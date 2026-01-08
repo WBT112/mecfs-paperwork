@@ -158,13 +158,7 @@ const getArrayItemTitle = (
 };
 
 const ArrayFieldItemTemplate = (props: ArrayFieldItemTemplateProps) => {
-  const {
-    children,
-    buttonsProps,
-    index,
-    parentUiSchema,
-    registry,
-  } = props;
+  const { children, buttonsProps, index, parentUiSchema, registry } = props;
   const { ButtonTemplates } = registry.templates;
   const t = getTranslator(
     registry.formContext as FormpackFormContext | undefined,
