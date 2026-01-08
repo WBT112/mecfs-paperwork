@@ -1,16 +1,58 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { loadFormpackI18n } from '../i18n/formpack';
+import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
-import { FormpackLoaderError, loadFormpackManifest } from '../formpacks/loader';
+import {
+  FormpackLoaderError,
+  loadFormpackManifest,
+  loadFormpackSchema,
+  loadFormpackUiSchema,
+} from '../formpacks/loader';
 import type { FormpackManifest } from '../formpacks/types';
+import type { ComponentType } from 'react';
+import type { FormProps } from '@rjsf/core';
+import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
+
+type FormDataState = Record<string, unknown>;
+
+type RjsfFormProps = FormProps<FormDataState>;
+
+const LazyForm = lazy(async () => {
+  const module = await import('@rjsf/core');
+  return { default: module.default as ComponentType<RjsfFormProps> };
+});
 
 const buildErrorMessage = (
   error: unknown,
   t: (key: string) => string,
 ): string => {
   if (error instanceof FormpackLoaderError) {
+    if (error.code === 'schema_not_found') {
+      return t('formpackSchemaNotFound');
+    }
+
+    if (error.code === 'schema_invalid') {
+      return t('formpackSchemaInvalid');
+    }
+
+    if (error.code === 'schema_unavailable') {
+      return t('formpackSchemaUnavailable');
+    }
+
+    if (error.code === 'ui_schema_not_found') {
+      return t('formpackUiSchemaNotFound');
+    }
+
+    if (error.code === 'ui_schema_invalid') {
+      return t('formpackUiSchemaInvalid');
+    }
+
+    if (error.code === 'ui_schema_unavailable') {
+      return t('formpackUiSchemaUnavailable');
+    }
+
     if (error.code === 'not_found') {
       return t('formpackNotFound');
     }
@@ -35,12 +77,17 @@ const buildErrorMessage = (
  * Shows formpack metadata with translations loaded for the active locale.
  */
 export default function FormpackDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { locale } = useLocale();
   const { id } = useParams();
   const [manifest, setManifest] = useState<FormpackManifest | null>(null);
+  const [schema, setSchema] = useState<RJSFSchema | null>(null);
+  const [uiSchema, setUiSchema] = useState<UiSchema | null>(null);
+  const [formData, setFormData] = useState<FormDataState>({});
+  const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const lastFormpackIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     let isActive = true;
@@ -58,12 +105,28 @@ export default function FormpackDetailPage() {
         if (!isActive) {
           return;
         }
+        const [schemaData, uiSchemaData] = await Promise.all([
+          loadFormpackSchema(formpackId),
+          loadFormpackUiSchema(formpackId),
+        ]);
+        if (!isActive) {
+          return;
+        }
+        const shouldResetFormData = lastFormpackIdRef.current !== formpackId;
         setManifest(data);
+        setSchema(schemaData as RJSFSchema);
+        setUiSchema(uiSchemaData as UiSchema);
+        if (shouldResetFormData) {
+          setFormData({});
+          lastFormpackIdRef.current = formpackId;
+        }
       } catch (error) {
         if (!isActive) {
           return;
         }
         setManifest(null);
+        setSchema(null);
+        setUiSchema(null);
         setErrorMessage(buildErrorMessage(error, t));
       } finally {
         if (isActive) {
@@ -75,6 +138,12 @@ export default function FormpackDetailPage() {
     if (id) {
       void loadManifest(id);
     } else {
+      setManifest(null);
+      setSchema(null);
+      setUiSchema(null);
+      setFormData({});
+      setValidator(null);
+      lastFormpackIdRef.current = undefined;
       setErrorMessage(t('formpackMissingId'));
       setIsLoading(false);
     }
@@ -88,6 +157,11 @@ export default function FormpackDetailPage() {
     () => (manifest ? `formpack:${manifest.id}` : undefined),
     [manifest],
   );
+  const activeLanguage = i18n.language;
+  const translatedUiSchema = useMemo(() => {
+    void activeLanguage;
+    return uiSchema ? translateUiSchema(uiSchema, t, namespace) : null;
+  }, [activeLanguage, namespace, t, uiSchema]);
 
   const title = manifest
     ? t(manifest.titleKey, {
@@ -102,6 +176,35 @@ export default function FormpackDetailPage() {
         defaultValue: manifest.descriptionKey,
       })
     : '';
+
+  const handleFormChange: NonNullable<RjsfFormProps['onChange']> = (event) => {
+    setFormData(event.formData as FormDataState);
+  };
+
+  const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = (
+    event,
+    submitEvent,
+  ) => {
+    submitEvent?.preventDefault();
+    setFormData(event.formData as FormDataState);
+  };
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadValidator = async () => {
+      const module = await import('@rjsf/validator-ajv8');
+      if (isActive) {
+        setValidator(module.default);
+      }
+    };
+
+    void loadValidator();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -189,6 +292,42 @@ export default function FormpackDetailPage() {
             </dl>
           </div>
         )}
+        <div className="formpack-detail__section">
+          <h3>{t('formpackFormHeading')}</h3>
+          {schema && translatedUiSchema && validator && (
+            <Suspense fallback={<p>{t('formpackLoading')}</p>}>
+              <LazyForm
+                className="formpack-form"
+                schema={schema}
+                uiSchema={translatedUiSchema}
+                validator={validator}
+                formData={formData}
+                onChange={handleFormChange}
+                onSubmit={handleFormSubmit}
+                noHtml5Validate
+                showErrorList={false}
+              >
+                <div className="formpack-form__actions">
+                  <button
+                    type="button"
+                    className="app__button"
+                    onClick={() => setFormData({})}
+                  >
+                    {t('formpackFormReset')}
+                  </button>
+                </div>
+              </LazyForm>
+            </Suspense>
+          )}
+        </div>
+        <div className="formpack-detail__section">
+          <h3>{t('formpackFormPreviewHeading')}</h3>
+          <pre className="formpack-preview">
+            {Object.keys(formData).length
+              ? JSON.stringify(formData, null, 2)
+              : t('formpackFormPreviewEmpty')}
+          </pre>
+        </div>
       </div>
     </section>
   );

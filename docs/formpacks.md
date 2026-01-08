@@ -58,6 +58,7 @@ Required fields:
 - Uses RJSF UI Schema.
 - Controls section order and field presentation.
 - Use i18n keys for section titles and help texts.
+- For `ui:title` and `ui:description`, prefix the i18n key with `t:` (example: `"ui:title": "t:notfallpass.section.person.title"`).
 - Lists must allow add/remove operations.
 
 ## DOCX templates

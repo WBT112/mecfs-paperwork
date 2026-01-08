@@ -15,6 +15,12 @@
   "formpackNotFound": "Dieses Formpack wurde nicht gefunden.",
   "formpackUnsupported": "Dieses Formpack nutzt eine noch nicht unterstützte Sprache.",
   "formpackInvalid": "Dieses Formpack-Manifest ist ungültig.",
+  "formpackSchemaNotFound": "Die Formular-Schema-Datei fehlt.",
+  "formpackSchemaInvalid": "Die Formular-Schema-Datei ist ungültig.",
+  "formpackSchemaUnavailable": "Das Formular-Schema konnte nicht geladen werden.",
+  "formpackUiSchemaNotFound": "Die Formular-UI-Schema-Datei fehlt.",
+  "formpackUiSchemaInvalid": "Die Formular-UI-Schema-Datei ist ungültig.",
+  "formpackUiSchemaUnavailable": "Das Formular-UI-Schema konnte nicht geladen werden.",
   "formpackMissingId": "Es wurde kein Formpack ausgewählt.",
   "formpackBackToList": "Zurück zu den Formpacks",
   "formpackOpen": "Öffnen",
@@ -28,5 +34,9 @@
   "formpackDocxHeading": "DOCX-Assets",
   "formpackDocxTemplateA4": "A4-Vorlage",
   "formpackDocxTemplateWallet": "Wallet-Vorlage",
-  "formpackDocxMapping": "DOCX-Mapping"
+  "formpackDocxMapping": "DOCX-Mapping",
+  "formpackFormHeading": "Formular",
+  "formpackFormReset": "Formular zurücksetzen",
+  "formpackFormPreviewHeading": "Formulardaten-Vorschau",
+  "formpackFormPreviewEmpty": "Noch keine Daten eingegeben."
 }

@@ -108,6 +108,20 @@ body {
   text-decoration: underline;
 }
 
+.app__button {
+  border: 1px solid #cbd5f5;
+  background: #eef2ff;
+  color: #1d4ed8;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+
+.app__button:hover {
+  background: #e0e7ff;
+}
+
 .app__error {
   color: #b91c1c;
   margin: 0.5rem 0 1rem;
@@ -181,4 +195,37 @@ body {
   margin: 0;
   color: #111827;
   word-break: break-word;
+}
+
+.formpack-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.formpack-form label {
+  font-weight: 600;
+}
+
+.formpack-form input,
+.formpack-form textarea,
+.formpack-form select {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+.formpack-form__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.formpack-preview {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
 }
