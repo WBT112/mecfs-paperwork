@@ -246,11 +246,63 @@ body {
   min-height: 2.5rem;
 }
 
-.formpack-form .array-item-add button,
-.formpack-form .array-item-remove button,
-.formpack-form .array-item-move-up button,
-.formpack-form .array-item-move-down button {
-  min-width: 2.5rem;
+.formpack-array {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.formpack-array__items {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.formpack-array__add {
+  display: flex;
+}
+
+.formpack-array__add-button {
+  width: 100%;
+}
+
+.formpack-array-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.formpack-array-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+  background: #ffffff;
+}
+
+.formpack-array-item__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.formpack-array-item__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.formpack-array-item__content > fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.formpack-array-item__content > fieldset > legend {
+  display: none;
 }
 
 .formpack-form legend {

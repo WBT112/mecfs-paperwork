@@ -5,6 +5,11 @@ import { loadFormpackI18n } from '../i18n/formpack';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
 import {
+  formpackTemplates,
+  type FormpackFormContext,
+} from '../lib/rjsfTemplates';
+import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
+import {
   FormpackLoaderError,
   loadFormpackManifest,
   loadFormpackSchema,
@@ -162,6 +167,13 @@ export default function FormpackDetailPage() {
     void activeLanguage;
     return uiSchema ? translateUiSchema(uiSchema, t, namespace) : null;
   }, [activeLanguage, namespace, t, uiSchema]);
+  const normalizedUiSchema = useMemo(
+    () =>
+      schema && translatedUiSchema
+        ? applyArrayUiSchemaDefaults(schema, translatedUiSchema)
+        : null,
+    [schema, translatedUiSchema],
+  );
 
   const title = manifest
     ? t(manifest.titleKey, {
@@ -205,6 +217,8 @@ export default function FormpackDetailPage() {
       isActive = false;
     };
   }, []);
+
+  const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
 
   if (isLoading) {
     return (
@@ -297,16 +311,18 @@ export default function FormpackDetailPage() {
         <div className="formpack-detail__form">
           <div className="formpack-detail__section">
             <h3>{t('formpackFormHeading')}</h3>
-            {schema && translatedUiSchema && validator && (
+            {schema && normalizedUiSchema && validator && (
               <Suspense fallback={<p>{t('formpackLoading')}</p>}>
                 <LazyForm
                   className="formpack-form"
                   schema={schema}
-                  uiSchema={translatedUiSchema}
+                  uiSchema={normalizedUiSchema}
+                  templates={formpackTemplates}
                   validator={validator}
                   formData={formData}
                   onChange={handleFormChange}
                   onSubmit={handleFormSubmit}
+                  formContext={formContext}
                   noHtml5Validate
                   showErrorList={false}
                 >

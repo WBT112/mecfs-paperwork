@@ -38,5 +38,10 @@
   "formpackFormHeading": "Formular",
   "formpackFormReset": "Formular zurücksetzen",
   "formpackFormPreviewHeading": "Formulardaten-Vorschau",
-  "formpackFormPreviewEmpty": "Noch keine Daten eingegeben."
+  "formpackFormPreviewEmpty": "Noch keine Daten eingegeben.",
+  "common.add": "Hinzufügen",
+  "common.remove": "Entfernen",
+  "common.item": "Eintrag",
+  "common.itemWithIndex": "{{item}} {{index}}",
+  "common.addItemWithTitle": "{{item}} hinzufügen"
 }
