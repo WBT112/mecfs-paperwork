@@ -5,6 +5,11 @@ import { loadFormpackI18n } from '../i18n/formpack';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
 import {
+  formpackTemplates,
+  type FormpackFormContext,
+} from '../lib/rjsfTemplates';
+import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
+import {
   FormpackLoaderError,
   loadFormpackManifest,
   loadFormpackSchema,
@@ -162,6 +167,13 @@ export default function FormpackDetailPage() {
     void activeLanguage;
     return uiSchema ? translateUiSchema(uiSchema, t, namespace) : null;
   }, [activeLanguage, namespace, t, uiSchema]);
+  const normalizedUiSchema = useMemo(
+    () =>
+      schema && translatedUiSchema
+        ? applyArrayUiSchemaDefaults(schema, translatedUiSchema)
+        : null,
+    [schema, translatedUiSchema],
+  );
 
   const title = manifest
     ? t(manifest.titleKey, {
@@ -206,6 +218,8 @@ export default function FormpackDetailPage() {
     };
   }, []);
 
+  const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
+
   if (isLoading) {
     return (
       <section className="app__card">
@@ -243,90 +257,96 @@ export default function FormpackDetailPage() {
         </Link>
       </div>
       <div className="formpack-detail">
-        <div className="formpack-detail__section">
-          <h3>{t('formpackDetailsHeading')}</h3>
-          <dl>
-            <div>
-              <dt>{t('formpackId')}</dt>
-              <dd>{manifest.id}</dd>
-            </div>
-            <div>
-              <dt>{t('formpackVersion')}</dt>
-              <dd>{manifest.version}</dd>
-            </div>
-            <div>
-              <dt>{t('formpackDefaultLocale')}</dt>
-              <dd>{manifest.defaultLocale}</dd>
-            </div>
-            <div>
-              <dt>{t('formpackLocales')}</dt>
-              <dd>{manifest.locales.join(', ')}</dd>
-            </div>
-          </dl>
-        </div>
-        <div className="formpack-detail__section">
-          <h3>{t('formpackExportsHeading')}</h3>
-          <dl>
-            <div>
-              <dt>{t('formpackExports')}</dt>
-              <dd>{manifest.exports.join(', ')}</dd>
-            </div>
-          </dl>
-        </div>
-        {manifest.docx && (
+        <div className="formpack-detail__assets">
           <div className="formpack-detail__section">
-            <h3>{t('formpackDocxHeading')}</h3>
+            <h3>{t('formpackDetailsHeading')}</h3>
             <dl>
               <div>
-                <dt>{t('formpackDocxTemplateA4')}</dt>
-                <dd>{manifest.docx.templates.a4}</dd>
+                <dt>{t('formpackId')}</dt>
+                <dd>{manifest.id}</dd>
               </div>
               <div>
-                <dt>{t('formpackDocxTemplateWallet')}</dt>
-                <dd>{manifest.docx.templates.wallet}</dd>
+                <dt>{t('formpackVersion')}</dt>
+                <dd>{manifest.version}</dd>
               </div>
               <div>
-                <dt>{t('formpackDocxMapping')}</dt>
-                <dd>{manifest.docx.mapping}</dd>
+                <dt>{t('formpackDefaultLocale')}</dt>
+                <dd>{manifest.defaultLocale}</dd>
+              </div>
+              <div>
+                <dt>{t('formpackLocales')}</dt>
+                <dd>{manifest.locales.join(', ')}</dd>
               </div>
             </dl>
           </div>
-        )}
-        <div className="formpack-detail__section">
-          <h3>{t('formpackFormHeading')}</h3>
-          {schema && translatedUiSchema && validator && (
-            <Suspense fallback={<p>{t('formpackLoading')}</p>}>
-              <LazyForm
-                className="formpack-form"
-                schema={schema}
-                uiSchema={translatedUiSchema}
-                validator={validator}
-                formData={formData}
-                onChange={handleFormChange}
-                onSubmit={handleFormSubmit}
-                noHtml5Validate
-                showErrorList={false}
-              >
-                <div className="formpack-form__actions">
-                  <button
-                    type="button"
-                    className="app__button"
-                    onClick={() => setFormData({})}
-                  >
-                    {t('formpackFormReset')}
-                  </button>
+          <div className="formpack-detail__section">
+            <h3>{t('formpackExportsHeading')}</h3>
+            <dl>
+              <div>
+                <dt>{t('formpackExports')}</dt>
+                <dd>{manifest.exports.join(', ')}</dd>
+              </div>
+            </dl>
+          </div>
+          {manifest.docx && (
+            <div className="formpack-detail__section">
+              <h3>{t('formpackDocxHeading')}</h3>
+              <dl>
+                <div>
+                  <dt>{t('formpackDocxTemplateA4')}</dt>
+                  <dd>{manifest.docx.templates.a4}</dd>
                 </div>
-              </LazyForm>
-            </Suspense>
+                <div>
+                  <dt>{t('formpackDocxTemplateWallet')}</dt>
+                  <dd>{manifest.docx.templates.wallet}</dd>
+                </div>
+                <div>
+                  <dt>{t('formpackDocxMapping')}</dt>
+                  <dd>{manifest.docx.mapping}</dd>
+                </div>
+              </dl>
+            </div>
           )}
         </div>
-        <div className="formpack-detail__section">
-          <h3>{t('formpackFormPreviewHeading')}</h3>
-          <pre className="formpack-preview">
-            {Object.keys(formData).length
-              ? JSON.stringify(formData, null, 2)
-              : t('formpackFormPreviewEmpty')}
-          </pre>
+        <div className="formpack-detail__form">
+          <div className="formpack-detail__section">
+            <h3>{t('formpackFormHeading')}</h3>
+            {schema && normalizedUiSchema && validator && (
+              <Suspense fallback={<p>{t('formpackLoading')}</p>}>
+                <LazyForm
+                  className="formpack-form"
+                  schema={schema}
+                  uiSchema={normalizedUiSchema}
+                  templates={formpackTemplates}
+                  validator={validator}
+                  formData={formData}
+                  onChange={handleFormChange}
+                  onSubmit={handleFormSubmit}
+                  formContext={formContext}
+                  noHtml5Validate
+                  showErrorList={false}
+                >
+                  <div className="formpack-form__actions">
+                    <button
+                      type="button"
+                      className="app__button"
+                      onClick={() => setFormData({})}
+                    >
+                      {t('formpackFormReset')}
+                    </button>
+                  </div>
+                </LazyForm>
+              </Suspense>
+            )}
+          </div>
+          <div className="formpack-detail__section">
+            <h3>{t('formpackFormPreviewHeading')}</h3>
+            <pre className="formpack-preview">
+              {Object.keys(formData).length
+                ? JSON.stringify(formData, null, 2)
+                : t('formpackFormPreviewEmpty')}
+            </pre>
+          </div>
         </div>
       </div>
     </section>

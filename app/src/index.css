@@ -167,20 +167,27 @@ body {
 
 .formpack-detail {
   display: grid;
+  gap: 2rem;
+}
+
+.formpack-detail__assets,
+.formpack-detail__form {
+  display: grid;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .formpack-detail__section h3 {
   margin: 0 0 0.75rem;
 }
 
-.formpack-detail__section dl {
+.formpack-detail__section > dl {
   margin: 0;
   display: grid;
   gap: 0.75rem;
 }
 
-.formpack-detail__section div {
+.formpack-detail__section > dl > div {
   display: grid;
   grid-template-columns: minmax(140px, 200px) 1fr;
   gap: 0.75rem;
@@ -202,17 +209,114 @@ body {
   gap: 1rem;
 }
 
+.formpack-form *,
+.formpack-form *::before,
+.formpack-form *::after {
+  box-sizing: border-box;
+}
+
 .formpack-form label {
   font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .formpack-form input,
 .formpack-form textarea,
 .formpack-form select {
   width: 100%;
+  max-width: 100%;
   padding: 0.5rem 0.6rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
+}
+
+.formpack-form fieldset {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.formpack-form button,
+.formpack-form .btn {
+  font-size: 0.95rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  min-height: 2.5rem;
+}
+
+.formpack-array {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.formpack-array__items {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.formpack-array__add {
+  display: flex;
+}
+
+.formpack-array__add-button {
+  width: 100%;
+}
+
+.formpack-array-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.formpack-array-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+  background: #ffffff;
+}
+
+.formpack-array-item__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.formpack-array-item__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.formpack-array-item__content > fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.formpack-array-item__content > fieldset > legend {
+  display: none;
+}
+
+.formpack-form legend {
+  padding: 0 0.25rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.formpack-form .field-description,
+.formpack-form .help-block {
+  margin: 0.35rem 0 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .formpack-form__actions {
@@ -228,4 +332,5 @@ body {
   overflow-x: auto;
   font-size: 0.9rem;
   white-space: pre-wrap;
+  max-width: 100%;
 }

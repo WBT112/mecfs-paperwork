@@ -2,20 +2,34 @@ import type { TFunction } from 'i18next';
 import type { UiSchema } from '@rjsf/utils';
 
 const TRANSLATION_PREFIX = 't:';
-const TRANSLATABLE_KEYS = new Set(['ui:title', 'ui:description']);
+const TRANSLATABLE_KEYS = new Set(['ui:title', 'ui:description', 'ui:help']);
+
+const looksLikeTranslationKey = (value: string): boolean => {
+  if (value.startsWith(TRANSLATION_PREFIX)) {
+    return true;
+  }
+
+  if (value.trim() !== value || value.length === 0) {
+    return false;
+  }
+
+  if (/\s/.test(value)) {
+    return false;
+  }
+
+  return value.includes('.');
+};
 
 const translateUiSchemaString = (
   value: string,
   t: TFunction,
   namespace?: string,
 ): string => {
-  if (!value.startsWith(TRANSLATION_PREFIX)) {
-    return value;
-  }
+  const key = value.startsWith(TRANSLATION_PREFIX)
+    ? value.slice(TRANSLATION_PREFIX.length).trim()
+    : value;
 
-  const key = value.slice(TRANSLATION_PREFIX.length).trim();
-
-  if (!key) {
+  if (!key || !looksLikeTranslationKey(value)) {
     return value;
   }
 
@@ -49,7 +63,7 @@ const translateUiSchemaNode = (
 };
 
 /**
- * Translates ui:title and ui:description values with the t:<key> convention.
+ * Translates ui:title, ui:description, and ui:help values in a uiSchema tree.
  */
 export const translateUiSchema = (
   uiSchema: UiSchema,

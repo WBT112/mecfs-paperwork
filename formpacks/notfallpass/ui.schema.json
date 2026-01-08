@@ -11,9 +11,11 @@
   "person": {
     "ui:title": "notfallpass.section.person.title",
     "name": {
+      "ui:title": "notfallpass.person.name.label",
       "ui:help": "notfallpass.person.name.help"
     },
     "birthDate": {
+      "ui:title": "notfallpass.person.birthDate.label",
       "ui:help": "notfallpass.person.birthDate.help"
     }
   },
@@ -25,9 +27,18 @@
       "removable": true
     },
     "items": {
-      "name": {"ui:help": "notfallpass.contacts.name.help"},
-      "phone": {"ui:help": "notfallpass.contacts.phone.help"},
-      "relation": {"ui:help": "notfallpass.contacts.relation.help"}
+      "name": {
+        "ui:title": "notfallpass.contacts.name.label",
+        "ui:help": "notfallpass.contacts.name.help"
+      },
+      "phone": {
+        "ui:title": "notfallpass.contacts.phone.label",
+        "ui:help": "notfallpass.contacts.phone.help"
+      },
+      "relation": {
+        "ui:title": "notfallpass.contacts.relation.label",
+        "ui:help": "notfallpass.contacts.relation.help"
+      }
     }
   },
   "diagnoses": {
@@ -48,9 +59,18 @@
       "removable": true
     },
     "items": {
-      "name": {"ui:help": "notfallpass.medications.name.help"},
-      "dosage": {"ui:help": "notfallpass.medications.dosage.help"},
-      "schedule": {"ui:help": "notfallpass.medications.schedule.help"}
+      "name": {
+        "ui:title": "notfallpass.medications.name.label",
+        "ui:help": "notfallpass.medications.name.help"
+      },
+      "dosage": {
+        "ui:title": "notfallpass.medications.dosage.label",
+        "ui:help": "notfallpass.medications.dosage.help"
+      },
+      "schedule": {
+        "ui:title": "notfallpass.medications.schedule.label",
+        "ui:help": "notfallpass.medications.schedule.help"
+      }
     }
   },
   "allergies": {
@@ -60,7 +80,13 @@
   },
   "doctor": {
     "ui:title": "notfallpass.section.doctor.title",
-    "name": {"ui:help": "notfallpass.doctor.name.help"},
-    "phone": {"ui:help": "notfallpass.doctor.phone.help"}
+    "name": {
+      "ui:title": "notfallpass.doctor.name.label",
+      "ui:help": "notfallpass.doctor.name.help"
+    },
+    "phone": {
+      "ui:title": "notfallpass.doctor.phone.label",
+      "ui:help": "notfallpass.doctor.phone.help"
+    }
   }
 }

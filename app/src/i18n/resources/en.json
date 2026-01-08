@@ -38,5 +38,10 @@
   "formpackFormHeading": "Form",
   "formpackFormReset": "Reset form",
   "formpackFormPreviewHeading": "Form data preview",
-  "formpackFormPreviewEmpty": "No data entered yet."
+  "formpackFormPreviewEmpty": "No data entered yet.",
+  "common.add": "Add",
+  "common.remove": "Remove",
+  "common.item": "Item",
+  "common.itemWithIndex": "{{item}} {{index}}",
+  "common.addItemWithTitle": "Add {{item}}"
 }
