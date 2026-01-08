@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Vite build output
+app/dist/
+app/.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store

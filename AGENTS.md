@@ -72,6 +72,7 @@ Do not block feature work on this unless the issue explicitly targets security t
   - what changed
   - how it was verified (commands + results)
   - known limitations / follow-ups
+  - Run npm run format before opening PRs if format:check fails.
 
 ## 9) Data model constraints (MVP)
 - Storage: IndexedDB with `records` + `revisions` (snapshots). Keep migrations explicit.
