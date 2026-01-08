@@ -1,11 +1,32 @@
 {
   "appTitle": "mecfs-paperwork",
   "appSubtitle": "Offline-first paperwork workspace",
-  "workspaceTitle": "Workspace",
-  "workspaceDescription": "This is a placeholder for upcoming record creation, review, and export tools.",
   "languageLabel": "Language",
   "languageOptions": {
     "de": "Deutsch",
     "en": "English"
-  }
+  },
+  "formpackListTitle": "Formpacks",
+  "formpackListDescription": "Available form bundles ready for use.",
+  "formpackDetailTitle": "Formpack details",
+  "formpackLoading": "Loading formpack data...",
+  "formpackListErrorFallback": "Unable to load formpacks right now.",
+  "formpackLoadError": "Unable to load this formpack right now.",
+  "formpackNotFound": "This formpack could not be found.",
+  "formpackUnsupported": "This formpack uses a locale that is not supported yet.",
+  "formpackInvalid": "This formpack manifest is invalid.",
+  "formpackMissingId": "No formpack was selected.",
+  "formpackBackToList": "Back to formpacks",
+  "formpackOpen": "Open",
+  "formpackDetailsHeading": "Details",
+  "formpackId": "Formpack ID",
+  "formpackVersion": "Version",
+  "formpackDefaultLocale": "Default locale",
+  "formpackLocales": "Supported locales",
+  "formpackExportsHeading": "Exports",
+  "formpackExports": "Formats",
+  "formpackDocxHeading": "DOCX assets",
+  "formpackDocxTemplateA4": "A4 template",
+  "formpackDocxTemplateWallet": "Wallet template",
+  "formpackDocxMapping": "DOCX mapping"
 }
