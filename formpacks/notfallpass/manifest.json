@@ -1,0 +1,16 @@
+{
+  "id": "notfallpass",
+  "version": "0.1.0",
+  "defaultLocale": "de",
+  "locales": ["de", "en"],
+  "titleKey": "notfallpass.title",
+  "descriptionKey": "notfallpass.description",
+  "exports": ["docx", "json"],
+  "docx": {
+    "templates": {
+      "a4": "docx/template.a4.docx",
+      "wallet": "docx/template.wallet.docx"
+    },
+    "mapping": "docx/mapping.json"
+  }
+}

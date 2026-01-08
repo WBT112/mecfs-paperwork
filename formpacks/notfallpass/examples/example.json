@@ -1,0 +1,27 @@
+{
+  "person": {
+    "name": "Max Mustermann",
+    "birthDate": "1990-04-12"
+  },
+  "contacts": [
+    {
+      "name": "Erika Musterfrau",
+      "phone": "+49 30 123456",
+      "relation": "Partnerin"
+    }
+  ],
+  "diagnoses": "ME/CFS, orthostatic intolerance",
+  "symptoms": "Severe fatigue, dizziness, light sensitivity",
+  "medications": [
+    {
+      "name": "Electrolyte solution",
+      "dosage": "500 ml",
+      "schedule": "Daily"
+    }
+  ],
+  "allergies": "No known drug allergies",
+  "doctor": {
+    "name": "Dr. Example",
+    "phone": "+49 30 987654"
+  }
+}
