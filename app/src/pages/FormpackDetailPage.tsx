@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { loadFormpackI18n } from '../i18n/formpack';
@@ -87,6 +87,7 @@ export default function FormpackDetailPage() {
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const lastFormpackIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     let isActive = true;
@@ -111,10 +112,14 @@ export default function FormpackDetailPage() {
         if (!isActive) {
           return;
         }
+        const shouldResetFormData = lastFormpackIdRef.current !== formpackId;
         setManifest(data);
         setSchema(schemaData as RJSFSchema);
         setUiSchema(uiSchemaData as UiSchema);
-        setFormData({});
+        if (shouldResetFormData) {
+          setFormData({});
+          lastFormpackIdRef.current = formpackId;
+        }
       } catch (error) {
         if (!isActive) {
           return;
@@ -138,6 +143,7 @@ export default function FormpackDetailPage() {
       setUiSchema(null);
       setFormData({});
       setValidator(null);
+      lastFormpackIdRef.current = undefined;
       setErrorMessage(t('formpackMissingId'));
       setIsLoading(false);
     }
