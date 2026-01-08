@@ -11,7 +11,13 @@ export type FormpackLoaderErrorCode =
   | 'not_found'
   | 'invalid'
   | 'network'
-  | 'unsupported';
+  | 'unsupported'
+  | 'schema_not_found'
+  | 'schema_invalid'
+  | 'schema_unavailable'
+  | 'ui_schema_not_found'
+  | 'ui_schema_invalid'
+  | 'ui_schema_unavailable';
 
 /**
  * Error type for formpack loading failures.
@@ -28,9 +34,15 @@ export class FormpackLoaderError extends Error {
 
 const buildManifestPath = (formpackId: string) =>
   `/formpacks/${formpackId}/manifest.json`;
+const buildSchemaPath = (formpackId: string) =>
+  `/formpacks/${formpackId}/schema.json`;
+const buildUiSchemaPath = (formpackId: string) =>
+  `/formpacks/${formpackId}/ui.schema.json`;
 
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isFormpackExportType = (value: string): value is FormpackExportType =>
   value === 'docx' || value === 'json';
@@ -201,6 +213,88 @@ export const loadFormpackManifest = async (
 
   return parseManifest(payload, formpackId);
 };
+
+const loadFormpackJsonResource = async (
+  path: string,
+  {
+    notFoundCode,
+    invalidCode,
+    unavailableCode,
+  }: {
+    notFoundCode: FormpackLoaderErrorCode;
+    invalidCode: FormpackLoaderErrorCode;
+    unavailableCode: FormpackLoaderErrorCode;
+  },
+): Promise<Record<string, unknown>> => {
+  let response: Response;
+
+  try {
+    response = await fetch(path, { headers: { Accept: 'application/json' } });
+  } catch {
+    throw new FormpackLoaderError(
+      unavailableCode,
+      'Unable to reach the formpack resource.',
+    );
+  }
+
+  if (response.status === 404) {
+    throw new FormpackLoaderError(
+      notFoundCode,
+      'The formpack resource could not be found.',
+    );
+  }
+
+  if (!response.ok) {
+    throw new FormpackLoaderError(
+      unavailableCode,
+      'Unable to load the formpack resource.',
+    );
+  }
+
+  let payload: unknown;
+
+  try {
+    payload = (await response.json()) as unknown;
+  } catch {
+    throw new FormpackLoaderError(
+      invalidCode,
+      'The formpack resource could not be parsed.',
+    );
+  }
+
+  if (!isRecord(payload)) {
+    throw new FormpackLoaderError(
+      invalidCode,
+      'The formpack resource is not a valid JSON object.',
+    );
+  }
+
+  return payload;
+};
+
+/**
+ * Fetches the JSON schema for a formpack.
+ */
+export const loadFormpackSchema = async (
+  formpackId: string,
+): Promise<Record<string, unknown>> =>
+  loadFormpackJsonResource(buildSchemaPath(formpackId), {
+    notFoundCode: 'schema_not_found',
+    invalidCode: 'schema_invalid',
+    unavailableCode: 'schema_unavailable',
+  });
+
+/**
+ * Fetches the UI schema for a formpack.
+ */
+export const loadFormpackUiSchema = async (
+  formpackId: string,
+): Promise<Record<string, unknown>> =>
+  loadFormpackJsonResource(buildUiSchemaPath(formpackId), {
+    notFoundCode: 'ui_schema_not_found',
+    invalidCode: 'ui_schema_invalid',
+    unavailableCode: 'ui_schema_unavailable',
+  });
 
 /**
  * Loads all formpacks declared in the static registry.

@@ -15,6 +15,12 @@
   "formpackNotFound": "This formpack could not be found.",
   "formpackUnsupported": "This formpack uses a locale that is not supported yet.",
   "formpackInvalid": "This formpack manifest is invalid.",
+  "formpackSchemaNotFound": "The form schema file is missing.",
+  "formpackSchemaInvalid": "The form schema file is invalid.",
+  "formpackSchemaUnavailable": "The form schema could not be loaded.",
+  "formpackUiSchemaNotFound": "The form UI schema file is missing.",
+  "formpackUiSchemaInvalid": "The form UI schema file is invalid.",
+  "formpackUiSchemaUnavailable": "The form UI schema could not be loaded.",
   "formpackMissingId": "No formpack was selected.",
   "formpackBackToList": "Back to formpacks",
   "formpackOpen": "Open",
@@ -28,5 +34,9 @@
   "formpackDocxHeading": "DOCX assets",
   "formpackDocxTemplateA4": "A4 template",
   "formpackDocxTemplateWallet": "Wallet template",
-  "formpackDocxMapping": "DOCX mapping"
+  "formpackDocxMapping": "DOCX mapping",
+  "formpackFormHeading": "Form",
+  "formpackFormReset": "Reset form",
+  "formpackFormPreviewHeading": "Form data preview",
+  "formpackFormPreviewEmpty": "No data entered yet."
 }

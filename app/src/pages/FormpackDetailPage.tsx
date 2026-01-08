@@ -2,15 +2,50 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { loadFormpackI18n } from '../i18n/formpack';
+import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
-import { FormpackLoaderError, loadFormpackManifest } from '../formpacks/loader';
+import {
+  FormpackLoaderError,
+  loadFormpackManifest,
+  loadFormpackSchema,
+  loadFormpackUiSchema,
+} from '../formpacks/loader';
 import type { FormpackManifest } from '../formpacks/types';
+import Form from '@rjsf/core';
+import validator from '@rjsf/validator-ajv8';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
+
+type FormDataState = Record<string, unknown>;
 
 const buildErrorMessage = (
   error: unknown,
   t: (key: string) => string,
 ): string => {
   if (error instanceof FormpackLoaderError) {
+    if (error.code === 'schema_not_found') {
+      return t('formpackSchemaNotFound');
+    }
+
+    if (error.code === 'schema_invalid') {
+      return t('formpackSchemaInvalid');
+    }
+
+    if (error.code === 'schema_unavailable') {
+      return t('formpackSchemaUnavailable');
+    }
+
+    if (error.code === 'ui_schema_not_found') {
+      return t('formpackUiSchemaNotFound');
+    }
+
+    if (error.code === 'ui_schema_invalid') {
+      return t('formpackUiSchemaInvalid');
+    }
+
+    if (error.code === 'ui_schema_unavailable') {
+      return t('formpackUiSchemaUnavailable');
+    }
+
     if (error.code === 'not_found') {
       return t('formpackNotFound');
     }
@@ -35,10 +70,13 @@ const buildErrorMessage = (
  * Shows formpack metadata with translations loaded for the active locale.
  */
 export default function FormpackDetailPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { locale } = useLocale();
   const { id } = useParams();
   const [manifest, setManifest] = useState<FormpackManifest | null>(null);
+  const [schema, setSchema] = useState<RJSFSchema | null>(null);
+  const [uiSchema, setUiSchema] = useState<UiSchema | null>(null);
+  const [formData, setFormData] = useState<FormDataState>({});
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -58,12 +96,24 @@ export default function FormpackDetailPage() {
         if (!isActive) {
           return;
         }
+        const [schemaData, uiSchemaData] = await Promise.all([
+          loadFormpackSchema(formpackId),
+          loadFormpackUiSchema(formpackId),
+        ]);
+        if (!isActive) {
+          return;
+        }
         setManifest(data);
+        setSchema(schemaData as RJSFSchema);
+        setUiSchema(uiSchemaData as UiSchema);
+        setFormData({});
       } catch (error) {
         if (!isActive) {
           return;
         }
         setManifest(null);
+        setSchema(null);
+        setUiSchema(null);
         setErrorMessage(buildErrorMessage(error, t));
       } finally {
         if (isActive) {
@@ -75,6 +125,10 @@ export default function FormpackDetailPage() {
     if (id) {
       void loadManifest(id);
     } else {
+      setManifest(null);
+      setSchema(null);
+      setUiSchema(null);
+      setFormData({});
       setErrorMessage(t('formpackMissingId'));
       setIsLoading(false);
     }
@@ -88,6 +142,11 @@ export default function FormpackDetailPage() {
     () => (manifest ? `formpack:${manifest.id}` : undefined),
     [manifest],
   );
+  const activeLanguage = i18n.language;
+  const translatedUiSchema = useMemo(() => {
+    void activeLanguage;
+    return uiSchema ? translateUiSchema(uiSchema, t, namespace) : null;
+  }, [activeLanguage, namespace, t, uiSchema]);
 
   const title = manifest
     ? t(manifest.titleKey, {
@@ -189,6 +248,42 @@ export default function FormpackDetailPage() {
             </dl>
           </div>
         )}
+        <div className="formpack-detail__section">
+          <h3>{t('formpackFormHeading')}</h3>
+          {schema && translatedUiSchema && (
+            <Form
+              className="formpack-form"
+              schema={schema}
+              uiSchema={translatedUiSchema}
+              validator={validator}
+              formData={formData}
+              onChange={(event) => setFormData(event.formData as FormDataState)}
+              onSubmit={(_, event) => {
+                event?.preventDefault();
+              }}
+              noHtml5Validate
+              showErrorList={false}
+            >
+              <div className="formpack-form__actions">
+                <button
+                  type="button"
+                  className="app__button"
+                  onClick={() => setFormData({})}
+                >
+                  {t('formpackFormReset')}
+                </button>
+              </div>
+            </Form>
+          )}
+        </div>
+        <div className="formpack-detail__section">
+          <h3>{t('formpackFormPreviewHeading')}</h3>
+          <pre className="formpack-preview">
+            {Object.keys(formData).length
+              ? JSON.stringify(formData, null, 2)
+              : t('formpackFormPreviewEmpty')}
+          </pre>
+        </div>
       </div>
     </section>
   );
