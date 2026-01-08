@@ -43,8 +43,20 @@
   },
   "diagnoses": {
     "ui:title": "notfallpass.section.diagnoses.title",
-    "ui:widget": "textarea",
-    "ui:help": "notfallpass.diagnoses.help"
+    "ui:description": "notfallpass.diagnoses.additional.title",
+    "ui:order": ["meCfs", "pots", "longCovid"],
+    "meCfs": {
+      "ui:title": "notfallpass.diagnoses.meCfs.label",
+      "ui:help": "notfallpass.diagnoses.meCfs.help"
+    },
+    "pots": {
+      "ui:title": "notfallpass.diagnoses.pots.label",
+      "ui:help": "notfallpass.diagnoses.pots.help"
+    },
+    "longCovid": {
+      "ui:title": "notfallpass.diagnoses.longCovid.label",
+      "ui:help": "notfallpass.diagnoses.longCovid.help"
+    }
   },
   "symptoms": {
     "ui:title": "notfallpass.section.symptoms.title",

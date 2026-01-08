@@ -10,7 +10,11 @@
       "relation": "Partnerin"
     }
   ],
-  "diagnoses": "ME/CFS, orthostatic intolerance",
+  "diagnoses": {
+    "meCfs": true,
+    "pots": true,
+    "longCovid": false
+  },
   "symptoms": "Severe fatigue, dizziness, light sensitivity",
   "medications": [
     {
