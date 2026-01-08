@@ -51,6 +51,18 @@ export const useRecords = (formpackId: string | null) => {
     try {
       const nextRecords = await listRecords(formpackId);
       setRecords(nextRecords);
+      setActiveRecord((current) => {
+        if (current) {
+          return nextRecords.some((record) => record.id === current.id)
+            ? current
+            : null;
+        }
+        if (!nextRecords.length) {
+          return null;
+        }
+        // Default to the most recently updated record on fresh loads.
+        return nextRecords[0];
+      });
     } catch (error) {
       setErrorCode(getStorageErrorCode(error));
     } finally {

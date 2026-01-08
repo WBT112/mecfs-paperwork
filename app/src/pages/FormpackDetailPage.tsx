@@ -110,6 +110,7 @@ export default function FormpackDetailPage() {
   );
   const [isLoading, setIsLoading] = useState(true);
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
+  const isCreatingRecordRef = useRef(false);
   const formpackId = manifest?.id ?? null;
   const {
     records,
@@ -265,7 +266,21 @@ export default function FormpackDetailPage() {
     : '';
 
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = (event) => {
-    setFormData(event.formData as FormDataState);
+    const nextData = event.formData as FormDataState;
+    setFormData(nextData);
+
+    if (
+      manifest &&
+      !activeRecord &&
+      !isCreatingRecordRef.current &&
+      storageError !== 'unavailable'
+    ) {
+      isCreatingRecordRef.current = true;
+      const recordTitle = title || t('formpackRecordUntitled');
+      void createRecord(locale, nextData, recordTitle).finally(() => {
+        isCreatingRecordRef.current = false;
+      });
+    }
   };
 
   const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = (
