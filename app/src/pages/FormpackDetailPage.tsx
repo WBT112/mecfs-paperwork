@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { loadFormpackI18n } from '../i18n/formpack';
@@ -11,11 +11,18 @@ import {
   loadFormpackUiSchema,
 } from '../formpacks/loader';
 import type { FormpackManifest } from '../formpacks/types';
-import Form from '@rjsf/core';
-import validator from '@rjsf/validator-ajv8';
-import type { RJSFSchema, UiSchema } from '@rjsf/utils';
+import type { ComponentType } from 'react';
+import type { FormProps } from '@rjsf/core';
+import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
 
 type FormDataState = Record<string, unknown>;
+
+type RjsfFormProps = FormProps<FormDataState>;
+
+const LazyForm = lazy(async () => {
+  const module = await import('@rjsf/core');
+  return { default: module.default as ComponentType<RjsfFormProps> };
+});
 
 const buildErrorMessage = (
   error: unknown,
@@ -77,6 +84,7 @@ export default function FormpackDetailPage() {
   const [schema, setSchema] = useState<RJSFSchema | null>(null);
   const [uiSchema, setUiSchema] = useState<UiSchema | null>(null);
   const [formData, setFormData] = useState<FormDataState>({});
+  const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -129,6 +137,7 @@ export default function FormpackDetailPage() {
       setSchema(null);
       setUiSchema(null);
       setFormData({});
+      setValidator(null);
       setErrorMessage(t('formpackMissingId'));
       setIsLoading(false);
     }
@@ -161,6 +170,35 @@ export default function FormpackDetailPage() {
         defaultValue: manifest.descriptionKey,
       })
     : '';
+
+  const handleFormChange: NonNullable<RjsfFormProps['onChange']> = (event) => {
+    setFormData(event.formData as FormDataState);
+  };
+
+  const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = (
+    event,
+    submitEvent,
+  ) => {
+    submitEvent?.preventDefault();
+    setFormData(event.formData as FormDataState);
+  };
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadValidator = async () => {
+      const module = await import('@rjsf/validator-ajv8');
+      if (isActive) {
+        setValidator(module.default);
+      }
+    };
+
+    void loadValidator();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   if (isLoading) {
     return (
@@ -250,30 +288,30 @@ export default function FormpackDetailPage() {
         )}
         <div className="formpack-detail__section">
           <h3>{t('formpackFormHeading')}</h3>
-          {schema && translatedUiSchema && (
-            <Form
-              className="formpack-form"
-              schema={schema}
-              uiSchema={translatedUiSchema}
-              validator={validator}
-              formData={formData}
-              onChange={(event) => setFormData(event.formData as FormDataState)}
-              onSubmit={(_, event) => {
-                event?.preventDefault();
-              }}
-              noHtml5Validate
-              showErrorList={false}
-            >
-              <div className="formpack-form__actions">
-                <button
-                  type="button"
-                  className="app__button"
-                  onClick={() => setFormData({})}
-                >
-                  {t('formpackFormReset')}
-                </button>
-              </div>
-            </Form>
+          {schema && translatedUiSchema && validator && (
+            <Suspense fallback={<p>{t('formpackLoading')}</p>}>
+              <LazyForm
+                className="formpack-form"
+                schema={schema}
+                uiSchema={translatedUiSchema}
+                validator={validator}
+                formData={formData}
+                onChange={handleFormChange}
+                onSubmit={handleFormSubmit}
+                noHtml5Validate
+                showErrorList={false}
+              >
+                <div className="formpack-form__actions">
+                  <button
+                    type="button"
+                    className="app__button"
+                    onClick={() => setFormData({})}
+                  >
+                    {t('formpackFormReset')}
+                  </button>
+                </div>
+              </LazyForm>
+            </Suspense>
           )}
         </div>
         <div className="formpack-detail__section">
