@@ -238,6 +238,21 @@ body {
   border: 1px solid #e5e7eb;
 }
 
+.formpack-form button,
+.formpack-form .btn {
+  font-size: 0.95rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  min-height: 2.5rem;
+}
+
+.formpack-form .array-item-add button,
+.formpack-form .array-item-remove button,
+.formpack-form .array-item-move-up button,
+.formpack-form .array-item-move-down button {
+  min-width: 2.5rem;
+}
+
 .formpack-form legend {
   padding: 0 0.25rem;
   font-weight: 600;
