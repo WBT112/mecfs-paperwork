@@ -1,4 +1,12 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { loadFormpackI18n } from '../i18n/formpack';
@@ -16,6 +24,12 @@ import {
   loadFormpackUiSchema,
 } from '../formpacks/loader';
 import type { FormpackManifest } from '../formpacks/types';
+import {
+  type StorageErrorCode,
+  useAutosaveRecord,
+  useRecords,
+  useSnapshots,
+} from '../storage/hooks';
 import type { ComponentType } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
@@ -91,8 +105,29 @@ export default function FormpackDetailPage() {
   const [formData, setFormData] = useState<FormDataState>({});
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [storageError, setStorageError] = useState<StorageErrorCode | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(true);
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
+  const formpackId = manifest?.id ?? null;
+  const {
+    records,
+    activeRecord,
+    isLoading: isRecordsLoading,
+    errorCode: recordsError,
+    createRecord,
+    loadRecord,
+    updateActiveRecord,
+    applyRecordUpdate,
+  } = useRecords(formpackId);
+  const {
+    snapshots,
+    isLoading: isSnapshotsLoading,
+    errorCode: snapshotsError,
+    createSnapshot,
+    loadSnapshot,
+  } = useSnapshots(activeRecord?.id ?? null);
 
   useEffect(() => {
     let isActive = true;
@@ -158,6 +193,16 @@ export default function FormpackDetailPage() {
     };
   }, [id, locale, t]);
 
+  useEffect(() => {
+    setStorageError(recordsError ?? snapshotsError ?? null);
+  }, [recordsError, snapshotsError]);
+
+  useEffect(() => {
+    if (activeRecord) {
+      setFormData(activeRecord.data);
+    }
+  }, [activeRecord]);
+
   const namespace = useMemo(
     () => (manifest ? `formpack:${manifest.id}` : undefined),
     [manifest],
@@ -174,6 +219,36 @@ export default function FormpackDetailPage() {
         : null,
     [schema, translatedUiSchema],
   );
+  const dateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(activeLanguage, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }),
+    [activeLanguage],
+  );
+  const formatTimestamp = useCallback(
+    (value: string) => {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) {
+        return value;
+      }
+      return dateFormatter.format(date);
+    },
+    [dateFormatter],
+  );
+  const buildSnapshotLabel = useCallback(() => {
+    const timestamp = formatTimestamp(new Date().toISOString());
+    return t('formpackSnapshotLabel', { timestamp });
+  }, [formatTimestamp, t]);
+  const storageErrorMessage = useMemo(() => {
+    if (!storageError) {
+      return null;
+    }
+    return storageError === 'unavailable'
+      ? t('storageUnavailable')
+      : t('storageError');
+  }, [storageError, t]);
 
   const title = manifest
     ? t(manifest.titleKey, {
@@ -200,6 +275,63 @@ export default function FormpackDetailPage() {
     submitEvent?.preventDefault();
     setFormData(event.formData as FormDataState);
   };
+
+  const handleCreateRecord = useCallback(async () => {
+    if (!manifest) {
+      return;
+    }
+
+    const recordTitle = title || t('formpackRecordUntitled');
+    const record = await createRecord(locale, formData, recordTitle);
+    if (record) {
+      setFormData(record.data);
+    }
+  }, [createRecord, formData, locale, manifest, t, title]);
+
+  const handleLoadRecord = useCallback(
+    async (recordId: string) => {
+      const record = await loadRecord(recordId);
+      if (record) {
+        setFormData(record.data);
+      }
+    },
+    [loadRecord],
+  );
+
+  const handleCreateSnapshot = useCallback(async () => {
+    if (!activeRecord) {
+      return;
+    }
+
+    await createSnapshot(formData, buildSnapshotLabel());
+  }, [activeRecord, buildSnapshotLabel, createSnapshot, formData]);
+
+  const handleRestoreSnapshot = useCallback(
+    async (snapshotId: string) => {
+      if (!activeRecord) {
+        return;
+      }
+
+      const snapshot = await loadSnapshot(snapshotId);
+      if (!snapshot) {
+        return;
+      }
+
+      setFormData(snapshot.data);
+      await updateActiveRecord(activeRecord.id, {
+        data: snapshot.data,
+      });
+    },
+    [activeRecord, loadSnapshot, updateActiveRecord],
+  );
+
+  useAutosaveRecord(activeRecord?.id ?? null, formData, locale, {
+    onSaved: (record) => {
+      setStorageError(null);
+      applyRecordUpdate(record);
+    },
+    onError: setStorageError,
+  });
 
   useEffect(() => {
     let isActive = true;
@@ -310,6 +442,69 @@ export default function FormpackDetailPage() {
         </div>
         <div className="formpack-detail__form">
           <div className="formpack-detail__section">
+            <h3>{t('formpackRecordsHeading')}</h3>
+            {storageErrorMessage && (
+              <p className="app__error">{storageErrorMessage}</p>
+            )}
+            <div className="formpack-records__actions">
+              <button
+                type="button"
+                className="app__button"
+                onClick={handleCreateRecord}
+                disabled={!manifest || storageError === 'unavailable'}
+              >
+                {t('formpackRecordNew')}
+              </button>
+            </div>
+            {records.length ? (
+              <ul className="formpack-records__list">
+                {records.map((record) => {
+                  const isActive = activeRecord?.id === record.id;
+                  return (
+                    <li
+                      key={record.id}
+                      className={`formpack-records__item${
+                        isActive ? ' formpack-records__item--active' : ''
+                      }`}
+                    >
+                      <div>
+                        <p className="formpack-records__title">
+                          {record.title ?? t('formpackRecordUntitled')}
+                        </p>
+                        <p className="formpack-records__meta">
+                          {t('formpackRecordUpdatedAt', {
+                            timestamp: formatTimestamp(record.updatedAt),
+                          })}
+                        </p>
+                      </div>
+                      <div className="formpack-records__item-actions">
+                        <button
+                          type="button"
+                          className="app__button"
+                          onClick={() => handleLoadRecord(record.id)}
+                          disabled={storageError === 'unavailable'}
+                        >
+                          {t('formpackRecordLoad')}
+                        </button>
+                        {isActive && (
+                          <span className="formpack-records__badge">
+                            {t('formpackRecordActive')}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="formpack-records__empty">
+                {isRecordsLoading
+                  ? t('formpackRecordsLoading')
+                  : t('formpackRecordsEmpty')}
+              </p>
+            )}
+          </div>
+          <div className="formpack-detail__section">
             <h3>{t('formpackFormHeading')}</h3>
             {schema && normalizedUiSchema && validator && (
               <Suspense fallback={<p>{t('formpackLoading')}</p>}>
@@ -337,6 +532,64 @@ export default function FormpackDetailPage() {
                   </div>
                 </LazyForm>
               </Suspense>
+            )}
+          </div>
+          <div className="formpack-detail__section">
+            <h3>{t('formpackSnapshotsHeading')}</h3>
+            {activeRecord ? (
+              <>
+                <div className="formpack-snapshots__actions">
+                  <button
+                    type="button"
+                    className="app__button"
+                    onClick={handleCreateSnapshot}
+                    disabled={storageError === 'unavailable'}
+                  >
+                    {t('formpackSnapshotCreate')}
+                  </button>
+                </div>
+                {snapshots.length ? (
+                  <ul className="formpack-snapshots__list">
+                    {snapshots.map((snapshot) => (
+                      <li
+                        key={snapshot.id}
+                        className="formpack-snapshots__item"
+                      >
+                        <div>
+                          <p className="formpack-snapshots__title">
+                            {snapshot.label ?? t('formpackSnapshotUntitled')}
+                          </p>
+                          <p className="formpack-snapshots__meta">
+                            {t('formpackSnapshotCreatedAt', {
+                              timestamp: formatTimestamp(snapshot.createdAt),
+                            })}
+                          </p>
+                        </div>
+                        <div className="formpack-snapshots__item-actions">
+                          <button
+                            type="button"
+                            className="app__button"
+                            onClick={() => handleRestoreSnapshot(snapshot.id)}
+                            disabled={storageError === 'unavailable'}
+                          >
+                            {t('formpackSnapshotRestore')}
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="formpack-snapshots__empty">
+                    {isSnapshotsLoading
+                      ? t('formpackSnapshotsLoading')
+                      : t('formpackSnapshotsEmpty')}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="formpack-snapshots__empty">
+                {t('formpackSnapshotsNoRecord')}
+              </p>
             )}
           </div>
           <div className="formpack-detail__section">

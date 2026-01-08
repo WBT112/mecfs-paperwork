@@ -1,0 +1,75 @@
+import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
+import type { RecordEntry, SnapshotEntry } from './types';
+
+const DB_NAME = 'mecfs-paperwork';
+const DB_VERSION = 1;
+
+/**
+ * Typed schema for the IndexedDB storage.
+ */
+interface MecfsPaperworkDB extends DBSchema {
+  records: {
+    key: string;
+    value: RecordEntry;
+    indexes: {
+      by_formpackId: string;
+      by_updatedAt: string;
+    };
+  };
+  snapshots: {
+    key: string;
+    value: SnapshotEntry;
+    indexes: {
+      by_recordId: string;
+      by_recordId_createdAt: [string, string];
+    };
+  };
+}
+
+/**
+ * Error for cases where IndexedDB is not available.
+ */
+export class StorageUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'StorageUnavailableError';
+  }
+}
+
+const isIndexedDbAvailable = (): boolean =>
+  typeof indexedDB !== 'undefined' && indexedDB !== null;
+
+/**
+ * Opens the IndexedDB connection for the app.
+ */
+export const openStorage = async (): Promise<
+  IDBPDatabase<MecfsPaperworkDB>
+> => {
+  if (!isIndexedDbAvailable()) {
+    throw new StorageUnavailableError('IndexedDB is unavailable.');
+  }
+
+  return openDB<MecfsPaperworkDB>(DB_NAME, DB_VERSION, {
+    upgrade(database) {
+      if (!database.objectStoreNames.contains('records')) {
+        const recordStore = database.createObjectStore('records', {
+          keyPath: 'id',
+        });
+        recordStore.createIndex('by_formpackId', 'formpackId');
+        recordStore.createIndex('by_updatedAt', 'updatedAt');
+      }
+
+      if (!database.objectStoreNames.contains('snapshots')) {
+        const snapshotStore = database.createObjectStore('snapshots', {
+          keyPath: 'id',
+        });
+        snapshotStore.createIndex('by_recordId', 'recordId');
+        snapshotStore.createIndex(
+          'by_recordId_createdAt',
+          ['recordId', 'createdAt'],
+          { unique: false },
+        );
+      }
+    },
+  });
+};
