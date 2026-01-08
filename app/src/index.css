@@ -73,6 +73,7 @@ body {
 
 .app__content {
   display: flex;
+  width: 100%;
 }
 
 .app__card {
@@ -80,9 +81,104 @@ body {
   border-radius: 16px;
   padding: 1.5rem 2rem;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-  max-width: 520px;
+  width: 100%;
+  max-width: 960px;
 }
 
 .app__card h2 {
   margin-top: 0;
+}
+
+.app__card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.app__link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.app__link:hover {
+  text-decoration: underline;
+}
+
+.app__error {
+  color: #b91c1c;
+  margin: 0.5rem 0 1rem;
+}
+
+.formpack-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.formpack-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  background: #f9fafb;
+}
+
+.formpack-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.formpack-card__description {
+  margin: 0;
+  color: #4b5563;
+}
+
+.formpack-card__link {
+  align-self: flex-start;
+  color: #1d4ed8;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.formpack-card__link:hover {
+  text-decoration: underline;
+}
+
+.formpack-detail {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.formpack-detail__section h3 {
+  margin: 0 0 0.75rem;
+}
+
+.formpack-detail__section dl {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.formpack-detail__section div {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) 1fr;
+  gap: 0.75rem;
+}
+
+.formpack-detail__section dt {
+  font-weight: 600;
+  color: #374151;
+}
+
+.formpack-detail__section dd {
+  margin: 0;
+  color: #111827;
+  word-break: break-word;
 }

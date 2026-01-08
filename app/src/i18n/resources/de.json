@@ -1,11 +1,32 @@
 {
   "appTitle": "mecfs-paperwork",
   "appSubtitle": "Offline-first Arbeitsbereich für Formulare",
-  "workspaceTitle": "Arbeitsbereich",
-  "workspaceDescription": "Dies ist ein Platzhalter für kommende Funktionen zur Erstellung, Prüfung und zum Export von Datensätzen.",
   "languageLabel": "Sprache",
   "languageOptions": {
     "de": "Deutsch",
     "en": "Englisch"
-  }
+  },
+  "formpackListTitle": "Formpacks",
+  "formpackListDescription": "Verfügbare Formpakete für die Nutzung.",
+  "formpackDetailTitle": "Formpack-Details",
+  "formpackLoading": "Formpack-Daten werden geladen...",
+  "formpackListErrorFallback": "Formpacks konnten gerade nicht geladen werden.",
+  "formpackLoadError": "Dieses Formpack konnte gerade nicht geladen werden.",
+  "formpackNotFound": "Dieses Formpack wurde nicht gefunden.",
+  "formpackUnsupported": "Dieses Formpack nutzt eine noch nicht unterstützte Sprache.",
+  "formpackInvalid": "Dieses Formpack-Manifest ist ungültig.",
+  "formpackMissingId": "Es wurde kein Formpack ausgewählt.",
+  "formpackBackToList": "Zurück zu den Formpacks",
+  "formpackOpen": "Öffnen",
+  "formpackDetailsHeading": "Details",
+  "formpackId": "Formpack-ID",
+  "formpackVersion": "Version",
+  "formpackDefaultLocale": "Standardsprache",
+  "formpackLocales": "Unterstützte Sprachen",
+  "formpackExportsHeading": "Exporte",
+  "formpackExports": "Formate",
+  "formpackDocxHeading": "DOCX-Assets",
+  "formpackDocxTemplateA4": "A4-Vorlage",
+  "formpackDocxTemplateWallet": "Wallet-Vorlage",
+  "formpackDocxMapping": "DOCX-Mapping"
 }

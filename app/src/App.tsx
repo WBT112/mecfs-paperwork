@@ -1,7 +1,10 @@
 import type { ChangeEvent } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from './i18n/useLocale';
 import { SupportedLocale } from './i18n/locale';
+import FormpackDetailPage from './pages/FormpackDetailPage';
+import FormpackListPage from './pages/FormpackListPage';
 
 /**
  * App shell for the offline-first paperwork UI.
@@ -40,10 +43,11 @@ export default function App() {
         </div>
       </header>
       <main className="app__content">
-        <section className="app__card">
-          <h2>{t('workspaceTitle')}</h2>
-          <p>{t('workspaceDescription')}</p>
-        </section>
+        <Routes>
+          <Route path="/" element={<Navigate to="/formpacks" replace />} />
+          <Route path="/formpacks" element={<FormpackListPage />} />
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
       </main>
     </div>
   );
