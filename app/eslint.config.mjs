@@ -35,7 +35,10 @@ export default [
       ...reactHooks.configs.recommended.rules,
 
       // Vite + React refresh best practice
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
     },
   },
 ];
