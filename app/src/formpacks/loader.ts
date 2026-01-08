@@ -137,6 +137,14 @@ const parseManifest = (
 
   const exports = payload.exports.filter(isFormpackExportType);
   const docx = parseDocxManifest(payload.docx);
+  const requiresDocx = exports.includes('docx');
+
+  if (requiresDocx && !docx) {
+    throw new FormpackLoaderError(
+      'invalid',
+      'The formpack manifest declares DOCX exports without valid DOCX assets.',
+    );
+  }
 
   return {
     id: payload.id,
