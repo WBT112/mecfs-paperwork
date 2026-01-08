@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mecfs-paperwork.local/formpacks/notfallpass/schema.json",
+  "title": "notfallpass",
+  "type": "object",
+  "required": ["person", "contacts", "diagnoses", "symptoms", "medications", "allergies", "doctor"],
+  "properties": {
+    "person": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "birthDate": {"type": "string", "format": "date"}
+      },
+      "additionalProperties": false
+    },
+    "contacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "phone"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "phone": {"type": "string", "minLength": 1},
+          "relation": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "diagnoses": {"type": "string"},
+    "symptoms": {"type": "string"},
+    "medications": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {"type": "string", "minLength": 1},
+          "dosage": {"type": "string"},
+          "schedule": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "allergies": {"type": "string"},
+    "doctor": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string"},
+        "phone": {"type": "string"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

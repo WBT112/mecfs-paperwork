@@ -1,0 +1,457 @@
+diff --git a/docs/formpacks.md b/docs/formpacks.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..f90779d19baf59bcf5a3abecb09064feace2e7fd
+--- /dev/null
++++ b/docs/formpacks.md
+@@ -0,0 +1,118 @@
++# Formpacks
++
++## Purpose
++Formpacks are self-contained content bundles that define a form, its localization, and export templates. Packs live in the repository so new forms can be added without code changes and remain offline-first.
++
++## Directory structure
++```
++formpacks/
++  <id>/
++    manifest.json
++    schema.json
++    ui.schema.json
++    i18n/
++      de.json
++      en.json
++    docx/
++      template.a4.docx
++      template.wallet.docx
++      mapping.json
++    examples/
++      example.json
++```
++
++## Manifest (`manifest.json`)
++The manifest describes metadata and export assets.
++
++Required fields:
++- `id`: Pack identifier (string), e.g. `notfallpass`.
++- `version`: Semantic version of the pack, e.g. `0.1.0`.
++- `defaultLocale`: `de` or `en`.
++- `locales`: Array of supported locales, e.g. `["de", "en"]`.
++- `titleKey`: i18n key for the display title.
++- `descriptionKey`: i18n key for the description.
++- `exports`: Array of supported export types (MVP: `docx`, `json`).
++- `docx.templates.a4`: Path to the A4 template.
++- `docx.templates.wallet`: Path to the wallet template.
++- `docx.mapping`: Path to the DOCX mapping file.
++
++## i18n
++- All labels, section titles, and help texts are referenced by i18n keys.
++- Key namespace: `<packId>.*` (for example `notfallpass.section.contacts.title`).
++- `i18n/de.json` and `i18n/en.json` must contain the same keys.
++- Fallback behavior: if a key is missing in the active locale, show the key as text and optionally fall back to `defaultLocale`.
++
++## JSON Schema (`schema.json`)
++- Uses JSON Schema Draft 2020-12 for MVP.
++- Defines the record structure stored by the app.
++- Minimum required fields:
++  - `person` (name, optional birthDate)
++  - `contacts[]` (name, phone, relation optional)
++  - `diagnoses` (string)
++  - `symptoms` (string)
++  - `medications[]` (name, dosage, schedule optional)
++  - `allergies` (string)
++  - `doctor` (name optional, phone optional)
++
++## UI Schema (`ui.schema.json`)
++- Uses RJSF UI Schema.
++- Controls section order and field presentation.
++- Use i18n keys for section titles and help texts.
++- Lists must allow add/remove operations.
++
++## DOCX templates
++Templates are `.docx` files with placeholders that follow these rules:
++
++### Field placeholders
++- Text fields: `{{field.path}}` (example: `{{person.name}}`).
++
++### i18n placeholders
++- Labels/headings: `{{t:key}}` (example: `{{t:notfallpass.section.person.title}}`).
++
++### Loops
++- Start a loop with `{{#contacts}}` and end it with `{{/contacts}}`.
++- Inside the loop use child fields like `{{name}}`, `{{phone}}`, `{{relation}}`.
++
++Templates can be visually simple in the MVP but must include the required placeholders.
++
++## DOCX mapping (`docx/mapping.json`)
++The mapping describes how data is injected into the template variables.
++
++Minimal format:
++```
++{
++  "version": 1,
++  "fields": [
++    { "var": "person.name", "path": "person.name" },
++    { "var": "person.birthDate", "path": "person.birthDate" },
++    { "var": "diagnoses", "path": "diagnoses" },
++    { "var": "symptoms", "path": "symptoms" },
++    { "var": "allergies", "path": "allergies" }
++  ],
++  "loops": [
++    { "var": "contacts", "path": "contacts" },
++    { "var": "medications", "path": "medications" }
++  ],
++  "i18n": {
++    "prefix": "notfallpass"
++  }
++}
++```
++
++Rules:
++- `var` is the name used in DOCX placeholders.
++- `path` is a dot-notation path in the record data.
++- `loops` reference array paths.
++- Conditional logic is future work and not part of the MVP.
++
++## Versioning
++- `manifest.version` is the formpack version (content + schema + templates).
++- `mapping.version` is the mapping file format version.
++
++## Contributor guidance
++To add a new pack, copy the `formpacks/notfallpass` skeleton and adjust:
++- `manifest.json` metadata and paths
++- `schema.json` + `ui.schema.json`
++- `i18n` keys + translations
++- DOCX templates and mapping
++- Example data (must be fake)
+diff --git a/formpacks/notfallpass/docx/mapping.json b/formpacks/notfallpass/docx/mapping.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..ebc006396080895b6b1dda46f80a58e3ebe9dc48
+--- /dev/null
++++ b/formpacks/notfallpass/docx/mapping.json
+@@ -0,0 +1,19 @@
++{
++  "version": 1,
++  "fields": [
++    {"var": "person.name", "path": "person.name"},
++    {"var": "person.birthDate", "path": "person.birthDate"},
++    {"var": "diagnoses", "path": "diagnoses"},
++    {"var": "symptoms", "path": "symptoms"},
++    {"var": "allergies", "path": "allergies"},
++    {"var": "doctor.name", "path": "doctor.name"},
++    {"var": "doctor.phone", "path": "doctor.phone"}
++  ],
++  "loops": [
++    {"var": "contacts", "path": "contacts"},
++    {"var": "medications", "path": "medications"}
++  ],
++  "i18n": {
++    "prefix": "notfallpass"
++  }
++}
+diff --git a/formpacks/notfallpass/docx/template.a4.docx b/formpacks/notfallpass/docx/template.a4.docx
+new file mode 100644
+index 0000000000000000000000000000000000000000..21fe3870d97d6eadd9fa0a712ac25d002a4ad8e1
+GIT binary patch
+literal 1197
+zcmWIWW@Zs#U|`^2$aL0-nR~QL>l2W-laYZz7)VDu=jWBA=9R>UR2HNb$Ldw&=G0C&
+z>vz~dpyhof*Xi&n76lF*sxKSoD;H?+Z`fqs8CsoNdH2#jTR(1Brzwj~Kc8K*Jo@ck
+zVQZfp=C7Z2WiEBNbTDF8)z5u(>)tPUz>{)-^-!GLgr`|6c70V;>ShxDUUbg#p7zly
+zH~u><9U)T;Rrq(>TwbE|g4bt7-mPz8FC8Q`uUDR&;H>KMy+b)CR?PqRqB(h<FCx0y
+zCzr2$t$O6enzopdt;(NQulT2x$yNE~LymI1XmiMPFR_nB$N7Insd-&nP|-Xk{($)6
+zUmPbjguh%9-|^G_Wq<Zzi>Ti8I?ry+j1;}w)z{~U@=x1We{tpG56)jX15kp<VL>qG
+zCScI$1A~YgNXHkY<`nDefymzTyZM?7MA#n8U7m4HkCi={r}gNJ4N^4?%WS8(Re471
+z@7XIWbHu`8-tF>F=65fjdD5qtl`eTDm6c^}K~VJ32S#(usuc_iwST_RF^Vv7x-NEB
+zGJW1B-#J_QRg}$)W(0j=_gXyT!iNZ}elveJaUTDjJY7|K>tYn|hF$Gz^Jl)*G(pt6
+z>ZHP#O>9Owa{nLRwa998SI=Y1{q^x_w(@Bk4IdskJrAw>Z;duP6npLJx+$iQ>NT6-
+zi*Xx)-b&<PU=Rd)tvtUdML#7!xilA;1VC}Wb=twc+X@10z_{<8CvE*!%XjUK>d3ci
+zgO+aNcSuNzHsWbIx$I@x{k_ey>XDku+hRWaVXFW0=g@<%kMl35>pyUA-zL;usc5u;
+zt2BMK*PmZM{}ifja=4Urb8)Mej6%ops%`hCOI<zJu(XHMY|3x1EiUWMd|nV`V07kU
+z<I{b*Rmz=9^FP^Ey|vNeXjC_-{kKwM+Rlk{MZfBtp0UfZw&STn%-P=lvj*Ohb3)!6
+ztmJqQ?{H=P`jDt4Yu{9>JI@Gqx81XMZE@Y=zP0jE-~S(B=(3o#^Kr+IiAhb$r@SV2
+zY<X$3)qm2v%|)%#mMk)PST`fXyy)16P5UL=FMK*?b4{*F()Yf{dEuRV<W?}=U3oBV
+zk&k}E%cQFkDaM^YJYU~E>-V|DZ@s%T-!Z{iCOiE$?6$Z%H%EufBl)Y#?(Xnw4`%C4
+zye|CKZs#JUFPToVft=@FD!;4<igol|v!m;MolF0RXUFH~$m?G}`Y3y&NX+&a{qXre
+z<IdgZ{iA04UC8QPeTBxOfcvJpbDy$xe*YZ#eZ$@txsF*Mrv3<8v*?b}rPiD>lM|0j
+za<|ldlfGI}emv`!`HJ-a3<2JZOd`y<^EWV(!Jq*c>sWI;x&i2^AEKRsp@C5uXarJT
+gK-Y+#wh$Ws0X1Tzv;c2bHjol#AlwP0?=gdT089|_*#H0l
+
+literal 0
+HcmV?d00001
+
+diff --git a/formpacks/notfallpass/docx/template.wallet.docx b/formpacks/notfallpass/docx/template.wallet.docx
+new file mode 100644
+index 0000000000000000000000000000000000000000..8d2f861239e52d0422b7fa9c5f8a6b4a86585f4f
+GIT binary patch
+literal 1128
+zcmWIWW@Zs#U|`^2$aL0-nR~QL>l2W-laYZz7)VDu=jWBA=9R>UR2HNb$Ldw&=G0C&
+z>vz~dpyhof*Xi&n76lF*sxKSoD;H?+Z`fqs8CsoNdH2#jTR(1Brzwj~Kc8K*Jo@ck
+zVQZfp=C7Z2WiEBNbTDF8)z5u(>)tPUz>{)-^-!GLgr`|6c70V;>ShxDUUbg#p7zly
+zH~u><9U)T;Rrq(>TwbE|g4bt7-mPz8FC8Q`uUDR&;H>KMy+b)CR?PqRqB(h<FCx0y
+zCzr2$t$O6enzopdt;(NQulT2x$yNE~LymI1XmiMPFR_nB$N7Insd-&nP|-Xk{($)6
+zUmPbjguh%9-|^G_Wq<Zzi>Ti8I?ry+j1;}w)z{~U@=x1We{tpG56)jX15kp<VL>qG
+zCScI$1A~YgNXHkY<`nDefymzTyZM?7MA#n8U7m4HkCi={r}gNJ4N^4?%WS8(Re471
+z@7XIWbHu`8-tF>F=65fjdD5qtl`eTDm6c^}K~VJ32S#(usuc_iwST_RF^Vv7x-NEB
+zGJW1B-#J_QRg}$)W(0j=_gXyT!iNZ}elveJaUTDjJY7|K>tYn|hF$Gz^Jl)*G(pt6
+z>ZHP#O>9Owa{nLRwa998SI=Y1{q^x_w(@Bk4IdskJrAw>Z;duP6npLJx+$iQ>NRN=
+zd*d9Sw;Wj+7zBY{E6*=V(ND=wF3kld0Z`m;opLbiumMlo``WGtbEhwfe!1(ylI?fd
+znsfOdSY-)y=q9f|yX#W<{5zMnwjPu?spn+B$^QQ|htEgb^A_`3++T3=sD+;^i(BH&
+z8Cv4+^ZmCQ3sz2AHbqzJ#8I(55h9B#r%zpRO^V0W$H4A&QK0Zm9nU?h9KGcivmV|m
+zYNgw`boC^@*i2ci5A)<N<Q7d|cG>0hv5q7WSD)CVoxCp{Z!|S?Km6eJY;DM!gH|6N
+zm??DK?K5iLGATEE>32iZD~Iar{eQR#F0yv{Exzb!+JesBE47~2@7ZWPQajGY>*;!U
+z#$L;dRYiUKdw+a4?cb@cBYEP=`M;l|b2+~n{Ix##@94_5O@T&Bn0bFQSzOuU{bkcD
+z+Yk49=0+?u)_>PwcWCwX^DDSdC)?EdEN}We>+{Pu^S=8Pm41k{S|=2>&R;Fl;?=BG
+z%QnX-ebhO>tM#huR<_8d(?^}HxQkjn#5YA<c3gJ<JlpH^{f@Hb!6*E7ua~H04De=T
+z5@E)jHG%O11`WUn!<tdi4M0!05bX>M4UEb_Bao6Yx<>S5fzbF5s1YNP1bDNufs`-<
+M;Z7hulNrPV0E8dJ2mk;8
+
+literal 0
+HcmV?d00001
+
+diff --git a/formpacks/notfallpass/examples/example.json b/formpacks/notfallpass/examples/example.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..a263f30da30cb587fb0f30f1330f134ea8c21550
+--- /dev/null
++++ b/formpacks/notfallpass/examples/example.json
+@@ -0,0 +1,27 @@
++{
++  "person": {
++    "name": "Max Mustermann",
++    "birthDate": "1990-04-12"
++  },
++  "contacts": [
++    {
++      "name": "Erika Musterfrau",
++      "phone": "+49 30 123456",
++      "relation": "Partnerin"
++    }
++  ],
++  "diagnoses": "ME/CFS, orthostatic intolerance",
++  "symptoms": "Severe fatigue, dizziness, light sensitivity",
++  "medications": [
++    {
++      "name": "Electrolyte solution",
++      "dosage": "500 ml",
++      "schedule": "Daily"
++    }
++  ],
++  "allergies": "No known drug allergies",
++  "doctor": {
++    "name": "Dr. Example",
++    "phone": "+49 30 987654"
++  }
++}
+diff --git a/formpacks/notfallpass/i18n/de.json b/formpacks/notfallpass/i18n/de.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..c4f9677876b3d6712afc290baaecf6598534474f
+--- /dev/null
++++ b/formpacks/notfallpass/i18n/de.json
+@@ -0,0 +1,24 @@
++{
++  "notfallpass.title": "Notfallpass",
++  "notfallpass.description": "Wichtige Gesundheitsinformationen für den Notfall.",
++  "notfallpass.section.person.title": "Person",
++  "notfallpass.section.contacts.title": "Notfallkontakte",
++  "notfallpass.section.diagnoses.title": "Diagnosen",
++  "notfallpass.section.symptoms.title": "Symptome",
++  "notfallpass.section.medications.title": "Medikamente",
++  "notfallpass.section.allergies.title": "Allergien",
++  "notfallpass.section.doctor.title": "Behandelnde Ärztin / Arzt",
++  "notfallpass.person.name.help": "Vollständiger Name der betroffenen Person.",
++  "notfallpass.person.birthDate.help": "Geburtsdatum im Format JJJJ-MM-TT.",
++  "notfallpass.contacts.name.help": "Name der Kontaktperson.",
++  "notfallpass.contacts.phone.help": "Telefonnummer für den Notfall.",
++  "notfallpass.contacts.relation.help": "Beziehung zur betroffenen Person (optional).",
++  "notfallpass.diagnoses.help": "Wichtige Diagnosen und Hinweise.",
++  "notfallpass.symptoms.help": "Typische Symptome und Warnzeichen.",
++  "notfallpass.medications.name.help": "Name des Medikaments.",
++  "notfallpass.medications.dosage.help": "Dosierung (optional).",
++  "notfallpass.medications.schedule.help": "Einnahmeplan (optional).",
++  "notfallpass.allergies.help": "Bekannte Allergien oder Unverträglichkeiten.",
++  "notfallpass.doctor.name.help": "Name der behandelnden Praxis oder Ärztin/Arzt (optional).",
++  "notfallpass.doctor.phone.help": "Telefonnummer der Praxis (optional)."
++}
+diff --git a/formpacks/notfallpass/i18n/en.json b/formpacks/notfallpass/i18n/en.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..e73f56b57e5aefae0aa666b5843c1393b66a6465
+--- /dev/null
++++ b/formpacks/notfallpass/i18n/en.json
+@@ -0,0 +1,24 @@
++{
++  "notfallpass.title": "Emergency Card",
++  "notfallpass.description": "Key health information for emergencies.",
++  "notfallpass.section.person.title": "Person",
++  "notfallpass.section.contacts.title": "Emergency Contacts",
++  "notfallpass.section.diagnoses.title": "Diagnoses",
++  "notfallpass.section.symptoms.title": "Symptoms",
++  "notfallpass.section.medications.title": "Medications",
++  "notfallpass.section.allergies.title": "Allergies",
++  "notfallpass.section.doctor.title": "Treating Clinician",
++  "notfallpass.person.name.help": "Full name of the person.",
++  "notfallpass.person.birthDate.help": "Birth date in YYYY-MM-DD format.",
++  "notfallpass.contacts.name.help": "Name of the contact person.",
++  "notfallpass.contacts.phone.help": "Emergency phone number.",
++  "notfallpass.contacts.relation.help": "Relationship to the person (optional).",
++  "notfallpass.diagnoses.help": "Key diagnoses and notes.",
++  "notfallpass.symptoms.help": "Typical symptoms and warning signs.",
++  "notfallpass.medications.name.help": "Medication name.",
++  "notfallpass.medications.dosage.help": "Dosage (optional).",
++  "notfallpass.medications.schedule.help": "Schedule (optional).",
++  "notfallpass.allergies.help": "Known allergies or intolerances.",
++  "notfallpass.doctor.name.help": "Name of the treating practice or clinician (optional).",
++  "notfallpass.doctor.phone.help": "Practice phone number (optional)."
++}
+diff --git a/formpacks/notfallpass/manifest.json b/formpacks/notfallpass/manifest.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..7dcbeeeded3bbd734efcd1bd392d1d66da11977c
+--- /dev/null
++++ b/formpacks/notfallpass/manifest.json
+@@ -0,0 +1,16 @@
++{
++  "id": "notfallpass",
++  "version": "0.1.0",
++  "defaultLocale": "de",
++  "locales": ["de", "en"],
++  "titleKey": "notfallpass.title",
++  "descriptionKey": "notfallpass.description",
++  "exports": ["docx", "json"],
++  "docx": {
++    "templates": {
++      "a4": "docx/template.a4.docx",
++      "wallet": "docx/template.wallet.docx"
++    },
++    "mapping": "docx/mapping.json"
++  }
++}
+diff --git a/formpacks/notfallpass/schema.json b/formpacks/notfallpass/schema.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..9209a194c63c87c420fa3081cdbc5aad2fabae1c
+--- /dev/null
++++ b/formpacks/notfallpass/schema.json
+@@ -0,0 +1,56 @@
++{
++  "$schema": "https://json-schema.org/draft/2020-12/schema",
++  "$id": "https://mecfs-paperwork.local/formpacks/notfallpass/schema.json",
++  "title": "notfallpass",
++  "type": "object",
++  "required": ["person", "contacts", "diagnoses", "symptoms", "medications", "allergies", "doctor"],
++  "properties": {
++    "person": {
++      "type": "object",
++      "required": ["name"],
++      "properties": {
++        "name": {"type": "string", "minLength": 1},
++        "birthDate": {"type": "string", "format": "date"}
++      },
++      "additionalProperties": false
++    },
++    "contacts": {
++      "type": "array",
++      "items": {
++        "type": "object",
++        "required": ["name", "phone"],
++        "properties": {
++          "name": {"type": "string", "minLength": 1},
++          "phone": {"type": "string", "minLength": 1},
++          "relation": {"type": "string"}
++        },
++        "additionalProperties": false
++      }
++    },
++    "diagnoses": {"type": "string"},
++    "symptoms": {"type": "string"},
++    "medications": {
++      "type": "array",
++      "items": {
++        "type": "object",
++        "required": ["name"],
++        "properties": {
++          "name": {"type": "string", "minLength": 1},
++          "dosage": {"type": "string"},
++          "schedule": {"type": "string"}
++        },
++        "additionalProperties": false
++      }
++    },
++    "allergies": {"type": "string"},
++    "doctor": {
++      "type": "object",
++      "properties": {
++        "name": {"type": "string"},
++        "phone": {"type": "string"}
++      },
++      "additionalProperties": false
++    }
++  },
++  "additionalProperties": false
++}
+diff --git a/formpacks/notfallpass/ui.schema.json b/formpacks/notfallpass/ui.schema.json
+new file mode 100644
+index 0000000000000000000000000000000000000000..82c414bbc00efb57c28a38d74ed5ecae18883621
+--- /dev/null
++++ b/formpacks/notfallpass/ui.schema.json
+@@ -0,0 +1,66 @@
++{
++  "ui:order": [
++    "person",
++    "contacts",
++    "diagnoses",
++    "symptoms",
++    "medications",
++    "allergies",
++    "doctor"
++  ],
++  "person": {
++    "ui:title": "notfallpass.section.person.title",
++    "name": {
++      "ui:help": "notfallpass.person.name.help"
++    },
++    "birthDate": {
++      "ui:help": "notfallpass.person.birthDate.help"
++    }
++  },
++  "contacts": {
++    "ui:title": "notfallpass.section.contacts.title",
++    "ui:options": {
++      "addable": true,
++      "orderable": false,
++      "removable": true
++    },
++    "items": {
++      "name": {"ui:help": "notfallpass.contacts.name.help"},
++      "phone": {"ui:help": "notfallpass.contacts.phone.help"},
++      "relation": {"ui:help": "notfallpass.contacts.relation.help"}
++    }
++  },
++  "diagnoses": {
++    "ui:title": "notfallpass.section.diagnoses.title",
++    "ui:widget": "textarea",
++    "ui:help": "notfallpass.diagnoses.help"
++  },
++  "symptoms": {
++    "ui:title": "notfallpass.section.symptoms.title",
++    "ui:widget": "textarea",
++    "ui:help": "notfallpass.symptoms.help"
++  },
++  "medications": {
++    "ui:title": "notfallpass.section.medications.title",
++    "ui:options": {
++      "addable": true,
++      "orderable": false,
++      "removable": true
++    },
++    "items": {
++      "name": {"ui:help": "notfallpass.medications.name.help"},
++      "dosage": {"ui:help": "notfallpass.medications.dosage.help"},
++      "schedule": {"ui:help": "notfallpass.medications.schedule.help"}
++    }
++  },
++  "allergies": {
++    "ui:title": "notfallpass.section.allergies.title",
++    "ui:widget": "textarea",
++    "ui:help": "notfallpass.allergies.help"
++  },
++  "doctor": {
++    "ui:title": "notfallpass.section.doctor.title",
++    "name": {"ui:help": "notfallpass.doctor.name.help"},
++    "phone": {"ui:help": "notfallpass.doctor.phone.help"}
++  }
++}
