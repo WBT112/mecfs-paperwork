@@ -167,20 +167,27 @@ body {
 
 .formpack-detail {
   display: grid;
+  gap: 2rem;
+}
+
+.formpack-detail__assets,
+.formpack-detail__form {
+  display: grid;
   gap: 1.5rem;
+  min-width: 0;
 }
 
 .formpack-detail__section h3 {
   margin: 0 0 0.75rem;
 }
 
-.formpack-detail__section dl {
+.formpack-detail__section > dl {
   margin: 0;
   display: grid;
   gap: 0.75rem;
 }
 
-.formpack-detail__section div {
+.formpack-detail__section > dl > div {
   display: grid;
   grid-template-columns: minmax(140px, 200px) 1fr;
   gap: 0.75rem;
@@ -202,17 +209,47 @@ body {
   gap: 1rem;
 }
 
+.formpack-form *,
+.formpack-form *::before,
+.formpack-form *::after {
+  box-sizing: border-box;
+}
+
 .formpack-form label {
   font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .formpack-form input,
 .formpack-form textarea,
 .formpack-form select {
   width: 100%;
+  max-width: 100%;
   padding: 0.5rem 0.6rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
+}
+
+.formpack-form fieldset {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.formpack-form legend {
+  padding: 0 0.25rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.formpack-form .field-description,
+.formpack-form .help-block {
+  margin: 0.35rem 0 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .formpack-form__actions {
@@ -228,4 +265,5 @@ body {
   overflow-x: auto;
   font-size: 0.9rem;
   white-space: pre-wrap;
+  max-width: 100%;
 }
