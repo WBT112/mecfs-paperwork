@@ -4,6 +4,7 @@ node_modules/
 # Vite build output
 app/dist/
 app/.vite/
+app/public/formpacks/
 
 # Logs
 npm-debug.log*

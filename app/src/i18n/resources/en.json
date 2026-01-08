@@ -1,0 +1,11 @@
+{
+  "appTitle": "mecfs-paperwork",
+  "appSubtitle": "Offline-first paperwork workspace",
+  "workspaceTitle": "Workspace",
+  "workspaceDescription": "This is a placeholder for upcoming record creation, review, and export tools.",
+  "languageLabel": "Language",
+  "languageOptions": {
+    "de": "Deutsch",
+    "en": "English"
+  }
+}
