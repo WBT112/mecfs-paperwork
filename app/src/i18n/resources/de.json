@@ -1,0 +1,11 @@
+{
+  "appTitle": "mecfs-paperwork",
+  "appSubtitle": "Offline-first Arbeitsbereich für Formulare",
+  "workspaceTitle": "Arbeitsbereich",
+  "workspaceDescription": "Dies ist ein Platzhalter für kommende Funktionen zur Erstellung, Prüfung und zum Export von Datensätzen.",
+  "languageLabel": "Sprache",
+  "languageOptions": {
+    "de": "Deutsch",
+    "en": "Englisch"
+  }
+}
