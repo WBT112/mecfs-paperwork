@@ -243,7 +243,7 @@ export const useAutosaveRecord = (
     onError?: (code: StorageErrorCode) => void;
   },
 ) => {
-  const delay = options?.delay ?? 800;
+  const delay = options?.delay ?? 1200;
   const onSaved = options?.onSaved;
   const onError = options?.onError;
   const lastSavedRef = useRef<string | null>(null);
