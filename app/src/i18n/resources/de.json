@@ -48,6 +48,7 @@
   "formpackRecordActive": "Aktiver Entwurf",
   "formpackRecordUntitled": "Unbenannter Entwurf",
   "formpackRecordUpdatedAt": "Aktualisiert {{timestamp}}",
+  "formpackRecordExportJson": "Entwurf exportieren (JSON)",
   "formpackSnapshotsHeading": "Verlauf",
   "formpackSnapshotsLoading": "Snapshots werden geladen...",
   "formpackSnapshotsEmpty": "Noch keine Snapshots vorhanden.",
