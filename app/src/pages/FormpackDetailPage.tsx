@@ -130,6 +130,19 @@ export default function FormpackDetailPage() {
     createSnapshot,
     loadSnapshot,
   } = useSnapshots(activeRecord?.id ?? null);
+  const { markAsSaved } = useAutosaveRecord(
+    activeRecord?.id ?? null,
+    formData,
+    locale,
+    activeRecord?.data ?? null,
+    {
+      onSaved: (record) => {
+        setStorageError(null);
+        applyRecordUpdate(record);
+      },
+      onError: setStorageError,
+    },
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -201,9 +214,10 @@ export default function FormpackDetailPage() {
 
   useEffect(() => {
     if (activeRecord) {
+      markAsSaved(activeRecord.data);
       setFormData(activeRecord.data);
     }
-  }, [activeRecord]);
+  }, [activeRecord, markAsSaved]);
 
   const namespace = useMemo(
     () => (manifest ? `formpack:${manifest.id}` : undefined),
@@ -412,6 +426,7 @@ export default function FormpackDetailPage() {
       return;
     }
 
+    markAsSaved(record.data);
     setFormData(record.data);
     persistActiveRecordId(record.id);
   }, [
@@ -420,6 +435,7 @@ export default function FormpackDetailPage() {
     formData,
     locale,
     manifest,
+    markAsSaved,
     persistActiveRecordId,
     t,
     title,
@@ -430,11 +446,12 @@ export default function FormpackDetailPage() {
     async (recordId: string) => {
       const record = await loadRecord(recordId);
       if (record) {
+        markAsSaved(record.data);
         setFormData(record.data);
         persistActiveRecordId(record.id);
       }
     },
-    [loadRecord, persistActiveRecordId],
+    [loadRecord, markAsSaved, persistActiveRecordId],
   );
 
   const handleCreateSnapshot = useCallback(async () => {
@@ -457,25 +474,14 @@ export default function FormpackDetailPage() {
       }
 
       setFormData(snapshot.data);
-      await updateActiveRecord(activeRecord.id, {
+      const updated = await updateActiveRecord(activeRecord.id, {
         data: snapshot.data,
       });
+      if (updated) {
+        markAsSaved(snapshot.data);
+      }
     },
-    [activeRecord, loadSnapshot, updateActiveRecord],
-  );
-
-  useAutosaveRecord(
-    activeRecord?.id ?? null,
-    formData,
-    locale,
-    activeRecord?.data ?? null,
-    {
-      onSaved: (record) => {
-        setStorageError(null);
-        applyRecordUpdate(record);
-      },
-      onError: setStorageError,
-    },
+    [activeRecord, loadSnapshot, markAsSaved, updateActiveRecord],
   );
 
   useEffect(() => {
@@ -689,7 +695,14 @@ export default function FormpackDetailPage() {
                       <button
                         type="button"
                         className="app__button"
-                        onClick={() => setFormData({})}
+                        onClick={() => {
+                          if (!activeRecord) {
+                            return;
+                          }
+
+                          markAsSaved(activeRecord.data);
+                          setFormData(activeRecord.data);
+                        }}
                       >
                         {t('formpackFormReset')}
                       </button>
