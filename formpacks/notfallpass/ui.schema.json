@@ -44,7 +44,7 @@
   "diagnoses": {
     "ui:title": "notfallpass.section.diagnoses.title",
     "ui:description": "notfallpass.diagnoses.additional.title",
-    "ui:order": ["meCfs", "pots", "longCovid"],
+    "ui:order": ["meCfs", "pots", "longCovid", "formatted"],
     "meCfs": {
       "ui:title": "notfallpass.diagnoses.meCfs.label",
       "ui:help": "notfallpass.diagnoses.meCfs.help"
@@ -56,6 +56,9 @@
     "longCovid": {
       "ui:title": "notfallpass.diagnoses.longCovid.label",
       "ui:help": "notfallpass.diagnoses.longCovid.help"
+    },
+    "formatted": {
+      "ui:widget": "hidden"
     }
   },
   "symptoms": {

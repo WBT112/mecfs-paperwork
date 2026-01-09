@@ -30,7 +30,8 @@
     "diagnoses": {
       "type": "object",
       "properties": {
-        "meCfs": {"type": "boolean"}
+        "meCfs": {"type": "boolean"},
+        "formatted": {"type": "string"}
       },
       "allOf": [
         {

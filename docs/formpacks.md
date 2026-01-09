@@ -86,7 +86,7 @@ Minimal format:
   "fields": [
     { "var": "person.name", "path": "person.name" },
     { "var": "person.birthDate", "path": "person.birthDate" },
-    { "var": "diagnoses", "path": "diagnoses" },
+    { "var": "diagnoses.formatted", "path": "diagnoses.formatted" },
     { "var": "symptoms", "path": "symptoms" },
     { "var": "allergies", "path": "allergies" }
   ],

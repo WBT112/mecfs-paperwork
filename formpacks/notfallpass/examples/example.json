@@ -13,7 +13,8 @@
   "diagnoses": {
     "meCfs": true,
     "pots": true,
-    "longCovid": false
+    "longCovid": false,
+    "formatted": "ME/CFS, POTS"
   },
   "symptoms": "Severe fatigue, dizziness, light sensitivity",
   "medications": [
