@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '../i18n/locale';
 import { StorageUnavailableError } from './db';
 import {
@@ -246,9 +246,24 @@ export const useAutosaveRecord = (
   const delay = options?.delay ?? 800;
   const onSaved = options?.onSaved;
   const onError = options?.onError;
+  const lastSavedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!recordId) {
+      lastSavedRef.current = null;
+      return;
+    }
+
+    lastSavedRef.current = JSON.stringify(formData);
+  }, [recordId, formData]);
+
+  useEffect(() => {
+    if (!recordId) {
+      return;
+    }
+
+    const nextSerialized = JSON.stringify(formData);
+    if (lastSavedRef.current === nextSerialized) {
       return;
     }
 
@@ -261,6 +276,7 @@ export const useAutosaveRecord = (
           if (record && onSaved) {
             onSaved(record);
           }
+          lastSavedRef.current = nextSerialized;
         })
         .catch((error: unknown) => {
           if (onError) {
