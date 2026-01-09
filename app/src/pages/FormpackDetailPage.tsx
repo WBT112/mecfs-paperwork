@@ -451,13 +451,19 @@ export default function FormpackDetailPage() {
     [activeRecord, loadSnapshot, updateActiveRecord],
   );
 
-  useAutosaveRecord(activeRecord?.id ?? null, formData, locale, {
-    onSaved: (record) => {
-      setStorageError(null);
-      applyRecordUpdate(record);
+  useAutosaveRecord(
+    activeRecord?.id ?? null,
+    formData,
+    locale,
+    activeRecord?.data ?? null,
+    {
+      onSaved: (record) => {
+        setStorageError(null);
+        applyRecordUpdate(record);
+      },
+      onError: setStorageError,
     },
-    onError: setStorageError,
-  });
+  );
 
   useEffect(() => {
     let isActive = true;
@@ -646,34 +652,42 @@ export default function FormpackDetailPage() {
           </div>
           <div className="formpack-detail__section">
             <h3>{t('formpackFormHeading')}</h3>
-            {schema && normalizedUiSchema && validator && (
-              <Suspense fallback={<p>{t('formpackLoading')}</p>}>
-                <LazyForm
-                  className="formpack-form"
-                  schema={schema}
-                  uiSchema={normalizedUiSchema}
-                  templates={formpackTemplates}
-                  validator={validator}
-                  formData={formData}
-                  omitExtraData
-                  liveOmit
-                  onChange={handleFormChange}
-                  onSubmit={handleFormSubmit}
-                  formContext={formContext}
-                  noHtml5Validate
-                  showErrorList={false}
-                >
-                  <div className="formpack-form__actions">
-                    <button
-                      type="button"
-                      className="app__button"
-                      onClick={() => setFormData({})}
-                    >
-                      {t('formpackFormReset')}
-                    </button>
-                  </div>
-                </LazyForm>
-              </Suspense>
+            {activeRecord ? (
+              schema &&
+              normalizedUiSchema &&
+              validator && (
+                <Suspense fallback={<p>{t('formpackLoading')}</p>}>
+                  <LazyForm
+                    className="formpack-form"
+                    schema={schema}
+                    uiSchema={normalizedUiSchema}
+                    templates={formpackTemplates}
+                    validator={validator}
+                    formData={formData}
+                    omitExtraData
+                    liveOmit
+                    onChange={handleFormChange}
+                    onSubmit={handleFormSubmit}
+                    formContext={formContext}
+                    noHtml5Validate
+                    showErrorList={false}
+                  >
+                    <div className="formpack-form__actions">
+                      <button
+                        type="button"
+                        className="app__button"
+                        onClick={() => setFormData({})}
+                      >
+                        {t('formpackFormReset')}
+                      </button>
+                    </div>
+                  </LazyForm>
+                </Suspense>
+              )
+            ) : (
+              <p className="formpack-records__empty">
+                {t('formpackFormNoActiveRecord')}
+              </p>
             )}
           </div>
           <div className="formpack-detail__section">

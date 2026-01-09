@@ -237,6 +237,7 @@ export const useAutosaveRecord = (
   recordId: string | null,
   formData: Record<string, unknown>,
   locale: SupportedLocale,
+  baselineData: Record<string, unknown> | null,
   options?: {
     delay?: number;
     onSaved?: (record: RecordEntry) => void;
@@ -247,15 +248,20 @@ export const useAutosaveRecord = (
   const onSaved = options?.onSaved;
   const onError = options?.onError;
   const lastSavedRef = useRef<string | null>(null);
+  const lastRecordIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!recordId) {
       lastSavedRef.current = null;
+      lastRecordIdRef.current = null;
       return;
     }
 
-    lastSavedRef.current = JSON.stringify(formData);
-  }, [recordId, formData]);
+    if (lastRecordIdRef.current !== recordId) {
+      lastRecordIdRef.current = recordId;
+      lastSavedRef.current = baselineData ? JSON.stringify(baselineData) : null;
+    }
+  }, [recordId, baselineData]);
 
   useEffect(() => {
     if (!recordId) {
