@@ -14,6 +14,11 @@ import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
 import { validateJsonImport } from '../import/json';
 import {
+  buildJsonExportFilename,
+  buildJsonExportPayload,
+  downloadJsonExport,
+} from '../export/json';
+import {
   formpackTemplates,
   type FormpackFormContext,
 } from '../lib/rjsfTemplates';
@@ -633,6 +638,21 @@ export default function FormpackDetailPage() {
     title,
     updateActiveRecord,
   ]);
+  const handleExportJson = useCallback(() => {
+    if (!manifest || !activeRecord) {
+      return;
+    }
+
+    const payload = buildJsonExportPayload({
+      formpack: { id: manifest.id, version: manifest.version },
+      record: activeRecord,
+      data: formData,
+      locale,
+      revisions: snapshots,
+    });
+    const filename = buildJsonExportFilename(payload);
+    downloadJsonExport(payload, filename);
+  }, [activeRecord, formData, locale, manifest, snapshots]);
 
   useEffect(() => {
     let isActive = true;
@@ -935,6 +955,16 @@ export default function FormpackDetailPage() {
                       >
                         {t('formpackFormReset')}
                       </button>
+                      {manifest.exports.includes('json') && (
+                        <button
+                          type="button"
+                          className="app__button"
+                          onClick={handleExportJson}
+                          disabled={storageError === 'unavailable'}
+                        >
+                          {t('formpackRecordExportJson')}
+                        </button>
+                      )}
                     </div>
                   </LazyForm>
                 </Suspense>

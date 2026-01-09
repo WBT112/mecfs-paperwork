@@ -58,6 +58,7 @@
   "formpackImportIncludeRevisions": "Import snapshots if provided",
   "formpackImportAction": "Import JSON",
   "formpackImportInProgress": "Importing...",
+  "formpackRecordExportJson": "Export record (JSON)",
   "formpackSnapshotsHeading": "History",
   "formpackSnapshotsLoading": "Loading snapshots...",
   "formpackSnapshotsEmpty": "No snapshots yet.",
