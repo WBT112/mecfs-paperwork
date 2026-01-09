@@ -26,15 +26,37 @@ const deleteDatabase = async (page: Page, dbName: string) => {
 
 const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
   return page.evaluate(async ({ dbName, storeName }) => {
-    const openDb = () =>
-      new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(dbName);
-        request.onerror = () => reject(request.error);
-        request.onupgradeneeded = () => resolve(request.result);
-        request.onsuccess = () => resolve(request.result);
-      });
+    const openExistingDb = async () => {
+      if (indexedDB.databases) {
+        const databases = await indexedDB.databases();
+        if (!databases.some((db) => db.name === dbName)) {
+          return null;
+        }
+      }
 
-    const db = await openDb();
+      return await new Promise<IDBDatabase | null>((resolve) => {
+        let aborted = false;
+        const request = indexedDB.open(dbName);
+        request.onupgradeneeded = () => {
+          aborted = true;
+          request.transaction?.abort();
+        };
+        request.onsuccess = () => {
+          const db = request.result;
+          if (aborted) {
+            db.close();
+            resolve(null);
+            return;
+          }
+          resolve(db);
+        };
+        request.onerror = () => resolve(null);
+        request.onblocked = () => resolve(null);
+      });
+    };
+
+    const db = await openExistingDb();
+    if (!db) return 0;
 
     try {
       if (!db.objectStoreNames.contains(storeName)) return 0;
@@ -59,6 +81,20 @@ const getActiveRecordId = async (page: Page) => {
   );
 };
 
+const waitForActiveRecordId = async (page: Page) => {
+  let activeId = '';
+  await expect
+    .poll(
+      async () => {
+        activeId = (await getActiveRecordId(page)) ?? '';
+        return activeId;
+      },
+      { timeout: 10_000, intervals: [250, 500, 1000] },
+    )
+    .not.toBe('');
+  return activeId;
+};
+
 const readRecordById = async (
   page: Page,
   id: string,
@@ -66,15 +102,37 @@ const readRecordById = async (
 ) => {
   return page.evaluate(
     async ({ dbName, storeName, id }) => {
-      const openDb = () =>
-        new Promise<IDBDatabase>((resolve, reject) => {
-          const request = indexedDB.open(dbName);
-          request.onerror = () => reject(request.error);
-          request.onupgradeneeded = () => resolve(request.result);
-          request.onsuccess = () => resolve(request.result);
-        });
+      const openExistingDb = async () => {
+        if (indexedDB.databases) {
+          const databases = await indexedDB.databases();
+          if (!databases.some((db) => db.name === dbName)) {
+            return null;
+          }
+        }
 
-      const db = await openDb();
+        return await new Promise<IDBDatabase | null>((resolve) => {
+          let aborted = false;
+          const request = indexedDB.open(dbName);
+          request.onupgradeneeded = () => {
+            aborted = true;
+            request.transaction?.abort();
+          };
+          request.onsuccess = () => {
+            const db = request.result;
+            if (aborted) {
+              db.close();
+              resolve(null);
+              return;
+            }
+            resolve(db);
+          };
+          request.onerror = () => resolve(null);
+          request.onblocked = () => resolve(null);
+        });
+      };
+
+      const db = await openExistingDb();
+      if (!db) return null;
 
       try {
         if (!db.objectStoreNames.contains(storeName)) return null;
@@ -94,20 +152,47 @@ const readRecordById = async (
   );
 };
 
+const waitForRecordListReady = async (page: Page) => {
+  await page.waitForFunction(() => {
+    const empty = document.querySelector('.formpack-records__empty');
+    if (empty) {
+      const text = empty.textContent?.toLowerCase() ?? '';
+      return !text.includes('loading') && !text.includes('geladen');
+    }
+    return true;
+  });
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
-  if (await nameInput.count()) return;
-
-  const newDraftButton = page
-    .locator('.formpack-records__actions .app__button')
-    .first();
-  if (await newDraftButton.count()) {
-    await newDraftButton.click();
-  } else {
-    // Fallback (if CSS changes): click the first button on the page.
-    await page.getByRole('button').first().click();
+  const existingActiveId = await getActiveRecordId(page);
+  if (existingActiveId) {
+    await expect(nameInput).toBeVisible();
+    return;
   }
 
+  await waitForRecordListReady(page);
+
+  const activeIdAfterLoad = await getActiveRecordId(page);
+  if (activeIdAfterLoad) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new\s*draft|neuer\s*entwurf/i,
+  });
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
+  } else {
+    // Fallback: click the first action button in the drafts area.
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
+  }
+
+  await waitForActiveRecordId(page);
   await expect(nameInput).toBeVisible();
 };
 
@@ -126,6 +211,7 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
     .toBe(expectedName);
 };
 
+// Verifies autosave persists to IndexedDB and reload restores the same draft without creating extras.
 test('autosave persists and reload does not create extra records', async ({
   page,
 }) => {
@@ -151,6 +237,7 @@ test('autosave persists and reload does not create extra records', async ({
   // Wait until the value is actually persisted in IndexedDB (no flaky sleeps)
   await waitForNamePersisted(page, 'Test User');
 
+  // Ensure only one persisted draft exists before the reload.
   const countBefore = await countObjectStoreRecords(page);
   expect(countBefore).toBeGreaterThan(0);
 
@@ -161,6 +248,7 @@ test('autosave persists and reload does not create extra records', async ({
   await expect(nameInputAfter).toBeVisible();
   await expect(nameInputAfter).toHaveValue('Test User');
 
+  // Reload must not create additional drafts.
   const countAfter = await countObjectStoreRecords(page);
   expect(countAfter).toBe(countBefore);
 });
