@@ -29,6 +29,7 @@ import {
   loadFormpackSchema,
   loadFormpackUiSchema,
 } from '../formpacks/loader';
+import { buildDocumentModel } from '../formpacks/documentModel';
 import type { FormpackManifest } from '../formpacks/types';
 import {
   type StorageErrorCode,
@@ -699,6 +700,10 @@ export default function FormpackDetailPage() {
   }, []);
 
   const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
+  const documentModel = useMemo(
+    () => buildDocumentModel(formpackId, locale, formData),
+    [formData, formpackId, locale],
+  );
 
   if (isLoading) {
     return (
@@ -1069,6 +1074,20 @@ export default function FormpackDetailPage() {
                 ? JSON.stringify(formData, null, 2)
                 : t('formpackFormPreviewEmpty')}
             </pre>
+          </div>
+          <div className="formpack-detail__section">
+            <h3>{t('formpackDocumentPreviewHeading')}</h3>
+            {documentModel.diagnosisParagraphs.length ? (
+              <div className="formpack-document-preview">
+                {documentModel.diagnosisParagraphs.map((paragraph, index) => (
+                  <p key={`${index}-${paragraph}`}>{paragraph}</p>
+                ))}
+              </div>
+            ) : (
+              <p className="formpack-document-preview__empty">
+                {t('formpackDocumentPreviewEmpty')}
+              </p>
+            )}
           </div>
         </div>
       </div>

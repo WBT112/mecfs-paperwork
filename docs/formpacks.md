@@ -42,6 +42,11 @@ Required fields:
 - `i18n/de.json` and `i18n/en.json` must contain the same keys.
 - Fallback behavior: if a key is missing in the active locale, show the key as text and optionally fall back to `defaultLocale`.
 
+### Export text blocks
+- Exportable paragraphs are stored in formpack i18n files and referenced by projection code.
+- The document model includes `diagnosisParagraphs: string[]`, which is built from diagnosis flags and i18n keys.
+- Avoid hardcoding medical paragraph text in code; use `t()` with the formpack namespace.
+
 ## JSON Schema (`schema.json`)
 - Uses JSON Schema Draft 2020-12 for MVP.
 - Defines the record structure stored by the app.

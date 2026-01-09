@@ -476,3 +476,25 @@ body {
   white-space: pre-wrap;
   max-width: 100%;
 }
+
+.formpack-document-preview {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+  font-size: 0.95rem;
+}
+
+.formpack-document-preview p {
+  margin: 0 0 0.75rem;
+}
+
+.formpack-document-preview p:last-child {
+  margin-bottom: 0;
+}
+
+.formpack-document-preview__empty {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
