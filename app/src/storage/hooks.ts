@@ -57,11 +57,7 @@ export const useRecords = (formpackId: string | null) => {
             ? current
             : null;
         }
-        if (!nextRecords.length) {
-          return null;
-        }
-        // Default to the most recently updated record on fresh loads.
-        return nextRecords[0];
+        return null;
       });
     } catch (error) {
       setErrorCode(getStorageErrorCode(error));
