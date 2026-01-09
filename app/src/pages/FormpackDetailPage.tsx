@@ -539,14 +539,20 @@ export default function FormpackDetailPage() {
     setImportSuccess(null);
     setIsImporting(true);
 
-    const result = validateJsonImport(importJson, schema, manifest.id);
-    if (result.error) {
-      setImportError(buildImportErrorMessage(result.error));
-      setIsImporting(false);
-      return;
-    }
-
     try {
+      let result;
+      try {
+        result = validateJsonImport(importJson, schema, manifest.id);
+      } catch {
+        setImportError(t('importInvalidPayload'));
+        return;
+      }
+
+      if (result.error) {
+        setImportError(buildImportErrorMessage(result.error));
+        return;
+      }
+
       const payload = result.payload;
       let targetRecordId: string | null = null;
 
