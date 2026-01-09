@@ -20,15 +20,37 @@ const deleteDatabase = async (page: Page, dbName: string) => {
 
 const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
   return page.evaluate(async ({ dbName, storeName }) => {
-    const openDb = () =>
-      new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(dbName);
-        request.onerror = () => reject(request.error);
-        request.onupgradeneeded = () => resolve(request.result);
-        request.onsuccess = () => resolve(request.result);
-      });
+    const openExistingDb = async () => {
+      if (indexedDB.databases) {
+        const databases = await indexedDB.databases();
+        if (!databases.some((db) => db.name === dbName)) {
+          return null;
+        }
+      }
 
-    const db = await openDb();
+      return await new Promise<IDBDatabase | null>((resolve) => {
+        let aborted = false;
+        const request = indexedDB.open(dbName);
+        request.onupgradeneeded = () => {
+          aborted = true;
+          request.transaction?.abort();
+        };
+        request.onsuccess = () => {
+          const db = request.result;
+          if (aborted) {
+            db.close();
+            resolve(null);
+            return;
+          }
+          resolve(db);
+        };
+        request.onerror = () => resolve(null);
+        request.onblocked = () => resolve(null);
+      });
+    };
+
+    const db = await openExistingDb();
+    if (!db) return 0;
     try {
       if (!db.objectStoreNames.contains(storeName)) return 0;
 
@@ -46,21 +68,79 @@ const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
 };
 
 const getActiveRecordId = async (page: Page) => {
-  return page.evaluate((key) => window.localStorage.getItem(key), ACTIVE_RECORD_KEY);
+  return page.evaluate(
+    (key) => window.localStorage.getItem(key),
+    ACTIVE_RECORD_KEY,
+  );
 };
 
-const readRecordById = async (page: Page, id: string, options: DbOptions = DB) => {
+const waitForActiveRecordId = async (page: Page) => {
+  let activeId = '';
+  await expect
+    .poll(
+      async () => {
+        activeId = (await getActiveRecordId(page)) ?? '';
+        return activeId;
+      },
+      { timeout: 10_000, intervals: [250, 500, 1000] },
+    )
+    .not.toBe('');
+  return activeId;
+};
+
+const waitForActiveRecordIdOrNull = async (
+  page: Page,
+  timeoutMs = 3000,
+) => {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const activeId = await getActiveRecordId(page);
+    if (activeId) {
+      return activeId;
+    }
+    await page.waitForTimeout(100);
+  }
+  return null;
+};
+
+const readRecordById = async (
+  page: Page,
+  id: string,
+  options: DbOptions = DB,
+) => {
   return page.evaluate(
     async ({ dbName, storeName, id }) => {
-      const openDb = () =>
-        new Promise<IDBDatabase>((resolve, reject) => {
-          const request = indexedDB.open(dbName);
-          request.onerror = () => reject(request.error);
-          request.onupgradeneeded = () => resolve(request.result);
-          request.onsuccess = () => resolve(request.result);
-        });
+      const openExistingDb = async () => {
+        if (indexedDB.databases) {
+          const databases = await indexedDB.databases();
+          if (!databases.some((db) => db.name === dbName)) {
+            return null;
+          }
+        }
 
-      const db = await openDb();
+        return await new Promise<IDBDatabase | null>((resolve) => {
+          let aborted = false;
+          const request = indexedDB.open(dbName);
+          request.onupgradeneeded = () => {
+            aborted = true;
+            request.transaction?.abort();
+          };
+          request.onsuccess = () => {
+            const db = request.result;
+            if (aborted) {
+              db.close();
+              resolve(null);
+              return;
+            }
+            resolve(db);
+          };
+          request.onerror = () => resolve(null);
+          request.onblocked = () => resolve(null);
+        });
+      };
+
+      const db = await openExistingDb();
+      if (!db) return null;
       try {
         if (!db.objectStoreNames.contains(storeName)) return null;
 
@@ -75,25 +155,87 @@ const readRecordById = async (page: Page, id: string, options: DbOptions = DB) =
         db.close();
       }
     },
-    { ...options, id }
+    { ...options, id },
   );
 };
 
-const ensureDraftExists = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
-  if (await nameInput.count()) return;
-
-  const newDraftBtn = page.getByRole('button', {
-    name: /new\s*draft|neuer\s*entwurf/i
+const waitForRecordListReady = async (page: Page) => {
+  await page.waitForFunction(() => {
+    const empty = document.querySelector('.formpack-records__empty');
+    if (empty) {
+      const text = empty.textContent?.toLowerCase() ?? '';
+      return !text.includes('loading') && !text.includes('geladen');
+    }
+    return true;
   });
+};
 
-  if (await newDraftBtn.count()) {
-    await newDraftBtn.first().click();
-  } else {
-    await page.locator('.formpack-records__actions .app__button').first().click();
+const clickNewDraftIfNeeded = async (page: Page) => {
+  const nameInput = page.locator('#root_person_name');
+  const existingActiveId = await getActiveRecordId(page);
+  if (existingActiveId) {
+    await expect(nameInput).toBeVisible();
+    return;
   }
 
+  await waitForRecordListReady(page);
+
+  const autoDraftId = await waitForActiveRecordIdOrNull(page);
+  if (autoDraftId) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  const existingDraftCount = await page
+    .locator('.formpack-records__item')
+    .count();
+  if (existingDraftCount > 0) {
+    const loadButton = page
+      .locator('.formpack-records__item')
+      .first()
+      .getByRole('button', { name: /load\s*draft|entwurf\s*laden/i });
+    if (await loadButton.count()) {
+      await loadButton.click();
+      await waitForActiveRecordId(page);
+    }
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new\s*draft|neuer\s*entwurf/i,
+  });
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
+  } else {
+    // Fallback: click the first action button in the drafts area.
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
+  }
+
+  await waitForActiveRecordId(page);
   await expect(nameInput).toBeVisible();
+};
+
+const clickNewDraft = async (page: Page) => {
+  await waitForRecordListReady(page);
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new\s*draft|neuer\s*entwurf/i,
+  });
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
+  } else {
+    // Fallback: click the first action button in the drafts area.
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
+  }
+
+  await waitForActiveRecordId(page);
 };
 
 const waitForNamePersisted = async (page: Page, expectedName: string) => {
@@ -105,33 +247,27 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
         const record = await readRecordById(page, activeId);
         return record?.data?.person?.name ?? '';
       },
-      { timeout: 15_000, intervals: [250, 500, 1000] }
+      { timeout: 15_000, intervals: [250, 500, 1000] },
     )
     .toBe(expectedName);
 };
 
-const clickNewDraft = async (page: Page) => {
-  const btn = page.getByRole('button', { name: /new\s*draft|neuer\s*entwurf/i });
-  if (await btn.count()) {
-    await btn.first().click();
-    return;
-  }
-  await page.locator('.formpack-records__actions .app__button').first().click();
-};
 
 const loadNonActiveDraftViaUI = async (page: Page) => {
-  const nonActiveItem = page.locator(
-    '.formpack-records__item:not(.formpack-records__item--active)'
-  ).first();
+  const nonActiveItem = page
+    .locator('.formpack-records__item:not(.formpack-records__item--active)')
+    .first();
 
   await expect(nonActiveItem).toBeVisible();
 
   // There is a single load button per record item in the current UI.
-  await nonActiveItem.getByRole('button', { name: /load\s*draft|entwurf\s*laden/i }).click();
+  await nonActiveItem
+    .getByRole('button', { name: /load\s*draft|entwurf\s*laden/i })
+    .click();
 };
 
 test('new draft clones data and old draft remains preserved (first clone + subsequent edits)', async ({
-  page
+  page,
 }) => {
   // Clean slate
   await page.goto('/');
@@ -144,7 +280,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
   // Required behavior: user must click “New draft” to start
-  await ensureDraftExists(page);
+  await clickNewDraftIfNeeded(page);
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();
@@ -163,14 +299,20 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   await clickNewDraft(page);
 
   await expect
-    .poll(async () => getActiveRecordId(page), { timeout: 10_000, intervals: [250, 500, 1000] })
+    .poll(async () => getActiveRecordId(page), {
+      timeout: 10_000,
+      intervals: [250, 500, 1000],
+    })
     .not.toBe(draftAId);
 
   const draftBId = await getActiveRecordId(page);
   expect(draftBId).toBeTruthy();
 
   await expect
-    .poll(async () => countObjectStoreRecords(page), { timeout: 10_000, intervals: [250, 500, 1000] })
+    .poll(async () => countObjectStoreRecords(page), {
+      timeout: 10_000,
+      intervals: [250, 500, 1000],
+    })
     .toBe(recordCountA + 1);
 
   // 3) Verify both Draft A and Draft B contain the cloned value
@@ -196,7 +338,10 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   await expect(nameInput).toHaveValue('Alice Clone');
 
   await expect
-    .poll(async () => getActiveRecordId(page), { timeout: 10_000, intervals: [250, 500, 1000] })
+    .poll(async () => getActiveRecordId(page), {
+      timeout: 10_000,
+      intervals: [250, 500, 1000],
+    })
     .toBe(draftAId);
 
   // 6) Switch back to Draft B via UI and verify Draft B data
@@ -204,7 +349,10 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   await expect(nameInput).toHaveValue('Bob In Draft B');
 
   await expect
-    .poll(async () => getActiveRecordId(page), { timeout: 10_000, intervals: [250, 500, 1000] })
+    .poll(async () => getActiveRecordId(page), {
+      timeout: 10_000,
+      intervals: [250, 500, 1000],
+    })
     .toBe(draftBId);
 
   // 7) Ensure no extra records were created by switching

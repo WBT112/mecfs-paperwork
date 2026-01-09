@@ -20,15 +20,37 @@ const deleteDatabase = async (page: Page, dbName: string) => {
 
 const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
   return page.evaluate(async ({ dbName, storeName }) => {
-    const openDb = () =>
-      new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(dbName);
-        request.onerror = () => reject(request.error);
-        request.onupgradeneeded = () => resolve(request.result);
-        request.onsuccess = () => resolve(request.result);
-      });
+    const openExistingDb = async () => {
+      if (indexedDB.databases) {
+        const databases = await indexedDB.databases();
+        if (!databases.some((db) => db.name === dbName)) {
+          return null;
+        }
+      }
 
-    const db = await openDb();
+      return await new Promise<IDBDatabase | null>((resolve) => {
+        let aborted = false;
+        const request = indexedDB.open(dbName);
+        request.onupgradeneeded = () => {
+          aborted = true;
+          request.transaction?.abort();
+        };
+        request.onsuccess = () => {
+          const db = request.result;
+          if (aborted) {
+            db.close();
+            resolve(null);
+            return;
+          }
+          resolve(db);
+        };
+        request.onerror = () => resolve(null);
+        request.onblocked = () => resolve(null);
+      });
+    };
+
+    const db = await openExistingDb();
+    if (!db) return 0;
     try {
       if (!db.objectStoreNames.contains(storeName)) return 0;
 
@@ -46,21 +68,64 @@ const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
 };
 
 const getActiveRecordId = async (page: Page) => {
-  return page.evaluate((key) => window.localStorage.getItem(key), ACTIVE_RECORD_KEY);
+  return page.evaluate(
+    (key) => window.localStorage.getItem(key),
+    ACTIVE_RECORD_KEY,
+  );
 };
 
-const readRecordById = async (page: Page, id: string, options: DbOptions = DB) => {
+const waitForActiveRecordId = async (page: Page) => {
+  let activeId = '';
+  await expect
+    .poll(
+      async () => {
+        activeId = (await getActiveRecordId(page)) ?? '';
+        return activeId;
+      },
+      { timeout: 10_000, intervals: [250, 500, 1000] },
+    )
+    .not.toBe('');
+  return activeId;
+};
+
+const readRecordById = async (
+  page: Page,
+  id: string,
+  options: DbOptions = DB,
+) => {
   return page.evaluate(
     async ({ dbName, storeName, id }) => {
-      const openDb = () =>
-        new Promise<IDBDatabase>((resolve, reject) => {
-          const request = indexedDB.open(dbName);
-          request.onerror = () => reject(request.error);
-          request.onupgradeneeded = () => resolve(request.result);
-          request.onsuccess = () => resolve(request.result);
-        });
+      const openExistingDb = async () => {
+        if (indexedDB.databases) {
+          const databases = await indexedDB.databases();
+          if (!databases.some((db) => db.name === dbName)) {
+            return null;
+          }
+        }
 
-      const db = await openDb();
+        return await new Promise<IDBDatabase | null>((resolve) => {
+          let aborted = false;
+          const request = indexedDB.open(dbName);
+          request.onupgradeneeded = () => {
+            aborted = true;
+            request.transaction?.abort();
+          };
+          request.onsuccess = () => {
+            const db = request.result;
+            if (aborted) {
+              db.close();
+              resolve(null);
+              return;
+            }
+            resolve(db);
+          };
+          request.onerror = () => resolve(null);
+          request.onblocked = () => resolve(null);
+        });
+      };
+
+      const db = await openExistingDb();
+      if (!db) return null;
       try {
         if (!db.objectStoreNames.contains(storeName)) return null;
 
@@ -75,7 +140,7 @@ const readRecordById = async (page: Page, id: string, options: DbOptions = DB) =
         db.close();
       }
     },
-    { ...options, id }
+    { ...options, id },
   );
 };
 
@@ -88,39 +153,67 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
         const record = await readRecordById(page, activeId);
         return record?.data?.person?.name ?? '';
       },
-      { timeout: 15_000, intervals: [250, 500, 1000] }
+      { timeout: 15_000, intervals: [250, 500, 1000] },
     )
     .toBe(expectedName);
 };
 
-const ensureDraftExists = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
-  if (await nameInput.count()) return;
-
-  // Preferred: role-based, locale-tolerant selector
-  const newDraftBtn = page.getByRole('button', {
-    name: /new\s*draft|neuer\s*entwurf/i
+const waitForRecordListReady = async (page: Page) => {
+  await page.waitForFunction(() => {
+    const empty = document.querySelector('.formpack-records__empty');
+    if (empty) {
+      const text = empty.textContent?.toLowerCase() ?? '';
+      return !text.includes('loading') && !text.includes('geladen');
+    }
+    return true;
   });
+};
 
-  if (await newDraftBtn.count()) {
-    await newDraftBtn.first().click();
-  } else {
-    // Fallback: keep your existing layout class hook
-    await page.locator('.formpack-records__actions .app__button').first().click();
+const clickNewDraftIfNeeded = async (page: Page) => {
+  const nameInput = page.locator('#root_person_name');
+  const existingActiveId = await getActiveRecordId(page);
+  if (existingActiveId) {
+    await expect(nameInput).toBeVisible();
+    return;
   }
 
+  await waitForRecordListReady(page);
+
+  const activeIdAfterLoad = await getActiveRecordId(page);
+  if (activeIdAfterLoad) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new\s*draft|neuer\s*entwurf/i,
+  });
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
+  } else {
+    // Fallback: click the first action button in the drafts area.
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
+  }
+
+  await waitForActiveRecordId(page);
   await expect(nameInput).toBeVisible();
 };
 
 const createSnapshot = async (page: Page) => {
   const createBtn = page.getByRole('button', {
-    name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i
+    name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i,
   });
 
   if (await createBtn.count()) {
     await createBtn.first().click();
   } else {
-    await page.locator('.formpack-snapshots__actions .app__button').first().click();
+    await page
+      .locator('.formpack-snapshots__actions .app__button')
+      .first()
+      .click();
   }
 
   const items = page.locator('.formpack-snapshots__item');
@@ -133,7 +226,7 @@ const restoreFirstSnapshot = async (page: Page) => {
 
   // Try to click the restore action explicitly (locale-tolerant).
   const restoreBtn = snapshotItem.getByRole('button', {
-    name: /restore|wiederherstellen|laden/i
+    name: /restore|wiederherstellen|laden/i,
   });
 
   if (await restoreBtn.count()) {
@@ -144,11 +237,14 @@ const restoreFirstSnapshot = async (page: Page) => {
   // Fallback: in many UIs the restore button is the last action (delete is often first).
   const buttons = snapshotItem.locator('button');
   const btnCount = await buttons.count();
-  if (btnCount === 0) throw new Error('No action buttons found in snapshot item.');
+  if (btnCount === 0)
+    throw new Error('No action buttons found in snapshot item.');
   await buttons.nth(btnCount - 1).click();
 };
 
-test('snapshot restore restores data and does not create extra records', async ({ page }) => {
+test('snapshot restore restores data and does not create extra records', async ({
+  page,
+}) => {
   await page.goto('/');
   await page.evaluate(() => {
     window.localStorage.clear();
@@ -158,7 +254,7 @@ test('snapshot restore restores data and does not create extra records', async (
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
-  await ensureDraftExists(page);
+  await clickNewDraftIfNeeded(page);
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();

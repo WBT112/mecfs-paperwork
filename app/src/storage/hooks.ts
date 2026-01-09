@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type SetStateAction,
+} from 'react';
 import type { SupportedLocale } from '../i18n/locale';
 import { StorageUnavailableError } from './db';
 import {
@@ -39,11 +45,23 @@ export const useRecords = (formpackId: string | null) => {
   // Tracks the initial records load to avoid actions before IndexedDB finishes.
   const [hasLoaded, setHasLoaded] = useState(false);
   const [errorCode, setErrorCode] = useState<StorageErrorCode | null>(null);
+  const activeRecordRef = useRef<RecordEntry | null>(null);
+
+  const setActiveRecordState = useCallback(
+    (value: SetStateAction<RecordEntry | null>) => {
+      setActiveRecord((current) => {
+        const next = typeof value === 'function' ? value(current) : value;
+        activeRecordRef.current = next;
+        return next;
+      });
+    },
+    [],
+  );
 
   const refresh = useCallback(async () => {
     if (!formpackId) {
       setRecords([]);
-      setActiveRecord(null);
+      setActiveRecordState(null);
       setHasLoaded(false);
       return;
     }
@@ -53,14 +71,26 @@ export const useRecords = (formpackId: string | null) => {
 
     try {
       const nextRecords = await listRecords(formpackId);
-      setRecords(nextRecords);
-      setActiveRecord((current) => {
-        if (current) {
-          return nextRecords.some((record) => record.id === current.id)
-            ? current
-            : null;
+      const active = activeRecordRef.current;
+      const mergedRecords =
+        active &&
+        active.formpackId === formpackId &&
+        !nextRecords.some((record) => record.id === active.id)
+          ? upsertRecord(nextRecords, active)
+          : nextRecords;
+
+      // Avoid dropping a newly created active record if the initial list returns late.
+      setRecords(mergedRecords);
+      setActiveRecordState((current) => {
+        if (!current) {
+          return null;
         }
-        return null;
+        if (current.formpackId !== formpackId) {
+          return null;
+        }
+        return mergedRecords.some((record) => record.id === current.id)
+          ? current
+          : null;
       });
     } catch (error) {
       setErrorCode(getStorageErrorCode(error));
@@ -68,7 +98,7 @@ export const useRecords = (formpackId: string | null) => {
       setIsLoading(false);
       setHasLoaded(true);
     }
-  }, [formpackId]);
+  }, [formpackId, setActiveRecordState]);
 
   useEffect(() => {
     setHasLoaded(false);
@@ -89,7 +119,7 @@ export const useRecords = (formpackId: string | null) => {
 
       try {
         const record = await createRecordEntry(formpackId, locale, data, title);
-        setActiveRecord(record);
+        setActiveRecordState(record);
         setRecords((prev) => upsertRecord(prev, record));
         return record;
       } catch (error) {
@@ -97,25 +127,28 @@ export const useRecords = (formpackId: string | null) => {
         return null;
       }
     },
-    [formpackId],
+    [formpackId, setActiveRecordState],
   );
 
-  const loadRecord = useCallback(async (recordId: string) => {
-    setErrorCode(null);
+  const loadRecord = useCallback(
+    async (recordId: string) => {
+      setErrorCode(null);
 
-    try {
-      const record = await getRecord(recordId);
-      if (!record) {
+      try {
+        const record = await getRecord(recordId);
+        if (!record) {
+          return null;
+        }
+        setActiveRecordState(record);
+        setRecords((prev) => upsertRecord(prev, record));
+        return record;
+      } catch (error) {
+        setErrorCode(getStorageErrorCode(error));
         return null;
       }
-      setActiveRecord(record);
-      setRecords((prev) => upsertRecord(prev, record));
-      return record;
-    } catch (error) {
-      setErrorCode(getStorageErrorCode(error));
-      return null;
-    }
-  }, []);
+    },
+    [setActiveRecordState],
+  );
 
   const updateActiveRecord = useCallback(
     async (
@@ -133,7 +166,7 @@ export const useRecords = (formpackId: string | null) => {
         if (!updated) {
           return null;
         }
-        setActiveRecord(updated);
+        setActiveRecordState(updated);
         setRecords((prev) => upsertRecord(prev, updated));
         return updated;
       } catch (error) {
@@ -141,13 +174,16 @@ export const useRecords = (formpackId: string | null) => {
         return null;
       }
     },
-    [],
+    [setActiveRecordState],
   );
 
-  const applyRecordUpdate = useCallback((record: RecordEntry) => {
-    setActiveRecord(record);
-    setRecords((prev) => upsertRecord(prev, record));
-  }, []);
+  const applyRecordUpdate = useCallback(
+    (record: RecordEntry) => {
+      setActiveRecordState(record);
+      setRecords((prev) => upsertRecord(prev, record));
+    },
+    [setActiveRecordState],
+  );
 
   return {
     records,
@@ -159,7 +195,7 @@ export const useRecords = (formpackId: string | null) => {
     loadRecord,
     updateActiveRecord,
     applyRecordUpdate,
-    setActiveRecord,
+    setActiveRecord: setActiveRecordState,
     hasLoaded,
   };
 };
