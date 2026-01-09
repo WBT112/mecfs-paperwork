@@ -312,37 +312,50 @@ export default function FormpackDetailPage() {
       return;
     }
 
+    let isActive = true;
+    const currentFormpackId = formpackId;
     hasRestoredRecordRef.current = formpackId;
 
     const restoreActiveRecord = async () => {
       const lastId = readActiveRecordId();
       if (lastId) {
         const record = await loadRecord(lastId);
-        if (record) {
+        if (isActive && record && record.formpackId === currentFormpackId) {
           persistActiveRecordId(record.id);
           return;
         }
       }
 
-      if (records.length) {
-        setActiveRecord(records[0]);
-        persistActiveRecordId(records[0].id);
+      if (!isActive) {
         return;
       }
 
-      if (!manifest || storageError === 'unavailable') {
+      if (records.length) {
+        const fallbackRecord = records[0];
+        if (fallbackRecord.formpackId === currentFormpackId) {
+          setActiveRecord(fallbackRecord);
+          persistActiveRecordId(fallbackRecord.id);
+        }
+        return;
+      }
+
+      if (!manifest || storageError === 'unavailable' || !isActive) {
         setActiveRecord(null);
         return;
       }
 
       const recordTitle = title || t('formpackRecordUntitled');
       const record = await createRecord(locale, formData, recordTitle);
-      if (record) {
+      if (isActive && record && record.formpackId === currentFormpackId) {
         persistActiveRecordId(record.id);
       }
     };
 
     void restoreActiveRecord();
+
+    return () => {
+      isActive = false;
+    };
   }, [
     formpackId,
     isRecordsLoading,
