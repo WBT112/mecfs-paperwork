@@ -27,7 +27,30 @@
         "additionalProperties": false
       }
     },
-    "diagnoses": {"type": "string"},
+    "diagnoses": {
+      "type": "object",
+      "properties": {
+        "meCfs": {"type": "boolean"},
+        "formatted": {"type": "string"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "meCfs": {"const": true}
+            },
+            "required": ["meCfs"]
+          },
+          "then": {
+            "properties": {
+              "pots": {"type": "boolean"},
+              "longCovid": {"type": "boolean"}
+            }
+          }
+        }
+      ],
+      "unevaluatedProperties": false
+    },
     "symptoms": {"type": "string"},
     "medications": {
       "type": "array",

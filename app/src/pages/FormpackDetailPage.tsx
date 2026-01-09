@@ -530,6 +530,8 @@ export default function FormpackDetailPage() {
                   templates={formpackTemplates}
                   validator={validator}
                   formData={formData}
+                  omitExtraData
+                  liveOmit
                   onChange={handleFormChange}
                   onSubmit={handleFormSubmit}
                   formContext={formContext}
