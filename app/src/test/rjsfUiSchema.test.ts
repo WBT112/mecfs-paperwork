@@ -43,7 +43,7 @@ describe('applyArrayUiSchemaDefaults', () => {
       items: { type: 'string' },
     };
     const result = applyArrayUiSchemaDefaults(schema, {});
-    expect(result.items?.['ui:options']?.label).toBe(false);
+    expect((result.items as any)?.['ui:options']?.label).toBe(false);
   });
 
   it('should not override existing item label option', () => {
@@ -53,7 +53,7 @@ describe('applyArrayUiSchemaDefaults', () => {
     };
     const uiSchema = { items: { 'ui:options': { label: true } } };
     const result = applyArrayUiSchemaDefaults(schema, uiSchema);
-    expect(result.items?.['ui:options']?.label).toBe(true);
+    expect((result.items as any)?.['ui:options']?.label).toBe(true);
   });
 
   it('should handle array with no items property', () => {
