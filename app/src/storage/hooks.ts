@@ -232,6 +232,8 @@ export const useSnapshots = (recordId: string | null) => {
 
 /**
  * Autosaves record data changes after a debounce delay.
+ *
+ * Returns helpers for syncing the autosave baseline after programmatic updates.
  */
 export const useAutosaveRecord = (
   recordId: string | null,
@@ -264,6 +266,23 @@ export const useAutosaveRecord = (
   }, [recordId, baselineData]);
 
   useEffect(() => {
+    if (!recordId || !baselineData) {
+      return;
+    }
+
+    if (lastRecordIdRef.current === recordId) {
+      lastSavedRef.current = JSON.stringify(baselineData);
+    }
+  }, [recordId, baselineData]);
+
+  /**
+   * Syncs autosave's baseline to already persisted data.
+   */
+  const markAsSaved = useCallback((nextData: Record<string, unknown>) => {
+    lastSavedRef.current = JSON.stringify(nextData);
+  }, []);
+
+  useEffect(() => {
     if (!recordId) {
       return;
     }
@@ -274,6 +293,10 @@ export const useAutosaveRecord = (
     }
 
     const timeout = window.setTimeout(() => {
+      if (lastSavedRef.current === nextSerialized) {
+        return;
+      }
+
       void updateRecordEntry(recordId, {
         data: formData,
         locale,
@@ -295,4 +318,6 @@ export const useAutosaveRecord = (
       window.clearTimeout(timeout);
     };
   }, [recordId, formData, locale, delay, onSaved, onError]);
+
+  return { markAsSaved };
 };
