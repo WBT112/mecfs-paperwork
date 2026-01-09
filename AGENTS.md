@@ -28,6 +28,7 @@ If any step fails: fix it before finishing.
 - If `npm run test` exists, run it and fix failures before proposing a PR.
 - If no test runner is configured yet (no `test` script), state that explicitly in the PR description and do not invent a large test suite unless the issue asks for it.
 - Create Unit tests if possible
+- Check if any existing tests need to be changed
 
 ### When changing behavior
 - Add or update unit tests for new/changed business logic (e.g., mapping, validation, export, storage).
