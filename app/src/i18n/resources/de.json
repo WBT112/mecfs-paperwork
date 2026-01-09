@@ -37,6 +37,7 @@
   "formpackDocxMapping": "DOCX-Mapping",
   "formpackFormHeading": "Formular",
   "formpackFormReset": "Formular zurücksetzen",
+  "formpackFormNoActiveRecord": "Wähle oder erstelle einen Entwurf, um mit der Eingabe zu beginnen.",
   "formpackFormPreviewHeading": "Formulardaten-Vorschau",
   "formpackFormPreviewEmpty": "Noch keine Daten eingegeben.",
   "formpackRecordsHeading": "Entwürfe",

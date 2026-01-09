@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '../i18n/locale';
 import { StorageUnavailableError } from './db';
 import {
@@ -57,11 +57,7 @@ export const useRecords = (formpackId: string | null) => {
             ? current
             : null;
         }
-        if (!nextRecords.length) {
-          return null;
-        }
-        // Default to the most recently updated record on fresh loads.
-        return nextRecords[0];
+        return null;
       });
     } catch (error) {
       setErrorCode(getStorageErrorCode(error));
@@ -241,18 +237,39 @@ export const useAutosaveRecord = (
   recordId: string | null,
   formData: Record<string, unknown>,
   locale: SupportedLocale,
+  baselineData: Record<string, unknown> | null,
   options?: {
     delay?: number;
     onSaved?: (record: RecordEntry) => void;
     onError?: (code: StorageErrorCode) => void;
   },
 ) => {
-  const delay = options?.delay ?? 800;
+  const delay = options?.delay ?? 1200;
   const onSaved = options?.onSaved;
   const onError = options?.onError;
+  const lastSavedRef = useRef<string | null>(null);
+  const lastRecordIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!recordId) {
+      lastSavedRef.current = null;
+      lastRecordIdRef.current = null;
+      return;
+    }
+
+    if (lastRecordIdRef.current !== recordId) {
+      lastRecordIdRef.current = recordId;
+      lastSavedRef.current = baselineData ? JSON.stringify(baselineData) : null;
+    }
+  }, [recordId, baselineData]);
+
+  useEffect(() => {
+    if (!recordId) {
+      return;
+    }
+
+    const nextSerialized = JSON.stringify(formData);
+    if (lastSavedRef.current === nextSerialized) {
       return;
     }
 
@@ -265,6 +282,7 @@ export const useAutosaveRecord = (
           if (record && onSaved) {
             onSaved(record);
           }
+          lastSavedRef.current = nextSerialized;
         })
         .catch((error: unknown) => {
           if (onError) {
