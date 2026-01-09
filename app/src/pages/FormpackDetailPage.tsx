@@ -379,12 +379,30 @@ export default function FormpackDetailPage() {
     }
 
     const recordTitle = title || t('formpackRecordUntitled');
-    const record = await createRecord(locale, formData, recordTitle);
-    if (record) {
-      setFormData(record.data);
-      persistActiveRecordId(record.id);
+    let baseRecord = activeRecord;
+
+    if (activeRecord) {
+      baseRecord = await updateActiveRecord(activeRecord.id, {
+        data: formData,
+        locale,
+      });
+    } else {
+      baseRecord = await createRecord(locale, formData, recordTitle);
     }
+
+    if (!baseRecord) {
+      return;
+    }
+
+    const record = await createRecord(locale, formData, recordTitle);
+    if (!record) {
+      return;
+    }
+
+    setFormData(record.data);
+    persistActiveRecordId(record.id);
   }, [
+    activeRecord,
     createRecord,
     formData,
     locale,
@@ -392,6 +410,7 @@ export default function FormpackDetailPage() {
     persistActiveRecordId,
     t,
     title,
+    updateActiveRecord,
   ]);
 
   const handleLoadRecord = useCallback(
