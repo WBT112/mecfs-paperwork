@@ -148,7 +148,12 @@ export const validateJsonImport = (
     return { payload: null, error: 'invalid_revisions' };
   }
 
-  const ajv = new Ajv({ allErrors: true, strict: false });
+  // Ajv v6 typings omit `strict`; keep it optional for v8 compatibility.
+  const ajvOptions: Ajv.Options & { strict?: boolean } = {
+    allErrors: true,
+    strict: false,
+  };
+  const ajv = new Ajv(ajvOptions);
   const validate = ajv.compile(schema);
   const isValid = validate(record.data);
   if (!isValid) {
