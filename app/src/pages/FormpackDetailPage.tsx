@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { loadFormpackI18n } from '../i18n/formpack';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
+import { validateJsonImport } from '../import/json';
 import {
   buildJsonExportFilename,
   buildJsonExportPayload,
@@ -35,6 +36,7 @@ import {
   useRecords,
   useSnapshots,
 } from '../storage/hooks';
+import { createSnapshot as createSnapshotEntry } from '../storage/snapshots';
 import type { ComponentType } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
@@ -108,6 +110,12 @@ export default function FormpackDetailPage() {
   const [schema, setSchema] = useState<RJSFSchema | null>(null);
   const [uiSchema, setUiSchema] = useState<UiSchema | null>(null);
   const [formData, setFormData] = useState<FormDataState>({});
+  const [importJson, setImportJson] = useState('');
+  const [importMode, setImportMode] = useState<'new' | 'overwrite'>('new');
+  const [importIncludeRevisions, setImportIncludeRevisions] = useState(true);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importSuccess, setImportSuccess] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
@@ -134,6 +142,7 @@ export default function FormpackDetailPage() {
     errorCode: snapshotsError,
     createSnapshot,
     loadSnapshot,
+    refresh: refreshSnapshots,
   } = useSnapshots(activeRecord?.id ?? null);
   const { markAsSaved } = useAutosaveRecord(
     activeRecord?.id ?? null,
@@ -270,6 +279,34 @@ export default function FormpackDetailPage() {
       ? t('storageUnavailable')
       : t('storageError');
   }, [storageError, t]);
+
+  const buildImportErrorMessage = useCallback(
+    (code: string) => {
+      switch (code) {
+        case 'invalid_json':
+          return t('importInvalidJson');
+        case 'unknown_formpack':
+          return t('importUnknownFormpack');
+        case 'schema_mismatch':
+          return t('importSchemaMismatch');
+        case 'formpack_mismatch':
+          return t('importFormpackMismatch');
+        case 'invalid_revisions':
+          return t('importInvalidRevisions');
+        case 'unsupported_locale':
+          return t('importUnsupportedLocale');
+        default:
+          return t('importInvalidPayload');
+      }
+    },
+    [t],
+  );
+
+  useEffect(() => {
+    if (!activeRecord && importMode === 'overwrite') {
+      setImportMode('new');
+    }
+  }, [activeRecord, importMode]);
 
   const activeRecordStorageKey = useMemo(
     () => (formpackId ? `mecfs-paperwork.activeRecordId.${formpackId}` : null),
@@ -484,6 +521,123 @@ export default function FormpackDetailPage() {
     [activeRecord, loadSnapshot, markAsSaved, updateActiveRecord],
   );
 
+  const handleImport = useCallback(async () => {
+    if (!manifest || !schema) {
+      return;
+    }
+
+    setImportError(null);
+    setImportSuccess(null);
+    setIsImporting(true);
+
+    const result = validateJsonImport(importJson, schema, manifest.id);
+    if (result.error) {
+      setImportError(buildImportErrorMessage(result.error));
+      setIsImporting(false);
+      return;
+    }
+
+    try {
+      const payload = result.payload;
+      let targetRecordId: string | null = null;
+
+      if (importMode === 'overwrite') {
+        if (!activeRecord) {
+          setImportError(t('importNoActiveRecord'));
+          return;
+        }
+
+        const confirmed = window.confirm(t('importOverwriteConfirm'));
+        if (!confirmed) {
+          return;
+        }
+
+        const updates: {
+          data: Record<string, unknown>;
+          locale: typeof payload.record.locale;
+          title?: string;
+        } = {
+          data: payload.record.data,
+          locale: payload.record.locale,
+        };
+
+        if (payload.record.title) {
+          updates.title = payload.record.title;
+        }
+
+        const updated = await updateActiveRecord(activeRecord.id, updates);
+        if (!updated) {
+          setImportError(t('importStorageError'));
+          return;
+        }
+
+        markAsSaved(updated.data);
+        setFormData(updated.data);
+        persistActiveRecordId(updated.id);
+        targetRecordId = updated.id;
+      } else {
+        const recordTitle =
+          payload.record.title ?? title ?? t('formpackRecordUntitled');
+        const record = await createRecord(
+          payload.record.locale,
+          payload.record.data,
+          recordTitle,
+        );
+        if (!record) {
+          setImportError(t('importStorageError'));
+          return;
+        }
+
+        markAsSaved(record.data);
+        setFormData(record.data);
+        persistActiveRecordId(record.id);
+        targetRecordId = record.id;
+      }
+
+      if (
+        importIncludeRevisions &&
+        targetRecordId &&
+        payload.revisions &&
+        payload.revisions.length
+      ) {
+        await Promise.all(
+          payload.revisions.map((revision) =>
+            createSnapshotEntry(
+              targetRecordId,
+              revision.data,
+              revision.label,
+              revision.createdAt,
+            ),
+          ),
+        );
+        if (importMode === 'overwrite') {
+          await refreshSnapshots();
+        }
+      }
+
+      setImportSuccess(t('importSuccess'));
+      setImportJson('');
+    } catch {
+      setImportError(t('importStorageError'));
+    } finally {
+      setIsImporting(false);
+    }
+  }, [
+    activeRecord,
+    buildImportErrorMessage,
+    createRecord,
+    importIncludeRevisions,
+    importJson,
+    importMode,
+    manifest,
+    markAsSaved,
+    persistActiveRecordId,
+    refreshSnapshots,
+    schema,
+    t,
+    title,
+    updateActiveRecord,
+  ]);
   const handleExportJson = useCallback(() => {
     if (!manifest || !activeRecord) {
       return;
@@ -684,6 +838,85 @@ export default function FormpackDetailPage() {
                 </div>
               </div>
             )}
+          </div>
+          <div className="formpack-detail__section">
+            <h3>{t('formpackImportHeading')}</h3>
+            <p className="formpack-import__hint">{t('formpackImportHint')}</p>
+            <div className="formpack-import__field">
+              <label htmlFor="formpack-import-json">
+                {t('formpackImportLabel')}
+              </label>
+              <textarea
+                id="formpack-import-json"
+                className="formpack-import__textarea"
+                rows={6}
+                value={importJson}
+                onChange={(event) => {
+                  setImportJson(event.target.value);
+                  setImportError(null);
+                  setImportSuccess(null);
+                }}
+              />
+            </div>
+            <fieldset className="formpack-import__options">
+              <legend>{t('formpackImportModeLabel')}</legend>
+              <label className="formpack-import__option">
+                <input
+                  type="radio"
+                  name="import-mode"
+                  value="new"
+                  checked={importMode === 'new'}
+                  onChange={() => setImportMode('new')}
+                />
+                {t('formpackImportModeNew')}
+              </label>
+              <label className="formpack-import__option">
+                <input
+                  type="radio"
+                  name="import-mode"
+                  value="overwrite"
+                  checked={importMode === 'overwrite'}
+                  onChange={() => setImportMode('overwrite')}
+                  disabled={!activeRecord}
+                />
+                {t('formpackImportModeOverwrite')}
+              </label>
+              {!activeRecord && (
+                <p className="formpack-import__note">
+                  {t('formpackImportModeOverwriteHint')}
+                </p>
+              )}
+            </fieldset>
+            <label className="formpack-import__option">
+              <input
+                type="checkbox"
+                checked={importIncludeRevisions}
+                onChange={(event) =>
+                  setImportIncludeRevisions(event.target.checked)
+                }
+              />
+              {t('formpackImportIncludeRevisions')}
+            </label>
+            {importError && <p className="app__error">{importError}</p>}
+            {importSuccess && (
+              <p className="formpack-import__success">{importSuccess}</p>
+            )}
+            <div className="formpack-import__actions">
+              <button
+                type="button"
+                className="app__button"
+                onClick={handleImport}
+                disabled={
+                  !importJson.trim() ||
+                  storageError === 'unavailable' ||
+                  isImporting
+                }
+              >
+                {isImporting
+                  ? t('formpackImportInProgress')
+                  : t('formpackImportAction')}
+              </button>
+            </div>
           </div>
           <div className="formpack-detail__section">
             <h3>{t('formpackFormHeading')}</h3>
