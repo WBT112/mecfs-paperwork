@@ -1,8 +1,9 @@
+/// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  fullyParallel: false,
   timeout: 30_000,
   expect: { timeout: 10_000 },
 

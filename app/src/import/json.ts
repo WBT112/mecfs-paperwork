@@ -1,4 +1,4 @@
-import Ajv from 'ajv';
+import Ajv, { type Options as AjvOptions } from 'ajv';
 import type { RJSFSchema } from '@rjsf/utils';
 import { isSupportedLocale, type SupportedLocale } from '../i18n/locale';
 import { FORMPACK_IDS } from '../formpacks/registry';
@@ -149,7 +149,7 @@ export const validateJsonImport = (
   }
 
   // Ajv v6 typings omit `strict`; keep it optional for v8 compatibility.
-  const ajvOptions: Ajv.Options & { strict?: boolean } = {
+  const ajvOptions: AjvOptions & { strict?: boolean } = {
     allErrors: true,
     strict: false,
   };
