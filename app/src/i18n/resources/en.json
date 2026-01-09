@@ -37,6 +37,7 @@
   "formpackDocxMapping": "DOCX mapping",
   "formpackFormHeading": "Form",
   "formpackFormReset": "Reset form",
+  "formpackFormNoActiveRecord": "Select or create a draft to start editing.",
   "formpackFormPreviewHeading": "Form data preview",
   "formpackFormPreviewEmpty": "No data entered yet.",
   "formpackRecordsHeading": "Drafts",
