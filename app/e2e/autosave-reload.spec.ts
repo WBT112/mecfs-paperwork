@@ -10,7 +10,7 @@ const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
 
 const DB: DbOptions = {
   dbName: 'mecfs-paperwork',
-  storeName: 'records'
+  storeName: 'records',
 };
 
 const deleteDatabase = async (page: Page, dbName: string) => {
@@ -53,42 +53,54 @@ const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
 };
 
 const getActiveRecordId = async (page: Page) => {
-  return page.evaluate((key) => window.localStorage.getItem(key), ACTIVE_RECORD_KEY);
+  return page.evaluate(
+    (key) => window.localStorage.getItem(key),
+    ACTIVE_RECORD_KEY,
+  );
 };
 
-const readRecordById = async (page: Page, id: string, options: DbOptions = DB) => {
-  return page.evaluate(async ({ dbName, storeName, id }) => {
-    const openDb = () =>
-      new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(dbName);
-        request.onerror = () => reject(request.error);
-        request.onupgradeneeded = () => resolve(request.result);
-        request.onsuccess = () => resolve(request.result);
-      });
+const readRecordById = async (
+  page: Page,
+  id: string,
+  options: DbOptions = DB,
+) => {
+  return page.evaluate(
+    async ({ dbName, storeName, id }) => {
+      const openDb = () =>
+        new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open(dbName);
+          request.onerror = () => reject(request.error);
+          request.onupgradeneeded = () => resolve(request.result);
+          request.onsuccess = () => resolve(request.result);
+        });
 
-    const db = await openDb();
+      const db = await openDb();
 
-    try {
-      if (!db.objectStoreNames.contains(storeName)) return null;
+      try {
+        if (!db.objectStoreNames.contains(storeName)) return null;
 
-      return await new Promise<any>((resolve, reject) => {
-        const tx = db.transaction(storeName, 'readonly');
-        const store = tx.objectStore(storeName);
-        const getReq = store.get(id);
-        getReq.onerror = () => reject(getReq.error);
-        getReq.onsuccess = () => resolve(getReq.result ?? null);
-      });
-    } finally {
-      db.close();
-    }
-  }, { ...options, id });
+        return await new Promise<any>((resolve, reject) => {
+          const tx = db.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          const getReq = store.get(id);
+          getReq.onerror = () => reject(getReq.error);
+          getReq.onsuccess = () => resolve(getReq.result ?? null);
+        });
+      } finally {
+        db.close();
+      }
+    },
+    { ...options, id },
+  );
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   if (await nameInput.count()) return;
 
-  const newDraftButton = page.locator('.formpack-records__actions .app__button').first();
+  const newDraftButton = page
+    .locator('.formpack-records__actions .app__button')
+    .first();
   if (await newDraftButton.count()) {
     await newDraftButton.click();
   } else {
@@ -109,12 +121,14 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
         const record = await readRecordById(page, activeId);
         return record?.data?.person?.name ?? '';
       },
-      { timeout: 15_000, intervals: [250, 500, 1000] }
+      { timeout: 15_000, intervals: [250, 500, 1000] },
     )
     .toBe(expectedName);
 };
 
-test('autosave persists and reload does not create extra records', async ({ page }) => {
+test('autosave persists and reload does not create extra records', async ({
+  page,
+}) => {
   // Clean slate: no persisted state
   await page.goto('/');
   await page.evaluate(() => {
