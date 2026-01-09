@@ -406,19 +406,14 @@ export default function FormpackDetailPage() {
     }
 
     const recordTitle = title || t('formpackRecordUntitled');
-    let baseRecord = activeRecord;
-
     if (activeRecord) {
-      baseRecord = await updateActiveRecord(activeRecord.id, {
+      const baseRecord = await updateActiveRecord(activeRecord.id, {
         data: formData,
         locale,
       });
-    } else {
-      baseRecord = await createRecord(locale, formData, recordTitle);
-    }
-
-    if (!baseRecord) {
-      return;
+      if (!baseRecord) {
+        return;
+      }
     }
 
     const record = await createRecord(locale, formData, recordTitle);
