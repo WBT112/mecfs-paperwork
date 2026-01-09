@@ -36,12 +36,15 @@ export const useRecords = (formpackId: string | null) => {
   const [records, setRecords] = useState<RecordEntry[]>([]);
   const [activeRecord, setActiveRecord] = useState<RecordEntry | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  // Tracks the initial records load to avoid actions before IndexedDB finishes.
+  const [hasLoaded, setHasLoaded] = useState(false);
   const [errorCode, setErrorCode] = useState<StorageErrorCode | null>(null);
 
   const refresh = useCallback(async () => {
     if (!formpackId) {
       setRecords([]);
       setActiveRecord(null);
+      setHasLoaded(false);
       return;
     }
 
@@ -63,10 +66,12 @@ export const useRecords = (formpackId: string | null) => {
       setErrorCode(getStorageErrorCode(error));
     } finally {
       setIsLoading(false);
+      setHasLoaded(true);
     }
   }, [formpackId]);
 
   useEffect(() => {
+    setHasLoaded(false);
     void refresh();
   }, [refresh]);
 
@@ -155,6 +160,7 @@ export const useRecords = (formpackId: string | null) => {
     updateActiveRecord,
     applyRecordUpdate,
     setActiveRecord,
+    hasLoaded,
   };
 };
 

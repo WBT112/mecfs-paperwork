@@ -129,6 +129,7 @@ export default function FormpackDetailPage() {
     records,
     activeRecord,
     isLoading: isRecordsLoading,
+    hasLoaded: hasLoadedRecords,
     errorCode: recordsError,
     createRecord,
     loadRecord,
@@ -364,7 +365,12 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    if (hasRestoredRecordRef.current === formpackId || isRecordsLoading) {
+    // Wait for the initial records load to avoid creating duplicate drafts.
+    if (!hasLoadedRecords || isRecordsLoading) {
+      return;
+    }
+
+    if (hasRestoredRecordRef.current === formpackId) {
       return;
     }
 
@@ -414,6 +420,7 @@ export default function FormpackDetailPage() {
     };
   }, [
     formpackId,
+    hasLoadedRecords,
     isRecordsLoading,
     createRecord,
     formData,
