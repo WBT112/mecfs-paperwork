@@ -48,6 +48,7 @@
   "formpackRecordActive": "Active draft",
   "formpackRecordUntitled": "Untitled draft",
   "formpackRecordUpdatedAt": "Updated {{timestamp}}",
+  "formpackRecordExportJson": "Export record (JSON)",
   "formpackSnapshotsHeading": "History",
   "formpackSnapshotsLoading": "Loading snapshots...",
   "formpackSnapshotsEmpty": "No snapshots yet.",
