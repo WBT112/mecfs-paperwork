@@ -242,6 +242,7 @@ const restoreFirstSnapshot = async (page: Page) => {
   await buttons.nth(btnCount - 1).click();
 };
 
+// Verifies snapshot creation/restoration and ensures no extra drafts are created across reloads.
 test('snapshot restore restores data and does not create extra records', async ({
   page,
 }) => {
@@ -263,6 +264,7 @@ test('snapshot restore restores data and does not create extra records', async (
   await nameInput.fill('Alice Snapshot');
   await waitForNamePersisted(page, 'Alice Snapshot');
 
+  // Snapshot operations must stay within the existing draft.
   const recordsCountBaseline = await countObjectStoreRecords(page);
   expect(recordsCountBaseline).toBeGreaterThan(0);
 
@@ -280,6 +282,7 @@ test('snapshot restore restores data and does not create extra records', async (
   await waitForNamePersisted(page, 'Alice Snapshot');
 
   // Restore should not create a new draft record
+  // Restoring a snapshot must not create a new draft.
   const recordsCountAfterRestore = await countObjectStoreRecords(page);
   expect(recordsCountAfterRestore).toBe(recordsCountBaseline);
 
@@ -289,6 +292,7 @@ test('snapshot restore restores data and does not create extra records', async (
   await expect(nameInput).toBeVisible();
   await expect(nameInput).toHaveValue('Alice Snapshot');
 
+  // Reload must keep the same record count after restoration.
   const recordsCountAfterReload = await countObjectStoreRecords(page);
   expect(recordsCountAfterReload).toBe(recordsCountBaseline);
 });

@@ -266,6 +266,7 @@ const loadNonActiveDraftViaUI = async (page: Page) => {
     .click();
 };
 
+// Verifies new draft cloning, data isolation, and draft switching without creating extra records.
 test('new draft clones data and old draft remains preserved (first clone + subsequent edits)', async ({
   page,
 }) => {
@@ -289,6 +290,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   await nameInput.fill('Alice Clone');
   await waitForNamePersisted(page, 'Alice Clone');
 
+  // There should be exactly one draft after the first save.
   const recordCountA = await countObjectStoreRecords(page);
   expect(recordCountA).toBe(1);
 
@@ -298,6 +300,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   // 2) Click “New draft” -> Draft B should be created as a clone
   await clickNewDraft(page);
 
+  // New draft must have a different ID than Draft A.
   await expect
     .poll(async () => getActiveRecordId(page), {
       timeout: 10_000,
@@ -308,6 +311,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   const draftBId = await getActiveRecordId(page);
   expect(draftBId).toBeTruthy();
 
+  // Creating Draft B should add exactly one more record.
   await expect
     .poll(async () => countObjectStoreRecords(page), {
       timeout: 10_000,
@@ -356,6 +360,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
     .toBe(draftBId);
 
   // 7) Ensure no extra records were created by switching
+  // Switching drafts must not create any additional records.
   const recordCountEnd = await countObjectStoreRecords(page);
   expect(recordCountEnd).toBe(recordCountA + 1);
 });

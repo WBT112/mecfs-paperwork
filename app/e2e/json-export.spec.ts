@@ -89,6 +89,7 @@ const clickNewDraftIfNeeded = async (page: Page) => {
   await expect(nameInput).toBeVisible();
 };
 
+// Verifies JSON export downloads a file with expected metadata and form data for the active draft.
 test('exports JSON with record metadata and form data', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => {
@@ -102,6 +103,7 @@ test('exports JSON with record metadata and form data', async ({ page }) => {
 
   await page.locator('#root_person_name').fill('Test User');
 
+  // Trigger the JSON export for the active draft.
   const downloadPromise = page.waitForEvent('download');
   const exportButton = page
     .getByRole('button', {
@@ -114,6 +116,7 @@ test('exports JSON with record metadata and form data', async ({ page }) => {
   const filePath = await download.path();
   expect(filePath).not.toBeNull();
 
+  // The payload must include metadata and the form data we entered.
   const contents = await readFile(filePath as string, 'utf-8');
   const payload = JSON.parse(contents) as {
     app: { id: string; version: string };

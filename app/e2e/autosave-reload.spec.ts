@@ -211,6 +211,7 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
     .toBe(expectedName);
 };
 
+// Verifies autosave persists to IndexedDB and reload restores the same draft without creating extras.
 test('autosave persists and reload does not create extra records', async ({
   page,
 }) => {
@@ -236,6 +237,7 @@ test('autosave persists and reload does not create extra records', async ({
   // Wait until the value is actually persisted in IndexedDB (no flaky sleeps)
   await waitForNamePersisted(page, 'Test User');
 
+  // Ensure only one persisted draft exists before the reload.
   const countBefore = await countObjectStoreRecords(page);
   expect(countBefore).toBeGreaterThan(0);
 
@@ -246,6 +248,7 @@ test('autosave persists and reload does not create extra records', async ({
   await expect(nameInputAfter).toBeVisible();
   await expect(nameInputAfter).toHaveValue('Test User');
 
+  // Reload must not create additional drafts.
   const countAfter = await countObjectStoreRecords(page);
   expect(countAfter).toBe(countBefore);
 });
