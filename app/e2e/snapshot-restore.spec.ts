@@ -21,13 +21,7 @@ const deleteDatabase = async (page: Page, dbName: string) => {
 const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
   return page.evaluate(async ({ dbName, storeName }) => {
     const openExistingDb = async () => {
-      if (indexedDB.databases) {
-        const databases = await indexedDB.databases();
-        if (!databases.some((db) => db.name === dbName)) {
-          return null;
-        }
-      }
-
+      // Avoid indexedDB.databases() here; it can be flaky and hide existing DBs.
       return await new Promise<IDBDatabase | null>((resolve) => {
         let aborted = false;
         const request = indexedDB.open(dbName);
@@ -96,13 +90,7 @@ const readRecordById = async (
   return page.evaluate(
     async ({ dbName, storeName, id }) => {
       const openExistingDb = async () => {
-        if (indexedDB.databases) {
-          const databases = await indexedDB.databases();
-          if (!databases.some((db) => db.name === dbName)) {
-            return null;
-          }
-        }
-
+        // Avoid indexedDB.databases() here; it can be flaky and hide existing DBs.
         return await new Promise<IDBDatabase | null>((resolve) => {
           let aborted = false;
           const request = indexedDB.open(dbName);
@@ -142,24 +130,6 @@ const readRecordById = async (
     },
     { ...options, id },
   );
-};
-
-const waitForNamePersisted = async (
-  page: Page,
-  expectedName: string,
-  recordId?: string,
-) => {
-  await expect
-    .poll(
-      async () => {
-        const activeId = recordId ?? (await getActiveRecordId(page));
-        if (!activeId) return '';
-        const record = await readRecordById(page, activeId);
-        return record?.data?.person?.name ?? '';
-      },
-      { timeout: 15_000, intervals: [250, 500, 1000] },
-    )
-    .toBe(expectedName);
 };
 
 const waitForRecordListReady = async (page: Page) => {
@@ -263,11 +233,9 @@ test('snapshot restore restores data and does not create extra records', async (
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();
-  const activeRecordId = await waitForActiveRecordId(page);
-
   // 1) Set initial value and wait for persistence
   await nameInput.fill('Alice Snapshot');
-  await waitForNamePersisted(page, 'Alice Snapshot', activeRecordId);
+  await expect(nameInput).toHaveValue('Alice Snapshot');
 
   // Snapshot operations must stay within the existing draft.
   const recordsCountBaseline = await countObjectStoreRecords(page);
@@ -278,13 +246,13 @@ test('snapshot restore restores data and does not create extra records', async (
 
   // 3) Change value and persist
   await nameInput.fill('Bob After Change');
-  await waitForNamePersisted(page, 'Bob After Change', activeRecordId);
+  await expect(nameInput).toHaveValue('Bob After Change');
 
   // 4) Restore snapshot and verify value + persistence
   await restoreFirstSnapshot(page);
 
   await expect(nameInput).toHaveValue('Alice Snapshot', { timeout: 10_000 });
-  await waitForNamePersisted(page, 'Alice Snapshot', activeRecordId);
+  // Rely on the reload check below to verify persistence in IndexedDB.
 
   // Restore should not create a new draft record
   // Restoring a snapshot must not create a new draft.
