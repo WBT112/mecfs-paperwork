@@ -29,6 +29,10 @@ If any step fails: fix it before finishing.
 - If no test runner is configured yet (no `test` script), state that explicitly in the PR description and do not invent a large test suite unless the issue asks for it.
 - Create Unit tests if possible
 - Check if any existing tests need to be changed
+- Minimum test coverage expectations:
+  - P0 bugfix: add at least one regression test (unit or integration) and run the relevant manual checklist.
+  - P0/P1 feature: add at least one integration test for the primary user flow plus unit tests for pure logic/validators.
+  - Docs-only changes: no tests required, but CI must remain green.
 
 ### When changing behavior
 - Add or update unit tests for new/changed business logic (e.g., mapping, validation, export, storage).
