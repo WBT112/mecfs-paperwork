@@ -8,6 +8,7 @@
   },
   "formpackListTitle": "Formpacks",
   "formpackListDescription": "Available form bundles ready for use.",
+  "formpackListEmpty": "No formpacks are available yet.",
   "formpackDetailTitle": "Formpack details",
   "formpackLoading": "Loading formpack data...",
   "formpackListErrorFallback": "Unable to load formpacks right now.",

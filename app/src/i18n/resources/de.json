@@ -8,6 +8,7 @@
   },
   "formpackListTitle": "Formpacks",
   "formpackListDescription": "Verfügbare Formpakete für die Nutzung.",
+  "formpackListEmpty": "Es sind noch keine Formpacks verfügbar.",
   "formpackDetailTitle": "Formpack-Details",
   "formpackLoading": "Formpack-Daten werden geladen...",
   "formpackListErrorFallback": "Formpacks konnten gerade nicht geladen werden.",

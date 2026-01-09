@@ -113,34 +113,38 @@ export default function FormpackListPage() {
           <p className="app__subtitle">{t('formpackListDescription')}</p>
         </div>
       </div>
-      <div className="formpack-list">
-        {manifests.map((manifest) => {
-          const namespace = `formpack:${manifest.id}`;
-          const title = t(manifest.titleKey, {
-            ns: namespace,
-            defaultValue: manifest.titleKey,
-          });
-          const description = t(manifest.descriptionKey, {
-            ns: namespace,
-            defaultValue: manifest.descriptionKey,
-          });
+      {manifests.length > 0 ? (
+        <div className="formpack-list">
+          {manifests.map((manifest) => {
+            const namespace = `formpack:${manifest.id}`;
+            const title = t(manifest.titleKey, {
+              ns: namespace,
+              defaultValue: manifest.titleKey,
+            });
+            const description = t(manifest.descriptionKey, {
+              ns: namespace,
+              defaultValue: manifest.descriptionKey,
+            });
 
-          return (
-            <article key={manifest.id} className="formpack-card">
-              <div>
-                <h3>{title}</h3>
-                <p className="formpack-card__description">{description}</p>
-              </div>
-              <Link
-                className="formpack-card__link"
-                to={`/formpacks/${manifest.id}`}
-              >
-                {t('formpackOpen')}
-              </Link>
-            </article>
-          );
-        })}
-      </div>
+            return (
+              <article key={manifest.id} className="formpack-card">
+                <div>
+                  <h3>{title}</h3>
+                  <p className="formpack-card__description">{description}</p>
+                </div>
+                <Link
+                  className="formpack-card__link"
+                  to={`/formpacks/${manifest.id}`}
+                >
+                  {t('formpackOpen')}
+                </Link>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="formpack-records__empty">{t('formpackListEmpty')}</p>
+      )}
     </section>
   );
 }

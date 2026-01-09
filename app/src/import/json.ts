@@ -176,9 +176,9 @@ const applySchemaDefaults = (
       continue;
     }
 
-    const propertySchema = (
-      schema.properties as Record<string, unknown>
-    )[key] as RJSFSchema | boolean | undefined;
+    const propertySchema = (schema.properties as Record<string, unknown>)[
+      key
+    ] as RJSFSchema | boolean | undefined;
     const defaultValue = resolveSchemaDefaultValue(propertySchema);
     if (defaultValue !== undefined) {
       normalized[key] = defaultValue;
