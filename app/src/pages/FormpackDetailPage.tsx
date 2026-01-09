@@ -288,6 +288,20 @@ export default function FormpackDetailPage() {
     [activeRecordStorageKey],
   );
 
+  const title = manifest
+    ? t(manifest.titleKey, {
+        ns: namespace,
+        defaultValue: manifest.titleKey,
+      })
+    : '';
+
+  const description = manifest
+    ? t(manifest.descriptionKey, {
+        ns: namespace,
+        defaultValue: manifest.descriptionKey,
+      })
+    : '';
+
   useEffect(() => {
     if (!formpackId) {
       hasRestoredRecordRef.current = null;
@@ -313,8 +327,18 @@ export default function FormpackDetailPage() {
       if (records.length) {
         setActiveRecord(records[0]);
         persistActiveRecordId(records[0].id);
-      } else {
+        return;
+      }
+
+      if (!manifest || storageError === 'unavailable') {
         setActiveRecord(null);
+        return;
+      }
+
+      const recordTitle = title || t('formpackRecordUntitled');
+      const record = await createRecord(locale, formData, recordTitle);
+      if (record) {
+        persistActiveRecordId(record.id);
       }
     };
 
@@ -322,26 +346,19 @@ export default function FormpackDetailPage() {
   }, [
     formpackId,
     isRecordsLoading,
+    createRecord,
+    formData,
+    locale,
     loadRecord,
+    manifest,
     persistActiveRecordId,
     readActiveRecordId,
     records,
     setActiveRecord,
+    storageError,
+    t,
+    title,
   ]);
-
-  const title = manifest
-    ? t(manifest.titleKey, {
-        ns: namespace,
-        defaultValue: manifest.titleKey,
-      })
-    : '';
-
-  const description = manifest
-    ? t(manifest.descriptionKey, {
-        ns: namespace,
-        defaultValue: manifest.descriptionKey,
-      })
-    : '';
 
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = (event) => {
     const nextData = event.formData as FormDataState;
