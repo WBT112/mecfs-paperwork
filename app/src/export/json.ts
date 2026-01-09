@@ -16,7 +16,13 @@ export type JsonExportRevision = {
 export type JsonExportPayload = {
   app: { id: string; version: string };
   formpack: { id: string; version: string };
-  record: { id: string; name?: string; updatedAt: string };
+  record: {
+    id: string;
+    name?: string;
+    updatedAt: string;
+    locale: SupportedLocale;
+    data: Record<string, unknown>;
+  };
   locale: SupportedLocale;
   exportedAt: string;
   data: Record<string, unknown>;
@@ -55,6 +61,8 @@ export const buildJsonExportPayload = (
       id: options.record.id,
       name: options.record.title,
       updatedAt: options.record.updatedAt,
+      locale: options.locale,
+      data: options.data,
     },
     locale: options.locale,
     exportedAt,

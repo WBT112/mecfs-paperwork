@@ -102,6 +102,7 @@ test('exports JSON with record metadata and form data', async ({ page }) => {
   await clickNewDraftIfNeeded(page);
 
   await page.locator('#root_person_name').fill('Test User');
+  const activeIdBeforeImport = await waitForActiveRecordId(page);
 
   // Trigger the JSON export for the active draft.
   const downloadPromise = page.waitForEvent('download');
@@ -140,4 +141,23 @@ test('exports JSON with record metadata and form data', async ({ page }) => {
   });
   expect(new Date(payload.exportedAt).toISOString()).toBe(payload.exportedAt);
   expect(payload.revisions).toBeUndefined();
+
+  // Import the exported payload to verify the round-trip flow stays functional.
+  await page.locator('#formpack-import-file').setInputFiles(filePath as string);
+  const importButton = page
+    .getByRole('button', { name: /JSON importieren|Import JSON/i })
+    .first();
+  await expect(importButton).toBeEnabled();
+  await importButton.click();
+
+  const importSuccess = page.locator('.formpack-import__success');
+  await expect(importSuccess).toHaveText(/Import abgeschlossen|Import complete/i);
+
+  await expect
+    .poll(async () => getActiveRecordId(page), {
+      timeout: 10_000,
+      intervals: [250, 500, 1000],
+    })
+    .not.toBe(activeIdBeforeImport);
+  await expect(page.locator('#root_person_name')).toHaveValue('Test User');
 });

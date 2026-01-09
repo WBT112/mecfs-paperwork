@@ -144,11 +144,15 @@ const readRecordById = async (
   );
 };
 
-const waitForNamePersisted = async (page: Page, expectedName: string) => {
+const waitForNamePersisted = async (
+  page: Page,
+  expectedName: string,
+  recordId?: string,
+) => {
   await expect
     .poll(
       async () => {
-        const activeId = await getActiveRecordId(page);
+        const activeId = recordId ?? (await getActiveRecordId(page));
         if (!activeId) return '';
         const record = await readRecordById(page, activeId);
         return record?.data?.person?.name ?? '';
@@ -259,10 +263,11 @@ test('snapshot restore restores data and does not create extra records', async (
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();
+  const activeRecordId = await waitForActiveRecordId(page);
 
   // 1) Set initial value and wait for persistence
   await nameInput.fill('Alice Snapshot');
-  await waitForNamePersisted(page, 'Alice Snapshot');
+  await waitForNamePersisted(page, 'Alice Snapshot', activeRecordId);
 
   // Snapshot operations must stay within the existing draft.
   const recordsCountBaseline = await countObjectStoreRecords(page);
@@ -273,13 +278,13 @@ test('snapshot restore restores data and does not create extra records', async (
 
   // 3) Change value and persist
   await nameInput.fill('Bob After Change');
-  await waitForNamePersisted(page, 'Bob After Change');
+  await waitForNamePersisted(page, 'Bob After Change', activeRecordId);
 
   // 4) Restore snapshot and verify value + persistence
   await restoreFirstSnapshot(page);
 
   await expect(nameInput).toHaveValue('Alice Snapshot', { timeout: 10_000 });
-  await waitForNamePersisted(page, 'Alice Snapshot');
+  await waitForNamePersisted(page, 'Alice Snapshot', activeRecordId);
 
   // Restore should not create a new draft record
   // Restoring a snapshot must not create a new draft.

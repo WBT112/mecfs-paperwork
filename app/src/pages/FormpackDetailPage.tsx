@@ -36,8 +36,8 @@ import {
   useRecords,
   useSnapshots,
 } from '../storage/hooks';
-import { createSnapshot as createSnapshotEntry } from '../storage/snapshots';
-import type { ComponentType } from 'react';
+import { importRecordWithSnapshots } from '../storage/import';
+import type { ChangeEvent, ComponentType } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
 
@@ -104,13 +104,14 @@ const buildErrorMessage = (
  */
 export default function FormpackDetailPage() {
   const { t, i18n } = useTranslation();
-  const { locale } = useLocale();
+  const { locale, setLocale } = useLocale();
   const { id } = useParams();
   const [manifest, setManifest] = useState<FormpackManifest | null>(null);
   const [schema, setSchema] = useState<RJSFSchema | null>(null);
   const [uiSchema, setUiSchema] = useState<UiSchema | null>(null);
   const [formData, setFormData] = useState<FormDataState>({});
   const [importJson, setImportJson] = useState('');
+  const [importFileName, setImportFileName] = useState<string | null>(null);
   const [importMode, setImportMode] = useState<'new' | 'overwrite'>('new');
   const [importIncludeRevisions, setImportIncludeRevisions] = useState(true);
   const [importError, setImportError] = useState<string | null>(null);
@@ -122,6 +123,7 @@ export default function FormpackDetailPage() {
     null,
   );
   const [isLoading, setIsLoading] = useState(true);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
   const hasRestoredRecordRef = useRef<string | null>(null);
   const formpackId = manifest?.id ?? null;
@@ -537,14 +539,20 @@ export default function FormpackDetailPage() {
     setImportSuccess(null);
     setIsImporting(true);
 
-    const result = validateJsonImport(importJson, schema, manifest.id);
-    if (result.error) {
-      setImportError(buildImportErrorMessage(result.error));
-      setIsImporting(false);
-      return;
-    }
-
     try {
+      let result;
+      try {
+        result = validateJsonImport(importJson, schema, manifest.id);
+      } catch {
+        setImportError(t('importInvalidPayload'));
+        return;
+      }
+
+      if (result.error) {
+        setImportError(buildImportErrorMessage(result.error));
+        return;
+      }
+
       const payload = result.payload;
       let targetRecordId: string | null = null;
 
@@ -559,25 +567,17 @@ export default function FormpackDetailPage() {
           return;
         }
 
-        const updates: {
-          data: Record<string, unknown>;
-          locale: typeof payload.record.locale;
-          title?: string;
-        } = {
+        const updated = await importRecordWithSnapshots({
+          formpackId: manifest.id,
+          mode: 'overwrite',
+          recordId: activeRecord.id,
           data: payload.record.data,
           locale: payload.record.locale,
-        };
+          title: payload.record.title ?? activeRecord.title,
+          revisions: importIncludeRevisions ? payload.revisions : [],
+        });
 
-        if (payload.record.title) {
-          updates.title = payload.record.title;
-        }
-
-        const updated = await updateActiveRecord(activeRecord.id, updates);
-        if (!updated) {
-          setImportError(t('importStorageError'));
-          return;
-        }
-
+        applyRecordUpdate(updated);
         markAsSaved(updated.data);
         setFormData(updated.data);
         persistActiveRecordId(updated.id);
@@ -585,16 +585,16 @@ export default function FormpackDetailPage() {
       } else {
         const recordTitle =
           payload.record.title ?? title ?? t('formpackRecordUntitled');
-        const record = await createRecord(
-          payload.record.locale,
-          payload.record.data,
-          recordTitle,
-        );
-        if (!record) {
-          setImportError(t('importStorageError'));
-          return;
-        }
+        const record = await importRecordWithSnapshots({
+          formpackId: manifest.id,
+          mode: 'new',
+          data: payload.record.data,
+          locale: payload.record.locale,
+          title: recordTitle,
+          revisions: importIncludeRevisions ? payload.revisions : [],
+        });
 
+        applyRecordUpdate(record);
         markAsSaved(record.data);
         setFormData(record.data);
         persistActiveRecordId(record.id);
@@ -607,23 +607,18 @@ export default function FormpackDetailPage() {
         payload.revisions &&
         payload.revisions.length
       ) {
-        await Promise.all(
-          payload.revisions.map((revision) =>
-            createSnapshotEntry(
-              targetRecordId,
-              revision.data,
-              revision.label,
-              revision.createdAt,
-            ),
-          ),
-        );
         if (importMode === 'overwrite') {
           await refreshSnapshots();
         }
       }
 
+      await setLocale(payload.record.locale);
       setImportSuccess(t('importSuccess'));
       setImportJson('');
+      setImportFileName(null);
+      if (importInputRef.current) {
+        importInputRef.current.value = '';
+      }
     } catch {
       setImportError(t('importStorageError'));
     } finally {
@@ -632,7 +627,7 @@ export default function FormpackDetailPage() {
   }, [
     activeRecord,
     buildImportErrorMessage,
-    createRecord,
+    applyRecordUpdate,
     importIncludeRevisions,
     importJson,
     importMode,
@@ -641,10 +636,35 @@ export default function FormpackDetailPage() {
     persistActiveRecordId,
     refreshSnapshots,
     schema,
+    setLocale,
     t,
     title,
-    updateActiveRecord,
   ]);
+
+  const handleImportFileChange = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] ?? null;
+      setImportError(null);
+      setImportSuccess(null);
+
+      if (!file) {
+        setImportJson('');
+        setImportFileName(null);
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        setImportJson(text);
+        setImportFileName(file.name);
+      } catch {
+        setImportJson('');
+        setImportFileName(file.name);
+        setImportError(t('importInvalidJson'));
+      }
+    },
+    [t],
+  );
   const handleExportJson = useCallback(() => {
     if (!manifest || !activeRecord) {
       return;
@@ -850,20 +870,22 @@ export default function FormpackDetailPage() {
             <h3>{t('formpackImportHeading')}</h3>
             <p className="formpack-import__hint">{t('formpackImportHint')}</p>
             <div className="formpack-import__field">
-              <label htmlFor="formpack-import-json">
+              <label htmlFor="formpack-import-file">
                 {t('formpackImportLabel')}
               </label>
-              <textarea
-                id="formpack-import-json"
-                className="formpack-import__textarea"
-                rows={6}
-                value={importJson}
-                onChange={(event) => {
-                  setImportJson(event.target.value);
-                  setImportError(null);
-                  setImportSuccess(null);
-                }}
+              <input
+                ref={importInputRef}
+                id="formpack-import-file"
+                className="formpack-import__file"
+                type="file"
+                accept="application/json,.json"
+                onChange={handleImportFileChange}
               />
+              {importFileName && (
+                <p className="formpack-import__file-name">
+                  {t('formpackImportFileName', { name: importFileName })}
+                </p>
+              )}
             </div>
             <fieldset className="formpack-import__options">
               <legend>{t('formpackImportModeLabel')}</legend>
