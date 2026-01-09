@@ -36,6 +36,8 @@ type ExportRecordMetadata = {
   id?: string;
   name?: string;
   updatedAt?: string;
+  locale?: SupportedLocale;
+  data?: Record<string, unknown>;
 };
 
 type ExportRevisionPayload = {
@@ -194,12 +196,20 @@ const normalizeExportPayload = (
     return { payload: null, error: 'formpack_mismatch' };
   }
 
-  const data = payload.data;
-  if (data === undefined || data === null) {
+  let recordData: unknown = payload.data;
+  if (recordData === undefined && isRecord(record) && 'data' in record) {
+    recordData = record.data;
+  }
+
+  if (recordData === undefined || recordData === null) {
     return { payload: null, error: 'invalid_payload' };
   }
 
-  const localeValue = payload.locale;
+  let localeValue: unknown = payload.locale;
+  if (localeValue === undefined && isRecord(record) && 'locale' in record) {
+    localeValue = record.locale;
+  }
+
   if (typeof localeValue !== 'string' || !isSupportedLocale(localeValue)) {
     return { payload: null, error: 'unsupported_locale' };
   }
@@ -225,7 +235,7 @@ const normalizeExportPayload = (
     return { payload: null, error: 'invalid_revisions' };
   }
 
-  const isValid = validateSchema(schema, data);
+  const isValid = validateSchema(schema, recordData);
   if (!isValid) {
     return { payload: null, error: 'schema_mismatch' };
   }
@@ -240,7 +250,7 @@ const normalizeExportPayload = (
     record: {
       title: recordTitle,
       locale: localeValue,
-      data: data as Record<string, unknown>,
+      data: recordData as Record<string, unknown>,
     },
     revisions,
   });
