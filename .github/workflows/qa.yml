@@ -32,6 +32,10 @@ jobs:
         working-directory: app
         run: npm run lint
 
+      - name: Format (write)
+        working-directory: app
+        run: npm run format
+
       - name: Format check
         working-directory: app
         run: npm run format:check
