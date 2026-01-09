@@ -64,7 +64,7 @@ test('exports JSON with record metadata and form data', async ({ page }) => {
     formpack: { id: string; version: string };
     record: { id: string; name?: string; updatedAt: string };
     locale: string;
-    exportedAt: string;
+    createdAt: string;
     data: Record<string, unknown>;
     revisions?: unknown[];
   };
@@ -79,6 +79,6 @@ test('exports JSON with record metadata and form data', async ({ page }) => {
       name: 'Test User',
     },
   });
-  expect(new Date(payload.exportedAt).toISOString()).toBe(payload.exportedAt);
+  expect(new Date(payload.createdAt).toISOString()).toBe(payload.createdAt);
   expect(payload.revisions).toBeUndefined();
 });

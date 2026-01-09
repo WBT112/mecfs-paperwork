@@ -46,10 +46,17 @@ const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
 };
 
 const getActiveRecordId = async (page: Page) => {
-  return page.evaluate((key) => window.localStorage.getItem(key), ACTIVE_RECORD_KEY);
+  return page.evaluate(
+    (key) => window.localStorage.getItem(key),
+    ACTIVE_RECORD_KEY,
+  );
 };
 
-const readRecordById = async (page: Page, id: string, options: DbOptions = DB) => {
+const readRecordById = async (
+  page: Page,
+  id: string,
+  options: DbOptions = DB,
+) => {
   return page.evaluate(
     async ({ dbName, storeName, id }) => {
       const openDb = () =>
@@ -75,7 +82,7 @@ const readRecordById = async (page: Page, id: string, options: DbOptions = DB) =
         db.close();
       }
     },
-    { ...options, id }
+    { ...options, id },
   );
 };
 
@@ -88,7 +95,7 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
         const record = await readRecordById(page, activeId);
         return record?.data?.person?.name ?? '';
       },
-      { timeout: 15_000, intervals: [250, 500, 1000] }
+      { timeout: 15_000, intervals: [250, 500, 1000] },
     )
     .toBe(expectedName);
 };
@@ -99,14 +106,17 @@ const ensureDraftExists = async (page: Page) => {
 
   // Preferred: role-based, locale-tolerant selector
   const newDraftBtn = page.getByRole('button', {
-    name: /new\s*draft|neuer\s*entwurf/i
+    name: /new\s*draft|neuer\s*entwurf/i,
   });
 
   if (await newDraftBtn.count()) {
     await newDraftBtn.first().click();
   } else {
     // Fallback: keep your existing layout class hook
-    await page.locator('.formpack-records__actions .app__button').first().click();
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
   }
 
   await expect(nameInput).toBeVisible();
@@ -114,13 +124,16 @@ const ensureDraftExists = async (page: Page) => {
 
 const createSnapshot = async (page: Page) => {
   const createBtn = page.getByRole('button', {
-    name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i
+    name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i,
   });
 
   if (await createBtn.count()) {
     await createBtn.first().click();
   } else {
-    await page.locator('.formpack-snapshots__actions .app__button').first().click();
+    await page
+      .locator('.formpack-snapshots__actions .app__button')
+      .first()
+      .click();
   }
 
   const items = page.locator('.formpack-snapshots__item');
@@ -133,7 +146,7 @@ const restoreFirstSnapshot = async (page: Page) => {
 
   // Try to click the restore action explicitly (locale-tolerant).
   const restoreBtn = snapshotItem.getByRole('button', {
-    name: /restore|wiederherstellen|laden/i
+    name: /restore|wiederherstellen|laden/i,
   });
 
   if (await restoreBtn.count()) {
@@ -144,11 +157,14 @@ const restoreFirstSnapshot = async (page: Page) => {
   // Fallback: in many UIs the restore button is the last action (delete is often first).
   const buttons = snapshotItem.locator('button');
   const btnCount = await buttons.count();
-  if (btnCount === 0) throw new Error('No action buttons found in snapshot item.');
+  if (btnCount === 0)
+    throw new Error('No action buttons found in snapshot item.');
   await buttons.nth(btnCount - 1).click();
 };
 
-test('snapshot restore restores data and does not create extra records', async ({ page }) => {
+test('snapshot restore restores data and does not create extra records', async ({
+  page,
+}) => {
   await page.goto('/');
   await page.evaluate(() => {
     window.localStorage.clear();

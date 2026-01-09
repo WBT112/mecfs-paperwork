@@ -18,7 +18,7 @@ export type JsonExportPayload = {
   formpack: { id: string; version: string };
   record: { id: string; name?: string; updatedAt: string };
   locale: SupportedLocale;
-  exportedAt: string;
+  createdAt: string;
   data: Record<string, unknown>;
   revisions?: JsonExportRevision[];
 };
@@ -29,7 +29,7 @@ export type JsonExportOptions = {
   data: Record<string, unknown>;
   locale: SupportedLocale;
   revisions?: SnapshotEntry[];
-  exportedAt?: string;
+  createdAt?: string;
 };
 
 /**
@@ -38,7 +38,7 @@ export type JsonExportOptions = {
 export const buildJsonExportPayload = (
   options: JsonExportOptions,
 ): JsonExportPayload => {
-  const exportedAt = options.exportedAt ?? new Date().toISOString();
+  const createdAt = options.createdAt ?? new Date().toISOString();
   const revisions = options.revisions?.length
     ? options.revisions.map((revision) => ({
         id: revision.id,
@@ -57,7 +57,7 @@ export const buildJsonExportPayload = (
       updatedAt: options.record.updatedAt,
     },
     locale: options.locale,
-    exportedAt,
+    createdAt,
     data: options.data,
     ...(revisions ? { revisions } : {}),
   };
@@ -86,7 +86,7 @@ export const buildJsonExportFilename = (payload: JsonExportPayload): string => {
   const recordName = payload.record.name
     ? sanitizeFilenameSegment(payload.record.name)
     : payload.record.id;
-  const date = formatExportDate(payload.exportedAt);
+  const date = formatExportDate(payload.createdAt);
   return `${payload.formpack.id}_${recordName}_${date}_${payload.locale}.json`;
 };
 

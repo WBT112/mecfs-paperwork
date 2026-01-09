@@ -216,15 +216,20 @@ body {
   margin-bottom: 0.75rem;
 }
 
-.formpack-import__textarea {
+.formpack-import__file {
   width: 100%;
-  min-height: 140px;
-  resize: vertical;
   padding: 0.6rem;
   border-radius: 8px;
   border: 1px solid #d1d5db;
   font-family: inherit;
   font-size: 0.95rem;
+  background-color: #ffffff;
+}
+
+.formpack-import__file-name {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
 }
 
 .formpack-import__options {
