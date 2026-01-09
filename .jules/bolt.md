@@ -1,0 +1,3 @@
+## 2024-08-05 - Memoized List Item to Prevent Re-renders
+**Learning:** In `FormpackListPage.tsx`, the entire list of formpacks was re-rendering whenever the parent component's state updated, even if the list data itself was unchanged. Extracting the list item into a separate component and wrapping it with `React.memo` prevents these unnecessary re-renders. This is a common and effective pattern for optimizing list performance in React.
+**Action:** When profiling React components that render lists, I will look for opportunities to memoize list items to avoid performance degradation, especially as the list size grows.

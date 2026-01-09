@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import FormpackCard from '../components/FormpackCard';
 import { loadFormpackI18n } from '../i18n/formpack';
 import { useLocale } from '../i18n/useLocale';
 import { listFormpacks } from '../formpacks/loader';
@@ -114,32 +114,9 @@ export default function FormpackListPage() {
         </div>
       </div>
       <div className="formpack-list">
-        {manifests.map((manifest) => {
-          const namespace = `formpack:${manifest.id}`;
-          const title = t(manifest.titleKey, {
-            ns: namespace,
-            defaultValue: manifest.titleKey,
-          });
-          const description = t(manifest.descriptionKey, {
-            ns: namespace,
-            defaultValue: manifest.descriptionKey,
-          });
-
-          return (
-            <article key={manifest.id} className="formpack-card">
-              <div>
-                <h3>{title}</h3>
-                <p className="formpack-card__description">{description}</p>
-              </div>
-              <Link
-                className="formpack-card__link"
-                to={`/formpacks/${manifest.id}`}
-              >
-                {t('formpackOpen')}
-              </Link>
-            </article>
-          );
-        })}
+        {manifests.map((manifest) => (
+          <FormpackCard key={manifest.id} manifest={manifest} />
+        ))}
       </div>
     </section>
   );
