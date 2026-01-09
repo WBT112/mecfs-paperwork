@@ -1,18 +1,20 @@
 import { expect, test, type Page } from '@playwright/test';
 
-type DbCountOptions = {
+type DbOptions = {
   dbName: string;
   storeName: string;
 };
 
-const DEFAULT_DB: DbCountOptions = {
+const FORM_PACK_ID = 'notfallpass';
+const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
+
+const DB: DbOptions = {
   dbName: 'mecfs-paperwork',
-  storeName: 'records',
+  storeName: 'records'
 };
 
 const deleteDatabase = async (page: Page, dbName: string) => {
   await page.evaluate(async (name) => {
-    // Best-effort cleanup; failures should not make the test flaky.
     await new Promise<void>((resolve) => {
       const req = indexedDB.deleteDatabase(name);
       req.onsuccess = () => resolve();
@@ -22,10 +24,7 @@ const deleteDatabase = async (page: Page, dbName: string) => {
   }, dbName);
 };
 
-const countObjectStoreRecords = async (
-  page: Page,
-  options: DbCountOptions = DEFAULT_DB,
-) => {
+const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
   return page.evaluate(async ({ dbName, storeName }) => {
     const openDb = () =>
       new Promise<IDBDatabase>((resolve, reject) => {
@@ -38,9 +37,7 @@ const countObjectStoreRecords = async (
     const db = await openDb();
 
     try {
-      if (!db.objectStoreNames.contains(storeName)) {
-        return 0;
-      }
+      if (!db.objectStoreNames.contains(storeName)) return 0;
 
       return await new Promise<number>((resolve, reject) => {
         const tx = db.transaction(storeName, 'readonly');
@@ -55,50 +52,99 @@ const countObjectStoreRecords = async (
   }, options);
 };
 
-const ensureActiveDraft = async (page: Page) => {
-  // Wait until the form container is present; formpacks load async.
-  await page.waitForSelector('.formpack-detail__form', { state: 'visible' });
-  // Give the app a brief moment to auto-restore/create the initial record.
-  await page.waitForTimeout(300);
+const getActiveRecordId = async (page: Page) => {
+  return page.evaluate((key) => window.localStorage.getItem(key), ACTIVE_RECORD_KEY);
+};
 
-  // If the form is not yet rendered (no active record), create a new draft.
+const readRecordById = async (page: Page, id: string, options: DbOptions = DB) => {
+  return page.evaluate(async ({ dbName, storeName, id }) => {
+    const openDb = () =>
+      new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open(dbName);
+        request.onerror = () => reject(request.error);
+        request.onupgradeneeded = () => resolve(request.result);
+        request.onsuccess = () => resolve(request.result);
+      });
+
+    const db = await openDb();
+
+    try {
+      if (!db.objectStoreNames.contains(storeName)) return null;
+
+      return await new Promise<any>((resolve, reject) => {
+        const tx = db.transaction(storeName, 'readonly');
+        const store = tx.objectStore(storeName);
+        const getReq = store.get(id);
+        getReq.onerror = () => reject(getReq.error);
+        getReq.onsuccess = () => resolve(getReq.result ?? null);
+      });
+    } finally {
+      db.close();
+    }
+  }, { ...options, id });
+};
+
+const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
-  if (await nameInput.count()) {
-    return;
+  if (await nameInput.count()) return;
+
+  const newDraftButton = page.locator('.formpack-records__actions .app__button').first();
+  if (await newDraftButton.count()) {
+    await newDraftButton.click();
+  } else {
+    // Fallback (if CSS changes): click the first button on the page.
+    await page.getByRole('button').first().click();
   }
 
-  // The “New draft” button is rendered inside the records section.
-  // We intentionally avoid text-based selectors to keep tests locale-independent.
-  await page.locator('.formpack-records__actions .app__button').first().click();
   await expect(nameInput).toBeVisible();
 };
 
+const waitForNamePersisted = async (page: Page, expectedName: string) => {
+  await expect
+    .poll(
+      async () => {
+        const activeId = await getActiveRecordId(page);
+        if (!activeId) return '';
+
+        const record = await readRecordById(page, activeId);
+        return record?.data?.person?.name ?? '';
+      },
+      { timeout: 15_000, intervals: [250, 500, 1000] }
+    )
+    .toBe(expectedName);
+};
+
 test('autosave persists and reload does not create extra records', async ({ page }) => {
-  // Start from a clean slate.
+  // Clean slate: no persisted state
   await page.goto('/');
   await page.evaluate(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
   });
-  await deleteDatabase(page, DEFAULT_DB.dbName);
+  await deleteDatabase(page, DB.dbName);
 
-  await page.goto('/formpacks/notfallpass');
-  await ensureActiveDraft(page);
+  await page.goto(`/formpacks/${FORM_PACK_ID}`);
+
+  // Ensure we have an editable form (active record)
+  await clickNewDraftIfNeeded(page);
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();
 
+  // Edit form
   await nameInput.fill('Test User');
 
-  // Wait for debounce (defaults to 1200ms) + a small buffer.
-  await page.waitForTimeout(1700);
+  // Wait until the value is actually persisted in IndexedDB (no flaky sleeps)
+  await waitForNamePersisted(page, 'Test User');
 
   const countBefore = await countObjectStoreRecords(page);
   expect(countBefore).toBeGreaterThan(0);
 
+  // Reload and verify no new record was created and value is restored
   await page.reload();
 
   const nameInputAfter = page.locator('#root_person_name');
+  await expect(nameInputAfter).toBeVisible();
   await expect(nameInputAfter).toHaveValue('Test User');
 
   const countAfter = await countObjectStoreRecords(page);
