@@ -13,3 +13,7 @@ yarn-error.log*
 
 # OS files
 .DS_Store
+
+# Playwright
+playwright-report/
+test-results/
