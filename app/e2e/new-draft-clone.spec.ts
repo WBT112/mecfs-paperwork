@@ -20,15 +20,37 @@ const deleteDatabase = async (page: Page, dbName: string) => {
 
 const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
   return page.evaluate(async ({ dbName, storeName }) => {
-    const openDb = () =>
-      new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(dbName);
-        request.onerror = () => reject(request.error);
-        request.onupgradeneeded = () => resolve(request.result);
-        request.onsuccess = () => resolve(request.result);
-      });
+    const openExistingDb = async () => {
+      if (indexedDB.databases) {
+        const databases = await indexedDB.databases();
+        if (!databases.some((db) => db.name === dbName)) {
+          return null;
+        }
+      }
 
-    const db = await openDb();
+      return await new Promise<IDBDatabase | null>((resolve) => {
+        let aborted = false;
+        const request = indexedDB.open(dbName);
+        request.onupgradeneeded = () => {
+          aborted = true;
+          request.transaction?.abort();
+        };
+        request.onsuccess = () => {
+          const db = request.result;
+          if (aborted) {
+            db.close();
+            resolve(null);
+            return;
+          }
+          resolve(db);
+        };
+        request.onerror = () => resolve(null);
+        request.onblocked = () => resolve(null);
+      });
+    };
+
+    const db = await openExistingDb();
+    if (!db) return 0;
     try {
       if (!db.objectStoreNames.contains(storeName)) return 0;
 
@@ -52,6 +74,35 @@ const getActiveRecordId = async (page: Page) => {
   );
 };
 
+const waitForActiveRecordId = async (page: Page) => {
+  let activeId = '';
+  await expect
+    .poll(
+      async () => {
+        activeId = (await getActiveRecordId(page)) ?? '';
+        return activeId;
+      },
+      { timeout: 10_000, intervals: [250, 500, 1000] },
+    )
+    .not.toBe('');
+  return activeId;
+};
+
+const waitForActiveRecordIdOrNull = async (
+  page: Page,
+  timeoutMs = 3000,
+) => {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    const activeId = await getActiveRecordId(page);
+    if (activeId) {
+      return activeId;
+    }
+    await page.waitForTimeout(100);
+  }
+  return null;
+};
+
 const readRecordById = async (
   page: Page,
   id: string,
@@ -59,15 +110,37 @@ const readRecordById = async (
 ) => {
   return page.evaluate(
     async ({ dbName, storeName, id }) => {
-      const openDb = () =>
-        new Promise<IDBDatabase>((resolve, reject) => {
-          const request = indexedDB.open(dbName);
-          request.onerror = () => reject(request.error);
-          request.onupgradeneeded = () => resolve(request.result);
-          request.onsuccess = () => resolve(request.result);
-        });
+      const openExistingDb = async () => {
+        if (indexedDB.databases) {
+          const databases = await indexedDB.databases();
+          if (!databases.some((db) => db.name === dbName)) {
+            return null;
+          }
+        }
 
-      const db = await openDb();
+        return await new Promise<IDBDatabase | null>((resolve) => {
+          let aborted = false;
+          const request = indexedDB.open(dbName);
+          request.onupgradeneeded = () => {
+            aborted = true;
+            request.transaction?.abort();
+          };
+          request.onsuccess = () => {
+            const db = request.result;
+            if (aborted) {
+              db.close();
+              resolve(null);
+              return;
+            }
+            resolve(db);
+          };
+          request.onerror = () => resolve(null);
+          request.onblocked = () => resolve(null);
+        });
+      };
+
+      const db = await openExistingDb();
+      if (!db) return null;
       try {
         if (!db.objectStoreNames.contains(storeName)) return null;
 
@@ -86,24 +159,83 @@ const readRecordById = async (
   );
 };
 
-const ensureDraftExists = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
-  if (await nameInput.count()) return;
+const waitForRecordListReady = async (page: Page) => {
+  await page.waitForFunction(() => {
+    const empty = document.querySelector('.formpack-records__empty');
+    if (empty) {
+      const text = empty.textContent?.toLowerCase() ?? '';
+      return !text.includes('loading') && !text.includes('geladen');
+    }
+    return true;
+  });
+};
 
-  const newDraftBtn = page.getByRole('button', {
+const clickNewDraftIfNeeded = async (page: Page) => {
+  const nameInput = page.locator('#root_person_name');
+  const existingActiveId = await getActiveRecordId(page);
+  if (existingActiveId) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  await waitForRecordListReady(page);
+
+  const autoDraftId = await waitForActiveRecordIdOrNull(page);
+  if (autoDraftId) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  const existingDraftCount = await page
+    .locator('.formpack-records__item')
+    .count();
+  if (existingDraftCount > 0) {
+    const loadButton = page
+      .locator('.formpack-records__item')
+      .first()
+      .getByRole('button', { name: /load\s*draft|entwurf\s*laden/i });
+    if (await loadButton.count()) {
+      await loadButton.click();
+      await waitForActiveRecordId(page);
+    }
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  const newDraftButton = page.getByRole('button', {
     name: /new\s*draft|neuer\s*entwurf/i,
   });
-
-  if (await newDraftBtn.count()) {
-    await newDraftBtn.first().click();
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
   } else {
+    // Fallback: click the first action button in the drafts area.
     await page
       .locator('.formpack-records__actions .app__button')
       .first()
       .click();
   }
 
+  await waitForActiveRecordId(page);
   await expect(nameInput).toBeVisible();
+};
+
+const clickNewDraft = async (page: Page) => {
+  await waitForRecordListReady(page);
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new\s*draft|neuer\s*entwurf/i,
+  });
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
+  } else {
+    // Fallback: click the first action button in the drafts area.
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
+  }
+
+  await waitForActiveRecordId(page);
 };
 
 const waitForNamePersisted = async (page: Page, expectedName: string) => {
@@ -120,16 +252,6 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
     .toBe(expectedName);
 };
 
-const clickNewDraft = async (page: Page) => {
-  const btn = page.getByRole('button', {
-    name: /new\s*draft|neuer\s*entwurf/i,
-  });
-  if (await btn.count()) {
-    await btn.first().click();
-    return;
-  }
-  await page.locator('.formpack-records__actions .app__button').first().click();
-};
 
 const loadNonActiveDraftViaUI = async (page: Page) => {
   const nonActiveItem = page
@@ -144,6 +266,7 @@ const loadNonActiveDraftViaUI = async (page: Page) => {
     .click();
 };
 
+// Verifies new draft cloning, data isolation, and draft switching without creating extra records.
 test('new draft clones data and old draft remains preserved (first clone + subsequent edits)', async ({
   page,
 }) => {
@@ -158,7 +281,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
   // Required behavior: user must click “New draft” to start
-  await ensureDraftExists(page);
+  await clickNewDraftIfNeeded(page);
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();
@@ -167,6 +290,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   await nameInput.fill('Alice Clone');
   await waitForNamePersisted(page, 'Alice Clone');
 
+  // There should be exactly one draft after the first save.
   const recordCountA = await countObjectStoreRecords(page);
   expect(recordCountA).toBe(1);
 
@@ -176,6 +300,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   // 2) Click “New draft” -> Draft B should be created as a clone
   await clickNewDraft(page);
 
+  // New draft must have a different ID than Draft A.
   await expect
     .poll(async () => getActiveRecordId(page), {
       timeout: 10_000,
@@ -186,6 +311,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   const draftBId = await getActiveRecordId(page);
   expect(draftBId).toBeTruthy();
 
+  // Creating Draft B should add exactly one more record.
   await expect
     .poll(async () => countObjectStoreRecords(page), {
       timeout: 10_000,
@@ -234,6 +360,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
     .toBe(draftBId);
 
   // 7) Ensure no extra records were created by switching
+  // Switching drafts must not create any additional records.
   const recordCountEnd = await countObjectStoreRecords(page);
   expect(recordCountEnd).toBe(recordCountA + 1);
 });

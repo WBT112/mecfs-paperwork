@@ -7,6 +7,7 @@ type DbOptions = {
 };
 
 const FORM_PACK_ID = 'notfallpass';
+const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
 const DB: DbOptions = {
   dbName: 'mecfs-paperwork',
   storeName: 'records',
@@ -23,22 +24,72 @@ const deleteDatabase = async (page: Page, dbName: string) => {
   }, dbName);
 };
 
+const getActiveRecordId = async (page: Page) => {
+  return page.evaluate(
+    (key) => window.localStorage.getItem(key),
+    ACTIVE_RECORD_KEY,
+  );
+};
+
+const waitForActiveRecordId = async (page: Page) => {
+  let activeId = '';
+  await expect
+    .poll(
+      async () => {
+        activeId = (await getActiveRecordId(page)) ?? '';
+        return activeId;
+      },
+      { timeout: 10_000, intervals: [250, 500, 1000] },
+    )
+    .not.toBe('');
+  return activeId;
+};
+
+const waitForRecordListReady = async (page: Page) => {
+  await page.waitForFunction(() => {
+    const empty = document.querySelector('.formpack-records__empty');
+    if (empty) {
+      const text = empty.textContent?.toLowerCase() ?? '';
+      return !text.includes('loading') && !text.includes('geladen');
+    }
+    return true;
+  });
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
-  if (await nameInput.count()) return;
-
-  const newDraftButton = page
-    .locator('.formpack-records__actions .app__button')
-    .first();
-  if (await newDraftButton.count()) {
-    await newDraftButton.click();
-  } else {
-    await page.getByRole('button').first().click();
+  const existingActiveId = await getActiveRecordId(page);
+  if (existingActiveId) {
+    await expect(nameInput).toBeVisible();
+    return;
   }
 
+  await waitForRecordListReady(page);
+
+  const activeIdAfterLoad = await getActiveRecordId(page);
+  if (activeIdAfterLoad) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new\s*draft|neuer\s*entwurf/i,
+  });
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
+  } else {
+    // Fallback: click the first action button in the drafts area.
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
+  }
+
+  await waitForActiveRecordId(page);
   await expect(nameInput).toBeVisible();
 };
 
+// Verifies JSON export downloads a file with expected metadata and form data for the active draft.
 test('exports JSON with record metadata and form data', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => {
@@ -51,13 +102,22 @@ test('exports JSON with record metadata and form data', async ({ page }) => {
   await clickNewDraftIfNeeded(page);
 
   await page.locator('#root_person_name').fill('Test User');
+  const activeIdBeforeImport = await waitForActiveRecordId(page);
 
+  // Trigger the JSON export for the active draft.
   const downloadPromise = page.waitForEvent('download');
-  await page.getByRole('button', { name: /JSON/ }).click();
+  const exportButton = page
+    .getByRole('button', {
+      name: /Entwurf exportieren \(JSON\)|Export record \(JSON\)/i,
+    })
+    .first();
+  await expect(exportButton).toBeEnabled();
+  await exportButton.click();
   const download = await downloadPromise;
   const filePath = await download.path();
   expect(filePath).not.toBeNull();
 
+  // The payload must include metadata and the form data we entered.
   const contents = await readFile(filePath as string, 'utf-8');
   const payload = JSON.parse(contents) as {
     app: { id: string; version: string };
@@ -81,4 +141,23 @@ test('exports JSON with record metadata and form data', async ({ page }) => {
   });
   expect(new Date(payload.exportedAt).toISOString()).toBe(payload.exportedAt);
   expect(payload.revisions).toBeUndefined();
+
+  // Import the exported payload to verify the round-trip flow stays functional.
+  await page.locator('#formpack-import-file').setInputFiles(filePath as string);
+  const importButton = page
+    .getByRole('button', { name: /JSON importieren|Import JSON/i })
+    .first();
+  await expect(importButton).toBeEnabled();
+  await importButton.click();
+
+  const importSuccess = page.locator('.formpack-import__success');
+  await expect(importSuccess).toHaveText(/Import abgeschlossen|Import complete/i);
+
+  await expect
+    .poll(async () => getActiveRecordId(page), {
+      timeout: 10_000,
+      intervals: [250, 500, 1000],
+    })
+    .not.toBe(activeIdBeforeImport);
+  await expect(page.locator('#root_person_name')).toHaveValue('Test User');
 });

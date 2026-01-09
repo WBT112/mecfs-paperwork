@@ -20,15 +20,37 @@ const deleteDatabase = async (page: Page, dbName: string) => {
 
 const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
   return page.evaluate(async ({ dbName, storeName }) => {
-    const openDb = () =>
-      new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open(dbName);
-        request.onerror = () => reject(request.error);
-        request.onupgradeneeded = () => resolve(request.result);
-        request.onsuccess = () => resolve(request.result);
-      });
+    const openExistingDb = async () => {
+      if (indexedDB.databases) {
+        const databases = await indexedDB.databases();
+        if (!databases.some((db) => db.name === dbName)) {
+          return null;
+        }
+      }
 
-    const db = await openDb();
+      return await new Promise<IDBDatabase | null>((resolve) => {
+        let aborted = false;
+        const request = indexedDB.open(dbName);
+        request.onupgradeneeded = () => {
+          aborted = true;
+          request.transaction?.abort();
+        };
+        request.onsuccess = () => {
+          const db = request.result;
+          if (aborted) {
+            db.close();
+            resolve(null);
+            return;
+          }
+          resolve(db);
+        };
+        request.onerror = () => resolve(null);
+        request.onblocked = () => resolve(null);
+      });
+    };
+
+    const db = await openExistingDb();
+    if (!db) return 0;
     try {
       if (!db.objectStoreNames.contains(storeName)) return 0;
 
@@ -52,6 +74,20 @@ const getActiveRecordId = async (page: Page) => {
   );
 };
 
+const waitForActiveRecordId = async (page: Page) => {
+  let activeId = '';
+  await expect
+    .poll(
+      async () => {
+        activeId = (await getActiveRecordId(page)) ?? '';
+        return activeId;
+      },
+      { timeout: 10_000, intervals: [250, 500, 1000] },
+    )
+    .not.toBe('');
+  return activeId;
+};
+
 const readRecordById = async (
   page: Page,
   id: string,
@@ -59,15 +95,37 @@ const readRecordById = async (
 ) => {
   return page.evaluate(
     async ({ dbName, storeName, id }) => {
-      const openDb = () =>
-        new Promise<IDBDatabase>((resolve, reject) => {
-          const request = indexedDB.open(dbName);
-          request.onerror = () => reject(request.error);
-          request.onupgradeneeded = () => resolve(request.result);
-          request.onsuccess = () => resolve(request.result);
-        });
+      const openExistingDb = async () => {
+        if (indexedDB.databases) {
+          const databases = await indexedDB.databases();
+          if (!databases.some((db) => db.name === dbName)) {
+            return null;
+          }
+        }
 
-      const db = await openDb();
+        return await new Promise<IDBDatabase | null>((resolve) => {
+          let aborted = false;
+          const request = indexedDB.open(dbName);
+          request.onupgradeneeded = () => {
+            aborted = true;
+            request.transaction?.abort();
+          };
+          request.onsuccess = () => {
+            const db = request.result;
+            if (aborted) {
+              db.close();
+              resolve(null);
+              return;
+            }
+            resolve(db);
+          };
+          request.onerror = () => resolve(null);
+          request.onblocked = () => resolve(null);
+        });
+      };
+
+      const db = await openExistingDb();
+      if (!db) return null;
       try {
         if (!db.objectStoreNames.contains(storeName)) return null;
 
@@ -86,11 +144,15 @@ const readRecordById = async (
   );
 };
 
-const waitForNamePersisted = async (page: Page, expectedName: string) => {
+const waitForNamePersisted = async (
+  page: Page,
+  expectedName: string,
+  recordId?: string,
+) => {
   await expect
     .poll(
       async () => {
-        const activeId = await getActiveRecordId(page);
+        const activeId = recordId ?? (await getActiveRecordId(page));
         if (!activeId) return '';
         const record = await readRecordById(page, activeId);
         return record?.data?.person?.name ?? '';
@@ -100,25 +162,47 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
     .toBe(expectedName);
 };
 
-const ensureDraftExists = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
-  if (await nameInput.count()) return;
+const waitForRecordListReady = async (page: Page) => {
+  await page.waitForFunction(() => {
+    const empty = document.querySelector('.formpack-records__empty');
+    if (empty) {
+      const text = empty.textContent?.toLowerCase() ?? '';
+      return !text.includes('loading') && !text.includes('geladen');
+    }
+    return true;
+  });
+};
 
-  // Preferred: role-based, locale-tolerant selector
-  const newDraftBtn = page.getByRole('button', {
+const clickNewDraftIfNeeded = async (page: Page) => {
+  const nameInput = page.locator('#root_person_name');
+  const existingActiveId = await getActiveRecordId(page);
+  if (existingActiveId) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  await waitForRecordListReady(page);
+
+  const activeIdAfterLoad = await getActiveRecordId(page);
+  if (activeIdAfterLoad) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  const newDraftButton = page.getByRole('button', {
     name: /new\s*draft|neuer\s*entwurf/i,
   });
-
-  if (await newDraftBtn.count()) {
-    await newDraftBtn.first().click();
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
   } else {
-    // Fallback: keep your existing layout class hook
+    // Fallback: click the first action button in the drafts area.
     await page
       .locator('.formpack-records__actions .app__button')
       .first()
       .click();
   }
 
+  await waitForActiveRecordId(page);
   await expect(nameInput).toBeVisible();
 };
 
@@ -162,6 +246,7 @@ const restoreFirstSnapshot = async (page: Page) => {
   await buttons.nth(btnCount - 1).click();
 };
 
+// Verifies snapshot creation/restoration and ensures no extra drafts are created across reloads.
 test('snapshot restore restores data and does not create extra records', async ({
   page,
 }) => {
@@ -174,15 +259,17 @@ test('snapshot restore restores data and does not create extra records', async (
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
-  await ensureDraftExists(page);
+  await clickNewDraftIfNeeded(page);
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();
+  const activeRecordId = await waitForActiveRecordId(page);
 
   // 1) Set initial value and wait for persistence
   await nameInput.fill('Alice Snapshot');
-  await waitForNamePersisted(page, 'Alice Snapshot');
+  await waitForNamePersisted(page, 'Alice Snapshot', activeRecordId);
 
+  // Snapshot operations must stay within the existing draft.
   const recordsCountBaseline = await countObjectStoreRecords(page);
   expect(recordsCountBaseline).toBeGreaterThan(0);
 
@@ -191,15 +278,16 @@ test('snapshot restore restores data and does not create extra records', async (
 
   // 3) Change value and persist
   await nameInput.fill('Bob After Change');
-  await waitForNamePersisted(page, 'Bob After Change');
+  await waitForNamePersisted(page, 'Bob After Change', activeRecordId);
 
   // 4) Restore snapshot and verify value + persistence
   await restoreFirstSnapshot(page);
 
   await expect(nameInput).toHaveValue('Alice Snapshot', { timeout: 10_000 });
-  await waitForNamePersisted(page, 'Alice Snapshot');
+  await waitForNamePersisted(page, 'Alice Snapshot', activeRecordId);
 
   // Restore should not create a new draft record
+  // Restoring a snapshot must not create a new draft.
   const recordsCountAfterRestore = await countObjectStoreRecords(page);
   expect(recordsCountAfterRestore).toBe(recordsCountBaseline);
 
@@ -209,6 +297,7 @@ test('snapshot restore restores data and does not create extra records', async (
   await expect(nameInput).toBeVisible();
   await expect(nameInput).toHaveValue('Alice Snapshot');
 
+  // Reload must keep the same record count after restoration.
   const recordsCountAfterReload = await countObjectStoreRecords(page);
   expect(recordsCountAfterReload).toBe(recordsCountBaseline);
 });
