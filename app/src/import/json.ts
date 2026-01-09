@@ -46,13 +46,13 @@ type ExportRevisionPayload = {
 };
 
 type JsonExportContainer = {
-  app: ImportAppMetadata;
+  app?: ImportAppMetadata;
   formpack: ImportFormpackMetadata;
   record?: ExportRecordMetadata;
   locale: SupportedLocale;
   createdAt?: string;
   exportedAt?: string;
-  data: Record<string, unknown>;
+  data: unknown;
   revisions?: ExportRevisionPayload[];
 };
 
@@ -156,10 +156,7 @@ const normalizeExportRevisions = (
   return normalized;
 };
 
-const validateSchema = (
-  schema: RJSFSchema,
-  data: Record<string, unknown>,
-): boolean => {
+const validateSchema = (schema: RJSFSchema, data: unknown): boolean => {
   // Ajv v6 typings omit `strict`; keep it optional for v8 compatibility.
   const ajvOptions: AjvOptions & { strict?: boolean } = {
     allErrors: true,
@@ -179,8 +176,10 @@ const normalizeExportPayload = (
   const formpack = payload.formpack;
   const record = payload.record;
 
-  if (!isRecord(app) || typeof app.id !== 'string') {
-    return { payload: null, error: 'invalid_payload' };
+  if (app !== undefined) {
+    if (!isRecord(app) || typeof app.id !== 'string') {
+      return { payload: null, error: 'invalid_payload' };
+    }
   }
 
   if (!isRecord(formpack) || typeof formpack.id !== 'string') {
@@ -196,7 +195,7 @@ const normalizeExportPayload = (
   }
 
   const data = payload.data;
-  if (!isRecord(data)) {
+  if (data === undefined || data === null) {
     return { payload: null, error: 'invalid_payload' };
   }
 
@@ -205,16 +204,8 @@ const normalizeExportPayload = (
     return { payload: null, error: 'unsupported_locale' };
   }
 
-  const createdAtValue =
-    typeof payload.createdAt === 'string'
-      ? payload.createdAt
-      : typeof payload.exportedAt === 'string'
-        ? payload.exportedAt
-        : null;
-
-  if (!createdAtValue) {
-    return { payload: null, error: 'invalid_payload' };
-  }
+  void payload.createdAt;
+  void payload.exportedAt;
 
   let recordTitle: string | undefined;
   if (record !== undefined) {
@@ -249,7 +240,7 @@ const normalizeExportPayload = (
     record: {
       title: recordTitle,
       locale: localeValue,
-      data,
+      data: data as Record<string, unknown>,
     },
     revisions,
   });
