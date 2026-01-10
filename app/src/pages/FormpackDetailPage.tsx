@@ -758,7 +758,9 @@ export default function FormpackDetailPage() {
       const filename = buildDocxExportFilename(formpackId, docxTemplateId);
       downloadDocxExport(report, filename);
       setDocxSuccess(t('formpackDocxExportSuccess'));
-    } catch {
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error);
       setDocxError(t('formpackDocxExportError'));
     } finally {
       setIsDocxExporting(false);

@@ -1,4 +1,5 @@
 import { createReport } from 'docx-templates';
+import { Buffer } from 'buffer';
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
 import type { DocumentModel } from '../formpacks/documentModel';
@@ -62,6 +63,15 @@ const isSafeAssetPath = (value: string) => {
   if (value.startsWith('/') || value.startsWith('\\')) return false;
   if (value.includes('..')) return false;
   return true;
+};
+
+/**
+ * docx-templates (or its deps) can expect Node's Buffer in the browser.
+ * Vite does not polyfill Node globals automatically; we provide a minimal polyfill.
+ */
+const ensureBufferPolyfill = (): void => {
+  const g = globalThis as unknown as { Buffer?: typeof Buffer };
+  if (!g.Buffer) g.Buffer = Buffer;
 };
 
 const parseDocxMapping = (payload: unknown): DocxMapping => {
@@ -379,6 +389,8 @@ export const createDocxReport = async (
   data: DocxTemplateContext,
 ): Promise<Uint8Array> => {
   try {
+    ensureBufferPolyfill();
+
     return await createReport({
       template,
       data,
