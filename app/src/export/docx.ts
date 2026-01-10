@@ -324,9 +324,13 @@ export const createDocxReport = async (
     return await createReport({
       template,
       data,
+      cmdDelimiter: ['{{', '}}'],   // <-- WICHTIG: damit {{...}} erkannt wird
+      // optional, wenn du \n in Texten hast:
+      // processLineBreaks: true,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown DOCX export error.';
+    const message =
+      error instanceof Error ? error.message : 'Unknown DOCX export error.';
     throw new Error(`Unable to generate DOCX report: ${message}`);
   }
 };

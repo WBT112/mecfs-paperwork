@@ -1,0 +1,93 @@
+import i18n from '../i18n';
+import type { SupportedLocale } from '../i18n/locale';
+
+/**
+ * Minimal "isRecord" helper to avoid relying on external utils and to harden input parsing.
+ */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Sets a nested value on an object based on a dotted key path.
+ * Example: setNested(t, "notfallpass.section.person.title", "Person") =>
+ *   t.notfallpass.section.person.title = "Person"
+ */
+const setNested = (
+  target: Record<string, unknown>,
+  dottedKey: string,
+  value: string,
+): void => {
+  const segments = dottedKey.split('.').filter(Boolean);
+  if (!segments.length) return;
+
+  let cursor: Record<string, unknown> = target;
+
+  for (let i = 0; i < segments.length; i += 1) {
+    const segment = segments[i];
+    const isLeaf = i === segments.length - 1;
+
+    if (isLeaf) {
+      cursor[segment] = value;
+      return;
+    }
+
+    const next = cursor[segment];
+    if (!isRecord(next)) {
+      cursor[segment] = {};
+    }
+    cursor = cursor[segment] as Record<string, unknown>;
+  }
+};
+
+export type I18nTemplateContext = {
+  /**
+   * A nested translation object that can be used in docx-templates like:
+   *   {{t.notfallpass.title}}
+   *   {{t.notfallpass.section.person.title}}
+   */
+  t: Record<string, unknown>;
+};
+
+/**
+ * Builds a nested i18n translation context for docx-templates.
+ *
+ * - Reads translations from i18next resource bundle for namespace `formpack:<formpackId>`.
+ * - Takes only flat string keys, ignores non-string values (hardening).
+ * - Optionally filters keys by prefix. If prefix is provided, only keys that start with `${prefix}.`
+ *   are included (example prefix: "notfallpass" or "notfallpass.export").
+ *
+ * Notes:
+ * - This assumes your resource bundle for `formpack:<formpackId>` is a flat key/value map.
+ * - If your translations are nested objects instead of flat keys, adjust the extraction logic.
+ */
+export const buildI18nContext = (
+  formpackId: string,
+  locale: SupportedLocale,
+  prefix?: string,
+): I18nTemplateContext => {
+  const namespace = `formpack:${formpackId}`;
+
+  let resources: unknown = null;
+  try {
+    resources = i18n.getResourceBundle(locale, namespace);
+  } catch {
+    // Hardening: fail closed, do not throw here; caller can proceed without i18n.
+    return { t: {} };
+  }
+
+  if (!isRecord(resources)) {
+    return { t: {} };
+  }
+
+  const tObj: Record<string, unknown> = {};
+  const prefixFilter = prefix ? `${prefix}.` : null;
+
+  for (const [key, value] of Object.entries(resources)) {
+    if (prefixFilter && !key.startsWith(prefixFilter)) continue;
+    if (typeof value !== 'string') continue;
+
+    setNested(tObj, key, value);
+  }
+
+  return { t: tObj };
+};
