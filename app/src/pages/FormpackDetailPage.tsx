@@ -120,6 +120,8 @@ export default function FormpackDetailPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formpackTranslationsVersion, setFormpackTranslationsVersion] =
+    useState(0);
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
   );
@@ -178,6 +180,7 @@ export default function FormpackDetailPage() {
         if (!isActive) {
           return;
         }
+        setFormpackTranslationsVersion((version) => version + 1);
         const [schemaData, uiSchemaData] = await Promise.all([
           loadFormpackSchema(formpackId),
           loadFormpackUiSchema(formpackId),
@@ -216,6 +219,7 @@ export default function FormpackDetailPage() {
       setUiSchema(null);
       setFormData({});
       setValidator(null);
+      setFormpackTranslationsVersion(0);
       lastFormpackIdRef.current = undefined;
       setErrorMessage(t('formpackMissingId'));
       setIsLoading(false);
@@ -704,10 +708,10 @@ export default function FormpackDetailPage() {
     (key: string) => t(key, { ns: namespace, defaultValue: key, replace: {} }),
     [namespace, t],
   );
-  const documentModel = useMemo(
-    () => buildDocumentModel(formpackId, locale, formData),
-    [formData, formpackId, locale],
-  );
+  const documentModel = useMemo(() => {
+    void formpackTranslationsVersion;
+    return buildDocumentModel(formpackId, locale, formData);
+  }, [formData, formpackId, formpackTranslationsVersion, locale]);
   const hasDocumentContent = Boolean(
     documentModel.diagnosisParagraphs.length ||
     documentModel.person.name ||
