@@ -457,6 +457,23 @@ export default function FormpackDetailPage() {
     setFormData(event.formData as FormDataState);
   };
 
+  const handleResetForm = useCallback(async () => {
+    if (!activeRecord) {
+      return;
+    }
+
+    const clearedData: FormDataState = {};
+    setFormData(clearedData);
+
+    const updated = await updateActiveRecord(activeRecord.id, {
+      data: clearedData,
+      locale,
+    });
+    if (updated) {
+      markAsSaved(updated.data);
+    }
+  }, [activeRecord, locale, markAsSaved, updateActiveRecord]);
+
   const handleCreateRecord = useCallback(async () => {
     if (!manifest) {
       return;
@@ -1004,14 +1021,7 @@ export default function FormpackDetailPage() {
                       <button
                         type="button"
                         className="app__button"
-                        onClick={() => {
-                          if (!activeRecord) {
-                            return;
-                          }
-
-                          markAsSaved(activeRecord.data);
-                          setFormData(activeRecord.data);
-                        }}
+                        onClick={handleResetForm}
                       >
                         {t('formpackFormReset')}
                       </button>
