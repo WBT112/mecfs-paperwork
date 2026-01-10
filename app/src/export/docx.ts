@@ -289,6 +289,7 @@ export const createDocxReport = async (
   createReport({
     template,
     data,
+    additionalJsContext: {},
   });
 
 /**

@@ -8,6 +8,7 @@ app/public/formpacks/
 
 # Logs
 npm-debug.log*
+npm_dev.log*
 yarn-debug.log*
 yarn-error.log*
 
