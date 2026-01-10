@@ -40,6 +40,8 @@
   "formpackFormNoActiveRecord": "Select or create a draft to start editing.",
   "formpackFormPreviewHeading": "Form data preview",
   "formpackFormPreviewEmpty": "No data entered yet.",
+  "formpackDocumentPreviewHeading": "Document preview",
+  "formpackDocumentPreviewEmpty": "No export paragraphs yet.",
   "formpackRecordsHeading": "Drafts",
   "formpackRecordsLoading": "Loading drafts...",
   "formpackRecordsEmpty": "No drafts available yet.",

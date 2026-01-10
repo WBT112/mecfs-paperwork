@@ -82,56 +82,6 @@ const waitForActiveRecordId = async (page: Page) => {
   return activeId;
 };
 
-const readRecordById = async (
-  page: Page,
-  id: string,
-  options: DbOptions = DB,
-) => {
-  return page.evaluate(
-    async ({ dbName, storeName, id }) => {
-      const openExistingDb = async () => {
-        // Avoid indexedDB.databases() here; it can be flaky and hide existing DBs.
-        return await new Promise<IDBDatabase | null>((resolve) => {
-          let aborted = false;
-          const request = indexedDB.open(dbName);
-          request.onupgradeneeded = () => {
-            aborted = true;
-            request.transaction?.abort();
-          };
-          request.onsuccess = () => {
-            const db = request.result;
-            if (aborted) {
-              db.close();
-              resolve(null);
-              return;
-            }
-            resolve(db);
-          };
-          request.onerror = () => resolve(null);
-          request.onblocked = () => resolve(null);
-        });
-      };
-
-      const db = await openExistingDb();
-      if (!db) return null;
-      try {
-        if (!db.objectStoreNames.contains(storeName)) return null;
-
-        return await new Promise<any>((resolve, reject) => {
-          const tx = db.transaction(storeName, 'readonly');
-          const store = tx.objectStore(storeName);
-          const getReq = store.get(id);
-          getReq.onerror = () => reject(getReq.error);
-          getReq.onsuccess = () => resolve(getReq.result ?? null);
-        });
-      } finally {
-        db.close();
-      }
-    },
-    { ...options, id },
-  );
-};
-
 const waitForRecordListReady = async (page: Page) => {
   await page.waitForFunction(() => {
     const empty = document.querySelector('.formpack-records__empty');

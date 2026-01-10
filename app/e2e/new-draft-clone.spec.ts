@@ -88,10 +88,7 @@ const waitForActiveRecordId = async (page: Page) => {
   return activeId;
 };
 
-const waitForActiveRecordIdOrNull = async (
-  page: Page,
-  timeoutMs = 3000,
-) => {
+const waitForActiveRecordIdOrNull = async (page: Page, timeoutMs = 3000) => {
   const startedAt = Date.now();
   while (Date.now() - startedAt < timeoutMs) {
     const activeId = await getActiveRecordId(page);
@@ -251,7 +248,6 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
     )
     .toBe(expectedName);
 };
-
 
 const loadNonActiveDraftViaUI = async (page: Page) => {
   const nonActiveItem = page

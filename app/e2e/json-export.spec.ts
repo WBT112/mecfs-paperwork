@@ -151,7 +151,9 @@ test('exports JSON with record metadata and form data', async ({ page }) => {
   await importButton.click();
 
   const importSuccess = page.locator('.formpack-import__success');
-  await expect(importSuccess).toHaveText(/Import abgeschlossen|Import complete/i);
+  await expect(importSuccess).toHaveText(
+    /Import abgeschlossen|Import complete/i,
+  );
 
   await expect
     .poll(async () => getActiveRecordId(page), {

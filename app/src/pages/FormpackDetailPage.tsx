@@ -9,6 +9,7 @@ import {
 } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import Ajv2020 from 'ajv/dist/2020';
 import { loadFormpackI18n } from '../i18n/formpack';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
@@ -29,6 +30,7 @@ import {
   loadFormpackSchema,
   loadFormpackUiSchema,
 } from '../formpacks/loader';
+import { buildDocumentModel } from '../formpacks/documentModel';
 import type { FormpackManifest } from '../formpacks/types';
 import {
   type StorageErrorCode,
@@ -119,6 +121,8 @@ export default function FormpackDetailPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [formpackTranslationsVersion, setFormpackTranslationsVersion] =
+    useState(0);
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
   );
@@ -177,6 +181,7 @@ export default function FormpackDetailPage() {
         if (!isActive) {
           return;
         }
+        setFormpackTranslationsVersion((version) => version + 1);
         const [schemaData, uiSchemaData] = await Promise.all([
           loadFormpackSchema(formpackId),
           loadFormpackUiSchema(formpackId),
@@ -215,6 +220,7 @@ export default function FormpackDetailPage() {
       setUiSchema(null);
       setFormData({});
       setValidator(null);
+      setFormpackTranslationsVersion(0);
       lastFormpackIdRef.current = undefined;
       setErrorMessage(t('formpackMissingId'));
       setIsLoading(false);
@@ -686,8 +692,12 @@ export default function FormpackDetailPage() {
 
     const loadValidator = async () => {
       const module = await import('@rjsf/validator-ajv8');
+      // Ajv2020 includes the draft 2020-12 meta schema used by formpacks.
+      const validator = module.customizeValidator({
+        AjvClass: Ajv2020,
+      });
       if (isActive) {
-        setValidator(module.default);
+        setValidator(validator);
       }
     };
 
@@ -699,6 +709,26 @@ export default function FormpackDetailPage() {
   }, []);
 
   const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
+  const formpackT = useCallback(
+    (key: string) => t(key, { ns: namespace, defaultValue: key, replace: {} }),
+    [namespace, t],
+  );
+  const documentModel = useMemo(() => {
+    void formpackTranslationsVersion;
+    return buildDocumentModel(formpackId, locale, formData);
+  }, [formData, formpackId, formpackTranslationsVersion, locale]);
+  const hasDocumentContent = Boolean(
+    documentModel.diagnosisParagraphs.length ||
+    documentModel.person.name ||
+    documentModel.person.birthDate ||
+    documentModel.contacts.length ||
+    documentModel.diagnosesFormatted ||
+    documentModel.symptoms ||
+    documentModel.medications.length ||
+    documentModel.allergies ||
+    documentModel.doctor.name ||
+    documentModel.doctor.phone,
+  );
 
   if (isLoading) {
     return (
@@ -1069,6 +1099,177 @@ export default function FormpackDetailPage() {
                 ? JSON.stringify(formData, null, 2)
                 : t('formpackFormPreviewEmpty')}
             </pre>
+          </div>
+          <div className="formpack-detail__section">
+            <h3>{t('formpackDocumentPreviewHeading')}</h3>
+            {hasDocumentContent ? (
+              <div className="formpack-document-preview">
+                {(documentModel.person.name ||
+                  documentModel.person.birthDate) && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.person.title')}</h4>
+                    <dl>
+                      {documentModel.person.name && (
+                        <div>
+                          <dt>{formpackT('notfallpass.person.name.label')}</dt>
+                          <dd>{documentModel.person.name}</dd>
+                        </div>
+                      )}
+                      {documentModel.person.birthDate && (
+                        <div>
+                          <dt>
+                            {formpackT('notfallpass.person.birthDate.label')}
+                          </dt>
+                          <dd>{documentModel.person.birthDate}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                )}
+                {documentModel.contacts.length > 0 && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.contacts.title')}</h4>
+                    <ul className="formpack-document-preview__list">
+                      {documentModel.contacts.map((contact, index) => (
+                        <li key={`contact-${index}`}>
+                          <dl>
+                            {contact.name && (
+                              <div>
+                                <dt>
+                                  {formpackT('notfallpass.contacts.name.label')}
+                                </dt>
+                                <dd>{contact.name}</dd>
+                              </div>
+                            )}
+                            {contact.phone && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.contacts.phone.label',
+                                  )}
+                                </dt>
+                                <dd>{contact.phone}</dd>
+                              </div>
+                            )}
+                            {contact.relation && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.contacts.relation.label',
+                                  )}
+                                </dt>
+                                <dd>{contact.relation}</dd>
+                              </div>
+                            )}
+                          </dl>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(documentModel.diagnosisParagraphs.length ||
+                  documentModel.diagnosesFormatted) && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.diagnoses.title')}</h4>
+                    {documentModel.diagnosisParagraphs.map(
+                      (paragraph, index) => (
+                        <p key={`diagnosis-${index}-${paragraph}`}>
+                          {paragraph}
+                        </p>
+                      ),
+                    )}
+                    {documentModel.diagnosesFormatted && (
+                      <div className="formpack-document-preview__note">
+                        <h5>
+                          {formpackT('notfallpass.diagnoses.additional.title')}
+                        </h5>
+                        <p>{documentModel.diagnosesFormatted}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {documentModel.symptoms && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.symptoms.title')}</h4>
+                    <p>{documentModel.symptoms}</p>
+                  </div>
+                )}
+                {documentModel.medications.length > 0 && (
+                  <div className="formpack-document-preview__section">
+                    <h4>
+                      {formpackT('notfallpass.section.medications.title')}
+                    </h4>
+                    <ul className="formpack-document-preview__list">
+                      {documentModel.medications.map((medication, index) => (
+                        <li key={`medication-${index}`}>
+                          <dl>
+                            {medication.name && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.medications.name.label',
+                                  )}
+                                </dt>
+                                <dd>{medication.name}</dd>
+                              </div>
+                            )}
+                            {medication.dosage && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.medications.dosage.label',
+                                  )}
+                                </dt>
+                                <dd>{medication.dosage}</dd>
+                              </div>
+                            )}
+                            {medication.schedule && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.medications.schedule.label',
+                                  )}
+                                </dt>
+                                <dd>{medication.schedule}</dd>
+                              </div>
+                            )}
+                          </dl>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {documentModel.allergies && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.allergies.title')}</h4>
+                    <p>{documentModel.allergies}</p>
+                  </div>
+                )}
+                {(documentModel.doctor.name || documentModel.doctor.phone) && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.doctor.title')}</h4>
+                    <dl>
+                      {documentModel.doctor.name && (
+                        <div>
+                          <dt>{formpackT('notfallpass.doctor.name.label')}</dt>
+                          <dd>{documentModel.doctor.name}</dd>
+                        </div>
+                      )}
+                      {documentModel.doctor.phone && (
+                        <div>
+                          <dt>{formpackT('notfallpass.doctor.phone.label')}</dt>
+                          <dd>{documentModel.doctor.phone}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="formpack-document-preview__empty">
+                {t('formpackDocumentPreviewEmpty')}
+              </p>
+            )}
           </div>
         </div>
       </div>

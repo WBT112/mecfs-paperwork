@@ -40,6 +40,8 @@
   "formpackFormNoActiveRecord": "Wähle oder erstelle einen Entwurf, um mit der Eingabe zu beginnen.",
   "formpackFormPreviewHeading": "Formulardaten-Vorschau",
   "formpackFormPreviewEmpty": "Noch keine Daten eingegeben.",
+  "formpackDocumentPreviewHeading": "Dokumentvorschau",
+  "formpackDocumentPreviewEmpty": "Noch keine Export-Absätze vorhanden.",
   "formpackRecordsHeading": "Entwürfe",
   "formpackRecordsLoading": "Entwürfe werden geladen...",
   "formpackRecordsEmpty": "Noch keine Entwürfe vorhanden.",
