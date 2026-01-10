@@ -700,9 +700,25 @@ export default function FormpackDetailPage() {
   }, []);
 
   const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
+  const formpackT = useCallback(
+    (key: string) => t(key, { ns: namespace, defaultValue: key, replace: {} }),
+    [namespace, t],
+  );
   const documentModel = useMemo(
     () => buildDocumentModel(formpackId, locale, formData),
     [formData, formpackId, locale],
+  );
+  const hasDocumentContent = Boolean(
+    documentModel.diagnosisParagraphs.length ||
+    documentModel.person.name ||
+    documentModel.person.birthDate ||
+    documentModel.contacts.length ||
+    documentModel.diagnosesFormatted ||
+    documentModel.symptoms ||
+    documentModel.medications.length ||
+    documentModel.allergies ||
+    documentModel.doctor.name ||
+    documentModel.doctor.phone,
   );
 
   if (isLoading) {
@@ -1077,11 +1093,168 @@ export default function FormpackDetailPage() {
           </div>
           <div className="formpack-detail__section">
             <h3>{t('formpackDocumentPreviewHeading')}</h3>
-            {documentModel.diagnosisParagraphs.length ? (
+            {hasDocumentContent ? (
               <div className="formpack-document-preview">
-                {documentModel.diagnosisParagraphs.map((paragraph, index) => (
-                  <p key={`${index}-${paragraph}`}>{paragraph}</p>
-                ))}
+                {(documentModel.person.name ||
+                  documentModel.person.birthDate) && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.person.title')}</h4>
+                    <dl>
+                      {documentModel.person.name && (
+                        <div>
+                          <dt>{formpackT('notfallpass.person.name.label')}</dt>
+                          <dd>{documentModel.person.name}</dd>
+                        </div>
+                      )}
+                      {documentModel.person.birthDate && (
+                        <div>
+                          <dt>
+                            {formpackT('notfallpass.person.birthDate.label')}
+                          </dt>
+                          <dd>{documentModel.person.birthDate}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                )}
+                {documentModel.contacts.length > 0 && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.contacts.title')}</h4>
+                    <ul className="formpack-document-preview__list">
+                      {documentModel.contacts.map((contact, index) => (
+                        <li key={`contact-${index}`}>
+                          <dl>
+                            {contact.name && (
+                              <div>
+                                <dt>
+                                  {formpackT('notfallpass.contacts.name.label')}
+                                </dt>
+                                <dd>{contact.name}</dd>
+                              </div>
+                            )}
+                            {contact.phone && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.contacts.phone.label',
+                                  )}
+                                </dt>
+                                <dd>{contact.phone}</dd>
+                              </div>
+                            )}
+                            {contact.relation && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.contacts.relation.label',
+                                  )}
+                                </dt>
+                                <dd>{contact.relation}</dd>
+                              </div>
+                            )}
+                          </dl>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {(documentModel.diagnosisParagraphs.length ||
+                  documentModel.diagnosesFormatted) && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.diagnoses.title')}</h4>
+                    {documentModel.diagnosisParagraphs.map(
+                      (paragraph, index) => (
+                        <p key={`diagnosis-${index}-${paragraph}`}>
+                          {paragraph}
+                        </p>
+                      ),
+                    )}
+                    {documentModel.diagnosesFormatted && (
+                      <div className="formpack-document-preview__note">
+                        <h5>
+                          {formpackT('notfallpass.diagnoses.additional.title')}
+                        </h5>
+                        <p>{documentModel.diagnosesFormatted}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {documentModel.symptoms && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.symptoms.title')}</h4>
+                    <p>{documentModel.symptoms}</p>
+                  </div>
+                )}
+                {documentModel.medications.length > 0 && (
+                  <div className="formpack-document-preview__section">
+                    <h4>
+                      {formpackT('notfallpass.section.medications.title')}
+                    </h4>
+                    <ul className="formpack-document-preview__list">
+                      {documentModel.medications.map((medication, index) => (
+                        <li key={`medication-${index}`}>
+                          <dl>
+                            {medication.name && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.medications.name.label',
+                                  )}
+                                </dt>
+                                <dd>{medication.name}</dd>
+                              </div>
+                            )}
+                            {medication.dosage && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.medications.dosage.label',
+                                  )}
+                                </dt>
+                                <dd>{medication.dosage}</dd>
+                              </div>
+                            )}
+                            {medication.schedule && (
+                              <div>
+                                <dt>
+                                  {formpackT(
+                                    'notfallpass.medications.schedule.label',
+                                  )}
+                                </dt>
+                                <dd>{medication.schedule}</dd>
+                              </div>
+                            )}
+                          </dl>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {documentModel.allergies && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.allergies.title')}</h4>
+                    <p>{documentModel.allergies}</p>
+                  </div>
+                )}
+                {(documentModel.doctor.name || documentModel.doctor.phone) && (
+                  <div className="formpack-document-preview__section">
+                    <h4>{formpackT('notfallpass.section.doctor.title')}</h4>
+                    <dl>
+                      {documentModel.doctor.name && (
+                        <div>
+                          <dt>{formpackT('notfallpass.doctor.name.label')}</dt>
+                          <dd>{documentModel.doctor.name}</dd>
+                        </div>
+                      )}
+                      {documentModel.doctor.phone && (
+                        <div>
+                          <dt>{formpackT('notfallpass.doctor.phone.label')}</dt>
+                          <dd>{documentModel.doctor.phone}</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="formpack-document-preview__empty">

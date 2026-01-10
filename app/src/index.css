@@ -485,16 +485,81 @@ body {
   font-size: 0.95rem;
 }
 
-.formpack-document-preview p {
-  margin: 0 0 0.75rem;
-}
-
-.formpack-document-preview p:last-child {
-  margin-bottom: 0;
-}
-
 .formpack-document-preview__empty {
   margin: 0;
   color: #6b7280;
   font-size: 0.9rem;
+}
+
+.formpack-document-preview__section {
+  padding-bottom: 0.85rem;
+  margin-bottom: 0.85rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.formpack-document-preview__section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.formpack-document-preview__section h4 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.formpack-document-preview__section h5 {
+  margin: 0.75rem 0 0.35rem;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.formpack-document-preview__section p {
+  margin: 0 0 0.5rem;
+}
+
+.formpack-document-preview__section p:last-child {
+  margin-bottom: 0;
+}
+
+.formpack-document-preview__section dl {
+  margin: 0;
+}
+
+.formpack-document-preview__section dl div {
+  display: grid;
+  grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+  gap: 0.35rem 0.75rem;
+  padding: 0.2rem 0;
+}
+
+.formpack-document-preview__section dt {
+  font-weight: 600;
+}
+
+.formpack-document-preview__section dd {
+  margin: 0;
+}
+
+.formpack-document-preview__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.formpack-document-preview__list li {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.formpack-document-preview__note {
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid #cbd5f5;
+  background: #eef2ff;
+  border-radius: 8px;
 }
