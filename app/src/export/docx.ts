@@ -1,5 +1,4 @@
-import { createReport } from 'docx-templates';
-import { Buffer } from 'buffer';
+import { createReport } from 'docx-templates/lib/browser.js';
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
 import type { DocumentModel } from '../formpacks/documentModel';
@@ -26,9 +25,7 @@ type DocxMapping = {
 };
 
 /**
- * Template context fed into docx-templates. Keys are created by mapping.json and by i18n context.
- * - Fields/loops get written into this object using the mapping's `var` paths.
- * - i18n keys get exposed as `t:<key>` strings so templates can render localized blocks.
+ * Template context fed into docx-templates.
  */
 export type DocxTemplateContext = Record<string, unknown>;
 
@@ -58,20 +55,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isSafeAssetPath = (value: string) => {
-  // Prevent path traversal and invalid absolute paths.
   if (!value || value.trim().length === 0) return false;
   if (value.startsWith('/') || value.startsWith('\\')) return false;
   if (value.includes('..')) return false;
   return true;
-};
-
-/**
- * docx-templates (or its deps) can expect Node's Buffer in the browser.
- * Vite does not polyfill Node globals automatically; we provide a minimal polyfill.
- */
-const ensureBufferPolyfill = (): void => {
-  const g = globalThis as unknown as { Buffer?: typeof Buffer };
-  if (!g.Buffer) g.Buffer = Buffer;
 };
 
 const parseDocxMapping = (payload: unknown): DocxMapping => {
@@ -132,36 +119,21 @@ const parseDocxMapping = (payload: unknown): DocxMapping => {
 };
 
 const getPathValue = (source: unknown, path: string): unknown => {
-  if (!path) {
-    return undefined;
-  }
+  if (!path) return undefined;
 
   return path.split('.').reduce<unknown>((current, segment) => {
-    if (!isRecord(current) && !Array.isArray(current)) {
-      return undefined;
-    }
+    if (!isRecord(current) && !Array.isArray(current)) return undefined;
 
-    if (isRecord(current)) {
-      return current[segment];
-    }
+    if (isRecord(current)) return current[segment];
 
-    // Array access via numeric segments.
     const index = Number(segment);
-    if (Number.isNaN(index)) {
-      return undefined;
-    }
+    if (Number.isNaN(index)) return undefined;
     return current[index];
   }, source);
 };
 
-const setPathValue = (
-  target: Record<string, unknown>,
-  path: string,
-  value: unknown,
-) => {
-  if (!path || path.trim().length === 0) {
-    return;
-  }
+const setPathValue = (target: Record<string, unknown>, path: string, value: unknown) => {
+  if (!path || path.trim().length === 0) return;
 
   const segments = path.split('.');
   let cursor: Record<string, unknown> = target;
@@ -182,36 +154,23 @@ const setPathValue = (
   });
 };
 
-const normalizeFieldValue = (value: unknown): string | number | boolean => {
-  if (value === null || value === undefined) {
-    return '';
-  }
-
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return value;
-  }
-
+/**
+ * IMPORTANT: Keep template values string-only to avoid browser-side encoding issues.
+ */
+const normalizeFieldValue = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (typeof value === 'boolean') return value ? 'true' : 'false';
   return '';
 };
 
 const normalizeLoopEntry = (entry: unknown): unknown => {
-  if (entry === null || entry === undefined) {
-    return null;
-  }
+  if (entry === null || entry === undefined) return null;
 
   if (!isRecord(entry)) {
-    if (typeof entry === 'string') {
-      return entry;
-    }
-
-    if (typeof entry === 'number' || typeof entry === 'boolean') {
-      return entry.toString();
-    }
-
+    if (typeof entry === 'string') return entry;
+    if (typeof entry === 'number' || typeof entry === 'boolean') return String(entry);
     return null;
   }
 
@@ -223,70 +182,49 @@ const normalizeLoopEntry = (entry: unknown): unknown => {
   return normalized;
 };
 
-/**
- * Builds a flattened translation context for templates.
- *
- * Template usage pattern:
- * - Add placeholders like {{t:notfallpass.export.diagnoses.meCfs.paragraph}}
- * - Mapping can optionally filter to a prefix (e.g. "notfallpass.export")
- *
- * Note: This assumes the resource bundle is a flat key/value map (no nested objects).
- */
 const buildI18nContext = (
   formpackId: string,
   locale: SupportedLocale,
   prefix?: string,
 ): Record<string, string> => {
   const namespace = `formpack:${formpackId}`;
-  const context: Record<string, string> = {};
 
-  let resources: Record<string, string> | null = null;
+  let resources: unknown = null;
   try {
-    resources = i18n.getResourceBundle(locale, namespace) as Record<string, string> | null;
+    resources = i18n.getResourceBundle(locale, namespace);
   } catch {
-    return context;
+    return {};
   }
 
-  if (!resources) {
-    return context;
+  if (!isRecord(resources)) {
+    return {};
   }
 
+  const context: Record<string, string> = {};
   const prefixFilter = prefix ? `${prefix}.` : null;
 
   Object.entries(resources).forEach(([key, value]) => {
-    if (prefixFilter && !key.startsWith(prefixFilter)) {
-      return;
-    }
+    if (prefixFilter && !key.startsWith(prefixFilter)) return;
+    if (typeof value !== 'string') return; // hardening: ignore non-string bundles
     context[`t:${key}`] = value;
   });
 
   return context;
 };
 
-const loadDocxMapping = async (
-  formpackId: string,
-  mappingPath: string,
-): Promise<DocxMapping> => {
+const loadDocxMapping = async (formpackId: string, mappingPath: string): Promise<DocxMapping> => {
   if (!isSafeAssetPath(mappingPath)) {
     throw new Error('Invalid DOCX mapping path.');
   }
 
   const url = buildAssetPath(formpackId, mappingPath);
-  const response = await fetch(url, {
-    headers: { Accept: 'application/json' },
-  });
+  const response = await fetch(url, { headers: { Accept: 'application/json' } });
 
   if (!response.ok) {
-    throw new Error(`Unable to load DOCX mapping (${response.status}) from ${url}.`);
+    throw new Error(`Unable to load DOCX mapping (${response.status}).`);
   }
 
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    throw new Error(`Unable to parse DOCX mapping JSON from ${url}.`);
-  }
-
+  const payload = (await response.json()) as unknown;
   return parseDocxMapping(payload);
 };
 
@@ -305,14 +243,8 @@ export const mapDocumentDataToTemplate = async (
   const mappingPath = options.mappingPath ?? 'docx/mapping.json';
   const mapping = await loadDocxMapping(formpackId, mappingPath);
 
-  // Base context: i18n strings and minimal non-sensitive meta data.
   const context: DocxTemplateContext = {
     ...buildI18nContext(formpackId, locale, mapping.i18n?.prefix),
-    meta: {
-      formpackId,
-      templateId,
-      locale,
-    },
   };
 
   mapping.fields.forEach((field) => {
@@ -325,7 +257,7 @@ export const mapDocumentDataToTemplate = async (
     const entries = Array.isArray(value)
       ? value
           .map(normalizeLoopEntry)
-          .filter((entry) => entry !== null && entry !== undefined)
+          .filter((e) => e !== null && e !== undefined)
       : [];
     setPathValue(context, loop.var, entries);
   });
@@ -348,7 +280,7 @@ export const loadDocxTemplate = async (
   const response = await fetch(url);
 
   if (!response.ok) {
-    throw new Error(`Unable to load DOCX template (${response.status}) from ${url}.`);
+    throw new Error(`Unable to load DOCX template (${response.status}).`);
   }
 
   const buffer = await response.arrayBuffer();
@@ -361,7 +293,7 @@ const formatExportDate = (value: Date) =>
 const sanitizeFilenamePart = (value: string) =>
   value
     .trim()
-    .replace(/[\\/:*?"<>|]+/g, '-') // Windows reserved characters
+    .replace(/[\\/:*?"<>|]+/g, '-')
     .replace(/\s+/g, '-')
     .slice(0, 80);
 
@@ -389,16 +321,12 @@ export const createDocxReport = async (
   data: DocxTemplateContext,
 ): Promise<Uint8Array> => {
   try {
-    ensureBufferPolyfill();
-
     return await createReport({
       template,
       data,
     });
   } catch (error) {
-    // Do not include `data` in the error message.
-    const message =
-      error instanceof Error ? error.message : 'Unknown DOCX export error.';
+    const message = error instanceof Error ? error.message : 'Unknown DOCX export error.';
     throw new Error(`Unable to generate DOCX report: ${message}`);
   }
 };
@@ -407,18 +335,14 @@ export const createDocxReport = async (
  * Downloads a DOCX report blob.
  *
  * Hardening:
- * - Forces an ArrayBuffer-backed copy before Blob creation to avoid TS/DOM typing issues
- *   involving Uint8Array<ArrayBufferLike> / SharedArrayBuffer.
+ * - Forces an ArrayBuffer-backed copy before Blob creation (avoids BlobPart typing/runtime edge cases).
  */
-export const downloadDocxExport = (
-  report: Uint8Array,
-  filename: string,
-): void => {
+export const downloadDocxExport = (report: Uint8Array, filename: string): void => {
   const safeFilename = filename.toLowerCase().endsWith('.docx')
     ? filename
     : `${filename}.docx`;
 
-  // Force an ArrayBuffer-backed copy to satisfy BlobPart typings in strict DOM libs.
+  // Force a copy to ensure ArrayBuffer-backed bytes.
   const bytes = new Uint8Array(report);
 
   const blob = new Blob([bytes], { type: DOCX_MIME });
