@@ -54,6 +54,34 @@ const getStringValue = (value: unknown): string | null => {
   return trimmed.length ? trimmed : null;
 };
 
+const formatBirthDate = (value: string | null): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const ymdDash = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (ymdDash) {
+    return `${ymdDash[3]}-${ymdDash[2]}-${ymdDash[1]}`;
+  }
+
+  const ymdSlash = value.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (ymdSlash) {
+    return `${ymdSlash[3]}-${ymdSlash[2]}-${ymdSlash[1]}`;
+  }
+
+  const dmyDot = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (dmyDot) {
+    return `${dmyDot[1]}-${dmyDot[2]}-${dmyDot[3]}`;
+  }
+
+  const dmyDash = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (dmyDash) {
+    return `${dmyDash[1]}-${dmyDash[2]}-${dmyDash[3]}`;
+  }
+
+  return value;
+};
+
 const getRecordValue = (value: unknown): Record<string, unknown> | null =>
   isRecord(value) ? value : null;
 
@@ -102,7 +130,7 @@ const buildBaseDocumentModel = (
   return {
     person: {
       name: getStringValue(person?.name),
-      birthDate: getStringValue(person?.birthDate),
+      birthDate: formatBirthDate(getStringValue(person?.birthDate)),
     },
     contacts,
     diagnosesFormatted: getStringValue(diagnoses?.formatted),

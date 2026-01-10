@@ -682,10 +682,11 @@ export default function FormpackDetailPage() {
       data: formData,
       locale,
       revisions: snapshots,
+      ...(schema ? { schema } : {}),
     });
     const filename = buildJsonExportFilename(payload);
     downloadJsonExport(payload, filename);
-  }, [activeRecord, formData, locale, manifest, snapshots]);
+  }, [activeRecord, formData, locale, manifest, schema, snapshots]);
 
   useEffect(() => {
     let isActive = true;

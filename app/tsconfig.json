@@ -16,7 +16,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node", "@playwright/test"]
+    "types": ["node", "@playwright/test", "vitest/config"]
   },
   "include": ["src"]
 }

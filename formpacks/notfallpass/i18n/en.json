@@ -11,7 +11,7 @@
   "notfallpass.person.name.label": "Name",
   "notfallpass.person.name.help": "Full name of the person.",
   "notfallpass.person.birthDate.label": "Birth date",
-  "notfallpass.person.birthDate.help": "Birth date in YYYY-MM-DD format.",
+  "notfallpass.person.birthDate.help": "Birth date in DD-MM-YYYY format.",
   "notfallpass.contacts.name.label": "Name",
   "notfallpass.contacts.name.help": "Name of the contact person.",
   "notfallpass.contacts.phone.label": "Phone",
