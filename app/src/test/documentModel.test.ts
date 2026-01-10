@@ -53,4 +53,11 @@ describe('buildDocumentModel', () => {
       enTranslations['notfallpass.export.diagnoses.longCovid.paragraph'],
     ]);
   });
+
+  it('formats birthDate for display', () => {
+    const result = buildDocumentModel('notfallpass', 'en', {
+      person: { birthDate: '1990-04-12' },
+    });
+    expect(result.person.birthDate).toBe('12-04-1990');
+  });
 });

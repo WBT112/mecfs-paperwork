@@ -1,4 +1,5 @@
 import Ajv, { type Options as AjvOptions } from 'ajv/dist/2020';
+import addFormats from 'ajv-formats';
 import type { RJSFSchema } from '@rjsf/utils';
 import { isSupportedLocale, type SupportedLocale } from '../i18n/locale';
 import { FORMPACK_IDS } from '../formpacks/registry';
@@ -130,6 +131,8 @@ const validateSchema = (schema: RJSFSchema, data: unknown): boolean => {
     strict: false,
   };
   const ajv = new Ajv(ajvOptions);
+  // Enable standard JSON Schema formats like "date".
+  addFormats(ajv);
   const validate = ajv.compile(schema);
   return validate(data);
 };

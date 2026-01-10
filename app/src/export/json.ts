@@ -1,4 +1,5 @@
 import appPackage from '../../package.json';
+import type { RJSFSchema } from '@rjsf/utils';
 import type { SupportedLocale } from '../i18n/locale';
 import type { FormpackManifest } from '../formpacks/types';
 import type { RecordEntry, SnapshotEntry } from '../storage/types';
@@ -36,6 +37,114 @@ export type JsonExportOptions = {
   locale: SupportedLocale;
   revisions?: SnapshotEntry[];
   exportedAt?: string;
+  schema?: RJSFSchema;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const buildIsoDate = (
+  year: number,
+  month: number,
+  day: number,
+): string | null => {
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return date.toISOString().slice(0, 10);
+};
+
+const normalizeDateString = (value: string): string => {
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  const ymdSlash = trimmed.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
+  if (ymdSlash) {
+    const iso = buildIsoDate(
+      Number(ymdSlash[1]),
+      Number(ymdSlash[2]),
+      Number(ymdSlash[3]),
+    );
+    return iso ?? value;
+  }
+
+  const dmyDot = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (dmyDot) {
+    const iso = buildIsoDate(
+      Number(dmyDot[3]),
+      Number(dmyDot[2]),
+      Number(dmyDot[1]),
+    );
+    return iso ?? value;
+  }
+
+  return value;
+};
+
+// Normalize date-formatted fields to YYYY-MM-DD for export compatibility.
+const normalizeSchemaDates = (
+  schema: RJSFSchema | boolean | undefined,
+  value: unknown,
+): unknown => {
+  if (!schema || typeof schema !== 'object') {
+    return value;
+  }
+
+  let normalized = value;
+
+  if (schema.format === 'date' && typeof normalized === 'string') {
+    normalized = normalizeDateString(normalized);
+  }
+
+  if (schema.items && Array.isArray(normalized)) {
+    const itemSchema = schema.items as RJSFSchema | boolean;
+    normalized = normalized.map((entry) =>
+      normalizeSchemaDates(itemSchema, entry),
+    );
+  }
+
+  if (schema.properties && isRecord(normalized)) {
+    const updated: Record<string, unknown> = { ...normalized };
+    for (const [key, propertySchema] of Object.entries(schema.properties)) {
+      if (!Object.prototype.hasOwnProperty.call(updated, key)) {
+        continue;
+      }
+      updated[key] = normalizeSchemaDates(
+        propertySchema as RJSFSchema | boolean,
+        updated[key],
+      );
+    }
+    normalized = updated;
+  }
+
+  if (Array.isArray(schema.allOf)) {
+    for (const entry of schema.allOf) {
+      normalized = normalizeSchemaDates(
+        entry as RJSFSchema | boolean,
+        normalized,
+      );
+    }
+  }
+
+  return normalized;
+};
+
+const normalizeExportData = (
+  schema: RJSFSchema | undefined,
+  data: Record<string, unknown>,
+): Record<string, unknown> => {
+  if (!schema) {
+    return data;
+  }
+  const normalized = normalizeSchemaDates(schema, data);
+  return isRecord(normalized) ? normalized : data;
 };
 
 /**
@@ -45,12 +154,13 @@ export const buildJsonExportPayload = (
   options: JsonExportOptions,
 ): JsonExportPayload => {
   const exportedAt = options.exportedAt ?? new Date().toISOString();
+  const normalizedData = normalizeExportData(options.schema, options.data);
   const revisions = options.revisions?.length
     ? options.revisions.map((revision) => ({
         id: revision.id,
         label: revision.label,
         createdAt: revision.createdAt,
-        data: revision.data,
+        data: normalizeExportData(options.schema, revision.data),
       }))
     : undefined;
 
@@ -62,11 +172,11 @@ export const buildJsonExportPayload = (
       name: options.record.title,
       updatedAt: options.record.updatedAt,
       locale: options.locale,
-      data: options.data,
+      data: normalizedData,
     },
     locale: options.locale,
     exportedAt,
-    data: options.data,
+    data: normalizedData,
     ...(revisions ? { revisions } : {}),
   };
 };

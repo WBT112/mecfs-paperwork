@@ -33,6 +33,13 @@ later. The export is offline-first and contains no telemetry.
 - `data`: Record form data (JSON object).
 - `revisions`: Optional snapshots captured for the record.
 
+### Date formats
+- Fields marked as `format: "date"` in a formpack schema are expected to be
+  `YYYY-MM-DD`.
+- Exports normalize common date inputs (`YYYY/MM/DD`, `DD.MM.YYYY`) to
+  `YYYY-MM-DD` when the schema declares `format: "date"`.
+- Imports validate `format: "date"` via Ajv formats and reject invalid dates.
+
 ## Filename format
 
 ```
