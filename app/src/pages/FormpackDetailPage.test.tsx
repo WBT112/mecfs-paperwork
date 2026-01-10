@@ -170,6 +170,7 @@ describe('FormpackDetailPage', () => {
         locale: 'de',
       }),
     );
+    expect(mockUpdateActiveRecord).toHaveBeenCalledTimes(1);
 
     await waitFor(() =>
       expect(screen.getByTestId('form-data')).toHaveTextContent(
