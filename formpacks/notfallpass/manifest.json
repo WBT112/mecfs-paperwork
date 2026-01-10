@@ -8,8 +8,8 @@
   "exports": ["docx", "json"],
   "docx": {
     "templates": {
-      "a4": "docx/template.a4.docx",
-      "wallet": "docx/template.wallet.docx"
+      "a4": "templates/a4.docx",
+      "wallet": "templates/wallet.docx"
     },
     "mapping": "docx/mapping.json"
   }

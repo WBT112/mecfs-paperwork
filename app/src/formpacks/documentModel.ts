@@ -18,7 +18,9 @@ export type DocumentModel = {
     phone: string | null;
     relation: string | null;
   }>;
-  diagnosesFormatted: string | null;
+  diagnoses: {
+    formatted: string | null;
+  };
   symptoms: string | null;
   medications: Array<{
     name: string | null;
@@ -133,7 +135,9 @@ const buildBaseDocumentModel = (
       birthDate: formatBirthDate(getStringValue(person?.birthDate)),
     },
     contacts,
-    diagnosesFormatted: getStringValue(diagnoses?.formatted),
+    diagnoses: {
+      formatted: getStringValue(diagnoses?.formatted),
+    },
     symptoms: getStringValue(formData.symptoms),
     medications,
     allergies: getStringValue(formData.allergies),

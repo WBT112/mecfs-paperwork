@@ -20,6 +20,14 @@ import {
   downloadJsonExport,
 } from '../export/json';
 import {
+  buildDocxExportFilename,
+  createDocxReport,
+  downloadDocxExport,
+  loadDocxTemplate,
+  mapDocumentDataToTemplate,
+  type DocxTemplateId,
+} from '../export/docx';
+import {
   formpackTemplates,
   type FormpackFormContext,
 } from '../lib/rjsfTemplates';
@@ -119,6 +127,10 @@ export default function FormpackDetailPage() {
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [docxTemplateId, setDocxTemplateId] = useState<DocxTemplateId>('a4');
+  const [docxError, setDocxError] = useState<string | null>(null);
+  const [docxSuccess, setDocxSuccess] = useState<string | null>(null);
+  const [isDocxExporting, setIsDocxExporting] = useState(false);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formpackTranslationsVersion, setFormpackTranslationsVersion] =
@@ -688,6 +700,15 @@ export default function FormpackDetailPage() {
     },
     [t],
   );
+  const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
+  const formpackT = useCallback(
+    (key: string) => t(key, { ns: namespace, defaultValue: key, replace: {} }),
+    [namespace, t],
+  );
+  const documentModel = useMemo(() => {
+    void formpackTranslationsVersion;
+    return buildDocumentModel(formpackId, locale, formData);
+  }, [formData, formpackId, formpackTranslationsVersion, locale]);
   const handleExportJson = useCallback(() => {
     if (!manifest || !activeRecord) {
       return;
@@ -704,6 +725,45 @@ export default function FormpackDetailPage() {
     const filename = buildJsonExportFilename(payload);
     downloadJsonExport(payload, filename);
   }, [activeRecord, formData, locale, manifest, schema, snapshots]);
+
+  const handleExportDocx = useCallback(async () => {
+    if (!manifest?.docx || !formpackId) {
+      return;
+    }
+
+    setDocxError(null);
+    setDocxSuccess(null);
+    setIsDocxExporting(true);
+
+    try {
+      const templatePath =
+        docxTemplateId === 'wallet'
+          ? manifest.docx.templates.wallet
+          : manifest.docx.templates.a4;
+
+      if (!templatePath) {
+        setDocxError(t('formpackDocxExportError'));
+        return;
+      }
+
+      const [template, templateContext] = await Promise.all([
+        loadDocxTemplate(formpackId, templatePath),
+        mapDocumentDataToTemplate(formpackId, docxTemplateId, documentModel, {
+          mappingPath: manifest.docx.mapping,
+          locale,
+        }),
+      ]);
+
+      const report = await createDocxReport(template, templateContext);
+      const filename = buildDocxExportFilename(formpackId, docxTemplateId);
+      downloadDocxExport(report, filename);
+      setDocxSuccess(t('formpackDocxExportSuccess'));
+    } catch {
+      setDocxError(t('formpackDocxExportError'));
+    } finally {
+      setIsDocxExporting(false);
+    }
+  }, [docxTemplateId, documentModel, formpackId, locale, manifest, t]);
 
   useEffect(() => {
     let isActive = true;
@@ -726,27 +786,47 @@ export default function FormpackDetailPage() {
     };
   }, []);
 
-  const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
-  const formpackT = useCallback(
-    (key: string) => t(key, { ns: namespace, defaultValue: key, replace: {} }),
-    [namespace, t],
-  );
-  const documentModel = useMemo(() => {
-    void formpackTranslationsVersion;
-    return buildDocumentModel(formpackId, locale, formData);
-  }, [formData, formpackId, formpackTranslationsVersion, locale]);
   const hasDocumentContent = Boolean(
     documentModel.diagnosisParagraphs.length ||
     documentModel.person.name ||
     documentModel.person.birthDate ||
     documentModel.contacts.length ||
-    documentModel.diagnosesFormatted ||
+    documentModel.diagnoses.formatted ||
     documentModel.symptoms ||
     documentModel.medications.length ||
     documentModel.allergies ||
     documentModel.doctor.name ||
     documentModel.doctor.phone,
   );
+  const docxTemplateOptions = useMemo(() => {
+    if (!manifest?.docx) {
+      return [];
+    }
+
+    const options: Array<{ id: DocxTemplateId; label: string }> = [
+      { id: 'a4', label: t('formpackDocxTemplateA4Option') },
+    ];
+
+    if (manifest.id === 'notfallpass' && manifest.docx.templates.wallet) {
+      options.push({
+        id: 'wallet',
+        label: t('formpackDocxTemplateWalletOption'),
+      });
+    }
+
+    return options;
+  }, [manifest, t]);
+
+  useEffect(() => {
+    if (!docxTemplateOptions.length) {
+      setDocxTemplateId('a4');
+      return;
+    }
+
+    if (!docxTemplateOptions.some((option) => option.id === docxTemplateId)) {
+      setDocxTemplateId(docxTemplateOptions[0].id);
+    }
+  }, [docxTemplateId, docxTemplateOptions]);
 
   if (isLoading) {
     return (
@@ -826,7 +906,11 @@ export default function FormpackDetailPage() {
                 </div>
                 <div>
                   <dt>{t('formpackDocxTemplateWallet')}</dt>
-                  <dd>{manifest.docx.templates.wallet}</dd>
+                  <dd>
+                    {manifest.docx.templates.wallet
+                      ? manifest.docx.templates.wallet
+                      : t('formpackDocxTemplateWalletUnavailable')}
+                  </dd>
                 </div>
                 <div>
                   <dt>{t('formpackDocxMapping')}</dt>
@@ -1018,6 +1102,51 @@ export default function FormpackDetailPage() {
                     showErrorList={false}
                   >
                     <div className="formpack-form__actions">
+                      {manifest.exports.includes('docx') &&
+                        manifest.docx &&
+                        docxTemplateOptions.length > 0 && (
+                          <div className="formpack-docx-export">
+                            <label className="formpack-docx-export__label">
+                              {t('formpackDocxTemplateLabel')}
+                              <select
+                                className="formpack-docx-export__select"
+                                value={docxTemplateId}
+                                onChange={(event) =>
+                                  setDocxTemplateId(
+                                    event.target.value as DocxTemplateId,
+                                  )
+                                }
+                              >
+                                {docxTemplateOptions.map((option) => (
+                                  <option key={option.id} value={option.id}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <button
+                              type="button"
+                              className="app__button"
+                              onClick={handleExportDocx}
+                              disabled={
+                                storageError === 'unavailable' ||
+                                isDocxExporting
+                              }
+                            >
+                              {isDocxExporting
+                                ? t('formpackDocxExportInProgress')
+                                : t('formpackRecordExportDocx')}
+                            </button>
+                            {docxError && (
+                              <span className="app__error">{docxError}</span>
+                            )}
+                            {docxSuccess && (
+                              <span className="formpack-docx-export__success">
+                                {docxSuccess}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       <button
                         type="button"
                         className="app__button"
@@ -1179,7 +1308,7 @@ export default function FormpackDetailPage() {
                   </div>
                 )}
                 {(documentModel.diagnosisParagraphs.length ||
-                  documentModel.diagnosesFormatted) && (
+                  documentModel.diagnoses.formatted) && (
                   <div className="formpack-document-preview__section">
                     <h4>{formpackT('notfallpass.section.diagnoses.title')}</h4>
                     {documentModel.diagnosisParagraphs.map(
@@ -1189,12 +1318,12 @@ export default function FormpackDetailPage() {
                         </p>
                       ),
                     )}
-                    {documentModel.diagnosesFormatted && (
+                    {documentModel.diagnoses.formatted && (
                       <div className="formpack-document-preview__note">
                         <h5>
                           {formpackT('notfallpass.diagnoses.additional.title')}
                         </h5>
-                        <p>{documentModel.diagnosesFormatted}</p>
+                        <p>{documentModel.diagnoses.formatted}</p>
                       </div>
                     )}
                   </div>

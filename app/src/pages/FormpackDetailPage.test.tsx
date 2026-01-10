@@ -57,7 +57,7 @@ vi.mock('../formpacks/documentModel', () => ({
     diagnosisParagraphs: [],
     person: { name: null, birthDate: null },
     contacts: [],
-    diagnosesFormatted: null,
+    diagnoses: { formatted: null },
     symptoms: null,
     medications: [],
     allergies: null,
@@ -123,6 +123,10 @@ vi.mock('react-i18next', () => ({
     t: mockT,
     i18n: { language: 'de' },
   }),
+  initReactI18next: {
+    type: '3rdParty',
+    init: () => undefined,
+  },
 }));
 
 describe('FormpackDetailPage', () => {

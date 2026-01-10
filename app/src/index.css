@@ -397,7 +397,36 @@ body {
 
 .formpack-form__actions {
   display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
   justify-content: flex-end;
+}
+
+.formpack-docx-export {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-right: auto;
+}
+
+.formpack-docx-export__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.formpack-docx-export__select {
+  min-width: 180px;
+}
+
+.formpack-docx-export__success {
+  color: #15803d;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .formpack-records__actions,

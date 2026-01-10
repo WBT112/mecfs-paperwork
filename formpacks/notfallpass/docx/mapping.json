@@ -11,7 +11,8 @@
   ],
   "loops": [
     {"var": "contacts", "path": "contacts"},
-    {"var": "medications", "path": "medications"}
+    {"var": "medications", "path": "medications"},
+    {"var": "diagnosisParagraphs", "path": "diagnosisParagraphs"}
   ],
   "i18n": {
     "prefix": "notfallpass"

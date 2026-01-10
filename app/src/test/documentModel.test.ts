@@ -60,4 +60,11 @@ describe('buildDocumentModel', () => {
     });
     expect(result.person.birthDate).toBe('12-04-1990');
   });
+
+  it('projects formatted diagnoses into the nested diagnoses object', () => {
+    const result = buildDocumentModel('notfallpass', 'en', {
+      diagnoses: { formatted: 'Example diagnosis' },
+    });
+    expect(result.diagnoses.formatted).toBe('Example diagnosis');
+  });
 });

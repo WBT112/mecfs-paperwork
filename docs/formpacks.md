@@ -14,9 +14,10 @@ formpacks/
       de.json
       en.json
     docx/
-      template.a4.docx
-      template.wallet.docx
       mapping.json
+    templates/
+      a4.docx
+      wallet.docx
     examples/
       example.json
 ```
@@ -33,7 +34,7 @@ Required fields:
 - `descriptionKey`: i18n key for the description.
 - `exports`: Array of supported export types (MVP: `docx`, `json`).
 - `docx.templates.a4`: Path to the A4 template.
-- `docx.templates.wallet`: Path to the wallet template.
+- `docx.templates.wallet`: Path to the wallet template (only supported for `notfallpass`).
 - `docx.mapping`: Path to the DOCX mapping file.
 
 ## i18n
@@ -69,6 +70,12 @@ Required fields:
 ## DOCX templates
 Templates are `.docx` files with placeholders that follow these rules:
 
+All formpacks must provide an A4 template. The wallet card format is only supported by the `notfallpass` formpack.
+
+### Template locations
+- `formpacks/<packId>/templates/a4.docx` is required for all formpacks.
+- `formpacks/notfallpass/templates/wallet.docx` is optional and only supported for `notfallpass`.
+
 ### Field placeholders
 - Text fields: `{{field.path}}` (example: `{{person.name}}`).
 
@@ -78,11 +85,13 @@ Templates are `.docx` files with placeholders that follow these rules:
 ### Loops
 - Start a loop with `{{#contacts}}` and end it with `{{/contacts}}`.
 - Inside the loop use child fields like `{{name}}`, `{{phone}}`, `{{relation}}`.
+- For paragraph lists, use `{{#diagnosisParagraphs}}` with `{{.}}` to render each entry.
 
 Templates can be visually simple in the MVP but must include the required placeholders.
 
 ## DOCX mapping (`docx/mapping.json`)
 The mapping describes how data is injected into the template variables.
+Document data is produced by `buildDocumentModel(formpackId, locale, formData)` and then mapped into template variables via `mapDocumentDataToTemplate`.
 
 Minimal format:
 ```

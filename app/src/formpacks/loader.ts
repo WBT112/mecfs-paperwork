@@ -49,6 +49,7 @@ const isFormpackExportType = (value: string): value is FormpackExportType =>
 
 const parseDocxManifest = (
   value: unknown,
+  formpackId: string,
 ): FormpackDocxManifest | undefined => {
   if (!value || typeof value !== 'object') {
     return undefined;
@@ -62,11 +63,20 @@ const parseDocxManifest = (
 
   const templates = docx.templates as { a4?: unknown; wallet?: unknown };
 
-  if (
-    typeof templates.a4 !== 'string' ||
-    typeof templates.wallet !== 'string'
-  ) {
+  if (typeof templates.a4 !== 'string') {
     return undefined;
+  }
+
+  if (templates.wallet !== undefined && typeof templates.wallet !== 'string') {
+    return undefined;
+  }
+
+  // Only the notfallpass formpack supports the wallet DOCX template.
+  if (templates.wallet && formpackId !== 'notfallpass') {
+    throw new FormpackLoaderError(
+      'invalid',
+      'Wallet templates are only supported for the notfallpass formpack.',
+    );
   }
 
   if (typeof docx.mapping !== 'string') {
@@ -76,7 +86,7 @@ const parseDocxManifest = (
   return {
     templates: {
       a4: templates.a4,
-      wallet: templates.wallet,
+      ...(templates.wallet ? { wallet: templates.wallet } : {}),
     },
     mapping: docx.mapping,
   };
@@ -148,7 +158,7 @@ const parseManifest = (
   }
 
   const exports = payload.exports.filter(isFormpackExportType);
-  const docx = parseDocxManifest(payload.docx);
+  const docx = parseDocxManifest(payload.docx, formpackId);
   const requiresDocx = exports.includes('docx');
 
   if (requiresDocx && !docx) {
