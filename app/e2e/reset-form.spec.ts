@@ -160,8 +160,9 @@ const waitForRecordData = async (
 
 test.describe('reset form', () => {
   test('clears the draft and persists after reload', async ({ page }) => {
-    await deleteDatabase(page, DB.dbName);
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await deleteDatabase(page, DB.dbName);
+    await page.reload();
 
     await clickNewDraftIfNeeded(page);
 
