@@ -1,0 +1,2762 @@
+diff --git a/app/package-lock.json b/app/package-lock.json
+index c82f685fa70254ef43fbf1abf1a5963813b47a30..b69751a7dc136713c34ceac1bc4521ec84f89f62 100644
+--- a/app/package-lock.json
++++ b/app/package-lock.json
+@@ -1,40 +1,41 @@
+ {
+   "name": "mecfs-paperwork-app",
+   "version": "0.0.0",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "mecfs-paperwork-app",
+       "version": "0.0.0",
+       "dependencies": {
+         "@rjsf/core": "^6.1.2",
+         "@rjsf/utils": "^6.1.2",
+         "@rjsf/validator-ajv8": "^6.1.2",
+         "ajv": "^8.17.1",
+         "ajv-formats": "^2.1.1",
++        "docx-templates": "^4.13.0",
+         "i18next": "^23.12.0",
+         "idb": "^8.0.3",
+         "react": "^18.3.1",
+         "react-dom": "^18.3.1",
+         "react-i18next": "^14.1.3",
+         "react-router-dom": "^6.30.3"
+       },
+       "devDependencies": {
+         "@playwright/test": "^1.57.0",
+         "@testing-library/jest-dom": "^6.9.1",
+         "@testing-library/react": "^16.3.1",
+         "@testing-library/user-event": "^14.6.1",
+         "@types/node": "^25.0.3",
+         "@types/react": "^18.3.3",
+         "@types/react-dom": "^18.3.0",
+         "@typescript-eslint/eslint-plugin": "^7.18.0",
+         "@typescript-eslint/parser": "^7.18.0",
+         "@vitejs/plugin-react": "^4.3.1",
+         "@vitest/coverage-v8": "^4.0.16",
+         "eslint": "^8.57.0",
+         "eslint-plugin-react-hooks": "^4.6.2",
+         "eslint-plugin-react-refresh": "^0.4.11",
+         "globals": "^15.9.0",
+         "husky": "^9.1.7",
+         "jsdom": "^27.4.0",
+@@ -2679,50 +2680,56 @@
+     },
+     "node_modules/commander": {
+       "version": "14.0.2",
+       "resolved": "https://registry.npmjs.org/commander/-/commander-14.0.2.tgz",
+       "integrity": "sha512-TywoWNNRbhoD0BXs1P3ZEScW8W5iKrnbithIl0YH+uCmBd0QpPOA8yc82DS3BIE5Ma6FnBVUsJ7wVUDz4dvOWQ==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=20"
+       }
+     },
+     "node_modules/concat-map": {
+       "version": "0.0.1",
+       "resolved": "https://registry.npmjs.org/concat-map/-/concat-map-0.0.1.tgz",
+       "integrity": "sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==",
+       "dev": true,
+       "license": "MIT"
+     },
+     "node_modules/convert-source-map": {
+       "version": "2.0.0",
+       "resolved": "https://registry.npmjs.org/convert-source-map/-/convert-source-map-2.0.0.tgz",
+       "integrity": "sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==",
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/core-util-is": {
++      "version": "1.0.3",
++      "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.3.tgz",
++      "integrity": "sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==",
++      "license": "MIT"
++    },
+     "node_modules/cross-spawn": {
+       "version": "7.0.6",
+       "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.6.tgz",
+       "integrity": "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "path-key": "^3.1.0",
+         "shebang-command": "^2.0.0",
+         "which": "^2.0.1"
+       },
+       "engines": {
+         "node": ">= 8"
+       }
+     },
+     "node_modules/css-tree": {
+       "version": "3.1.0",
+       "resolved": "https://registry.npmjs.org/css-tree/-/css-tree-3.1.0.tgz",
+       "integrity": "sha512-0eW44TGN5SQXU1mWSkKwFstI/22X2bG1nYzZTYMAWjylYURhse752YgbE4Cx46AC+bAvI+/dYTPRk1LqSUnu6w==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "mdn-data": "2.12.2",
+         "source-map-js": "^1.0.1"
+       },
+@@ -2830,50 +2837,63 @@
+       "version": "3.0.1",
+       "resolved": "https://registry.npmjs.org/dir-glob/-/dir-glob-3.0.1.tgz",
+       "integrity": "sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "path-type": "^4.0.0"
+       },
+       "engines": {
+         "node": ">=8"
+       }
+     },
+     "node_modules/doctrine": {
+       "version": "3.0.0",
+       "resolved": "https://registry.npmjs.org/doctrine/-/doctrine-3.0.0.tgz",
+       "integrity": "sha512-yS+Q5i3hBf7GBkd4KG8a7eBNNWNGLTaEwwYWUijIYM7zrlYDM0BFXHjjPWlWZ1Rg7UaddZeIDmi9jF3HmqiQ2w==",
+       "dev": true,
+       "license": "Apache-2.0",
+       "dependencies": {
+         "esutils": "^2.0.2"
+       },
+       "engines": {
+         "node": ">=6.0.0"
+       }
+     },
++    "node_modules/docx-templates": {
++      "version": "4.15.0",
++      "resolved": "https://registry.npmjs.org/docx-templates/-/docx-templates-4.15.0.tgz",
++      "integrity": "sha512-H0JEDFVCF5j64Do9fqHVWwF86MOWUnHhQ2dfGWy7C2o9yPwtbCT1pXpotE6165Px07fia1Ted1Xh1fj1UZ9u1g==",
++      "license": "MIT",
++      "dependencies": {
++        "jszip": "^3.10.1",
++        "sax": "1.3.0"
++      },
++      "engines": {
++        "node": ">=6"
++      }
++    },
+     "node_modules/dom-accessibility-api": {
+       "version": "0.5.16",
+       "resolved": "https://registry.npmjs.org/dom-accessibility-api/-/dom-accessibility-api-0.5.16.tgz",
+       "integrity": "sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==",
+       "dev": true,
+       "license": "MIT",
+       "peer": true
+     },
+     "node_modules/electron-to-chromium": {
+       "version": "1.5.267",
+       "resolved": "https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.5.267.tgz",
+       "integrity": "sha512-0Drusm6MVRXSOJpGbaSVgcQsuB4hEkMpHXaVstcPmhu5LIedxs1xNK/nIxmQIU/RPC0+1/o0AVZfBTkTNJOdUw==",
+       "dev": true,
+       "license": "ISC"
+     },
+     "node_modules/emoji-regex": {
+       "version": "10.6.0",
+       "resolved": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-10.6.0.tgz",
+       "integrity": "sha512-toUI84YS5YmxW219erniWD0CIVOo46xGKColeNQRgOzDorgBi1v4D71/OFzgD9GO2UGKIv1C3Sp8DAn0+j5w7A==",
+       "dev": true,
+       "license": "MIT"
+     },
+     "node_modules/entities": {
+       "version": "6.0.1",
+       "resolved": "https://registry.npmjs.org/entities/-/entities-6.0.1.tgz",
+@@ -3620,50 +3640,56 @@
+           "type": "individual",
+           "url": "https://www.i18next.com/how-to/faq#i18next-is-awesome.-how-can-i-support-the-project"
+         }
+       ],
+       "license": "MIT",
+       "dependencies": {
+         "@babel/runtime": "^7.23.2"
+       }
+     },
+     "node_modules/idb": {
+       "version": "8.0.3",
+       "resolved": "https://registry.npmjs.org/idb/-/idb-8.0.3.tgz",
+       "integrity": "sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==",
+       "license": "ISC"
+     },
+     "node_modules/ignore": {
+       "version": "5.3.2",
+       "resolved": "https://registry.npmjs.org/ignore/-/ignore-5.3.2.tgz",
+       "integrity": "sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">= 4"
+       }
+     },
++    "node_modules/immediate": {
++      "version": "3.0.6",
++      "resolved": "https://registry.npmjs.org/immediate/-/immediate-3.0.6.tgz",
++      "integrity": "sha512-XXOFtyqDjNDAQxVfYxuF7g9Il/IbWmmlQg2MYKOH8ExIT1qg6xc4zyS3HaEEATgs1btfzxq15ciUiY7gjSXRGQ==",
++      "license": "MIT"
++    },
+     "node_modules/import-fresh": {
+       "version": "3.3.1",
+       "resolved": "https://registry.npmjs.org/import-fresh/-/import-fresh-3.3.1.tgz",
+       "integrity": "sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "parent-module": "^1.0.0",
+         "resolve-from": "^4.0.0"
+       },
+       "engines": {
+         "node": ">=6"
+       },
+       "funding": {
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
+     "node_modules/imurmurhash": {
+       "version": "0.1.4",
+       "resolved": "https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz",
+       "integrity": "sha512-JmXMZ6wuvDmLiHEml9ykzqO6lwFbof0GG4IkcGaENdCRDDmMVnny7s5HsIgHCbaq0w2MyPhDqkhTUgS2LU2PHA==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=0.8.19"
+@@ -3673,51 +3699,50 @@
+       "version": "4.0.0",
+       "resolved": "https://registry.npmjs.org/indent-string/-/indent-string-4.0.0.tgz",
+       "integrity": "sha512-EdDDZu4A2OyIK7Lr/2zG+w5jmbuk1DVBnEwREQvBzspBJkCEbRa8GxU1lghYcaGJCnRWibjDXlq779X1/y5xwg==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=8"
+       }
+     },
+     "node_modules/inflight": {
+       "version": "1.0.6",
+       "resolved": "https://registry.npmjs.org/inflight/-/inflight-1.0.6.tgz",
+       "integrity": "sha512-k92I/b08q4wvFscXCLvqfsHCrjrF7yiXsQuIVvVE7N82W3+aqpzuUdBbfhWcy/FZR3/4IgflMgKLOsvPDrGCJA==",
+       "deprecated": "This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.",
+       "dev": true,
+       "license": "ISC",
+       "dependencies": {
+         "once": "^1.3.0",
+         "wrappy": "1"
+       }
+     },
+     "node_modules/inherits": {
+       "version": "2.0.4",
+       "resolved": "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz",
+       "integrity": "sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==",
+-      "dev": true,
+       "license": "ISC"
+     },
+     "node_modules/is-extglob": {
+       "version": "2.1.1",
+       "resolved": "https://registry.npmjs.org/is-extglob/-/is-extglob-2.1.1.tgz",
+       "integrity": "sha512-SbKbANkN603Vi4jEZv49LeVJMn4yGwsbzZworEoyEiutsN3nJYdbO36zfhGJ6QEDpOZIFkDtnq5JRxmvl3jsoQ==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=0.10.0"
+       }
+     },
+     "node_modules/is-fullwidth-code-point": {
+       "version": "5.1.0",
+       "resolved": "https://registry.npmjs.org/is-fullwidth-code-point/-/is-fullwidth-code-point-5.1.0.tgz",
+       "integrity": "sha512-5XHYaSyiqADb4RnZ1Bdad6cPp8Toise4TzEjcOYDHZkTCbKgiUl7WTUCpNWHuxmDt91wnsZBc9xinNzopv3JMQ==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "get-east-asian-width": "^1.3.1"
+       },
+       "engines": {
+         "node": ">=18"
+       },
+       "funding": {
+@@ -3742,50 +3767,56 @@
+       "resolved": "https://registry.npmjs.org/is-number/-/is-number-7.0.0.tgz",
+       "integrity": "sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=0.12.0"
+       }
+     },
+     "node_modules/is-path-inside": {
+       "version": "3.0.3",
+       "resolved": "https://registry.npmjs.org/is-path-inside/-/is-path-inside-3.0.3.tgz",
+       "integrity": "sha512-Fd4gABb+ycGAmKou8eMftCupSir5lRxqf4aD/vd0cD2qc4HL07OjCeuHMr8Ro4CoMaeCKDB0/ECBOVWjTwUvPQ==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=8"
+       }
+     },
+     "node_modules/is-potential-custom-element-name": {
+       "version": "1.0.1",
+       "resolved": "https://registry.npmjs.org/is-potential-custom-element-name/-/is-potential-custom-element-name-1.0.1.tgz",
+       "integrity": "sha512-bCYeRA2rVibKZd+s2625gGnGF/t7DSqDs4dP7CrLA1m7jKWz6pps0LpYLJN8Q64HtmPKJ1hrN3nzPNKFEKOUiQ==",
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/isarray": {
++      "version": "1.0.0",
++      "resolved": "https://registry.npmjs.org/isarray/-/isarray-1.0.0.tgz",
++      "integrity": "sha512-VLghIWNM6ELQzo7zwmcg0NmTVyWKYjvIeM83yjp0wRDTmUnrM678fQbcKBo6n2CJEF0szoG//ytg+TKla89ALQ==",
++      "license": "MIT"
++    },
+     "node_modules/isexe": {
+       "version": "2.0.0",
+       "resolved": "https://registry.npmjs.org/isexe/-/isexe-2.0.0.tgz",
+       "integrity": "sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==",
+       "dev": true,
+       "license": "ISC"
+     },
+     "node_modules/istanbul-lib-coverage": {
+       "version": "3.2.2",
+       "resolved": "https://registry.npmjs.org/istanbul-lib-coverage/-/istanbul-lib-coverage-3.2.2.tgz",
+       "integrity": "sha512-O8dpsF+r0WV/8MNRKfnmrtCWhuKjxrq2w+jpzBL5UZKTi2LeVWnWOmWRxFlesJONmc+wLAGvKQZEOanko0LFTg==",
+       "dev": true,
+       "license": "BSD-3-Clause",
+       "engines": {
+         "node": ">=8"
+       }
+     },
+     "node_modules/istanbul-lib-report": {
+       "version": "3.0.1",
+       "resolved": "https://registry.npmjs.org/istanbul-lib-report/-/istanbul-lib-report-3.0.1.tgz",
+       "integrity": "sha512-GCfE1mtsHGOELCU8e/Z7YWzpmybrx/+dSTfLrvY8qRmaY6zXTKWn6WQIjaAFw069icm6GVMNkgu0NzI4iPZUNw==",
+       "dev": true,
+       "license": "BSD-3-Clause",
+       "dependencies": {
+         "istanbul-lib-coverage": "^3.0.0",
+@@ -3917,74 +3948,95 @@
+       "dev": true,
+       "license": "MIT"
+     },
+     "node_modules/json5": {
+       "version": "2.2.3",
+       "resolved": "https://registry.npmjs.org/json5/-/json5-2.2.3.tgz",
+       "integrity": "sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==",
+       "dev": true,
+       "license": "MIT",
+       "bin": {
+         "json5": "lib/cli.js"
+       },
+       "engines": {
+         "node": ">=6"
+       }
+     },
+     "node_modules/jsonpointer": {
+       "version": "5.0.1",
+       "resolved": "https://registry.npmjs.org/jsonpointer/-/jsonpointer-5.0.1.tgz",
+       "integrity": "sha512-p/nXbhSEcu3pZRdkW1OfJhpsVtW1gd4Wa1fnQc9YLiTfAjn0312eMKimbdIQzuZl9aa9xUGaRlP9T/CJE/ditQ==",
+       "license": "MIT",
+       "engines": {
+         "node": ">=0.10.0"
+       }
+     },
++    "node_modules/jszip": {
++      "version": "3.10.1",
++      "resolved": "https://registry.npmjs.org/jszip/-/jszip-3.10.1.tgz",
++      "integrity": "sha512-xXDvecyTpGLrqFrvkrUSoxxfJI5AH7U8zxxtVclpsUtMCq4JQ290LY8AW5c7Ggnr/Y/oK+bQMbqK2qmtk3pN4g==",
++      "license": "(MIT OR GPL-3.0-or-later)",
++      "dependencies": {
++        "lie": "~3.3.0",
++        "pako": "~1.0.2",
++        "readable-stream": "~2.3.6",
++        "setimmediate": "^1.0.5"
++      }
++    },
+     "node_modules/keyv": {
+       "version": "4.5.4",
+       "resolved": "https://registry.npmjs.org/keyv/-/keyv-4.5.4.tgz",
+       "integrity": "sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "json-buffer": "3.0.1"
+       }
+     },
+     "node_modules/levn": {
+       "version": "0.4.1",
+       "resolved": "https://registry.npmjs.org/levn/-/levn-0.4.1.tgz",
+       "integrity": "sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "prelude-ls": "^1.2.1",
+         "type-check": "~0.4.0"
+       },
+       "engines": {
+         "node": ">= 0.8.0"
+       }
+     },
++    "node_modules/lie": {
++      "version": "3.3.0",
++      "resolved": "https://registry.npmjs.org/lie/-/lie-3.3.0.tgz",
++      "integrity": "sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==",
++      "license": "MIT",
++      "dependencies": {
++        "immediate": "~3.0.5"
++      }
++    },
+     "node_modules/lint-staged": {
+       "version": "16.2.7",
+       "resolved": "https://registry.npmjs.org/lint-staged/-/lint-staged-16.2.7.tgz",
+       "integrity": "sha512-lDIj4RnYmK7/kXMya+qJsmkRFkGolciXjrsZ6PC25GdTfWOAWetR0ZbsNXRAj1EHHImRSalc+whZFg56F5DVow==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "commander": "^14.0.2",
+         "listr2": "^9.0.5",
+         "micromatch": "^4.0.8",
+         "nano-spawn": "^2.0.0",
+         "pidtree": "^0.6.0",
+         "string-argv": "^0.3.2",
+         "yaml": "^2.8.1"
+       },
+       "bin": {
+         "lint-staged": "bin/lint-staged.js"
+       },
+       "engines": {
+         "node": ">=20.17"
+       },
+       "funding": {
+         "url": "https://opencollective.com/lint-staged"
+       }
+     },
+@@ -4375,50 +4427,56 @@
+         "yocto-queue": "^0.1.0"
+       },
+       "engines": {
+         "node": ">=10"
+       },
+       "funding": {
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
+     "node_modules/p-locate": {
+       "version": "5.0.0",
+       "resolved": "https://registry.npmjs.org/p-locate/-/p-locate-5.0.0.tgz",
+       "integrity": "sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "p-limit": "^3.0.2"
+       },
+       "engines": {
+         "node": ">=10"
+       },
+       "funding": {
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
++    "node_modules/pako": {
++      "version": "1.0.11",
++      "resolved": "https://registry.npmjs.org/pako/-/pako-1.0.11.tgz",
++      "integrity": "sha512-4hLB8Py4zZce5s4yd9XzopqwVv/yGNhV1Bl8NTmCq1763HeK2+EwVTv+leGeL13Dnh2wfbqowVPXCIO0z4taYw==",
++      "license": "(MIT AND Zlib)"
++    },
+     "node_modules/parent-module": {
+       "version": "1.0.1",
+       "resolved": "https://registry.npmjs.org/parent-module/-/parent-module-1.0.1.tgz",
+       "integrity": "sha512-GQ2EWRpQV8/o+Aw8YqtfZZPfNRWZYkbidE9k5rpl/hC3vtHHBfGm2Ifi6qWV+coDGkrUKZAxE3Lot5kcsRlh+g==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "callsites": "^3.0.0"
+       },
+       "engines": {
+         "node": ">=6"
+       }
+     },
+     "node_modules/parse5": {
+       "version": "8.0.0",
+       "resolved": "https://registry.npmjs.org/parse5/-/parse5-8.0.0.tgz",
+       "integrity": "sha512-9m4m5GSgXjL4AjumKzq1Fgfp3Z8rsvjRNbnkVwfu2ImRqE5D0LnY2QfDen18FSY9C573YU5XxSapdHZTZ2WolA==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "entities": "^6.0.0"
+       },
+       "funding": {
+         "url": "https://github.com/inikulin/parse5?sponsor=1"
+       }
+@@ -4621,50 +4679,56 @@
+         "node": "^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0"
+       }
+     },
+     "node_modules/pretty-format/node_modules/ansi-styles": {
+       "version": "5.2.0",
+       "resolved": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-5.2.0.tgz",
+       "integrity": "sha512-Cxwpt2SfTzTtXcfOlzGEee8O+c+MmUgGrNiBcXnuWxuFJHe6a5Hz7qwhwe5OgaSYI0IJvkLqWX1ASG+cJOkEiA==",
+       "dev": true,
+       "license": "MIT",
+       "peer": true,
+       "engines": {
+         "node": ">=10"
+       },
+       "funding": {
+         "url": "https://github.com/chalk/ansi-styles?sponsor=1"
+       }
+     },
+     "node_modules/pretty-format/node_modules/react-is": {
+       "version": "17.0.2",
+       "resolved": "https://registry.npmjs.org/react-is/-/react-is-17.0.2.tgz",
+       "integrity": "sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==",
+       "dev": true,
+       "license": "MIT",
+       "peer": true
+     },
++    "node_modules/process-nextick-args": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/process-nextick-args/-/process-nextick-args-2.0.1.tgz",
++      "integrity": "sha512-3ouUOpQhtgrbOa17J7+uxOTpITYWaGP7/AhoR3+A+/1e9skrzelGi/dXzEYyvbxubEF6Wn2ypscTKiKJFFn1ag==",
++      "license": "MIT"
++    },
+     "node_modules/prop-types": {
+       "version": "15.8.1",
+       "resolved": "https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz",
+       "integrity": "sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==",
+       "license": "MIT",
+       "dependencies": {
+         "loose-envify": "^1.4.0",
+         "object-assign": "^4.1.1",
+         "react-is": "^16.13.1"
+       }
+     },
+     "node_modules/prop-types/node_modules/react-is": {
+       "version": "16.13.1",
+       "resolved": "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz",
+       "integrity": "sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==",
+       "license": "MIT"
+     },
+     "node_modules/punycode": {
+       "version": "2.3.1",
+       "resolved": "https://registry.npmjs.org/punycode/-/punycode-2.3.1.tgz",
+       "integrity": "sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=6"
+@@ -4764,50 +4828,65 @@
+       },
+       "engines": {
+         "node": ">=14.0.0"
+       },
+       "peerDependencies": {
+         "react": ">=16.8"
+       }
+     },
+     "node_modules/react-router-dom": {
+       "version": "6.30.3",
+       "resolved": "https://registry.npmjs.org/react-router-dom/-/react-router-dom-6.30.3.tgz",
+       "integrity": "sha512-pxPcv1AczD4vso7G4Z3TKcvlxK7g7TNt3/FNGMhfqyntocvYKj+GCatfigGDjbLozC4baguJ0ReCigoDJXb0ag==",
+       "license": "MIT",
+       "dependencies": {
+         "@remix-run/router": "1.23.2",
+         "react-router": "6.30.3"
+       },
+       "engines": {
+         "node": ">=14.0.0"
+       },
+       "peerDependencies": {
+         "react": ">=16.8",
+         "react-dom": ">=16.8"
+       }
+     },
++    "node_modules/readable-stream": {
++      "version": "2.3.8",
++      "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-2.3.8.tgz",
++      "integrity": "sha512-8p0AUk4XODgIewSi0l8Epjs+EVnWiK7NoDIEGU0HhE7+ZyY8D1IMY7odu5lRrFXGg71L15KG8QrPmum45RTtdA==",
++      "license": "MIT",
++      "dependencies": {
++        "core-util-is": "~1.0.0",
++        "inherits": "~2.0.3",
++        "isarray": "~1.0.0",
++        "process-nextick-args": "~2.0.0",
++        "safe-buffer": "~5.1.1",
++        "string_decoder": "~1.1.1",
++        "util-deprecate": "~1.0.1"
++      }
++    },
+     "node_modules/redent": {
+       "version": "3.0.0",
+       "resolved": "https://registry.npmjs.org/redent/-/redent-3.0.0.tgz",
+       "integrity": "sha512-6tDA8g98We0zd0GvVeMT9arEOnTw9qM03L9cJXaCjrip1OO764RDBLBfrB4cwzNGDj5OA5ioymC9GkizgWJDUg==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "indent-string": "^4.0.0",
+         "strip-indent": "^3.0.0"
+       },
+       "engines": {
+         "node": ">=8"
+       }
+     },
+     "node_modules/require-from-string": {
+       "version": "2.0.2",
+       "resolved": "https://registry.npmjs.org/require-from-string/-/require-from-string-2.0.2.tgz",
+       "integrity": "sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==",
+       "license": "MIT",
+       "engines": {
+         "node": ">=0.10.0"
+       }
+     },
+     "node_modules/resolve-from": {
+       "version": "4.0.0",
+@@ -4918,85 +4997,103 @@
+     },
+     "node_modules/run-parallel": {
+       "version": "1.2.0",
+       "resolved": "https://registry.npmjs.org/run-parallel/-/run-parallel-1.2.0.tgz",
+       "integrity": "sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==",
+       "dev": true,
+       "funding": [
+         {
+           "type": "github",
+           "url": "https://github.com/sponsors/feross"
+         },
+         {
+           "type": "patreon",
+           "url": "https://www.patreon.com/feross"
+         },
+         {
+           "type": "consulting",
+           "url": "https://feross.org/support"
+         }
+       ],
+       "license": "MIT",
+       "dependencies": {
+         "queue-microtask": "^1.2.2"
+       }
+     },
++    "node_modules/safe-buffer": {
++      "version": "5.1.2",
++      "resolved": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.1.2.tgz",
++      "integrity": "sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==",
++      "license": "MIT"
++    },
++    "node_modules/sax": {
++      "version": "1.3.0",
++      "resolved": "https://registry.npmjs.org/sax/-/sax-1.3.0.tgz",
++      "integrity": "sha512-0s+oAmw9zLl1V1cS9BtZN7JAd0cW5e0QH4W3LWEK6a4LaLEA2OTpGYWDY+6XasBLtz6wkm3u1xRw95mRuJ59WA==",
++      "license": "ISC"
++    },
+     "node_modules/saxes": {
+       "version": "6.0.0",
+       "resolved": "https://registry.npmjs.org/saxes/-/saxes-6.0.0.tgz",
+       "integrity": "sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA==",
+       "dev": true,
+       "license": "ISC",
+       "dependencies": {
+         "xmlchars": "^2.2.0"
+       },
+       "engines": {
+         "node": ">=v12.22.7"
+       }
+     },
+     "node_modules/scheduler": {
+       "version": "0.23.2",
+       "resolved": "https://registry.npmjs.org/scheduler/-/scheduler-0.23.2.tgz",
+       "integrity": "sha512-UOShsPwz7NrMUqhR6t0hWjFduvOzbtv7toDH1/hIrfRNIDBnnBWd0CwJTGvTpngVlmwGCdP9/Zl/tVrDqcuYzQ==",
+       "license": "MIT",
+       "dependencies": {
+         "loose-envify": "^1.1.0"
+       }
+     },
+     "node_modules/semver": {
+       "version": "7.7.3",
+       "resolved": "https://registry.npmjs.org/semver/-/semver-7.7.3.tgz",
+       "integrity": "sha512-SdsKMrI9TdgjdweUSR9MweHA4EJ8YxHn8DFaDisvhVlUOe4BF1tLD7GAj0lIqWVl+dPb/rExr0Btby5loQm20Q==",
+       "dev": true,
+       "license": "ISC",
+       "bin": {
+         "semver": "bin/semver.js"
+       },
+       "engines": {
+         "node": ">=10"
+       }
+     },
++    "node_modules/setimmediate": {
++      "version": "1.0.5",
++      "resolved": "https://registry.npmjs.org/setimmediate/-/setimmediate-1.0.5.tgz",
++      "integrity": "sha512-MATJdZp8sLqDl/68LfQmbP8zKPLQNV6BIZoIgrscFDQ+RsvK/BxeDQOgyxKKoh0y/8h3BqVFnCqQ/gd+reiIXA==",
++      "license": "MIT"
++    },
+     "node_modules/shebang-command": {
+       "version": "2.0.0",
+       "resolved": "https://registry.npmjs.org/shebang-command/-/shebang-command-2.0.0.tgz",
+       "integrity": "sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "shebang-regex": "^3.0.0"
+       },
+       "engines": {
+         "node": ">=8"
+       }
+     },
+     "node_modules/shebang-regex": {
+       "version": "3.0.0",
+       "resolved": "https://registry.npmjs.org/shebang-regex/-/shebang-regex-3.0.0.tgz",
+       "integrity": "sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=8"
+       }
+     },
+     "node_modules/siginfo": {
+       "version": "2.0.0",
+@@ -5060,50 +5157,59 @@
+     },
+     "node_modules/source-map-js": {
+       "version": "1.2.1",
+       "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz",
+       "integrity": "sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==",
+       "dev": true,
+       "license": "BSD-3-Clause",
+       "engines": {
+         "node": ">=0.10.0"
+       }
+     },
+     "node_modules/stackback": {
+       "version": "0.0.2",
+       "resolved": "https://registry.npmjs.org/stackback/-/stackback-0.0.2.tgz",
+       "integrity": "sha512-1XMJE5fQo1jGH6Y/7ebnwPOBEkIEnT4QF32d5R1+VXdXveM0IBMJt8zfaxX1P3QhVwrYe+576+jkANtSS2mBbw==",
+       "dev": true,
+       "license": "MIT"
+     },
+     "node_modules/std-env": {
+       "version": "3.10.0",
+       "resolved": "https://registry.npmjs.org/std-env/-/std-env-3.10.0.tgz",
+       "integrity": "sha512-5GS12FdOZNliM5mAOxFRg7Ir0pWz8MdpYm6AY6VPkGpbA7ZzmbzNcBJQ0GPvvyWgcY7QAhCgf9Uy89I03faLkg==",
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/string_decoder": {
++      "version": "1.1.1",
++      "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.1.1.tgz",
++      "integrity": "sha512-n/ShnvDi6FHbbVfviro+WojiFzv+s8MPMHBczVePfUpDJLwoLT0ht1l4YwBCbi8pJAveEEdnkHyPyTP/mzRfwg==",
++      "license": "MIT",
++      "dependencies": {
++        "safe-buffer": "~5.1.0"
++      }
++    },
+     "node_modules/string-argv": {
+       "version": "0.3.2",
+       "resolved": "https://registry.npmjs.org/string-argv/-/string-argv-0.3.2.tgz",
+       "integrity": "sha512-aqD2Q0144Z+/RqG52NeHEkZauTAUWJO8c6yTftGJKO3Tja5tUgIfmIl6kExvhtxSDP7fXB6DvzkfMpCd/F3G+Q==",
+       "dev": true,
+       "license": "MIT",
+       "engines": {
+         "node": ">=0.6.19"
+       }
+     },
+     "node_modules/string-width": {
+       "version": "8.1.0",
+       "resolved": "https://registry.npmjs.org/string-width/-/string-width-8.1.0.tgz",
+       "integrity": "sha512-Kxl3KJGb/gxkaUMOjRsQ8IrXiGW75O4E3RPjFIINOVH8AMl2SQ/yWdTzWwF3FevIX9LcMAjJW+GRwAlAbTSXdg==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "get-east-asian-width": "^1.3.0",
+         "strip-ansi": "^7.1.0"
+       },
+       "engines": {
+         "node": ">=20"
+       },
+       "funding": {
+         "url": "https://github.com/sponsors/sindresorhus"
+@@ -5417,50 +5523,56 @@
+           "url": "https://github.com/sponsors/ai"
+         }
+       ],
+       "license": "MIT",
+       "dependencies": {
+         "escalade": "^3.2.0",
+         "picocolors": "^1.1.1"
+       },
+       "bin": {
+         "update-browserslist-db": "cli.js"
+       },
+       "peerDependencies": {
+         "browserslist": ">= 4.21.0"
+       }
+     },
+     "node_modules/uri-js": {
+       "version": "4.4.1",
+       "resolved": "https://registry.npmjs.org/uri-js/-/uri-js-4.4.1.tgz",
+       "integrity": "sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==",
+       "dev": true,
+       "license": "BSD-2-Clause",
+       "dependencies": {
+         "punycode": "^2.1.0"
+       }
+     },
++    "node_modules/util-deprecate": {
++      "version": "1.0.2",
++      "resolved": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
++      "integrity": "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==",
++      "license": "MIT"
++    },
+     "node_modules/vite": {
+       "version": "5.4.21",
+       "resolved": "https://registry.npmjs.org/vite/-/vite-5.4.21.tgz",
+       "integrity": "sha512-o5a9xKjbtuhY6Bi5S3+HvbRERmouabWbyUcpXXUA1u+GNUKoROi9byOJ8M0nHbHYHkYICiMlqxkg1KkYmm25Sw==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "esbuild": "^0.21.3",
+         "postcss": "^8.4.43",
+         "rollup": "^4.20.0"
+       },
+       "bin": {
+         "vite": "bin/vite.js"
+       },
+       "engines": {
+         "node": "^18.0.0 || >=20.0.0"
+       },
+       "funding": {
+         "url": "https://github.com/vitejs/vite?sponsor=1"
+       },
+       "optionalDependencies": {
+         "fsevents": "~2.3.3"
+       },
+       "peerDependencies": {
+         "@types/node": "^18.0.0 || >=20.0.0",
+@@ -5483,51 +5595,50 @@
+           "optional": true
+         },
+         "sass": {
+           "optional": true
+         },
+         "sass-embedded": {
+           "optional": true
+         },
+         "stylus": {
+           "optional": true
+         },
+         "sugarss": {
+           "optional": true
+         },
+         "terser": {
+           "optional": true
+         }
+       }
+     },
+     "node_modules/vitest": {
+       "version": "4.0.16",
+       "resolved": "https://registry.npmjs.org/vitest/-/vitest-4.0.16.tgz",
+       "integrity": "sha512-E4t7DJ9pESL6E3I8nFjPa4xGUd3PmiWDLsDztS2qXSJWfHtbQnwAWylaBvSNY48I3vr8PTqIZlyK8TE3V3CA4Q==",
+       "dev": true,
+       "license": "MIT",
+-      "peer": true,
+       "dependencies": {
+         "@vitest/expect": "4.0.16",
+         "@vitest/mocker": "4.0.16",
+         "@vitest/pretty-format": "4.0.16",
+         "@vitest/runner": "4.0.16",
+         "@vitest/snapshot": "4.0.16",
+         "@vitest/spy": "4.0.16",
+         "@vitest/utils": "4.0.16",
+         "es-module-lexer": "^1.7.0",
+         "expect-type": "^1.2.2",
+         "magic-string": "^0.30.21",
+         "obug": "^2.1.1",
+         "pathe": "^2.0.3",
+         "picomatch": "^4.0.3",
+         "std-env": "^3.10.0",
+         "tinybench": "^2.9.0",
+         "tinyexec": "^1.0.2",
+         "tinyglobby": "^0.2.15",
+         "tinyrainbow": "^3.0.3",
+         "vite": "^6.0.0 || ^7.0.0",
+         "why-is-node-running": "^2.3.0"
+       },
+       "bin": {
+         "vitest": "vitest.mjs"
+       },
+diff --git a/app/package.json b/app/package.json
+index 1e3f8fd13dfe8f7f8e6153b0ce949dec7d8718ae..fba4300444aebedfd66d2bb37c2530135fae3780 100644
+--- a/app/package.json
++++ b/app/package.json
+@@ -9,50 +9,51 @@
+     "dev": "vite",
+     "build": "tsc -b && vite build",
+     "preview": "vite preview",
+     "lint": "eslint .",
+     "lint:fix": "eslint . --fix",
+     "format": "prettier . --write",
+     "format:check": "prettier . --check",
+     "typecheck": "tsc --noEmit",
+     "test:e2e": "playwright test",
+     "test:e2e:ui": "playwright test --ui",
+     "test:unit": "vitest --run",
+     "prepare": "husky",
+     "precommit": "lint-staged"
+   },
+   "lint-staged": {
+     "*.{ts,tsx,js,jsx,json,css,md,yml,yaml}": [
+       "prettier --write"
+     ]
+   },
+   "dependencies": {
+     "@rjsf/core": "^6.1.2",
+     "@rjsf/utils": "^6.1.2",
+     "@rjsf/validator-ajv8": "^6.1.2",
+     "ajv": "^8.17.1",
+     "ajv-formats": "^2.1.1",
++    "docx-templates": "^4.13.0",
+     "i18next": "^23.12.0",
+     "idb": "^8.0.3",
+     "react": "^18.3.1",
+     "react-dom": "^18.3.1",
+     "react-i18next": "^14.1.3",
+     "react-router-dom": "^6.30.3"
+   },
+   "devDependencies": {
+     "@playwright/test": "^1.57.0",
+     "@testing-library/jest-dom": "^6.9.1",
+     "@testing-library/react": "^16.3.1",
+     "@testing-library/user-event": "^14.6.1",
+     "@types/node": "^25.0.3",
+     "@types/react": "^18.3.3",
+     "@types/react-dom": "^18.3.0",
+     "@typescript-eslint/eslint-plugin": "^7.18.0",
+     "@typescript-eslint/parser": "^7.18.0",
+     "@vitejs/plugin-react": "^4.3.1",
+     "@vitest/coverage-v8": "^4.0.16",
+     "eslint": "^8.57.0",
+     "eslint-plugin-react-hooks": "^4.6.2",
+     "eslint-plugin-react-refresh": "^0.4.11",
+     "globals": "^15.9.0",
+     "husky": "^9.1.7",
+     "jsdom": "^27.4.0",
+diff --git a/app/src/export/docx.ts b/app/src/export/docx.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..e215e9cbf90af53d1f5f6dce5e6673df25cee67f
+--- /dev/null
++++ b/app/src/export/docx.ts
+@@ -0,0 +1,310 @@
++import { createReport } from 'docx-templates';
++import i18n from '../i18n';
++import type { SupportedLocale } from '../i18n/locale';
++import type { DocumentModel } from '../formpacks/documentModel';
++
++export type DocxTemplateId = 'a4' | 'wallet';
++
++type DocxMappingField = {
++  var: string;
++  path: string;
++};
++
++type DocxMappingLoop = {
++  var: string;
++  path: string;
++};
++
++type DocxMapping = {
++  version: number;
++  fields: DocxMappingField[];
++  loops?: DocxMappingLoop[];
++  i18n?: {
++    prefix?: string;
++  };
++};
++
++export type DocxTemplateContext = Record<string, unknown>;
++
++type MapTemplateOptions = {
++  mappingPath?: string;
++  locale?: SupportedLocale;
++};
++
++const buildAssetPath = (formpackId: string, assetPath: string) =>
++  `/formpacks/${formpackId}/${assetPath}`;
++
++const isRecord = (value: unknown): value is Record<string, unknown> =>
++  typeof value === 'object' && value !== null && !Array.isArray(value);
++
++const parseDocxMapping = (payload: unknown): DocxMapping => {
++  if (!isRecord(payload)) {
++    throw new Error('Invalid DOCX mapping payload.');
++  }
++
++  if (typeof payload.version !== 'number') {
++    throw new Error('DOCX mapping payload must declare a version.');
++  }
++
++  if (!Array.isArray(payload.fields)) {
++    throw new Error('DOCX mapping payload must declare fields.');
++  }
++
++  const fields = payload.fields.filter(
++    (field): field is DocxMappingField =>
++      isRecord(field) &&
++      typeof field.var === 'string' &&
++      typeof field.path === 'string',
++  );
++
++  if (!fields.length) {
++    throw new Error('DOCX mapping payload has no valid fields.');
++  }
++
++  const loops = Array.isArray(payload.loops)
++    ? payload.loops.filter(
++        (loop): loop is DocxMappingLoop =>
++          isRecord(loop) &&
++          typeof loop.var === 'string' &&
++          typeof loop.path === 'string',
++      )
++    : undefined;
++
++  const i18nConfig = isRecord(payload.i18n)
++    ? {
++        prefix:
++          typeof payload.i18n.prefix === 'string'
++            ? payload.i18n.prefix
++            : undefined,
++      }
++    : undefined;
++
++  return {
++    version: payload.version,
++    fields,
++    loops,
++    i18n: i18nConfig,
++  };
++};
++
++const getPathValue = (source: unknown, path: string): unknown => {
++  if (!path) {
++    return undefined;
++  }
++
++  return path.split('.').reduce<unknown>((current, segment) => {
++    if (!isRecord(current) && !Array.isArray(current)) {
++      return undefined;
++    }
++
++    if (isRecord(current)) {
++      return current[segment];
++    }
++
++    const index = Number(segment);
++    if (Number.isNaN(index)) {
++      return undefined;
++    }
++    return current[index];
++  }, source);
++};
++
++const setPathValue = (
++  target: Record<string, unknown>,
++  path: string,
++  value: unknown,
++) => {
++  const segments = path.split('.');
++  let cursor: Record<string, unknown> = target;
++
++  segments.forEach((segment, index) => {
++    if (index === segments.length - 1) {
++      cursor[segment] = value;
++      return;
++    }
++
++    if (!isRecord(cursor[segment])) {
++      cursor[segment] = {};
++    }
++
++    cursor = cursor[segment] as Record<string, unknown>;
++  });
++};
++
++const normalizeFieldValue = (value: unknown): string | number | boolean => {
++  if (value === null || value === undefined) {
++    return '';
++  }
++
++  if (typeof value === 'string') {
++    return value;
++  }
++
++  if (typeof value === 'number' || typeof value === 'boolean') {
++    return value;
++  }
++
++  return '';
++};
++
++const normalizeLoopEntry = (entry: unknown): unknown => {
++  if (entry === null || entry === undefined) {
++    return null;
++  }
++
++  if (!isRecord(entry)) {
++    if (typeof entry === 'string') {
++      return entry;
++    }
++
++    if (typeof entry === 'number' || typeof entry === 'boolean') {
++      return entry.toString();
++    }
++
++    return null;
++  }
++
++  const normalized: Record<string, unknown> = {};
++  Object.entries(entry).forEach(([key, value]) => {
++    normalized[key] = normalizeFieldValue(value);
++  });
++
++  return normalized;
++};
++
++const buildI18nContext = (
++  formpackId: string,
++  locale: SupportedLocale,
++  prefix?: string,
++): Record<string, string> => {
++  const namespace = `formpack:${formpackId}`;
++  const resources = i18n.getResourceBundle(locale, namespace) as Record<
++    string,
++    string
++  > | null;
++
++  if (!resources) {
++    return {};
++  }
++
++  const context: Record<string, string> = {};
++  const prefixFilter = prefix ? `${prefix}.` : null;
++
++  Object.entries(resources).forEach(([key, value]) => {
++    if (prefixFilter && !key.startsWith(prefixFilter)) {
++      return;
++    }
++    context[`t:${key}`] = value;
++  });
++
++  return context;
++};
++
++const loadDocxMapping = async (
++  formpackId: string,
++  mappingPath: string,
++): Promise<DocxMapping> => {
++  const response = await fetch(buildAssetPath(formpackId, mappingPath), {
++    headers: { Accept: 'application/json' },
++  });
++
++  if (!response.ok) {
++    throw new Error('Unable to load DOCX mapping.');
++  }
++
++  return parseDocxMapping(await response.json());
++};
++
++/**
++ * Maps a document model into template-ready context data.
++ */
++export const mapDocumentDataToTemplate = async (
++  formpackId: string,
++  templateId: DocxTemplateId,
++  documentData: DocumentModel,
++  options: MapTemplateOptions = {},
++): Promise<DocxTemplateContext> => {
++  void templateId;
++  const locale = options.locale ?? (i18n.language as SupportedLocale);
++  const mappingPath = options.mappingPath ?? 'docx/mapping.json';
++  const mapping = await loadDocxMapping(formpackId, mappingPath);
++  const context: DocxTemplateContext = {
++    ...buildI18nContext(formpackId, locale, mapping.i18n?.prefix),
++  };
++
++  mapping.fields.forEach((field) => {
++    const value = normalizeFieldValue(getPathValue(documentData, field.path));
++    setPathValue(context, field.var, value);
++  });
++
++  mapping.loops?.forEach((loop) => {
++    const value = getPathValue(documentData, loop.path);
++    const entries = Array.isArray(value)
++      ? value
++          .map(normalizeLoopEntry)
++          .filter((entry) => entry !== null && entry !== undefined)
++      : [];
++    setPathValue(context, loop.var, entries);
++  });
++
++  return context;
++};
++
++/**
++ * Loads a DOCX template asset for a formpack.
++ */
++export const loadDocxTemplate = async (
++  formpackId: string,
++  templatePath: string,
++): Promise<Uint8Array> => {
++  const response = await fetch(buildAssetPath(formpackId, templatePath));
++
++  if (!response.ok) {
++    throw new Error('Unable to load DOCX template.');
++  }
++
++  const buffer = await response.arrayBuffer();
++  return new Uint8Array(buffer);
++};
++
++const formatExportDate = (value: Date) =>
++  value.toISOString().slice(0, 10).replace(/-/g, '');
++
++/**
++ * Builds the exported DOCX filename.
++ */
++export const buildDocxExportFilename = (
++  formpackId: string,
++  templateId: DocxTemplateId,
++  exportedAt: Date = new Date(),
++): string => `${formpackId}-${templateId}-${formatExportDate(exportedAt)}.docx`;
++
++/**
++ * Generates a DOCX report from a template and context.
++ */
++export const createDocxReport = async (
++  template: Uint8Array,
++  data: DocxTemplateContext,
++): Promise<Uint8Array> =>
++  createReport({
++    template,
++    data,
++  });
++
++/**
++ * Downloads a DOCX report blob.
++ */
++export const downloadDocxExport = (
++  report: Uint8Array,
++  filename: string,
++): void => {
++  const blob = new Blob([report], {
++    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
++  });
++  const url = URL.createObjectURL(blob);
++  const anchor = document.createElement('a');
++  anchor.href = url;
++  anchor.download = filename;
++  anchor.click();
++  window.setTimeout(() => URL.revokeObjectURL(url), 0);
++};
+diff --git a/app/src/formpacks/documentModel.ts b/app/src/formpacks/documentModel.ts
+index 7b14b3a992e2646a1c73739bd9cfc0c497388e79..8caf80245d15d81f61c3beee7f10f036bf7d7bad 100644
+--- a/app/src/formpacks/documentModel.ts
++++ b/app/src/formpacks/documentModel.ts
+@@ -1,46 +1,48 @@
+ import i18n from '../i18n';
+ import type { SupportedLocale } from '../i18n/locale';
+ 
+ type DiagnosisFlags = {
+   meCfs?: boolean;
+   pots?: boolean;
+   longCovid?: boolean;
+ };
+ 
+ export type DocumentModel = {
+   diagnosisParagraphs: string[];
+   person: {
+     name: string | null;
+     birthDate: string | null;
+   };
+   contacts: Array<{
+     name: string | null;
+     phone: string | null;
+     relation: string | null;
+   }>;
+-  diagnosesFormatted: string | null;
++  diagnoses: {
++    formatted: string | null;
++  };
+   symptoms: string | null;
+   medications: Array<{
+     name: string | null;
+     dosage: string | null;
+     schedule: string | null;
+   }>;
+   allergies: string | null;
+   doctor: {
+     name: string | null;
+     phone: string | null;
+   };
+ };
+ 
+ const isRecord = (value: unknown): value is Record<string, unknown> =>
+   typeof value === 'object' && value !== null && !Array.isArray(value);
+ 
+ const getDiagnosisFlags = (
+   formData: Record<string, unknown>,
+ ): DiagnosisFlags => {
+   const diagnoses = isRecord(formData.diagnoses) ? formData.diagnoses : null;
+   return {
+     meCfs: diagnoses?.meCfs === true,
+     pots: diagnoses?.pots === true,
+     longCovid: diagnoses?.longCovid === true,
+   };
+@@ -111,51 +113,53 @@ const buildBaseDocumentModel = (
+     })
+     .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+ 
+   const medications = getArrayValue(formData.medications)
+     .map((entry) => {
+       const record = getRecordValue(entry);
+       if (!record) {
+         return null;
+       }
+       const name = getStringValue(record.name);
+       const dosage = getStringValue(record.dosage);
+       const schedule = getStringValue(record.schedule);
+       if (!name && !dosage && !schedule) {
+         return null;
+       }
+       return { name, dosage, schedule };
+     })
+     .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+ 
+   return {
+     person: {
+       name: getStringValue(person?.name),
+       birthDate: formatBirthDate(getStringValue(person?.birthDate)),
+     },
+     contacts,
+-    diagnosesFormatted: getStringValue(diagnoses?.formatted),
++    diagnoses: {
++      formatted: getStringValue(diagnoses?.formatted),
++    },
+     symptoms: getStringValue(formData.symptoms),
+     medications,
+     allergies: getStringValue(formData.allergies),
+     doctor: {
+       name: getStringValue(doctor?.name),
+       phone: getStringValue(doctor?.phone),
+     },
+   };
+ };
+ 
+ /**
+  * Builds a document projection for exports using formpack i18n content.
+  */
+ export const buildDocumentModel = (
+   formpackId: string | null,
+   locale: SupportedLocale,
+   formData: Record<string, unknown>,
+ ): DocumentModel => {
+   const baseModel = buildBaseDocumentModel(formData);
+ 
+   if (!formpackId) {
+     return { diagnosisParagraphs: [], ...baseModel };
+   }
+ 
+   const t = i18n.getFixedT(locale, `formpack:${formpackId}`);
+diff --git a/app/src/formpacks/loader.ts b/app/src/formpacks/loader.ts
+index e186c40e4fdd2a72d41416b92efb240b25bb9f84..7274d5f65319e960f4bd0480e107aecf8a997933 100644
+--- a/app/src/formpacks/loader.ts
++++ b/app/src/formpacks/loader.ts
+@@ -27,78 +27,87 @@ export class FormpackLoaderError extends Error {
+ 
+   constructor(code: FormpackLoaderErrorCode, message: string) {
+     super(message);
+     this.name = 'FormpackLoaderError';
+     this.code = code;
+   }
+ }
+ 
+ const buildManifestPath = (formpackId: string) =>
+   `/formpacks/${formpackId}/manifest.json`;
+ const buildSchemaPath = (formpackId: string) =>
+   `/formpacks/${formpackId}/schema.json`;
+ const buildUiSchemaPath = (formpackId: string) =>
+   `/formpacks/${formpackId}/ui.schema.json`;
+ 
+ const isStringArray = (value: unknown): value is string[] =>
+   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+ const isRecord = (value: unknown): value is Record<string, unknown> =>
+   typeof value === 'object' && value !== null && !Array.isArray(value);
+ 
+ const isFormpackExportType = (value: string): value is FormpackExportType =>
+   value === 'docx' || value === 'json';
+ 
+ const parseDocxManifest = (
+   value: unknown,
++  formpackId: string,
+ ): FormpackDocxManifest | undefined => {
+   if (!value || typeof value !== 'object') {
+     return undefined;
+   }
+ 
+   const docx = value as { templates?: unknown; mapping?: unknown };
+ 
+   if (!docx.templates || typeof docx.templates !== 'object') {
+     return undefined;
+   }
+ 
+   const templates = docx.templates as { a4?: unknown; wallet?: unknown };
+ 
+-  if (
+-    typeof templates.a4 !== 'string' ||
+-    typeof templates.wallet !== 'string'
+-  ) {
++  if (typeof templates.a4 !== 'string') {
++    return undefined;
++  }
++
++  if (templates.wallet !== undefined && typeof templates.wallet !== 'string') {
+     return undefined;
+   }
+ 
++  if (templates.wallet && formpackId !== 'notfallpass') {
++    throw new FormpackLoaderError(
++      'invalid',
++      'Wallet templates are only supported for the notfallpass formpack.',
++    );
++  }
++
+   if (typeof docx.mapping !== 'string') {
+     return undefined;
+   }
+ 
+   return {
+     templates: {
+       a4: templates.a4,
+-      wallet: templates.wallet,
++      ...(templates.wallet ? { wallet: templates.wallet } : {}),
+     },
+     mapping: docx.mapping,
+   };
+ };
+ 
+ const parseManifest = (
+   payload: FormpackManifestPayload,
+   formpackId: string,
+ ): FormpackManifest => {
+   if (
+     typeof payload.id !== 'string' ||
+     typeof payload.version !== 'string' ||
+     typeof payload.titleKey !== 'string' ||
+     typeof payload.descriptionKey !== 'string'
+   ) {
+     throw new FormpackLoaderError(
+       'invalid',
+       'The formpack manifest is missing required fields.',
+     );
+   }
+ 
+   if (payload.id !== formpackId) {
+     throw new FormpackLoaderError(
+       'invalid',
+       'The formpack manifest id does not match the requested pack.',
+@@ -126,51 +135,51 @@ const parseManifest = (
+     );
+   }
+ 
+   if (!isSupportedLocale(payload.defaultLocale)) {
+     throw new FormpackLoaderError(
+       'unsupported',
+       'The formpack manifest declares an unsupported default locale.',
+     );
+   }
+ 
+   if (!isStringArray(payload.exports)) {
+     throw new FormpackLoaderError(
+       'invalid',
+       'The formpack manifest must declare export formats.',
+     );
+   }
+ 
+   if (!payload.exports.every(isFormpackExportType)) {
+     throw new FormpackLoaderError(
+       'unsupported',
+       'The formpack manifest declares an unsupported export type.',
+     );
+   }
+ 
+   const exports = payload.exports.filter(isFormpackExportType);
+-  const docx = parseDocxManifest(payload.docx);
++  const docx = parseDocxManifest(payload.docx, formpackId);
+   const requiresDocx = exports.includes('docx');
+ 
+   if (requiresDocx && !docx) {
+     throw new FormpackLoaderError(
+       'invalid',
+       'The formpack manifest declares DOCX exports without valid DOCX assets.',
+     );
+   }
+ 
+   return {
+     id: payload.id,
+     version: payload.version,
+     defaultLocale: payload.defaultLocale,
+     locales: payload.locales,
+     titleKey: payload.titleKey,
+     descriptionKey: payload.descriptionKey,
+     exports,
+     docx,
+   };
+ };
+ 
+ /**
+  * Fetches a single formpack manifest by id.
+  */
+ export const loadFormpackManifest = async (
+diff --git a/app/src/formpacks/types.ts b/app/src/formpacks/types.ts
+index 962661c49fa8074bebab3914c18a00b0974bbc7f..15b2b23d06d300d6d853a270b52733c9d84fcd5e 100644
+--- a/app/src/formpacks/types.ts
++++ b/app/src/formpacks/types.ts
+@@ -1,33 +1,33 @@
+ import type { SupportedLocale } from '../i18n/locale';
+ 
+ export type FormpackExportType = 'docx' | 'json';
+ 
+ export interface FormpackDocxManifest {
+   templates: {
+     a4: string;
+-    wallet: string;
++    wallet?: string;
+   };
+   mapping: string;
+ }
+ 
+ export interface FormpackManifest {
+   id: string;
+   version: string;
+   defaultLocale: SupportedLocale;
+   locales: SupportedLocale[];
+   titleKey: string;
+   descriptionKey: string;
+   exports: FormpackExportType[];
+   docx?: FormpackDocxManifest;
+ }
+ 
+ /**
+  * Narrowed runtime shape for validating formpack manifest payloads.
+  */
+ export interface FormpackManifestPayload {
+   id: unknown;
+   version: unknown;
+   defaultLocale: unknown;
+   locales: unknown;
+   titleKey: unknown;
+   descriptionKey: unknown;
+diff --git a/app/src/i18n/resources/de.json b/app/src/i18n/resources/de.json
+index 0d78c396a7fb10ad4550e8102f3137b3054735fd..d8453919fe8fb9f463878a883baac49c25e3a1c2 100644
+--- a/app/src/i18n/resources/de.json
++++ b/app/src/i18n/resources/de.json
+@@ -12,51 +12,59 @@
+   "formpackLoading": "Formpack-Daten werden geladen...",
+   "formpackListErrorFallback": "Formpacks konnten gerade nicht geladen werden.",
+   "formpackLoadError": "Dieses Formpack konnte gerade nicht geladen werden.",
+   "formpackNotFound": "Dieses Formpack wurde nicht gefunden.",
+   "formpackUnsupported": "Dieses Formpack nutzt eine noch nicht unterstützte Sprache.",
+   "formpackInvalid": "Dieses Formpack-Manifest ist ungültig.",
+   "formpackSchemaNotFound": "Die Formular-Schema-Datei fehlt.",
+   "formpackSchemaInvalid": "Die Formular-Schema-Datei ist ungültig.",
+   "formpackSchemaUnavailable": "Das Formular-Schema konnte nicht geladen werden.",
+   "formpackUiSchemaNotFound": "Die Formular-UI-Schema-Datei fehlt.",
+   "formpackUiSchemaInvalid": "Die Formular-UI-Schema-Datei ist ungültig.",
+   "formpackUiSchemaUnavailable": "Das Formular-UI-Schema konnte nicht geladen werden.",
+   "formpackMissingId": "Es wurde kein Formpack ausgewählt.",
+   "formpackBackToList": "Zurück zu den Formpacks",
+   "formpackOpen": "Öffnen",
+   "formpackDetailsHeading": "Details",
+   "formpackId": "Formpack-ID",
+   "formpackVersion": "Version",
+   "formpackDefaultLocale": "Standardsprache",
+   "formpackLocales": "Unterstützte Sprachen",
+   "formpackExportsHeading": "Exporte",
+   "formpackExports": "Formate",
+   "formpackDocxHeading": "DOCX-Assets",
+   "formpackDocxTemplateA4": "A4-Vorlage",
+   "formpackDocxTemplateWallet": "Wallet-Vorlage",
++  "formpackDocxTemplateWalletUnavailable": "Nicht verfügbar",
+   "formpackDocxMapping": "DOCX-Mapping",
++  "formpackDocxTemplateLabel": "DOCX-Vorlage",
++  "formpackDocxTemplateA4Option": "A4 (Standard)",
++  "formpackDocxTemplateWalletOption": "Wallet-Karte",
++  "formpackRecordExportDocx": "DOCX exportieren",
++  "formpackDocxExportInProgress": "DOCX wird exportiert...",
++  "formpackDocxExportSuccess": "DOCX exportiert.",
++  "formpackDocxExportError": "DOCX-Export fehlgeschlagen.",
+   "formpackFormHeading": "Formular",
+   "formpackFormReset": "Formular zurücksetzen",
+   "formpackFormNoActiveRecord": "Wähle oder erstelle einen Entwurf, um mit der Eingabe zu beginnen.",
+   "formpackFormPreviewHeading": "Formulardaten-Vorschau",
+   "formpackFormPreviewEmpty": "Noch keine Daten eingegeben.",
+   "formpackDocumentPreviewHeading": "Dokumentvorschau",
+   "formpackDocumentPreviewEmpty": "Noch keine Export-Absätze vorhanden.",
+   "formpackRecordsHeading": "Entwürfe",
+   "formpackRecordsLoading": "Entwürfe werden geladen...",
+   "formpackRecordsEmpty": "Noch keine Entwürfe vorhanden.",
+   "formpackRecordNew": "Neuer Entwurf",
+   "formpackRecordLoad": "Entwurf laden",
+   "formpackRecordActive": "Aktiver Entwurf",
+   "formpackRecordUntitled": "Unbenannter Entwurf",
+   "formpackRecordUpdatedAt": "Aktualisiert {{timestamp}}",
+   "formpackImportHeading": "Import",
+   "formpackImportHint": "Wähle eine JSON-Exportdatei, um einen Entwurf wiederherzustellen.",
+   "formpackImportLabel": "JSON-Datei",
+   "formpackImportFileName": "Ausgewählte Datei: {{name}}",
+   "formpackImportModeLabel": "Importmodus",
+   "formpackImportModeNew": "Neuen Entwurf anlegen (empfohlen)",
+   "formpackImportModeOverwrite": "Aktiven Entwurf überschreiben",
+   "formpackImportModeOverwriteHint": "Wähle einen aktiven Entwurf, um überschreiben zu können.",
+   "formpackImportIncludeRevisions": "Snapshots mitimportieren (falls vorhanden)",
+   "formpackImportAction": "JSON importieren",
+diff --git a/app/src/i18n/resources/en.json b/app/src/i18n/resources/en.json
+index 802cde0c15570bfcc87d913f5a17c22e1398b9b9..68eaf47b51d4deded960d77d610cff3a9e62f25e 100644
+--- a/app/src/i18n/resources/en.json
++++ b/app/src/i18n/resources/en.json
+@@ -12,51 +12,59 @@
+   "formpackLoading": "Loading formpack data...",
+   "formpackListErrorFallback": "Unable to load formpacks right now.",
+   "formpackLoadError": "Unable to load this formpack right now.",
+   "formpackNotFound": "This formpack could not be found.",
+   "formpackUnsupported": "This formpack uses a locale that is not supported yet.",
+   "formpackInvalid": "This formpack manifest is invalid.",
+   "formpackSchemaNotFound": "The form schema file is missing.",
+   "formpackSchemaInvalid": "The form schema file is invalid.",
+   "formpackSchemaUnavailable": "The form schema could not be loaded.",
+   "formpackUiSchemaNotFound": "The form UI schema file is missing.",
+   "formpackUiSchemaInvalid": "The form UI schema file is invalid.",
+   "formpackUiSchemaUnavailable": "The form UI schema could not be loaded.",
+   "formpackMissingId": "No formpack was selected.",
+   "formpackBackToList": "Back to formpacks",
+   "formpackOpen": "Open",
+   "formpackDetailsHeading": "Details",
+   "formpackId": "Formpack ID",
+   "formpackVersion": "Version",
+   "formpackDefaultLocale": "Default locale",
+   "formpackLocales": "Supported locales",
+   "formpackExportsHeading": "Exports",
+   "formpackExports": "Formats",
+   "formpackDocxHeading": "DOCX assets",
+   "formpackDocxTemplateA4": "A4 template",
+   "formpackDocxTemplateWallet": "Wallet template",
++  "formpackDocxTemplateWalletUnavailable": "Not available",
+   "formpackDocxMapping": "DOCX mapping",
++  "formpackDocxTemplateLabel": "DOCX template",
++  "formpackDocxTemplateA4Option": "A4 (default)",
++  "formpackDocxTemplateWalletOption": "Wallet card",
++  "formpackRecordExportDocx": "Export DOCX",
++  "formpackDocxExportInProgress": "Exporting DOCX...",
++  "formpackDocxExportSuccess": "DOCX exported.",
++  "formpackDocxExportError": "DOCX export failed.",
+   "formpackFormHeading": "Form",
+   "formpackFormReset": "Reset form",
+   "formpackFormNoActiveRecord": "Select or create a draft to start editing.",
+   "formpackFormPreviewHeading": "Form data preview",
+   "formpackFormPreviewEmpty": "No data entered yet.",
+   "formpackDocumentPreviewHeading": "Document preview",
+   "formpackDocumentPreviewEmpty": "No export paragraphs yet.",
+   "formpackRecordsHeading": "Drafts",
+   "formpackRecordsLoading": "Loading drafts...",
+   "formpackRecordsEmpty": "No drafts available yet.",
+   "formpackRecordNew": "New draft",
+   "formpackRecordLoad": "Load draft",
+   "formpackRecordActive": "Active draft",
+   "formpackRecordUntitled": "Untitled draft",
+   "formpackRecordUpdatedAt": "Updated {{timestamp}}",
+   "formpackImportHeading": "Import",
+   "formpackImportHint": "Select a JSON export to restore a record.",
+   "formpackImportLabel": "JSON file",
+   "formpackImportFileName": "Selected file: {{name}}",
+   "formpackImportModeLabel": "Import mode",
+   "formpackImportModeNew": "Create a new draft (recommended)",
+   "formpackImportModeOverwrite": "Overwrite the active draft",
+   "formpackImportModeOverwriteHint": "Select an active draft to enable overwrite.",
+   "formpackImportIncludeRevisions": "Import snapshots if provided",
+   "formpackImportAction": "Import JSON",
+diff --git a/app/src/index.css b/app/src/index.css
+index 106967efaec18aff59c3d30b0aaf3da54a44fd2a..7b7eee92a6ed725bf909e39c9966219af5146944 100644
+--- a/app/src/index.css
++++ b/app/src/index.css
+@@ -375,53 +375,82 @@ body {
+   margin: 0;
+   padding: 0;
+   border: 0;
+ }
+ 
+ .formpack-array-item__content > fieldset > legend {
+   display: none;
+ }
+ 
+ .formpack-form legend {
+   padding: 0 0.25rem;
+   font-weight: 600;
+   font-size: 1rem;
+ }
+ 
+ .formpack-form .field-description,
+ .formpack-form .help-block {
+   margin: 0.35rem 0 0;
+   color: #4b5563;
+   font-size: 0.9rem;
+   line-height: 1.4;
+ }
+ 
+ .formpack-form__actions {
+   display: flex;
++  flex-wrap: wrap;
++  gap: 0.75rem;
++  align-items: center;
+   justify-content: flex-end;
+ }
+ 
++.formpack-docx-export {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 0.5rem;
++  align-items: center;
++  margin-right: auto;
++}
++
++.formpack-docx-export__label {
++  display: flex;
++  flex-direction: column;
++  gap: 0.25rem;
++  font-weight: 600;
++  font-size: 0.9rem;
++}
++
++.formpack-docx-export__select {
++  min-width: 180px;
++}
++
++.formpack-docx-export__success {
++  color: #15803d;
++  font-weight: 600;
++  font-size: 0.9rem;
++}
++
+ .formpack-records__actions,
+ .formpack-snapshots__actions {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 0.75rem;
+   margin-bottom: 0.75rem;
+ }
+ 
+ .formpack-records__list,
+ .formpack-snapshots__list {
+   list-style: none;
+   padding: 0;
+   margin: 0;
+   display: grid;
+   gap: 0.75rem;
+ }
+ 
+ .formpack-records__item,
+ .formpack-snapshots__item {
+   border: 1px solid #e5e7eb;
+   border-radius: 10px;
+   padding: 0.75rem 0.9rem;
+   background: #fff;
+   display: flex;
+   align-items: flex-start;
+diff --git a/app/src/pages/FormpackDetailPage.test.tsx b/app/src/pages/FormpackDetailPage.test.tsx
+index 59d1ccf97f6713b51bcb797a610ad1e7f2b7325a..2889258d1f695d2fcfd90abb9dfc616eff3d199e 100644
+--- a/app/src/pages/FormpackDetailPage.test.tsx
++++ b/app/src/pages/FormpackDetailPage.test.tsx
+@@ -35,51 +35,51 @@ vi.mock('@rjsf/core', () => ({
+         onClick={() => onChange?.({ formData: { field: 'value' } })}
+       >
+         trigger-change
+       </button>
+       {children}
+     </div>
+   ),
+ }));
+ 
+ vi.mock('../i18n/formpack', () => ({
+   loadFormpackI18n: vi.fn().mockResolvedValue(undefined),
+ }));
+ 
+ vi.mock('../i18n/useLocale', () => ({
+   useLocale: () => ({
+     locale: 'de',
+     setLocale: vi.fn(),
+   }),
+ }));
+ 
+ vi.mock('../formpacks/documentModel', () => ({
+   buildDocumentModel: () => ({
+     diagnosisParagraphs: [],
+     person: { name: null, birthDate: null },
+     contacts: [],
+-    diagnosesFormatted: null,
++    diagnoses: { formatted: null },
+     symptoms: null,
+     medications: [],
+     allergies: null,
+     doctor: { name: null, phone: null },
+   }),
+ }));
+ 
+ vi.mock('../formpacks/loader', () => ({
+   FormpackLoaderError: class extends Error {},
+   loadFormpackManifest: vi.fn().mockResolvedValue({
+     id: 'notfallpass',
+     version: '1.0.0',
+     titleKey: 'formpackTitle',
+     descriptionKey: 'formpackDescription',
+     defaultLocale: 'de',
+     locales: ['de', 'en'],
+     exports: [],
+     docx: {
+       templates: {
+         a4: 'template-a4.docx',
+         wallet: 'template-wallet.docx',
+       },
+       mapping: 'mapping.json',
+     },
+   }),
+@@ -101,50 +101,54 @@ vi.mock('../storage/hooks', () => ({
+     loadRecord: vi.fn(),
+     updateActiveRecord: mockUpdateActiveRecord,
+     applyRecordUpdate: vi.fn(),
+     setActiveRecord: vi.fn(),
+   }),
+   useSnapshots: () => ({
+     snapshots: [],
+     isLoading: false,
+     errorCode: null,
+     createSnapshot: vi.fn(),
+     loadSnapshot: vi.fn(),
+     refresh: vi.fn(),
+   }),
+   useAutosaveRecord: () => ({
+     markAsSaved: mockMarkAsSaved,
+   }),
+ }));
+ 
+ const mockT = (key: string) => key;
+ 
+ vi.mock('react-i18next', () => ({
+   useTranslation: () => ({
+     t: mockT,
+     i18n: { language: 'de' },
+   }),
++  initReactI18next: {
++    type: '3rdParty',
++    init: () => undefined,
++  },
+ }));
+ 
+ describe('FormpackDetailPage', () => {
+   beforeEach(() => {
+     mockUpdateActiveRecord.mockResolvedValue({
+       ...record,
+       data: {},
+     });
+   });
+ 
+   afterEach(() => {
+     vi.clearAllMocks();
+   });
+ 
+   it('clears the draft and persists the reset', async () => {
+     render(
+       <MemoryRouter initialEntries={['/formpacks/notfallpass']}>
+         <Routes>
+           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+         </Routes>
+       </MemoryRouter>,
+     );
+ 
+     const triggerButton = await screen.findByText('trigger-change');
+ 
+diff --git a/app/src/pages/FormpackDetailPage.tsx b/app/src/pages/FormpackDetailPage.tsx
+index bfe6922bad741c2852665f34f25bf870acbe89a1..cf141960fcd9821536030cc6052c15b5d756be33 100644
+--- a/app/src/pages/FormpackDetailPage.tsx
++++ b/app/src/pages/FormpackDetailPage.tsx
+@@ -1,46 +1,54 @@
+ import {
+   Suspense,
+   lazy,
+   useCallback,
+   useEffect,
+   useMemo,
+   useRef,
+   useState,
+ } from 'react';
+ import { Link, useParams } from 'react-router-dom';
+ import { useTranslation } from 'react-i18next';
+ import Ajv2020 from 'ajv/dist/2020';
+ import { loadFormpackI18n } from '../i18n/formpack';
+ import { translateUiSchema } from '../i18n/rjsf';
+ import { useLocale } from '../i18n/useLocale';
+ import { validateJsonImport } from '../import/json';
+ import {
+   buildJsonExportFilename,
+   buildJsonExportPayload,
+   downloadJsonExport,
+ } from '../export/json';
++import {
++  buildDocxExportFilename,
++  createDocxReport,
++  downloadDocxExport,
++  loadDocxTemplate,
++  mapDocumentDataToTemplate,
++  type DocxTemplateId,
++} from '../export/docx';
+ import {
+   formpackTemplates,
+   type FormpackFormContext,
+ } from '../lib/rjsfTemplates';
+ import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
+ import {
+   FormpackLoaderError,
+   loadFormpackManifest,
+   loadFormpackSchema,
+   loadFormpackUiSchema,
+ } from '../formpacks/loader';
+ import { buildDocumentModel } from '../formpacks/documentModel';
+ import type { FormpackManifest } from '../formpacks/types';
+ import {
+   type StorageErrorCode,
+   useAutosaveRecord,
+   useRecords,
+   useSnapshots,
+ } from '../storage/hooks';
+ import { importRecordWithSnapshots } from '../storage/import';
+ import type { ChangeEvent, ComponentType } from 'react';
+ import type { FormProps } from '@rjsf/core';
+ import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
+ 
+ type FormDataState = Record<string, unknown>;
+@@ -97,50 +105,54 @@ const buildErrorMessage = (
+   if (error instanceof Error) {
+     return error.message;
+   }
+ 
+   return t('formpackLoadError');
+ };
+ 
+ /**
+  * Shows formpack metadata with translations loaded for the active locale.
+  */
+ export default function FormpackDetailPage() {
+   const { t, i18n } = useTranslation();
+   const { locale, setLocale } = useLocale();
+   const { id } = useParams();
+   const [manifest, setManifest] = useState<FormpackManifest | null>(null);
+   const [schema, setSchema] = useState<RJSFSchema | null>(null);
+   const [uiSchema, setUiSchema] = useState<UiSchema | null>(null);
+   const [formData, setFormData] = useState<FormDataState>({});
+   const [importJson, setImportJson] = useState('');
+   const [importFileName, setImportFileName] = useState<string | null>(null);
+   const [importMode, setImportMode] = useState<'new' | 'overwrite'>('new');
+   const [importIncludeRevisions, setImportIncludeRevisions] = useState(true);
+   const [importError, setImportError] = useState<string | null>(null);
+   const [importSuccess, setImportSuccess] = useState<string | null>(null);
+   const [isImporting, setIsImporting] = useState(false);
++  const [docxTemplateId, setDocxTemplateId] = useState<DocxTemplateId>('a4');
++  const [docxError, setDocxError] = useState<string | null>(null);
++  const [docxSuccess, setDocxSuccess] = useState<string | null>(null);
++  const [isDocxExporting, setIsDocxExporting] = useState(false);
+   const [validator, setValidator] = useState<ValidatorType | null>(null);
+   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+   const [formpackTranslationsVersion, setFormpackTranslationsVersion] =
+     useState(0);
+   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
+     null,
+   );
+   const [isLoading, setIsLoading] = useState(true);
+   const importInputRef = useRef<HTMLInputElement | null>(null);
+   const lastFormpackIdRef = useRef<string | undefined>(undefined);
+   const hasRestoredRecordRef = useRef<string | null>(null);
+   const formpackId = manifest?.id ?? null;
+   const {
+     records,
+     activeRecord,
+     isLoading: isRecordsLoading,
+     hasLoaded: hasLoadedRecords,
+     errorCode: recordsError,
+     createRecord,
+     loadRecord,
+     updateActiveRecord,
+     applyRecordUpdate,
+     setActiveRecord,
+   } = useRecords(formpackId);
+   const {
+@@ -666,109 +678,177 @@ export default function FormpackDetailPage() {
+ 
+   const handleImportFileChange = useCallback(
+     async (event: ChangeEvent<HTMLInputElement>) => {
+       const file = event.target.files?.[0] ?? null;
+       setImportError(null);
+       setImportSuccess(null);
+ 
+       if (!file) {
+         setImportJson('');
+         setImportFileName(null);
+         return;
+       }
+ 
+       try {
+         const text = await file.text();
+         setImportJson(text);
+         setImportFileName(file.name);
+       } catch {
+         setImportJson('');
+         setImportFileName(file.name);
+         setImportError(t('importInvalidJson'));
+       }
+     },
+     [t],
+   );
++  const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
++  const formpackT = useCallback(
++    (key: string) => t(key, { ns: namespace, defaultValue: key, replace: {} }),
++    [namespace, t],
++  );
++  const documentModel = useMemo(() => {
++    void formpackTranslationsVersion;
++    return buildDocumentModel(formpackId, locale, formData);
++  }, [formData, formpackId, formpackTranslationsVersion, locale]);
+   const handleExportJson = useCallback(() => {
+     if (!manifest || !activeRecord) {
+       return;
+     }
+ 
+     const payload = buildJsonExportPayload({
+       formpack: { id: manifest.id, version: manifest.version },
+       record: activeRecord,
+       data: formData,
+       locale,
+       revisions: snapshots,
+       ...(schema ? { schema } : {}),
+     });
+     const filename = buildJsonExportFilename(payload);
+     downloadJsonExport(payload, filename);
+   }, [activeRecord, formData, locale, manifest, schema, snapshots]);
+ 
++  const handleExportDocx = useCallback(async () => {
++    if (!manifest?.docx || !formpackId) {
++      return;
++    }
++
++    setDocxError(null);
++    setDocxSuccess(null);
++    setIsDocxExporting(true);
++
++    try {
++      const templatePath =
++        docxTemplateId === 'wallet'
++          ? manifest.docx.templates.wallet
++          : manifest.docx.templates.a4;
++
++      if (!templatePath) {
++        setDocxError(t('formpackDocxExportError'));
++        return;
++      }
++
++      const [template, templateContext] = await Promise.all([
++        loadDocxTemplate(formpackId, templatePath),
++        mapDocumentDataToTemplate(formpackId, docxTemplateId, documentModel, {
++          mappingPath: manifest.docx.mapping,
++          locale,
++        }),
++      ]);
++
++      const report = await createDocxReport(template, templateContext);
++      const filename = buildDocxExportFilename(formpackId, docxTemplateId);
++      downloadDocxExport(report, filename);
++      setDocxSuccess(t('formpackDocxExportSuccess'));
++    } catch {
++      setDocxError(t('formpackDocxExportError'));
++    } finally {
++      setIsDocxExporting(false);
++    }
++  }, [docxTemplateId, documentModel, formpackId, locale, manifest, t]);
++
+   useEffect(() => {
+     let isActive = true;
+ 
+     const loadValidator = async () => {
+       const module = await import('@rjsf/validator-ajv8');
+       // Ajv2020 includes the draft 2020-12 meta schema used by formpacks.
+       const validator = module.customizeValidator({
+         AjvClass: Ajv2020,
+       });
+       if (isActive) {
+         setValidator(validator);
+       }
+     };
+ 
+     void loadValidator();
+ 
+     return () => {
+       isActive = false;
+     };
+   }, []);
+ 
+-  const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
+-  const formpackT = useCallback(
+-    (key: string) => t(key, { ns: namespace, defaultValue: key, replace: {} }),
+-    [namespace, t],
+-  );
+-  const documentModel = useMemo(() => {
+-    void formpackTranslationsVersion;
+-    return buildDocumentModel(formpackId, locale, formData);
+-  }, [formData, formpackId, formpackTranslationsVersion, locale]);
+   const hasDocumentContent = Boolean(
+     documentModel.diagnosisParagraphs.length ||
+     documentModel.person.name ||
+     documentModel.person.birthDate ||
+     documentModel.contacts.length ||
+-    documentModel.diagnosesFormatted ||
++    documentModel.diagnoses.formatted ||
+     documentModel.symptoms ||
+     documentModel.medications.length ||
+     documentModel.allergies ||
+     documentModel.doctor.name ||
+     documentModel.doctor.phone,
+   );
++  const docxTemplateOptions = useMemo(() => {
++    if (!manifest?.docx) {
++      return [];
++    }
++
++    const options: Array<{ id: DocxTemplateId; label: string }> = [
++      { id: 'a4', label: t('formpackDocxTemplateA4Option') },
++    ];
++
++    if (manifest.id === 'notfallpass' && manifest.docx.templates.wallet) {
++      options.push({
++        id: 'wallet',
++        label: t('formpackDocxTemplateWalletOption'),
++      });
++    }
++
++    return options;
++  }, [manifest, t]);
++
++  useEffect(() => {
++    if (!docxTemplateOptions.length) {
++      setDocxTemplateId('a4');
++      return;
++    }
++
++    if (!docxTemplateOptions.some((option) => option.id === docxTemplateId)) {
++      setDocxTemplateId(docxTemplateOptions[0].id);
++    }
++  }, [docxTemplateId, docxTemplateOptions]);
+ 
+   if (isLoading) {
+     return (
+       <section className="app__card">
+         <h2>{t('formpackDetailTitle')}</h2>
+         <p>{t('formpackLoading')}</p>
+       </section>
+     );
+   }
+ 
+   if (errorMessage) {
+     return (
+       <section className="app__card">
+         <h2>{t('formpackDetailTitle')}</h2>
+         <p className="app__error">{errorMessage}</p>
+         <Link className="app__link" to="/formpacks">
+           {t('formpackBackToList')}
+         </Link>
+       </section>
+     );
+   }
+ 
+   if (!manifest) {
+     return null;
+   }
+@@ -804,51 +884,55 @@ export default function FormpackDetailPage() {
+               <div>
+                 <dt>{t('formpackLocales')}</dt>
+                 <dd>{manifest.locales.join(', ')}</dd>
+               </div>
+             </dl>
+           </div>
+           <div className="formpack-detail__section">
+             <h3>{t('formpackExportsHeading')}</h3>
+             <dl>
+               <div>
+                 <dt>{t('formpackExports')}</dt>
+                 <dd>{manifest.exports.join(', ')}</dd>
+               </div>
+             </dl>
+           </div>
+           {manifest.docx && (
+             <div className="formpack-detail__section">
+               <h3>{t('formpackDocxHeading')}</h3>
+               <dl>
+                 <div>
+                   <dt>{t('formpackDocxTemplateA4')}</dt>
+                   <dd>{manifest.docx.templates.a4}</dd>
+                 </div>
+                 <div>
+                   <dt>{t('formpackDocxTemplateWallet')}</dt>
+-                  <dd>{manifest.docx.templates.wallet}</dd>
++                  <dd>
++                    {manifest.docx.templates.wallet
++                      ? manifest.docx.templates.wallet
++                      : t('formpackDocxTemplateWalletUnavailable')}
++                  </dd>
+                 </div>
+                 <div>
+                   <dt>{t('formpackDocxMapping')}</dt>
+                   <dd>{manifest.docx.mapping}</dd>
+                 </div>
+               </dl>
+             </div>
+           )}
+         </div>
+         <div className="formpack-detail__form">
+           <div className="formpack-detail__section">
+             <h3>{t('formpackRecordsHeading')}</h3>
+             {storageErrorMessage && (
+               <p className="app__error">{storageErrorMessage}</p>
+             )}
+             {records.length ? (
+               <>
+                 <div className="formpack-records__actions">
+                   <button
+                     type="button"
+                     className="app__button"
+                     onClick={handleCreateRecord}
+                     disabled={!manifest || storageError === 'unavailable'}
+                   >
+                     {t('formpackRecordNew')}
+@@ -996,50 +1080,95 @@ export default function FormpackDetailPage() {
+             </div>
+           </div>
+           <div className="formpack-detail__section">
+             <h3>{t('formpackFormHeading')}</h3>
+             {activeRecord ? (
+               schema &&
+               normalizedUiSchema &&
+               validator && (
+                 <Suspense fallback={<p>{t('formpackLoading')}</p>}>
+                   <LazyForm
+                     className="formpack-form"
+                     schema={schema}
+                     uiSchema={normalizedUiSchema}
+                     templates={formpackTemplates}
+                     validator={validator}
+                     formData={formData}
+                     omitExtraData
+                     liveOmit
+                     onChange={handleFormChange}
+                     onSubmit={handleFormSubmit}
+                     formContext={formContext}
+                     noHtml5Validate
+                     showErrorList={false}
+                   >
+                     <div className="formpack-form__actions">
++                      {manifest.exports.includes('docx') &&
++                        manifest.docx &&
++                        docxTemplateOptions.length > 0 && (
++                          <div className="formpack-docx-export">
++                            <label className="formpack-docx-export__label">
++                              {t('formpackDocxTemplateLabel')}
++                              <select
++                                className="formpack-docx-export__select"
++                                value={docxTemplateId}
++                                onChange={(event) =>
++                                  setDocxTemplateId(
++                                    event.target.value as DocxTemplateId,
++                                  )
++                                }
++                              >
++                                {docxTemplateOptions.map((option) => (
++                                  <option key={option.id} value={option.id}>
++                                    {option.label}
++                                  </option>
++                                ))}
++                              </select>
++                            </label>
++                            <button
++                              type="button"
++                              className="app__button"
++                              onClick={handleExportDocx}
++                              disabled={
++                                storageError === 'unavailable' ||
++                                isDocxExporting
++                              }
++                            >
++                              {isDocxExporting
++                                ? t('formpackDocxExportInProgress')
++                                : t('formpackRecordExportDocx')}
++                            </button>
++                            {docxError && (
++                              <span className="app__error">{docxError}</span>
++                            )}
++                            {docxSuccess && (
++                              <span className="formpack-docx-export__success">
++                                {docxSuccess}
++                              </span>
++                            )}
++                          </div>
++                        )}
+                       <button
+                         type="button"
+                         className="app__button"
+                         onClick={handleResetForm}
+                       >
+                         {t('formpackFormReset')}
+                       </button>
+                       {manifest.exports.includes('json') && (
+                         <button
+                           type="button"
+                           className="app__button"
+                           onClick={handleExportJson}
+                           disabled={storageError === 'unavailable'}
+                         >
+                           {t('formpackRecordExportJson')}
+                         </button>
+                       )}
+                     </div>
+                   </LazyForm>
+                 </Suspense>
+               )
+             ) : (
+               <p className="formpack-records__empty">
+                 {t('formpackFormNoActiveRecord')}
+               </p>
+@@ -1157,66 +1286,66 @@ export default function FormpackDetailPage() {
+                                 <dt>
+                                   {formpackT(
+                                     'notfallpass.contacts.phone.label',
+                                   )}
+                                 </dt>
+                                 <dd>{contact.phone}</dd>
+                               </div>
+                             )}
+                             {contact.relation && (
+                               <div>
+                                 <dt>
+                                   {formpackT(
+                                     'notfallpass.contacts.relation.label',
+                                   )}
+                                 </dt>
+                                 <dd>{contact.relation}</dd>
+                               </div>
+                             )}
+                           </dl>
+                         </li>
+                       ))}
+                     </ul>
+                   </div>
+                 )}
+                 {(documentModel.diagnosisParagraphs.length ||
+-                  documentModel.diagnosesFormatted) && (
++                  documentModel.diagnoses.formatted) && (
+                   <div className="formpack-document-preview__section">
+                     <h4>{formpackT('notfallpass.section.diagnoses.title')}</h4>
+                     {documentModel.diagnosisParagraphs.map(
+                       (paragraph, index) => (
+                         <p key={`diagnosis-${index}-${paragraph}`}>
+                           {paragraph}
+                         </p>
+                       ),
+                     )}
+-                    {documentModel.diagnosesFormatted && (
++                    {documentModel.diagnoses.formatted && (
+                       <div className="formpack-document-preview__note">
+                         <h5>
+                           {formpackT('notfallpass.diagnoses.additional.title')}
+                         </h5>
+-                        <p>{documentModel.diagnosesFormatted}</p>
++                        <p>{documentModel.diagnoses.formatted}</p>
+                       </div>
+                     )}
+                   </div>
+                 )}
+                 {documentModel.symptoms && (
+                   <div className="formpack-document-preview__section">
+                     <h4>{formpackT('notfallpass.section.symptoms.title')}</h4>
+                     <p>{documentModel.symptoms}</p>
+                   </div>
+                 )}
+                 {documentModel.medications.length > 0 && (
+                   <div className="formpack-document-preview__section">
+                     <h4>
+                       {formpackT('notfallpass.section.medications.title')}
+                     </h4>
+                     <ul className="formpack-document-preview__list">
+                       {documentModel.medications.map((medication, index) => (
+                         <li key={`medication-${index}`}>
+                           <dl>
+                             {medication.name && (
+                               <div>
+                                 <dt>
+                                   {formpackT(
+                                     'notfallpass.medications.name.label',
+                                   )}
+diff --git a/app/src/test/documentModel.test.ts b/app/src/test/documentModel.test.ts
+index 627402e4b96443552ceec32aa50f6571830d2d93..25ff6fef7173e5533ef5c4cd5295deb50c6d8ad4 100644
+--- a/app/src/test/documentModel.test.ts
++++ b/app/src/test/documentModel.test.ts
+@@ -38,26 +38,33 @@ describe('buildDocumentModel', () => {
+   });
+ 
+   it('returns no paragraphs when ME/CFS is false even if POTS is true', () => {
+     const result = buildDocumentModel('notfallpass', 'en', {
+       diagnoses: { meCfs: false, pots: true },
+     });
+     expect(result.diagnosisParagraphs).toEqual([]);
+   });
+ 
+   it('returns ME/CFS and Long Covid paragraphs when both are checked', () => {
+     const result = buildDocumentModel('notfallpass', 'en', {
+       diagnoses: { meCfs: true, longCovid: true },
+     });
+     expect(result.diagnosisParagraphs).toEqual([
+       enTranslations['notfallpass.export.diagnoses.meCfs.paragraph'],
+       enTranslations['notfallpass.export.diagnoses.longCovid.paragraph'],
+     ]);
+   });
+ 
+   it('formats birthDate for display', () => {
+     const result = buildDocumentModel('notfallpass', 'en', {
+       person: { birthDate: '1990-04-12' },
+     });
+     expect(result.person.birthDate).toBe('12-04-1990');
+   });
++
++  it('projects formatted diagnoses into the nested diagnoses object', () => {
++    const result = buildDocumentModel('notfallpass', 'en', {
++      diagnoses: { formatted: 'Example diagnosis' },
++    });
++    expect(result.diagnoses.formatted).toBe('Example diagnosis');
++  });
+ });
+diff --git a/app/src/test/docxMapping.test.ts b/app/src/test/docxMapping.test.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..93eda550a1298ed0f1cc9aedcea30e4e4c8e3c6b
+--- /dev/null
++++ b/app/src/test/docxMapping.test.ts
+@@ -0,0 +1,73 @@
++import {
++  afterEach,
++  beforeAll,
++  beforeEach,
++  describe,
++  expect,
++  it,
++  vi,
++} from 'vitest';
++import i18n from '../i18n';
++import { mapDocumentDataToTemplate } from '../export/docx';
++import type { DocumentModel } from '../formpacks/documentModel';
++import enTranslations from '../../../formpacks/notfallpass/i18n/en.json';
++import mapping from '../../../formpacks/notfallpass/docx/mapping.json';
++
++const namespace = 'formpack:notfallpass';
++
++describe('mapDocumentDataToTemplate', () => {
++  beforeAll(() => {
++    if (!i18n.hasResourceBundle('en', namespace)) {
++      i18n.addResourceBundle(
++        'en',
++        namespace,
++        enTranslations as Record<string, string>,
++        true,
++        true,
++      );
++    }
++  });
++
++  beforeEach(() => {
++    const mockFetch = vi.fn().mockResolvedValue({
++      ok: true,
++      json: async () => mapping,
++    });
++    vi.stubGlobal('fetch', mockFetch);
++  });
++
++  afterEach(() => {
++    vi.unstubAllGlobals();
++  });
++
++  it('maps fields, loops, and i18n placeholders into the template context', async () => {
++    const documentData: DocumentModel = {
++      diagnosisParagraphs: ['Example paragraph'],
++      person: { name: 'Ada Example', birthDate: '01-01-2000' },
++      contacts: [{ name: 'Alex', phone: '+49 123', relation: 'Family' }],
++      diagnoses: { formatted: 'Additional diagnosis' },
++      symptoms: 'Example symptoms',
++      medications: [{ name: 'Med A', dosage: '10 mg', schedule: 'Daily' }],
++      allergies: 'None',
++      doctor: { name: 'Dr Example', phone: '555-0101' },
++    };
++
++    const context = await mapDocumentDataToTemplate(
++      'notfallpass',
++      'a4',
++      documentData,
++      { mappingPath: 'docx/mapping.json', locale: 'en' },
++    );
++
++    expect(context).toMatchObject({
++      person: { name: 'Ada Example', birthDate: '01-01-2000' },
++      diagnoses: { formatted: 'Additional diagnosis' },
++      contacts: [{ name: 'Alex', phone: '+49 123', relation: 'Family' }],
++      medications: [{ name: 'Med A', dosage: '10 mg', schedule: 'Daily' }],
++      diagnosisParagraphs: ['Example paragraph'],
++    });
++    expect(context['t:notfallpass.section.contacts.title']).toBe(
++      enTranslations['notfallpass.section.contacts.title'],
++    );
++  });
++});
+diff --git a/docs/formpacks.md b/docs/formpacks.md
+index cbb3db8796cf275e6498c21caedf2de07dc1f337..5e0be940a7b9b03c95b87ce599759210ca8b17f6 100644
+--- a/docs/formpacks.md
++++ b/docs/formpacks.md
+@@ -1,110 +1,119 @@
+ # Formpacks
+ 
+ ## Purpose
+ Formpacks are self-contained content bundles that define a form, its localization, and export templates. Packs live in the repository so new forms can be added without code changes and remain offline-first.
+ 
+ ## Directory structure
+ ```
+ formpacks/
+   <id>/
+     manifest.json
+     schema.json
+     ui.schema.json
+     i18n/
+       de.json
+       en.json
+     docx/
+-      template.a4.docx
+-      template.wallet.docx
+       mapping.json
++    templates/
++      a4.docx
++      wallet.docx
+     examples/
+       example.json
+ ```
+ 
+ ## Manifest (`manifest.json`)
+ The manifest describes metadata and export assets.
+ 
+ Required fields:
+ - `id`: Pack identifier (string), e.g. `notfallpass`.
+ - `version`: Semantic version of the pack, e.g. `0.1.0`.
+ - `defaultLocale`: `de` or `en`.
+ - `locales`: Array of supported locales, e.g. `["de", "en"]`.
+ - `titleKey`: i18n key for the display title.
+ - `descriptionKey`: i18n key for the description.
+ - `exports`: Array of supported export types (MVP: `docx`, `json`).
+ - `docx.templates.a4`: Path to the A4 template.
+-- `docx.templates.wallet`: Path to the wallet template.
++- `docx.templates.wallet`: Path to the wallet template (only supported for `notfallpass`).
+ - `docx.mapping`: Path to the DOCX mapping file.
+ 
+ ## i18n
+ - All labels, section titles, and help texts are referenced by i18n keys.
+ - Key namespace: `<packId>.*` (for example `notfallpass.section.contacts.title`).
+ - `i18n/de.json` and `i18n/en.json` must contain the same keys.
+ - Fallback behavior: if a key is missing in the active locale, show the key as text and optionally fall back to `defaultLocale`.
+ 
+ ### Export text blocks
+ - Exportable paragraphs are stored in formpack i18n files and referenced by projection code.
+ - The document model includes `diagnosisParagraphs: string[]`, which is built from diagnosis flags and i18n keys.
+ - Avoid hardcoding medical paragraph text in code; use `t()` with the formpack namespace.
+ 
+ ## JSON Schema (`schema.json`)
+ - Uses JSON Schema Draft 2020-12 for MVP.
+ - Defines the record structure stored by the app.
+ - Minimum required fields:
+   - `person` (name, optional birthDate)
+   - `contacts[]` (name, phone, relation optional)
+   - `diagnoses` (string)
+   - `symptoms` (string)
+   - `medications[]` (name, dosage, schedule optional)
+   - `allergies` (string)
+   - `doctor` (name optional, phone optional)
+ 
+ ## UI Schema (`ui.schema.json`)
+ - Uses RJSF UI Schema.
+ - Controls section order and field presentation.
+ - Use i18n keys for section titles and help texts.
+ - For `ui:title` and `ui:description`, prefix the i18n key with `t:` (example: `"ui:title": "t:notfallpass.section.person.title"`).
+ - Lists must allow add/remove operations.
+ 
+ ## DOCX templates
+ Templates are `.docx` files with placeholders that follow these rules:
+ 
++All formpacks must provide an A4 template. The wallet card format is only supported by the `notfallpass` formpack.
++
++### Template locations
++- `formpacks/<packId>/templates/a4.docx` is required for all formpacks.
++- `formpacks/notfallpass/templates/wallet.docx` is optional and only supported for `notfallpass`.
++
+ ### Field placeholders
+ - Text fields: `{{field.path}}` (example: `{{person.name}}`).
+ 
+ ### i18n placeholders
+ - Labels/headings: `{{t:key}}` (example: `{{t:notfallpass.section.person.title}}`).
+ 
+ ### Loops
+ - Start a loop with `{{#contacts}}` and end it with `{{/contacts}}`.
+ - Inside the loop use child fields like `{{name}}`, `{{phone}}`, `{{relation}}`.
++- For paragraph lists, use `{{#diagnosisParagraphs}}` with `{{.}}` to render each entry.
+ 
+ Templates can be visually simple in the MVP but must include the required placeholders.
+ 
+ ## DOCX mapping (`docx/mapping.json`)
+ The mapping describes how data is injected into the template variables.
++Document data is produced by `buildDocumentModel(formpackId, locale, formData)` and then mapped into template variables via `mapDocumentDataToTemplate`.
+ 
+ Minimal format:
+ ```
+ {
+   "version": 1,
+   "fields": [
+     { "var": "person.name", "path": "person.name" },
+     { "var": "person.birthDate", "path": "person.birthDate" },
+     { "var": "diagnoses.formatted", "path": "diagnoses.formatted" },
+     { "var": "symptoms", "path": "symptoms" },
+     { "var": "allergies", "path": "allergies" }
+   ],
+   "loops": [
+     { "var": "contacts", "path": "contacts" },
+     { "var": "medications", "path": "medications" }
+   ],
+   "i18n": {
+     "prefix": "notfallpass"
+   }
+ }
+ ```
+ 
+ Rules:
+ - `var` is the name used in DOCX placeholders.
+ - `path` is a dot-notation path in the record data.
+diff --git a/formpacks/notfallpass/docx/mapping.json b/formpacks/notfallpass/docx/mapping.json
+index 467a074cc93b2ae88ee4158b554467ab8ba31854..eefa7d3d4efdb31e1d199e57f424ac0fbc057d67 100644
+--- a/formpacks/notfallpass/docx/mapping.json
++++ b/formpacks/notfallpass/docx/mapping.json
+@@ -1,19 +1,20 @@
+ {
+   "version": 1,
+   "fields": [
+     {"var": "person.name", "path": "person.name"},
+     {"var": "person.birthDate", "path": "person.birthDate"},
+     {"var": "diagnoses.formatted", "path": "diagnoses.formatted"},
+     {"var": "symptoms", "path": "symptoms"},
+     {"var": "allergies", "path": "allergies"},
+     {"var": "doctor.name", "path": "doctor.name"},
+     {"var": "doctor.phone", "path": "doctor.phone"}
+   ],
+   "loops": [
+     {"var": "contacts", "path": "contacts"},
+-    {"var": "medications", "path": "medications"}
++    {"var": "medications", "path": "medications"},
++    {"var": "diagnosisParagraphs", "path": "diagnosisParagraphs"}
+   ],
+   "i18n": {
+     "prefix": "notfallpass"
+   }
+ }
+diff --git a/formpacks/notfallpass/docx/template.a4.docx b/formpacks/notfallpass/docx/template.a4.docx
+deleted file mode 100644
+index 0544e0ce3b7059161879e351ea86efdd4982e055..0000000000000000000000000000000000000000
+GIT binary patch
+literal 0
+HcmV?d00001
+
+literal 1201
+zcmWIWW@Zs#U|`^2$aL0-nR~QL>l2W-laYZz7)VDu=jWBA=9R>UR2HNb$Ldw&=G0C&
+z>vz~dpyhof*Xi&n76lF*sxKSoD;H?+Z`fqs8CsoNdH2#jTR(1Brzwj~Kc8K*Jo@ck
+zVQZfp=C7Z2WiEBNbTDF8)z5u(>)tPUz>{)-^-!GLgr`|6c70V;>ShxDUUbg#p7zly
+zH~u><9U)T;Rrq(>TwbE|g4bt7-mPz8FC8Q`uUDR&;H>KMy+b)CR?PqRqB(h<FCx0y
+zCzr2$t$O6enzopdt;(NQulT2x$yNE~LymI1XmiMPFR_nB$N7Insd-&nP|-Xk{($)6
+zUmPbjguh%9-|^G_Wq<Zzi>Ti8I?ry+j1;}w)z{~U@=x1We{tpG56)jX15kp<VL>qG
+zCScI$1A~YgNXHkY<`nDefymzTyZM?7MA#n8U7m4HkCi={r}gNJ4N^4?%WS8(Re471
+z@7XIWbHu`8-tF>F=65fjdD5qtl`eTDm6c^}K~VJ32S#(usuc_iwST_RF^Vv7x-NEB
+zGJW1B-#J_QRg}$)W(0j=_gXyT!iNZ}elveJaUTDjJY7|K>tYn|hF$Gz^Jl)*G(pt6
+z>ZHP#O>9Owa{nLRwa998SI=Y1{q^x_w(@Bk4IdskJrAw>Z;duP6npLJx+$iQ>b0!I
+z-_y4Oy_L<uz#s_pT6um^ihfFda%nCw34r2$>$HP?w-p51fN|eF&%A8cYLo1v_q?x0
+zFZIfmZ#ZydTZ#nBWZ%ng_f@l7-%D9K$LvYdbMYUKpNq4tpZ{-$T{WA$)t0FdXSgRe
+zhOV%_9rEb=`uuY3iL8^tPRr?rJYsOPxw`r5zAG!r*mP2THY~gozDTtwbsqcGriqDt
+zd^+EAFG_pr)J}eXG5dL-BZp1n%g^UsH=gNzvt~tl<gqKfubg$*A7<s%<g`Vedaxvk
+z|C}?!f1X8kl?yK^<)+@ZmOM1a>ea)qrE@<^m*)Jvu&ZB~S>sX0vp(fV?p>UH8rr@}
+zmzI6LQa80^_EhaHDxym{zh8FQJ;}Ij`rp$QEz``OZTxoObjB~Qs(B}#K6T)I;m2zx
+zoLa@^Bfk2W!fekY{!#DOmCagSTxEHyz@YEKl9Q!PcaN-mmy&GgAhlZkR>du$7qfSy
+z@$P#mw6kvUUA4rJ7CYZP%323IYgJ^=ui;+NDH{IqaQ_Rzdw>4Se*4&TcZ7|Y_rcQB
+zUyDl5o0t5{dr<yz=kyDO{|`G0w*Oj}`BKH)W6x&)UF~lp^SOhX*B_alB>Gfr;<=Q~
+ziyg)CFT1@~-yhh!y<*L>{Vi4B<O94JnM9az=W$>}gFyo@=CS5@bOX?H07N?jLj$8S
+k&<LdbfUXfeeIYdd18T%bZ2{h_Y#=4fK)4e~KVk;)0E!^-F#rGn
+
+diff --git a/formpacks/notfallpass/manifest.json b/formpacks/notfallpass/manifest.json
+index 2b0e952794fac8dd4187b4133a47d085fb16b118..4875ba214946683cc499597c20db1ccf0520455e 100644
+--- a/formpacks/notfallpass/manifest.json
++++ b/formpacks/notfallpass/manifest.json
+@@ -1,16 +1,16 @@
+ {
+   "id": "notfallpass",
+   "version": "0.1.1",
+   "defaultLocale": "de",
+   "locales": ["de", "en"],
+   "titleKey": "notfallpass.title",
+   "descriptionKey": "notfallpass.description",
+   "exports": ["docx", "json"],
+   "docx": {
+     "templates": {
+-      "a4": "docx/template.a4.docx",
+-      "wallet": "docx/template.wallet.docx"
++      "a4": "templates/a4.docx",
++      "wallet": "templates/wallet.docx"
+     },
+     "mapping": "docx/mapping.json"
+   }
+ }
+diff --git a/formpacks/notfallpass/templates/a4.docx b/formpacks/notfallpass/templates/a4.docx
+new file mode 100644
+index 0000000000000000000000000000000000000000..a8cf172e7d3c3f98e20e83014b2fa149dbba806a
+GIT binary patch
+literal 1223
+zcmWIWW@Zs#U|`^2$aL0-nR~QL>l2W-laYZz7)VDu=jWBA=9R>UR2HNb$Ldw&=G0C&
+z>vz~dpyhof*Xi&n76lF*sxKSoD;H?+Z`fqs8CsoNdH2#jTR(1Brzwj~Kc8K*Jo@ck
+zVQZfp=C7Z2WiEBNbTDF8)z5u(>)tPUz>{)-^-!GLgr`|6c70V;>ShxDUUbg#p7zly
+zH~u><9U)T;Rrq(>TwbE|g4bt7-mPz8FC8Q`uUDR&;H>KMy+b)CR?PqRqB(h<FCx0y
+zCzr2$t$O6enzopdt;(NQulT2x$yNE~LymI1XmiMPFR_nB$N7Insd-&nP|-Xk{($)6
+zUmPbjguh%9-|^G_Wq<Zzi>Ti8I?ry+j1;}w)z{~U@=x1We{tpG56)jX15kp<VL>qG
+zCScI$1A~YgNXHkY<`nDefymzTyZM?7MA#n8U7m4HkCi={r}gNJ4N^4?%WS8(Re471
+z@7XIWbHu`8-tF>F=65fjdD5qtl`eTDm6c^}K~VJ32S#(usuc_iwST_RF^Vv7x-NEB
+zGJW1B-#J_QRg}$)W(0j=_gXyT!iNZ}elveJaUTDjJY7|K>tYn|hF$Gz^Jl)*G(pt6
+z>ZHP#O>9Owa{nLRwa998SI=Y1{q^x_w(@Bk4IdskJrAw>Z;duP6npLJx+$iQ>a}US
+zcGjnX-U{SoU=Rd)tvtUdML#7!xilA;1VC}Wb=uj!*#;u5-z&MEtm9rHyHu0w%(7SO
+zE_vk2AJ~|GK<MAZTH{Qsx#jOo?I(wvT4f<!+|M(gzn#0{`w#E$H;sQRShMn`m3}0f
+zTf|DA=*{!(_wBpCNk_qa()Vi)XU_@TNZx#Fu2$yJz~+NJ9BLuUXO(uW)9O;Nx?uC<
+zTI0f<&0l9Jd)^mQf4%f`m;=X_hIifksXH}I!rM$&>nOjvcdA&2{h^dpjZ9nUss}q1
+z_|G{r{O4IyS$XhOgw2P2<u)xcqTfFJ+NJ%XORcX?;_iQ8W{xEpMec$Z6^}9rpDLK!
+zu_at?x4z8#;^&8?o-kc*`JJ~+_esyg)OsVXg^Q2P$>O)|UnYL3+eI&*eU+n@;SHZD
+zFGUSv*IZ(|cTQ>FrB6F<WKKNy@@>Z9Nb4<DzUz$N==m*uw00xorHH*3j;+^iin$dc
+z9Mr1*uJZNH*VEW0>c5@$Wm=xS^rZ*UQ(xTNbMf6}_pk+DGiPPEsQ%FRUGnmD4YTRy
+zN3k|P1#J)Ae!qWn@ExBu*XN(+UA${?)#kq*zb8DJFTB6de{+WHS$mr)A4AsP;?pn6
+zpLp+n_q&G$rnecVKgj;J@{U{O2C?-i)khqs<)3zYExtdnw|Z*C+3JO9U&RBw8JR?w
+zap!zs^n*bIFg;)`2ha^b&leEw3=9p7%0MHKatXRd^i+q?_z$QNBMk<4v$BDdFazOE
+KApL_G!~*~c82PRM
+
+literal 0
+HcmV?d00001
+
+diff --git a/formpacks/notfallpass/docx/template.wallet.docx b/formpacks/notfallpass/templates/wallet.docx
+similarity index 100%
+rename from formpacks/notfallpass/docx/template.wallet.docx
+rename to formpacks/notfallpass/templates/wallet.docx

@@ -5,7 +5,7 @@ export type FormpackExportType = 'docx' | 'json';
 export interface FormpackDocxManifest {
   templates: {
     a4: string;
-    wallet: string;
+    wallet?: string;
   };
   mapping: string;
 }
