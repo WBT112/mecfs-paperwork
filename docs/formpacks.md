@@ -203,6 +203,12 @@ To add a new pack, copy the `formpacks/notfallpass` skeleton and adjust:
 - DOCX templates and mapping
 - Example data (must be fake)
 
+Validate templates locally with:
+```
+cd app
+npm run formpack:validate
+```
+
 ## App registry (MVP)
 The app only loads formpacks listed in `app/src/formpacks/registry.ts`. Add the
 new pack id to `FORMPACK_IDS` so it appears in the catalog.
