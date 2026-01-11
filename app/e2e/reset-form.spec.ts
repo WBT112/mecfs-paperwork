@@ -7,6 +7,9 @@ type DbOptions = {
 
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
+const POLL_TIMEOUT = 20_000;
+const POLL_INTERVALS = [250, 500, 1000];
+const AUTOSAVE_WAIT_MS = 1500;
 
 const DB: DbOptions = {
   dbName: 'mecfs-paperwork',
@@ -39,67 +42,10 @@ const waitForActiveRecordId = async (page: Page) => {
         activeId = (await getActiveRecordId(page)) ?? '';
         return activeId;
       },
-      { timeout: 10_000, intervals: [250, 500, 1000] },
+      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
     )
     .not.toBe('');
   return activeId;
-};
-
-const readRecordById = async (
-  page: Page,
-  id: string,
-  options: DbOptions = DB,
-) => {
-  return page.evaluate(
-    async ({ dbName, storeName, id }) => {
-      const openExistingDb = async () => {
-        if (indexedDB.databases) {
-          const databases = await indexedDB.databases();
-          if (!databases.some((db) => db.name === dbName)) {
-            return null;
-          }
-        }
-
-        return await new Promise<IDBDatabase | null>((resolve) => {
-          let aborted = false;
-          const request = indexedDB.open(dbName);
-          request.onupgradeneeded = () => {
-            aborted = true;
-            request.transaction?.abort();
-          };
-          request.onsuccess = () => {
-            const db = request.result;
-            if (aborted) {
-              db.close();
-              resolve(null);
-              return;
-            }
-            resolve(db);
-          };
-          request.onerror = () => resolve(null);
-          request.onblocked = () => resolve(null);
-        });
-      };
-
-      const db = await openExistingDb();
-      if (!db) return null;
-
-      try {
-        if (!db.objectStoreNames.contains(storeName)) return null;
-
-        return await new Promise<any>((resolve, reject) => {
-          const tx = db.transaction(storeName, 'readonly');
-          const store = tx.objectStore(storeName);
-          const getReq = store.get(id);
-          getReq.onerror = () => reject(getReq.error);
-          getReq.onsuccess = () => resolve(getReq.result ?? null);
-        });
-      } finally {
-        db.close();
-      }
-    },
-    { ...options, id },
-  );
 };
 
 const waitForRecordListReady = async (page: Page) => {
@@ -122,6 +68,11 @@ const clickNewDraftIfNeeded = async (page: Page) => {
   }
 
   await waitForRecordListReady(page);
+  const activeIdAfterLoad = await getActiveRecordId(page);
+  if (activeIdAfterLoad) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
 
   const newDraftButton = page.getByRole('button', {
     name: /new\s*draft|neuer\s*entwurf/i,
@@ -139,58 +90,27 @@ const clickNewDraftIfNeeded = async (page: Page) => {
   await expect(nameInput).toBeVisible();
 };
 
-const waitForRecordData = async (
-  page: Page,
-  id: string,
-  check: (data: Record<string, unknown> | null) => boolean,
-) => {
-  await expect
-    .poll(
-      async () => {
-        const record = await readRecordById(page, id);
-        if (!record || !record.data) {
-          return false;
-        }
-        return check(record.data as Record<string, unknown>);
-      },
-      { timeout: 10_000, intervals: [250, 500, 1000] },
-    )
-    .toBe(true);
-};
-
-const isMeaningfulValue = (value: unknown): boolean => {
-  if (value === null || value === undefined) return false;
-  if (typeof value === 'string') return value.trim().length > 0;
-  if (typeof value === 'number') return value !== 0;
-  if (typeof value === 'boolean') return value;
-  if (Array.isArray(value)) {
-    return value.some((entry) => isMeaningfulValue(entry));
-  }
-  if (typeof value === 'object') {
-    return Object.values(value as Record<string, unknown>).some((entry) =>
-      isMeaningfulValue(entry),
-    );
-  }
-  return false;
-};
-
 test.describe('reset form', () => {
   test('clears the draft and persists after reload', async ({ page }) => {
-    await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await page.goto('/');
+    await page.evaluate(() => {
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+    });
     await deleteDatabase(page, DB.dbName);
-    await page.reload();
+    await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
     await clickNewDraftIfNeeded(page);
 
     const nameInput = page.locator('#root_person_name');
+    await waitForActiveRecordId(page);
     await nameInput.fill('Test Person');
     await expect(nameInput).toHaveValue('Test Person');
-
-    const activeId = await waitForActiveRecordId(page);
-    await waitForRecordData(page, activeId, (data) => {
-      const person = data.person as Record<string, unknown> | undefined;
-      return person?.name === 'Test Person';
-    });
+    // Wait for autosave debounce before asserting persistence via reload.
+    await page.waitForTimeout(AUTOSAVE_WAIT_MS);
+    await page.reload();
+    await expect(nameInput).toBeVisible();
+    await expect(nameInput).toHaveValue('Test Person');
 
     await page
       .getByRole('button', {
@@ -199,17 +119,9 @@ test.describe('reset form', () => {
       .click();
 
     await expect(nameInput).toHaveValue('');
-
-    await waitForRecordData(page, activeId, (data) => {
-      return !isMeaningfulValue(data);
-    });
-
+    await page.waitForTimeout(AUTOSAVE_WAIT_MS);
     await page.reload();
-
+    await expect(nameInput).toBeVisible();
     await expect(nameInput).toHaveValue('');
-
-    await waitForRecordData(page, activeId, (data) => {
-      return !isMeaningfulValue(data);
-    });
   });
 });

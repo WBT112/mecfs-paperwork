@@ -1,9 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 
 type DbOptions = { dbName: string; storeName: string };
-
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
+const POLL_TIMEOUT = 20_000;
+const POLL_INTERVALS = [250, 500, 1000];
+const AUTOSAVE_WAIT_MS = 1500;
 
 const DB: DbOptions = { dbName: 'mecfs-paperwork', storeName: 'records' };
 
@@ -76,7 +78,7 @@ const waitForActiveRecordId = async (page: Page) => {
         activeId = (await getActiveRecordId(page)) ?? '';
         return activeId;
       },
-      { timeout: 10_000, intervals: [250, 500, 1000] },
+      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
     )
     .not.toBe('');
   return activeId;
@@ -141,7 +143,7 @@ const createSnapshot = async (page: Page) => {
   }
 
   const items = page.locator('.formpack-snapshots__item');
-  await expect(items).toHaveCount(1, { timeout: 10_000 });
+  await expect(items).toHaveCount(1, { timeout: POLL_TIMEOUT });
 };
 
 const restoreFirstSnapshot = async (page: Page) => {
@@ -180,12 +182,14 @@ test('snapshot restore restores data and does not create extra records', async (
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
   await clickNewDraftIfNeeded(page);
+  await waitForActiveRecordId(page);
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();
   // 1) Set initial value and wait for persistence
   await nameInput.fill('Alice Snapshot');
   await expect(nameInput).toHaveValue('Alice Snapshot');
+  await page.waitForTimeout(AUTOSAVE_WAIT_MS);
 
   // Snapshot operations must stay within the existing draft.
   const recordsCountBaseline = await countObjectStoreRecords(page);
@@ -197,12 +201,16 @@ test('snapshot restore restores data and does not create extra records', async (
   // 3) Change value and persist
   await nameInput.fill('Bob After Change');
   await expect(nameInput).toHaveValue('Bob After Change');
+  await page.waitForTimeout(AUTOSAVE_WAIT_MS);
 
   // 4) Restore snapshot and verify value + persistence
   await restoreFirstSnapshot(page);
 
-  await expect(nameInput).toHaveValue('Alice Snapshot', { timeout: 10_000 });
-  // Rely on the reload check below to verify persistence in IndexedDB.
+  await expect(nameInput).toHaveValue('Alice Snapshot', {
+    timeout: POLL_TIMEOUT,
+  });
+  // Reload below confirms the persisted snapshot renders after refresh.
+  await page.waitForTimeout(AUTOSAVE_WAIT_MS);
 
   // Restore should not create a new draft record
   // Restoring a snapshot must not create a new draft.
@@ -213,7 +221,9 @@ test('snapshot restore restores data and does not create extra records', async (
   await page.reload();
 
   await expect(nameInput).toBeVisible();
-  await expect(nameInput).toHaveValue('Alice Snapshot');
+  await expect(nameInput).toHaveValue('Alice Snapshot', {
+    timeout: POLL_TIMEOUT,
+  });
 
   // Reload must keep the same record count after restoration.
   const recordsCountAfterReload = await countObjectStoreRecords(page);

@@ -20,6 +20,12 @@ import {
   downloadJsonExport,
 } from '../export/json';
 import type { DocxTemplateId } from '../export/docx';
+import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
+import {
+  formpackTemplates,
+  type FormpackFormContext,
+} from '../lib/rjsfTemplates';
+import {
   FormpackLoaderError,
   loadFormpackManifest,
   loadFormpackSchema,
@@ -722,15 +728,9 @@ export default function FormpackDetailPage() {
     setDocxSuccess(null);
     setIsDocxExporting(true);
 
-    const docxModule = await import('../export/docx');
-
-      const report = await docxModule.exportDocx({
-      const filename = docxModule.buildDocxExportFilename(
-        formpackId,
-        docxTemplateId,
-      );
-      docxModule.downloadDocxExport(report, filename);
-      const errorKey = docxModule.getDocxErrorKey(error);
+    let docxModule: typeof import('../export/docx') | null = null;
+    try {
+      docxModule = await import('../export/docx');
       const report = await docxModule.exportDocx({
         formpackId,
         recordId: activeRecord.id,
