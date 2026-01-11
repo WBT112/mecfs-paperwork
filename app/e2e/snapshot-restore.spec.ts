@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 type DbOptions = { dbName: string; storeName: string };
 const FORM_PACK_ID = 'notfallpass';
@@ -95,6 +95,16 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
+const clickActionButton = async (button: Locator) => {
+  // DOM click avoids Playwright's actionability flake during rapid rerenders.
+  await expect(button).toBeVisible({ timeout: POLL_TIMEOUT });
+  await expect(button).toBeEnabled({ timeout: POLL_TIMEOUT });
+  await button.scrollIntoViewIfNeeded();
+  await button.evaluate((element) => {
+    (element as HTMLButtonElement).click();
+  });
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   const existingActiveId = await getActiveRecordId(page);
@@ -115,13 +125,12 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     name: /new\s*draft|neuer\s*entwurf/i,
   });
   if (await newDraftButton.count()) {
-    await newDraftButton.first().click();
+    await clickActionButton(newDraftButton.first());
   } else {
     // Fallback: click the first action button in the drafts area.
-    await page
-      .locator('.formpack-records__actions .app__button')
-      .first()
-      .click();
+    await clickActionButton(
+      page.locator('.formpack-records__actions .app__button').first(),
+    );
   }
 
   await waitForActiveRecordId(page);
