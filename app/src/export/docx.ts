@@ -4,6 +4,10 @@ import type { SupportedLocale } from '../i18n/locale';
 import { buildDocumentModel } from '../formpacks/documentModel';
 import type { DocumentModel } from '../formpacks/documentModel';
 import { loadFormpackManifest } from '../formpacks/loader';
+import type {
+  FormpackDocxManifest,
+  FormpackManifest,
+} from '../formpacks/types';
 import { getRecord } from '../storage/records';
 import { buildI18nContext } from './buildI18nContext';
 
@@ -66,9 +70,14 @@ const assertTemplateAllowed = (
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
+// Session cache keeps DOCX assets available when the app is offline.
+const docxMappingCache = new Map<string, DocxMapping>();
+const docxTemplateCache = new Map<string, Uint8Array>();
 
 const buildAssetPath = (formpackId: string, assetPath: string) =>
   `/formpacks/${formpackId}/${assetPath}`;
+const buildCacheKey = (formpackId: string, assetPath: string) =>
+  `${formpackId}:${assetPath}`;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -315,6 +324,12 @@ const loadDocxMapping = async (
     throw new Error('Invalid DOCX mapping path.');
   }
 
+  const cacheKey = buildCacheKey(formpackId, mappingPath);
+  const cached = docxMappingCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const response = await fetch(buildAssetPath(formpackId, mappingPath), {
     headers: { Accept: 'application/json' },
   });
@@ -330,7 +345,9 @@ const loadDocxMapping = async (
     throw new Error('Unable to parse DOCX mapping JSON.');
   }
 
-  return parseDocxMapping(payload);
+  const mapping = parseDocxMapping(payload);
+  docxMappingCache.set(cacheKey, mapping);
+  return mapping;
 };
 
 /**
@@ -381,6 +398,12 @@ export const loadDocxTemplate = async (
     throw new Error('Invalid DOCX template path.');
   }
 
+  const cacheKey = buildCacheKey(formpackId, templatePath);
+  const cached = docxTemplateCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   const response = await fetch(buildAssetPath(formpackId, templatePath));
 
   if (!response.ok) {
@@ -388,7 +411,9 @@ export const loadDocxTemplate = async (
   }
 
   const buffer = await response.arrayBuffer();
-  return new Uint8Array(buffer);
+  const template = new Uint8Array(buffer);
+  docxTemplateCache.set(cacheKey, template);
+  return template;
 };
 
 const formatExportDate = (value: Date) =>
@@ -468,6 +493,7 @@ export type ExportDocxOptions = {
   recordId: string;
   variant: DocxExportVariant;
   locale: SupportedLocale;
+  manifest?: FormpackManifest;
 };
 
 /**
@@ -478,8 +504,10 @@ export const exportDocx = async ({
   recordId,
   variant,
   locale,
+  manifest: manifestOverride,
 }: ExportDocxOptions): Promise<Blob> => {
-  const manifest = await loadFormpackManifest(formpackId);
+  const manifest =
+    manifestOverride ?? (await loadFormpackManifest(formpackId));
   if (!manifest.docx) {
     throw new Error('DOCX export assets are not configured for this formpack.');
   }
@@ -516,4 +544,23 @@ export const exportDocx = async ({
   );
 
   return new Blob([new Uint8Array(report)], { type: DOCX_MIME });
+};
+
+/**
+ * Preloads DOCX assets into memory to keep exports working after going offline.
+ */
+export const preloadDocxAssets = async (
+  formpackId: string,
+  docx: FormpackDocxManifest,
+): Promise<void> => {
+  const tasks = [
+    loadDocxMapping(formpackId, docx.mapping),
+    loadDocxTemplate(formpackId, docx.templates.a4),
+  ];
+
+  if (docx.templates.wallet) {
+    tasks.push(loadDocxTemplate(formpackId, docx.templates.wallet));
+  }
+
+  await Promise.all(tasks);
 };

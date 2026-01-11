@@ -19,7 +19,14 @@ import {
   buildJsonExportPayload,
   downloadJsonExport,
 } from '../export/json';
-import type { DocxTemplateId } from '../export/docx';
+import {
+  buildDocxExportFilename,
+  downloadDocxExport,
+  exportDocx,
+  getDocxErrorKey,
+  preloadDocxAssets,
+  type DocxTemplateId,
+} from '../export/docx';
 import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
   formpackTemplates,
@@ -235,6 +242,20 @@ export default function FormpackDetailPage() {
       isActive = false;
     };
   }, [id, locale, t]);
+
+  useEffect(() => {
+    if (
+      !manifest ||
+      !manifest.docx ||
+      !manifest.exports.includes('docx') ||
+      !formpackId
+    ) {
+      return;
+    }
+
+    // Preload DOCX assets so export still works after going offline.
+    void preloadDocxAssets(formpackId, manifest.docx).catch(() => undefined);
+  }, [formpackId, manifest]);
 
   useEffect(() => {
     setStorageError(recordsError ?? snapshotsError ?? null);
@@ -720,7 +741,13 @@ export default function FormpackDetailPage() {
   }, [activeRecord, formData, locale, manifest, schema, snapshots]);
 
   const handleExportDocx = useCallback(async () => {
-    if (!manifest?.docx || !formpackId || !activeRecord) {
+    if (
+      !manifest ||
+      !manifest.docx ||
+      !manifest.exports.includes('docx') ||
+      !formpackId ||
+      !activeRecord
+    ) {
       return;
     }
 
@@ -728,26 +755,19 @@ export default function FormpackDetailPage() {
     setDocxSuccess(null);
     setIsDocxExporting(true);
 
-    let docxModule: typeof import('../export/docx') | null = null;
     try {
-      docxModule = await import('../export/docx');
-      const report = await docxModule.exportDocx({
+      const report = await exportDocx({
         formpackId,
         recordId: activeRecord.id,
         variant: docxTemplateId,
         locale,
+        manifest,
       });
-      const filename = docxModule.buildDocxExportFilename(
-        formpackId,
-        docxTemplateId,
-      );
-      docxModule.downloadDocxExport(report, filename);
+      const filename = buildDocxExportFilename(formpackId, docxTemplateId);
+      downloadDocxExport(report, filename);
       setDocxSuccess(t('formpackDocxExportSuccess'));
     } catch (error) {
-      const errorKey = docxModule
-        ? docxModule.getDocxErrorKey(error)
-        : 'formpackDocxExportError';
-      setDocxError(t(errorKey));
+      setDocxError(t(getDocxErrorKey(error)));
     } finally {
       setIsDocxExporting(false);
     }
