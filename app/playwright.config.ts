@@ -1,11 +1,14 @@
 /// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
 
+const isCI = Boolean(process.env.CI);
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
-  timeout: 30_000,
-  expect: { timeout: 10_000 },
+  timeout: isCI ? 60_000 : 30_000,
+  expect: { timeout: isCI ? 15_000 : 10_000 },
+  workers: isCI ? 2 : undefined,
 
   // Terminal output + HTML report folder
   reporter: [

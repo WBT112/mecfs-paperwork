@@ -21,10 +21,9 @@ import {
 } from '../export/json';
 import {
   buildDocxExportFilename,
-  createDocxReport,
   downloadDocxExport,
-  loadDocxTemplate,
-  mapDocumentDataToTemplate,
+  exportDocx,
+  getDocxErrorKey,
   type DocxTemplateId,
 } from '../export/docx';
 import {
@@ -727,7 +726,7 @@ export default function FormpackDetailPage() {
   }, [activeRecord, formData, locale, manifest, schema, snapshots]);
 
   const handleExportDocx = useCallback(async () => {
-    if (!manifest?.docx || !formpackId) {
+    if (!manifest?.docx || !formpackId || !activeRecord) {
       return;
     }
 
@@ -736,36 +735,22 @@ export default function FormpackDetailPage() {
     setIsDocxExporting(true);
 
     try {
-      const templatePath =
-        docxTemplateId === 'wallet'
-          ? manifest.docx.templates.wallet
-          : manifest.docx.templates.a4;
-
-      if (!templatePath) {
-        setDocxError(t('formpackDocxExportError'));
-        return;
-      }
-
-      const [template, templateContext] = await Promise.all([
-        loadDocxTemplate(formpackId, templatePath),
-        mapDocumentDataToTemplate(formpackId, docxTemplateId, documentModel, {
-          mappingPath: manifest.docx.mapping,
-          locale,
-        }),
-      ]);
-
-      const report = await createDocxReport(template, templateContext);
+      const report = await exportDocx({
+        formpackId,
+        recordId: activeRecord.id,
+        variant: docxTemplateId,
+        locale,
+      });
       const filename = buildDocxExportFilename(formpackId, docxTemplateId);
       downloadDocxExport(report, filename);
       setDocxSuccess(t('formpackDocxExportSuccess'));
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(error);
-      setDocxError(t('formpackDocxExportError'));
+      const errorKey = getDocxErrorKey(error);
+      setDocxError(t(errorKey));
     } finally {
       setIsDocxExporting(false);
     }
-  }, [docxTemplateId, documentModel, formpackId, locale, manifest, t]);
+  }, [activeRecord, docxTemplateId, formpackId, locale, manifest, t]);
 
   useEffect(() => {
     let isActive = true;
