@@ -19,18 +19,12 @@ import {
   buildJsonExportPayload,
   downloadJsonExport,
 } from '../export/json';
-import {
-  buildDocxExportFilename,
-  downloadDocxExport,
-  exportDocx,
-  getDocxErrorKey,
-  type DocxTemplateId,
-} from '../export/docx';
+import type { DocxTemplateId } from '../export/docx';
+import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
   formpackTemplates,
   type FormpackFormContext,
 } from '../lib/rjsfTemplates';
-import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
   FormpackLoaderError,
   loadFormpackManifest,
@@ -734,18 +728,25 @@ export default function FormpackDetailPage() {
     setDocxSuccess(null);
     setIsDocxExporting(true);
 
+    let docxModule: typeof import('../export/docx') | null = null;
     try {
-      const report = await exportDocx({
+      docxModule = await import('../export/docx');
+      const report = await docxModule.exportDocx({
         formpackId,
         recordId: activeRecord.id,
         variant: docxTemplateId,
         locale,
       });
-      const filename = buildDocxExportFilename(formpackId, docxTemplateId);
-      downloadDocxExport(report, filename);
+      const filename = docxModule.buildDocxExportFilename(
+        formpackId,
+        docxTemplateId,
+      );
+      docxModule.downloadDocxExport(report, filename);
       setDocxSuccess(t('formpackDocxExportSuccess'));
     } catch (error) {
-      const errorKey = getDocxErrorKey(error);
+      const errorKey = docxModule
+        ? docxModule.getDocxErrorKey(error)
+        : 'formpackDocxExportError';
       setDocxError(t(errorKey));
     } finally {
       setIsDocxExporting(false);

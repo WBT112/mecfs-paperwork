@@ -21,6 +21,9 @@ For every change that touches `app/`:
 3. `npm run format:check`
 4. `npm run typecheck`
 5. `npm run build`
+6. `npm run test:unit`
+7. `npm run test:e2e`
+8. `npm run formpack:validate`
 
 If any step fails: fix it before finishing.
 
@@ -38,7 +41,7 @@ If any step fails: fix it before finishing.
 - Add or update unit tests for new/changed business logic (e.g., mapping, validation, export, storage).
 - Prefer fast, deterministic tests. Avoid flaky E2E tests.
 
-### E2E (later)
+### E2E
 - Only add E2E tests when the issue explicitly requires it or when touching critical user flows.
 - Keep E2E coverage minimal (smoke tests) and stable.
 
