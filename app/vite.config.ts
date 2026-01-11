@@ -4,6 +4,16 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      events: 'events',
+      stream: 'stream-browserify',
+      util: 'util',
+    },
+  },
+  optimizeDeps: {
+    include: ['events', 'stream-browserify', 'util'],
+  },
   server: {
     cors: false,
   },
