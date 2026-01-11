@@ -44,6 +44,10 @@ jobs:
         working-directory: app
         run: npm run typecheck
 
+      - name: Formpack validation
+        working-directory: app
+        run: npm run formpack:validate
+
       - name: Unit tests
         working-directory: app
         run: npm run test:unit

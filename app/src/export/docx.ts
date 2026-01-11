@@ -1,10 +1,14 @@
 import { createReport } from 'docx-templates/lib/browser.js';
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
+import { buildDocumentModel } from '../formpacks/documentModel';
 import type { DocumentModel } from '../formpacks/documentModel';
+import { loadFormpackManifest } from '../formpacks/loader';
+import { getRecord } from '../storage/records';
 import { buildI18nContext } from './buildI18nContext';
 
 export type DocxTemplateId = 'a4' | 'wallet';
+export type DocxExportVariant = DocxTemplateId;
 
 type DocxMappingField = {
   var: string;
@@ -26,6 +30,17 @@ type DocxMapping = {
 };
 
 export type DocxTemplateContext = Record<string, unknown>;
+export type DocxAdditionalContext = {
+  t: ((key: string) => string) & Record<string, unknown>;
+  formatDate: (value: string | null | undefined) => string;
+  formatPhone: (value: string | null | undefined) => string;
+};
+export type DocxErrorKey =
+  | 'formpackDocxErrorUnterminatedFor'
+  | 'formpackDocxErrorIncompleteIf'
+  | 'formpackDocxErrorInvalidSyntax'
+  | 'formpackDocxErrorInvalidCommand'
+  | 'formpackDocxExportError';
 
 type MapTemplateOptions = {
   mappingPath?: string;
@@ -37,14 +52,20 @@ type MapTemplateOptions = {
  * - A4 is the standard template for all formpacks.
  * - Wallet templates are only supported for the notfallpass formpack.
  */
-const assertTemplateAllowed = (formpackId: string, templateId: DocxTemplateId) => {
+const assertTemplateAllowed = (
+  formpackId: string,
+  templateId: DocxTemplateId,
+) => {
   if (templateId === 'wallet' && formpackId !== 'notfallpass') {
-    throw new Error('Wallet DOCX export is only supported for the notfallpass formpack.');
+    throw new Error(
+      'Wallet DOCX export is only supported for the notfallpass formpack.',
+    );
   }
 };
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
 
 const buildAssetPath = (formpackId: string, assetPath: string) =>
   `/formpacks/${formpackId}/${assetPath}`;
@@ -88,7 +109,9 @@ const parseDocxMapping = (payload: unknown): DocxMapping => {
   );
 
   if (!fields.length) {
-    throw new Error('DOCX mapping payload must contain at least one valid field mapping.');
+    throw new Error(
+      'DOCX mapping payload must contain at least one valid field mapping.',
+    );
   }
 
   const loops = Array.isArray(payload.loops)
@@ -104,7 +127,10 @@ const parseDocxMapping = (payload: unknown): DocxMapping => {
 
   const i18nConfig = isRecord(payload.i18n)
     ? {
-        prefix: typeof payload.i18n.prefix === 'string' ? payload.i18n.prefix : undefined,
+        prefix:
+          typeof payload.i18n.prefix === 'string'
+            ? payload.i18n.prefix
+            : undefined,
       }
     : undefined;
 
@@ -114,6 +140,79 @@ const parseDocxMapping = (payload: unknown): DocxMapping => {
     loops,
     i18n: i18nConfig,
   };
+};
+
+const buildDocxAdditionalContext = (
+  formpackId: string,
+  locale: SupportedLocale,
+  i18nContext?: { t: Record<string, unknown> },
+): DocxAdditionalContext => {
+  const t = i18n.getFixedT(locale, `formpack:${formpackId}`);
+  const tFn = ((key: string) =>
+    t(key, { defaultValue: key })) as DocxAdditionalContext['t'];
+  const tContext = i18nContext?.t ?? buildI18nContext(formpackId, locale).t;
+  Object.assign(tFn, tContext);
+
+  const formatDate = (value: string | null | undefined): string => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+    return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
+      date,
+    );
+  };
+
+  const formatPhone = (value: string | null | undefined): string => {
+    if (!value) return '';
+    return String(value).trim();
+  };
+
+  return {
+    t: tFn,
+    formatDate,
+    formatPhone,
+  };
+};
+
+const coerceDocxError = (error: unknown): Error | null => {
+  if (Array.isArray(error)) {
+    const first = error.find((entry) => entry instanceof Error);
+    return first ?? null;
+  }
+
+  if (error instanceof Error) {
+    return error;
+  }
+
+  return null;
+};
+
+/**
+ * Maps docx-templates errors to user-facing i18n keys.
+ */
+export const getDocxErrorKey = (error: unknown): DocxErrorKey => {
+  const target = coerceDocxError(error);
+  if (!target) {
+    return 'formpackDocxExportError';
+  }
+
+  switch (target.name) {
+    case 'UnterminatedForLoopError':
+      return 'formpackDocxErrorUnterminatedFor';
+    case 'IncompleteConditionalStatementError':
+      return 'formpackDocxErrorIncompleteIf';
+    case 'TemplateParseError':
+    case 'CommandSyntaxError':
+      return 'formpackDocxErrorInvalidSyntax';
+    case 'InvalidCommandError':
+    case 'CommandExecutionError':
+    case 'ObjectCommandResultError':
+      return 'formpackDocxErrorInvalidCommand';
+    default:
+      return 'formpackDocxExportError';
+  }
 };
 
 const getPathValue = (source: unknown, path: string): unknown => {
@@ -139,7 +238,11 @@ const getPathValue = (source: unknown, path: string): unknown => {
   }, source);
 };
 
-const setPathValue = (target: Record<string, unknown>, path: string, value: unknown) => {
+const setPathValue = (
+  target: Record<string, unknown>,
+  path: string,
+  value: unknown,
+) => {
   if (!path || path.trim().length === 0) {
     return;
   }
@@ -191,7 +294,8 @@ const normalizeLoopEntry = (entry: unknown): unknown => {
 
   if (!isRecord(entry)) {
     if (typeof entry === 'string') return entry;
-    if (typeof entry === 'number' || typeof entry === 'boolean') return String(entry);
+    if (typeof entry === 'number' || typeof entry === 'boolean')
+      return String(entry);
     return null;
   }
 
@@ -314,37 +418,38 @@ export const buildDocxExportFilename = (
  * Generates a DOCX report from a template and context.
  *
  * Note: createReport can throw (template errors, missing placeholders, invalid loops).
- * We surface a sanitized error message (no form data).
  */
 export const createDocxReport = async (
   template: Uint8Array,
   data: DocxTemplateContext,
+  additionalJsContext?: DocxAdditionalContext,
+  failFast: boolean = true,
 ): Promise<Uint8Array> => {
-  try {
-    return await createReport({
-      template,
-      data,
-      cmdDelimiter: ['{{', '}}'],
-      processLineBreaks: true,
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown DOCX export error.';
-    throw new Error(`Unable to generate DOCX report: ${message}`);
-  }
+  return createReport({
+    template,
+    data,
+    cmdDelimiter: DOCX_CMD_DELIMITER,
+    processLineBreaks: true,
+    additionalJsContext,
+    failFast,
+  });
 };
 
 /**
  * Downloads a DOCX report blob.
  */
-export const downloadDocxExport = (report: Uint8Array, filename: string): void => {
+export const downloadDocxExport = (
+  report: Uint8Array | Blob,
+  filename: string,
+): void => {
   const safeFilename = filename.toLowerCase().endsWith('.docx')
     ? filename
     : `${filename}.docx`;
 
-  // Force a copy to ensure ArrayBuffer-backed bytes (avoids BlobPart typing/runtime edge cases).
-  const bytes = new Uint8Array(report);
-
-  const blob = new Blob([bytes], { type: DOCX_MIME });
+  const blob =
+    report instanceof Blob
+      ? report
+      : new Blob([new Uint8Array(report)], { type: DOCX_MIME });
   const url = URL.createObjectURL(blob);
 
   const anchor = document.createElement('a');
@@ -356,4 +461,59 @@ export const downloadDocxExport = (report: Uint8Array, filename: string): void =
   anchor.remove();
 
   window.setTimeout(() => URL.revokeObjectURL(url), 0);
+};
+
+export type ExportDocxOptions = {
+  formpackId: string;
+  recordId: string;
+  variant: DocxExportVariant;
+  locale: SupportedLocale;
+};
+
+/**
+ * Generates a DOCX export blob for the given record and variant.
+ */
+export const exportDocx = async ({
+  formpackId,
+  recordId,
+  variant,
+  locale,
+}: ExportDocxOptions): Promise<Blob> => {
+  const manifest = await loadFormpackManifest(formpackId);
+  if (!manifest.docx) {
+    throw new Error('DOCX export assets are not configured for this formpack.');
+  }
+
+  const templatePath =
+    variant === 'wallet'
+      ? manifest.docx.templates.wallet
+      : manifest.docx.templates.a4;
+
+  if (!templatePath) {
+    throw new Error(`DOCX template for ${variant} is not available.`);
+  }
+
+  const record = await getRecord(recordId);
+  if (!record) {
+    throw new Error('Unable to load the requested record.');
+  }
+
+  const documentModel = buildDocumentModel(formpackId, locale, record.data);
+  const [template, templateContext] = await Promise.all([
+    loadDocxTemplate(formpackId, templatePath),
+    mapDocumentDataToTemplate(formpackId, variant, documentModel, {
+      mappingPath: manifest.docx.mapping,
+      locale,
+    }),
+  ]);
+
+  const report = await createDocxReport(
+    template,
+    templateContext,
+    buildDocxAdditionalContext(formpackId, locale, {
+      t: isRecord(templateContext.t) ? templateContext.t : {},
+    }),
+  );
+
+  return new Blob([new Uint8Array(report)], { type: DOCX_MIME });
 };

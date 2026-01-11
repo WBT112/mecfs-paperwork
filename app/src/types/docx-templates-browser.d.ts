@@ -6,6 +6,8 @@ declare module 'docx-templates/lib/browser.js' {
     cmdDelimiter?: [string, string];
     literalXmlDelimiter?: string;
     processLineBreaks?: boolean;
+    additionalJsContext?: Record<string, unknown>;
+    failFast?: boolean;
   };
 
   export function createReport(

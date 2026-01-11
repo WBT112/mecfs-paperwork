@@ -135,25 +135,28 @@ Examples:
 
 Authoring Rules (important: prevents parser errors)
 Word processors (Word/LibreOffice) can split text into multiple internal “runs”. To keep commands parseable:
-Never apply formatting changes inside a command ({{...}} must remain a single uninterrupted run).
-Do not insert manual line breaks inside commands.
-Put FOR and END-FOR on their own paragraphs (recommended).
-Do not span loops across table cell boundaries or complex layout containers.
+- Use the standard delimiter policy: `{{ ... }}` for all commands.
+- Never apply formatting changes inside a command ({{...}} must remain a single uninterrupted run).
+- Do not insert manual line breaks inside commands.
+- Put FOR and END-FOR on their own paragraphs (recommended).
+- Always close loops with a matching `END-FOR <var>` (for example `{{END-FOR c}}`).
+- Inside loops, reference variables with a `$` prefix (example: `{{INS $c.name}}` or `{{INS $p}}`).
+- Do not span loops across table cell boundaries or complex layout containers.
 
 ### Template locations
 - `formpacks/<packId>/templates/a4.docx` is required for all formpacks.
 - `formpacks/notfallpass/templates/wallet.docx` is optional and only supported for `notfallpass`.
 
 ### Field placeholders
-- Text fields: `{{field.path}}` (example: `{{person.name}}`).
+- Text fields: `{{INS person.name}}` or `{{person.name}}`.
 
 ### i18n placeholders
-- Labels/headings: `{{t:key}}` (example: `{{t:notfallpass.section.person.title}}`).
+- Labels/headings: `{{t.notfallpass.section.person.title}}`.
 
 ### Loops
-- Start a loop with `{{#contacts}}` and end it with `{{/contacts}}`.
-- Inside the loop use child fields like `{{name}}`, `{{phone}}`, `{{relation}}`.
-- For paragraph lists, use `{{#diagnosisParagraphs}}` with `{{.}}` to render each entry.
+- Start a loop with `{{FOR c IN contacts}}` and end it with `{{END-FOR c}}`.
+- Inside the loop use child fields like `{{INS $c.name}}`, `{{INS $c.phone}}`, `{{INS $c.relation}}`.
+- For paragraph lists, use `{{FOR p IN diagnosisParagraphs}}` with `{{INS $p}}`.
 
 Templates can be visually simple in the MVP but must include the required placeholders.
 
