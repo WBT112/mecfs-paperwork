@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 type DbOptions = { dbName: string; storeName: string };
+type RecordEntry = { id: string; data: Record<string, unknown> };
 
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
@@ -59,6 +60,80 @@ const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
       db.close();
     }
   }, options);
+};
+
+const getRecordById = async (
+  page: Page,
+  recordId: string,
+  options: DbOptions = DB,
+) => {
+  return page.evaluate(
+    async ({ dbName, storeName, recordId }) => {
+      const openExistingDb = async () => {
+        return await new Promise<IDBDatabase | null>((resolve) => {
+          let aborted = false;
+          const request = indexedDB.open(dbName);
+          request.onupgradeneeded = () => {
+            aborted = true;
+            request.transaction?.abort();
+          };
+          request.onsuccess = () => {
+            const db = request.result;
+            if (aborted) {
+              db.close();
+              resolve(null);
+              return;
+            }
+            resolve(db);
+          };
+          request.onerror = () => resolve(null);
+          request.onblocked = () => resolve(null);
+        });
+      };
+
+      const db = await openExistingDb();
+      if (!db) return null;
+      try {
+        if (!db.objectStoreNames.contains(storeName)) return null;
+
+        return await new Promise<Record<string, unknown> | null>(
+          (resolve, reject) => {
+            const tx = db.transaction(storeName, 'readonly');
+            const store = tx.objectStore(storeName);
+            const getReq = store.get(recordId);
+            getReq.onerror = () => reject(getReq.error);
+            getReq.onsuccess = () => resolve(getReq.result ?? null);
+          },
+        );
+      } finally {
+        db.close();
+      }
+    },
+    { ...options, recordId },
+  );
+};
+
+const getRecordPersonName = (record: RecordEntry | null) => {
+  const data = record?.data as { person?: { name?: string } } | undefined;
+  return data?.person?.name ?? '';
+};
+
+const waitForRecordPersonName = async (
+  page: Page,
+  recordId: string,
+  expected: string,
+) => {
+  await expect
+    .poll(
+      async () => {
+        const record = (await getRecordById(page, recordId)) as
+          | RecordEntry
+          | null;
+        return getRecordPersonName(record);
+      },
+      { timeout: 10_000, intervals: [250, 500, 1000] },
+    )
+    .toBe(expected);
 };
 
 const getActiveRecordId = async (page: Page) => {
@@ -180,12 +255,14 @@ test('snapshot restore restores data and does not create extra records', async (
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
   await clickNewDraftIfNeeded(page);
+  const activeRecordId = await waitForActiveRecordId(page);
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();
   // 1) Set initial value and wait for persistence
   await nameInput.fill('Alice Snapshot');
   await expect(nameInput).toHaveValue('Alice Snapshot');
+  await waitForRecordPersonName(page, activeRecordId, 'Alice Snapshot');
 
   // Snapshot operations must stay within the existing draft.
   const recordsCountBaseline = await countObjectStoreRecords(page);
@@ -197,12 +274,14 @@ test('snapshot restore restores data and does not create extra records', async (
   // 3) Change value and persist
   await nameInput.fill('Bob After Change');
   await expect(nameInput).toHaveValue('Bob After Change');
+  await waitForRecordPersonName(page, activeRecordId, 'Bob After Change');
 
   // 4) Restore snapshot and verify value + persistence
   await restoreFirstSnapshot(page);
 
+  await waitForRecordPersonName(page, activeRecordId, 'Alice Snapshot');
   await expect(nameInput).toHaveValue('Alice Snapshot', { timeout: 10_000 });
-  // Rely on the reload check below to verify persistence in IndexedDB.
+  // Reload below confirms the persisted snapshot renders after refresh.
 
   // Restore should not create a new draft record
   // Restoring a snapshot must not create a new draft.
