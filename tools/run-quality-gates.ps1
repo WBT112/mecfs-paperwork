@@ -1,29 +1,22 @@
 # tools\run-quality-gates.ps1
-# Runs all quality gates from the "app" package (monorepo-friendly).
+# Runs all quality gates from the "app" package and stays in /app on success.
 # Usage:
 #   .\run-quality-gates.ps1
-#   .\run-quality-gates.ps1 -E2eCommand "test:e2e" -E2eRuns 3
-#   .\run-quality-gates.ps1 -AppSubdir "app"
+#   .\run-quality-gates.ps1 -UnitCommand "test:unit" -E2eCommand "test:e2e" -E2eRuns 3
 
 [CmdletBinding()]
 param(
-  # Optional: override where the app package lives relative to repo root
   [string]$AppSubdir = "app",
-
-  # Unit tests:
-  # - default uses "npm test"
-  # - alternatively set to an npm script name like "test:unit"
-  [string]$UnitCommand = "test:unit",
-
-  # E2E tests npm script name (default "test:e2e")
+  [string]$UnitCommand = "",
   [string]$E2eCommand = "test:e2e",
-
-  # How many times to run E2E
   [int]$E2eRuns = 3
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+$didPush = $false
+$success = $false
 
 function Find-RepoRoot {
   param([string]$StartDir)
@@ -50,9 +43,7 @@ function Get-PackageJsonScripts {
   }
 
   $json = Get-Content -LiteralPath $pkgPath -Raw | ConvertFrom-Json
-  if ($null -eq $json.scripts) {
-    return @{}
-  }
+  if ($null -eq $json.scripts) { return @{} }
 
   $scripts = @{}
   foreach ($p in $json.scripts.PSObject.Properties) {
@@ -104,22 +95,19 @@ try {
   Write-Host "Repo root: $repoRoot" -ForegroundColor DarkGray
   Write-Host "App dir:   $appDir" -ForegroundColor DarkGray
 
-  # Read scripts from app/package.json to fail fast with a clear message
+  # Verify required scripts exist in app/package.json
   $scripts = Get-PackageJsonScripts -PackageDir $appDir
-
-  # Verify required scripts exist in app
   Assert-ScriptExists -Scripts $scripts -Name "lint" -PackageDir $appDir
   Assert-ScriptExists -Scripts $scripts -Name "typecheck" -PackageDir $appDir
   Assert-ScriptExists -Scripts $scripts -Name "build" -PackageDir $appDir
   Assert-ScriptExists -Scripts $scripts -Name "formpack:validate" -PackageDir $appDir
-
   if (-not [string]::IsNullOrWhiteSpace($UnitCommand)) {
     Assert-ScriptExists -Scripts $scripts -Name $UnitCommand -PackageDir $appDir
   }
-
   Assert-ScriptExists -Scripts $scripts -Name $E2eCommand -PackageDir $appDir
 
   Push-Location -LiteralPath $appDir
+  $didPush = $true
 
   # Quality gates
   Invoke-Checked -Label "lint (npm run lint)" -Exe "npm" -Args @("run", "lint")
@@ -141,8 +129,10 @@ try {
     Invoke-Checked -Label "e2e run $i/$E2eRuns (npm run $E2eCommand)" -Exe "npm" -Args @("run", $E2eCommand)
   }
 
+  $success = $true
+
   Write-Host ""
-  Write-Host "Erfolg" -ForegroundColor Green
+  Write-Host "Erfolg (du bist jetzt im /app Ordner; starte direkt: npm run dev)" -ForegroundColor Green
   exit 0
 }
 catch {
@@ -152,5 +142,8 @@ catch {
   exit 1
 }
 finally {
-  Pop-Location -ErrorAction SilentlyContinue
+  # On failure: return to original directory. On success: stay in /app.
+  if (-not $success -and $didPush) {
+    Pop-Location -ErrorAction SilentlyContinue
+  }
 }
