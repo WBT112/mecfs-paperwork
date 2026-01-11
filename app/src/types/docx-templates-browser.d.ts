@@ -8,5 +8,7 @@ declare module 'docx-templates/lib/browser.js' {
     processLineBreaks?: boolean;
   };
 
-  export function createReport(options: CreateReportOptions): Promise<Uint8Array>;
+  export function createReport(
+    options: CreateReportOptions,
+  ): Promise<Uint8Array>;
 }

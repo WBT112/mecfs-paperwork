@@ -2,6 +2,7 @@ import { createReport } from 'docx-templates/lib/browser.js';
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
 import type { DocumentModel } from '../formpacks/documentModel';
+import { buildI18nContext } from './buildI18nContext';
 
 export type DocxTemplateId = 'a4' | 'wallet';
 
@@ -202,72 +203,10 @@ const normalizeLoopEntry = (entry: unknown): unknown => {
   return normalized;
 };
 
-const setNested = (target: Record<string, unknown>, dottedKey: string, value: string) => {
-  const segments = dottedKey.split('.').filter(Boolean);
-  if (!segments.length) return;
-
-  let cursor: Record<string, unknown> = target;
-
-  for (let i = 0; i < segments.length; i += 1) {
-    const segment = segments[i];
-    const isLeaf = i === segments.length - 1;
-
-    if (isLeaf) {
-      cursor[segment] = value;
-      return;
-    }
-
-    const next = cursor[segment];
-    if (!isRecord(next)) {
-      cursor[segment] = {};
-    }
-    cursor = cursor[segment] as Record<string, unknown>;
-  }
-};
-
-/**
- * Builds a nested i18n translation context for docx-templates.
- *
- * Example key: "notfallpass.section.person.title" becomes:
- *   context.t.notfallpass.section.person.title
- */
-const buildI18nContext = (
+const loadDocxMapping = async (
   formpackId: string,
-  locale: SupportedLocale,
-  prefix?: string,
-): { t: Record<string, unknown> } => {
-  const namespace = `formpack:${formpackId}`;
-
-  let resources: unknown = null;
-  try {
-    resources = i18n.getResourceBundle(locale, namespace);
-  } catch {
-    return { t: {} };
-  }
-
-  if (!isRecord(resources)) {
-    return { t: {} };
-  }
-
-  const tObj: Record<string, unknown> = {};
-  const prefixFilter = prefix ? `${prefix}.` : null;
-
-  Object.entries(resources).forEach(([key, value]) => {
-    if (prefixFilter && !key.startsWith(prefixFilter)) {
-      return;
-    }
-
-    if (typeof value !== 'string') {
-      return;
-    }
-
-    setNested(tObj, key, value);
-  });
-
-  return { t: tObj };
-};
-
-const loadDocxMapping = async (formpackId: string, mappingPath: string): Promise<DocxMapping> => {
+  mappingPath: string,
+): Promise<DocxMapping> => {
   if (!isSafeAssetPath(mappingPath)) {
     throw new Error('Invalid DOCX mapping path.');
   }
@@ -330,7 +269,10 @@ export const mapDocumentDataToTemplate = async (
 /**
  * Loads a DOCX template asset for a formpack.
  */
-export const loadDocxTemplate = async (formpackId: string, templatePath: string): Promise<Uint8Array> => {
+export const loadDocxTemplate = async (
+  formpackId: string,
+  templatePath: string,
+): Promise<Uint8Array> => {
   if (!isSafeAssetPath(templatePath)) {
     throw new Error('Invalid DOCX template path.');
   }
@@ -345,7 +287,8 @@ export const loadDocxTemplate = async (formpackId: string, templatePath: string)
   return new Uint8Array(buffer);
 };
 
-const formatExportDate = (value: Date) => value.toISOString().slice(0, 10).replace(/-/g, '');
+const formatExportDate = (value: Date) =>
+  value.toISOString().slice(0, 10).replace(/-/g, '');
 
 const sanitizeFilenamePart = (value: string) =>
   value
@@ -394,7 +337,9 @@ export const createDocxReport = async (
  * Downloads a DOCX report blob.
  */
 export const downloadDocxExport = (report: Uint8Array, filename: string): void => {
-  const safeFilename = filename.toLowerCase().endsWith('.docx') ? filename : `${filename}.docx`;
+  const safeFilename = filename.toLowerCase().endsWith('.docx')
+    ? filename
+    : `${filename}.docx`;
 
   // Force a copy to ensure ArrayBuffer-backed bytes (avoids BlobPart typing/runtime edge cases).
   const bytes = new Uint8Array(report);
