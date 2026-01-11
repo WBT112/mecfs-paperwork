@@ -158,6 +158,22 @@ const waitForRecordData = async (
     .toBe(true);
 };
 
+const isMeaningfulValue = (value: unknown): boolean => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value === 'boolean') return value;
+  if (Array.isArray(value)) {
+    return value.some((entry) => isMeaningfulValue(entry));
+  }
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).some((entry) =>
+      isMeaningfulValue(entry),
+    );
+  }
+  return false;
+};
+
 test.describe('reset form', () => {
   test('clears the draft and persists after reload', async ({ page }) => {
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
@@ -185,7 +201,7 @@ test.describe('reset form', () => {
     await expect(nameInput).toHaveValue('');
 
     await waitForRecordData(page, activeId, (data) => {
-      return Object.keys(data).length === 0;
+      return !isMeaningfulValue(data);
     });
 
     await page.reload();
@@ -193,7 +209,7 @@ test.describe('reset form', () => {
     await expect(nameInput).toHaveValue('');
 
     await waitForRecordData(page, activeId, (data) => {
-      return Object.keys(data).length === 0;
+      return !isMeaningfulValue(data);
     });
   });
 });

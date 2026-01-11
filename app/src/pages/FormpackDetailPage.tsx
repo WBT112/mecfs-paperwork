@@ -19,14 +19,7 @@ import {
   buildJsonExportPayload,
   downloadJsonExport,
 } from '../export/json';
-import {
-  buildDocxExportFilename,
-  createDocxReport,
-  downloadDocxExport,
-  loadDocxTemplate,
-  mapDocumentDataToTemplate,
-  type DocxTemplateId,
-} from '../export/docx';
+import type { DocxTemplateId } from '../export/docx';
 import {
   formpackTemplates,
   type FormpackFormContext,
@@ -727,7 +720,7 @@ export default function FormpackDetailPage() {
   }, [activeRecord, formData, locale, manifest, schema, snapshots]);
 
   const handleExportDocx = useCallback(async () => {
-    if (!manifest?.docx || !formpackId) {
+    if (!manifest?.docx || !formpackId || !activeRecord) {
       return;
     }
 
@@ -735,37 +728,31 @@ export default function FormpackDetailPage() {
     setDocxSuccess(null);
     setIsDocxExporting(true);
 
+    let docxModule: typeof import('../export/docx') | null = null;
+
     try {
-      const templatePath =
-        docxTemplateId === 'wallet'
-          ? manifest.docx.templates.wallet
-          : manifest.docx.templates.a4;
-
-      if (!templatePath) {
-        setDocxError(t('formpackDocxExportError'));
-        return;
-      }
-
-      const [template, templateContext] = await Promise.all([
-        loadDocxTemplate(formpackId, templatePath),
-        mapDocumentDataToTemplate(formpackId, docxTemplateId, documentModel, {
-          mappingPath: manifest.docx.mapping,
-          locale,
-        }),
-      ]);
-
-      const report = await createDocxReport(template, templateContext);
-      const filename = buildDocxExportFilename(formpackId, docxTemplateId);
-      downloadDocxExport(report, filename);
+      docxModule = await import('../export/docx');
+      const report = await docxModule.exportDocx({
+        formpackId,
+        recordId: activeRecord.id,
+        variant: docxTemplateId,
+        locale,
+      });
+      const filename = docxModule.buildDocxExportFilename(
+        formpackId,
+        docxTemplateId,
+      );
+      docxModule.downloadDocxExport(report, filename);
       setDocxSuccess(t('formpackDocxExportSuccess'));
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(error);
-      setDocxError(t('formpackDocxExportError'));
+      const errorKey = docxModule
+        ? docxModule.getDocxErrorKey(error)
+        : 'formpackDocxExportError';
+      setDocxError(t(errorKey));
     } finally {
       setIsDocxExporting(false);
     }
-  }, [docxTemplateId, documentModel, formpackId, locale, manifest, t]);
+  }, [activeRecord, docxTemplateId, formpackId, locale, manifest, t]);
 
   useEffect(() => {
     let isActive = true;

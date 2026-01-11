@@ -66,7 +66,7 @@ describe('mapDocumentDataToTemplate', () => {
       medications: [{ name: 'Med A', dosage: '10 mg', schedule: 'Daily' }],
       diagnosisParagraphs: ['Example paragraph'],
     });
- // NEW: Option A uses nested "t" object
+    // NEW: Option A uses nested "t" object
     const t = (context as any).t;
     expect(t?.notfallpass?.section?.contacts?.title).toBe(
       enTranslations['notfallpass.section.contacts.title'],
