@@ -67,10 +67,78 @@ Required fields:
 - For `ui:title` and `ui:description`, prefix the i18n key with `t:` (example: `"ui:title": "t:notfallpass.section.person.title"`).
 - Lists must allow add/remove operations.
 
-## DOCX templates
-Templates are `.docx` files with placeholders that follow these rules:
+## DOCX Export Templates (docx-templates)
 
-All formpacks must provide an A4 template. The wallet card format is only supported by the `notfallpass` formpack.
+### Engine
+We use **docx-templates** for client-side DOCX export. Templates are `.docx` files containing commands that are evaluated and replaced at export time.
+
+### Delimiter Policy (mandatory)
+This project uses `{{ ... }}` as the command delimiter (configured via `cmdDelimiter: ['{{','}}']` in the export code).
+
+Rules:
+- Do not mix delimiters (e.g., do not use `+++...+++` in our templates).
+- Mustache/Handlebars syntax is **not allowed**: `{{#...}}`, `{{/...}}`, `{{.}}`.
+
+### i18n in Templates (mandatory)
+Translations are provided as a nested object `t` in the template context.
+
+Examples:
+- `{{t.notfallpass.title}}`
+- `{{t.notfallpass.section.contacts.title}}`
+
+Rule:
+- Do not use colon syntax like `{{t:notfallpass.title}}` (not supported by our template contract).
+
+### Inserting Values
+Use `INS` for clarity and consistency (recommended project convention):
+
+Examples:
+- `{{INS person.name}}`
+- `{{INS doctor.phone}}`
+
+### FOR / END-FOR Loops (mandatory)
+Loops must follow docx-templates semantics:
+
+1) Every `FOR <var>` must be closed with `END-FOR <var>` (variable name required).
+2) Inside a loop, the current element must be referenced with a `$` prefix:
+   - correct: `{{INS $c.name}}`
+   - wrong: `{{INS c.name}}`
+3) The inner-most loop index is available as `$idx` (starting from 0).
+
+Minimal example:
+
+```text
+{{FOR item IN items}}
+{{INS $item}}
+{{END-FOR item}}
+
+
+Examples:
+
+{{t.notfallpass.section.contacts.title}}
+{{FOR c IN contacts}}
+{{INS $c.name}} | {{INS $c.phone}} | {{INS $c.relation}}
+{{END-FOR c}}
+
+
+{{t.notfallpass.section.medications.title}}
+{{FOR m IN medications}}
+{{INS $m.name}} | {{INS $m.dosage}} | {{INS $m.schedule}}
+{{END-FOR m}}
+
+
+{{t.notfallpass.section.diagnoses.title}}
+{{INS diagnoses.formatted}}
+{{FOR p IN diagnosisParagraphs}}
+{{INS $p}}
+{{END-FOR p}}
+
+Authoring Rules (important: prevents parser errors)
+Word processors (Word/LibreOffice) can split text into multiple internal “runs”. To keep commands parseable:
+Never apply formatting changes inside a command ({{...}} must remain a single uninterrupted run).
+Do not insert manual line breaks inside commands.
+Put FOR and END-FOR on their own paragraphs (recommended).
+Do not span loops across table cell boundaries or complex layout containers.
 
 ### Template locations
 - `formpacks/<packId>/templates/a4.docx` is required for all formpacks.
