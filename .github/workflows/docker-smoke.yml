@@ -1,0 +1,40 @@
+name: Docker smoke test
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-latest
+    if: >-
+      ${{ (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
+      && secrets.DHI_USERNAME != ''
+      && secrets.DHI_TOKEN != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to dhi.io
+        run: echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin
+        env:
+          DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+          DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
+
+      - name: Build image
+        run: docker build -t mecfs-paperwork .
+
+      - name: Run container
+        run: |
+          docker run -d --name mecfs-paperwork -p 8080:80 mecfs-paperwork
+          sleep 2
+
+      - name: Smoke checks
+        run: |
+          curl -f http://localhost:8080/
+          curl -f http://localhost:8080/formpacks
+          curl -f http://localhost:8080/some/deep/link
+
+      - name: Stop container
+        if: always()
+        run: docker stop mecfs-paperwork
