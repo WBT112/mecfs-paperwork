@@ -1,0 +1,56 @@
+name: Security - Trivy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "30 3 * * 1" # montags 03:30 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trivy-fs:
+    name: Trivy (FS scan - repo)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trivy FS scan (HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          format: table
+          exit-code: 1
+
+  trivy-image:
+    name: Trivy (Image scan - built container)
+    runs-on: ubuntu-latest
+    # secrets are not available to fork PRs -> skip image scan there
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to DHI registry
+        run: echo "${{ secrets.DHI_PASSWORD }}" | docker login dhi.io -u "${{ secrets.DHI_USERNAME }}" --password-stdin
+
+      - name: Build image
+        run: docker build -t mecfs-paperwork:${{ github.sha }} .
+
+      - name: Trivy image scan (HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: mecfs-paperwork:${{ github.sha }}
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          format: table
+          exit-code: 1
