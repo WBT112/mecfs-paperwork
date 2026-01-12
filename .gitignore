@@ -17,3 +17,6 @@ yarn-error.log*
 # Playwright
 playwright-report/
 test-results/
+
+#Secrets
+secrets
