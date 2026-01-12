@@ -38,7 +38,6 @@ import {
   loadFormpackSchema,
   loadFormpackUiSchema,
 } from '../formpacks/loader';
-import { buildDocumentModel } from '../formpacks/documentModel';
 import type { FormpackManifest } from '../formpacks/types';
 import {
   type StorageErrorCode,
@@ -47,7 +46,7 @@ import {
   useSnapshots,
 } from '../storage/hooks';
 import { importRecordWithSnapshots } from '../storage/import';
-import type { ChangeEvent, ComponentType } from 'react';
+import type { ChangeEvent, ComponentType, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
 
@@ -107,6 +106,130 @@ const buildErrorMessage = (
   }
 
   return t('formpackLoadError');
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const hasPreviewValue = (value: unknown): boolean => {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  if (typeof value === 'string') {
+    return value.trim().length > 0;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.some((entry) => hasPreviewValue(entry));
+  }
+  if (isRecord(value)) {
+    return Object.values(value).some((entry) => hasPreviewValue(entry));
+  }
+  return false;
+};
+
+const formatPreviewValue = (value: unknown): string => {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  return JSON.stringify(value);
+};
+
+const getOrderedKeys = (
+  schemaNode: RJSFSchema | undefined,
+  uiNode: UiSchema | null | undefined,
+  value: Record<string, unknown>,
+): string[] => {
+  const schemaProps = isRecord(schemaNode?.properties)
+    ? (schemaNode?.properties as Record<string, RJSFSchema>)
+    : null;
+  const keys = Array.from(
+    new Set([
+      ...(schemaProps ? Object.keys(schemaProps) : []),
+      ...Object.keys(value),
+    ]),
+  );
+  const uiOrderRaw =
+    isRecord(uiNode) && Array.isArray(uiNode['ui:order'])
+      ? uiNode['ui:order']
+      : null;
+  if (!uiOrderRaw) {
+    return keys;
+  }
+  const order = uiOrderRaw.filter((entry) => typeof entry === 'string');
+  const remaining = keys.filter((key) => !order.includes(key) && key !== '*');
+  if (order.includes('*')) {
+    const ordered: string[] = [];
+    order.forEach((entry) => {
+      if (entry === '*') {
+        ordered.push(...remaining);
+      } else if (keys.includes(entry)) {
+        ordered.push(entry);
+      }
+    });
+    return ordered;
+  }
+  return [...order.filter((entry) => entry !== '*'), ...remaining];
+};
+
+const getUiSchemaNode = (
+  uiNode: UiSchema | null | undefined,
+  key: string,
+): UiSchema | undefined => {
+  if (!isRecord(uiNode)) {
+    return undefined;
+  }
+  const entry = uiNode[key];
+  return isRecord(entry) ? (entry as UiSchema) : undefined;
+};
+
+const getItemSchema = (
+  schemaNode: RJSFSchema | undefined,
+): RJSFSchema | undefined => {
+  if (!schemaNode?.items) {
+    return undefined;
+  }
+  if (Array.isArray(schemaNode.items)) {
+    return schemaNode.items[0] as RJSFSchema | undefined;
+  }
+  return isRecord(schemaNode.items)
+    ? (schemaNode.items as RJSFSchema)
+    : undefined;
+};
+
+const getItemUiSchema = (
+  uiNode: UiSchema | null | undefined,
+): UiSchema | undefined => {
+  if (!isRecord(uiNode)) {
+    return undefined;
+  }
+  const items = uiNode.items;
+  if (Array.isArray(items)) {
+    return isRecord(items[0]) ? (items[0] as UiSchema) : undefined;
+  }
+  return isRecord(items) ? (items as UiSchema) : undefined;
+};
+
+const getLabel = (
+  key: string,
+  schemaNode: RJSFSchema | undefined,
+  uiNode: UiSchema | null | undefined,
+): string => {
+  if (isRecord(uiNode) && typeof uiNode['ui:title'] === 'string') {
+    return uiNode['ui:title'];
+  }
+  if (typeof schemaNode?.title === 'string' && schemaNode.title.length > 0) {
+    return schemaNode.title;
+  }
+  return key;
 };
 
 /**
@@ -275,8 +398,9 @@ export default function FormpackDetailPage() {
   const activeLanguage = i18n.language;
   const translatedUiSchema = useMemo(() => {
     void activeLanguage;
+    void formpackTranslationsVersion;
     return uiSchema ? translateUiSchema(uiSchema, t, namespace) : null;
-  }, [activeLanguage, namespace, t, uiSchema]);
+  }, [activeLanguage, formpackTranslationsVersion, namespace, t, uiSchema]);
   const normalizedUiSchema = useMemo(
     () =>
       schema && translatedUiSchema
@@ -715,14 +839,197 @@ export default function FormpackDetailPage() {
     [t],
   );
   const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
-  const formpackT = useCallback(
-    (key: string) => t(key, { ns: namespace, defaultValue: key, replace: {} }),
-    [namespace, t],
-  );
-  const documentModel = useMemo(() => {
-    void formpackTranslationsVersion;
-    return buildDocumentModel(formpackId, locale, formData);
-  }, [formData, formpackId, formpackTranslationsVersion, locale]);
+  const previewUiSchema = normalizedUiSchema ?? translatedUiSchema;
+  const renderPreviewArray = (
+    values: unknown[],
+    schemaNode: RJSFSchema | undefined,
+    uiNode: UiSchema | null | undefined,
+    label?: string,
+    sectionKey?: string,
+  ): ReactNode => {
+    const itemSchema = getItemSchema(schemaNode);
+    const itemUi = getItemUiSchema(uiNode);
+    const items = values
+      .map<ReactNode>((entry, index) => {
+        if (!hasPreviewValue(entry)) {
+          return null;
+        }
+        if (Array.isArray(entry)) {
+          const nested = renderPreviewArray(
+            entry,
+            itemSchema,
+            itemUi,
+            undefined,
+            `${sectionKey ?? 'array'}-${index}`,
+          );
+          return nested ? <li key={`nested-${index}`}>{nested}</li> : null;
+        }
+        if (isRecord(entry)) {
+          const nested = renderPreviewObject(
+            entry,
+            itemSchema,
+            itemUi,
+            undefined,
+            `${sectionKey ?? 'array'}-${index}`,
+          );
+          return nested ? <li key={`object-${index}`}>{nested}</li> : null;
+        }
+        return <li key={`value-${index}`}>{formatPreviewValue(entry)}</li>;
+      })
+      .filter(
+        (entry): entry is Exclude<ReactNode, null | undefined | false> =>
+          Boolean(entry),
+      );
+
+    if (!items.length) {
+      return null;
+    }
+
+    return (
+      <div
+        className="formpack-document-preview__section"
+        key={sectionKey}
+      >
+        {label ? <h4>{label}</h4> : null}
+        <ul className="formpack-document-preview__list">{items}</ul>
+      </div>
+    );
+  };
+  const renderPreviewObject = (
+    value: Record<string, unknown>,
+    schemaNode: RJSFSchema | undefined,
+    uiNode: UiSchema | null | undefined,
+    label?: string,
+    sectionKey?: string,
+  ): ReactNode => {
+    const schemaProps = isRecord(schemaNode?.properties)
+      ? (schemaNode?.properties as Record<string, RJSFSchema>)
+      : null;
+    const keys = getOrderedKeys(schemaNode, uiNode, value);
+    const rows: ReactNode[] = [];
+    const nested: ReactNode[] = [];
+
+    keys.forEach((key) => {
+      const entry = value[key];
+      if (!hasPreviewValue(entry)) {
+        return;
+      }
+      const childSchema = schemaProps ? schemaProps[key] : undefined;
+      const childUi = getUiSchemaNode(uiNode, key);
+      const childLabel = getLabel(key, childSchema, childUi);
+
+      if (Array.isArray(entry)) {
+        const section = renderPreviewArray(
+          entry,
+          childSchema,
+          childUi,
+          childLabel,
+          `${sectionKey ?? 'section'}-${key}`,
+        );
+        if (section) {
+          nested.push(section);
+        }
+        return;
+      }
+
+      if (isRecord(entry)) {
+        const section = renderPreviewObject(
+          entry,
+          childSchema,
+          childUi,
+          childLabel,
+          `${sectionKey ?? 'section'}-${key}`,
+        );
+        if (section) {
+          nested.push(section);
+        }
+        return;
+      }
+
+      rows.push(
+        <div key={`row-${key}`}>
+          <dt>{childLabel}</dt>
+          <dd>{formatPreviewValue(entry)}</dd>
+        </div>,
+      );
+    });
+
+    if (!rows.length && !nested.length) {
+      return null;
+    }
+
+    const content = (
+      <>
+        {rows.length > 0 ? <dl>{rows}</dl> : null}
+        {nested}
+      </>
+    );
+
+    if (!label) {
+      return content;
+    }
+
+    return (
+      <div
+        className="formpack-document-preview__section"
+        key={sectionKey}
+      >
+        <h4>{label}</h4>
+        {content}
+      </div>
+    );
+  };
+  const renderDocumentPreview = (): ReactNode => {
+    if (!isRecord(formData)) {
+      return null;
+    }
+
+    const schemaProps = isRecord(schema?.properties)
+      ? (schema.properties as Record<string, RJSFSchema>)
+      : null;
+    const keys = getOrderedKeys(schema ?? undefined, previewUiSchema, formData);
+    const sections = keys
+      .map<ReactNode>((key) => {
+        const entry = formData[key];
+        if (!hasPreviewValue(entry)) {
+          return null;
+        }
+        const childSchema = schemaProps ? schemaProps[key] : undefined;
+        const childUi = getUiSchemaNode(previewUiSchema, key);
+        const label = getLabel(key, childSchema, childUi);
+
+        if (Array.isArray(entry)) {
+          return renderPreviewArray(
+            entry,
+            childSchema,
+            childUi,
+            label,
+            `root-${key}`,
+          );
+        }
+        if (isRecord(entry)) {
+          return renderPreviewObject(
+            entry,
+            childSchema,
+            childUi,
+            label,
+            `root-${key}`,
+          );
+        }
+        return (
+          <div className="formpack-document-preview__section" key={`root-${key}`}>
+            <h4>{label}</h4>
+            <p>{formatPreviewValue(entry)}</p>
+          </div>
+        );
+      })
+      .filter(
+        (entry): entry is Exclude<ReactNode, null | undefined | false> =>
+          Boolean(entry),
+      );
+
+    return sections.length ? <>{sections}</> : null;
+  };
   const handleExportJson = useCallback(() => {
     if (!manifest || !activeRecord) {
       return;
@@ -794,18 +1101,7 @@ export default function FormpackDetailPage() {
     };
   }, []);
 
-  const hasDocumentContent = Boolean(
-    documentModel.diagnosisParagraphs.length ||
-    documentModel.person.name ||
-    documentModel.person.birthDate ||
-    documentModel.contacts.length ||
-    documentModel.diagnoses.formatted ||
-    documentModel.symptoms ||
-    documentModel.medications.length ||
-    documentModel.allergies ||
-    documentModel.doctor.name ||
-    documentModel.doctor.phone,
-  );
+  const hasDocumentContent = hasPreviewValue(formData);
   const docxTemplateOptions = useMemo(() => {
     if (!manifest?.docx) {
       return [];
@@ -1252,166 +1548,7 @@ export default function FormpackDetailPage() {
             <h3>{t('formpackDocumentPreviewHeading')}</h3>
             {hasDocumentContent ? (
               <div className="formpack-document-preview">
-                {(documentModel.person.name ||
-                  documentModel.person.birthDate) && (
-                  <div className="formpack-document-preview__section">
-                    <h4>{formpackT('notfallpass.section.person.title')}</h4>
-                    <dl>
-                      {documentModel.person.name && (
-                        <div>
-                          <dt>{formpackT('notfallpass.person.name.label')}</dt>
-                          <dd>{documentModel.person.name}</dd>
-                        </div>
-                      )}
-                      {documentModel.person.birthDate && (
-                        <div>
-                          <dt>
-                            {formpackT('notfallpass.person.birthDate.label')}
-                          </dt>
-                          <dd>{documentModel.person.birthDate}</dd>
-                        </div>
-                      )}
-                    </dl>
-                  </div>
-                )}
-                {documentModel.contacts.length > 0 && (
-                  <div className="formpack-document-preview__section">
-                    <h4>{formpackT('notfallpass.section.contacts.title')}</h4>
-                    <ul className="formpack-document-preview__list">
-                      {documentModel.contacts.map((contact, index) => (
-                        <li key={`contact-${index}`}>
-                          <dl>
-                            {contact.name && (
-                              <div>
-                                <dt>
-                                  {formpackT('notfallpass.contacts.name.label')}
-                                </dt>
-                                <dd>{contact.name}</dd>
-                              </div>
-                            )}
-                            {contact.phone && (
-                              <div>
-                                <dt>
-                                  {formpackT(
-                                    'notfallpass.contacts.phone.label',
-                                  )}
-                                </dt>
-                                <dd>{contact.phone}</dd>
-                              </div>
-                            )}
-                            {contact.relation && (
-                              <div>
-                                <dt>
-                                  {formpackT(
-                                    'notfallpass.contacts.relation.label',
-                                  )}
-                                </dt>
-                                <dd>{contact.relation}</dd>
-                              </div>
-                            )}
-                          </dl>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {(documentModel.diagnosisParagraphs.length ||
-                  documentModel.diagnoses.formatted) && (
-                  <div className="formpack-document-preview__section">
-                    <h4>{formpackT('notfallpass.section.diagnoses.title')}</h4>
-                    {documentModel.diagnosisParagraphs.map(
-                      (paragraph, index) => (
-                        <p key={`diagnosis-${index}-${paragraph}`}>
-                          {paragraph}
-                        </p>
-                      ),
-                    )}
-                    {documentModel.diagnoses.formatted && (
-                      <div className="formpack-document-preview__note">
-                        <h5>
-                          {formpackT('notfallpass.diagnoses.additional.title')}
-                        </h5>
-                        <p>{documentModel.diagnoses.formatted}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {documentModel.symptoms && (
-                  <div className="formpack-document-preview__section">
-                    <h4>{formpackT('notfallpass.section.symptoms.title')}</h4>
-                    <p>{documentModel.symptoms}</p>
-                  </div>
-                )}
-                {documentModel.medications.length > 0 && (
-                  <div className="formpack-document-preview__section">
-                    <h4>
-                      {formpackT('notfallpass.section.medications.title')}
-                    </h4>
-                    <ul className="formpack-document-preview__list">
-                      {documentModel.medications.map((medication, index) => (
-                        <li key={`medication-${index}`}>
-                          <dl>
-                            {medication.name && (
-                              <div>
-                                <dt>
-                                  {formpackT(
-                                    'notfallpass.medications.name.label',
-                                  )}
-                                </dt>
-                                <dd>{medication.name}</dd>
-                              </div>
-                            )}
-                            {medication.dosage && (
-                              <div>
-                                <dt>
-                                  {formpackT(
-                                    'notfallpass.medications.dosage.label',
-                                  )}
-                                </dt>
-                                <dd>{medication.dosage}</dd>
-                              </div>
-                            )}
-                            {medication.schedule && (
-                              <div>
-                                <dt>
-                                  {formpackT(
-                                    'notfallpass.medications.schedule.label',
-                                  )}
-                                </dt>
-                                <dd>{medication.schedule}</dd>
-                              </div>
-                            )}
-                          </dl>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {documentModel.allergies && (
-                  <div className="formpack-document-preview__section">
-                    <h4>{formpackT('notfallpass.section.allergies.title')}</h4>
-                    <p>{documentModel.allergies}</p>
-                  </div>
-                )}
-                {(documentModel.doctor.name || documentModel.doctor.phone) && (
-                  <div className="formpack-document-preview__section">
-                    <h4>{formpackT('notfallpass.section.doctor.title')}</h4>
-                    <dl>
-                      {documentModel.doctor.name && (
-                        <div>
-                          <dt>{formpackT('notfallpass.doctor.name.label')}</dt>
-                          <dd>{documentModel.doctor.name}</dd>
-                        </div>
-                      )}
-                      {documentModel.doctor.phone && (
-                        <div>
-                          <dt>{formpackT('notfallpass.doctor.phone.label')}</dt>
-                          <dd>{documentModel.doctor.phone}</dd>
-                        </div>
-                      )}
-                    </dl>
-                  </div>
-                )}
+                {renderDocumentPreview()}
               </div>
             ) : (
               <p className="formpack-document-preview__empty">

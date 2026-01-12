@@ -12,6 +12,8 @@ export type DocumentModel = {
   person: {
     name: string | null;
     birthDate: string | null;
+    email?: string | null;
+    website?: string | null;
   };
   contacts: Array<{
     name: string | null;
@@ -133,6 +135,8 @@ const buildBaseDocumentModel = (
     person: {
       name: getStringValue(person?.name),
       birthDate: formatBirthDate(getStringValue(person?.birthDate)),
+      email: getStringValue(person?.email),
+      website: getStringValue(person?.website),
     },
     contacts,
     diagnoses: {

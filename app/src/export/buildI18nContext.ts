@@ -40,6 +40,28 @@ export const setNested = (
   }
 };
 
+const getNested = (
+  target: Record<string, unknown>,
+  dottedKey: string,
+): Record<string, unknown> | undefined => {
+  if (!isRecord(target)) return undefined;
+  const segments = dottedKey.split('.').filter(Boolean);
+  if (!segments.length) return undefined;
+
+  let cursor: Record<string, unknown> = target;
+
+  for (let i = 0; i < segments.length; i += 1) {
+    const segment = segments[i];
+    const next = cursor[segment];
+    if (!isRecord(next)) {
+      return undefined;
+    }
+    cursor = next;
+  }
+
+  return cursor;
+};
+
 export type I18nTemplateContext = {
   /**
    * A nested translation object that can be used in docx-templates like:
@@ -88,6 +110,12 @@ export const buildI18nContext = (
     if (typeof value !== 'string') continue;
 
     setNested(tObj, key, value);
+  }
+
+  const aliasSource =
+    (prefix && getNested(tObj, prefix)) || getNested(tObj, formpackId);
+  if (aliasSource && !('__PACK_ID__' in tObj)) {
+    tObj.__PACK_ID__ = aliasSource;
   }
 
   return { t: tObj };

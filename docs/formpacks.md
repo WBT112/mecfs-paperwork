@@ -196,17 +196,46 @@ Rules:
 - `mapping.version` is the mapping file format version.
 
 ## Contributor guidance
-To add a new pack, copy the `formpacks/notfallpass` skeleton and adjust:
+To add a new pack, use the scaffold command:
+```
+cd app
+npm run formpack:new -- --id my-pack --title "My Pack"
+```
+
+Optionally register the pack with the app catalog:
+```
+cd app
+npm run formpack:new -- --id my-pack --title "My Pack" --register
+```
+
+Then review the generated files and adjust:
 - `manifest.json` metadata and paths
 - `schema.json` + `ui.schema.json`
 - `i18n` keys + translations
 - DOCX templates and mapping
 - Example data (must be fake)
 
+## Formpack validation (contract + preflight)
+`npm run formpack:validate` performs contract validation for each pack and then runs the DOCX preflight.
+
+Contract checks include:
+- Required files and JSON parsing for manifest/schema/ui schema/i18n/examples.
+- `manifest.json` fields (`id`, `version`, `defaultLocale`, `locales`, `titleKey`, `descriptionKey`, `exports`, `docx`).
+- `exports` includes `docx` and `json`, with safe asset paths for `docx.templates.a4` and `docx.mapping`.
+- Strict i18n parity between `i18n/de.json` and `i18n/en.json`.
+- Coverage of `t:` keys referenced in `schema.json` and `ui.schema.json`.
+- Example data validated against `schema.json` (no payload dumps in output).
+
 Validate templates locally with:
 ```
 cd app
 npm run formpack:validate
+```
+
+Validate a single pack by id:
+```
+cd app
+npm run formpack:validate -- --id my-pack
 ```
 
 ## App registry (MVP)
