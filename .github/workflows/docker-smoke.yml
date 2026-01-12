@@ -1,0 +1,54 @@
+name: Docker smoke test
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check secrets
+        id: check-secrets
+        env:
+          DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+          DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
+        run: |
+          if [ -n "$DHI_USERNAME" ] && [ -n "$DHI_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Log in to dhi.io
+        if: steps.check-secrets.outputs.available == 'true'
+        run: echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin
+        env:
+          DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+          DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
+
+      - name: Build image
+        if: steps.check-secrets.outputs.available == 'true'
+        run: docker build -t mecfs-paperwork .
+
+      - name: Run container
+        if: steps.check-secrets.outputs.available == 'true'
+        run: |
+          docker run -d --name mecfs-paperwork -p 8080:80 mecfs-paperwork
+          sleep 2
+
+      - name: Smoke checks
+        if: steps.check-secrets.outputs.available == 'true'
+        run: |
+          curl -f http://localhost:8080/
+          curl -f http://localhost:8080/formpacks
+          curl -f http://localhost:8080/some/deep/link
+
+      - name: Stop container
+        if: always() && steps.check-secrets.outputs.available == 'true'
+        run: docker stop mecfs-paperwork
