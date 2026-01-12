@@ -135,6 +135,7 @@ export default function FormpackListPage() {
                 <Link
                   className="formpack-card__link"
                   to={`/formpacks/${manifest.id}`}
+                  aria-label={`${t('formpackOpen')} ${title}`}
                 >
                   {t('formpackOpen')}
                 </Link>
