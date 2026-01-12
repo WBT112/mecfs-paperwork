@@ -876,9 +876,8 @@ export default function FormpackDetailPage() {
         }
         return <li key={`value-${index}`}>{formatPreviewValue(entry)}</li>;
       })
-      .filter(
-        (entry): entry is Exclude<ReactNode, null | undefined | false> =>
-          Boolean(entry),
+      .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
+        Boolean(entry),
       );
 
     if (!items.length) {
@@ -886,10 +885,7 @@ export default function FormpackDetailPage() {
     }
 
     return (
-      <div
-        className="formpack-document-preview__section"
-        key={sectionKey}
-      >
+      <div className="formpack-document-preview__section" key={sectionKey}>
         {label ? <h4>{label}</h4> : null}
         <ul className="formpack-document-preview__list">{items}</ul>
       </div>
@@ -970,10 +966,7 @@ export default function FormpackDetailPage() {
     }
 
     return (
-      <div
-        className="formpack-document-preview__section"
-        key={sectionKey}
-      >
+      <div className="formpack-document-preview__section" key={sectionKey}>
         <h4>{label}</h4>
         {content}
       </div>
@@ -1017,15 +1010,17 @@ export default function FormpackDetailPage() {
           );
         }
         return (
-          <div className="formpack-document-preview__section" key={`root-${key}`}>
+          <div
+            className="formpack-document-preview__section"
+            key={`root-${key}`}
+          >
             <h4>{label}</h4>
             <p>{formatPreviewValue(entry)}</p>
           </div>
         );
       })
-      .filter(
-        (entry): entry is Exclude<ReactNode, null | undefined | false> =>
-          Boolean(entry),
+      .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
+        Boolean(entry),
       );
 
     return sections.length ? <>{sections}</> : null;
