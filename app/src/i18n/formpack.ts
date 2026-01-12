@@ -40,6 +40,12 @@ export const loadFormpackI18n = async (
 ): Promise<void> => {
   const namespace = buildFormpackNamespace(formpackId);
 
+  // ⚡ Bolt: Skip fetching if translations for this formpack and locale are already loaded.
+  // This avoids redundant network requests when switching languages or components.
+  if (i18n.hasResourceBundle(locale, namespace)) {
+    return;
+  }
+
   for (const candidateLocale of getLocaleFallbacks(locale)) {
     const translations = await fetchTranslations(formpackId, candidateLocale);
 
