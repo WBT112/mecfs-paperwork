@@ -39,9 +39,7 @@ const exportDocxAndExpectSuccess = async (
   docxSection: Locator,
   exportButton: Locator,
 ) => {
-  const successMessage = docxSection.locator(
-    '.formpack-docx-export__success',
-  );
+  const successMessage = docxSection.locator('.formpack-docx-export__success');
   const errorMessage = docxSection.locator('.app__error');
 
   await clickActionButton(exportButton);

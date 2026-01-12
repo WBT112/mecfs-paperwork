@@ -506,8 +506,7 @@ export const exportDocx = async ({
   locale,
   manifest: manifestOverride,
 }: ExportDocxOptions): Promise<Blob> => {
-  const manifest =
-    manifestOverride ?? (await loadFormpackManifest(formpackId));
+  const manifest = manifestOverride ?? (await loadFormpackManifest(formpackId));
   if (!manifest.docx) {
     throw new Error('DOCX export assets are not configured for this formpack.');
   }
