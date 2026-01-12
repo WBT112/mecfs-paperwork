@@ -48,18 +48,21 @@ const updateRegistry = async (formpackId) => {
     'registry.ts',
   );
   const content = await fs.readFile(registryPath, 'utf8');
-  const idsMatch = content.match(/FORMPACK_IDS\s*=\s*\[([\s\S]*?)\]/);
+  const registryPattern =
+    /(export const FORMPACK_IDS\s*=\s*)\[([\s\S]*?)\](\s*as const;)/;
+  const idsMatch = content.match(registryPattern);
   if (!idsMatch) {
     throw new Error('Could not find FORMPACK_IDS in registry.ts');
   }
 
-  const idsBlock = idsMatch[1];
-  const ids = idsBlock
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.replace(/['",]/g, '').trim())
-    .filter(Boolean);
+  const idsBlock = idsMatch[2];
+  const ids = [];
+  const idPattern = /'([^']+)'|"([^"]+)"/g;
+  let idMatch = idPattern.exec(idsBlock);
+  while (idMatch) {
+    ids.push(idMatch[1] ?? idMatch[2]);
+    idMatch = idPattern.exec(idsBlock);
+  }
 
   if (ids.includes(formpackId)) {
     return;
@@ -70,8 +73,9 @@ const updateRegistry = async (formpackId) => {
 
   const formattedIds = ids.map((id) => `  '${id}',`).join('\n');
   const updated = content.replace(
-    /FORMPACK_IDS\\s*=\\s*\\[[\\s\\S]*?\\]/,
-    `FORMPACK_IDS = [\n${formattedIds}\n]`,
+    registryPattern,
+    (_match, prefix, _idsBlock, suffix) =>
+      `${prefix}[\n${formattedIds}\n]${suffix}`,
   );
 
   await fs.writeFile(registryPath, updated, 'utf8');

@@ -76,6 +76,25 @@ const setNested = (target, dottedKey, value) => {
   });
 };
 
+const getNested = (target, dottedKey) => {
+  if (!isRecord(target)) return undefined;
+  const segments = dottedKey.split('.').filter(Boolean);
+  if (!segments.length) return undefined;
+
+  let cursor = target;
+
+  for (let i = 0; i < segments.length; i += 1) {
+    const segment = segments[i];
+    const next = cursor[segment];
+    if (!isRecord(next)) {
+      return undefined;
+    }
+    cursor = next;
+  }
+
+  return cursor;
+};
+
 const buildI18nContext = (translations, prefix) => {
   const t = {};
   if (!isRecord(translations)) {
@@ -88,6 +107,11 @@ const buildI18nContext = (translations, prefix) => {
     if (typeof value !== 'string') return;
     setNested(t, key, value);
   });
+
+  const aliasSource = prefix ? getNested(t, prefix) : undefined;
+  if (aliasSource && !('__PACK_ID__' in t)) {
+    t.__PACK_ID__ = aliasSource;
+  }
 
   return { t };
 };

@@ -65,6 +65,7 @@
     "globals": "^15.9.0",
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",
+    "jszip": "^3.10.1",
     "lint-staged": "^16.2.7",
     "prettier": "^3.3.3",
     "typescript": "5.5.4",
