@@ -9,3 +9,14 @@ playwright-report
 test-results
 npm-debug.log
 .DS_Store
+**/dist
+**/.vite
+**/playwright-report
+**/test-results
+**/.cache
+.gitignore
+README.md
+*.log
+.env
+.env*
+.vite

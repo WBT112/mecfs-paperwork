@@ -15,4 +15,4 @@ RUN npm run build
 FROM dhi.io/nginx:1 AS runtime
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /repo/app/dist /usr/share/nginx/html
+COPY --from=build /repo/app/dist /usr/share/nginx/html/
