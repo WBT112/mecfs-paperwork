@@ -12,11 +12,12 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * Example: setNested(t, "notfallpass.section.person.title", "Person") =>
  *   t.notfallpass.section.person.title = "Person"
  */
-const setNested = (
+export const setNested = (
   target: Record<string, unknown>,
   dottedKey: string,
   value: string,
 ): void => {
+  if (!isRecord(target)) return;
   const segments = dottedKey.split('.').filter(Boolean);
   if (!segments.length) return;
 
