@@ -96,13 +96,25 @@ const waitForRecordListReady = async (page: Page) => {
 };
 
 const clickActionButton = async (button: Locator) => {
-  // DOM click avoids Playwright's actionability flake during rapid rerenders.
-  await expect(button).toBeVisible({ timeout: POLL_TIMEOUT });
-  await expect(button).toBeEnabled({ timeout: POLL_TIMEOUT });
-  await button.scrollIntoViewIfNeeded();
-  await button.evaluate((element) => {
-    (element as HTMLButtonElement).click();
-  });
+  const attemptClick = async () => {
+    // DOM click avoids Playwright's actionability flake during rapid rerenders.
+    await expect(button).toBeVisible({ timeout: POLL_TIMEOUT });
+    await expect(button).toBeEnabled({ timeout: POLL_TIMEOUT });
+    await button.scrollIntoViewIfNeeded();
+    await button.evaluate((element) => {
+      (element as HTMLButtonElement).click();
+    });
+  };
+
+  try {
+    await attemptClick();
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('not attached')) {
+      await attemptClick();
+      return;
+    }
+    throw error;
+  }
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {

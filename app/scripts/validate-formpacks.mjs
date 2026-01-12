@@ -1,6 +1,8 @@
 /* eslint-env node */
 /* global console, process */
 import { createReport } from 'docx-templates';
+import Ajv2020 from 'ajv/dist/2020.js';
+import addFormats from 'ajv-formats';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +11,16 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..', '..');
 const formpacksDir = path.join(repoRoot, 'formpacks');
 const CMD_DELIMITER = ['{{', '}}'];
+const REQUIRED_MANIFEST_FIELDS = [
+  'id',
+  'version',
+  'defaultLocale',
+  'locales',
+  'titleKey',
+  'descriptionKey',
+  'exports',
+  'docx',
+];
 
 const isRecord = (value) =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -121,9 +133,11 @@ const buildAdditionalJsContext = (tContext) => {
   };
 };
 
-const collectErrors = (errors, templatePath, error) => {
+const collectErrors = (errors, formpackId, contextPath, error) => {
   if (Array.isArray(error)) {
-    error.forEach((entry) => collectErrors(errors, templatePath, entry));
+    error.forEach((entry) =>
+      collectErrors(errors, formpackId, contextPath, entry),
+    );
     return;
   }
 
@@ -131,7 +145,7 @@ const collectErrors = (errors, templatePath, error) => {
     error instanceof Error
       ? error
       : new Error(typeof error === 'string' ? error : 'Unknown template error');
-  errors.push({ templatePath, error: normalized });
+  errors.push({ formpackId, contextPath, error: normalized });
 };
 
 const readJson = async (filePath) => {
@@ -139,11 +153,78 @@ const readJson = async (filePath) => {
   return JSON.parse(raw);
 };
 
-const listFormpacks = async () => {
+const parseArgs = (args) => {
+  const result = { id: null };
+  for (let index = 0; index < args.length; index += 1) {
+    const token = args[index];
+    if (token === '--id') {
+      result.id = args[index + 1] ?? null;
+      index += 1;
+    }
+  }
+  return result;
+};
+
+const listFormpacks = async (onlyId) => {
   const entries = await fs.readdir(formpacksDir, { withFileTypes: true });
-  return entries
+  const formpackIds = entries
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
+  if (!onlyId) return formpackIds;
+  return formpackIds.filter((id) => id === onlyId);
+};
+
+/**
+ * Collect i18n keys referenced via t: values in schema-like objects.
+ */
+const collectTranslationKeys = (value, keys) => {
+  if (typeof value === 'string' && value.startsWith('t:')) {
+    const key = value.slice(2).trim();
+    if (key.length > 0) {
+      keys.add(key);
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((entry) => collectTranslationKeys(entry, keys));
+    return;
+  }
+
+  if (isRecord(value)) {
+    Object.values(value).forEach((entry) =>
+      collectTranslationKeys(entry, keys),
+    );
+  }
+};
+
+/**
+ * Build a set of translation keys from a flat i18n JSON object.
+ */
+const getTranslationKeySet = (translations) => {
+  if (!isRecord(translations)) {
+    return new Set();
+  }
+
+  return new Set(Object.keys(translations));
+};
+
+/**
+ * Return keys in expected that are missing from actual.
+ */
+const getMissingKeys = (expected, actual) =>
+  [...expected].filter((key) => !actual.has(key));
+
+const validateExample = (schema, example) => {
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  addFormats(ajv);
+  const validate = ajv.compile(schema);
+  const valid = validate(example);
+  if (valid) return [];
+  return (validate.errors ?? []).map((error) => {
+    const path = error.instancePath || '(root)';
+    return `${path} ${error.message ?? 'is invalid'}`;
+  });
 };
 
 const validateTemplate = async ({
@@ -156,6 +237,7 @@ const validateTemplate = async ({
   if (!isSafeAssetPath(templatePath)) {
     collectErrors(
       errors,
+      formpackId,
       templatePath,
       new Error('Invalid template path in formpack manifest.'),
     );
@@ -165,6 +247,7 @@ const validateTemplate = async ({
   if (!isSafeAssetPath(mappingPath)) {
     collectErrors(
       errors,
+      formpackId,
       templatePath,
       new Error('Invalid DOCX mapping path in formpack manifest.'),
     );
@@ -179,14 +262,14 @@ const validateTemplate = async ({
   try {
     template = await fs.readFile(templateFile);
   } catch (error) {
-    collectErrors(errors, templatePath, error);
+    collectErrors(errors, formpackId, templatePath, error);
     return;
   }
 
   try {
     mapping = await readJson(mappingFile);
   } catch (error) {
-    collectErrors(errors, templatePath, error);
+    collectErrors(errors, formpackId, templatePath, error);
     return;
   }
 
@@ -203,25 +286,337 @@ const validateTemplate = async ({
       processLineBreaks: true,
     });
   } catch (error) {
-    collectErrors(errors, templatePath, error);
+    collectErrors(errors, formpackId, templatePath, error);
   }
 };
 
-const run = async () => {
-  const formpackIds = await listFormpacks();
-  const errors = [];
+const validateContract = async ({ formpackId, errors }) => {
+  const baseDir = path.join(formpacksDir, formpackId);
+  const manifestPath = path.join(baseDir, 'manifest.json');
+  const schemaPath = path.join(baseDir, 'schema.json');
+  const uiSchemaPath = path.join(baseDir, 'ui.schema.json');
+  const examplePath = path.join(baseDir, 'examples', 'example.json');
+  const i18nDePath = path.join(baseDir, 'i18n', 'de.json');
+  const i18nEnPath = path.join(baseDir, 'i18n', 'en.json');
 
-  for (const formpackId of formpackIds) {
-    const manifestPath = path.join(formpacksDir, formpackId, 'manifest.json');
-    let manifest;
-    try {
-      manifest = await readJson(manifestPath);
-    } catch (error) {
-      collectErrors(errors, manifestPath, error);
-      continue;
+  const requiredFiles = [
+    manifestPath,
+    schemaPath,
+    uiSchemaPath,
+    examplePath,
+    i18nDePath,
+    i18nEnPath,
+  ];
+
+  await Promise.all(
+    requiredFiles.map(async (filePath) => {
+      try {
+        await fs.access(filePath);
+      } catch (error) {
+        collectErrors(errors, formpackId, filePath, error);
+      }
+    }),
+  );
+
+  let manifest;
+  let schema;
+  let uiSchema;
+  let example;
+  let translationsDe;
+  let translationsEn;
+
+  try {
+    manifest = await readJson(manifestPath);
+  } catch (error) {
+    collectErrors(errors, formpackId, manifestPath, error);
+  }
+
+  try {
+    schema = await readJson(schemaPath);
+  } catch (error) {
+    collectErrors(errors, formpackId, schemaPath, error);
+  }
+
+  try {
+    uiSchema = await readJson(uiSchemaPath);
+  } catch (error) {
+    collectErrors(errors, formpackId, uiSchemaPath, error);
+  }
+
+  try {
+    example = await readJson(examplePath);
+  } catch (error) {
+    collectErrors(errors, formpackId, examplePath, error);
+  }
+
+  try {
+    translationsDe = await readJson(i18nDePath);
+  } catch (error) {
+    collectErrors(errors, formpackId, i18nDePath, error);
+  }
+
+  try {
+    translationsEn = await readJson(i18nEnPath);
+  } catch (error) {
+    collectErrors(errors, formpackId, i18nEnPath, error);
+  }
+
+  if (isRecord(manifest)) {
+    REQUIRED_MANIFEST_FIELDS.forEach((field) => {
+      if (!(field in manifest)) {
+        collectErrors(
+          errors,
+          formpackId,
+          manifestPath,
+          new Error(`Missing required field: ${field}`),
+        );
+      }
+    });
+
+    if (manifest.id !== formpackId) {
+      collectErrors(
+        errors,
+        formpackId,
+        manifestPath,
+        new Error('Manifest id does not match formpack directory name.'),
+      );
     }
 
-    if (!isRecord(manifest.docx) || !isRecord(manifest.docx.templates)) {
+    const locales = Array.isArray(manifest.locales) ? manifest.locales : [];
+    if (!locales.includes('de') || !locales.includes('en')) {
+      collectErrors(
+        errors,
+        formpackId,
+        manifestPath,
+        new Error('Manifest locales must include "de" and "en".'),
+      );
+    }
+
+    if (manifest.defaultLocale && !locales.includes(manifest.defaultLocale)) {
+      collectErrors(
+        errors,
+        formpackId,
+        manifestPath,
+        new Error(
+          'Manifest defaultLocale must be one of the manifest locales.',
+        ),
+      );
+    }
+
+    const exportsList = Array.isArray(manifest.exports) ? manifest.exports : [];
+    if (!exportsList.includes('docx') || !exportsList.includes('json')) {
+      collectErrors(
+        errors,
+        formpackId,
+        manifestPath,
+        new Error('Manifest exports must include "docx" and "json".'),
+      );
+    }
+
+    if (exportsList.includes('docx')) {
+      if (!isRecord(manifest.docx)) {
+        collectErrors(
+          errors,
+          formpackId,
+          manifestPath,
+          new Error('Manifest docx configuration is missing.'),
+        );
+      }
+
+      if (!isRecord(manifest.docx?.templates)) {
+        collectErrors(
+          errors,
+          formpackId,
+          manifestPath,
+          new Error('Manifest docx templates are missing.'),
+        );
+      }
+
+      if (
+        manifest.docx?.templates?.a4 &&
+        !isSafeAssetPath(manifest.docx.templates.a4)
+      ) {
+        collectErrors(
+          errors,
+          formpackId,
+          manifestPath,
+          new Error('Manifest docx.templates.a4 must be a safe relative path.'),
+        );
+      }
+
+      if (manifest.docx?.mapping && !isSafeAssetPath(manifest.docx.mapping)) {
+        collectErrors(
+          errors,
+          formpackId,
+          manifestPath,
+          new Error('Manifest docx.mapping must be a safe relative path.'),
+        );
+      }
+    }
+  }
+
+  const deKeys = getTranslationKeySet(translationsDe);
+  const enKeys = getTranslationKeySet(translationsEn);
+  const missingInDe = getMissingKeys(enKeys, deKeys);
+  const missingInEn = getMissingKeys(deKeys, enKeys);
+
+  if (missingInDe.length > 0) {
+    collectErrors(
+      errors,
+      formpackId,
+      i18nDePath,
+      new Error(`Missing keys in de.json: ${missingInDe.join(', ')}`),
+    );
+  }
+
+  if (missingInEn.length > 0) {
+    collectErrors(
+      errors,
+      formpackId,
+      i18nEnPath,
+      new Error(`Missing keys in en.json: ${missingInEn.join(', ')}`),
+    );
+  }
+
+  if (isRecord(manifest)) {
+    const requiredKeys = [manifest.titleKey, manifest.descriptionKey].filter(
+      (key) => typeof key === 'string',
+    );
+
+    requiredKeys.forEach((key) => {
+      if (!deKeys.has(key)) {
+        collectErrors(
+          errors,
+          formpackId,
+          i18nDePath,
+          new Error(`Missing i18n key: ${key}`),
+        );
+      }
+      if (!enKeys.has(key)) {
+        collectErrors(
+          errors,
+          formpackId,
+          i18nEnPath,
+          new Error(`Missing i18n key: ${key}`),
+        );
+      }
+    });
+  }
+
+  const tKeys = new Set();
+  if (schema) {
+    collectTranslationKeys(schema, tKeys);
+  }
+  if (uiSchema) {
+    collectTranslationKeys(uiSchema, tKeys);
+  }
+
+  tKeys.forEach((key) => {
+    if (!deKeys.has(key)) {
+      collectErrors(
+        errors,
+        formpackId,
+        i18nDePath,
+        new Error(`Missing i18n key referenced by schema: ${key}`),
+      );
+    }
+    if (!enKeys.has(key)) {
+      collectErrors(
+        errors,
+        formpackId,
+        i18nEnPath,
+        new Error(`Missing i18n key referenced by schema: ${key}`),
+      );
+    }
+  });
+
+  if (schema && example) {
+    const exampleErrors = validateExample(schema, example);
+    exampleErrors.forEach((message) =>
+      collectErrors(
+        errors,
+        formpackId,
+        examplePath,
+        new Error(`Example does not match schema: ${message}`),
+      ),
+    );
+  }
+
+  if (isRecord(manifest?.docx?.templates)) {
+    const templatePath =
+      typeof manifest.docx.templates.a4 === 'string'
+        ? manifest.docx.templates.a4
+        : null;
+    if (templatePath) {
+      try {
+        await fs.access(path.join(baseDir, templatePath));
+      } catch (error) {
+        collectErrors(errors, formpackId, templatePath, error);
+      }
+    } else if (
+      Array.isArray(manifest.exports) &&
+      manifest.exports.includes('docx')
+    ) {
+      collectErrors(
+        errors,
+        formpackId,
+        manifestPath,
+        new Error(
+          'Manifest docx.templates.a4 is required when exports include docx.',
+        ),
+      );
+    }
+  }
+
+  if (typeof manifest?.docx?.mapping === 'string') {
+    try {
+      await fs.access(path.join(baseDir, manifest.docx.mapping));
+    } catch (error) {
+      collectErrors(errors, formpackId, manifest.docx.mapping, error);
+    }
+  } else if (
+    Array.isArray(manifest?.exports) &&
+    manifest.exports.includes('docx')
+  ) {
+    collectErrors(
+      errors,
+      formpackId,
+      manifestPath,
+      new Error('Manifest docx.mapping is required when exports include docx.'),
+    );
+  }
+
+  return {
+    manifest,
+    translations:
+      typeof manifest?.defaultLocale === 'string' &&
+      manifest.defaultLocale === 'en'
+        ? translationsEn
+        : translationsDe,
+  };
+};
+
+/**
+ * Run contract validation and DOCX preflight for formpacks.
+ */
+const run = async () => {
+  const { id } = parseArgs(process.argv.slice(2));
+  const formpackIds = await listFormpacks(id);
+  const errors = [];
+
+  if (id && formpackIds.length === 0) {
+    collectErrors(errors, id, formpacksDir, new Error('Formpack not found.'));
+  }
+
+  const preflightQueue = [];
+
+  for (const formpackId of formpackIds) {
+    const { manifest, translations } = await validateContract({
+      formpackId,
+      errors,
+    });
+
+    if (!isRecord(manifest?.docx) || !isRecord(manifest.docx.templates)) {
       continue;
     }
 
@@ -230,27 +625,11 @@ const run = async () => {
     if (!mappingPath) {
       collectErrors(
         errors,
-        manifestPath,
+        formpackId,
+        path.join(formpacksDir, formpackId, 'manifest.json'),
         new Error('DOCX mapping is missing from the formpack manifest.'),
       );
       continue;
-    }
-
-    const defaultLocale =
-      typeof manifest.defaultLocale === 'string'
-        ? manifest.defaultLocale
-        : 'de';
-    let translations = {};
-    try {
-      const translationsPath = path.join(
-        formpacksDir,
-        formpackId,
-        'i18n',
-        `${defaultLocale}.json`,
-      );
-      translations = await readJson(translationsPath);
-    } catch {
-      translations = {};
     }
 
     const templates = manifest.docx.templates;
@@ -258,29 +637,47 @@ const run = async () => {
       (value) => typeof value === 'string',
     );
 
-    for (const templatePath of templatePaths) {
+    preflightQueue.push({
+      formpackId,
+      mappingPath,
+      templatePaths,
+      translations: isRecord(translations) ? translations : {},
+    });
+  }
+
+  for (const task of preflightQueue) {
+    for (const templatePath of task.templatePaths) {
       await validateTemplate({
         templatePath,
-        mappingPath,
-        formpackId,
+        mappingPath: task.mappingPath,
+        formpackId: task.formpackId,
         errors,
-        translations,
+        translations: task.translations,
       });
     }
   }
 
   if (errors.length > 0) {
-    console.error('DOCX template preflight failed.');
-    errors.forEach(({ templatePath, error }) => {
+    console.error('Formpack validation failed.');
+    errors.forEach(({ formpackId, contextPath, error }) => {
       console.error(
-        `- ${templatePath}: ${error.name ?? 'Error'} - ${error.message ?? ''}`,
+        `- ${formpackId}: ${contextPath} - ${error.name ?? 'Error'} - ${
+          error.message ?? ''
+        }`,
       );
     });
     process.exitCode = 1;
     return;
   }
 
-  console.log('DOCX template preflight passed.');
+  console.log('Formpack validation passed.');
 };
 
-await run();
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  await run();
+}
+
+export { collectTranslationKeys, getMissingKeys, getTranslationKeySet, run };
