@@ -8,9 +8,9 @@ jobs:
   docker-smoke:
     runs-on: ubuntu-latest
     if: >-
-      ${{ (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
+      (github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork)
       && secrets.DHI_USERNAME != ''
-      && secrets.DHI_TOKEN != '' }}
+      && secrets.DHI_TOKEN != ''
     steps:
       - name: Checkout
         uses: actions/checkout@v4
