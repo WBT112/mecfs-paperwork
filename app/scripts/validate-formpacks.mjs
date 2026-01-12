@@ -21,6 +21,59 @@ const REQUIRED_MANIFEST_FIELDS = [
   'exports',
   'docx',
 ];
+const manifestAjv = new Ajv2020({ allErrors: true, strict: false });
+addFormats(manifestAjv);
+const MANIFEST_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: [
+    'id',
+    'version',
+    'defaultLocale',
+    'locales',
+    'titleKey',
+    'descriptionKey',
+    'exports',
+    'docx',
+  ],
+  properties: {
+    id: { type: 'string', minLength: 1 },
+    version: { type: 'string', minLength: 1 },
+    defaultLocale: { enum: ['de', 'en'] },
+    locales: {
+      type: 'array',
+      items: { enum: ['de', 'en'] },
+      minItems: 1,
+      uniqueItems: true,
+    },
+    titleKey: { type: 'string', minLength: 1 },
+    descriptionKey: { type: 'string', minLength: 1 },
+    exports: {
+      type: 'array',
+      items: { enum: ['docx', 'json'] },
+      minItems: 1,
+      uniqueItems: true,
+    },
+    docx: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['templates', 'mapping'],
+      properties: {
+        templates: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['a4'],
+          properties: {
+            a4: { type: 'string', minLength: 1 },
+            wallet: { type: 'string', minLength: 1 },
+          },
+        },
+        mapping: { type: 'string', minLength: 1 },
+      },
+    },
+  },
+};
+const validateManifestSchema = manifestAjv.compile(MANIFEST_SCHEMA);
 
 const isRecord = (value) =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -170,6 +223,25 @@ const collectErrors = (errors, formpackId, contextPath, error) => {
       ? error
       : new Error(typeof error === 'string' ? error : 'Unknown template error');
   errors.push({ formpackId, contextPath, error: normalized });
+};
+
+const validateManifest = (manifest, formpackId, manifestPath, errors) => {
+  const valid = validateManifestSchema(manifest);
+  if (valid) {
+    return true;
+  }
+
+  (validateManifestSchema.errors ?? []).forEach((error) => {
+    const path = error.instancePath || '(root)';
+    collectErrors(
+      errors,
+      formpackId,
+      manifestPath,
+      new Error(`manifest${path} ${error.message ?? 'is invalid'}`),
+    );
+  });
+
+  return false;
 };
 
 const readJson = async (filePath) => {
@@ -353,6 +425,10 @@ const validateContract = async ({ formpackId, errors }) => {
     manifest = await readJson(manifestPath);
   } catch (error) {
     collectErrors(errors, formpackId, manifestPath, error);
+  }
+
+  if (manifest !== undefined) {
+    validateManifest(manifest, formpackId, manifestPath, errors);
   }
 
   try {

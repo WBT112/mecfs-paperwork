@@ -121,23 +121,166 @@ const createFormpack = async ({ id, title, register }) => {
 
   const schema = {
     type: 'object',
+    required: ['person'],
     properties: {
       person: {
         type: 'object',
+        required: ['name'],
         properties: {
-          name: {
-            type: 'string',
-            title: `t:${id}.person.name`,
+          name: { type: 'string', minLength: 1 },
+          birthDate: { type: 'string', format: 'date' },
+          email: { type: 'string', format: 'email' },
+          website: { type: 'string' },
+        },
+        additionalProperties: false,
+      },
+      contacts: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['name'],
+          properties: {
+            name: { type: 'string', minLength: 1 },
+            phone: { type: 'string' },
+            relation: { type: 'string' },
           },
+          additionalProperties: false,
         },
       },
+      diagnoses: {
+        type: 'object',
+        properties: {
+          formatted: { type: 'string' },
+        },
+        additionalProperties: false,
+      },
+      symptoms: { type: 'string' },
+      medications: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['name'],
+          properties: {
+            name: { type: 'string', minLength: 1 },
+            dosage: { type: 'string' },
+            schedule: { type: 'string' },
+          },
+          additionalProperties: false,
+        },
+      },
+      allergies: { type: 'string' },
+      doctor: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          phone: { type: 'string' },
+        },
+        additionalProperties: false,
+      },
     },
+    additionalProperties: false,
   };
 
   const uiSchema = {
+    'ui:order': [
+      'person',
+      'contacts',
+      'diagnoses',
+      'symptoms',
+      'medications',
+      'allergies',
+      'doctor',
+    ],
     person: {
+      'ui:title': `${id}.section.person.title`,
       name: {
-        'ui:placeholder': `t:${id}.person.name.placeholder`,
+        'ui:title': `${id}.person.name.label`,
+        'ui:help': `${id}.person.name.help`,
+      },
+      birthDate: {
+        'ui:title': `${id}.person.birthDate.label`,
+        'ui:help': `${id}.person.birthDate.help`,
+      },
+      email: {
+        'ui:title': `${id}.person.email.label`,
+        'ui:help': `${id}.person.email.help`,
+      },
+      website: {
+        'ui:title': `${id}.person.website.label`,
+        'ui:help': `${id}.person.website.help`,
+      },
+    },
+    contacts: {
+      'ui:title': `${id}.section.contacts.title`,
+      'ui:options': {
+        addable: true,
+        orderable: false,
+        removable: true,
+      },
+      items: {
+        name: {
+          'ui:title': `${id}.contacts.name.label`,
+          'ui:help': `${id}.contacts.name.help`,
+        },
+        phone: {
+          'ui:title': `${id}.contacts.phone.label`,
+          'ui:help': `${id}.contacts.phone.help`,
+        },
+        relation: {
+          'ui:title': `${id}.contacts.relation.label`,
+          'ui:help': `${id}.contacts.relation.help`,
+        },
+      },
+    },
+    diagnoses: {
+      'ui:title': `${id}.section.diagnoses.title`,
+      formatted: {
+        'ui:title': `${id}.diagnoses.formatted.label`,
+        'ui:help': `${id}.diagnoses.formatted.help`,
+        'ui:widget': 'textarea',
+      },
+    },
+    symptoms: {
+      'ui:title': `${id}.section.symptoms.title`,
+      'ui:help': `${id}.symptoms.help`,
+      'ui:widget': 'textarea',
+    },
+    medications: {
+      'ui:title': `${id}.section.medications.title`,
+      'ui:options': {
+        addable: true,
+        orderable: false,
+        removable: true,
+      },
+      items: {
+        name: {
+          'ui:title': `${id}.medications.name.label`,
+          'ui:help': `${id}.medications.name.help`,
+        },
+        dosage: {
+          'ui:title': `${id}.medications.dosage.label`,
+          'ui:help': `${id}.medications.dosage.help`,
+        },
+        schedule: {
+          'ui:title': `${id}.medications.schedule.label`,
+          'ui:help': `${id}.medications.schedule.help`,
+        },
+      },
+    },
+    allergies: {
+      'ui:title': `${id}.section.allergies.title`,
+      'ui:help': `${id}.allergies.help`,
+      'ui:widget': 'textarea',
+    },
+    doctor: {
+      'ui:title': `${id}.section.doctor.title`,
+      name: {
+        'ui:title': `${id}.doctor.name.label`,
+        'ui:help': `${id}.doctor.name.help`,
+      },
+      phone: {
+        'ui:title': `${id}.doctor.phone.label`,
+        'ui:help': `${id}.doctor.phone.help`,
       },
     },
   };
@@ -145,27 +288,139 @@ const createFormpack = async ({ id, title, register }) => {
   const example = {
     person: {
       name: 'Beispiel',
+      birthDate: '1990-04-12',
+      email: 'beispiel@example.com',
+      website: 'https://example.com',
+    },
+    contacts: [
+      {
+        name: 'Kontakt A',
+        phone: '+49 123 456',
+        relation: 'Familie',
+      },
+      {
+        name: 'Kontakt B',
+        phone: '+49 987 654',
+        relation: 'Freunde',
+      },
+    ],
+    diagnoses: {
+      formatted: 'Beispiel Diagnose',
+    },
+    symptoms: 'Beispiel Symptome',
+    medications: [
+      {
+        name: 'Medikament A',
+        dosage: '10 mg',
+        schedule: 'morgens',
+      },
+    ],
+    allergies: 'Keine',
+    doctor: {
+      name: 'Praxis Beispiel',
+      phone: '+49 555 123',
     },
   };
 
   const i18nDe = {
     [`${id}.title`]: titleValue,
     [`${id}.description`]: `${titleValue} Beschreibung`,
-    [`${id}.person.name`]: 'Name',
-    [`${id}.person.name.placeholder`]: 'Name eingeben',
+    [`${id}.section.person.title`]: 'Person',
+    [`${id}.section.contacts.title`]: 'Kontakte',
+    [`${id}.section.diagnoses.title`]: 'Diagnosen',
+    [`${id}.section.symptoms.title`]: 'Symptome',
+    [`${id}.section.medications.title`]: 'Medikation',
+    [`${id}.section.allergies.title`]: 'Allergien',
+    [`${id}.section.doctor.title`]: 'Arzt',
+    [`${id}.person.name.label`]: 'Name',
+    [`${id}.person.name.help`]: 'Vollstaendiger Name',
+    [`${id}.person.birthDate.label`]: 'Geburtsdatum',
+    [`${id}.person.birthDate.help`]: 'TT-MM-JJJJ',
+    [`${id}.person.email.label`]: 'E-Mail',
+    [`${id}.person.email.help`]: 'Adresse fuer Rueckfragen',
+    [`${id}.person.website.label`]: 'Webseite',
+    [`${id}.person.website.help`]: 'Oeffentliche Profil-URL',
+    [`${id}.contacts.entry.label`]: 'Kontakt',
+    [`${id}.contacts.name.label`]: 'Name',
+    [`${id}.contacts.name.help`]: 'Kontaktperson',
+    [`${id}.contacts.phone.label`]: 'Telefon',
+    [`${id}.contacts.phone.help`]: 'Telefonnummer',
+    [`${id}.contacts.relation.label`]: 'Beziehung',
+    [`${id}.contacts.relation.help`]: 'z.B. Familie',
+    [`${id}.diagnoses.formatted.label`]: 'Diagnose (Freitext)',
+    [`${id}.diagnoses.formatted.help`]: 'Optionale Diagnosebeschreibung',
+    [`${id}.symptoms.help`]: 'Wichtige Symptome',
+    [`${id}.medications.name.label`]: 'Medikament',
+    [`${id}.medications.name.help`]: 'Name des Medikaments',
+    [`${id}.medications.dosage.label`]: 'Dosierung',
+    [`${id}.medications.dosage.help`]: 'z.B. 10 mg',
+    [`${id}.medications.schedule.label`]: 'Einnahme',
+    [`${id}.medications.schedule.help`]: 'z.B. morgens',
+    [`${id}.allergies.help`]: 'Bekannte Allergien',
+    [`${id}.doctor.name.label`]: 'Arzt',
+    [`${id}.doctor.name.help`]: 'Name der Praxis',
+    [`${id}.doctor.phone.label`]: 'Telefon',
+    [`${id}.doctor.phone.help`]: 'Praxis-Telefon',
   };
 
   const i18nEn = {
     [`${id}.title`]: titleValue,
     [`${id}.description`]: `${titleValue} description`,
-    [`${id}.person.name`]: 'Name',
-    [`${id}.person.name.placeholder`]: 'Enter name',
+    [`${id}.section.person.title`]: 'Person',
+    [`${id}.section.contacts.title`]: 'Contacts',
+    [`${id}.section.diagnoses.title`]: 'Diagnoses',
+    [`${id}.section.symptoms.title`]: 'Symptoms',
+    [`${id}.section.medications.title`]: 'Medications',
+    [`${id}.section.allergies.title`]: 'Allergies',
+    [`${id}.section.doctor.title`]: 'Doctor',
+    [`${id}.person.name.label`]: 'Name',
+    [`${id}.person.name.help`]: 'Full name',
+    [`${id}.person.birthDate.label`]: 'Birth date',
+    [`${id}.person.birthDate.help`]: 'DD-MM-YYYY',
+    [`${id}.person.email.label`]: 'Email',
+    [`${id}.person.email.help`]: 'Contact email address',
+    [`${id}.person.website.label`]: 'Website',
+    [`${id}.person.website.help`]: 'Public profile URL',
+    [`${id}.contacts.entry.label`]: 'Contact',
+    [`${id}.contacts.name.label`]: 'Name',
+    [`${id}.contacts.name.help`]: 'Contact person',
+    [`${id}.contacts.phone.label`]: 'Phone',
+    [`${id}.contacts.phone.help`]: 'Phone number',
+    [`${id}.contacts.relation.label`]: 'Relation',
+    [`${id}.contacts.relation.help`]: 'e.g. family',
+    [`${id}.diagnoses.formatted.label`]: 'Diagnosis (free text)',
+    [`${id}.diagnoses.formatted.help`]: 'Optional diagnosis summary',
+    [`${id}.symptoms.help`]: 'Key symptoms',
+    [`${id}.medications.name.label`]: 'Medication',
+    [`${id}.medications.name.help`]: 'Medication name',
+    [`${id}.medications.dosage.label`]: 'Dosage',
+    [`${id}.medications.dosage.help`]: 'e.g. 10 mg',
+    [`${id}.medications.schedule.label`]: 'Schedule',
+    [`${id}.medications.schedule.help`]: 'e.g. mornings',
+    [`${id}.allergies.help`]: 'Known allergies',
+    [`${id}.doctor.name.label`]: 'Doctor',
+    [`${id}.doctor.name.help`]: 'Practice name',
+    [`${id}.doctor.phone.label`]: 'Phone',
+    [`${id}.doctor.phone.help`]: 'Practice phone',
   };
 
   const mapping = {
     version: 1,
-    fields: [{ var: 'person.name', path: 'person.name' }],
-    loops: [],
+    fields: [
+      { var: 'person.name', path: 'person.name' },
+      { var: 'person.birthDate', path: 'person.birthDate' },
+      { var: 'person.email', path: 'person.email' },
+      { var: 'person.website', path: 'person.website' },
+      { var: 'diagnoses.formatted', path: 'diagnoses.formatted' },
+      { var: 'symptoms', path: 'symptoms' },
+      { var: 'allergies', path: 'allergies' },
+      { var: 'doctor.name', path: 'doctor.name' },
+      { var: 'doctor.phone', path: 'doctor.phone' },
+    ],
+    loops: [
+      { var: 'contacts', path: 'contacts' },
+      { var: 'medications', path: 'medications' },
+    ],
     i18n: {
       prefix: id,
     },
