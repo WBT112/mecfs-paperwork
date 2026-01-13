@@ -1,8 +1,8 @@
 import { describe, vi, it, expect, beforeEach } from 'vitest';
-import { createRecord } from '../../storage/records';
-import { openStorage } from '../../storage/db';
+import { createRecord } from '../../../src/storage/records';
+import { openStorage } from '../../../src/storage/db';
 
-vi.mock('../../storage/db', () => ({
+vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
 }));
 

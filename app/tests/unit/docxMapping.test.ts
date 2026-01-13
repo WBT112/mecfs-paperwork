@@ -7,9 +7,9 @@ import {
   it,
   vi,
 } from 'vitest';
-import i18n from '../i18n';
-import { mapDocumentDataToTemplate } from '../export/docx';
-import type { DocumentModel } from '../formpacks/documentModel';
+import i18n from '../../src/i18n';
+import { mapDocumentDataToTemplate } from '../../src/export/docx';
+import type { DocumentModel } from '../../src/formpacks/documentModel';
 import enTranslations from '../../../formpacks/notfallpass/i18n/en.json';
 import mapping from '../../../formpacks/notfallpass/docx/mapping.json';
 

@@ -3,8 +3,8 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import FormpackDetailPage from './FormpackDetailPage';
-import { exportDocx } from '../export/docx';
+import FormpackDetailPage from '../../src/pages/FormpackDetailPage';
+import { exportDocx } from '../../src/export/docx';
 
 const mockUpdateActiveRecord = vi.fn();
 const mockMarkAsSaved = vi.fn();
@@ -19,8 +19,9 @@ const record = {
   updatedAt: new Date().toISOString(),
 };
 
-vi.mock('../export/docx', async (importOriginal) => {
-  const original = await importOriginal<typeof import('../export/docx')>();
+vi.mock('../../src/export/docx', async (importOriginal) => {
+  const original =
+    await importOriginal<typeof import('../../src/export/docx')>();
   return {
     ...original,
     exportDocx: vi.fn(),
@@ -50,18 +51,18 @@ vi.mock('@rjsf/core', () => ({
   ),
 }));
 
-vi.mock('../i18n/formpack', () => ({
+vi.mock('../../src/i18n/formpack', () => ({
   loadFormpackI18n: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../i18n/useLocale', () => ({
+vi.mock('../../src/i18n/useLocale', () => ({
   useLocale: () => ({
     locale: 'de',
     setLocale: vi.fn(),
   }),
 }));
 
-vi.mock('../formpacks/documentModel', () => ({
+vi.mock('../../src/formpacks/documentModel', () => ({
   buildDocumentModel: () => ({
     diagnosisParagraphs: [],
     person: { name: null, birthDate: null },
@@ -74,7 +75,7 @@ vi.mock('../formpacks/documentModel', () => ({
   }),
 }));
 
-vi.mock('../formpacks/loader', () => ({
+vi.mock('../../src/formpacks/loader', () => ({
   FormpackLoaderError: class extends Error {},
   loadFormpackManifest: vi.fn().mockResolvedValue({
     id: 'notfallpass',
@@ -99,7 +100,7 @@ vi.mock('../formpacks/loader', () => ({
   loadFormpackUiSchema: vi.fn().mockResolvedValue({}),
 }));
 
-vi.mock('../storage/hooks', () => ({
+vi.mock('../../src/storage/hooks', () => ({
   useRecords: () => ({
     records: [record],
     activeRecord: record,
