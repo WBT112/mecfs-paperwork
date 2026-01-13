@@ -9,7 +9,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp
-      - /var/run
+      - /var/run:uid=65532,gid=65532,mode=0755
       - /var/cache/nginx:uid=65532,gid=65532,mode=0755
       - /var/cache/nginx/client_temp:uid=65532,gid=65532,mode=0755
       - /var/log/nginx:uid=65532,gid=65532,mode=0755
