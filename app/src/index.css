@@ -65,10 +65,25 @@ body {
 }
 
 .app__locale-switch select {
-  padding: 0.4rem 0.6rem;
+  padding: 0.4rem 2rem 0.4rem 0.6rem;
   border-radius: 8px;
   border: 1px solid #d1d5db;
-  background: #ffffff;
+  background-color: #ffffff;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.app__select-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.app__select-chevron {
+  position: absolute;
+  right: 0.6rem;
+  pointer-events: none;
 }
 
 .app__content {
