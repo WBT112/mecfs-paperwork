@@ -1069,6 +1069,7 @@ export default function FormpackDetailPage() {
       downloadDocxExport(report, filename);
       setDocxSuccess(t('formpackDocxExportSuccess'));
     } catch (error) {
+      console.error('DOCX export failed:', error);
       setDocxError(t(getDocxErrorKey(error)));
     } finally {
       setIsDocxExporting(false);
