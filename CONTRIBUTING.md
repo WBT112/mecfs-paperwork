@@ -28,7 +28,7 @@ Thank you for contributing. This project is **offline-first** and must avoid acc
 
 ### Node / npm
 Use the project’s standard toolchain:
-- Node: **v24.12.0**
+- Node: **v24.12.0** (see `.nvmrc`; run `nvm use`)
 - npm: **11.6.2**
 
 Verify:
