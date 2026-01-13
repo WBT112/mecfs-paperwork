@@ -38,10 +38,10 @@ Alle Checks werden im `app/`-Ordner ausgeführt:
 npm run lint
 npm run format:check
 npm run typecheck
+npm run build
 npm test
 npm run test:e2e
 npm run formpack:validate
-npm run build
 ```
 
 Optional (Coverage-Report):
