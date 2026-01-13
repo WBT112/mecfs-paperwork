@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { RJSFSchema } from '@rjsf/utils';
-import { buildJsonExportPayload } from '../export/json';
-import type { RecordEntry, SnapshotEntry } from '../storage/types';
+import { buildJsonExportPayload } from '../../src/export/json';
+import type { RecordEntry, SnapshotEntry } from '../../src/storage/types';
 
 const schema: RJSFSchema = {
   type: 'object',

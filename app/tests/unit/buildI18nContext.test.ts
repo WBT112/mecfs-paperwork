@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { setNested } from '../export/buildI18nContext';
+import { setNested } from '../../src/export/buildI18nContext';
 
 describe('setNested', () => {
   it('should set a value on a deeply nested path', () => {

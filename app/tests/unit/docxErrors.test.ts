@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDocxErrorKey } from '../export/docx';
+import { getDocxErrorKey } from '../../src/export/docx';
 
 const errorWithName = (name: string): Error => {
   const error = new Error('Template error');

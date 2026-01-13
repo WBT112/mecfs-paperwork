@@ -37,6 +37,10 @@ If any step fails: fix it before finishing.
   - P0/P1 feature: add at least one integration test for the primary user flow plus unit tests for pure logic/validators.
   - Docs-only changes: no tests required, but CI must remain green.
 
+### Test locations
+- Vitest-based unit and component tests are located in `/app/tests`.
+- Playwright-based E2E tests are located in `/app/e2e`.
+
 ### When changing behavior
 - Add or update unit tests for new/changed business logic (e.g., mapping, validation, export, storage).
 - Prefer fast, deterministic tests. Avoid flaky E2E tests.
