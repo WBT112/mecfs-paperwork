@@ -19,8 +19,10 @@
     "formpack:validate": "node scripts/validate-formpacks.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test": "npm run test:unit",
+    "test": "vitest --run",
     "test:unit": "vitest --run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest --run --coverage",
     "prepare": "husky",
     "precommit": "lint-staged"
   },

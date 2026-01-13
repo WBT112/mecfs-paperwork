@@ -50,7 +50,7 @@ jobs:
 
       - name: Unit tests
         working-directory: app
-        run: npm run test:unit
+        run: npm test
 
       - name: Build
         working-directory: app
