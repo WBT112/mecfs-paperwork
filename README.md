@@ -4,6 +4,8 @@ Offline-first Tooling zur Erstellung und Verwaltung von ME/CFS-bezogenen Formula
 
 **Wichtig:** Dieses Repository darf **keine echten Patientendaten** enthalten (auch nicht in Issues, Logs, Screenshots, Fixtures oder Export-Dateien).
 
+Allgemeine Diskussionen bitte in den **Discussions** führen. Für Bugs die **Issues** nutzen.
+
 ---
 
 ## Repository-Struktur
@@ -133,5 +135,6 @@ Wenn du ein Sicherheitsproblem findest:
 ---
 
 ## Lizenz
+
 
 Siehe `LICENSE`.
