@@ -21,7 +21,7 @@ For every change that touches `app/`:
 3. `npm run format:check`
 4. `npm run typecheck`
 5. `npm run build`
-6. `npm run test:unit`
+6. `npm test`
 7. `npm run test:e2e`
 8. `npm run formpack:validate`
 
@@ -52,12 +52,17 @@ If any step fails: fix it before finishing.
 - Prefer early returns and clear naming over cleverness.
 
 ## 5) Comments & documentation standard
-- Add comments for:
-  - non-obvious business rules
-  - tricky edge cases
-  - data model assumptions (e.g., IndexedDB schema, migrations)
-- Prefer short, high-signal comments (why/how), not restating the code.
-- For exported functions and modules: add a brief doc comment (TSDoc/JSDoc style).
+- **English only** for code and test comments.
+- **Explain decisions, not mechanics:** Comments should capture rationale, constraints, and non-obvious behavior. Avoid “what the code does” narration.
+- **Privacy-first:** Comments must never contain real patient/health data or identifiable personal information. Use synthetic examples only.
+- **Use structured prefixes where relevant:**
+  - `RATIONALE:` design decision / trade-off
+  - `NOTE:` non-obvious behavior / edge case
+  - `SECURITY:` privacy, data-handling, threat model constraints
+  - `TODO:` only with a clear next action (avoid vague TODOs)
+- **Minimize surface area:** Prefer a single short header comment (file/function) over many inline comments.
+- **Tests:** Only comment when mocking or setup is tricky, or when explaining a regression scenario. No flaky patterns (no sleeps/time-based assertions).
+- **Review gate:** If a comment is added, reviewers should be able to answer: “Does this reduce future misunderstanding or prevent a known class of mistakes?” If not, remove it.
 
 ## 6) Tooling expectations (baseline)
 - Linting: ESLint with TypeScript support.

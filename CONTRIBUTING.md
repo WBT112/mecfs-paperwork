@@ -53,6 +53,12 @@ Optional (recommended): run the one-command helper script (Windows PowerShell):
 ```powershell
 . .\tools\run-quality-gates.ps1
 ```
+
+Optional (coverage report):
+
+```bash
+npm run test:coverage
+```
 ## Issues
 - Please create an issue to discuss your idea first before you use precious time for coding and testing.
 
@@ -71,6 +77,19 @@ Optional (recommended): run the one-command helper script (Windows PowerShell):
 ### Code style
 - Follow the existing project style (ESLint/Prettier/TypeScript).
 - Keep code and test comments **in English**.
+
+## Comment Policy
+
+### Code & test comments
+- **Language:** Write code and test comments in **English**.
+- **Purpose:** Comments must explain **why** something exists (constraints, trade-offs, edge cases), not restate what the code already shows.
+- **Privacy:** Never include **real patient/health data** in comments, examples, fixtures, screenshots, logs, or exports. Use clearly fake data only.
+- **Durability:** Prefer stable, high-signal notes:
+  - `// RATIONALE:` for design decisions
+  - `// NOTE:` for non-obvious behavior
+  - `// SECURITY:` for security/privacy constraints
+- **Avoid noise:** Do not add comments that paraphrase obvious logic (“increment i”, “set state”).
+- **Tests:** Comment only when setup/mocking is non-trivial or a regression needs context. No timing hacks.
 
 ## Security & privacy notes (local storage and exports)
 
