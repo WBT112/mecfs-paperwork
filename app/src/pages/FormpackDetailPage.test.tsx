@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FormpackDetailPage from './FormpackDetailPage';
+import { exportDocx } from '../export/docx';
 
 const mockUpdateActiveRecord = vi.fn();
 const mockMarkAsSaved = vi.fn();
@@ -17,6 +18,14 @@ const record = {
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
+
+vi.mock('../export/docx', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../export/docx')>();
+  return {
+    ...original,
+    exportDocx: vi.fn(),
+  };
+});
 
 vi.mock('@rjsf/core', () => ({
   default: ({
@@ -74,7 +83,7 @@ vi.mock('../formpacks/loader', () => ({
     descriptionKey: 'formpackDescription',
     defaultLocale: 'de',
     locales: ['de', 'en'],
-    exports: [],
+    exports: ['docx'],
     docx: {
       templates: {
         a4: 'template-a4.docx',
@@ -183,5 +192,29 @@ describe('FormpackDetailPage', () => {
     );
 
     expect(mockMarkAsSaved).toHaveBeenCalledWith({});
+  });
+
+  it('logs an error if DOCX export fails', async () => {
+    const error = new Error('DOCX export failed');
+    vi.mocked(exportDocx).mockRejectedValue(error);
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <MemoryRouter initialEntries={['/formpacks/notfallpass']}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const exportButton = await screen.findByText('formpackRecordExportDocx');
+    await userEvent.click(exportButton);
+
+    await waitFor(() => expect(consoleSpy).toHaveBeenCalledWith('DOCX export failed:', error));
+    expect(
+      await screen.findByText('formpackDocxExportError'),
+    ).toBeInTheDocument();
+
+    consoleSpy.mockRestore();
   });
 });
