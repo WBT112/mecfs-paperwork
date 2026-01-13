@@ -1,24 +1,24 @@
 # mecfs-paperwork
 
-Offline-first Tooling zur Erstellung und Verwaltung von ME/CFS-bezogenen Formularen („Formpacks“) inklusive Export (z. B. DOCX, JSON).
+Offline-first tool for creating and managing ME/CFS-related forms ("formpacks") including export (e.g., DOCX, JSON).
 
-**Wichtig:** Dieses Repository darf **keine echten Patientendaten** enthalten (auch nicht in Issues, Logs, Screenshots, Fixtures oder Export-Dateien).
+**Important:** This repository must **not contain any real patient data** (not in issues, logs, screenshots, fixtures, or export files).
 
-Allgemeine Diskussionen bitte in den **Discussions** führen. Für Bugs die **Issues** nutzen.
-
----
-
-## Repository-Struktur
-
-- `app/` – React/Vite Frontend (Build-Output: `app/dist`)
-- `formpacks/` – Formpacks (Schemas, UI-Schemas, i18n, Templates)
-- `docs/` – Projektdokumentation (QA, i18n, Formpacks, Exportformate)
-- `tools/` – Lokale Hilfsskripte (Quality Gates, Support-Zip, Skeletons)
-- `.github/workflows/` – CI Workflows
+Use **Discussions** for general topics. Use **Issues** for bugs.
 
 ---
 
-## Lokale Entwicklung
+## Repository structure
+
+- `app/` - React/Vite frontend (build output: `app/dist`)
+- `formpacks/` - Formpacks (schemas, UI schemas, i18n, templates)
+- `docs/` - Project documentation (QA, i18n, formpacks, export formats)
+- `tools/` - Local helper scripts (quality gates, support zip, skeletons)
+- `.github/workflows/` - CI workflows
+
+---
+
+## Local development
 
 ```bash
 cd app
@@ -26,13 +26,13 @@ npm install
 npm run dev
 ```
 
-Hinweis: `predev`/`prebuild` synchronisieren `formpacks/` automatisch nach `app/public/formpacks`.
+Note: `predev`/`prebuild` automatically sync `formpacks/` to `app/public/formpacks`.
 
 ---
 
-## Quality Gates (lokal)
+## Quality gates (local)
 
-Alle Checks werden im `app/`-Ordner ausgeführt:
+All checks run from the `app/` directory:
 
 ```bash
 npm run lint
@@ -44,41 +44,41 @@ npm run test:e2e
 npm run formpack:validate
 ```
 
-Optional (Coverage-Report):
+Optional (coverage report):
 
 ```bash
 npm run test:coverage
 ```
 
-### One-Command Check (PowerShell)
+### One-command check (PowerShell)
 
-Im `tools/`-Ordner liegt ein Helper-Skript, das die Quality Gates automatisiert (inkl. optionalem Docker-Build + Smoke-Test):
+There is a helper script in `tools/` that automates the quality gates (including optional Docker build + smoke test):
 
 ```powershell
 . .\tools\run-quality-gates.ps1
 ```
 
-Optionen (je nach Skript-Version):
-- Docker-Checks überspringen: `-SkipDockerChecks`
-- Container nach Smoke-Test laufen lassen: `-KeepDockerRunning`
+Options (depending on script version):
+- Skip Docker checks: `-SkipDockerChecks`
+- Keep container running after smoke test: `-KeepDockerRunning`
 
 ---
 
 ## Formpacks
 
-Formpacks liegen im Repo-Root unter `formpacks/<id>/...`.
+Formpacks live at the repo root under `formpacks/<id>/...`.
 
-### Neues Formpack erstellen 
+### Create a new formpack
 
 ```bash
 cd app
-npm run formpack:new -- --id <packId> --title "<Titel>" [--register]
+npm run formpack:new -- --id <packId> --title "<Title>" [--register]
 ```
 
 - Default: `exports: ["docx","json"]`
-- `--register` ist optional und trägt die ID in `app/src/formpacks/registry.ts` ein (damit das Pack sofort in der UI erscheint).
+- `--register` is optional and adds the ID to `app/src/formpacks/registry.ts` so the pack appears in the UI immediately.
 
-### Formpacks validieren (Contract + DOCX Preflight)
+### Validate formpacks (contract + DOCX preflight)
 
 ```bash
 cd app
@@ -87,40 +87,40 @@ npm run formpack:validate
 
 ---
 
-## Docker (statisches Deployment via NGINX)
+## Docker (static deployment via NGINX)
 
-Der Container-Build erstellt die statischen Assets und liefert sie via NGINX.
+The container build generates static assets and serves them through NGINX.
 
-### Docker Compose (lokal)
+### Docker Compose (local)
 
 ```bash
-docker login dhi.io   # (free Docker Token benötigt)
+docker login dhi.io   # (free Docker token required)
 docker compose up --build
 ```
 
-Öffnen:
+Open:
 - http://localhost:8080
 
-Stop/Cleanup:
+Stop/cleanup:
 
 ```bash
 docker compose down
 ```
 
-Hinweis: Der Healthcheck nutzt `nginx -t`, da das Runtime-Image keine HTTP-Clients enthält.
+Note: The healthcheck uses `nginx -t` because the runtime image does not include HTTP clients.
 
-### Docker Build/Run (direkt)
+### Docker build/run (direct)
 
 ```bash
-docker login dhi.io   # (free Docker Token benötigt)
+docker login dhi.io   # (free Docker token required)
 docker build -t mecfs-paperwork:local .
 docker run --rm -p 8080:80 mecfs-paperwork:local
 ```
 
-Öffnen:
+Open:
 - http://localhost:8080
 
-Optionaler Smoke-Test (HTTP 200 erwartet):
+Optional smoke test (HTTP 200 expected):
 
 ```powershell
 curl.exe -i http://localhost:8080/
@@ -129,39 +129,39 @@ curl.exe -i http://localhost:8080/some/deep/link
 
 ---
 
-## Dokumentation
+## Documentation
 
 - Formpacks: `docs/formpacks.md`
-- i18n-Konventionen: `docs/i18n.md`
-- JSON-Exportformat: `docs/formats/json-export.md`
-- QA-Übersicht: `docs/qa/README.md`
-  - Definition of Done / Quality Gates: `docs/qa/dod.md`
-  - Testkonzept: `docs/qa/testkonzept.md`
-  - Testdaten/Privacy: `docs/qa/testdaten.md`
-  - Manuelle Checklisten: `docs/qa/manual-checklists.md`
-- Contribution Guidelines: `CONTRIBUTING.md`
-- Agent/Automation Standards & Quality Gates: `AGENTS.md`
+- i18n conventions: `docs/i18n.md`
+- JSON export format: `docs/formats/json-export.md`
+- QA overview: `docs/qa/README.md`
+  - Definition of Done / quality gates: `docs/qa/dod.md`
+  - Test concept: `docs/qa/testkonzept.md`
+  - Test data/privacy: `docs/qa/testdaten.md`
+  - Manual checklists: `docs/qa/manual-checklists.md`
+- Contribution guidelines: `CONTRIBUTING.md`
+- Agent/automation standards and quality gates: `AGENTS.md`
 
 ---
 
-## Security / Responsible Disclosure
+## Security / Responsible disclosure
 
-Wenn du ein Sicherheitsproblem findest:
-- Bitte erstelle ein GitHub Issue mit Prefix **[SECURITY]** oder kontaktiere den Maintainer direkt über GitHub.
-- Keine exploit-ready Details öffentlich posten; keine echten Patientendaten teilen.
+If you find a security issue:
+- Please open a GitHub issue with prefix **[SECURITY]** or contact the maintainer directly on GitHub.
+- Do not post exploit-ready details publicly; do not share real patient data.
 
-(Siehe auch: `SECURITY.md`.)
-
----
-
-## KI-gestützte Entwicklung (Transparenz)
-
-Dieses Projekt wird in Teilen KI-gestützt entwickelt (z. B. mit Agenten/Codex/Jules). Das ist bewusst so: Das Problem ist wichtig, die Entwicklung soll zügig vorankommen, und KI hilft dabei, kleine Änderungen schnell umzusetzen.
-
-Wichtig: KI ersetzt keine Qualitäts- oder Sicherheitsmaßnahmen. Änderungen werden nicht „blind“ übernommen, sondern über Review und die bestehenden Quality Gates abgesichert (siehe „Quality Gates“ sowie CONTRIBUTING/AGENTS).
+(See also: `SECURITY.md`.)
 
 ---
 
-## Lizenz
+## AI-assisted development (transparency)
 
-Siehe `LICENSE`.
+This project is developed in part with AI assistance (e.g., agents/Codex/Jules). This is intentional: the problem matters, development should move quickly, and AI helps deliver small changes faster.
+
+Important: AI does not replace quality or security measures. Changes are not accepted "blindly"; they go through review and the existing quality gates (see "Quality gates" and CONTRIBUTING/AGENTS).
+
+---
+
+## License
+
+See `LICENSE`.
