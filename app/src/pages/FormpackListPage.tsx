@@ -127,19 +127,18 @@ export default function FormpackListPage() {
             });
 
             return (
-              <article key={manifest.id} className="formpack-card">
+              <Link
+                key={manifest.id}
+                className="formpack-card"
+                to={`/formpacks/${manifest.id}`}
+                aria-label={`${t('formpackOpen')} ${title}`}
+              >
                 <div>
                   <h3>{title}</h3>
                   <p className="formpack-card__description">{description}</p>
                 </div>
-                <Link
-                  className="formpack-card__link"
-                  to={`/formpacks/${manifest.id}`}
-                  aria-label={`${t('formpackOpen')} ${title}`}
-                >
-                  {t('formpackOpen')}
-                </Link>
-              </article>
+                <div className="formpack-card__link">{t('formpackOpen')}</div>
+              </Link>
             );
           })}
         </div>
