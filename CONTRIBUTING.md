@@ -42,10 +42,10 @@ Run from `app/`:
 npm run lint
 npm run format:check
 npm run typecheck
+npm run build
 npm test
 npm run test:e2e
 npm run formpack:validate
-npm run build
 ```
 
 Optional (recommended): run the one-command helper script (Windows PowerShell):
