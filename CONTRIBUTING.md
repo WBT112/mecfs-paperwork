@@ -1,182 +1,91 @@
 # Contributing to mecfs-paperwork
 
-Thank you for contributing. This project is **offline-first** and must avoid accidental disclosure of sensitive information. Please follow the rules below to keep contributions safe, reviewable, and consistent.
+Thanks for contributing. This project is **offline-first** and deals with workflows that may involve sensitive health information. Please follow the rules below to keep contributions safe, reviewable, and consistent.
 
----
+## Ground rules (non‑negotiable)
 
-## Ground Rules (Non-Negotiable)
+- **No real patient data** in this repository — including issues, PRs, screenshots, logs, fixtures, exports, or attachments.
+- Use **clearly fake / anonymized** data only (names like `Alice Example`, dummy dates, random IDs).
+- **No telemetry / tracking / analytics**.
+- **Offline-first**: the app must not require network access at runtime (except loading the static app assets).
+- Do not log personal or sensitive data to the console.
 
-- **No real patient data** in the repository, issues, PRs, screenshots, logs, fixtures, or examples.
-- **No telemetry / analytics / tracking**.
-- **Offline-first**: the app must not make network requests at runtime except loading the static app assets.
-- **Do not log personal/sensitive data** to the console.
+If you accidentally included sensitive data, remove it immediately and contact the maintainer via GitHub (Issue or direct message).
 
----
+## Where to start
 
-## Language & Code Quality Standards
+- Project overview: `README.md`
+- Quality Gates / DoD: `docs/qa/dod.md`
+- QA overview: `docs/qa/README.md`
+- Formpack authoring: `docs/formpacks.md`
+- Security reporting: `SECURITY.md`
+- Automation / agent quality policy: `AGENTS.md`
 
-- **Code identifiers** (files, variables, functions) must be **English**.
-- **Code comments and docs** must be **English**.
-- Keep code **readable** and **well-structured**:
-  - prefer small, composable functions
-  - avoid cleverness; choose clarity
-  - add comments for non-obvious rules and edge cases (explain *why*, not *what*)
+## Development setup
 
----
+### Prerequisites
+- Node and npm as defined by the repository (see `.nvmrc` if present).
+- Docker (optional, for container build testing).
 
-## Prerequisites
-
-### Node / npm
-Use the project’s standard toolchain:
-- Node: **v24.12.0** (see `.nvmrc`; run `nvm use`)
-- npm: **11.6.2**
-
-Verify:
-```sh
-node -v
-npm -v
-```
-
-> If you use a different npm version, you may see lockfile churn (e.g. `"peer": true` appearing). To minimize this, follow the workflow below (use `npm ci` for installs).
-
----
-
-## Install & Run (Local Development)
-
-From the repo root:
-
-```sh
+### Install & run
+```bash
 cd app
-npm ci
+npm install
 npm run dev
 ```
 
-Open the URL printed by Vite (typically `http://localhost:5173`).
+## Quality gates (required before opening a PR)
 
-### Production build preview
-```sh
-cd app
-npm run build
-npm run preview
-```
+Run from `app/`:
 
----
-
-## Dependency Management & package-lock.json Policy
-
-### Default rule
-- For local testing and PR reviews, **use `npm ci`** (it installs from `package-lock.json` deterministically and avoids rewriting it).
-- Only use **`npm install`** when you **intentionally change dependencies**.
-
-### Why you might see `"peer": true` in `package-lock.json`
-Some npm versions may rewrite lockfile metadata during `npm install`. This is not necessarily harmful, but it creates noisy diffs. The best mitigation is:
-- **Prefer `npm ci`**
-- Keep **Node/npm versions consistent** across contributors and CI.
-
-If you intentionally changed dependencies:
-1. run `npm install`
-2. ensure `package-lock.json` changes are expected
-3. commit both `package.json` and `package-lock.json`
-
----
-
-## Quality Gates (Must Be Green)
-
-Before opening a PR (and before requesting review), run:
-
-```sh
-cd app
+```bash
 npm run lint
 npm run format:check
 npm run typecheck
+npm test
+npm run test:e2e
+npm run formpack:validate
 npm run build
 ```
 
-If `format:check` fails:
-```sh
-cd app
-npm run format
-npm run format:check
+Optional (recommended): run the one-command helper script (Windows PowerShell):
+
+```powershell
+. .\tools\run-quality-gates.ps1
 ```
+## Issues
+- Please create an issue to discuss your idea first before you use precious time for coding and testing.
 
----
+## Pull requests
 
-## Branching & PR Guidelines
+### Scope & structure
+- Prefer **small, focused PRs** (one change set / one intent).
+- Include a clear description: *what*, *why*, *how to test*.
+- Update documentation when behavior or workflows change.
 
-- Prefer **one issue per PR**.
-- Keep PRs small and focused.
-- Suggested branch naming:
-  - `feat/issue-<n>-short-title`
-  - `fix/issue-<n>-short-title`
-  - `chore/issue-<n>-short-title`
+### Tests
+- Add or update **unit tests** for changed **business logic** (export/mapping/storage/helpers).
+- UI tests should be minimal and focused on critical user flows.
+- Tests must be deterministic — no sleeps/timing hacks/flaky assertions.
 
-### PR description must include
-- What changed (short summary)
-- How it was verified (commands + outcome)
-- Known limitations / follow-ups
-- Confirmation of:
-  - no telemetry
-  - no real patient data
+### Code style
+- Follow the existing project style (ESLint/Prettier/TypeScript).
+- Keep code and test comments **in English**.
 
----
+## Security & privacy notes (local storage and exports)
 
-## Acceptance / Review Checklist (Standard Steps)
+This app supports local storage and exports (e.g., DOCX/JSON). Exports may contain sensitive information.
 
-Use this checklist when reviewing a PR locally.
+Please ensure:
+- Never attach real exports or real logs to PRs/issues.
+- Avoid copying export content into issues/PR descriptions.
+- Use fake data whenever you test export paths.
 
-### 1) Fetch and checkout
-```sh
-git fetch
-git switch <pr-branch>
-```
+## Reporting security issues
 
-### 2) Install & run quality gates
-```sh
-cd app
-npm ci
-npm run lint
-npm run format:check
-npm run typecheck
-npm run build
-```
+Please do **not** publish exploit-ready details in public issues.
+Use the process described in `SECURITY.md` (GitHub issue with prefix **[SECURITY]** or contact the maintainer via GitHub).
 
-### 3) Manual smoke test (minimum)
-```sh
-cd app
-npm run dev
-```
-- App starts without errors
-- Core UI renders
-- Language switch (if present) behaves correctly
-- No unexpected console errors
+## License
 
-### 4) Security / privacy sanity checks
-- No real patient data in:
-  - repo files
-  - examples
-  - tests
-  - screenshots
-- No new network calls added unintentionally
-- No new tracking/telemetry libraries introduced
-- No sensitive console logs
-
-### 5) Final decision
-- If all gates pass and scope matches the issue, approve and merge.
-
----
-
-## Working with Codex (Optional)
-
-If you delegate implementation to Codex:
-- Ensure the issue has clear scope + acceptance criteria.
-- Ensure the PR meets the **Quality Gates** above.
-- Keep the repo’s agent guidance in `AGENTS.md` up to date.
-
----
-
-## Questions
-If something is unclear, open a GitHub issue describing:
-- expected behavior
-- current behavior
-- reproduction steps
-- environment (OS, Node version, npm version)
+By contributing, you agree that your contributions will be licensed under the project’s license (Apache-2.0). See `LICENSE`.
