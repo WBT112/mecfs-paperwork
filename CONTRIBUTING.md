@@ -53,6 +53,12 @@ Optional (recommended): run the one-command helper script (Windows PowerShell):
 ```powershell
 . .\tools\run-quality-gates.ps1
 ```
+
+Optional (coverage report):
+
+```bash
+npm run test:coverage
+```
 ## Issues
 - Please create an issue to discuss your idea first before you use precious time for coding and testing.
 

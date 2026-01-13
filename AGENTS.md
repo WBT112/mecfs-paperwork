@@ -21,7 +21,7 @@ For every change that touches `app/`:
 3. `npm run format:check`
 4. `npm run typecheck`
 5. `npm run build`
-6. `npm run test:unit`
+6. `npm test`
 7. `npm run test:e2e`
 8. `npm run formpack:validate`
 
