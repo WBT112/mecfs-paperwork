@@ -10,8 +10,9 @@ services:
     tmpfs:
       - /tmp
       - /var/run
-      - /var/cache/nginx:uid=101,gid=101,mode=0755
-      - /var/cache/nginx/client_temp:uid=101,gid=101,mode=0755
+      - /var/cache/nginx:uid=65532,gid=65532,mode=0755
+      - /var/cache/nginx/client_temp:uid=65532,gid=65532,mode=0755
+      - /var/log/nginx:uid=65532,gid=65532,mode=0755
     security_opt:
       - no-new-privileges:true
     cap_drop:
