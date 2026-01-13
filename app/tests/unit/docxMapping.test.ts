@@ -29,15 +29,14 @@ describe('mapDocumentDataToTemplate', () => {
   });
 
   beforeEach(() => {
-    const mockFetch = vi.fn().mockResolvedValue({
+    vi.spyOn(global, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => mapping,
-    });
-    vi.stubGlobal('fetch', mockFetch);
+    } as Response);
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it('maps fields, loops, and i18n placeholders into the template context', async () => {
