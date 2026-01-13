@@ -42,6 +42,12 @@ npm run formpack:validate
 npm run build
 ```
 
+Optional (Coverage-Report):
+
+```bash
+npm run test:coverage
+```
+
 ### One-Command Check (PowerShell)
 
 Im `tools/`-Ordner liegt ein Helper-Skript, das die Quality Gates automatisiert (inkl. optionalem Docker-Build + Smoke-Test):
