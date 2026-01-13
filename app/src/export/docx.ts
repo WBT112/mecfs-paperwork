@@ -1,3 +1,6 @@
+// This file contains the core logic for exporting data to DOCX format.
+// It handles DOCX template loading, data mapping, and report generation.
+
 import { createReport } from 'docx-templates/lib/browser.js';
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
@@ -427,6 +430,7 @@ const sanitizeFilenamePart = (value: string) =>
     .trim()
     .replace(/[\\/:*?"<>|]+/g, '-')
     .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
     .slice(0, 80);
 
 /**

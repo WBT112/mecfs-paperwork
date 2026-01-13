@@ -1681,9 +1681,7 @@ export default function FormpackDetailPage() {
           <div className="formpack-detail__section">
             <h3>{t('formpackDocumentPreviewHeading')}</h3>
             {hasDocumentContent ? (
-              <div className="formpack-document-preview">
-                {documentPreview}
-              </div>
+              <div className="formpack-document-preview">{documentPreview}</div>
             ) : (
               <p className="formpack-document-preview__empty">
                 {t('formpackDocumentPreviewEmpty')}
