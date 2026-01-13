@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import i18n from '../i18n';
-import { buildDocumentModel } from '../formpacks/documentModel';
+import i18n from '../../src/i18n';
+import { buildDocumentModel } from '../../src/formpacks/documentModel';
 import enTranslations from '../../../formpacks/notfallpass/i18n/en.json';
 
 const namespace = 'formpack:notfallpass';

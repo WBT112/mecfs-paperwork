@@ -43,13 +43,13 @@ const config: AppConfig = {
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: './src/test/setup.ts',
+    setupFiles: './tests/setup/setup.ts',
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
     },
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
-    exclude: ['node_modules', 'dist', 'e2e', 'public'],
+    include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
+    exclude: ['node_modules', 'dist', 'e2e', 'public', 'src'],
   },
 };
 

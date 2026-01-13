@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
+import { applyArrayUiSchemaDefaults } from '../../src/lib/rjsfUiSchema';
 import type { RJSFSchema } from '@rjsf/utils';
 
 describe('applyArrayUiSchemaDefaults', () => {

@@ -3,9 +3,9 @@ import {
   loadDocxTemplate,
   mapDocumentDataToTemplate,
   preloadDocxAssets,
-} from '../export/docx';
-import type { DocumentModel } from '../formpacks/documentModel';
-import type { FormpackDocxManifest } from '../formpacks/types';
+} from '../../src/export/docx';
+import type { DocumentModel } from '../../src/formpacks/documentModel';
+import type { FormpackDocxManifest } from '../../src/formpacks/types';
 
 describe('preloadDocxAssets', () => {
   afterEach(() => {
