@@ -91,6 +91,26 @@ npm run formpack:validate
 
 Der Container-Build erstellt die statischen Assets und serviert sie via NGINX.
 
+### Docker Compose (lokal)
+
+```bash
+docker login dhi.io   # nur falls erforderlich (private Registry)
+docker compose up --build
+```
+
+Öffnen:
+- http://localhost:8080
+
+Stop/cleanup:
+
+```bash
+docker compose down
+```
+
+Hinweis: Der Healthcheck nutzt `nginx -t`, da das Runtime-Image keine HTTP-Clients enthält.
+
+### Docker Build/Run (direkt)
+
 ```bash
 docker login dhi.io   # nur falls erforderlich (private Registry)
 docker build -t mecfs-paperwork:local .
