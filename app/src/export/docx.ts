@@ -83,7 +83,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isSafeAssetPath = (value: string) => {
-  // Prevent path traversal and invalid absolute paths.
+  // SECURITY: This is a critical security control.
+  // It prevents path traversal attacks when loading DOCX assets.
+  // Assets are loaded via fetch(), so a malicious formpack could otherwise
+  // construct a path to access unintended files from the public/ directory.
   if (!value || value.trim().length === 0) return false;
   if (value.startsWith('/') || value.startsWith('\\')) return false;
   if (value.includes('..')) return false;
