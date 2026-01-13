@@ -17,6 +17,15 @@ param(
   # How many times to run E2E
   [int]$E2eRuns = 3,
 
+
+  # Docker image smoke test port (uses docker run -p)
+  [int]$DockerImagePort = 18080,
+
+  # Docker Compose published port (should match compose.yaml)
+  [int]$ComposePort = 8080,
+
+  # Docker Compose checks
+  [switch]$SkipComposeChecks,
   # Docker checks
   [switch]$SkipDockerChecks,
 
@@ -195,8 +204,13 @@ try {
 
     # 3) Run container detached for smoke checks
     Write-Host ""
-    Write-Host "==> docker run (detached) -p 8080:80" -ForegroundColor Cyan
-    $containerId = (docker run -d --rm -p 8080:80 mecfs-paperwork:local).Trim()
+    Write-Host ("==> docker run (detached) -p {0}:80" -f $DockerImagePort) -ForegroundColor Cyan
+    $runOut = (& docker run -d --rm -p ("{0}:80" -f $DockerImagePort) mecfs-paperwork:local) 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+      throw ("docker run failed (exit code {0}): {1}" -f $exitCode, $runOut)
+    }
+    $containerId = ($runOut | Out-String).Trim()
     if ([string]::IsNullOrWhiteSpace($containerId)) {
       throw "docker run did not return a container id."
     }
@@ -204,14 +218,14 @@ try {
     # 4) Smoke checks (HTTP 200)
     Write-Host ""
     Write-Host "==> smoke check: http://localhost:8080/" -ForegroundColor Cyan
-    Wait-HttpOk -Url "http://localhost:8080/"
+    Wait-HttpOk -Url ("http://localhost:{0}/" -f $DockerImagePort)
 
     Write-Host ""
     Write-Host "==> smoke check (SPA fallback): http://localhost:8080/some/deep/link" -ForegroundColor Cyan
-    Wait-HttpOk -Url "http://localhost:8080/some/deep/link"
+    Wait-HttpOk -Url ("http://localhost:{0}/some/deep/link" -f $DockerImagePort)
 
     Write-Host ""
-    Write-Host "Docker smoke checks passed. You can open: http://localhost:8080" -ForegroundColor Green
+    Write-Host ("Docker image smoke checks passed. You can open: http://localhost:{0}" -f $DockerImagePort) -ForegroundColor Green
 
     if (-not $KeepDockerRunning) {
       Write-Host ""
@@ -224,6 +238,50 @@ try {
     }
 
     Pop-Location # back to /app
+
+  # Docker Compose checks (build + up + smoke + down)
+  if (-not $SkipComposeChecks) {
+    $composeFile = Join-Path $repoRoot "compose.yaml"
+    if (-not (Test-Path -LiteralPath $composeFile)) {
+      throw "compose.yaml not found in repo root: $repoRoot. Add compose.yaml or run with -SkipComposeChecks."
+    }
+
+    Push-Location -LiteralPath $repoRoot
+
+    # Login (only required if registry is private)
+    Invoke-DockerLogin
+
+    # Ensure docker compose is available
+    Invoke-Checked -Label "docker compose version" -Exe "docker" -Args @("compose", "version")
+
+    $composeStarted = $false
+    try {
+      Invoke-Checked -Label "docker compose up -d --build" -Exe "docker" -Args @("compose", "up", "-d", "--build")
+
+      $composeStarted = $true
+
+      Write-Host ""
+      Write-Host ("==> compose smoke check: http://localhost:{0}/" -f $ComposePort) -ForegroundColor Cyan
+      Wait-HttpOk -Url ("http://localhost:{0}/" -f $ComposePort)
+
+      Write-Host ""
+      Write-Host ("==> compose smoke check (SPA fallback): http://localhost:{0}/some/deep/link" -f $ComposePort) -ForegroundColor Cyan
+      Wait-HttpOk -Url ("http://localhost:{0}/some/deep/link" -f $ComposePort)
+
+      Write-Host ""
+      Write-Host ("Docker Compose smoke checks passed. You can open: http://localhost:{0}" -f $ComposePort) -ForegroundColor Green
+    }
+    finally {
+      if ($composeStarted) {
+        Write-Host ""
+        Write-Host "==> docker compose down (cleanup)" -ForegroundColor Cyan
+        # Best-effort cleanup; do not hide failures before this point.
+        docker compose down --remove-orphans | Out-Host
+      }
+      Pop-Location # back to /app
+    }
+  }
+
   }
 
   $success = $true
