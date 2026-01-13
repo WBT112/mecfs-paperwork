@@ -1,4 +1,2 @@
-node_modules
-_dist
-.vite
-dist
+playwright-report/
+test-results/
