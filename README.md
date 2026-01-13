@@ -68,7 +68,7 @@ Optionen (je nach Skript-Version):
 
 Formpacks liegen im Repo-Root unter `formpacks/<id>/...`.
 
-### Neues Formpack scaffolden
+### Neues Formpack erstellen 
 
 ```bash
 cd app
@@ -89,19 +89,19 @@ npm run formpack:validate
 
 ## Docker (statisches Deployment via NGINX)
 
-Der Container-Build erstellt die statischen Assets und serviert sie via NGINX.
+Der Container-Build erstellt die statischen Assets und liefert sie via NGINX.
 
 ### Docker Compose (lokal)
 
 ```bash
-docker login dhi.io   # nur falls erforderlich (private Registry)
+docker login dhi.io   # (free Docker Token benötigt)
 docker compose up --build
 ```
 
 Öffnen:
 - http://localhost:8080
 
-Stop/cleanup:
+Stop/Cleanup:
 
 ```bash
 docker compose down
@@ -112,7 +112,7 @@ Hinweis: Der Healthcheck nutzt `nginx -t`, da das Runtime-Image keine HTTP-Clien
 ### Docker Build/Run (direkt)
 
 ```bash
-docker login dhi.io   # nur falls erforderlich (private Registry)
+docker login dhi.io   # (free Docker Token benötigt)
 docker build -t mecfs-paperwork:local .
 docker run --rm -p 8080:80 mecfs-paperwork:local
 ```
@@ -154,7 +154,14 @@ Wenn du ein Sicherheitsproblem findest:
 
 ---
 
-## Lizenz
+## KI-gestützte Entwicklung (Transparenz)
 
+Dieses Projekt wird in Teilen KI-gestützt entwickelt (z. B. mit Agenten/Codex/Jules). Das ist bewusst so: Das Problem ist wichtig, die Entwicklung soll zügig vorankommen, und KI hilft dabei, kleine Änderungen schnell umzusetzen.
+
+Wichtig: KI ersetzt keine Qualitäts- oder Sicherheitsmaßnahmen. Änderungen werden nicht „blind“ übernommen, sondern über Review und die bestehenden Quality Gates abgesichert (siehe „Quality Gates“ sowie CONTRIBUTING/AGENTS).
+
+---
+
+## Lizenz
 
 Siehe `LICENSE`.
