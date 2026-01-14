@@ -149,7 +149,9 @@ curl.exe -i http://localhost:8080/some/deep/link
 If you find a security issue:
 - Please open a GitHub issue with prefix **[SECURITY]** or contact the maintainer directly on GitHub.
 - Do not post exploit-ready details publicly; do not share real patient data.
-
+We keep two lightweight security/privacy artifacts in the repo:
+- `docs/security/threat-model.md` (scope, assets, trust boundaries, attack surface)
+- `docs/security/security-review.md` (monthly, evidence-based review log)
 (See also: `SECURITY.md`.)
 
 ---
