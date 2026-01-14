@@ -11,10 +11,9 @@ export const createSnapshot = async (
   recordId: string,
   data: Record<string, unknown>,
   label?: string,
-  createdAt?: string,
 ): Promise<SnapshotEntry> => {
   const db = await openStorage();
-  const now = createdAt ?? new Date().toISOString();
+  const now = new Date().toISOString();
   const snapshot: SnapshotEntry = {
     id: crypto.randomUUID(),
     recordId,
