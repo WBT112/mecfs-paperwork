@@ -22,8 +22,11 @@ const getTranslator = (formContext?: FormpackFormContext): TFunction =>
 const buildButtonClassName = (className?: string) =>
   ['app__button', 'formpack-array-button', className].filter(Boolean).join(' ');
 
-const ArrayAddButton = (props: IconButtonProps) => {
-  const { className, disabled, onClick, children, registry } = props;
+const TranslatedButton = (
+  props: IconButtonProps & { translationKey: string },
+) => {
+  const { className, disabled, onClick, children, registry, translationKey } =
+    props;
   const t = getTranslator(
     registry.formContext as FormpackFormContext | undefined,
   );
@@ -35,28 +38,18 @@ const ArrayAddButton = (props: IconButtonProps) => {
       onClick={onClick}
       disabled={disabled}
     >
-      {children ?? t('common.add')}
+      {children ?? t(translationKey)}
     </button>
   );
 };
 
-const ArrayRemoveButton = (props: IconButtonProps) => {
-  const { className, disabled, onClick, children, registry } = props;
-  const t = getTranslator(
-    registry.formContext as FormpackFormContext | undefined,
-  );
+const ArrayAddButton = (props: IconButtonProps) => (
+  <TranslatedButton {...props} translationKey="common.add" />
+);
 
-  return (
-    <button
-      type="button"
-      className={buildButtonClassName(className)}
-      onClick={onClick}
-      disabled={disabled}
-    >
-      {children ?? t('common.remove')}
-    </button>
-  );
-};
+const ArrayRemoveButton = (props: IconButtonProps) => (
+  <TranslatedButton {...props} translationKey="common.remove" />
+);
 
 const ArrayMoveButton = () => null;
 
