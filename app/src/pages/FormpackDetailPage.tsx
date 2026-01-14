@@ -232,6 +232,144 @@ const getLabel = (
   return key;
 };
 
+// RATIONALE: These functions are pure and do not depend on component state.
+// Defining them outside the component prevents them from being re-created on every
+// render, which improves performance by reducing garbage collection and avoiding
+// unnecessary re-renders of memoized components that depend on them.
+function renderPreviewObject(
+  value: Record<string, unknown>,
+  schemaNode: RJSFSchema | undefined,
+  uiNode: UiSchema | null | undefined,
+  label?: string,
+  sectionKey?: string,
+): ReactNode {
+  const schemaProps = isRecord(schemaNode?.properties)
+    ? (schemaNode?.properties as Record<string, RJSFSchema>)
+    : null;
+  const keys = getOrderedKeys(schemaNode, uiNode, value);
+  const rows: ReactNode[] = [];
+  const nested: ReactNode[] = [];
+
+  keys.forEach((key) => {
+    const entry = value[key];
+    if (!hasPreviewValue(entry)) {
+      return;
+    }
+    const childSchema = schemaProps ? schemaProps[key] : undefined;
+    const childUi = getUiSchemaNode(uiNode, key);
+    const childLabel = getLabel(key, childSchema, childUi);
+
+    if (Array.isArray(entry)) {
+      const section = renderPreviewArray(
+        entry,
+        childSchema,
+        childUi,
+        childLabel,
+        `${sectionKey ?? 'section'}-${key}`,
+      );
+      if (section) {
+        nested.push(section);
+      }
+      return;
+    }
+
+    if (isRecord(entry)) {
+      const section = renderPreviewObject(
+        entry,
+        childSchema,
+        childUi,
+        childLabel,
+        `${sectionKey ?? 'section'}-${key}`,
+      );
+      if (section) {
+        nested.push(section);
+      }
+      return;
+    }
+
+    rows.push(
+      <div key={`row-${key}`}>
+        <dt>{childLabel}</dt>
+        <dd>{formatPreviewValue(entry)}</dd>
+      </div>,
+    );
+  });
+
+  if (!rows.length && !nested.length) {
+    return null;
+  }
+
+  const content = (
+    <>
+      {rows.length > 0 ? <dl>{rows}</dl> : null}
+      {nested}
+    </>
+  );
+
+  if (!label) {
+    return content;
+  }
+
+  return (
+    <div className="formpack-document-preview__section" key={sectionKey}>
+      <h4>{label}</h4>
+      {content}
+    </div>
+  );
+}
+
+function renderPreviewArray(
+  values: unknown[],
+  schemaNode: RJSFSchema | undefined,
+  uiNode: UiSchema | null | undefined,
+  label?: string,
+  sectionKey?: string,
+): ReactNode {
+  const itemSchema = getItemSchema(schemaNode);
+  const itemUi = getItemUiSchema(uiNode);
+  const items = values
+    .map<ReactNode>((entry, index) => {
+      if (!hasPreviewValue(entry)) {
+        return null;
+      }
+      if (Array.isArray(entry)) {
+        const nested = renderPreviewArray(
+          entry,
+          itemSchema,
+          itemUi,
+          undefined,
+          `${sectionKey ?? 'array'}-${index}`,
+        );
+        return nested ? <li key={`nested-${index}`}>{nested}</li> : null;
+      }
+      if (isRecord(entry)) {
+        const nested = renderPreviewObject(
+          entry,
+          itemSchema,
+          itemUi,
+          undefined,
+          `${sectionKey ?? 'array'}-${index}`,
+        );
+        return nested ? <li key={`object-${index}`}>{nested}</li> : null;
+      }
+      return <li key={`value-${index}`}>{formatPreviewValue(entry)}</li>;
+    })
+    .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
+      Boolean(entry),
+    );
+
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <div className="formpack-document-preview__section" key={sectionKey}>
+      {label ? <h4>{label}</h4> : null}
+      <ul className="formpack-document-preview__list">{items}</ul>
+    </div>
+  );
+}
+
 /**
  * Shows formpack metadata with translations loaded for the active locale.
  */
@@ -840,274 +978,7 @@ export default function FormpackDetailPage() {
   );
   const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
   const previewUiSchema = normalizedUiSchema ?? translatedUiSchema;
-  const renderPreviewArray = (
-    values: unknown[],
-    schemaNode: RJSFSchema | undefined,
-    uiNode: UiSchema | null | undefined,
-    label?: string,
-    sectionKey?: string,
-  ): ReactNode => {
-    const itemSchema = getItemSchema(schemaNode);
-    const itemUi = getItemUiSchema(uiNode);
-    const items = values
-      .map<ReactNode>((entry, index) => {
-        if (!hasPreviewValue(entry)) {
-          return null;
-        }
-        if (Array.isArray(entry)) {
-          const nested = renderPreviewArray(
-            entry,
-            itemSchema,
-            itemUi,
-            undefined,
-            `${sectionKey ?? 'array'}-${index}`,
-          );
-          return nested ? <li key={`nested-${index}`}>{nested}</li> : null;
-        }
-        if (isRecord(entry)) {
-          const nested = renderPreviewObject(
-            entry,
-            itemSchema,
-            itemUi,
-            undefined,
-            `${sectionKey ?? 'array'}-${index}`,
-          );
-          return nested ? <li key={`object-${index}`}>{nested}</li> : null;
-        }
-        return <li key={`value-${index}`}>{formatPreviewValue(entry)}</li>;
-      })
-      .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
-        Boolean(entry),
-      );
-
-    if (!items.length) {
-      return null;
-    }
-
-    return (
-      <div className="formpack-document-preview__section" key={sectionKey}>
-        {label ? <h4>{label}</h4> : null}
-        <ul className="formpack-document-preview__list">{items}</ul>
-      </div>
-    );
-  };
-  const renderPreviewObject = (
-    value: Record<string, unknown>,
-    schemaNode: RJSFSchema | undefined,
-    uiNode: UiSchema | null | undefined,
-    label?: string,
-    sectionKey?: string,
-  ): ReactNode => {
-    const schemaProps = isRecord(schemaNode?.properties)
-      ? (schemaNode?.properties as Record<string, RJSFSchema>)
-      : null;
-    const keys = getOrderedKeys(schemaNode, uiNode, value);
-    const rows: ReactNode[] = [];
-    const nested: ReactNode[] = [];
-
-    keys.forEach((key) => {
-      const entry = value[key];
-      if (!hasPreviewValue(entry)) {
-        return;
-      }
-      const childSchema = schemaProps ? schemaProps[key] : undefined;
-      const childUi = getUiSchemaNode(uiNode, key);
-      const childLabel = getLabel(key, childSchema, childUi);
-
-      if (Array.isArray(entry)) {
-        const section = renderPreviewArray(
-          entry,
-          childSchema,
-          childUi,
-          childLabel,
-          `${sectionKey ?? 'section'}-${key}`,
-        );
-        if (section) {
-          nested.push(section);
-        }
-        return;
-      }
-
-      if (isRecord(entry)) {
-        const section = renderPreviewObject(
-          entry,
-          childSchema,
-          childUi,
-          childLabel,
-          `${sectionKey ?? 'section'}-${key}`,
-        );
-        if (section) {
-          nested.push(section);
-        }
-        return;
-      }
-
-      rows.push(
-        <div key={`row-${key}`}>
-          <dt>{childLabel}</dt>
-          <dd>{formatPreviewValue(entry)}</dd>
-        </div>,
-      );
-    });
-
-    if (!rows.length && !nested.length) {
-      return null;
-    }
-
-    const content = (
-      <>
-        {rows.length > 0 ? <dl>{rows}</dl> : null}
-        {nested}
-      </>
-    );
-
-    if (!label) {
-      return content;
-    }
-
-    return (
-      <div className="formpack-document-preview__section" key={sectionKey}>
-        <h4>{label}</h4>
-        {content}
-      </div>
-    );
-  };
   const documentPreview = useMemo(() => {
-    const renderPreviewArray = (
-      values: unknown[],
-      schemaNode: RJSFSchema | undefined,
-      uiNode: UiSchema | null | undefined,
-      label?: string,
-      sectionKey?: string,
-    ): ReactNode => {
-      const itemSchema = getItemSchema(schemaNode);
-      const itemUi = getItemUiSchema(uiNode);
-      const items = values
-        .map<ReactNode>((entry, index) => {
-          if (!hasPreviewValue(entry)) {
-            return null;
-          }
-          if (Array.isArray(entry)) {
-            const nested = renderPreviewArray(
-              entry,
-              itemSchema,
-              itemUi,
-              undefined,
-              `${sectionKey ?? 'array'}-${index}`,
-            );
-            return nested ? <li key={`nested-${index}`}>{nested}</li> : null;
-          }
-          if (isRecord(entry)) {
-            const nested = renderPreviewObject(
-              entry,
-              itemSchema,
-              itemUi,
-              undefined,
-              `${sectionKey ?? 'array'}-${index}`,
-            );
-            return nested ? <li key={`object-${index}`}>{nested}</li> : null;
-          }
-          return <li key={`value-${index}`}>{formatPreviewValue(entry)}</li>;
-        })
-        .filter(
-          (entry): entry is Exclude<ReactNode, null | undefined | false> =>
-            Boolean(entry),
-        );
-
-      if (!items.length) {
-        return null;
-      }
-
-      return (
-        <div className="formpack-document-preview__section" key={sectionKey}>
-          {label ? <h4>{label}</h4> : null}
-          <ul className="formpack-document-preview__list">{items}</ul>
-        </div>
-      );
-    };
-
-    const renderPreviewObject = (
-      value: Record<string, unknown>,
-      schemaNode: RJSFSchema | undefined,
-      uiNode: UiSchema | null | undefined,
-      label?: string,
-      sectionKey?: string,
-    ): ReactNode => {
-      const schemaProps = isRecord(schemaNode?.properties)
-        ? (schemaNode?.properties as Record<string, RJSFSchema>)
-        : null;
-      const keys = getOrderedKeys(schemaNode, uiNode, value);
-      const rows: ReactNode[] = [];
-      const nested: ReactNode[] = [];
-
-      keys.forEach((key) => {
-        const entry = value[key];
-        if (!hasPreviewValue(entry)) {
-          return;
-        }
-        const childSchema = schemaProps ? schemaProps[key] : undefined;
-        const childUi = getUiSchemaNode(uiNode, key);
-        const childLabel = getLabel(key, childSchema, childUi);
-
-        if (Array.isArray(entry)) {
-          const section = renderPreviewArray(
-            entry,
-            childSchema,
-            childUi,
-            childLabel,
-            `${sectionKey ?? 'section'}-${key}`,
-          );
-          if (section) {
-            nested.push(section);
-          }
-          return;
-        }
-
-        if (isRecord(entry)) {
-          const section = renderPreviewObject(
-            entry,
-            childSchema,
-            childUi,
-            childLabel,
-            `${sectionKey ?? 'section'}-${key}`,
-          );
-          if (section) {
-            nested.push(section);
-          }
-          return;
-        }
-
-        rows.push(
-          <div key={`row-${key}`}>
-            <dt>{childLabel}</dt>
-            <dd>{formatPreviewValue(entry)}</dd>
-          </div>,
-        );
-      });
-
-      if (!rows.length && !nested.length) {
-        return null;
-      }
-
-      const content = (
-        <>
-          {rows.length > 0 ? <dl>{rows}</dl> : null}
-          {nested}
-        </>
-      );
-
-      if (!label) {
-        return content;
-      }
-
-      return (
-        <div className="formpack-document-preview__section" key={sectionKey}>
-          <h4>{label}</h4>
-          {content}
-        </div>
-      );
-    };
-
     if (!isRecord(formData)) {
       return null;
     }
