@@ -7,11 +7,7 @@ describe('app/src/export/docx.ts', () => {
     const testDate = new Date('2023-10-26T10:00:00Z');
 
     it('should generate a correctly formatted filename with valid inputs', () => {
-      const filename = buildDocxExportFilename(
-        'my-formpack',
-        'a4',
-        testDate,
-      );
+      const filename = buildDocxExportFilename('my-formpack', 'a4', testDate);
       expect(filename).toBe('my-formpack-a4-20231026.docx');
     });
 

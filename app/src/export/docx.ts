@@ -454,9 +454,7 @@ export const buildDocxExportFilename = (
 ): string => {
   const safeFormpack = sanitizeFilenamePart(formpackId) || 'document';
   const safeTemplate = sanitizeFilenamePart(templateId);
-  return `${
-    safeFormpack || 'document'
-  }-${safeTemplate}-${formatExportDate(exportedAt)}.docx`;
+  return `${safeFormpack}-${safeTemplate}-${formatExportDate(exportedAt)}.docx`;
 };
 
 /**
