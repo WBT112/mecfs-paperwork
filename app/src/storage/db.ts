@@ -51,6 +51,9 @@ export const openStorage = async (): Promise<
 
   return openDB<MecfsPaperworkDB>(DB_NAME, DB_VERSION, {
     upgrade(database) {
+      // NOTE: This upgrade callback only runs when the DB_VERSION is incremented.
+      // Any schema changes (adding/removing object stores or indexes) require
+      // a version bump for them to be applied.
       if (!database.objectStoreNames.contains('records')) {
         const recordStore = database.createObjectStore('records', {
           keyPath: 'id',
