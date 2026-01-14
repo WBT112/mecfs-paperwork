@@ -451,6 +451,8 @@ body {
   min-width: 180px;
   min-height: 2.5rem;
   padding: 0.5rem 0.85rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .formpack-docx-export__success {
