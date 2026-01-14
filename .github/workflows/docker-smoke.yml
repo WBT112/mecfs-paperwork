@@ -28,9 +28,19 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Fail if DHI secrets are missing
+        if: steps.check-secrets.outputs.available != 'true'
+        run: |
+          echo "::error::Missing DHI secrets. Configure DHI_USERNAME and DHI_TOKEN to run Docker smoke tests."
+          exit 1
+
       - name: Log in to dhi.io
         if: steps.check-secrets.outputs.available == 'true'
-        run: echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin
+        run: |
+          if ! echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin; then
+            echo "::error::Registry login failed. Verify DHI_USERNAME and DHI_TOKEN."
+            exit 1
+          fi
         env:
           DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
           DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
@@ -76,9 +86,19 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Fail if DHI secrets are missing
+        if: steps.check-secrets.outputs.available != 'true'
+        run: |
+          echo "::error::Missing DHI secrets. Configure DHI_USERNAME and DHI_TOKEN to run Docker smoke tests."
+          exit 1
+
       - name: Log in to dhi.io
         if: steps.check-secrets.outputs.available == 'true'
-        run: echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin
+        run: |
+          if ! echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin; then
+            echo "::error::Registry login failed. Verify DHI_USERNAME and DHI_TOKEN."
+            exit 1
+          fi
         env:
           DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
           DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
