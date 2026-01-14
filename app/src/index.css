@@ -441,8 +441,8 @@ body {
 
 .formpack-docx-export__label {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 600;
   font-size: 0.9rem;
 }
