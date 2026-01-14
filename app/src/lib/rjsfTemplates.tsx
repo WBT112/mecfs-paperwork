@@ -51,8 +51,6 @@ const ArrayRemoveButton = (props: IconButtonProps) => (
   <TranslatedButton {...props} translationKey="common.remove" />
 );
 
-const ArrayMoveButton = () => null;
-
 const ArrayFieldTemplate = (props: ArrayFieldTemplateProps) => {
   const {
     canAdd,
@@ -192,8 +190,8 @@ export const formpackTemplates: FormpackTemplates = {
   ButtonTemplates: {
     AddButton: ArrayAddButton,
     RemoveButton: ArrayRemoveButton,
-    MoveUpButton: ArrayMoveButton,
-    MoveDownButton: ArrayMoveButton,
-    CopyButton: ArrayMoveButton,
+    MoveUpButton: () => null,
+    MoveDownButton: () => null,
+    CopyButton: () => null,
   },
 };
