@@ -336,19 +336,24 @@ const loadDocxMapping = async (
     return cached;
   }
 
-  const response = await fetch(buildAssetPath(formpackId, mappingPath), {
+  const assetPath = buildAssetPath(formpackId, mappingPath);
+  const response = await fetch(assetPath, {
     headers: { Accept: 'application/json' },
   });
 
   if (!response.ok) {
-    throw new Error(`Unable to load DOCX mapping (${response.status}).`);
+    throw new Error(
+      `Unable to load DOCX mapping for formpack:${formpackId} at ${assetPath} (${response.status}).`,
+    );
   }
 
   let payload: unknown;
   try {
     payload = await response.json();
   } catch {
-    throw new Error('Unable to parse DOCX mapping JSON.');
+    throw new Error(
+      `Unable to parse DOCX mapping JSON for formpack:${formpackId} at ${assetPath}.`,
+    );
   }
 
   const mapping = parseDocxMapping(payload);
@@ -410,10 +415,13 @@ export const loadDocxTemplate = async (
     return cached;
   }
 
-  const response = await fetch(buildAssetPath(formpackId, templatePath));
+  const assetPath = buildAssetPath(formpackId, templatePath);
+  const response = await fetch(assetPath);
 
   if (!response.ok) {
-    throw new Error(`Unable to load DOCX template (${response.status}).`);
+    throw new Error(
+      `Unable to load DOCX template for formpack:${formpackId} at ${assetPath} (${response.status}).`,
+    );
   }
 
   const buffer = await response.arrayBuffer();
