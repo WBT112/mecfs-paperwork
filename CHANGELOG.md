@@ -36,10 +36,10 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Formpack validation: `npm run formpack:validate` including contract checks and DOCX template preflight.
 
 ### Changed
-- N/A
+- a lot
 
 ### Fixed
-- N/A
+- a lot
 
 ### Security
 - No telemetry by design (offline-first).
