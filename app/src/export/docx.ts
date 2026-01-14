@@ -433,14 +433,16 @@ export const loadDocxTemplate = async (
 const formatExportDate = (value: Date) =>
   value.toISOString().slice(0, 10).replace(/-/g, '');
 
-const sanitizeFilenamePart = (value: string) =>
-  value
+const sanitizeFilenamePart = (value: string | null | undefined) => {
+  if (!value) return '';
+  return value
     .trim()
     .replace(/[\\/:*?"<>|_]+/g, '-')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 80);
+};
 
 /**
  * Builds the exported DOCX filename.
