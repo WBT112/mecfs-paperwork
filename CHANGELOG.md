@@ -32,7 +32,8 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - Offline-first Notfallpass formpack with JSON export/import.
 - Snapshot create/restore for drafts.
 - DOCX export (A4) with template + mapping support.
-- Formpack validation (`npm run formpack:validate`) including DOCX template preflight.
+- Formpack authoring scaffold: `npm run formpack:new -- --id <id> --title "<title>" [--register]`.
+- Formpack validation: `npm run formpack:validate` including contract checks and DOCX template preflight.
 
 ### Changed
 - N/A
