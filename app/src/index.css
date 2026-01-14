@@ -449,6 +449,8 @@ body {
 
 .formpack-docx-export__select {
   min-width: 180px;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.85rem;
 }
 
 .formpack-docx-export__success {
