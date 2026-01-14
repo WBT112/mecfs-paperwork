@@ -11,14 +11,20 @@ import { type Page } from '@playwright/test';
  * @param page The Playwright page object.
  * @param dbName The name of the IndexedDB database to delete.
  */
-export const deleteDatabase = async (page: Page, dbName:string) => {
+export const deleteDatabase = async (page: Page, dbName: string) => {
   await page.evaluate(async (name) => {
     await new Promise<void>((resolve, reject) => {
       const req = indexedDB.deleteDatabase(name);
       req.onsuccess = () => resolve();
       // Rejecting on error or blocked is critical for test stability.
-      req.onerror = () => reject(new Error(`Failed to delete IndexedDB: ${req.error?.message ?? 'Unknown error'}`));
-      req.onblocked = () => reject(new Error('Failed to delete IndexedDB: operation blocked.'));
+      req.onerror = () =>
+        reject(
+          new Error(
+            `Failed to delete IndexedDB: ${req.error?.message ?? 'Unknown error'}`,
+          ),
+        );
+      req.onblocked = () =>
+        reject(new Error('Failed to delete IndexedDB: operation blocked.'));
     });
   }, dbName);
 };

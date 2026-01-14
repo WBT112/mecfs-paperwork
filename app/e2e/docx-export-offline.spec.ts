@@ -37,6 +37,42 @@ const exportDocxAndExpectSuccess = async (
   await expect(errorMessage).toHaveCount(0);
 };
 
+test('docx template select and export button align in height', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+  await deleteDatabase(page, DB_NAME);
+
+  await page.goto(`/formpacks/${FORM_PACK_ID}`);
+
+  const docxSection = page.locator('.formpack-docx-export');
+  await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
+
+  const templateSelect = docxSection.locator('.formpack-docx-export__select');
+  const exportButton = docxSection.getByRole('button', {
+    name: /export docx|docx exportieren/i,
+  });
+
+  await expect(templateSelect).toBeVisible({ timeout: POLL_TIMEOUT });
+  await expect(exportButton).toBeVisible({ timeout: POLL_TIMEOUT });
+
+  const selectBox = await templateSelect.boundingBox();
+  const buttonBox = await exportButton.boundingBox();
+
+  expect(selectBox).not.toBeNull();
+  expect(buttonBox).not.toBeNull();
+
+  if (!selectBox || !buttonBox) {
+    throw new Error('Expected bounding boxes for DOCX controls.');
+  }
+
+  expect(Math.abs(selectBox.height - buttonBox.height)).toBeLessThanOrEqual(1);
+});
+
 test('docx export works online and offline', async ({ page, context }) => {
   await page.goto('/');
   await page.evaluate(() => {

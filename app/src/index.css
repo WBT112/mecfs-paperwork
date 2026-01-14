@@ -441,14 +441,18 @@ body {
 
 .formpack-docx-export__label {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.5rem;
   font-weight: 600;
   font-size: 0.9rem;
 }
 
 .formpack-docx-export__select {
   min-width: 180px;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.95rem;
+  line-height: 1.4;
 }
 
 .formpack-docx-export__success {
