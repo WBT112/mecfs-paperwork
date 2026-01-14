@@ -157,11 +157,19 @@ body {
   justify-content: space-between;
   gap: 1rem;
   background: #f9fafb;
+  text-decoration: none;
+  color: inherit;
+}
+
+.formpack-card:hover h3,
+.formpack-card:hover .formpack-card__link {
+  text-decoration: underline;
 }
 
 .formpack-card h3 {
   margin: 0 0 0.5rem;
   font-size: 1.1rem;
+  color: #111827;
 }
 
 .formpack-card__description {
