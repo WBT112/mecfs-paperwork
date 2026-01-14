@@ -4,7 +4,7 @@ Offline-first tool for creating and managing ME/CFS-related forms ("formpacks") 
 
 **Important:** This repository must **not contain any real patient data** (not in issues, logs, screenshots, fixtures, or export files).
 
-Use **Discussions** for general topics. Use **Issues** for bugs.
+Use **Discussions** for general topics/feature requests. Use **Issues** for bugs.
 
 ---
 
