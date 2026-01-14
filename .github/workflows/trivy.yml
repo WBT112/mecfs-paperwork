@@ -36,7 +36,12 @@ jobs:
     name: Trivy (Image scan - built container)
     runs-on: ubuntu-latest
     # Run only on trusted events where secrets are available.
-    if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: |
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' &&
+        github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
