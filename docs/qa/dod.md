@@ -16,15 +16,13 @@ This document defines the minimum acceptance criteria for M0 changes.
 
 ## Required Verification Commands (PR Quality Gates)
 Run from `app/` unless stated otherwise:
-1. `npm ci`
-2. `npm run lint`
-3. `npm run format:check`
-4. `npm run typecheck`
-5. `npm run build`
-6. `npm run test` (or equivalent)
-
-**Equivalent for M0 until unit/integration tests exist:**
-- `npm run test:e2e` for smoke coverage.
+1. `npm run lint`
+2. `npm run format:check`
+3. `npm run typecheck`
+4. `npm run build`
+5. `npm test`
+6. `npm run test:e2e`
+7. `npm run formpack:validate`
 
 ## Manual QA Checklist (minimum)
 - Import/Export roundtrip (JSON backup).
