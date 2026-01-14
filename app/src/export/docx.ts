@@ -428,9 +428,10 @@ const formatExportDate = (value: Date) =>
 const sanitizeFilenamePart = (value: string) =>
   value
     .trim()
-    .replace(/[\\/:*?"<>|]+/g, '-')
+    .replace(/[\\/:*?"<>|_]+/g, '-')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
     .slice(0, 80);
 
 /**
@@ -441,7 +442,7 @@ export const buildDocxExportFilename = (
   templateId: DocxTemplateId,
   exportedAt: Date = new Date(),
 ): string => {
-  const safeFormpack = sanitizeFilenamePart(formpackId || 'document');
+  const safeFormpack = sanitizeFilenamePart(formpackId) || 'document';
   const safeTemplate = sanitizeFilenamePart(templateId);
   return `${safeFormpack}-${safeTemplate}-${formatExportDate(exportedAt)}.docx`;
 };
