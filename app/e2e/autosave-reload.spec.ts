@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { deleteDatabase } from './helpers';
 
 type DbOptions = {
   dbName: string;
@@ -11,17 +12,6 @@ const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
 const DB: DbOptions = {
   dbName: 'mecfs-paperwork',
   storeName: 'records',
-};
-
-const deleteDatabase = async (page: Page, dbName: string) => {
-  await page.evaluate(async (name) => {
-    await new Promise<void>((resolve) => {
-      const req = indexedDB.deleteDatabase(name);
-      req.onsuccess = () => resolve();
-      req.onerror = () => resolve();
-      req.onblocked = () => resolve();
-    });
-  }, dbName);
 };
 
 const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {

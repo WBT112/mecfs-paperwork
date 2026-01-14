@@ -1,19 +1,9 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { deleteDatabase } from './helpers';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 20_000;
-
-const deleteDatabase = async (page: Page, dbName: string) => {
-  await page.evaluate(async (name) => {
-    await new Promise<void>((resolve) => {
-      const req = indexedDB.deleteDatabase(name);
-      req.onsuccess = () => resolve();
-      req.onerror = () => resolve();
-      req.onblocked = () => resolve();
-    });
-  }, dbName);
-};
 
 const clickActionButton = async (button: Locator) => {
   await expect(button).toBeVisible({ timeout: POLL_TIMEOUT });
