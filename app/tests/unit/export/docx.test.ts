@@ -49,10 +49,12 @@ describe('app/src/export/docx.ts', () => {
       vi.spyOn(records, 'getRecord').mockResolvedValue(null);
       vi.spyOn(loader, 'loadFormpackManifest').mockResolvedValue({
         id: 'test-formpack',
-        name: 'Test Formpack',
         version: '1.0.0',
-        description: 'A test formpack',
-        questions: [],
+        defaultLocale: 'en',
+        locales: ['en'],
+        titleKey: 'test-title',
+        descriptionKey: 'test-description',
+        exports: ['docx'],
         docx: {
           mapping: 'docx/mapping.json',
           templates: {
