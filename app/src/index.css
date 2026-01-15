@@ -74,6 +74,11 @@ body {
   -moz-appearance: none;
 }
 
+.app__locale-switch select:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .app__select-wrapper {
   position: relative;
   display: inline-flex;
@@ -135,6 +140,11 @@ body {
 
 .app__button:hover {
   background: #e0e7ff;
+}
+
+.app__button:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .app__error {
@@ -254,6 +264,11 @@ body {
   background-color: #ffffff;
 }
 
+.formpack-import__file:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
 .formpack-import__file-name {
   margin: 0;
   color: #6b7280;
@@ -320,6 +335,13 @@ body {
   padding: 0.5rem 0.6rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
+}
+
+.formpack-form input:focus-visible,
+.formpack-form textarea:focus-visible,
+.formpack-form select:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .formpack-form input[type='checkbox'] {
