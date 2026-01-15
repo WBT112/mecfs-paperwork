@@ -46,7 +46,7 @@ import {
   useSnapshots,
 } from '../storage/hooks';
 import { importRecordWithSnapshots } from '../storage/import';
-import type { ChangeEvent, ComponentType, ReactNode } from 'react';
+import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
 
@@ -1087,6 +1087,41 @@ export default function FormpackDetailPage() {
     }
   }, [activeRecord, docxTemplateId, formpackId, locale, manifest, t]);
 
+  const handleActionClickCapture = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const actionButton = target.closest('button.app__button');
+      if (!(actionButton instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      const { action } = actionButton.dataset;
+      if (action === 'docx-export') {
+        if (importSuccess) {
+          setImportSuccess(null);
+        }
+        return;
+      }
+      if (action === 'json-import') {
+        if (docxSuccess) {
+          setDocxSuccess(null);
+        }
+        return;
+      }
+      if (docxSuccess) {
+        setDocxSuccess(null);
+      }
+      if (importSuccess) {
+        setImportSuccess(null);
+      }
+    },
+    [docxSuccess, importSuccess],
+  );
+
   useEffect(() => {
     let isActive = true;
 
@@ -1178,7 +1213,10 @@ export default function FormpackDetailPage() {
           {t('formpackBackToList')}
         </Link>
       </div>
-      <div className="formpack-detail">
+      <div
+        className="formpack-detail"
+        onClickCapture={handleActionClickCapture}
+      >
         <div className="formpack-detail__assets">
           <div className="formpack-detail__section">
             <h3>{t('formpackDetailsHeading')}</h3>
@@ -1381,6 +1419,7 @@ export default function FormpackDetailPage() {
                 type="button"
                 className="app__button"
                 onClick={handleImport}
+                data-action="json-import"
                 disabled={
                   !importJson.trim() ||
                   storageError === 'unavailable' ||
@@ -1442,6 +1481,7 @@ export default function FormpackDetailPage() {
                               type="button"
                               className="app__button"
                               onClick={handleExportDocx}
+                              data-action="docx-export"
                               disabled={
                                 storageError === 'unavailable' ||
                                 isDocxExporting
