@@ -22,8 +22,9 @@ For every change that touches `app/`:
 4. `npm run typecheck`
 5. `npm run build`
 6. `npm test`
-7. `npm run test:e2e`
+7. `npm run test:e2e` 
 8. `npm run formpack:validate`
+9. If tests cannot be run because dependencies are missing try to isntall them e.g. npx playwright install
 
 If any step fails: fix it before finishing.
 
@@ -96,3 +97,4 @@ Do not block feature work on this unless the issue explicitly targets security t
 - Storage: IndexedDB with `records` + `revisions` (snapshots). Keep migrations explicit.
 - Export: primary DOCX (A4 + Wallet as separate downloads), plus JSON backup/import.
 - i18n: DE + EN from the start; locale stored per record and kept in exports.
+
