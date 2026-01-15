@@ -732,18 +732,23 @@ export default function FormpackDetailPage() {
     title,
   ]);
 
-  const handleFormChange: NonNullable<RjsfFormProps['onChange']> = (event) => {
-    const nextData = event.formData as FormDataState;
-    setFormData(nextData);
-  };
+  // RATIONALE: Memoize form event handlers to prevent unnecessary re-renders of the
+  // expensive Form component, which receives these callbacks as props.
+  const handleFormChange: NonNullable<RjsfFormProps['onChange']> = useCallback(
+    (event) => {
+      const nextData = event.formData as FormDataState;
+      setFormData(nextData);
+    },
+    [setFormData],
+  );
 
-  const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = (
-    event,
-    submitEvent,
-  ) => {
-    submitEvent?.preventDefault();
-    setFormData(event.formData as FormDataState);
-  };
+  const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = useCallback(
+    (event, submitEvent) => {
+      submitEvent?.preventDefault();
+      setFormData(event.formData as FormDataState);
+    },
+    [setFormData],
+  );
 
   const handleResetForm = useCallback(async () => {
     if (!activeRecord) {
