@@ -164,6 +164,7 @@ try {
   Assert-ScriptExists -Scripts $scripts -Name "formpack:validate" -PackageDir $appDir
   Assert-ScriptExists -Scripts $scripts -Name "format:check" -PackageDir $appDir
   Assert-ScriptExists -Scripts $scripts -Name "format" -PackageDir $appDir
+  Assert-ScriptExists -Scripts $scripts -Name "dev" -PackageDir $appDir
 
   if (-not [string]::IsNullOrWhiteSpace($UnitCommand)) {
     Assert-ScriptExists -Scripts $scripts -Name $UnitCommand -PackageDir $appDir
@@ -291,7 +292,8 @@ try {
   $success = $true
 
   Write-Host ""
-  Write-Host "Erfolg (du bist jetzt im /app Ordner; starte direkt: npm run dev)" -ForegroundColor Green
+  Write-Host "Erfolg (du bist jetzt im /app Ordner; starte npm run dev)" -ForegroundColor Green
+  & npm run dev
   exit 0
 }
 catch {
