@@ -30,6 +30,20 @@ Note: `predev`/`prebuild` automatically sync `formpacks/` to `app/public/formpac
 
 ---
 
+## Legal content (imprint & privacy)
+
+Legal pages are sourced from repo-managed Markdown files:
+
+- `app/src/content/legal/imprint.md`
+- `app/src/content/legal/privacy.md`
+
+These files contain placeholders only and must be completed by the maintainer
+before any public launch. The footer GitHub button uses `VITE_REPO_URL` and
+falls back to `https://github.com/your-org/mecfs-paperwork`. Set
+`VITE_REPO_URL` to an empty string to hide the GitHub link.
+
+---
+
 ## Quality gates (local)
 
 All checks run from the `app/` directory:

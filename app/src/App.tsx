@@ -3,8 +3,11 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from './i18n/useLocale';
 import { SupportedLocale } from './i18n/locale';
+import Footer from './components/Footer';
 import FormpackDetailPage from './pages/FormpackDetailPage';
 import FormpackListPage from './pages/FormpackListPage';
+import ImprintPage from './pages/ImprintPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 /**
  * App shell for the offline-first paperwork UI.
@@ -66,8 +69,11 @@ export default function App() {
           <Route path="/" element={<Navigate to="/formpacks" replace />} />
           <Route path="/formpacks" element={<FormpackListPage />} />
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          <Route path="/imprint" element={<ImprintPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
         </Routes>
       </main>
+      <Footer />
     </div>
   );
 }

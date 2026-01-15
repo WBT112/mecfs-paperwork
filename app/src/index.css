@@ -89,6 +89,7 @@ body {
 .app__content {
   display: flex;
   width: 100%;
+  flex: 1;
 }
 
 .app__card {
@@ -140,6 +141,57 @@ body {
 .app__error {
   color: #b91c1c;
   margin: 0.5rem 0 1rem;
+}
+
+.app__footer {
+  margin-top: auto;
+}
+
+.app__footer-content {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.25rem 2rem;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+.app__footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.app__footer-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.app__footer-link:hover {
+  text-decoration: underline;
+}
+
+.app__footer-link--github {
+  border: 1px solid #cbd5f5;
+  background: #eef2ff;
+  color: #1d4ed8;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+}
+
+.app__footer-link--github:hover {
+  background: #e0e7ff;
+}
+
+.legal-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.legal-page ul {
+  margin: 0;
+  padding-left: 1.25rem;
 }
 
 .formpack-list {
