@@ -218,11 +218,15 @@ const collectErrors = (errors, formpackId, contextPath, error) => {
     return;
   }
 
+  if (!errors.has(formpackId)) {
+    errors.set(formpackId, []);
+  }
+
   const normalized =
     error instanceof Error
       ? error
       : new Error(typeof error === 'string' ? error : 'Unknown template error');
-  errors.push({ formpackId, contextPath, error: normalized });
+  errors.get(formpackId).push({ contextPath, error: normalized });
 };
 
 const validateManifest = (manifest, formpackId, manifestPath, errors) => {
@@ -702,7 +706,7 @@ const validateContract = async ({ formpackId, errors }) => {
 const run = async () => {
   const { id } = parseArgs(process.argv.slice(2));
   const formpackIds = await listFormpacks(id);
-  const errors = [];
+  const errors = new Map();
 
   if (id && formpackIds.length === 0) {
     collectErrors(errors, id, formpacksDir, new Error('Formpack not found.'));
@@ -757,15 +761,18 @@ const run = async () => {
     }
   }
 
-  if (errors.length > 0) {
+  if (errors.size > 0) {
     console.error('Formpack validation failed.');
-    errors.forEach(({ formpackId, contextPath, error }) => {
-      console.error(
-        `- ${formpackId}: ${contextPath} - ${error.name ?? 'Error'} - ${
-          error.message ?? ''
-        }`,
-      );
-    });
+    for (const [formpackId, packErrors] of errors.entries()) {
+      console.error(`\n- ${formpackId}:`);
+      packErrors.forEach(({ contextPath, error }) => {
+        console.error(
+          `  - ${contextPath}: ${error.name ?? 'Error'} - ${
+            error.message ?? ''
+          }`,
+        );
+      });
+    }
     process.exitCode = 1;
     return;
   }
