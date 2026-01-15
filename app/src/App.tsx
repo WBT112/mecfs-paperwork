@@ -6,8 +6,9 @@ import { SupportedLocale } from './i18n/locale';
 import Footer from './components/Footer';
 import FormpackDetailPage from './pages/FormpackDetailPage';
 import FormpackListPage from './pages/FormpackListPage';
-import ImprintPage from './pages/ImprintPage';
-import PrivacyPage from './pages/PrivacyPage';
+import LegalPage from './pages/LegalPage';
+import imprintContent from './content/legal/imprint.md?raw';
+import privacyContent from './content/legal/privacy.md?raw';
 
 /**
  * App shell for the offline-first paperwork UI.
@@ -69,8 +70,14 @@ export default function App() {
           <Route path="/" element={<Navigate to="/formpacks" replace />} />
           <Route path="/formpacks" element={<FormpackListPage />} />
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
-          <Route path="/imprint" element={<ImprintPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route
+            path="/imprint"
+            element={<LegalPage content={imprintContent} />}
+          />
+          <Route
+            path="/privacy"
+            element={<LegalPage content={privacyContent} />}
+          />
         </Routes>
       </main>
       <Footer />
