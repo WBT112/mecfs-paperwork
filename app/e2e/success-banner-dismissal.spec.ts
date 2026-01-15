@@ -28,6 +28,7 @@ test('dismisses success messages when other action buttons are clicked', async (
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
   await createNewDraft(page);
+  await page.locator('#root_person_name').fill('Test User');
 
   const docxSection = page.locator('.formpack-docx-export');
   const docxExportButton = docxSection.getByRole('button', {
