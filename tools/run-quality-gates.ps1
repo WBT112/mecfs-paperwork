@@ -1,6 +1,7 @@
 # tools\run-quality-gates.ps1
 # Runs all quality gates from the "app" package and stays in /app on success.
 # Additionally builds + runs Docker image and performs smoke checks.
+# Optionally checks docker compose.
 
 [CmdletBinding()]
 param(
@@ -17,7 +18,6 @@ param(
   # How many times to run E2E
   [int]$E2eRuns = 3,
 
-
   # Docker image smoke test port (uses docker run -p)
   [int]$DockerImagePort = 18080,
 
@@ -26,6 +26,7 @@ param(
 
   # Docker Compose checks
   [switch]$SkipComposeChecks,
+
   # Docker checks
   [switch]$SkipDockerChecks,
 
@@ -36,21 +37,25 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$didPushApp = $false
 $success = $false
 $containerId = ""
+$originalLocation = Get-Location
 
 function Find-RepoRoot {
   param([Parameter(Mandatory = $true)][string]$StartDir)
 
-  $dir = Resolve-Path -LiteralPath $StartDir
+  # Keep $dir as a STRING path throughout to avoid .Path issues.
+  $dir = (Resolve-Path -LiteralPath $StartDir).Path
   while ($true) {
-    if (Test-Path -LiteralPath (Join-Path $dir ".git")) { return $dir.Path }
+    $gitMarker = Join-Path $dir ".git"
+    if (Test-Path -LiteralPath $gitMarker) { return $dir }
+
     $parent = Split-Path -Parent $dir
     if ([string]::IsNullOrWhiteSpace($parent) -or $parent -eq $dir) { break }
     $dir = $parent
   }
-  throw "Repo root not found (no .git directory) starting from: $StartDir"
+
+  throw "Repo root not found (no .git) starting from: $StartDir"
 }
 
 function Get-PackageJsonScripts {
@@ -106,10 +111,8 @@ function Invoke-DockerLogin {
   Write-Host ""
   Write-Host "==> docker login dhi.io (optional, only if private)" -ForegroundColor Cyan
 
-  # If credentials are provided via env vars, do non-interactive login.
-  # Otherwise, fall back to interactive login.
+  # Non-interactive login if env vars exist (CI-safe), otherwise interactive.
   if (-not [string]::IsNullOrWhiteSpace($env:DHI_USERNAME) -and -not [string]::IsNullOrWhiteSpace($env:DHI_PASSWORD)) {
-    # Use docker login with password via stdin
     $env:DHI_PASSWORD | docker login dhi.io -u $env:DHI_USERNAME --password-stdin | Out-Host
     if ($LASTEXITCODE -ne 0) {
       throw "docker login dhi.io failed (exit code $LASTEXITCODE)."
@@ -131,13 +134,9 @@ function Wait-HttpOk {
 
   $deadline = (Get-Date).AddSeconds($MaxSeconds)
   while ((Get-Date) -lt $deadline) {
-    try {
-      # -f fails on >=400, -sS makes errors visible but quiet otherwise
-      curl.exe -fsS $Url | Out-Null
-      return
-    } catch {
-      Start-Sleep -Seconds 1
-    }
+    & curl.exe -fsS $Url *> $null
+    if ($LASTEXITCODE -eq 0) { return }
+    Start-Sleep -Seconds 1
   }
 
   throw "Timeout waiting for HTTP 200 from: $Url"
@@ -146,8 +145,8 @@ function Wait-HttpOk {
 try {
   $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
   $repoRoot  = Find-RepoRoot -StartDir $scriptDir
+  $appDir    = Join-Path $repoRoot $AppSubdir
 
-  $appDir = Join-Path $repoRoot $AppSubdir
   if (-not (Test-Path -LiteralPath $appDir)) {
     throw "App directory not found: $appDir (repoRoot=$repoRoot, AppSubdir=$AppSubdir)"
   }
@@ -155,7 +154,9 @@ try {
   Write-Host "Repo root: $repoRoot" -ForegroundColor DarkGray
   Write-Host "App dir:   $appDir" -ForegroundColor DarkGray
 
-  # Verify required scripts exist in app/package.json
+  # --- App quality gates ---
+  Push-Location -LiteralPath $appDir
+
   $scripts = Get-PackageJsonScripts -PackageDir $appDir
   Assert-ScriptExists -Scripts $scripts -Name "lint" -PackageDir $appDir
   Assert-ScriptExists -Scripts $scripts -Name "typecheck" -PackageDir $appDir
@@ -169,10 +170,6 @@ try {
   }
   Assert-ScriptExists -Scripts $scripts -Name $E2eCommand -PackageDir $appDir
 
-  Push-Location -LiteralPath $appDir
-  $didPushApp = $true
-
-  # Quality gates
   try {
     Invoke-Checked -Label "format:check (npm run format:check)" -Exe "npm" -Args @("run", "format:check")
   } catch {
@@ -184,99 +181,122 @@ try {
 
   Invoke-Checked -Label "lint (npm run lint)" -Exe "npm" -Args @("run", "lint")
   Invoke-Checked -Label "typecheck (npm run typecheck)" -Exe "npm" -Args @("run", "typecheck")
-  Invoke-Checked -Label "build (npm run build)" -Exe "npm" -Args @("run", "build")
-  Invoke-Checked -Label "formpack:validate (npm run formpack:validate)" -Exe "npm" -Args @("run", "formpack:validate")
 
-  # Unit tests
   if ([string]::IsNullOrWhiteSpace($UnitCommand)) {
     Invoke-Checked -Label "unit tests (npm test)" -Exe "npm" -Args @("test")
   } else {
     Invoke-Checked -Label "unit tests (npm run $UnitCommand)" -Exe "npm" -Args @("run", $UnitCommand)
   }
 
-  # E2E tests (3x)
   for ($i = 1; $i -le $E2eRuns; $i++) {
     Invoke-Checked -Label ("e2e tests run {0}/{1} (npm run {2})" -f $i, $E2eRuns, $E2eCommand) -Exe "npm" -Args @("run", $E2eCommand)
   }
 
-  # Return to repo root for docker checks
-  Pop-Location
-  $didPushApp = $false
+  Invoke-Checked -Label "formpack:validate (npm run formpack:validate)" -Exe "npm" -Args @("run", "formpack:validate")
+  Invoke-Checked -Label "build (npm run build)" -Exe "npm" -Args @("run", "build")
 
-  # Docker checks (build + run + smoke)
+  Pop-Location
+
+  # If both docker image + compose checks are enabled and ports collide, avoid conflicts.
+  if (-not $SkipDockerChecks -and -not $SkipComposeChecks -and $DockerImagePort -eq $ComposePort) {
+    Write-Host ""
+    Write-Host "==> Note: DockerImagePort equals ComposePort; switching DockerImagePort to 18080 to avoid port conflict." -ForegroundColor Yellow
+    $DockerImagePort = 18080
+  }
+
+  # --- Docker image checks ---
   if (-not $SkipDockerChecks) {
-    # Build must be executed from repo root (Dockerfile is in repo root)
     Push-Location -LiteralPath $repoRoot
 
-    # 1) Login (only required if registry is private)
     Invoke-DockerLogin
-
-    # 2) Build image
     Invoke-Checked -Label "docker build (mecfs-paperwork:local)" -Exe "docker" -Args @("build", "-t", "mecfs-paperwork:local", ".")
 
-    # 3) Run container detached for smoke checks
     Write-Host ""
     Write-Host ("==> docker run (detached) -p {0}:80" -f $DockerImagePort) -ForegroundColor Cyan
-    $runOut = (& docker run -d --rm -p ("{0}:80" -f $DockerImagePort) mecfs-paperwork:local) 2>&1
-    $exitCode = $LASTEXITCODE
-    if ($exitCode -ne 0) {
-      throw "docker run failed (exit code $exitCode). Output: $runOut"
+    $runOut = (& docker run -d --rm -p ("{0}:80" -f $DockerImagePort) "mecfs-paperwork:local") 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      throw "docker run failed (exit code $LASTEXITCODE): $runOut"
     }
-    $containerId = $runOut.Trim()
-    Write-Host "Container started: $containerId" -ForegroundColor DarkGray
 
-    # 4) Smoke check HTTP
-    Wait-HttpOk -Url ("http://127.0.0.1:{0}/" -f $DockerImagePort) -MaxSeconds 20
+    $containerId = ([string]$runOut).Trim()
+    if ([string]::IsNullOrWhiteSpace($containerId)) {
+      throw "docker run did not return a container id."
+    }
 
-    if ($KeepDockerRunning) {
+    Write-Host ""
+    Write-Host ("==> smoke check: http://localhost:{0}/" -f $DockerImagePort) -ForegroundColor Cyan
+    Wait-HttpOk -Url ("http://localhost:{0}/" -f $DockerImagePort)
+
+    Write-Host ""
+    Write-Host ("==> smoke check (SPA fallback): http://localhost:{0}/some/deep/link" -f $DockerImagePort) -ForegroundColor Cyan
+    Wait-HttpOk -Url ("http://localhost:{0}/some/deep/link" -f $DockerImagePort)
+
+    Write-Host ""
+    Write-Host ("Docker image smoke checks passed. Open: http://localhost:{0}" -f $DockerImagePort) -ForegroundColor Green
+
+    if (-not $KeepDockerRunning) {
       Write-Host ""
-      Write-Host "Docker smoke checks OK. Container is kept running." -ForegroundColor Green
-      Write-Host ("Stop with: docker stop {0}" -f $containerId) -ForegroundColor Yellow
+      Write-Host "==> stopping container $containerId" -ForegroundColor Cyan
+      docker stop $containerId | Out-Host
+      $containerId = ""
     } else {
       Write-Host ""
-      Write-Host "Stopping container..." -ForegroundColor DarkGray
-      docker stop $containerId | Out-Null
-      $containerId = ""
+      Write-Host "Container is still running. Stop it with:" -ForegroundColor Yellow
+      Write-Host "docker stop $containerId" -ForegroundColor Yellow
     }
 
     Pop-Location
   }
 
-  # Docker Compose checks (build + up + smoke + down)
+  # --- Docker Compose checks ---
   if (-not $SkipComposeChecks) {
+    $composeFile = Join-Path $repoRoot "compose.yaml"
+    if (-not (Test-Path -LiteralPath $composeFile)) {
+      throw "compose.yaml not found in repo root: $repoRoot. Add compose.yaml or run with -SkipComposeChecks."
+    }
+
     Push-Location -LiteralPath $repoRoot
 
     Invoke-DockerLogin
+    Invoke-Checked -Label "docker compose version" -Exe "docker" -Args @("compose", "version")
 
-    Write-Host ""
-    Write-Host "==> docker compose up -d --build" -ForegroundColor Cyan
-    Invoke-Checked -Label "docker compose up -d --build" -Exe "docker" -Args @("compose", "up", "-d", "--build")
-
+    $composeStarted = $false
     try {
-      Wait-HttpOk -Url ("http://127.0.0.1:{0}/" -f $ComposePort) -MaxSeconds 30
+      Invoke-Checked -Label "docker compose up -d --build" -Exe "docker" -Args @("compose", "up", "-d", "--build")
+      $composeStarted = $true
+
+      Write-Host ""
+      Write-Host ("==> compose smoke check: http://localhost:{0}/" -f $ComposePort) -ForegroundColor Cyan
+      Wait-HttpOk -Url ("http://localhost:{0}/" -f $ComposePort)
+
+      Write-Host ""
+      Write-Host ("==> compose smoke check (SPA fallback): http://localhost:{0}/some/deep/link" -f $ComposePort) -ForegroundColor Cyan
+      Wait-HttpOk -Url ("http://localhost:{0}/some/deep/link" -f $ComposePort)
+
+      Write-Host ""
+      Write-Host ("Docker Compose smoke checks passed. Open: http://localhost:{0}" -f $ComposePort) -ForegroundColor Green
     }
     finally {
-      Write-Host ""
-      Write-Host "==> docker compose down" -ForegroundColor Cyan
-      docker compose down | Out-Host
+      if ($composeStarted) {
+        Write-Host ""
+        Write-Host "==> docker compose down (cleanup)" -ForegroundColor Cyan
+        docker compose down --remove-orphans | Out-Host
+      }
+      Pop-Location
     }
-
-    Pop-Location
   }
 
-  # Stay in /app on success
-  Push-Location -LiteralPath $appDir
-  $didPushApp = $true
-
+  # Success: move to /app so you can run npm run dev immediately.
+  Set-Location -LiteralPath $appDir
   $success = $true
+
   Write-Host ""
-  Write-Host "✅ All quality gates passed." -ForegroundColor Green
+  Write-Host "Erfolg (du bist jetzt im /app Ordner; starte direkt: npm run dev)" -ForegroundColor Green
+  exit 0
 }
 catch {
   Write-Host ""
-  Write-Host "❌ Quality gates failed:" -ForegroundColor Red
-  Write-Host $_.Exception.Message -ForegroundColor Red
-  Write-Host ""
+  Write-Host "FEHLER: $($_.Exception.Message)" -ForegroundColor Red
   Write-Host "Abbruch." -ForegroundColor Red
   exit 1
 }
@@ -286,8 +306,8 @@ finally {
     try { docker stop $containerId | Out-Null } catch {}
   }
 
-  # On failure: return to original directory. On success: stay in /app.
-  if (-not $success -and $didPushApp) {
-    Pop-Location -ErrorAction SilentlyContinue
+  # On failure, return to original directory.
+  if (-not $success) {
+    try { Set-Location -LiteralPath $originalLocation } catch {}
   }
 }
