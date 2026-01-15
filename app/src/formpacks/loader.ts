@@ -92,7 +92,7 @@ const parseDocxManifest = (
   };
 };
 
-const parseManifest = (
+export const parseManifest = (
   payload: FormpackManifestPayload,
   formpackId: string,
 ): FormpackManifest => {
