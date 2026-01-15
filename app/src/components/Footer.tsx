@@ -10,15 +10,21 @@ export default function Footer() {
     <footer className="app__footer">
       <div className="app__footer-content">
         <nav className="app__footer-links" aria-label={t('footerNavLabel')}>
-          <Link className="app__footer-link" to="/imprint">
+          <Link
+            className="app__footer-link app__footer-link--left"
+            to="/imprint"
+          >
             {t('footerImprint')}
           </Link>
-          <Link className="app__footer-link" to="/privacy">
+          <Link
+            className="app__footer-link app__footer-link--center"
+            to="/privacy"
+          >
             {t('footerPrivacy')}
           </Link>
           {repoUrl ? (
             <a
-              className="app__footer-link app__footer-link--github"
+              className="app__footer-link app__footer-link--right"
               href={repoUrl}
               target="_blank"
               rel="noreferrer noopener"

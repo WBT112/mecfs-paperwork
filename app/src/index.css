@@ -155,10 +155,10 @@ body {
 }
 
 .app__footer-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
+  gap: 0.75rem;
 }
 
 .app__footer-link {
@@ -171,16 +171,19 @@ body {
   text-decoration: underline;
 }
 
-.app__footer-link--github {
-  border: 1px solid #cbd5f5;
-  background: #eef2ff;
-  color: #1d4ed8;
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
+.app__footer-link--left {
+  justify-self: start;
+  text-align: left;
 }
 
-.app__footer-link--github:hover {
-  background: #e0e7ff;
+.app__footer-link--center {
+  justify-self: center;
+  text-align: center;
+}
+
+.app__footer-link--right {
+  justify-self: end;
+  text-align: right;
 }
 
 .legal-page {

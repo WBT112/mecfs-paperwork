@@ -1,4 +1,4 @@
-export const DEFAULT_REPO_URL = 'https://github.com/your-org/mecfs-paperwork';
+export const DEFAULT_REPO_URL = 'https://github.com/WBT112/mecfs-paperwork/';
 
 export const getRepoUrl = (): string | null => {
   const repoUrl = import.meta.env.VITE_REPO_URL;
