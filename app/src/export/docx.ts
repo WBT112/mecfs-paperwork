@@ -540,7 +540,7 @@ export const exportDocx = async ({
 
   const record = await getRecord(recordId);
   if (!record) {
-    throw new Error('Unable to load the requested record.');
+    throw new Error(`Unable to load the requested record: ${recordId}.`);
   }
 
   const documentModel = buildDocumentModel(formpackId, locale, record.data);

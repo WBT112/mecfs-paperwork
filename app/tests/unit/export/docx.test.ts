@@ -1,6 +1,11 @@
 // Tests for app/src/export/docx.ts
-import { describe, it, expect } from 'vitest';
-import { buildDocxExportFilename } from '../../../src/export/docx';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import {
+  buildDocxExportFilename,
+  exportDocx,
+} from '../../../src/export/docx';
+import * as records from '../../../src/storage/records';
+import * as loader from '../../../src/formpacks/loader';
 
 describe('app/src/export/docx.ts', () => {
   describe('buildDocxExportFilename()', () => {
@@ -35,6 +40,39 @@ describe('app/src/export/docx.ts', () => {
         testDate,
       );
       expect(filename).toBe('formpack-template-20231026.docx');
+    });
+  });
+
+  describe('exportDocx()', () => {
+    beforeEach(() => {
+      // Mock dependencies to isolate the function
+      vi.spyOn(records, 'getRecord').mockResolvedValue(null);
+      vi.spyOn(loader, 'loadFormpackManifest').mockResolvedValue({
+        id: 'test-formpack',
+        name: 'Test Formpack',
+        version: '1.0.0',
+        description: 'A test formpack',
+        questions: [],
+        docx: {
+          mapping: 'docx/mapping.json',
+          templates: {
+            a4: 'docx/template-a4.docx',
+          },
+        },
+      });
+    });
+
+    it('should throw an error with the record ID if the record is not found', async () => {
+      const options = {
+        formpackId: 'test-formpack',
+        recordId: 'record-123',
+        variant: 'a4' as const,
+        locale: 'en' as const,
+      };
+
+      await expect(exportDocx(options)).rejects.toThrow(
+        'Unable to load the requested record: record-123.',
+      );
     });
   });
 });
