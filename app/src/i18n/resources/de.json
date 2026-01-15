@@ -6,6 +6,10 @@
     "de": "Deutsch",
     "en": "Englisch"
   },
+  "footerNavLabel": "Fußzeilennavigation",
+  "footerImprint": "Impressum",
+  "footerPrivacy": "Datenschutzerklärung",
+  "footerGithub": "GitHub",
   "formpackListTitle": "Formpacks",
   "formpackListDescription": "Verfügbare Formpakete für die Nutzung.",
   "formpackListEmpty": "Es sind noch keine Formpacks verfügbar.",
