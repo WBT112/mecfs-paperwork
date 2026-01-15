@@ -1,4 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import { deleteDatabase } from './helpers';
 
 const FORM_PACK_ID = 'notfallpass';
@@ -16,9 +18,43 @@ const createNewDraft = async (page: Page) => {
   });
 };
 
+const loadExamplePayload = async () => {
+  const examplePath = path.resolve(
+    process.cwd(),
+    '../formpacks/notfallpass/examples/example.json',
+  );
+  const manifestPath = path.resolve(
+    process.cwd(),
+    '../formpacks/notfallpass/manifest.json',
+  );
+  const [exampleRaw, manifestRaw] = await Promise.all([
+    readFile(examplePath, 'utf-8'),
+    readFile(manifestPath, 'utf-8'),
+  ]);
+  const exampleData = JSON.parse(exampleRaw) as Record<string, unknown>;
+  const manifest = JSON.parse(manifestRaw) as { version?: string };
+  const timestamp = new Date().toISOString();
+
+  return {
+    app: { id: 'mecfs-paperwork' },
+    formpack: {
+      id: FORM_PACK_ID,
+      ...(manifest.version ? { version: manifest.version } : {}),
+    },
+    record: {
+      id: `e2e-${Date.now()}`,
+      title: 'Notfallpass',
+      updatedAt: timestamp,
+    },
+    locale: 'de',
+    exportedAt: timestamp,
+    data: exampleData,
+  };
+};
+
 test('dismisses success messages when other action buttons are clicked', async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto('/');
   await page.evaluate(() => {
     window.localStorage.clear();
@@ -39,22 +75,17 @@ test('dismisses success messages when other action buttons are clicked', async (
   await docxExportButton.click();
   await expect(docxSuccess).toBeVisible({ timeout: POLL_TIMEOUT });
 
-  const downloadPromise = page.waitForEvent('download');
-  const exportJsonButton = page
-    .getByRole('button', {
-      name: /Entwurf exportieren \(JSON\)|Export record \(JSON\)/i,
-    })
-    .first();
-  await expect(exportJsonButton).toBeEnabled({ timeout: POLL_TIMEOUT });
-  await exportJsonButton.click();
-  const download = await downloadPromise;
-  const downloadPath = await download.path();
-  expect(downloadPath).not.toBeNull();
+  const resetButton = page.getByRole('button', {
+    name: /Formular zurücksetzen|Reset form/i,
+  });
+  await expect(resetButton).toBeEnabled({ timeout: POLL_TIMEOUT });
+  await resetButton.click();
   await expect(docxSuccess).toBeHidden({ timeout: POLL_TIMEOUT });
 
-  await page
-    .locator('#formpack-import-file')
-    .setInputFiles(downloadPath as string);
+  const payload = await loadExamplePayload();
+  const importPath = testInfo.outputPath('import.json');
+  await writeFile(importPath, JSON.stringify(payload, null, 2), 'utf-8');
+  await page.locator('#formpack-import-file').setInputFiles(importPath);
   const importButton = page
     .getByRole('button', { name: /JSON importieren|Import JSON/i })
     .first();
