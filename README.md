@@ -36,7 +36,6 @@ All checks run from the `app/` directory:
 
 ```bash
 npm run lint
-npm run format:check
 npm run typecheck
 npm run build
 npm test

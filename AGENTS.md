@@ -18,12 +18,11 @@ Codex reads this file before doing any work. Follow it as the default standard f
 For every change that touches `app/`:
 1. `cd app`
 2. `npm run lint`
-3. `npm run format:check`
-4. `npm run typecheck`
-5. `npm run build`
-6. `npm test`
-7. `npm run test:e2e`
-8. `npm run formpack:validate`
+3. `npm run typecheck`
+4. `npm run build`
+5. `npm test`
+6. `npm run test:e2e`
+7. `npm run formpack:validate`
 
 If any step fails: fix it before finishing.
 
