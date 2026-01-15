@@ -435,13 +435,15 @@ const formatExportDate = (value: Date) =>
 
 const sanitizeFilenamePart = (value: string | null | undefined) => {
   if (!value) return '';
-  return value
-    .trim()
-    .replace(/[\\/:*?"<>|_]+/g, '-')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
+  return (
+    value
+      .trim()
+      // Replace any sequence of reserved characters or whitespace with a single hyphen.
+      .replace(/[\\/:*?"<>|_\s]+/g, '-')
+      // Remove leading/trailing hyphens.
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 80)
+  );
 };
 
 /**
