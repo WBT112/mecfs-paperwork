@@ -30,6 +30,7 @@
   "formpackMissingId": "No formpack was selected.",
   "formpackBackToList": "Back to formpacks",
   "formpackOpen": "Open",
+  "formpackOpenWithTitle": "Open {{title}}",
   "formpackDetailsHeading": "Details",
   "formpackId": "Formpack ID",
   "formpackVersion": "Version",
