@@ -58,20 +58,9 @@ jobs:
       - name: Smoke checks
         if: steps.check-secrets.outputs.available == 'true'
         run: |
-          check_http_200() {
-            local url="$1"
-            local status
-
-            status="$(curl -s -o /dev/null -w "%{http_code}" "$url")"
-            if [ "$status" -ne 200 ]; then
-              echo "::error::Expected HTTP 200 for $url, got $status"
-              exit 1
-            fi
-          }
-
-          check_http_200 http://localhost:8080/
-          check_http_200 http://localhost:8080/formpacks
-          check_http_200 http://localhost:8080/some/deep/link
+          curl -f http://localhost:8080/
+          curl -f http://localhost:8080/formpacks
+          curl -f http://localhost:8080/some/deep/link
 
       - name: Stop container
         if: always() && steps.check-secrets.outputs.available == 'true'
@@ -121,19 +110,9 @@ jobs:
       - name: Compose smoke checks
         if: steps.check-secrets.outputs.available == 'true'
         run: |
-          check_http_200() {
-            local url="$1"
-            local status
-
-            status="$(curl -s -o /dev/null -w "%{http_code}" "$url")"
-            if [ "$status" -ne 200 ]; then
-              echo "::error::Expected HTTP 200 for $url, got $status"
-              exit 1
-            fi
-          }
-
-          check_http_200 http://localhost:8080/
-          check_http_200 http://localhost:8080/some/deep/link
+          curl -f http://localhost:8080/
+          curl -f http://localhost:8080/formpacks
+          curl -f http://localhost:8080/some/deep/link
 
       - name: Compose down
         if: always() && steps.check-secrets.outputs.available == 'true'
