@@ -99,6 +99,11 @@ const parseFunding = (content) => {
 };
 
 const resolveSponsorUrl = (entries) => {
+  const customLinks = entries.custom ?? [];
+  if (customLinks.length > 0) {
+    return customLinks[0];
+  }
+
   const githubSponsors = entries.github ?? [];
   if (githubSponsors.length > 0) {
     return `https://github.com/sponsors/${githubSponsors[0]}`;
