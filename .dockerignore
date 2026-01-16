@@ -1,5 +1,6 @@
 .git
 .github
+!.github/FUNDING.yml
 node_modules
 app/node_modules
 app/dist
