@@ -58,7 +58,22 @@ jobs:
           fi
 
       - name: Login to DHI registry
-        run: echo "${{ secrets.DHI_TOKEN }}" | docker login dhi.io -u "${{ secrets.DHI_USERNAME }}" --password-stdin
+        timeout-minutes: 5
+        env:
+          DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+          DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
+        run: |
+          for attempt in 1 2 3; do
+            if echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin; then
+              exit 0
+            fi
+
+            echo "Login attempt ${attempt} failed. Retrying in 5s..."
+            sleep 5
+          done
+
+          echo "Registry login failed after 3 attempts."
+          exit 1
 
       - name: Build image
         run: docker build -t mecfs-paperwork:${{ github.sha }} .

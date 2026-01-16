@@ -36,11 +36,19 @@ jobs:
 
       - name: Log in to dhi.io
         if: steps.check-secrets.outputs.available == 'true'
+        timeout-minutes: 5
         run: |
-          if ! echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin; then
-            echo "::error::Registry login failed. Verify DHI_USERNAME and DHI_TOKEN."
-            exit 1
-          fi
+          for attempt in 1 2 3; do
+            if echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin; then
+              exit 0
+            fi
+
+            echo "::warning::Registry login attempt ${attempt} failed. Retrying in 5s..."
+            sleep 5
+          done
+
+          echo "::error::Registry login failed after 3 attempts. Verify DHI_USERNAME and DHI_TOKEN."
+          exit 1
         env:
           DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
           DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
@@ -94,11 +102,19 @@ jobs:
 
       - name: Log in to dhi.io
         if: steps.check-secrets.outputs.available == 'true'
+        timeout-minutes: 5
         run: |
-          if ! echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin; then
-            echo "::error::Registry login failed. Verify DHI_USERNAME and DHI_TOKEN."
-            exit 1
-          fi
+          for attempt in 1 2 3; do
+            if echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin; then
+              exit 0
+            fi
+
+            echo "::warning::Registry login attempt ${attempt} failed. Retrying in 5s..."
+            sleep 5
+          done
+
+          echo "::error::Registry login failed after 3 attempts. Verify DHI_USERNAME and DHI_TOKEN."
+          exit 1
         env:
           DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
           DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
