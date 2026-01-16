@@ -1463,9 +1463,13 @@ export default function FormpackDetailPage() {
                         manifest.docx &&
                         docxTemplateOptions.length > 0 && (
                           <div className="formpack-docx-export">
-                            <label className="formpack-docx-export__label">
+                            <label
+                              className="formpack-docx-export__label"
+                              htmlFor="docx-template-select"
+                            >
                               {t('formpackDocxTemplateLabel')}
                               <select
+                                id="docx-template-select"
                                 className="formpack-docx-export__select"
                                 value={docxTemplateId}
                                 onChange={(event) =>
