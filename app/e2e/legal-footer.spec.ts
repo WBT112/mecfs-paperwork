@@ -18,7 +18,10 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
   });
   await privacyLink.click();
   await expect(
-    page.getByRole('heading', { level: 1, name: /privacy policy/i }),
+    page.getByRole('heading', {
+      level: 1,
+      name: /privacy policy|datenschutzerklärung|datenschutz/i,
+    }),
   ).toBeVisible();
 
   const githubLink = page.getByRole('link', { name: /github/i });

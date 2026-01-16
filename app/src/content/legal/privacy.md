@@ -1,6 +1,6 @@
 # Datenschutzerklärung (Deutschland)
 
-*Stand: 16. Januar 2026*
+_Stand: 16. Januar 2026_
 
 Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeitung personenbezogener Daten beim Aufruf und bei der Nutzung der Webanwendung **mecfs-paperwork**.
 
@@ -33,6 +33,7 @@ E-Mail: [[Kontakt-E-Mail]]
 Beim Aufruf der Website verarbeitet der Hosting-Anbieter technisch notwendige Verbindungsdaten (Server-Logfiles), um die Website auszuliefern sowie Stabilität und Sicherheit zu gewährleisten.
 
 **Typische Logfile-Daten (können je nach Hosting variieren):**
+
 - IP-Adresse
 - Datum und Uhrzeit der Anfrage
 - angeforderte Ressource (URL/Pfad)
