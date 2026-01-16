@@ -14,7 +14,7 @@ The script accepts several parameters to customize its behavior:
 | ------------------- | ----------------------------------------------------------- | ---------------------------- |
 | `-UnitCommand`      | npm script for unit tests (e.g., "test:unit")               | "npm test"                   |
 | `-E2eCommand`       | npm script for E2E tests                                    | "test:e2e"                   |
-| `-E2eRuns`          | How many times to run E2E tests                             | 3                            |
+| `-E2eRuns`          | How many times to run E2E tests (find flakiness)                            | 3                            |
 | `-DockerImagePort`  | Port for Docker image smoke test                            | 18080                        |
 | `-ComposePort`      | Port for Docker Compose smoke test                          | 8080                         |
 | `-SkipComposeChecks`| Skip `docker compose` checks                                | (not set)                    |
