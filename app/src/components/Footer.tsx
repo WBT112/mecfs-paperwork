@@ -1,12 +1,10 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getRepoUrl } from '../lib/repo';
-import { getSponsorUrl } from '../lib/funding';
 
 export default function Footer() {
   const { t } = useTranslation();
   const repoUrl = getRepoUrl();
-  const sponsorUrl = getSponsorUrl();
 
   return (
     <footer className="app__footer">
@@ -19,21 +17,11 @@ export default function Footer() {
             {t('footerImprint')}
           </Link>
           <Link
-            className="app__footer-link app__footer-link--center-left"
+            className="app__footer-link app__footer-link--center"
             to="/privacy"
           >
             {t('footerPrivacy')}
           </Link>
-          {sponsorUrl ? (
-            <a
-              className="app__footer-link app__footer-link--center-right"
-              href={sponsorUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-            >
-              {t('footerSponsor')}
-            </a>
-          ) : null}
           {repoUrl ? (
             <a
               className="app__footer-link app__footer-link--right"
