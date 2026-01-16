@@ -5,8 +5,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "predev": "node scripts/sync-formpacks.mjs",
-    "prebuild": "node scripts/sync-formpacks.mjs",
+    "predev": "node scripts/sync-formpacks.mjs && node scripts/sync-funding.mjs",
+    "prebuild": "node scripts/sync-formpacks.mjs && node scripts/sync-funding.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
