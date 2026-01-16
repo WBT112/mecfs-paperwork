@@ -14,10 +14,21 @@ export type FormpackFormContext = {
   t: TFunction;
 };
 
+const isFormpackFormContext = (
+  context: unknown,
+): context is FormpackFormContext => {
+  return (
+    typeof context === 'object' &&
+    context !== null &&
+    't' in context &&
+    typeof (context as { t: unknown }).t === 'function'
+  );
+};
+
 const defaultTranslator = ((key: string) => key) as TFunction;
 
-const getTranslator = (formContext?: FormpackFormContext): TFunction =>
-  formContext?.t ?? defaultTranslator;
+const getTranslator = (formContext: unknown): TFunction =>
+  isFormpackFormContext(formContext) ? formContext.t : defaultTranslator;
 
 const buildButtonClassName = (className?: string) =>
   ['app__button', 'formpack-array-button', className].filter(Boolean).join(' ');
@@ -27,9 +38,7 @@ const TranslatedButton = (
 ) => {
   const { className, disabled, onClick, children, registry, translationKey } =
     props;
-  const t = getTranslator(
-    registry.formContext as FormpackFormContext | undefined,
-  );
+  const t = getTranslator(registry.formContext);
 
   return (
     <button
@@ -83,9 +92,7 @@ const ArrayFieldTemplate = (props: ArrayFieldTemplateProps) => {
       ? uiSchema['ui:title']
       : undefined;
   const addLabelBase = uiTitle ?? uiOptions.title ?? title;
-  const t = getTranslator(
-    registry.formContext as FormpackFormContext | undefined,
-  );
+  const t = getTranslator(registry.formContext);
   const addLabel = addLabelBase
     ? t('common.addItemWithTitle', { item: addLabelBase })
     : t('common.add');
@@ -151,9 +158,7 @@ const getArrayItemTitle = (
 const ArrayFieldItemTemplate = (props: ArrayFieldItemTemplateProps) => {
   const { children, buttonsProps, index, parentUiSchema, registry } = props;
   const { ButtonTemplates } = registry.templates;
-  const t = getTranslator(
-    registry.formContext as FormpackFormContext | undefined,
-  );
+  const t = getTranslator(registry.formContext);
   const itemTitle = getArrayItemTitle(parentUiSchema, index, t);
 
   return (
