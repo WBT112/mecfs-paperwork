@@ -1,9 +1,10 @@
 FROM node:24-bookworm-slim AS build
 
 WORKDIR /repo
-RUN mkdir -p /repo/app /repo/formpacks
+RUN mkdir -p /repo/app /repo/formpacks /repo/.github
 
 COPY formpacks /repo/formpacks
+COPY .github/FUNDING.yml /repo/.github/FUNDING.yml
 COPY app/package.json app/package-lock.json /repo/app/
 
 WORKDIR /repo/app
