@@ -1464,23 +1464,23 @@ export default function FormpackDetailPage() {
                               htmlFor="docx-template-select"
                             >
                               {t('formpackDocxTemplateLabel')}
+                              <select
+                                id="docx-template-select"
+                                className="formpack-docx-export__select"
+                                value={docxTemplateId}
+                                onChange={(event) =>
+                                  setDocxTemplateId(
+                                    event.target.value as DocxTemplateId,
+                                  )
+                                }
+                              >
+                                {docxTemplateOptions.map((option) => (
+                                  <option key={option.id} value={option.id}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
                             </label>
-                            <select
-                              id="docx-template-select"
-                              className="formpack-docx-export__select"
-                              value={docxTemplateId}
-                              onChange={(event) =>
-                                setDocxTemplateId(
-                                  event.target.value as DocxTemplateId,
-                                )
-                              }
-                            >
-                              {docxTemplateOptions.map((option) => (
-                                <option key={option.id} value={option.id}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
                             <button
                               type="button"
                               className="app__button"
