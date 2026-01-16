@@ -1,3 +1,9 @@
+/**
+ * Provides repository-related utility functions, such as resolving the repo URL.
+ */
+
+import { emptyStringToNull } from './utils';
+
 export const DEFAULT_REPO_URL = 'https://github.com/WBT112/mecfs-paperwork/';
 
 export const getRepoUrl = (): string | null => {
@@ -7,6 +13,5 @@ export const getRepoUrl = (): string | null => {
     return DEFAULT_REPO_URL;
   }
 
-  const trimmed = repoUrl.trim();
-  return trimmed.length > 0 ? trimmed : null;
+  return emptyStringToNull(repoUrl);
 };
