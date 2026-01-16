@@ -214,12 +214,8 @@ body {
 
 .formpack-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
-  justify-content: start;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
-  max-width: 720px;
-  width: 100%;
-  margin-right: auto;
 }
 
 .formpack-card {
