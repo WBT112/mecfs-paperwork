@@ -983,6 +983,10 @@ export default function FormpackDetailPage() {
   );
   const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
   const previewUiSchema = normalizedUiSchema ?? translatedUiSchema;
+  const jsonPreview = useMemo(
+    () => JSON.stringify(formData, null, 2),
+    [formData],
+  );
   const documentPreview = useMemo(() => {
     if (!isRecord(formData)) {
       return null;
@@ -1590,7 +1594,7 @@ export default function FormpackDetailPage() {
             <h3>{t('formpackFormPreviewHeading')}</h3>
             <pre className="formpack-preview">
               {Object.keys(formData).length
-                ? JSON.stringify(formData, null, 2)
+                ? jsonPreview
                 : t('formpackFormPreviewEmpty')}
             </pre>
           </div>
