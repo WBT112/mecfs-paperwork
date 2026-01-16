@@ -12,6 +12,7 @@ The script accepts several parameters to customize its behavior:
 
 | Parameter           | Description                                                 | Default                      |
 | ------------------- | ----------------------------------------------------------- | ---------------------------- |
+| `-AppSubdir`        | Subdirectory containing the target `package.json`           | "app"                        |
 | `-UnitCommand`      | npm script for unit tests (e.g., "test:unit")               | "npm test"                   |
 | `-E2eCommand`       | npm script for E2E tests                                    | "test:e2e"                   |
 | `-E2eRuns`          | How many times to run E2E tests (find flakiness)                            | 3                            |
