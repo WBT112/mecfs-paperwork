@@ -13,6 +13,11 @@ type AppConfig = import('vite').UserConfig & {
 const config: AppConfig = {
   plugins: [react()],
   resolve: {
+    // RATIONALE: The 'docx-templates' library relies on Node.js built-in
+    // modules like 'stream' and 'util'. To make it work in a browser
+    // environment, we need to provide browser-compatible polyfills. These
+    // aliases map the Node.js module names to their browser equivalents.
+    // Removing them will break the document export functionality.
     alias: [
       { find: /^events$/, replacement: require.resolve('events') },
       { find: /^stream$/, replacement: require.resolve('stream-browserify') },
