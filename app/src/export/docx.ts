@@ -350,9 +350,11 @@ const loadDocxMapping = async (
   let payload: unknown;
   try {
     payload = await response.json();
-  } catch {
+  } catch (error) {
     throw new Error(
-      `Unable to parse DOCX mapping JSON for formpack:${formpackId} at ${assetPath}.`,
+      `Unable to parse DOCX mapping JSON for formpack:${formpackId} at ${assetPath}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
   }
 
