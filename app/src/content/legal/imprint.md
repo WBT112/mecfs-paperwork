@@ -1,6 +1,6 @@
 # Impressum
 
-## Diensteanbieter (§ 5 DDG)
+## Diensteanbieter
 
 **[Vorname Nachname]**  
 [Straße Hausnummer]  
@@ -13,8 +13,10 @@ Deutschland
 
 ## Hinweis zum Angebot
 
-Diese Anwendung ist eine **Ausfüllhilfe** für Anträge im Rahmen der Unterstützung erkrankter Menschen.  
-Es werden **keine Verträge** über Waren oder Dienstleistungen mit Nutzer:innen geschlossen.
+Diese Anwendung ist eine **Ausfüllhilfe** für Anträge im Rahmen der Unterstützung erkrankter Menschen.
+
+- Es werden **keine Verträge** über Waren oder Dienstleistungen mit Nutzer:innen geschlossen.
+- Die bereitgestellten Informationen und Funktionen stellen **keine medizinische oder rechtliche Beratung** dar und ersetzen keine Beratung durch qualifizierte Fachpersonen.
 
 ## Haftung für Inhalte
 
