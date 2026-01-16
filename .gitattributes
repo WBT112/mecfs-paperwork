@@ -1,0 +1,9 @@
+# Default: normalize text files to LF in the repository
+* text=auto eol=lf
+
+# Windows scripts: keep CRLF if you have any .bat/.cmd
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# PowerShell: usually OK as LF, but if your environment needs CRLF, set it explicitly:
+# *.ps1 text eol=crlf
