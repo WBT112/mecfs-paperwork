@@ -111,6 +111,7 @@ jobs:
         if: steps.check-secrets.outputs.available == 'true'
         run: |
           curl -f http://localhost:8080/
+          curl -f http://localhost:8080/formpacks
           curl -f http://localhost:8080/some/deep/link
 
       - name: Compose down
