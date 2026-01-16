@@ -72,7 +72,9 @@ There is a helper script in `tools/` that automates the quality gates (including
 . .\tools\run-quality-gates.ps1
 ```
 
-For script options and advanced usage, see `tools/README.md`.
+Options (depending on script version):
+- Skip Docker checks: `-SkipDockerChecks`
+- Keep container running after smoke test: `-KeepDockerRunning`
 
 ---
 
