@@ -166,9 +166,9 @@ body {
 
 .app__footer-links {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
-  gap: 0.75rem 1.5rem;
+  gap: 0.75rem;
 }
 
 .app__footer-link {
@@ -186,12 +186,7 @@ body {
   text-align: left;
 }
 
-.app__footer-link--center-left {
-  justify-self: center;
-  text-align: center;
-}
-
-.app__footer-link--center-right {
+.app__footer-link--center {
   justify-self: center;
   text-align: center;
 }
@@ -199,24 +194,6 @@ body {
 .app__footer-link--right {
   justify-self: end;
   text-align: right;
-}
-
-@media (max-width: 720px) {
-  .app__footer-links {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    justify-items: center;
-  }
-
-  .app__footer-link {
-    justify-self: center;
-    text-align: center;
-  }
-}
-
-@media (max-width: 420px) {
-  .app__footer-links {
-    grid-template-columns: 1fr;
-  }
 }
 
 .legal-page {
@@ -247,10 +224,19 @@ body {
   background: #f9fafb;
   text-decoration: none;
   color: inherit;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+.formpack-card:hover,
+.formpack-card:focus-visible {
+  background: #ffffff;
+  border-color: #d1d5db;
 }
 
 .formpack-card:hover h3,
-.formpack-card:hover .formpack-card__link {
+.formpack-card:hover .formpack-card__link,
+.formpack-card:focus-visible h3,
+.formpack-card:focus-visible .formpack-card__link {
   text-decoration: underline;
 }
 

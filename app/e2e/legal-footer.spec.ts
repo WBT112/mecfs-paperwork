@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { getSponsorUrl } from '../src/lib/funding';
 import { DEFAULT_REPO_URL } from '../src/lib/repo';
 
 test('footer navigation reaches legal pages and exposes the GitHub link', async ({
@@ -28,17 +27,6 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
   const githubLink = page.getByRole('link', { name: /github/i });
   await expect(githubLink).toHaveAttribute('href', DEFAULT_REPO_URL);
   await expect(githubLink).toHaveAttribute(
-    'rel',
-    /noreferrer.*noopener|noopener.*noreferrer/,
-  );
-
-  const sponsorUrl = getSponsorUrl();
-  if (!sponsorUrl) {
-    throw new Error('Expected a sponsor URL to be available for the footer.');
-  }
-  const sponsorLink = page.getByRole('link', { name: /sponsor/i });
-  await expect(sponsorLink).toHaveAttribute('href', sponsorUrl);
-  await expect(sponsorLink).toHaveAttribute(
     'rel',
     /noreferrer.*noopener|noopener.*noreferrer/,
   );
