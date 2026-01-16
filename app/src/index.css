@@ -224,10 +224,19 @@ body {
   background: #f9fafb;
   text-decoration: none;
   color: inherit;
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+}
+
+.formpack-card:hover,
+.formpack-card:focus-visible {
+  background: #ffffff;
+  border-color: #d1d5db;
 }
 
 .formpack-card:hover h3,
-.formpack-card:hover .formpack-card__link {
+.formpack-card:hover .formpack-card__link,
+.formpack-card:focus-visible h3,
+.formpack-card:focus-visible .formpack-card__link {
   text-decoration: underline;
 }
 
