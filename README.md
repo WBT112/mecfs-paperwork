@@ -73,8 +73,17 @@ There is a helper script in `tools/` that automates the quality gates (including
 ```
 
 Options (depending on script version):
-- Skip Docker checks: `-SkipDockerChecks`
-- Keep container running after smoke test: `-KeepDockerRunning`
+
+| Parameter           | Description                                                 | Default                      |
+| ------------------- | ----------------------------------------------------------- | ---------------------------- |
+| `-UnitCommand`      | npm script for unit tests (e.g., "test:unit")               | "npm test"                   |
+| `-E2eCommand`       | npm script for E2E tests                                    | "test:e2e"                   |
+| `-E2eRuns`          | How many times to run E2E tests                             | 3                            |
+| `-DockerImagePort`  | Port for Docker image smoke test                            | 18080                        |
+| `-ComposePort`      | Port for Docker Compose smoke test                          | 8080                         |
+| `-SkipComposeChecks`| Skip `docker compose` checks                                | (not set)                    |
+| `-SkipDockerChecks` | Skip `docker build` and `docker run` checks                 | (not set)                    |
+| `-KeepDockerRunning`| If set, container keeps running after checks                | (not set)                    |
 
 ---
 
