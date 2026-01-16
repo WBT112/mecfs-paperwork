@@ -3,64 +3,61 @@ export type MarkdownBlock =
   | { type: 'paragraph'; text: string }
   | { type: 'list'; items: string[] };
 
-const flushParagraph = (blocks: MarkdownBlock[], lines: string[]): void => {
-  if (lines.length === 0) {
-    return;
-  }
-
-  blocks.push({ type: 'paragraph', text: lines.join(' ') });
-  lines.length = 0;
-};
-
-const flushList = (blocks: MarkdownBlock[], items: string[]): void => {
-  if (items.length === 0) {
-    return;
-  }
-
-  blocks.push({ type: 'list', items: [...items] });
-  items.length = 0;
-};
-
 export const parseMarkdown = (markdown: string): MarkdownBlock[] => {
   const blocks: MarkdownBlock[] = [];
-  const paragraphLines: string[] = [];
-  const listItems: string[] = [];
-  const lines = markdown.split(/\r?\n/);
+  let currentBlock: 'paragraph' | 'list' | null = null;
+  let lines: string[] = [];
 
-  lines.forEach((rawLine) => {
+  const flush = () => {
+    if (lines.length === 0) return;
+
+    if (currentBlock === 'paragraph') {
+      blocks.push({ type: 'paragraph', text: lines.join(' ') });
+    } else if (currentBlock === 'list') {
+      blocks.push({ type: 'list', items: [...lines] });
+    }
+
+    lines = [];
+    currentBlock = null;
+  };
+
+  for (const rawLine of markdown.split(/\r?\n/)) {
     const line = rawLine.trim();
 
     if (!line) {
-      flushParagraph(blocks, paragraphLines);
-      flushList(blocks, listItems);
-      return;
+      flush();
+      continue;
     }
 
     const headingMatch = /^(#{1,3})\s+(.*)$/.exec(line);
     if (headingMatch) {
-      flushParagraph(blocks, paragraphLines);
-      flushList(blocks, listItems);
+      flush();
       blocks.push({
         type: 'heading',
         level: headingMatch[1].length as 1 | 2 | 3,
         text: headingMatch[2],
       });
-      return;
+      continue;
     }
 
     const listMatch = /^[-*]\s+(.*)$/.exec(line);
     if (listMatch) {
-      flushParagraph(blocks, paragraphLines);
-      listItems.push(listMatch[1]);
-      return;
+      if (currentBlock !== 'list') {
+        flush();
+        currentBlock = 'list';
+      }
+      lines.push(listMatch[1]);
+      continue;
     }
 
-    flushList(blocks, listItems);
-    paragraphLines.push(line);
-  });
+    if (currentBlock !== 'paragraph') {
+      flush();
+      currentBlock = 'paragraph';
+    }
+    lines.push(line);
+  }
 
-  flushParagraph(blocks, paragraphLines);
-  flushList(blocks, listItems);
+  flush();
 
   return blocks;
 };
