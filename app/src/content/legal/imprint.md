@@ -9,7 +9,7 @@ Deutschland
 
 ## Kontakt
 
-**E-Mail:** [deine-mail@beispiel.de]  
+**E-Mail:** [deine-mail@beispiel.de]
 
 ## Hinweis zum Angebot
 

@@ -10,7 +10,7 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
   await expect(imprintLink).toBeVisible();
   await imprintLink.click();
   await expect(
-    page.getByRole('heading', { level: 1, name: /imprint/i }),
+    page.getByRole('heading', { level: 1, name: /imprint|impressum/i }),
   ).toBeVisible();
 
   const privacyLink = page.getByRole('link', {
