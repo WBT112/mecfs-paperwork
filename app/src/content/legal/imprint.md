@@ -1,25 +1,37 @@
-# Imprint
+# Impressum
 
-This imprint is a placeholder and must be reviewed and completed by the
-maintainer before any public launch.
+## Diensteanbieter (§ 5 DDG)
 
-## Operator
+**[Vorname Nachname]**  
+[Straße Hausnummer]  
+[PLZ Ort]  
+Deutschland
 
-Example Organization e.V.
-Example Street 1
-12345 Sample City
-Germany
+## Kontakt
 
-## Contact
+**E-Mail:** [deine-mail@beispiel.de]  
 
-Email: contact@example.org
-Phone: +49 000 000000
+## Hinweis zum Angebot
 
-## Responsible for content
+Diese Anwendung ist eine **Ausfüllhilfe** für Anträge im Rahmen der Unterstützung erkrankter Menschen.  
+Es werden **keine Verträge** über Waren oder Dienstleistungen mit Nutzer:innen geschlossen.
 
-Example Organization e.V.
+## Haftung für Inhalte
 
-## Notes
+Als Diensteanbieter bin ich für eigene Inhalte nach den allgemeinen Gesetzen verantwortlich.  
+Ich übernehme jedoch keine Gewähr für die Aktualität, Richtigkeit und Vollständigkeit der bereitgestellten Informationen.
 
-No real patient data is stored in this service. This placeholder does not
-constitute legal advice.
+## Haftung für Links
+
+Sofern dieses Angebot Links zu externen Websites Dritter enthält, habe ich auf deren Inhalte keinen Einfluss.  
+Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber verantwortlich.
+
+## Urheberrecht
+
+Die durch den Seitenbetreiber erstellten Inhalte und Werke unterliegen dem deutschen Urheberrecht.  
+Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechts bedürfen der schriftlichen Zustimmung.
+
+## Datenschutz
+
+Informationen zur Verarbeitung personenbezogener Daten findest du in der **Datenschutzerklärung**:  
+[Link zur Route, z. B. `/privacy`]
