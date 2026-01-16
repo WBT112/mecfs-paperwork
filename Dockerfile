@@ -4,6 +4,7 @@ WORKDIR /repo
 RUN mkdir -p /repo/app /repo/formpacks
 
 COPY formpacks /repo/formpacks
+COPY .github/FUNDING.yml /repo/.github/FUNDING.yml
 COPY app/package.json app/package-lock.json /repo/app/
 
 WORKDIR /repo/app
