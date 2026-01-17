@@ -14,10 +14,19 @@ RUN npm run build
 
 FROM dhi.io/nginx:1-dev AS curl_installer
 USER root
-RUN apt-get update && apt-get install -y curl --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl ca-certificates --no-install-recommends && rm -rf /var/lib/apt/lists/*
+# Prepare a directory with curl, its libs, and certs
+RUN mkdir -p /export \
+    && cp /usr/bin/curl /export/ \
+    && ldd /usr/bin/curl \
+        | awk '/=>/ {print $3} /ld-linux/ {print $1}' \
+        | grep -v 'linux-vdso' \
+        | sort | uniq \
+        | xargs -I '{}' cp -v --parents -L '{}' /export \
+    && cp -L --parents /etc/ssl/certs/ca-certificates.crt /export
 
 FROM dhi.io/nginx:1 AS runtime
-COPY --from=curl_installer /usr/bin/curl /usr/bin/curl
+COPY --from=curl_installer /export/ /
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /repo/app/dist /usr/share/nginx/html/
