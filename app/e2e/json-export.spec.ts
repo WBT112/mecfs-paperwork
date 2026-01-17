@@ -15,6 +15,17 @@ const DB: DbOptions = {
   storeName: 'records',
 };
 
+const attachPrivacyConsoleGuard = (page: Page, values: string[]) => {
+  page.on('console', (message) => {
+    const text = message.text();
+    for (const value of values) {
+      if (text.includes(value)) {
+        throw new Error(`Console output leaked private test data: ${value}`);
+      }
+    }
+  });
+};
+
 const getActiveRecordId = async (page: Page) => {
   return page.evaluate(
     (key) => window.localStorage.getItem(key),
@@ -90,6 +101,11 @@ for (const locale of locales) {
     test('exports JSON with record metadata and form data', async ({
       page,
     }) => {
+      const fakeName = 'Test User';
+      const fakeBirthDate = '1990-04-12';
+      const fakePhone = '555-000-0000';
+      attachPrivacyConsoleGuard(page, [fakeName, fakeBirthDate, fakePhone]);
+
       await page.goto('/');
       await page.evaluate(() => {
         window.localStorage.clear();
@@ -101,7 +117,9 @@ for (const locale of locales) {
       await switchLocale(page, locale);
       await clickNewDraftIfNeeded(page);
 
-      await page.locator('#root_person_name').fill('Test User');
+      await page.locator('#root_person_name').fill(fakeName);
+      await page.locator('#root_person_birthDate').fill(fakeBirthDate);
+      await page.locator('#root_doctor_phone').fill(fakePhone);
       await page.locator('#root_diagnoses_meCfs').check();
       const activeIdBeforeImport = await waitForActiveRecordId(page);
 
@@ -148,7 +166,11 @@ for (const locale of locales) {
       expect(payload.record.locale).toBe(locale);
       expect(payload.data).toMatchObject({
         person: {
-          name: 'Test User',
+          name: fakeName,
+          birthDate: fakeBirthDate,
+        },
+        doctor: {
+          phone: fakePhone,
         },
         diagnoses: {
           meCfs: true,
@@ -180,7 +202,11 @@ for (const locale of locales) {
           intervals: [250, 500, 1000],
         })
         .not.toBe(activeIdBeforeImport);
-      await expect(page.locator('#root_person_name')).toHaveValue('Test User');
+      await expect(page.locator('#root_person_name')).toHaveValue(fakeName);
+      await expect(page.locator('#root_person_birthDate')).toHaveValue(
+        fakeBirthDate,
+      );
+      await expect(page.locator('#root_doctor_phone')).toHaveValue(fakePhone);
       await expect(page.locator('#root_diagnoses_meCfs')).toBeChecked();
     });
   });
