@@ -36,7 +36,12 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
   if (!sponsorUrl) {
     throw new Error('Expected a sponsor URL to be available for the footer.');
   }
-  const sponsorLink = page.getByRole('link', { name: /sponsor/i });
+
+  // The UI may label the funding link as "Sponsor" (EN) or "Unterstützen" (DE).
+  // Accept common ASCII fallback spelling as well.
+  const sponsorLink = page.getByRole('link', {
+    name: /sponsor|unterst\u00fctzen|unterstuetzen/i,
+  });
   await expect(sponsorLink).toHaveAttribute('href', sponsorUrl);
   await expect(sponsorLink).toHaveAttribute(
     'rel',
