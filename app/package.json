@@ -17,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "formpack:new": "node scripts/new-formpack.mjs",
     "formpack:validate": "node scripts/validate-formpacks.mjs",
-    "test:e2e": "playwright test --repeat-each 3",
+    "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test": "vitest --run",
     "test:unit": "vitest --run",
