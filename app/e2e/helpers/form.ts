@@ -2,6 +2,10 @@ import { expect, Locator, Page } from '@playwright/test';
 
 export type InputTarget = string | Locator;
 
+// Some input types (notably <input type="date">) behave inconsistently across engines
+// when values are entered via keyboard simulation. For these, prefer direct assignment.
+const DIRECT_VALUE_TYPES = new Set(["date", "datetime-local", "time", "month", "week"]);
+
 export type FillTextInputStableOptions =
   | {
       /** Overall timeout (ms) for the fill operation. */
@@ -59,6 +63,37 @@ const trySetValue = async (
   await expect(input).toBeVisible({ timeout });
   await expect(input).toBeEnabled({ timeout });
 
+  let inputType = '';
+  try {
+    inputType = (await input.getAttribute('type'))?.toLowerCase() ?? '';
+  } catch {
+    inputType = '';
+  }
+
+  if (DIRECT_VALUE_TYPES.has(inputType)) {
+    await input.focus({ timeout });
+    await input.evaluate(
+      (el, v) => {
+        const i = el as HTMLInputElement;
+        i.value = v;
+        i.dispatchEvent(new Event('input', { bubbles: true }));
+        i.dispatchEvent(new Event('change', { bubbles: true }));
+      },
+      value,
+    );
+
+    await input.blur();
+
+    // WebKit sometimes buffers input updates until a focus change.
+    try {
+      await input.press('Tab', { timeout: 2_000 });
+    } catch {
+      // ignore
+    }
+
+    return await input.inputValue();
+  }
+
   // Some controlled inputs only commit changes after focus/blur.
   await input.click({ timeout, clickCount: 3 });
 
@@ -70,8 +105,10 @@ const trySetValue = async (
   }
 
   // Encourage frameworks to commit state.
-  await input.dispatchEvent('input');
-  await input.dispatchEvent('change');
+  await input.evaluate((el) => {
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  });
   await input.evaluate((el) => (el as HTMLElement).blur());
 
   // Tab is a reliable blur in WebKit; ignore failures if element disappears.

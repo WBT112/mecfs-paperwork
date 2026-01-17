@@ -81,19 +81,42 @@ const readRecordById = async (
 
           req.onupgradeneeded = () => {
             try {
-              req.transaction?.abort();
+              const db = req.result;
+              const tx = req.transaction;
+
+              // records store (matches app schema; keep additive)
+              if (!db.objectStoreNames.contains(storeName)) {
+                const store = db.createObjectStore(storeName, { keyPath: 'id' });
+                if (!store.indexNames.contains('active')) store.createIndex('active', 'active');
+                if (!store.indexNames.contains('updatedAt'))
+                  store.createIndex('updatedAt', 'updatedAt');
+              } else if (tx) {
+                const store = tx.objectStore(storeName);
+                if (!store.indexNames.contains('active')) store.createIndex('active', 'active');
+                if (!store.indexNames.contains('updatedAt'))
+                  store.createIndex('updatedAt', 'updatedAt');
+              }
+
+              // snapshots store (app schema)
+              const snapshotsName = 'snapshots';
+              if (!db.objectStoreNames.contains(snapshotsName)) {
+                const store = db.createObjectStore(snapshotsName, { keyPath: 'id' });
+                if (!store.indexNames.contains('recordId')) store.createIndex('recordId', 'recordId');
+                if (!store.indexNames.contains('createdAt'))
+                  store.createIndex('createdAt', 'createdAt');
+              } else if (tx) {
+                const store = tx.objectStore(snapshotsName);
+                if (!store.indexNames.contains('recordId')) store.createIndex('recordId', 'recordId');
+                if (!store.indexNames.contains('createdAt'))
+                  store.createIndex('createdAt', 'createdAt');
+              }
             } catch {
               // ignore
             }
-            try {
-              req.result?.close();
-            } catch {
-              // ignore
-            }
-            settle(null);
           };
 
           req.onerror = () => settle(null);
+          req.onblocked = () => settle(null);
           req.onsuccess = () => settle(req.result);
         });
       };
