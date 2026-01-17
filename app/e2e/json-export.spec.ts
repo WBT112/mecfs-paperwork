@@ -15,6 +15,9 @@ const DB: DbOptions = {
   storeName: 'records',
 };
 
+const POLL_TIMEOUT = 10_000;
+const POLL_INTERVALS = [250, 500, 1000];
+
 const attachPrivacyConsoleGuard = (page: Page, values: string[]) => {
   page.on('console', (message) => {
     const text = message.text();
@@ -41,7 +44,7 @@ const waitForActiveRecordId = async (page: Page) => {
         activeId = (await getActiveRecordId(page)) ?? '';
         return activeId;
       },
-      { timeout: 10_000, intervals: [250, 500, 1000] },
+      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
     )
     .not.toBe('');
   return activeId;
@@ -198,8 +201,8 @@ for (const locale of locales) {
 
       await expect
         .poll(async () => getActiveRecordId(page), {
-          timeout: 10_000,
-          intervals: [250, 500, 1000],
+          timeout: POLL_TIMEOUT,
+          intervals: POLL_INTERVALS,
         })
         .not.toBe(activeIdBeforeImport);
       await expect(page.locator('#root_person_name')).toHaveValue(fakeName);
