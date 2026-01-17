@@ -1,10 +1,12 @@
+/**
+ * Provides a function to recursively apply sensible UI schema defaults.
+ * This is used to improve the base presentation of form fields, especially for arrays.
+ */
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+import { isRecord } from './utils';
 
 const ensureUiOptions = (uiSchema: UiSchema): UiSchema => {
-  const uiOptions = isObject(uiSchema['ui:options'])
+  const uiOptions = isRecord(uiSchema['ui:options'])
     ? { ...uiSchema['ui:options'] }
     : {};
 
@@ -29,7 +31,7 @@ const applyArrayItemDefaults = (
   itemsSchema: RJSFSchema | boolean,
   itemsUiSchema: UiSchema | undefined,
 ): UiSchema | undefined => {
-  if (!isObject(itemsSchema)) {
+  if (!isRecord(itemsSchema)) {
     return itemsUiSchema;
   }
 
@@ -46,7 +48,7 @@ export const applyArrayUiSchemaDefaults = (
   schema: RJSFSchema,
   uiSchema: UiSchema = {},
 ): UiSchema => {
-  if (!isObject(schema)) {
+  if (!isRecord(schema)) {
     return uiSchema;
   }
 
@@ -73,7 +75,7 @@ export const applyArrayUiSchemaDefaults = (
       : withOptions;
   }
 
-  if (schema.type === 'object' && isObject(schema.properties)) {
+  if (schema.type === 'object' && isRecord(schema.properties)) {
     const properties = schema.properties as Record<string, RJSFSchema>;
     const updatedProperties: Record<string, UiSchema> = {};
 

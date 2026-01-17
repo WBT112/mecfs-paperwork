@@ -87,8 +87,6 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
- 
-
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   const existingActiveId = await getActiveRecordId(page);
