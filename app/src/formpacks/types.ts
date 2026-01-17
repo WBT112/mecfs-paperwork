@@ -25,12 +25,12 @@ export interface FormpackManifest {
  * Narrowed runtime shape for validating formpack manifest payloads.
  */
 export interface FormpackManifestPayload {
-  id: unknown;
-  version: unknown;
-  defaultLocale: unknown;
+  id: string;
+  version: string;
+  defaultLocale: string;
   locales: unknown;
-  titleKey: unknown;
-  descriptionKey: unknown;
+  titleKey: string;
+  descriptionKey: string;
   exports: unknown;
   docx?: unknown;
 }
