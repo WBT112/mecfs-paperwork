@@ -19,7 +19,9 @@ RUN LIBS=$(ldd /usr/bin/curl | awk '/=>/ {print $3} /ld-linux/ {print $1}' | gre
     && tar -C / -chf /curl-deps.tar /usr/bin/curl /etc/ssl/certs/ca-certificates.crt $LIBS
 
 FROM dhi.io/nginx:1 AS runtime
-ADD --from=curl_installer /curl-deps.tar /
+COPY --from=curl_installer /curl-deps.tar /curl-deps.tar
+ADD /curl-deps.tar /
+RUN rm /curl-deps.tar
 
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /repo/app/dist /usr/share/nginx/html/
