@@ -1,14 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
-import { clickActionButton } from './helpers/actions';
+import { fillTextInputStable } from './helpers/form';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
+import {
+  POLL_INTERVALS,
+  POLL_TIMEOUT,
+  waitForRecordById,
+  waitForRecordField,
+} from './helpers/records';
 
 type DbOptions = { dbName: string; storeName: string };
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
-const POLL_TIMEOUT = 20_000;
-const POLL_INTERVALS = [250, 500, 1000];
-const AUTOSAVE_WAIT_MS = 1500;
 
 const DB: DbOptions = { dbName: 'mecfs-paperwork', storeName: 'records' };
 
@@ -89,38 +92,6 @@ const waitForRecordListReady = async (page: Page) => {
 
  
 
-const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
-  const existingActiveId = await getActiveRecordId(page);
-  if (existingActiveId) {
-    await expect(nameInput).toBeVisible();
-    return;
-  }
-
-  await waitForRecordListReady(page);
-
-  const activeIdAfterLoad = await getActiveRecordId(page);
-  if (activeIdAfterLoad) {
-    await expect(nameInput).toBeVisible();
-    return;
-  }
-
-  const newDraftButton = page.getByRole('button', {
-    name: /new\s*draft|neuer\s*entwurf/i,
-  });
-  if (await newDraftButton.count()) {
-    await clickActionButton(newDraftButton.first());
-  } else {
-    // Fallback: click the first action button in the drafts area.
-    await clickActionButton(
-      page.locator('.formpack-records__actions .app__button').first(),
-    );
-  }
-
-  await waitForActiveRecordId(page);
-  await expect(nameInput).toBeVisible();
-};
-
 const createSnapshot = async (page: Page) => {
   const createBtn = page.getByRole('button', {
     name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i,
@@ -190,15 +161,21 @@ for (const locale of locales) {
         }),
       ).toBeVisible();
 
-      await clickNewDraftIfNeeded(page);
-      await waitForActiveRecordId(page);
+	      await waitForRecordListReady(page);
+	      const recordId = await waitForActiveRecordId(page);
+	      await waitForRecordById(page, recordId, { timeout: POLL_TIMEOUT });
 
-      const nameInput = page.locator('#root_person_name');
-      await expect(nameInput).toBeVisible();
-      // 1) Set initial value and wait for persistence
-      await nameInput.fill('Alice Snapshot');
-      await expect(nameInput).toHaveValue('Alice Snapshot');
-      await page.waitForTimeout(AUTOSAVE_WAIT_MS);
+	      const nameInput = page.locator('#root_person_name');
+	      await expect(nameInput).toBeVisible({ timeout: POLL_TIMEOUT });
+	      // 1) Set initial value and wait for persistence
+	      await fillTextInputStable(page, '#root_person_name', 'Alice Snapshot');
+	      await waitForRecordField(
+	        page,
+	        recordId,
+	        (record) => record?.data?.person?.name ?? '',
+	        'Alice Snapshot',
+	        { timeout: POLL_TIMEOUT },
+	      );
 
       // Snapshot operations must stay within the existing draft.
       const recordsCountBaseline = await countObjectStoreRecords(page);
@@ -208,18 +185,26 @@ for (const locale of locales) {
       await createSnapshot(page);
 
       // 3) Change value and persist
-      await nameInput.fill('Bob After Change');
-      await expect(nameInput).toHaveValue('Bob After Change');
-      await page.waitForTimeout(AUTOSAVE_WAIT_MS);
+	      await fillTextInputStable(page, '#root_person_name', 'Bob After Change');
+	      await waitForRecordField(
+	        page,
+	        recordId,
+	        (record) => record?.data?.person?.name ?? '',
+	        'Bob After Change',
+	        { timeout: POLL_TIMEOUT },
+	      );
 
       // 4) Restore snapshot and verify value + persistence
       await restoreFirstSnapshot(page);
 
-      await expect(nameInput).toHaveValue('Alice Snapshot', {
-        timeout: POLL_TIMEOUT,
-      });
-      // Reload below confirms the persisted snapshot renders after refresh.
-      await page.waitForTimeout(AUTOSAVE_WAIT_MS);
+	      await expect(nameInput).toHaveValue('Alice Snapshot', { timeout: POLL_TIMEOUT });
+	      await waitForRecordField(
+	        page,
+	        recordId,
+	        (record) => record?.data?.person?.name ?? '',
+	        'Alice Snapshot',
+	        { timeout: POLL_TIMEOUT },
+	      );
 
       // Restore should not create a new draft record
       // Restoring a snapshot must not create a new draft.
@@ -229,10 +214,15 @@ for (const locale of locales) {
       // 5) Reload: restored value must remain, and still no extra records
       await page.reload();
 
-      await expect(nameInput).toBeVisible();
-      await expect(nameInput).toHaveValue('Alice Snapshot', {
-        timeout: POLL_TIMEOUT,
-      });
+	      await expect(nameInput).toBeVisible({ timeout: POLL_TIMEOUT });
+	      await expect(nameInput).toHaveValue('Alice Snapshot', { timeout: POLL_TIMEOUT });
+	      await waitForRecordField(
+	        page,
+	        recordId,
+	        (record) => record?.data?.person?.name ?? '',
+	        'Alice Snapshot',
+	        { timeout: POLL_TIMEOUT },
+	      );
 
       // Reload must keep the same record count after restoration.
       const recordsCountAfterReload = await countObjectStoreRecords(page);
