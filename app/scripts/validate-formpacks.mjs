@@ -700,10 +700,24 @@ const validateContract = async ({ formpackId, errors }) => {
   };
 };
 
+const createLogger = (stream) => {
+  const log = (message) => stream.write(`${message}\n`);
+  return {
+    log,
+    info: (message) => log(`\u001b[34m${message}\u001b[0m`),
+    pass: (message) => log(`\u001b[32m${message}\u001b[0m`),
+    fail: (message) => log(`\u001b[31m${message}\u001b[0m`),
+    warn: (message) => log(`\u001b[33m${message}\u001b[0m`),
+    group: (label) => console.group(label),
+    groupEnd: () => console.groupEnd(),
+  };
+};
+
 /**
  * Run contract validation and DOCX preflight for formpacks.
  */
 const run = async () => {
+  const logger = createLogger(process.stdout);
   const { id } = parseArgs(process.argv.slice(2));
   const formpackIds = await listFormpacks(id);
   const errors = new Map();
@@ -762,22 +776,23 @@ const run = async () => {
   }
 
   if (errors.size > 0) {
-    console.error('Formpack validation failed.');
+    logger.fail('\nFormpack validation failed.');
     for (const [formpackId, packErrors] of errors.entries()) {
-      console.error(`\n- ${formpackId}:`);
+      logger.group(`\n- ${formpackId}:`);
       packErrors.forEach(({ contextPath, error }) => {
-        console.error(
-          `  - ${contextPath}: ${error.name ?? 'Error'} - ${
-            error.message ?? ''
-          }`,
-        );
+        const shortPath = contextPath.replace(repoRoot, '');
+        const message = `${shortPath}: ${error.name ?? 'Error'} - ${
+          error.message ?? ''
+        }`;
+        logger.fail(`  - ${message}`);
       });
+      logger.groupEnd();
     }
     process.exitCode = 1;
     return;
   }
 
-  console.log('Formpack validation passed.');
+  logger.pass('\nFormpack validation passed.');
 };
 
 if (
