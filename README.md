@@ -58,6 +58,8 @@ npm run test:e2e
 npm run formpack:validate
 ```
 
+If E2E tests (`test:e2e`) fail due to missing dependencies, you may need to install browser binaries: `npx playwright install`.
+
 Optional (coverage report):
 
 ```bash
