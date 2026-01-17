@@ -11,7 +11,21 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - browser: chromium
+            allow_failure: false
+            repeat_each: 3
+          - browser: firefox
+            allow_failure: true
+            repeat_each: 1
+          - browser: webkit
+            allow_failure: true
+            repeat_each: 1
 
     steps:
       - name: Checkout
@@ -28,21 +42,29 @@ jobs:
         working-directory: app
         run: npm ci
 
-      - name: Install Playwright browsers (Chromium only)
+      - name: Install Playwright browsers
         working-directory: app
-        run: npx playwright install chromium --with-deps
+        run: npx playwright install --with-deps chromium firefox webkit
 
-      - name: Run Playwright tests
+      - name: Run Playwright tests (${{ matrix.browser }})
         working-directory: app
         env:
           CI: true
-        run: npm run test:e2e
+        run: |
+          set +e
+          npx playwright test --project=${{ matrix.browser }} --repeat-each ${{ matrix.repeat_each }}
+          status=$?
+          if [ $status -ne 0 ] && [ "${{ matrix.allow_failure }}" = "true" ]; then
+            echo "::warning title=E2E failed but allowed::Playwright project '${{ matrix.browser }}' failed. This does not fail the workflow. See Playwright report artifacts for details."
+            exit 0
+          fi
+          exit $status
 
       - name: Upload Playwright report (always)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.browser }}
           path: |
             app/playwright-report
             app/test-results
