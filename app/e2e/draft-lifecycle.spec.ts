@@ -1,12 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
-import { fillTextInputStable } from './helpers/form';
 
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
 const DB_NAME = 'mecfs-paperwork';
 const STORE_NAME = 'records';
 const POLL_TIMEOUT = 20_000;
+const POLL_INTERVALS = [250, 500, 1000];
 
 const getActiveRecordId = async (page: Page) => {
   return page.evaluate(
@@ -15,7 +15,7 @@ const getActiveRecordId = async (page: Page) => {
   );
 };
 
-const waitForActiveRecordId = async (page: Page) => {
+const waitForActiveRecordId = async (page: Page, timeoutMs = POLL_TIMEOUT) => {
   let activeId = '';
   await expect
     .poll(
@@ -23,7 +23,7 @@ const waitForActiveRecordId = async (page: Page) => {
         activeId = (await getActiveRecordId(page)) ?? '';
         return activeId;
       },
-      { timeout: POLL_TIMEOUT, intervals: [250, 500, 1000] },
+      { timeout: timeoutMs, intervals: POLL_INTERVALS },
     )
     .not.toBe('');
   return activeId;
@@ -151,23 +151,13 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
   await clickNewDraft(page);
-  await fillTextInputStable(
-    page,
-    page.locator('#root_person_name'),
-    'Draft One',
-    POLL_TIMEOUT,
-  );
+  await page.locator('#root_person_name').fill('Draft One');
   const firstActiveId = await waitForActiveRecordId(page);
   await waitForNamePersisted(page, firstActiveId, 'Draft One');
 
   await clickNewDraft(page);
   const secondActiveId = await waitForActiveRecordIdChange(page, firstActiveId);
-  await fillTextInputStable(
-    page,
-    page.locator('#root_person_name'),
-    'Draft Two',
-    POLL_TIMEOUT,
-  );
+  await page.locator('#root_person_name').fill('Draft Two');
   await waitForNamePersisted(page, secondActiveId, 'Draft Two');
   expect(secondActiveId).not.toBe(firstActiveId);
 

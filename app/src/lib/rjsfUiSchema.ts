@@ -43,6 +43,13 @@ const applyArrayItemDefaults = (
 
 /**
  * Applies default UI options for array fields to improve usability.
+ *
+ * RATIONALE: The default rendering for array fields in react-jsonschema-form
+ * is often suboptimal for our use case. This function recursively traverses a
+ * schema and applies sensible defaults to array fields and their items:
+ * - Disables reordering of array items (`orderable: false`).
+ * - Hides the label for individual array items (`label: false`), as it's
+ *   often redundant.
  */
 export const applyArrayUiSchemaDefaults = (
   schema: RJSFSchema,

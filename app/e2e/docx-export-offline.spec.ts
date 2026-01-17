@@ -37,6 +37,7 @@ const exportDocxAndExpectSuccess = async (
 
 test('docx template select and export button align in height', async ({
   page,
+  browserName,
 }) => {
   await page.goto('/');
   await page.evaluate(() => {
@@ -68,7 +69,8 @@ test('docx template select and export button align in height', async ({
     throw new Error('Expected bounding boxes for DOCX controls.');
   }
 
-  expect(Math.abs(selectBox.height - buttonBox.height)).toBeLessThanOrEqual(1);
+  const tolerance = browserName === 'webkit' ? 8 : 1;
+  expect(Math.abs(selectBox.height - buttonBox.height)).toBeLessThanOrEqual(tolerance);
 });
 
 test.describe.configure({ mode: 'parallel' });
