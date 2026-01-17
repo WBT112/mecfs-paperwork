@@ -1,7 +1,8 @@
 // This file contains the core logic for exporting data to DOCX format.
 // It handles DOCX template loading, data mapping, and report generation.
 
-import { createReport } from 'docx-templates/lib/browser.js';
+import Docxtemplater from 'docxtemplater';
+import PizZip from 'pizzip';
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
 import { buildDocumentModel } from '../formpacks/documentModel';
@@ -192,9 +193,14 @@ const buildDocxAdditionalContext = (
 };
 
 const coerceDocxError = (error: unknown): Error | null => {
-  if (Array.isArray(error)) {
-    const first = error.find((entry) => entry instanceof Error);
-    return first ?? null;
+  // docxtemplater can throw an error object with an `errors` array property
+  if (
+    isRecord(error) &&
+    Array.isArray(error.errors) &&
+    error.errors.length > 0
+  ) {
+    const first = error.errors.find((entry) => entry instanceof Error);
+    return first ?? (error instanceof Error ? error : null);
   }
 
   if (error instanceof Error) {
@@ -215,26 +221,30 @@ export const getDocxErrorKey = (error: unknown): DocxErrorKey => {
     return 'formpackDocxExportError';
   }
 
-  switch (target.name) {
-    case 'UnterminatedForLoopError':
-      return 'formpackDocxErrorUnterminatedFor';
-    case 'IncompleteConditionalStatementError':
-      return 'formpackDocxErrorIncompleteIf';
-    case 'TemplateParseError':
-    case 'CommandSyntaxError':
-      return 'formpackDocxErrorInvalidSyntax';
-    case 'InvalidCommandError':
-    case 'CommandExecutionError':
-    case 'ObjectCommandResultError':
-      return 'formpackDocxErrorInvalidCommand';
-    default:
-      // PRIVACY: Log the original error for diagnostics, but return a generic key.
-      console.error(
-        `A DOCX export error occurred (type: ${target.name}).`,
-        target,
-      );
-      return 'formpackDocxExportError';
+  if (target.name === 'TemplateError') {
+    const properties = (target as any).properties as
+      | { id?: string }
+      | undefined;
+    switch (properties?.id) {
+      case 'loop_unterminated':
+        return 'formpackDocxErrorUnterminatedFor';
+      case 'tag_not_closed':
+      case 'tag_not_opened':
+        return 'formpackDocxErrorIncompleteIf';
+      case 'malformed_tag':
+        return 'formpackDocxErrorInvalidSyntax';
+      case 'scope_error':
+      case 'render_error':
+        return 'formpackDocxErrorInvalidCommand';
+    }
   }
+
+  // PRIVACY: Log the original error for diagnostics, but return a generic key.
+  console.error(
+    `A DOCX export error occurred (type: ${target.name}).`,
+    target,
+  );
+  return 'formpackDocxExportError';
 };
 
 const getPathValue = (source: unknown, path: string): unknown => {
@@ -477,16 +487,28 @@ export const createDocxReport = async (
   template: Uint8Array,
   data: DocxTemplateContext,
   additionalJsContext?: DocxAdditionalContext,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   failFast: boolean = true,
 ): Promise<Uint8Array> => {
-  return createReport({
-    template,
-    data,
-    cmdDelimiter: DOCX_CMD_DELIMITER,
-    processLineBreaks: true,
-    additionalJsContext,
-    failFast,
+  const zip = new PizZip(template);
+  const doc = new Docxtemplater(zip, {
+    delimiters: {
+      start: DOCX_CMD_DELIMITER[0],
+      end: DOCX_CMD_DELIMITER[1],
+    },
+    linebreaks: true,
   });
+
+  // The 'additionalJsContext' from docx-templates can be merged directly into the data payload.
+  // Docxtemplater can execute functions passed in the data context.
+  doc.setData({
+    ...data,
+    ...(additionalJsContext ?? {}),
+  });
+
+  doc.render();
+
+  return doc.getZip().generate({ type: 'uint8array' });
 };
 
 /**

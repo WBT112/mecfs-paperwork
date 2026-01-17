@@ -1,6 +1,5 @@
 /* eslint-env node */
 /* global console, process */
-import { createReport } from 'docx-templates';
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
 import fs from 'node:fs/promises';
@@ -334,6 +333,10 @@ const validateTemplate = async ({
   errors,
   translations,
 }) => {
+  // @ts-ignore -- module is not typed
+  const { default: PizZip } = await import('pizzip');
+  // @ts-ignore -- module is not typed
+  const { default: Docxtemplater } = await import('docxtemplater');
   if (!isSafeAssetPath(templatePath)) {
     collectErrors(
       errors,
@@ -377,16 +380,30 @@ const validateTemplate = async ({
   const additionalJsContext = buildAdditionalJsContext(data.t);
 
   try {
-    await createReport({
-      template,
-      data,
-      cmdDelimiter: CMD_DELIMITER,
-      additionalJsContext,
-      failFast: false,
-      processLineBreaks: true,
+    const zip = new PizZip(template);
+    const doc = new Docxtemplater(zip, {
+      delimiters: {
+        start: CMD_DELIMITER[0],
+        end: CMD_DELIMITER[1],
+      },
+      linebreaks: true,
     });
+
+    doc.setData({
+      ...data,
+      ...additionalJsContext,
+    });
+
+    doc.render();
   } catch (error) {
-    collectErrors(errors, formpackId, templatePath, error);
+    // docxtemplater can throw an error object with an `errors` array property
+    if (isRecord(error) && Array.isArray(error.errors)) {
+      error.errors.forEach((err) =>
+        collectErrors(errors, formpackId, templatePath, err),
+      );
+    } else {
+      collectErrors(errors, formpackId, templatePath, error);
+    }
   }
 };
 
