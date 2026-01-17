@@ -12,6 +12,7 @@ import type {
   FormpackManifest,
 } from '../formpacks/types';
 import { getRecord } from '../storage/records';
+import { isRecord } from '../lib/utils';
 import { buildI18nContext } from './buildI18nContext';
 
 export type DocxTemplateId = 'a4' | 'wallet';
@@ -81,9 +82,6 @@ const buildAssetPath = (formpackId: string, assetPath: string) =>
   `/formpacks/${formpackId}/${assetPath}`;
 const buildCacheKey = (formpackId: string, assetPath: string) =>
   `${formpackId}:${assetPath}`;
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isSafeAssetPath = (value: string) => {
   // SECURITY: This is a critical security control.
