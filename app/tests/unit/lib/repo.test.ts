@@ -13,13 +13,13 @@ describe('getRepoUrl', () => {
     expect(getRepoUrl()).toBe(testUrl.trim());
   });
 
-  it('returns null when the environment variable is an empty string', () => {
+  it('returns the default repo URL when the environment variable is an empty string', () => {
     vi.stubEnv('VITE_REPO_URL', '');
-    expect(getRepoUrl()).toBeNull();
+    expect(getRepoUrl()).toBe(DEFAULT_REPO_URL);
   });
 
-  it('returns null when the environment variable consists only of whitespace', () => {
+  it('returns the default repo URL when the environment variable consists only of whitespace', () => {
     vi.stubEnv('VITE_REPO_URL', '   ');
-    expect(getRepoUrl()).toBeNull();
+    expect(getRepoUrl()).toBe(DEFAULT_REPO_URL);
   });
 });
