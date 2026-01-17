@@ -1,20 +1,12 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { stat } from 'node:fs/promises';
 import { deleteDatabase } from './helpers';
+import { clickActionButton } from './helpers/actions';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 20_000;
-
-const clickActionButton = async (button: Locator) => {
-  await expect(button).toBeVisible({ timeout: POLL_TIMEOUT });
-  await expect(button).toBeEnabled({ timeout: POLL_TIMEOUT });
-  await button.scrollIntoViewIfNeeded();
-  await button.evaluate((element) => {
-    (element as HTMLButtonElement).click();
-  });
-};
 
 const waitForDocxExportReady = async (page: Page) => {
   const docxSection = page.locator('.formpack-docx-export');

@@ -1,5 +1,6 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
+import { clickActionButton } from './helpers/actions';
 import { switchLocale } from './helpers/locale';
 
 type DbOptions = {
@@ -47,15 +48,6 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
-const clickActionButton = async (button: Locator) => {
-  await expect(button).toBeVisible({ timeout: POLL_TIMEOUT });
-  await expect(button).toBeEnabled({ timeout: POLL_TIMEOUT });
-  await button.scrollIntoViewIfNeeded();
-  await button.evaluate((element) => {
-    (element as HTMLButtonElement).click();
-  });
-};
-
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   if (await nameInput.isVisible()) {
@@ -67,10 +59,11 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     name: /new\s*draft|neuer\s*entwurf/i,
   });
   if (await newDraftButton.count()) {
-    await clickActionButton(newDraftButton.first());
+    await clickActionButton(newDraftButton.first(), POLL_TIMEOUT);
   } else {
     await clickActionButton(
       page.locator('.formpack-records__actions .app__button').first(),
+      POLL_TIMEOUT,
     );
   }
   await waitForActiveRecordId(page);
@@ -82,12 +75,13 @@ const createSnapshot = async (page: Page) => {
     name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i,
   });
   if (await createButton.count()) {
-    await clickActionButton(createButton.first());
+    await clickActionButton(createButton.first(), POLL_TIMEOUT);
     return;
   }
 
   await clickActionButton(
     page.locator('.formpack-snapshots__actions .app__button').first(),
+    POLL_TIMEOUT,
   );
 };
 
@@ -98,7 +92,7 @@ const restoreFirstSnapshot = async (page: Page) => {
     name: /restore|wiederherstellen|laden/i,
   });
   if (await restoreButton.count()) {
-    await clickActionButton(restoreButton.first());
+    await clickActionButton(restoreButton.first(), POLL_TIMEOUT);
     return;
   }
 
@@ -107,7 +101,7 @@ const restoreFirstSnapshot = async (page: Page) => {
   if (btnCount === 0) {
     throw new Error('No action buttons found in snapshot item.');
   }
-  await clickActionButton(buttons.nth(btnCount - 1));
+  await clickActionButton(buttons.nth(btnCount - 1), POLL_TIMEOUT);
 };
 
 test.describe('offline-first extensions', () => {
@@ -131,7 +125,7 @@ test.describe('offline-first extensions', () => {
         name: /Entwurf exportieren \(JSON\)|Export record \(JSON\)/i,
       })
       .first();
-    await clickActionButton(exportButton);
+    await clickActionButton(exportButton, POLL_TIMEOUT);
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(/\.json$/i);
     await context.setOffline(false);

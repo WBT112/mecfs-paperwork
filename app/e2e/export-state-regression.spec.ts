@@ -1,5 +1,6 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
+import { clickActionButton } from './helpers/actions';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
@@ -16,15 +17,6 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
-const clickActionButton = async (button: Locator) => {
-  await expect(button).toBeVisible({ timeout: POLL_TIMEOUT });
-  await expect(button).toBeEnabled({ timeout: POLL_TIMEOUT });
-  await button.scrollIntoViewIfNeeded();
-  await button.evaluate((element) => {
-    (element as HTMLButtonElement).click();
-  });
-};
-
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   if (await nameInput.isVisible()) {
@@ -36,10 +28,11 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     name: /new\s*draft|neuer\s*entwurf/i,
   });
   if (await newDraftButton.count()) {
-    await clickActionButton(newDraftButton.first());
+    await clickActionButton(newDraftButton.first(), POLL_TIMEOUT);
   } else {
     await clickActionButton(
       page.locator('.formpack-records__actions .app__button').first(),
+      POLL_TIMEOUT,
     );
   }
   await expect(nameInput).toBeVisible({ timeout: POLL_TIMEOUT });
@@ -67,7 +60,7 @@ test('json export followed by docx export re-enables actions', async ({
     })
     .first();
   const jsonDownloadPromise = page.waitForEvent('download');
-  await clickActionButton(jsonExportButton);
+  await clickActionButton(jsonExportButton, POLL_TIMEOUT);
   const jsonDownload = await jsonDownloadPromise;
   expect(jsonDownload.suggestedFilename()).toMatch(/\.json$/i);
 
@@ -78,7 +71,7 @@ test('json export followed by docx export re-enables actions', async ({
   await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
 
   const docxDownloadPromise = page.waitForEvent('download');
-  await clickActionButton(docxExportButton);
+  await clickActionButton(docxExportButton, POLL_TIMEOUT);
   const docxDownload = await docxDownloadPromise;
   expect(docxDownload.suggestedFilename()).toMatch(/\.docx$/i);
 
