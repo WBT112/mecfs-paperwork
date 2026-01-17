@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
+import { fillTextInputStable } from './helpers/form';
 import { switchLocale } from './helpers/locale';
 
 type DbOptions = {
@@ -115,7 +116,12 @@ test.describe('offline-first extensions', () => {
 
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
     await clickNewDraftIfNeeded(page);
-    await page.locator('#root_person_name').fill('Offline Export');
+    await fillTextInputStable(
+      page,
+      page.locator('#root_person_name'),
+      'Offline Export',
+      POLL_TIMEOUT,
+    );
     await page.locator('#root_diagnoses_meCfs').check();
 
     await context.setOffline(true);
@@ -143,8 +149,7 @@ test.describe('offline-first extensions', () => {
     await clickNewDraftIfNeeded(page);
 
     const nameInput = page.locator('#root_person_name');
-    await nameInput.fill('Snapshot Offline');
-    await expect(nameInput).toHaveValue('Snapshot Offline');
+    await fillTextInputStable(page, nameInput, 'Snapshot Offline', POLL_TIMEOUT);
 
     await context.setOffline(true);
     await createSnapshot(page);
@@ -152,8 +157,7 @@ test.describe('offline-first extensions', () => {
       timeout: POLL_TIMEOUT,
     });
 
-    await nameInput.fill('Snapshot Changed');
-    await expect(nameInput).toHaveValue('Snapshot Changed');
+    await fillTextInputStable(page, nameInput, 'Snapshot Changed', POLL_TIMEOUT);
     await restoreFirstSnapshot(page);
     await expect(nameInput).toHaveValue('Snapshot Offline', {
       timeout: POLL_TIMEOUT,

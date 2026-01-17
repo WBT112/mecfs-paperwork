@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { fillTextInputStable } from './helpers/form';
 
 type DbOptions = {
   dbName: string;
@@ -9,7 +10,7 @@ const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
 const POLL_TIMEOUT = 20_000;
 const POLL_INTERVALS = [250, 500, 1000];
-const AUTOSAVE_WAIT_MS = 1500;
+const AUTOSAVE_TIMEOUT_MS = 20_000;
 
 const DB: DbOptions = {
   dbName: 'mecfs-paperwork',
@@ -46,6 +47,77 @@ const waitForActiveRecordId = async (page: Page) => {
     )
     .not.toBe('');
   return activeId;
+};
+
+const readRecordById = async (
+  page: Page,
+  id: string,
+  options: DbOptions = DB,
+) => {
+  return page.evaluate(
+    async ({ dbName, storeName, id }) => {
+      const openExistingDb = async () => {
+        if (indexedDB.databases) {
+          const databases = await indexedDB.databases();
+          if (!databases.some((db) => db.name === dbName)) {
+            return null;
+          }
+        }
+
+        return await new Promise<IDBDatabase | null>((resolve) => {
+          let aborted = false;
+          const request = indexedDB.open(dbName);
+          request.onupgradeneeded = () => {
+            aborted = true;
+            request.transaction?.abort();
+          };
+          request.onsuccess = () => {
+            const db = request.result;
+            if (aborted) {
+              db.close();
+              resolve(null);
+              return;
+            }
+            resolve(db);
+          };
+          request.onerror = () => resolve(null);
+          request.onblocked = () => resolve(null);
+        });
+      };
+
+      const db = await openExistingDb();
+      if (!db) return null;
+
+      try {
+        if (!db.objectStoreNames.contains(storeName)) return null;
+
+        return await new Promise<any>((resolve, reject) => {
+          const tx = db.transaction(storeName, 'readonly');
+          const store = tx.objectStore(storeName);
+          const getReq = store.get(id);
+          getReq.onerror = () => reject(getReq.error);
+          getReq.onsuccess = () => resolve(getReq.result ?? null);
+        });
+      } finally {
+        db.close();
+      }
+    },
+    { ...options, id },
+  );
+};
+
+const waitForNamePersisted = async (page: Page, expected: string) => {
+  await expect
+    .poll(
+      async () => {
+        const activeId = await getActiveRecordId(page);
+        if (!activeId) return '';
+        const record = await readRecordById(page, activeId);
+        return record?.data?.person?.name ?? '';
+      },
+      { timeout: AUTOSAVE_TIMEOUT_MS, intervals: POLL_INTERVALS },
+    )
+    .toBe(expected);
 };
 
 const waitForRecordListReady = async (page: Page) => {
@@ -104,10 +176,8 @@ test.describe('reset form', () => {
 
     const nameInput = page.locator('#root_person_name');
     await waitForActiveRecordId(page);
-    await nameInput.fill('Test Person');
-    await expect(nameInput).toHaveValue('Test Person');
-    // Wait for autosave debounce before asserting persistence via reload.
-    await page.waitForTimeout(AUTOSAVE_WAIT_MS);
+    await fillTextInputStable(page, nameInput, 'Test Person', POLL_TIMEOUT);
+    await waitForNamePersisted(page, 'Test Person');
     await page.reload();
     await expect(nameInput).toBeVisible();
     await expect(nameInput).toHaveValue('Test Person');
@@ -119,7 +189,7 @@ test.describe('reset form', () => {
       .click();
 
     await expect(nameInput).toHaveValue('');
-    await page.waitForTimeout(AUTOSAVE_WAIT_MS);
+    await waitForNamePersisted(page, '');
     await page.reload();
     await expect(nameInput).toBeVisible();
     await expect(nameInput).toHaveValue('');

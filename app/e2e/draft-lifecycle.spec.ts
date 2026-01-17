@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
+import { fillTextInputStable } from './helpers/form';
 
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
@@ -150,13 +151,23 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
   await clickNewDraft(page);
-  await page.locator('#root_person_name').fill('Draft One');
+  await fillTextInputStable(
+    page,
+    page.locator('#root_person_name'),
+    'Draft One',
+    POLL_TIMEOUT,
+  );
   const firstActiveId = await waitForActiveRecordId(page);
   await waitForNamePersisted(page, firstActiveId, 'Draft One');
 
   await clickNewDraft(page);
   const secondActiveId = await waitForActiveRecordIdChange(page, firstActiveId);
-  await page.locator('#root_person_name').fill('Draft Two');
+  await fillTextInputStable(
+    page,
+    page.locator('#root_person_name'),
+    'Draft Two',
+    POLL_TIMEOUT,
+  );
   await waitForNamePersisted(page, secondActiveId, 'Draft Two');
   expect(secondActiveId).not.toBe(firstActiveId);
 
