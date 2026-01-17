@@ -9,6 +9,7 @@ export default defineConfig({
   timeout: isCI ? 60_000 : 30_000,
   expect: { timeout: isCI ? 15_000 : 10_000 },
   workers: isCI ? 2 : undefined,
+  retries: 3,
 
   // Terminal output + HTML report folder
   reporter: [

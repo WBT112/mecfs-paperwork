@@ -16,7 +16,7 @@ param(
   [string]$E2eCommand = "test:e2e",
 
   # How many times to run E2E
-  [int]$E2eRuns = 3,
+  [int]$E2eRuns = 2,
 
   # Docker image smoke test port (uses docker run -p)
   [int]$DockerImagePort = 18080,

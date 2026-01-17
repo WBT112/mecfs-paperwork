@@ -1,5 +1,6 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
+import { clickActionButton } from './helpers/actions';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
 
 type DbOptions = { dbName: string; storeName: string };
@@ -86,27 +87,7 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
-const clickActionButton = async (button: Locator) => {
-  const attemptClick = async () => {
-    // DOM click avoids Playwright's actionability flake during rapid rerenders.
-    await expect(button).toBeVisible({ timeout: POLL_TIMEOUT });
-    await expect(button).toBeEnabled({ timeout: POLL_TIMEOUT });
-    await button.scrollIntoViewIfNeeded();
-    await button.evaluate((element) => {
-      (element as HTMLButtonElement).click();
-    });
-  };
-
-  try {
-    await attemptClick();
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('not attached')) {
-      await attemptClick();
-      return;
-    }
-    throw error;
-  }
-};
+ 
 
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');

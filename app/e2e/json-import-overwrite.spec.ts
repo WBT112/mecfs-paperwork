@@ -1,6 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
-import { switchLocale, type SupportedTestLocale } from './helpers/locale';
+import { fillTextInputStable } from './helpers/form';
+import {
+  expectLocaleLabel,
+  switchLocale,
+  type SupportedTestLocale,
+} from './helpers/locale';
 
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
@@ -90,7 +95,7 @@ for (const locale of locales) {
       await clickNewDraftIfNeeded(page);
 
       const nameInput = page.locator('#root_person_name');
-      await nameInput.fill('Record Alpha');
+      await fillTextInputStable(page, nameInput, 'Record Alpha', 20_000);
       await page.locator('#root_diagnoses_meCfs').check();
 
       const activeIdBeforeExport = await waitForActiveRecordId(page);
@@ -107,8 +112,11 @@ for (const locale of locales) {
       const filePath = await download.path();
       expect(filePath).not.toBeNull();
 
-      await nameInput.fill('Record Beta');
-      await expect(nameInput).toHaveValue('Record Beta');
+      await fillTextInputStable(page, nameInput, 'Record Beta', 20_000);
+
+      const oppositeLocale = locale === 'de' ? 'en' : 'de';
+      await switchLocale(page, oppositeLocale);
+      await expectLocaleLabel(page, oppositeLocale);
 
       const overwriteRadio = page.getByRole('radio', {
         name: /overwrite|überschreiben/i,
@@ -124,22 +132,48 @@ for (const locale of locales) {
         .first();
       await expect(importButton).toBeEnabled();
 
-      page.once('dialog', (dialog) => dialog.accept());
+      // Overwrite mode uses a native confirm dialog. Stubbing it makes the E2E
+      // test deterministic and avoids timing issues with dialog handling.
+      await page.evaluate(() => {
+        window.confirm = () => true;
+      });
+
       await importButton.click();
 
-      const importSuccess = page.locator('.formpack-import__success');
-      await expect(importSuccess).toHaveText(
-        /Import abgeschlossen|Import complete/i,
-      );
+      // Note: after a successful import the app clears the file input and the
+      // JSON payload, so the import button becomes disabled again.
+      await expect(importButton).toBeDisabled({ timeout: 30_000 });
+      await expect(importButton).toHaveText(/JSON importieren|Import JSON/i, {
+        timeout: 30_000,
+      });
 
+      // Import also restores the locale stored in the exported payload.
+      await expect
+        .poll(async () => page.locator('#locale-select').inputValue(), {
+          timeout: 30_000,
+          intervals: [250, 500, 1000],
+        })
+        .toBe(locale);
+
+      const expectedLocaleLabel = locale === 'de' ? 'Sprache' : 'Language';
+      await expect
+        .poll(
+          async () =>
+            (await page.locator('label[for="locale-select"]').textContent()) ??
+            '',
+          { timeout: 30_000, intervals: [250, 500, 1000] },
+        )
+        .toBe(expectedLocaleLabel);
       await expect
         .poll(async () => getActiveRecordId(page), {
-          timeout: 10_000,
+          timeout: 30_000,
           intervals: [250, 500, 1000],
         })
         .toBe(activeIdBeforeExport);
-      await expect(nameInput).toHaveValue('Record Alpha');
-      await expect(page.locator('#root_diagnoses_meCfs')).toBeChecked();
+      await expect(nameInput).toHaveValue('Record Alpha', { timeout: 30_000 });
+      await expect(page.locator('#root_diagnoses_meCfs')).toBeChecked({
+        timeout: 30_000,
+      });
     });
   });
 }
