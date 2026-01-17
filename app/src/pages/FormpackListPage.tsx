@@ -131,6 +131,7 @@ export default function FormpackListPage() {
                 key={manifest.id}
                 className="formpack-card"
                 to={`/formpacks/${manifest.id}`}
+                aria-label={t('formpackOpenWithTitle', { title })}
               >
                 <div>
                   <h3>{title}</h3>
