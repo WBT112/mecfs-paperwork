@@ -1,6 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
-import { switchLocale, type SupportedTestLocale } from './helpers/locale';
+import {
+  expectLocaleLabel,
+  switchLocale,
+  type SupportedTestLocale,
+} from './helpers/locale';
 
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
@@ -110,6 +114,10 @@ for (const locale of locales) {
       await nameInput.fill('Record Beta');
       await expect(nameInput).toHaveValue('Record Beta');
 
+      const oppositeLocale = locale === 'de' ? 'en' : 'de';
+      await switchLocale(page, oppositeLocale);
+      await expectLocaleLabel(page, oppositeLocale);
+
       const overwriteRadio = page.getByRole('radio', {
         name: /overwrite|überschreiben/i,
       });
@@ -132,6 +140,7 @@ for (const locale of locales) {
         /Import abgeschlossen|Import complete/i,
       );
 
+      await expectLocaleLabel(page, locale);
       await expect
         .poll(async () => getActiveRecordId(page), {
           timeout: 10_000,
