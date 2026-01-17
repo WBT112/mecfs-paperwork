@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from './i18n/useLocale';
 import { SupportedLocale } from './i18n/locale';
@@ -27,7 +27,11 @@ export default function App() {
       <header className="app__header">
         <div className="app__header-content">
           <div>
-            <h1>{t('appTitle')}</h1>
+            <h1>
+              <Link to="/formpacks" className="app__brand-link">
+                {t('appTitle')}
+              </Link>
+            </h1>
             <p className="app__subtitle">{t('appSubtitle')}</p>
           </div>
           <div className="app__locale-switch">
