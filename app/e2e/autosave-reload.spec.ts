@@ -9,6 +9,11 @@ type DbOptions = {
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
 
+// WebKit can be more timing-sensitive; keep polling explicit and stable.
+const POLL_TIMEOUT = 15_000;
+const POLL_INTERVALS = [250, 500, 1000];
+
+
 const DB: DbOptions = {
   dbName: 'mecfs-paperwork',
   storeName: 'records',
@@ -71,7 +76,7 @@ const getActiveRecordId = async (page: Page) => {
   );
 };
 
-const waitForActiveRecordId = async (page: Page) => {
+const waitForActiveRecordId = async (page: Page, timeoutMs = 10_000) => {
   let activeId = '';
   await expect
     .poll(
@@ -79,7 +84,7 @@ const waitForActiveRecordId = async (page: Page) => {
         activeId = (await getActiveRecordId(page)) ?? '';
         return activeId;
       },
-      { timeout: 10_000, intervals: [250, 500, 1000] },
+      { timeout: timeoutMs, intervals: POLL_INTERVALS },
     )
     .not.toBe('');
   return activeId;
@@ -163,7 +168,16 @@ const clickNewDraftIfNeeded = async (page: Page) => {
 
   await waitForRecordListReady(page);
 
-  const activeIdAfterLoad = await getActiveRecordId(page);
+  let activeIdAfterLoad = await getActiveRecordId(page);
+  if (!activeIdAfterLoad) {
+    try {
+      // Some browsers (especially WebKit) can take longer to bootstrap the initial draft.
+      activeIdAfterLoad = await waitForActiveRecordId(page, 8_000);
+    } catch {
+      // ignore and fall back to manual draft creation below
+    }
+  }
+
   if (activeIdAfterLoad) {
     await expect(nameInput).toBeVisible();
     return;
@@ -176,30 +190,30 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     await newDraftButton.first().click();
   } else {
     // Fallback: click the first action button in the drafts area.
-    await page
-      .locator('.formpack-records__actions .app__button')
-      .first()
-      .click();
+    await page.locator('.formpack-records__actions .app__button').first().click();
   }
 
   await waitForActiveRecordId(page);
   await expect(nameInput).toBeVisible();
 };
 
-const waitForNamePersisted = async (page: Page, expectedName: string) => {
+
+const waitForNamePersisted = async (
+  page: Page,
+  recordId: string,
+  expectedName: string,
+) => {
   await expect
     .poll(
       async () => {
-        const activeId = await getActiveRecordId(page);
-        if (!activeId) return '';
-
-        const record = await readRecordById(page, activeId);
+        const record = await readRecordById(page, recordId);
         return record?.data?.person?.name ?? '';
       },
-      { timeout: 15_000, intervals: [250, 500, 1000] },
+      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
     )
     .toBe(expectedName);
 };
+
 
 // Verifies autosave persists to IndexedDB and reload restores the same draft without creating extras.
 test('autosave persists and reload does not create extra records', async ({
@@ -217,6 +231,7 @@ test('autosave persists and reload does not create extra records', async ({
 
   // Ensure we have an editable form (active record)
   await clickNewDraftIfNeeded(page);
+  const recordId = await waitForActiveRecordId(page);
 
   const nameInput = page.locator('#root_person_name');
   await expect(nameInput).toBeVisible();
@@ -225,7 +240,7 @@ test('autosave persists and reload does not create extra records', async ({
   await nameInput.fill('Test User');
 
   // Wait until the value is actually persisted in IndexedDB (no flaky sleeps)
-  await waitForNamePersisted(page, 'Test User');
+  await waitForNamePersisted(page, recordId, 'Test User');
 
   // Ensure only one persisted draft exists before the reload.
   const countBefore = await countObjectStoreRecords(page);

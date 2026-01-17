@@ -9,7 +9,6 @@ export default defineConfig({
   timeout: isCI ? 60_000 : 30_000,
   expect: { timeout: isCI ? 15_000 : 10_000 },
   workers: isCI ? 2 : undefined,
-  retries: 3,
 
   // Terminal output + HTML report folder
   reporter: [
@@ -34,6 +33,16 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      // Gecko-based Firefox
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      // WebKit (closest to Safari engine)
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
     },
   ],
 });
