@@ -1,19 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
 import { deleteDatabase } from './helpers';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
 
-type DbOptions = {
-  dbName: string;
-  storeName: string;
-};
-
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
-const DB: DbOptions = {
-  dbName: 'mecfs-paperwork',
-  storeName: 'records',
-};
+const DB_NAME = 'mecfs-paperwork';
 
 const getActiveRecordId = async (page: Page) => {
   return page.evaluate(
@@ -86,26 +77,24 @@ const locales: SupportedTestLocale[] = ['de', 'en'];
 
 for (const locale of locales) {
   test.describe(locale, () => {
-    // Verifies JSON export downloads a file with expected metadata and form data for the active draft.
-    test('exports JSON with record metadata and form data', async ({
-      page,
-    }) => {
+    test('imports JSON overwrite into active draft', async ({ page }) => {
       await page.goto('/');
       await page.evaluate(() => {
         window.localStorage.clear();
         window.sessionStorage.clear();
       });
-      await deleteDatabase(page, DB.dbName);
+      await deleteDatabase(page, DB_NAME);
 
       await page.goto(`/formpacks/${FORM_PACK_ID}`);
       await switchLocale(page, locale);
       await clickNewDraftIfNeeded(page);
 
-      await page.locator('#root_person_name').fill('Test User');
+      const nameInput = page.locator('#root_person_name');
+      await nameInput.fill('Record Alpha');
       await page.locator('#root_diagnoses_meCfs').check();
-      const activeIdBeforeImport = await waitForActiveRecordId(page);
 
-      // Trigger the JSON export for the active draft.
+      const activeIdBeforeExport = await waitForActiveRecordId(page);
+
       const downloadPromise = page.waitForEvent('download');
       const exportButton = page
         .getByRole('button', {
@@ -117,49 +106,16 @@ for (const locale of locales) {
       const download = await downloadPromise;
       const filePath = await download.path();
       expect(filePath).not.toBeNull();
-      await expect(download.suggestedFilename()).toMatch(
-        new RegExp(
-          `^${FORM_PACK_ID}_.+_\\d{4}-\\d{2}-\\d{2}_${locale}\\.json$`,
-        ),
-      );
 
-      // The payload must include metadata and the form data we entered.
-      const contents = await readFile(filePath as string, 'utf-8');
-      const payload = JSON.parse(contents) as {
-        app: { id: string; version: string };
-        formpack: { id: string; version: string };
-        record: {
-          id: string;
-          name?: string;
-          updatedAt: string;
-          locale: string;
-        };
-        locale: string;
-        exportedAt: string;
-        data: Record<string, unknown>;
-        revisions?: unknown[];
-      };
+      await nameInput.fill('Record Beta');
+      await expect(nameInput).toHaveValue('Record Beta');
 
-      expect(payload.app.id).toBe('mecfs-paperwork');
-      expect(payload.formpack.id).toBe(FORM_PACK_ID);
-      expect(payload.record.id).toBeTruthy();
-      expect(payload.record.updatedAt).toBeTruthy();
-      expect(payload.locale).toBe(locale);
-      expect(payload.record.locale).toBe(locale);
-      expect(payload.data).toMatchObject({
-        person: {
-          name: 'Test User',
-        },
-        diagnoses: {
-          meCfs: true,
-        },
+      const overwriteRadio = page.getByRole('radio', {
+        name: /overwrite|überschreiben/i,
       });
-      expect(new Date(payload.exportedAt).toISOString()).toBe(
-        payload.exportedAt,
-      );
-      expect(payload.revisions).toBeUndefined();
+      await expect(overwriteRadio).toBeEnabled();
+      await overwriteRadio.check();
 
-      // Import the exported payload to verify the round-trip flow stays functional.
       await page
         .locator('#formpack-import-file')
         .setInputFiles(filePath as string);
@@ -167,6 +123,8 @@ for (const locale of locales) {
         .getByRole('button', { name: /JSON importieren|Import JSON/i })
         .first();
       await expect(importButton).toBeEnabled();
+
+      page.once('dialog', (dialog) => dialog.accept());
       await importButton.click();
 
       const importSuccess = page.locator('.formpack-import__success');
@@ -179,8 +137,8 @@ for (const locale of locales) {
           timeout: 10_000,
           intervals: [250, 500, 1000],
         })
-        .not.toBe(activeIdBeforeImport);
-      await expect(page.locator('#root_person_name')).toHaveValue('Test User');
+        .toBe(activeIdBeforeExport);
+      await expect(nameInput).toHaveValue('Record Alpha');
       await expect(page.locator('#root_diagnoses_meCfs')).toBeChecked();
     });
   });
