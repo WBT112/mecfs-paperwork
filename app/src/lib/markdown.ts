@@ -1,3 +1,5 @@
+import { sanitizeHTML } from './utils';
+
 export type MarkdownBlock =
   | { type: 'heading'; level: 1 | 2 | 3; text: string }
   | { type: 'paragraph'; text: string }
@@ -35,7 +37,7 @@ export const parseMarkdown = (markdown: string): MarkdownBlock[] => {
       blocks.push({
         type: 'heading',
         level: headingMatch[1].length as 1 | 2 | 3,
-        text: headingMatch[2],
+        text: sanitizeHTML(headingMatch[2]),
       });
       continue;
     }
@@ -46,7 +48,7 @@ export const parseMarkdown = (markdown: string): MarkdownBlock[] => {
         flush();
         currentBlock = 'list';
       }
-      lines.push(listMatch[1]);
+      lines.push(sanitizeHTML(listMatch[1]));
       continue;
     }
 
@@ -54,7 +56,7 @@ export const parseMarkdown = (markdown: string): MarkdownBlock[] => {
       flush();
       currentBlock = 'paragraph';
     }
-    lines.push(line);
+    lines.push(sanitizeHTML(line));
   }
 
   flush();
