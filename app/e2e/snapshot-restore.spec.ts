@@ -1,4 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { deleteDatabase } from './helpers';
+import { switchLocale, type SupportedTestLocale } from './helpers/locale';
 
 type DbOptions = { dbName: string; storeName: string };
 const FORM_PACK_ID = 'notfallpass';
@@ -8,17 +10,6 @@ const POLL_INTERVALS = [250, 500, 1000];
 const AUTOSAVE_WAIT_MS = 1500;
 
 const DB: DbOptions = { dbName: 'mecfs-paperwork', storeName: 'records' };
-
-const deleteDatabase = async (page: Page, dbName: string) => {
-  await page.evaluate(async (name) => {
-    await new Promise<void>((resolve) => {
-      const req = indexedDB.deleteDatabase(name);
-      req.onsuccess = () => resolve();
-      req.onerror = () => resolve();
-      req.onblocked = () => resolve();
-    });
-  }, dbName);
-};
 
 const countObjectStoreRecords = async (page: Page, options: DbOptions = DB) => {
   return page.evaluate(async ({ dbName, storeName }) => {
@@ -189,64 +180,82 @@ const restoreFirstSnapshot = async (page: Page) => {
   await buttons.nth(btnCount - 1).click();
 };
 
-// Verifies snapshot creation/restoration and ensures no extra drafts are created across reloads.
-test('snapshot restore restores data and does not create extra records', async ({
-  page,
-}) => {
-  await page.goto('/');
-  await page.evaluate(() => {
-    window.localStorage.clear();
-    window.sessionStorage.clear();
+test.describe.configure({ mode: 'parallel' });
+
+const locales: SupportedTestLocale[] = ['de', 'en'];
+const snapshotsHeadingByLocale: Record<SupportedTestLocale, RegExp> = {
+  de: /Verlauf/i,
+  en: /History/i,
+};
+
+for (const locale of locales) {
+  test.describe(locale, () => {
+    // Verifies snapshot creation/restoration and ensures no extra drafts are created across reloads.
+    test('snapshot restore restores data and does not create extra records', async ({
+      page,
+    }) => {
+      await page.goto('/');
+      await page.evaluate(() => {
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+      });
+      await deleteDatabase(page, DB.dbName);
+
+      await page.goto(`/formpacks/${FORM_PACK_ID}`);
+      await switchLocale(page, locale);
+      await expect(
+        page.getByRole('heading', {
+          name: snapshotsHeadingByLocale[locale],
+        }),
+      ).toBeVisible();
+
+      await clickNewDraftIfNeeded(page);
+      await waitForActiveRecordId(page);
+
+      const nameInput = page.locator('#root_person_name');
+      await expect(nameInput).toBeVisible();
+      // 1) Set initial value and wait for persistence
+      await nameInput.fill('Alice Snapshot');
+      await expect(nameInput).toHaveValue('Alice Snapshot');
+      await page.waitForTimeout(AUTOSAVE_WAIT_MS);
+
+      // Snapshot operations must stay within the existing draft.
+      const recordsCountBaseline = await countObjectStoreRecords(page);
+      expect(recordsCountBaseline).toBeGreaterThan(0);
+
+      // 2) Create snapshot and verify it appears
+      await createSnapshot(page);
+
+      // 3) Change value and persist
+      await nameInput.fill('Bob After Change');
+      await expect(nameInput).toHaveValue('Bob After Change');
+      await page.waitForTimeout(AUTOSAVE_WAIT_MS);
+
+      // 4) Restore snapshot and verify value + persistence
+      await restoreFirstSnapshot(page);
+
+      await expect(nameInput).toHaveValue('Alice Snapshot', {
+        timeout: POLL_TIMEOUT,
+      });
+      // Reload below confirms the persisted snapshot renders after refresh.
+      await page.waitForTimeout(AUTOSAVE_WAIT_MS);
+
+      // Restore should not create a new draft record
+      // Restoring a snapshot must not create a new draft.
+      const recordsCountAfterRestore = await countObjectStoreRecords(page);
+      expect(recordsCountAfterRestore).toBe(recordsCountBaseline);
+
+      // 5) Reload: restored value must remain, and still no extra records
+      await page.reload();
+
+      await expect(nameInput).toBeVisible();
+      await expect(nameInput).toHaveValue('Alice Snapshot', {
+        timeout: POLL_TIMEOUT,
+      });
+
+      // Reload must keep the same record count after restoration.
+      const recordsCountAfterReload = await countObjectStoreRecords(page);
+      expect(recordsCountAfterReload).toBe(recordsCountBaseline);
+    });
   });
-  await deleteDatabase(page, DB.dbName);
-
-  await page.goto(`/formpacks/${FORM_PACK_ID}`);
-
-  await clickNewDraftIfNeeded(page);
-  await waitForActiveRecordId(page);
-
-  const nameInput = page.locator('#root_person_name');
-  await expect(nameInput).toBeVisible();
-  // 1) Set initial value and wait for persistence
-  await nameInput.fill('Alice Snapshot');
-  await expect(nameInput).toHaveValue('Alice Snapshot');
-  await page.waitForTimeout(AUTOSAVE_WAIT_MS);
-
-  // Snapshot operations must stay within the existing draft.
-  const recordsCountBaseline = await countObjectStoreRecords(page);
-  expect(recordsCountBaseline).toBeGreaterThan(0);
-
-  // 2) Create snapshot and verify it appears
-  await createSnapshot(page);
-
-  // 3) Change value and persist
-  await nameInput.fill('Bob After Change');
-  await expect(nameInput).toHaveValue('Bob After Change');
-  await page.waitForTimeout(AUTOSAVE_WAIT_MS);
-
-  // 4) Restore snapshot and verify value + persistence
-  await restoreFirstSnapshot(page);
-
-  await expect(nameInput).toHaveValue('Alice Snapshot', {
-    timeout: POLL_TIMEOUT,
-  });
-  // Reload below confirms the persisted snapshot renders after refresh.
-  await page.waitForTimeout(AUTOSAVE_WAIT_MS);
-
-  // Restore should not create a new draft record
-  // Restoring a snapshot must not create a new draft.
-  const recordsCountAfterRestore = await countObjectStoreRecords(page);
-  expect(recordsCountAfterRestore).toBe(recordsCountBaseline);
-
-  // 5) Reload: restored value must remain, and still no extra records
-  await page.reload();
-
-  await expect(nameInput).toBeVisible();
-  await expect(nameInput).toHaveValue('Alice Snapshot', {
-    timeout: POLL_TIMEOUT,
-  });
-
-  // Reload must keep the same record count after restoration.
-  const recordsCountAfterReload = await countObjectStoreRecords(page);
-  expect(recordsCountAfterReload).toBe(recordsCountBaseline);
-});
+}
