@@ -68,24 +68,30 @@ export type ImportErrorCode =
   | 'invalid_revisions'
   | 'unsupported_locale';
 
+export type ImportError = {
+  code: ImportErrorCode;
+  message?: string;
+};
+
 export type ImportValidationResult =
   | { payload: JsonImportPayload; error: null }
-  | { payload: null; error: ImportErrorCode };
+  | { payload: null; error: ImportError };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const parseJson = (
   value: string,
-): { payload: unknown } | { error: 'invalid_json' } => {
+): { payload: unknown } | { error: 'invalid_json'; message: string } => {
   const normalized = value.replace(/^\uFEFF/, '').trimStart();
   if (!normalized) {
-    return { error: 'invalid_json' };
+    return { error: 'invalid_json', message: 'The file is empty.' };
   }
   try {
     return { payload: JSON.parse(normalized) as unknown };
-  } catch {
-    return { error: 'invalid_json' };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e);
+    return { error: 'invalid_json', message };
   }
 };
 
@@ -202,20 +208,20 @@ const normalizeExportPayload = (
 
   if (app !== undefined) {
     if (!isRecord(app) || typeof app.id !== 'string') {
-      return { payload: null, error: 'invalid_payload' };
+      return { payload: null, error: { code: 'invalid_payload' } };
     }
   }
 
   if (!isRecord(formpack) || typeof formpack.id !== 'string') {
-    return { payload: null, error: 'invalid_payload' };
+    return { payload: null, error: { code: 'invalid_payload' } };
   }
 
   if (!FORMPACK_IDS.includes(formpack.id as (typeof FORMPACK_IDS)[number])) {
-    return { payload: null, error: 'unknown_formpack' };
+    return { payload: null, error: { code: 'unknown_formpack' } };
   }
 
   if (formpack.id !== expectedFormpackId) {
-    return { payload: null, error: 'formpack_mismatch' };
+    return { payload: null, error: { code: 'formpack_mismatch' } };
   }
 
   let recordData: unknown = payload.data;
@@ -224,11 +230,11 @@ const normalizeExportPayload = (
   }
 
   if (recordData === undefined || recordData === null) {
-    return { payload: null, error: 'invalid_payload' };
+    return { payload: null, error: { code: 'invalid_payload' } };
   }
 
   if (!isRecord(recordData)) {
-    return { payload: null, error: 'invalid_payload' };
+    return { payload: null, error: { code: 'invalid_payload' } };
   }
 
   let localeValue: unknown = payload.locale;
@@ -237,11 +243,11 @@ const normalizeExportPayload = (
   }
 
   if (localeValue === undefined) {
-    return { payload: null, error: 'invalid_payload' };
+    return { payload: null, error: { code: 'invalid_payload' } };
   }
 
   if (typeof localeValue !== 'string' || !isSupportedLocale(localeValue)) {
-    return { payload: null, error: 'unsupported_locale' };
+    return { payload: null, error: { code: 'unsupported_locale' } };
   }
 
   void payload.createdAt;
@@ -250,15 +256,15 @@ const normalizeExportPayload = (
   let recordTitle: string | undefined;
   if (record !== undefined) {
     if (!isRecord(record)) {
-      return { payload: null, error: 'invalid_payload' };
+      return { payload: null, error: { code: 'invalid_payload' } };
     }
 
     if (record.title !== undefined && typeof record.title !== 'string') {
-      return { payload: null, error: 'invalid_payload' };
+      return { payload: null, error: { code: 'invalid_payload' } };
     }
 
     if (record.name !== undefined && typeof record.name !== 'string') {
-      return { payload: null, error: 'invalid_payload' };
+      return { payload: null, error: { code: 'invalid_payload' } };
     }
 
     recordTitle =
@@ -268,13 +274,13 @@ const normalizeExportPayload = (
 
   const revisions = normalizeExportRevisions(payload.revisions);
   if (revisions === 'invalid_revisions') {
-    return { payload: null, error: 'invalid_revisions' };
+    return { payload: null, error: { code: 'invalid_revisions' } };
   }
 
   const normalizedData = applySchemaDefaults(schema, recordData);
   const isValid = validateSchema(schema, normalizedData);
   if (!isValid) {
-    return { payload: null, error: 'schema_mismatch' };
+    return { payload: null, error: { code: 'schema_mismatch' } };
   }
 
   const normalizedPayload: JsonImportPayload = migrateExport({
@@ -311,11 +317,14 @@ export const validateJsonImport = (
 ): ImportValidationResult => {
   const parsed = parseJson(rawJson);
   if ('error' in parsed) {
-    return { payload: null, error: parsed.error };
+    return {
+      payload: null,
+      error: { code: parsed.error, message: parsed.message },
+    };
   }
 
   if (!isRecord(parsed.payload)) {
-    return { payload: null, error: 'invalid_payload' };
+    return { payload: null, error: { code: 'invalid_payload' } };
   }
 
   return normalizeExportPayload(

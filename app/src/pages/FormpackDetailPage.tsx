@@ -578,10 +578,12 @@ export default function FormpackDetailPage() {
   }, [storageError, t]);
 
   const buildImportErrorMessage = useCallback(
-    (code: string) => {
-      switch (code) {
+    (error: { code: string; message?: string }) => {
+      switch (error.code) {
         case 'invalid_json':
-          return t('importInvalidJson');
+          return error.message
+            ? t('importInvalidJsonWithDetails', { message: error.message })
+            : t('importInvalidJson');
         case 'unknown_formpack':
           return t('importUnknownFormpack');
         case 'schema_mismatch':
@@ -856,13 +858,7 @@ export default function FormpackDetailPage() {
     setIsImporting(true);
 
     try {
-      let result;
-      try {
-        result = validateJsonImport(importJson, schema, manifest.id);
-      } catch {
-        setImportError(t('importInvalidPayload'));
-        return;
-      }
+      const result = validateJsonImport(importJson, schema, manifest.id);
 
       if (result.error) {
         setImportError(buildImportErrorMessage(result.error));
