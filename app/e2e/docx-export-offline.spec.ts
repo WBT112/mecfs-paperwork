@@ -70,7 +70,9 @@ test('docx template select and export button align in height', async ({
   }
 
   const tolerance = browserName === 'webkit' ? 8 : 1;
-  expect(Math.abs(selectBox.height - buttonBox.height)).toBeLessThanOrEqual(tolerance);
+  expect(Math.abs(selectBox.height - buttonBox.height)).toBeLessThanOrEqual(
+    tolerance,
+  );
 });
 
 test.describe.configure({ mode: 'parallel' });

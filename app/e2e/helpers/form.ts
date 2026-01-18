@@ -4,7 +4,13 @@ export type InputTarget = string | Locator;
 
 // Some input types (notably <input type="date">) behave inconsistently across engines
 // when values are entered via keyboard simulation. For these, prefer direct assignment.
-const DIRECT_VALUE_TYPES = new Set(["date", "datetime-local", "time", "month", "week"]);
+const DIRECT_VALUE_TYPES = new Set([
+  'date',
+  'datetime-local',
+  'time',
+  'month',
+  'week',
+]);
 
 export type FillTextInputStableOptions =
   | {
@@ -72,15 +78,12 @@ const trySetValue = async (
 
   if (DIRECT_VALUE_TYPES.has(inputType)) {
     await input.focus({ timeout });
-    await input.evaluate(
-      (el, v) => {
-        const i = el as HTMLInputElement;
-        i.value = v;
-        i.dispatchEvent(new Event('input', { bubbles: true }));
-        i.dispatchEvent(new Event('change', { bubbles: true }));
-      },
-      value,
-    );
+    await input.evaluate((el, v) => {
+      const i = el as HTMLInputElement;
+      i.value = v;
+      i.dispatchEvent(new Event('input', { bubbles: true }));
+      i.dispatchEvent(new Event('change', { bubbles: true }));
+    }, value);
 
     await input.blur();
 
@@ -125,7 +128,8 @@ export const fillTextInputStable = async (
   value: string,
   options?: FillTextInputStableOptions,
 ) => {
-  const { timeout, intervals, retries, useKeyboard } = normalizeOptions(options);
+  const { timeout, intervals, retries, useKeyboard } =
+    normalizeOptions(options);
   const input = resolveTarget(page, target);
 
   let lastSeen = '';

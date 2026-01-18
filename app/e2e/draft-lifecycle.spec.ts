@@ -36,9 +36,9 @@ const waitForActiveRecordId = async (page: Page, timeoutMs = POLL_TIMEOUT) => {
 
 const waitForActiveRecordIdChange = async (page: Page, previousId: string) => {
   await expect
-		.poll(async () => getActiveRecordId(page), {
+    .poll(async () => getActiveRecordId(page), {
       timeout: POLL_TIMEOUT,
-			intervals: POLL_INTERVALS,
+      intervals: POLL_INTERVALS,
     })
     .not.toBe(previousId);
   return (await getActiveRecordId(page)) ?? '';
@@ -94,27 +94,27 @@ test('draft lifecycle supports switching between multiple drafts', async ({
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
-	// On an empty DB, the app creates the first draft automatically after
-	// records have loaded. Avoid clicking "new draft" too early, as that can
-	// race the initial restore path across browsers.
-	await waitForRecordListReady(page);
-	const firstActiveId = await waitForActiveRecordId(page);
-	await waitForRecordById(page, firstActiveId, { timeout: POLL_TIMEOUT });
-	await fillTextInputStable(page, '#root_person_name', 'Draft One');
-	await waitForNamePersisted(page, firstActiveId, 'Draft One');
+  // On an empty DB, the app creates the first draft automatically after
+  // records have loaded. Avoid clicking "new draft" too early, as that can
+  // race the initial restore path across browsers.
+  await waitForRecordListReady(page);
+  const firstActiveId = await waitForActiveRecordId(page);
+  await waitForRecordById(page, firstActiveId, { timeout: POLL_TIMEOUT });
+  await fillTextInputStable(page, '#root_person_name', 'Draft One');
+  await waitForNamePersisted(page, firstActiveId, 'Draft One');
 
-	await clickNewDraft(page);
-	const secondActiveId = await waitForActiveRecordIdChange(page, firstActiveId);
-	await waitForRecordById(page, secondActiveId, { timeout: POLL_TIMEOUT });
-	await fillTextInputStable(page, '#root_person_name', 'Draft Two');
-	await waitForNamePersisted(page, secondActiveId, 'Draft Two');
+  await clickNewDraft(page);
+  const secondActiveId = await waitForActiveRecordIdChange(page, firstActiveId);
+  await waitForRecordById(page, secondActiveId, { timeout: POLL_TIMEOUT });
+  await fillTextInputStable(page, '#root_person_name', 'Draft Two');
+  await waitForNamePersisted(page, secondActiveId, 'Draft Two');
   expect(secondActiveId).not.toBe(firstActiveId);
 
   const records = page.locator('.formpack-records__item');
   await expect
     .poll(async () => records.count(), {
       timeout: POLL_TIMEOUT,
-			intervals: POLL_INTERVALS,
+      intervals: POLL_INTERVALS,
     })
     .toBeGreaterThanOrEqual(2);
 
@@ -133,12 +133,12 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await expect
     .poll(async () => getActiveRecordId(page), {
       timeout: POLL_TIMEOUT,
-			intervals: POLL_INTERVALS,
+      intervals: POLL_INTERVALS,
     })
     .toBe(firstActiveId);
-	await expect(page.locator('#root_person_name')).toHaveValue('Draft One', {
-		timeout: POLL_TIMEOUT,
-	});
+  await expect(page.locator('#root_person_name')).toHaveValue('Draft One', {
+    timeout: POLL_TIMEOUT,
+  });
 
   const activeBadge = page.locator(
     '.formpack-records__item--active .formpack-records__badge',
@@ -149,12 +149,12 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await expect
     .poll(async () => getActiveRecordId(page), {
       timeout: POLL_TIMEOUT,
-			intervals: POLL_INTERVALS,
+      intervals: POLL_INTERVALS,
     })
     .toBe(secondActiveId);
-	await expect(page.locator('#root_person_name')).toHaveValue('Draft Two', {
-		timeout: POLL_TIMEOUT,
-	});
+  await expect(page.locator('#root_person_name')).toHaveValue('Draft Two', {
+    timeout: POLL_TIMEOUT,
+  });
 
   await expect(activeBadge).toHaveText(/active|aktiv/i);
 
@@ -162,10 +162,10 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await expect
     .poll(async () => getActiveRecordId(page), {
       timeout: POLL_TIMEOUT,
-			intervals: POLL_INTERVALS,
+      intervals: POLL_INTERVALS,
     })
     .toBe(secondActiveId);
-	await expect(page.locator('#root_person_name')).toHaveValue('Draft Two', {
-		timeout: POLL_TIMEOUT,
-	});
+  await expect(page.locator('#root_person_name')).toHaveValue('Draft Two', {
+    timeout: POLL_TIMEOUT,
+  });
 });
