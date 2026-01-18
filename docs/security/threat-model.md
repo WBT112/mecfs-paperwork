@@ -59,7 +59,7 @@
 - Never log user-entered content or exports (only redacted summaries if necessary).
 - Avoid storing full payloads; prefer minimization and clear retention boundaries.
 - Validate and constrain any template/formpack inputs; fail safely with actionable, non-sensitive errors.
-- Avoid unsafe HTML rendering; prefer safe markdown rendering without raw HTML (if introduced).
+- Avoid unsafe HTML rendering; prefer safe markdown rendering without raw HTML (Markdown uses react-markdown with raw HTML disabled).
 - Keep dependencies current; prioritize high/critical fixes.
 
 ## 8. Open risks / backlog
