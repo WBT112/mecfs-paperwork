@@ -6,6 +6,29 @@ export type InputTarget = string | Locator;
 // when values are entered via keyboard simulation. For these, prefer direct assignment.
 const DIRECT_VALUE_TYPES = new Set(["date", "datetime-local", "time", "month", "week"]);
 
+const DATE_ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Some date widgets render as plain text inputs with locale-specific placeholders
+ * (e.g. "TT.MM.JJJJ" or "DD/MM/YYYY"). Typing an ISO date into these can lead to
+ * garbled values and the app rejecting the input. If we detect an ISO date and a
+ * non-ISO placeholder, we type a locale-compatible representation.
+ */
+const formatIsoDateForPlaceholder = (isoDate: string, placeholder: string | null) => {
+  if (!DATE_ISO_RE.test(isoDate)) return isoDate;
+
+  const [yyyy, mm, dd] = isoDate.split('-');
+  const p = (placeholder ?? '').trim().toUpperCase();
+
+  const sep = p.includes('.') ? '.' : p.includes('/') ? '/' : p.includes('-') ? '-' : '.';
+  const firstTokenMatch = p.match(/(TT|DD|MM|YYYY|JJJJ)/);
+  const firstToken = firstTokenMatch?.[1] ?? '';
+
+  if (firstToken === 'TT' || firstToken === 'DD') return `${dd}${sep}${mm}${sep}${yyyy}`;
+  if (firstToken === 'MM') return `${mm}${sep}${dd}${sep}${yyyy}`;
+  return isoDate;
+};
+
 export type FillTextInputStableOptions =
   | {
       /** Overall timeout (ms) for the fill operation. */
@@ -99,7 +122,11 @@ const trySetValue = async (
 
   if (useKeyboard) {
     await page.keyboard.press(selectAllShortcut());
-    await page.keyboard.type(value, { delay: 10 });
+    const placeholder = await input.getAttribute('placeholder');
+    const valueToType = DATE_ISO_RE.test(value)
+      ? formatIsoDateForPlaceholder(value, placeholder)
+      : value;
+    await page.keyboard.type(valueToType, { delay: 10 });
   } else {
     await input.fill(value, { timeout });
   }
@@ -135,9 +162,18 @@ export const fillTextInputStable = async (
     try {
       await trySetValue(page, input, value, timeout, useKeyboard);
 
+      const placeholder = await input.getAttribute('placeholder');
+      const expectedTyped = DATE_ISO_RE.test(value)
+        ? formatIsoDateForPlaceholder(value, placeholder)
+        : value;
+      const acceptable = new Set([value, expectedTyped]);
+
       await expect
-        .poll(async () => input.inputValue(), { timeout, intervals })
-        .toBe(value);
+        .poll(async () => acceptable.has(await input.inputValue()), { timeout, intervals })
+        .toBe(true);
+
+      // One more change event after the stability check can help with some controlled widgets.
+      await input.dispatchEvent('change');
 
       return;
     } catch (err) {
