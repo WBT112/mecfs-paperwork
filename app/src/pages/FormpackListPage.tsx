@@ -91,7 +91,11 @@ export default function FormpackListPage() {
     return (
       <section className="app__card">
         <h2>{t('formpackListTitle')}</h2>
-        <p>{t('formpackLoading')}</p>
+        <div
+          className="app__loading-spinner"
+          role="status"
+          aria-label={t('formpackLoading')}
+        />
       </section>
     );
   }
