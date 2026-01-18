@@ -90,6 +90,39 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
+const clickNewDraftIfNeeded = async (page: Page) => {
+  const nameInput = page.locator('#root_person_name');
+  const existingActiveId = await getActiveRecordId(page);
+  if (existingActiveId) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  await waitForRecordListReady(page);
+
+  const activeIdAfterLoad = await getActiveRecordId(page);
+  if (activeIdAfterLoad) {
+    await expect(nameInput).toBeVisible();
+    return;
+  }
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new\s*draft|neuer\s*entwurf/i,
+  });
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
+  } else {
+    // Fallback: click the first action button in the drafts area.
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
+  }
+
+  await waitForActiveRecordId(page);
+  await expect(nameInput).toBeVisible();
+};
+
 const createSnapshot = async (page: Page) => {
   const createBtn = page.getByRole('button', {
     name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i,
@@ -159,7 +192,7 @@ for (const locale of locales) {
         }),
       ).toBeVisible();
 
-      await waitForRecordListReady(page);
+      await clickNewDraftIfNeeded(page);
       const recordId = await waitForActiveRecordId(page);
       await waitForRecordById(page, recordId, { timeout: POLL_TIMEOUT });
 

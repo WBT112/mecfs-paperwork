@@ -18,6 +18,28 @@ export default [
 
   js.configs.recommended,
 
+  // Node scripts (mjs/js/cjs)
+  // These scripts often import `console`/`process` explicitly.
+  // If we also enable `globals.node`, ESLint can flag that as a redeclare.
+  // Fix: keep node globals but disable exactly `console` and `process` globals for scripts.
+  {
+    files: ['scripts/**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: {
+        ...globals.node,
+        console: 'off',
+        process: 'off',
+      },
+    },
+    rules: {
+      // Script output is expected
+      'no-console': 'off',
+    },
+  },
+
+  // Playwright E2E
   {
     files: ['playwright.config.ts', 'e2e/**/*.ts'],
     languageOptions: {
@@ -30,7 +52,6 @@ export default [
       '@typescript-eslint': tsPlugin,
     },
     rules: {
-      // Prefer TS-aware unused vars
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
@@ -39,6 +60,7 @@ export default [
     },
   },
 
+  // App TS/TSX
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -56,17 +78,14 @@ export default [
       'react-refresh': reactRefresh,
     },
     rules: {
-      // Prefer TS-aware unused vars
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
 
-      // Hooks rules
       ...reactHooks.configs.recommended.rules,
 
-      // Vite + React refresh best practice
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },

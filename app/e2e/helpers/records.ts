@@ -87,21 +87,24 @@ const readRecordById = async (
         // Avoid implicitly creating or mutating schema from tests.
         // If the DB does not exist yet (or a schema upgrade would be needed),
         // return null and let the poller retry after the app has initialized.
-        if (indexedDB.databases) {
-          const databases = await indexedDB.databases();
-          if (!databases.some((db) => db.name === dbName)) {
-            return null;
-          }
-        } else {
-          // Some browsers (notably WebKit in certain configurations) do not
-          // expose indexedDB.databases(). On a fresh profile, calling
-          // indexedDB.open(dbName) would trigger onupgradeneeded and can
-          // interfere with the app's own lazy initialization.
-          //
-          // The app sets an activeRecordId key in localStorage as soon as the
-          // first draft for any form pack has been created. Use that as a
-          // cross-browser signal that opening the DB is safe.
-          if (!hasAnyActiveRecordId()) {
+        // Cross-browser signal:
+        // Once the app has created at least one draft for any form pack, it
+        // writes an activeRecordId.* key into localStorage. If that signal is
+        // present, it is safe for tests to open the DB without risking an
+        // onupgradeneeded race against the app's first-time initialization.
+        const safeToOpen = hasAnyActiveRecordId();
+
+        if (!safeToOpen) {
+          // If there is no localStorage signal, be conservative.
+          // Some engines (esp. WebKit, and occasionally Firefox) can report an
+          // incomplete list from indexedDB.databases(), or not implement it at
+          // all. We therefore only use databases() as an additional guard.
+          if (indexedDB.databases) {
+            const databases = await indexedDB.databases();
+            if (!databases.some((db) => db.name === dbName)) {
+              return null;
+            }
+          } else {
             return null;
           }
         }
