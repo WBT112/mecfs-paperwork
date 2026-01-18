@@ -7,7 +7,9 @@ test('legal markdown renders headings and internal links', async ({ page }) => {
     page.getByRole('heading', { level: 1, name: /imprint|impressum/i }),
   ).toBeVisible();
 
-  const privacyLink = page.locator('a[href="/privacy"]');
+  // The same internal link also exists in the footer navigation.
+  // Scope to the main content to avoid strict-mode conflicts.
+  const privacyLink = page.getByRole('main').locator('a[href="/privacy"]').first();
   await expect(privacyLink).toBeVisible();
   await privacyLink.click();
 
