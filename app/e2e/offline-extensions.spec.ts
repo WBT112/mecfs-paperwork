@@ -149,12 +149,7 @@ test.describe('offline-first extensions', () => {
     await clickNewDraftIfNeeded(page);
 
     const nameInput = page.locator('#root_person_name');
-    await fillTextInputStable(
-      page,
-      nameInput,
-      'Snapshot Offline',
-      POLL_TIMEOUT,
-    );
+    await fillTextInputStable(page, nameInput, 'Snapshot Offline', POLL_TIMEOUT);
 
     await context.setOffline(true);
     await createSnapshot(page);
@@ -162,12 +157,7 @@ test.describe('offline-first extensions', () => {
       timeout: POLL_TIMEOUT,
     });
 
-    await fillTextInputStable(
-      page,
-      nameInput,
-      'Snapshot Changed',
-      POLL_TIMEOUT,
-    );
+    await fillTextInputStable(page, nameInput, 'Snapshot Changed', POLL_TIMEOUT);
     await restoreFirstSnapshot(page);
     await expect(nameInput).toHaveValue('Snapshot Offline', {
       timeout: POLL_TIMEOUT,
