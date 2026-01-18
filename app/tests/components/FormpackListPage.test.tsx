@@ -58,7 +58,7 @@ describe('FormpackListPage', () => {
     await userEvent.click(formpack1Link);
 
     await waitFor(() => {
-        expect(screen.getByText('Formpack Detail Page')).toBeInTheDocument();
-      });
+      expect(screen.getByText('Formpack Detail Page')).toBeInTheDocument();
+    });
   });
 });

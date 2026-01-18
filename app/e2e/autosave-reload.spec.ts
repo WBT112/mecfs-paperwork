@@ -13,7 +13,6 @@ const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
 const POLL_TIMEOUT = 15_000;
 const POLL_INTERVALS = [250, 500, 1000];
 
-
 const DB: DbOptions = {
   dbName: 'mecfs-paperwork',
   storeName: 'records',
@@ -190,13 +189,15 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     await newDraftButton.first().click();
   } else {
     // Fallback: click the first action button in the drafts area.
-    await page.locator('.formpack-records__actions .app__button').first().click();
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
   }
 
   await waitForActiveRecordId(page);
   await expect(nameInput).toBeVisible();
 };
-
 
 const waitForNamePersisted = async (
   page: Page,
@@ -213,7 +214,6 @@ const waitForNamePersisted = async (
     )
     .toBe(expectedName);
 };
-
 
 // Verifies autosave persists to IndexedDB and reload restores the same draft without creating extras.
 test('autosave persists and reload does not create extra records', async ({

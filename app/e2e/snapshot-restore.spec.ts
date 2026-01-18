@@ -90,8 +90,6 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
- 
-
 const createSnapshot = async (page: Page) => {
   const createBtn = page.getByRole('button', {
     name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i,
@@ -161,21 +159,21 @@ for (const locale of locales) {
         }),
       ).toBeVisible();
 
-	      await waitForRecordListReady(page);
-	      const recordId = await waitForActiveRecordId(page);
-	      await waitForRecordById(page, recordId, { timeout: POLL_TIMEOUT });
+      await waitForRecordListReady(page);
+      const recordId = await waitForActiveRecordId(page);
+      await waitForRecordById(page, recordId, { timeout: POLL_TIMEOUT });
 
-	      const nameInput = page.locator('#root_person_name');
-	      await expect(nameInput).toBeVisible({ timeout: POLL_TIMEOUT });
-	      // 1) Set initial value and wait for persistence
-	      await fillTextInputStable(page, '#root_person_name', 'Alice Snapshot');
-	      await waitForRecordField(
-	        page,
-	        recordId,
-	        (record) => record?.data?.person?.name ?? '',
-	        'Alice Snapshot',
-	        { timeout: POLL_TIMEOUT },
-	      );
+      const nameInput = page.locator('#root_person_name');
+      await expect(nameInput).toBeVisible({ timeout: POLL_TIMEOUT });
+      // 1) Set initial value and wait for persistence
+      await fillTextInputStable(page, '#root_person_name', 'Alice Snapshot');
+      await waitForRecordField(
+        page,
+        recordId,
+        (record) => record?.data?.person?.name ?? '',
+        'Alice Snapshot',
+        { timeout: POLL_TIMEOUT },
+      );
 
       // Snapshot operations must stay within the existing draft.
       const recordsCountBaseline = await countObjectStoreRecords(page);
@@ -185,26 +183,28 @@ for (const locale of locales) {
       await createSnapshot(page);
 
       // 3) Change value and persist
-	      await fillTextInputStable(page, '#root_person_name', 'Bob After Change');
-	      await waitForRecordField(
-	        page,
-	        recordId,
-	        (record) => record?.data?.person?.name ?? '',
-	        'Bob After Change',
-	        { timeout: POLL_TIMEOUT },
-	      );
+      await fillTextInputStable(page, '#root_person_name', 'Bob After Change');
+      await waitForRecordField(
+        page,
+        recordId,
+        (record) => record?.data?.person?.name ?? '',
+        'Bob After Change',
+        { timeout: POLL_TIMEOUT },
+      );
 
       // 4) Restore snapshot and verify value + persistence
       await restoreFirstSnapshot(page);
 
-	      await expect(nameInput).toHaveValue('Alice Snapshot', { timeout: POLL_TIMEOUT });
-	      await waitForRecordField(
-	        page,
-	        recordId,
-	        (record) => record?.data?.person?.name ?? '',
-	        'Alice Snapshot',
-	        { timeout: POLL_TIMEOUT },
-	      );
+      await expect(nameInput).toHaveValue('Alice Snapshot', {
+        timeout: POLL_TIMEOUT,
+      });
+      await waitForRecordField(
+        page,
+        recordId,
+        (record) => record?.data?.person?.name ?? '',
+        'Alice Snapshot',
+        { timeout: POLL_TIMEOUT },
+      );
 
       // Restore should not create a new draft record
       // Restoring a snapshot must not create a new draft.
@@ -214,15 +214,17 @@ for (const locale of locales) {
       // 5) Reload: restored value must remain, and still no extra records
       await page.reload();
 
-	      await expect(nameInput).toBeVisible({ timeout: POLL_TIMEOUT });
-	      await expect(nameInput).toHaveValue('Alice Snapshot', { timeout: POLL_TIMEOUT });
-	      await waitForRecordField(
-	        page,
-	        recordId,
-	        (record) => record?.data?.person?.name ?? '',
-	        'Alice Snapshot',
-	        { timeout: POLL_TIMEOUT },
-	      );
+      await expect(nameInput).toBeVisible({ timeout: POLL_TIMEOUT });
+      await expect(nameInput).toHaveValue('Alice Snapshot', {
+        timeout: POLL_TIMEOUT,
+      });
+      await waitForRecordField(
+        page,
+        recordId,
+        (record) => record?.data?.person?.name ?? '',
+        'Alice Snapshot',
+        { timeout: POLL_TIMEOUT },
+      );
 
       // Reload must keep the same record count after restoration.
       const recordsCountAfterReload = await countObjectStoreRecords(page);

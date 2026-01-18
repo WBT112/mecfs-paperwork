@@ -4,7 +4,13 @@ export type InputTarget = string | Locator;
 
 // Some input types (notably <input type="date">) behave inconsistently across engines
 // when values are entered via keyboard simulation. For these, prefer direct assignment.
-const DIRECT_VALUE_TYPES = new Set(['date', 'datetime-local', 'time', 'month', 'week']);
+const DIRECT_VALUE_TYPES = new Set([
+  'date',
+  'datetime-local',
+  'time',
+  'month',
+  'week',
+]);
 
 const DATE_ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -14,17 +20,27 @@ const DATE_ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
  * garbled values and the app rejecting the input. If we detect an ISO date and a
  * non-ISO placeholder, we type a locale-compatible representation.
  */
-const formatIsoDateForPlaceholder = (isoDate: string, placeholder: string | null) => {
+const formatIsoDateForPlaceholder = (
+  isoDate: string,
+  placeholder: string | null,
+) => {
   if (!DATE_ISO_RE.test(isoDate)) return isoDate;
 
   const [yyyy, mm, dd] = isoDate.split('-');
   const p = (placeholder ?? '').trim().toUpperCase();
 
-  const sep = p.includes('.') ? '.' : p.includes('/') ? '/' : p.includes('-') ? '-' : '.';
+  const sep = p.includes('.')
+    ? '.'
+    : p.includes('/')
+      ? '/'
+      : p.includes('-')
+        ? '-'
+        : '.';
   const firstTokenMatch = p.match(/(TT|DD|MM|YYYY|JJJJ)/);
   const firstToken = firstTokenMatch?.[1] ?? '';
 
-  if (firstToken === 'TT' || firstToken === 'DD') return `${dd}${sep}${mm}${sep}${yyyy}`;
+  if (firstToken === 'TT' || firstToken === 'DD')
+    return `${dd}${sep}${mm}${sep}${yyyy}`;
   if (firstToken === 'MM') return `${mm}${sep}${dd}${sep}${yyyy}`;
   return isoDate;
 };
@@ -72,28 +88,26 @@ const normalizeOptions = (
 const resolveTarget = (page: Page, target: InputTarget): Locator =>
   typeof target === 'string' ? page.locator(target) : target;
 
-const selectAllShortcut = () => (process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+const selectAllShortcut = () =>
+  process.platform === 'darwin' ? 'Meta+A' : 'Control+A';
 
 /**
  * Sets the "value" via the native setter to ensure React-controlled inputs
  * reliably detect the change (React value tracker).
  */
 const setNativeValue = async (input: Locator, value: string) => {
-  await input.evaluate(
-    (el, v) => {
-      const i = el as HTMLInputElement;
+  await input.evaluate((el, v) => {
+    const i = el as HTMLInputElement;
 
-      // Native prototype setter (important for React-controlled inputs)
-      const proto = Object.getPrototypeOf(i);
-      const desc =
-        Object.getOwnPropertyDescriptor(proto, 'value') ??
-        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    // Native prototype setter (important for React-controlled inputs)
+    const proto = Object.getPrototypeOf(i);
+    const desc =
+      Object.getOwnPropertyDescriptor(proto, 'value') ??
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
 
-      if (desc?.set) desc.set.call(i, v);
-      else i.value = v;
-    },
-    value,
-  );
+    if (desc?.set) desc.set.call(i, v);
+    else i.value = v;
+  }, value);
 };
 
 const trySetValue = async (
@@ -174,7 +188,8 @@ export const fillTextInputStable = async (
   value: string,
   options?: FillTextInputStableOptions,
 ) => {
-  const { timeout, intervals, retries, useKeyboard } = normalizeOptions(options);
+  const { timeout, intervals, retries, useKeyboard } =
+    normalizeOptions(options);
   const input = resolveTarget(page, target);
 
   let lastSeen = '';
@@ -191,7 +206,10 @@ export const fillTextInputStable = async (
       const acceptable = new Set([value, expectedTyped]);
 
       await expect
-        .poll(async () => acceptable.has(await input.inputValue()), { timeout, intervals })
+        .poll(async () => acceptable.has(await input.inputValue()), {
+          timeout,
+          intervals,
+        })
         .toBe(true);
 
       // One more change event after the stability check can help with some controlled widgets.
