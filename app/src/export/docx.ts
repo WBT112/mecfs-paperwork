@@ -259,7 +259,9 @@ const getPathValue = (source: unknown, path: string): unknown => {
 };
 
 const isSafePathSegment = (segment: string): boolean =>
-  segment !== '__proto__' && segment !== 'constructor' && segment !== 'prototype';
+  segment !== '__proto__' &&
+  segment !== 'constructor' &&
+  segment !== 'prototype';
 
 const setPathValue = (
   target: Record<string, unknown>,

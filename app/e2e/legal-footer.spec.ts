@@ -13,7 +13,9 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
     name: /footer navigation|fußzeilennavigation/i,
   });
 
-  const imprintLink = footerNav.getByRole('link', { name: /imprint|impressum/i });
+  const imprintLink = footerNav.getByRole('link', {
+    name: /imprint|impressum/i,
+  });
   await expect(imprintLink).toBeVisible();
   await imprintLink.click();
   await expect(
