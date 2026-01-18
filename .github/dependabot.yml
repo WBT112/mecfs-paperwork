@@ -9,15 +9,24 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Berlin"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     rebase-strategy: "auto"
     labels:
       - "dependencies"
-    ignore:
-      # Keep noise low: no major bumps unless explicitly requested
-      - dependency-name: "*"
+    # Reduce supply-chain risk + noise: delay very fresh releases
+    cooldown:
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 3
+    # Bundle low-risk updates; majors remain separate PRs
+    groups:
+      root-minor-and-patch:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
         update-types:
-          - "version-update:semver-major"
+          - "minor"
+          - "patch"
 
   # App npm dependencies
   - package-ecosystem: "npm"
@@ -27,15 +36,23 @@ updates:
       day: "monday"
       time: "06:15"
       timezone: "Europe/Berlin"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     rebase-strategy: "auto"
     labels:
       - "dependencies"
       - "app"
-    ignore:
-      - dependency-name: "*"
+    cooldown:
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 3
+    groups:
+      app-minor-and-patch:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
         update-types:
-          - "version-update:semver-major"
+          - "minor"
+          - "patch"
 
   # GitHub Actions workflow updates
   - package-ecosystem: "github-actions"
@@ -45,12 +62,12 @@ updates:
       day: "monday"
       time: "06:30"
       timezone: "Europe/Berlin"
-    open-pull-requests-limit: 2
+    open-pull-requests-limit: 1
     rebase-strategy: "auto"
     labels:
       - "dependencies"
       - "github-actions"
-    ignore:
-      - dependency-name: "*"
-        update-types:
-          - "version-update:semver-major"
+    cooldown:
+      semver-major-days: 30
+      semver-minor-days: 7
+      semver-patch-days: 3
