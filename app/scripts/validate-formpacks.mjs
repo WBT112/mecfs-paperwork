@@ -85,12 +85,20 @@ const isSafeAssetPath = (value) => {
   return true;
 };
 
+const isSafePathSegment = (segment) =>
+  segment !== '__proto__' && segment !== 'constructor' && segment !== 'prototype';
+
 const setPathValue = (target, pathValue, value) => {
   if (!pathValue || pathValue.trim().length === 0) {
     return;
   }
 
   const segments = pathValue.split('.');
+  // Abort if any segment is unsafe to prevent prototype pollution.
+  if (!segments.every((segment) => isSafePathSegment(segment))) {
+    return;
+  }
+
   let cursor = target;
 
   segments.forEach((segment, index) => {
@@ -105,6 +113,10 @@ const setPathValue = (target, pathValue, value) => {
     }
 
     cursor = cursor[segment];
+  // Abort if any segment is unsafe to prevent prototype pollution.
+  if (!segments.every((segment) => isSafePathSegment(segment))) {
+    return;
+  }
   });
 };
 
