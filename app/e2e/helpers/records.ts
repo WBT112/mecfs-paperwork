@@ -68,56 +68,72 @@ const readRecordById = async (
 ): Promise<StoredRecord | null> => {
   return page.evaluate(
     async ({ dbName, storeName, recordId }) => {
-      const openExistingDb = async (): Promise<IDBDatabase | null> => {
-        return await new Promise((resolve) => {
-          const req = indexedDB.open(dbName);
-          let settled = false;
+      const hasAnyActiveRecordId = (): boolean => {
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+            if (!key.startsWith('mecfs-paperwork.activeRecordId.')) continue;
+            const value = localStorage.getItem(key);
+            if (value) return true;
+          }
+        } catch {
+          // If localStorage is unavailable for any reason, fall back to opening.
+        }
+        return false;
+      };
 
-          const settle = (db: IDBDatabase | null) => {
-            if (settled) return;
-            settled = true;
-            resolve(db);
-          };
+      const openExistingDb = async (): Promise<IDBDatabase | null> => {
+        // Avoid implicitly creating or mutating schema from tests.
+        // If the DB does not exist yet (or a schema upgrade would be needed),
+        // return null and let the poller retry after the app has initialized.
+        if (indexedDB.databases) {
+          const databases = await indexedDB.databases();
+          if (!databases.some((db) => db.name === dbName)) {
+            return null;
+          }
+        } else {
+          // Some browsers (notably WebKit in certain configurations) do not
+          // expose indexedDB.databases(). On a fresh profile, calling
+          // indexedDB.open(dbName) would trigger onupgradeneeded and can
+          // interfere with the app's own lazy initialization.
+          //
+          // The app sets an activeRecordId key in localStorage as soon as the
+          // first draft for any form pack has been created. Use that as a
+          // cross-browser signal that opening the DB is safe.
+          if (!hasAnyActiveRecordId()) {
+            return null;
+          }
+        }
+
+        return await new Promise((resolve) => {
+          let aborted = false;
+          const req = indexedDB.open(dbName);
 
           req.onupgradeneeded = () => {
+            aborted = true;
             try {
-              const db = req.result;
-              const tx = req.transaction;
-
-              // records store (matches app schema; keep additive)
-              if (!db.objectStoreNames.contains(storeName)) {
-                const store = db.createObjectStore(storeName, { keyPath: 'id' });
-                if (!store.indexNames.contains('active')) store.createIndex('active', 'active');
-                if (!store.indexNames.contains('updatedAt'))
-                  store.createIndex('updatedAt', 'updatedAt');
-              } else if (tx) {
-                const store = tx.objectStore(storeName);
-                if (!store.indexNames.contains('active')) store.createIndex('active', 'active');
-                if (!store.indexNames.contains('updatedAt'))
-                  store.createIndex('updatedAt', 'updatedAt');
-              }
-
-              // snapshots store (app schema)
-              const snapshotsName = 'snapshots';
-              if (!db.objectStoreNames.contains(snapshotsName)) {
-                const store = db.createObjectStore(snapshotsName, { keyPath: 'id' });
-                if (!store.indexNames.contains('recordId')) store.createIndex('recordId', 'recordId');
-                if (!store.indexNames.contains('createdAt'))
-                  store.createIndex('createdAt', 'createdAt');
-              } else if (tx) {
-                const store = tx.objectStore(snapshotsName);
-                if (!store.indexNames.contains('recordId')) store.createIndex('recordId', 'recordId');
-                if (!store.indexNames.contains('createdAt'))
-                  store.createIndex('createdAt', 'createdAt');
-              }
+              req.transaction?.abort();
             } catch {
               // ignore
             }
           };
 
-          req.onerror = () => settle(null);
-          req.onblocked = () => settle(null);
-          req.onsuccess = () => settle(req.result);
+          req.onerror = () => resolve(null);
+          req.onblocked = () => resolve(null);
+          req.onsuccess = () => {
+            const db = req.result;
+            if (aborted) {
+              try {
+                db.close();
+              } catch {
+                // ignore
+              }
+              resolve(null);
+              return;
+            }
+            resolve(db);
+          };
         });
       };
 
