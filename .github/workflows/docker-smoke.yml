@@ -1,5 +1,8 @@
 name: Docker smoke test
 
+permissions:
+  contents: read
+
 on:
   pull_request:
   push:
