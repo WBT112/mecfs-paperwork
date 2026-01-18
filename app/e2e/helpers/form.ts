@@ -4,7 +4,7 @@ export type InputTarget = string | Locator;
 
 // Some input types (notably <input type="date">) behave inconsistently across engines
 // when values are entered via keyboard simulation. For these, prefer direct assignment.
-const DIRECT_VALUE_TYPES = new Set(["date", "datetime-local", "time", "month", "week"]);
+const DIRECT_VALUE_TYPES = new Set(['date', 'datetime-local', 'time', 'month', 'week']);
 
 const DATE_ISO_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -72,8 +72,29 @@ const normalizeOptions = (
 const resolveTarget = (page: Page, target: InputTarget): Locator =>
   typeof target === 'string' ? page.locator(target) : target;
 
-const selectAllShortcut = () =>
-  process.platform === 'darwin' ? 'Meta+A' : 'Control+A';
+const selectAllShortcut = () => (process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
+
+/**
+ * Sets the "value" via the native setter to ensure React-controlled inputs
+ * reliably detect the change (React value tracker).
+ */
+const setNativeValue = async (input: Locator, value: string) => {
+  await input.evaluate(
+    (el, v) => {
+      const i = el as HTMLInputElement;
+
+      // Native prototype setter (important for React-controlled inputs)
+      const proto = Object.getPrototypeOf(i);
+      const desc =
+        Object.getOwnPropertyDescriptor(proto, 'value') ??
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+
+      if (desc?.set) desc.set.call(i, v);
+      else i.value = v;
+    },
+    value,
+  );
+};
 
 const trySetValue = async (
   page: Page,
@@ -95,15 +116,14 @@ const trySetValue = async (
 
   if (DIRECT_VALUE_TYPES.has(inputType)) {
     await input.focus({ timeout });
-    await input.evaluate(
-      (el, v) => {
-        const i = el as HTMLInputElement;
-        i.value = v;
-        i.dispatchEvent(new Event('input', { bubbles: true }));
-        i.dispatchEvent(new Event('change', { bubbles: true }));
-      },
-      value,
-    );
+
+    // Direct assignment for date-like inputs (reliable across engines)
+    await setNativeValue(input, value);
+
+    await input.evaluate((el) => {
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    });
 
     await input.blur();
 
@@ -144,6 +164,8 @@ const trySetValue = async (
   } catch {
     // no-op
   }
+
+  return await input.inputValue();
 };
 
 export const fillTextInputStable = async (
