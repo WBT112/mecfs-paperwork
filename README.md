@@ -1,3 +1,13 @@
+[![QA Gates](https://github.com/WBT112/mecfs-paperwork/actions/workflows/qa.yml/badge.svg?branch=main)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/qa.yml)
+[![E2E (Playwright)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/e2e.yml/badge.svg?branch=main)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/e2e.yml)
+[![Security - Trivy](https://github.com/WBT112/mecfs-paperwork/actions/workflows/trivy.yml/badge.svg?branch=main)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/trivy.yml)
+[![CodeQL](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql/badge.svg?branch=main)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql)
+[![Docker Smoke](https://github.com/WBT112/mecfs-paperwork/actions/workflows/docker-smoke.yml/badge.svg?branch=main)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/docker-smoke.yml)
+
+[![License: Apache-2.0](https://img.shields.io/github/license/WBT112/mecfs-paperwork)](https://github.com/WBT112/mecfs-paperwork/blob/main/LICENSE)
+[![Release](https://img.shields.io/github/v/release/WBT112/mecfs-paperwork?sort=semver)](https://github.com/WBT112/mecfs-paperwork/releases)
+
+
 # mecfs-paperwork
 
 Offline-first tool for creating and managing ME/CFS-related forms ("formpacks") including export (e.g., DOCX, JSON).
