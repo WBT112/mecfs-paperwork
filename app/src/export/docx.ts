@@ -258,6 +258,9 @@ const getPathValue = (source: unknown, path: string): unknown => {
   }, source);
 };
 
+const isSafePathSegment = (segment: string): boolean =>
+  segment !== '__proto__' && segment !== 'constructor' && segment !== 'prototype';
+
 const setPathValue = (
   target: Record<string, unknown>,
   path: string,
@@ -271,6 +274,11 @@ const setPathValue = (
   let cursor: Record<string, unknown> = target;
 
   segments.forEach((segment, index) => {
+    if (!isSafePathSegment(segment)) {
+      // Prevent prototype pollution via dangerous keys.
+      return;
+    }
+
     const isLeaf = index === segments.length - 1;
 
     if (isLeaf) {
