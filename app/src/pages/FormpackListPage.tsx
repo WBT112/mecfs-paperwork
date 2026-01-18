@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { loadFormpackI18n } from '../i18n/formpack';
@@ -105,6 +105,37 @@ export default function FormpackListPage() {
     );
   }
 
+  const formpackList = useMemo(
+    () =>
+      manifests.map((manifest) => {
+        const namespace = `formpack:${manifest.id}`;
+        const title = t(manifest.titleKey, {
+          ns: namespace,
+          defaultValue: manifest.titleKey,
+        });
+        const description = t(manifest.descriptionKey, {
+          ns: namespace,
+          defaultValue: manifest.descriptionKey,
+        });
+
+        return (
+          <Link
+            key={manifest.id}
+            className="formpack-card"
+            to={`/formpacks/${manifest.id}`}
+            aria-label={t('formpackOpenWithTitle', { title })}
+          >
+            <div>
+              <h3>{title}</h3>
+              <p className="formpack-card__description">{description}</p>
+            </div>
+            <div className="formpack-card__link">{t('formpackOpen')}</div>
+          </Link>
+        );
+      }),
+    [manifests, t],
+  );
+
   return (
     <section className="app__card">
       <div className="app__card-header">
@@ -114,34 +145,7 @@ export default function FormpackListPage() {
         </div>
       </div>
       {manifests.length > 0 ? (
-        <div className="formpack-list">
-          {manifests.map((manifest) => {
-            const namespace = `formpack:${manifest.id}`;
-            const title = t(manifest.titleKey, {
-              ns: namespace,
-              defaultValue: manifest.titleKey,
-            });
-            const description = t(manifest.descriptionKey, {
-              ns: namespace,
-              defaultValue: manifest.descriptionKey,
-            });
-
-            return (
-              <Link
-                key={manifest.id}
-                className="formpack-card"
-                to={`/formpacks/${manifest.id}`}
-                aria-label={t('formpackOpenWithTitle', { title })}
-              >
-                <div>
-                  <h3>{title}</h3>
-                  <p className="formpack-card__description">{description}</p>
-                </div>
-                <div className="formpack-card__link">{t('formpackOpen')}</div>
-              </Link>
-            );
-          })}
-        </div>
+        <div className="formpack-list">{formpackList}</div>
       ) : (
         <p className="formpack-records__empty">{t('formpackListEmpty')}</p>
       )}
