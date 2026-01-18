@@ -1,11 +1,17 @@
 name: Docker smoke test
 
+permissions:
+  contents: read
+
 on:
   pull_request:
   push:
     branches:
       - main
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   docker-smoke:
