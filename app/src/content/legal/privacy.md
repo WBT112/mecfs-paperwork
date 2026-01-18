@@ -16,7 +16,7 @@ Verantwortlich im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:
 
 [[Anschrift]]
 
-E-Mail: [[Kontakt-E-Mail]]
+E-Mail: deine-mail(at)beispiel.de
 
 > Wenn du diese Anwendung öffentlich betreibst, ersetze die Platzhalter vollständig.
 

@@ -9,7 +9,7 @@ Deutschland
 
 ## Kontakt
 
-**E-Mail:** [deine-mail@beispiel.de]
+**E-Mail:** deine-mail(at)beispiel.de
 
 ## Hinweis zum Angebot
 
@@ -35,5 +35,4 @@ Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerha
 
 ## Datenschutz
 
-Informationen zur Verarbeitung personenbezogener Daten findest du in der **Datenschutzerklärung**:  
-[Link zur Route, z. B. `/privacy`]
+Informationen zur Verarbeitung personenbezogener Daten findest du in der: [[**Datenschutzerklärung**](/privacy)]
