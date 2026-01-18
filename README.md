@@ -6,7 +6,6 @@
 
 [![License: Apache-2.0](https://img.shields.io/github/license/WBT112/mecfs-paperwork)](https://github.com/WBT112/mecfs-paperwork/blob/main/LICENSE)
 [![Release](https://img.shields.io/github/v/release/WBT112/mecfs-paperwork?sort=semver)](https://github.com/WBT112/mecfs-paperwork/releases)
-[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/WBT112/mecfs-paperwork)](https://scorecard.dev/viewer/?uri=github.com/WBT112/mecfs-paperwork)
 
 
 # mecfs-paperwork
