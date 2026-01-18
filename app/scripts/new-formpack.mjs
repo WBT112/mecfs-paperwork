@@ -81,6 +81,19 @@ const updateRegistry = async (formpackId) => {
   await fs.writeFile(registryPath, updated, 'utf8');
 };
 
+/**
+ * Creates a new "formpack" - a self-contained directory with all assets
+ * needed to render a form and its corresponding exports (e.g., DOCX).
+ *
+ * Each formpack contains:
+ * - manifest.json: Metadata (ID, version, locales).
+ * - schema.json: Data structure (JSON Schema).
+ * - ui.schema.json: Form layout rules (react-jsonschema-form).
+ * - i18n/*.json: Localization files.
+ * - docx/mapping.json: Maps schema fields to DOCX template variables.
+ * - templates/*.docx: The MS Word template for export.
+ * - examples/*.json: Sample data for testing and previews.
+ */
 const createFormpack = async ({ id, title, register }) => {
   if (!id) {
     throw new Error('Missing --id argument.');
