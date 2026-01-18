@@ -1,6 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { deleteDatabase } from './helpers';
+import { fillTextInputStable } from './helpers/form';
+import {
+  POLL_INTERVALS,
+  POLL_TIMEOUT,
+  waitForRecordById,
+  waitForRecordField,
+} from './helpers/records';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
 
 type DbOptions = {
@@ -41,7 +48,7 @@ const waitForActiveRecordId = async (page: Page) => {
         activeId = (await getActiveRecordId(page)) ?? '';
         return activeId;
       },
-      { timeout: 10_000, intervals: [250, 500, 1000] },
+		{ timeout: 10_000, intervals: POLL_INTERVALS },
     )
     .not.toBe('');
   return activeId;
@@ -117,11 +124,41 @@ for (const locale of locales) {
       await switchLocale(page, locale);
       await clickNewDraftIfNeeded(page);
 
-      await page.locator('#root_person_name').fill(fakeName);
-      await page.locator('#root_person_birthDate').fill(fakeBirthDate);
-      await page.locator('#root_doctor_phone').fill(fakePhone);
+	  const recordId = await waitForActiveRecordId(page);
+	  await waitForRecordById(page, recordId, { timeout: POLL_TIMEOUT });
+
+	  await fillTextInputStable(page, '#root_person_name', fakeName);
+	  await fillTextInputStable(page, '#root_person_birthDate', fakeBirthDate);
+	  await fillTextInputStable(page, '#root_doctor_phone', fakePhone);
       await page.locator('#root_diagnoses_meCfs').check();
-      const activeIdBeforeImport = await waitForActiveRecordId(page);
+
+	  // Ensure autosave has persisted the changes before exporting.
+	  await waitForRecordField(
+	    page,
+	    recordId,
+	    (record) => record?.data?.person?.name ?? '',
+	    fakeName,
+	  );
+	  await waitForRecordField(
+	    page,
+	    recordId,
+	    (record) => record?.data?.person?.birthDate ?? '',
+	    fakeBirthDate,
+	  );
+	  await waitForRecordField(
+	    page,
+	    recordId,
+	    (record) => record?.data?.doctor?.phone ?? '',
+	    fakePhone,
+	  );
+	  await waitForRecordField(
+	    page,
+	    recordId,
+	    (record) => record?.data?.diagnoses?.meCfs ?? false,
+	    true,
+	  );
+
+	  const activeIdBeforeImport = recordId;
 
       // Trigger the JSON export for the active draft.
       const downloadPromise = page.waitForEvent('download');
@@ -199,7 +236,7 @@ for (const locale of locales) {
       await expect
         .poll(async () => getActiveRecordId(page), {
           timeout: 10_000,
-          intervals: [250, 500, 1000],
+			intervals: POLL_INTERVALS,
         })
         .not.toBe(activeIdBeforeImport);
       await expect(page.locator('#root_person_name')).toHaveValue(fakeName);
