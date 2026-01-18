@@ -115,7 +115,7 @@ export default function FormpackListPage() {
           </Link>
         );
       }),
-    [manifests, t],
+    [manifests, t, isI18nReady],
   );
 
   if (isLoading || !isI18nReady) {

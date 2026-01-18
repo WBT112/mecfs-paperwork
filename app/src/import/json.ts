@@ -95,7 +95,7 @@ const parseJson = (
   }
 };
 
-export const normalizeExportRevisions = (
+const normalizeExportRevisions = (
   revisions: unknown,
 ): ImportRevisionPayload[] | 'invalid_revisions' => {
   if (revisions === undefined) {
