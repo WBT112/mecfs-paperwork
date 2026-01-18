@@ -1,0 +1,56 @@
+version: 2
+
+updates:
+  # Root-level npm dependencies (if applicable)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 3
+    rebase-strategy: "auto"
+    labels:
+      - "dependencies"
+    ignore:
+      # Keep noise low: no major bumps unless explicitly requested
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+  # App npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:15"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 3
+    rebase-strategy: "auto"
+    labels:
+      - "dependencies"
+      - "app"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
+
+  # GitHub Actions workflow updates
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:30"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 2
+    rebase-strategy: "auto"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - "version-update:semver-major"
