@@ -7,14 +7,20 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
 }) => {
   await page.goto('/');
 
-  const imprintLink = page.getByRole('link', { name: /imprint|impressum/i });
+  // Legal markdown pages can also contain internal links that duplicate footer links.
+  // Scope interactions to the footer navigation to avoid Playwright strict-mode conflicts.
+  const footerNav = page.getByRole('navigation', {
+    name: /footer navigation|fußzeilennavigation/i,
+  });
+
+  const imprintLink = footerNav.getByRole('link', { name: /imprint|impressum/i });
   await expect(imprintLink).toBeVisible();
   await imprintLink.click();
   await expect(
     page.getByRole('heading', { level: 1, name: /imprint|impressum/i }),
   ).toBeVisible();
 
-  const privacyLink = page.getByRole('link', {
+  const privacyLink = footerNav.getByRole('link', {
     name: /privacy policy|datenschutzerklärung/i,
   });
   await privacyLink.click();
@@ -25,7 +31,7 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
     }),
   ).toBeVisible();
 
-  const githubLink = page.getByRole('link', { name: /github/i });
+  const githubLink = footerNav.getByRole('link', { name: /github/i });
   await expect(githubLink).toHaveAttribute('href', DEFAULT_REPO_URL);
   await expect(githubLink).toHaveAttribute(
     'rel',
@@ -39,7 +45,7 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
 
   // The UI may label the funding link as "Sponsor" (EN) or "Unterstützen" (DE).
   // Accept common ASCII fallback spelling as well.
-  const sponsorLink = page.getByRole('link', {
+  const sponsorLink = footerNav.getByRole('link', {
     name: /sponsor|unterst\u00fctzen|unterstuetzen/i,
   });
   await expect(sponsorLink).toHaveAttribute('href', sponsorUrl);
