@@ -87,24 +87,6 @@ export default function FormpackListPage() {
     };
   }, [locale, manifests]);
 
-  if (isLoading || !isI18nReady) {
-    return (
-      <section className="app__card">
-        <h2>{t('formpackListTitle')}</h2>
-        <p>{t('formpackLoading')}</p>
-      </section>
-    );
-  }
-
-  if (errorMessage) {
-    return (
-      <section className="app__card">
-        <h2>{t('formpackListTitle')}</h2>
-        <p className="app__error">{errorMessage}</p>
-      </section>
-    );
-  }
-
   const formpackList = useMemo(
     () =>
       manifests.map((manifest) => {
@@ -135,6 +117,24 @@ export default function FormpackListPage() {
       }),
     [manifests, t],
   );
+
+  if (isLoading || !isI18nReady) {
+    return (
+      <section className="app__card">
+        <h2>{t('formpackListTitle')}</h2>
+        <p>{t('formpackLoading')}</p>
+      </section>
+    );
+  }
+
+  if (errorMessage) {
+    return (
+      <section className="app__card">
+        <h2>{t('formpackListTitle')}</h2>
+        <p className="app__error">{errorMessage}</p>
+      </section>
+    );
+  }
 
   return (
     <section className="app__card">
