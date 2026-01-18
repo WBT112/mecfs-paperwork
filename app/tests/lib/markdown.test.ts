@@ -8,15 +8,15 @@ describe('parseMarkdown', () => {
       {
         type: 'heading',
         level: 1,
-        text: '&lt;h1&gt;Title&lt;&#x2F;h1&gt;',
+        text: 'Title',
       },
       {
         type: 'paragraph',
-        text: '&lt;p&gt;paragraph&lt;&#x2F;p&gt;',
+        text: 'paragraph',
       },
       {
         type: 'list',
-        items: ['&lt;li&gt;item&lt;&#x2F;li&gt;'],
+        items: ['item'],
       },
     ];
     expect(parseMarkdown(input)).toEqual(expected);

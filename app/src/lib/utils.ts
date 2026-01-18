@@ -26,6 +26,8 @@ export const emptyStringToNull = (
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+import sanitizeHtml from 'sanitize-html';
+
 /**
  * Sanitizes a string by escaping HTML characters to prevent XSS.
  * This implementation is safe for server-side rendering (SSR) environments.
@@ -33,15 +35,9 @@ export const isRecord = (value: unknown): value is Record<string, unknown> =>
  * @param {string} str - The input string to be sanitized.
  * @returns {string} The sanitized string.
  */
-export const sanitizeHTML = (str: string) => {
-  const map: { [key: string]: string } = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#x27;',
-    "/": '&#x2F;',
-  };
-  const reg = /[&<>"'/]/ig;
-  return str.replace(reg, (match)=>(map[match]));
+export const sanitizeHTML = (str: string): string => {
+  return sanitizeHtml(str, {
+    allowedTags: [],
+    allowedAttributes: {},
+  });
 };
