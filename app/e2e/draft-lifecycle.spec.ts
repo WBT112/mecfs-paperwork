@@ -1,12 +1,17 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
+import { clickActionButton } from './helpers/actions';
+import { fillTextInputStable } from './helpers/form';
+import {
+  POLL_INTERVALS,
+  POLL_TIMEOUT,
+  waitForRecordById,
+  waitForRecordField,
+} from './helpers/records';
 
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
 const DB_NAME = 'mecfs-paperwork';
-const STORE_NAME = 'records';
-const POLL_TIMEOUT = 20_000;
-const POLL_INTERVALS = [250, 500, 1000];
 
 const getActiveRecordId = async (page: Page) => {
   return page.evaluate(
@@ -31,9 +36,9 @@ const waitForActiveRecordId = async (page: Page, timeoutMs = POLL_TIMEOUT) => {
 
 const waitForActiveRecordIdChange = async (page: Page, previousId: string) => {
   await expect
-    .poll(async () => getActiveRecordId(page), {
+		.poll(async () => getActiveRecordId(page), {
       timeout: POLL_TIMEOUT,
-      intervals: [250, 500, 1000],
+			intervals: POLL_INTERVALS,
     })
     .not.toBe(previousId);
   return (await getActiveRecordId(page)) ?? '';
@@ -50,92 +55,31 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
-const readRecordById = async (page: Page, id: string) => {
-  return page.evaluate(
-    async ({ dbName, storeName, id }) => {
-      if (indexedDB.databases) {
-        const databases = await indexedDB.databases();
-        if (!databases.some((db) => db.name === dbName)) {
-          return null;
-        }
-      }
-
-      const db = await new Promise<IDBDatabase | null>((resolve) => {
-        let aborted = false;
-        const request = indexedDB.open(dbName);
-        request.onupgradeneeded = () => {
-          aborted = true;
-          request.transaction?.abort();
-        };
-        request.onsuccess = () => {
-          const result = request.result;
-          if (aborted) {
-            result.close();
-            resolve(null);
-            return;
-          }
-          resolve(result);
-        };
-        request.onerror = () => resolve(null);
-        request.onblocked = () => resolve(null);
-      });
-
-      if (!db || !db.objectStoreNames.contains(storeName)) {
-        db?.close();
-        return null;
-      }
-
-      try {
-        return await new Promise<any>((resolve, reject) => {
-          const tx = db.transaction(storeName, 'readonly');
-          const store = tx.objectStore(storeName);
-          const getReq = store.get(id);
-          getReq.onerror = () => reject(getReq.error);
-          getReq.onsuccess = () => resolve(getReq.result ?? null);
-        });
-      } finally {
-        db.close();
-      }
-    },
-    { dbName: DB_NAME, storeName: STORE_NAME, id },
-  );
-};
-
 const waitForNamePersisted = async (
   page: Page,
   recordId: string,
   expectedName: string,
 ) => {
-  await expect
-    .poll(
-      async () => {
-        const record = await readRecordById(page, recordId);
-        return record?.data?.person?.name ?? '';
-      },
-      { timeout: POLL_TIMEOUT, intervals: [250, 500, 1000] },
-    )
-    .toBe(expectedName);
-};
-
-const clickActionButton = async (button: Locator) => {
-  await expect(button).toBeVisible({ timeout: POLL_TIMEOUT });
-  await expect(button).toBeEnabled({ timeout: POLL_TIMEOUT });
-  await button.click();
+  // Persisted state is stored in IndexedDB; the UI can temporarily show a value
+  // that hasn't been flushed yet.
+  await waitForRecordField(
+    page,
+    recordId,
+    (record) => record?.data?.person?.name ?? '',
+    expectedName,
+    { timeout: POLL_TIMEOUT },
+  );
 };
 
 const clickNewDraft = async (page: Page) => {
   await waitForRecordListReady(page);
-  const newDraftButton = page.getByRole('button', {
-    name: /new\s*draft|neuer\s*entwurf/i,
+  const newDraftButton = page
+    .locator('.formpack-records__actions .app__button')
+    .first();
+  await clickActionButton(newDraftButton);
+  await expect(page.locator('.formpack-records__item--active')).toBeVisible({
+    timeout: POLL_TIMEOUT,
   });
-  if (await newDraftButton.count()) {
-    await clickActionButton(newDraftButton.first());
-  } else {
-    await clickActionButton(
-      page.locator('.formpack-records__actions .app__button').first(),
-    );
-  }
-  await waitForActiveRecordId(page);
 };
 
 test('draft lifecycle supports switching between multiple drafts', async ({
@@ -150,22 +94,27 @@ test('draft lifecycle supports switching between multiple drafts', async ({
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
-  await clickNewDraft(page);
-  await page.locator('#root_person_name').fill('Draft One');
-  const firstActiveId = await waitForActiveRecordId(page);
-  await waitForNamePersisted(page, firstActiveId, 'Draft One');
+	// On an empty DB, the app creates the first draft automatically after
+	// records have loaded. Avoid clicking "new draft" too early, as that can
+	// race the initial restore path across browsers.
+	await waitForRecordListReady(page);
+	const firstActiveId = await waitForActiveRecordId(page);
+	await waitForRecordById(page, firstActiveId, { timeout: POLL_TIMEOUT });
+	await fillTextInputStable(page, '#root_person_name', 'Draft One');
+	await waitForNamePersisted(page, firstActiveId, 'Draft One');
 
-  await clickNewDraft(page);
-  const secondActiveId = await waitForActiveRecordIdChange(page, firstActiveId);
-  await page.locator('#root_person_name').fill('Draft Two');
-  await waitForNamePersisted(page, secondActiveId, 'Draft Two');
+	await clickNewDraft(page);
+	const secondActiveId = await waitForActiveRecordIdChange(page, firstActiveId);
+	await waitForRecordById(page, secondActiveId, { timeout: POLL_TIMEOUT });
+	await fillTextInputStable(page, '#root_person_name', 'Draft Two');
+	await waitForNamePersisted(page, secondActiveId, 'Draft Two');
   expect(secondActiveId).not.toBe(firstActiveId);
 
   const records = page.locator('.formpack-records__item');
   await expect
     .poll(async () => records.count(), {
       timeout: POLL_TIMEOUT,
-      intervals: [250, 500, 1000],
+			intervals: POLL_INTERVALS,
     })
     .toBeGreaterThanOrEqual(2);
 
@@ -184,10 +133,12 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await expect
     .poll(async () => getActiveRecordId(page), {
       timeout: POLL_TIMEOUT,
-      intervals: [250, 500, 1000],
+			intervals: POLL_INTERVALS,
     })
     .toBe(firstActiveId);
-  await expect(page.locator('#root_person_name')).toHaveValue('Draft One');
+	await expect(page.locator('#root_person_name')).toHaveValue('Draft One', {
+		timeout: POLL_TIMEOUT,
+	});
 
   const activeBadge = page.locator(
     '.formpack-records__item--active .formpack-records__badge',
@@ -198,10 +149,12 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await expect
     .poll(async () => getActiveRecordId(page), {
       timeout: POLL_TIMEOUT,
-      intervals: [250, 500, 1000],
+			intervals: POLL_INTERVALS,
     })
     .toBe(secondActiveId);
-  await expect(page.locator('#root_person_name')).toHaveValue('Draft Two');
+	await expect(page.locator('#root_person_name')).toHaveValue('Draft Two', {
+		timeout: POLL_TIMEOUT,
+	});
 
   await expect(activeBadge).toHaveText(/active|aktiv/i);
 
@@ -209,8 +162,10 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await expect
     .poll(async () => getActiveRecordId(page), {
       timeout: POLL_TIMEOUT,
-      intervals: [250, 500, 1000],
+			intervals: POLL_INTERVALS,
     })
     .toBe(secondActiveId);
-  await expect(page.locator('#root_person_name')).toHaveValue('Draft Two');
+	await expect(page.locator('#root_person_name')).toHaveValue('Draft Two', {
+		timeout: POLL_TIMEOUT,
+	});
 });
