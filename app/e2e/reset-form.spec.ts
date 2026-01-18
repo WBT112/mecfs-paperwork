@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { deleteDatabase } from './helpers';
 import { fillTextInputStable } from './helpers/form';
 
 type DbOptions = {
@@ -15,17 +16,6 @@ const AUTOSAVE_TIMEOUT_MS = 20_000;
 const DB: DbOptions = {
   dbName: 'mecfs-paperwork',
   storeName: 'records',
-};
-
-const deleteDatabase = async (page: Page, dbName: string) => {
-  await page.evaluate(async (name) => {
-    await new Promise<void>((resolve) => {
-      const req = indexedDB.deleteDatabase(name);
-      req.onsuccess = () => resolve();
-      req.onerror = () => resolve();
-      req.onblocked = () => resolve();
-    });
-  }, dbName);
 };
 
 const getActiveRecordId = async (page: Page) => {
