@@ -6,6 +6,7 @@ import type {
   FormpackManifest,
   FormpackManifestPayload,
 } from './types';
+import type { FormpackVisibility } from './types';
 
 export type FormpackLoaderErrorCode =
   | 'not_found'
@@ -46,6 +47,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isFormpackExportType = (value: string): value is FormpackExportType =>
   value === 'docx' || value === 'json';
+const isFormpackVisibility = (value: string): value is FormpackVisibility =>
+  value === 'public' || value === 'dev';
 
 const parseDocxManifest = (
   value: unknown,
@@ -160,6 +163,15 @@ export const parseManifest = (
   const exports = payload.exports.filter(isFormpackExportType);
   const docx = parseDocxManifest(payload.docx, formpackId);
   const requiresDocx = exports.includes('docx');
+  const visibility =
+    payload.visibility === undefined ? 'public' : payload.visibility;
+
+  if (typeof visibility !== 'string' || !isFormpackVisibility(visibility)) {
+    throw new FormpackLoaderError(
+      'invalid',
+      'The formpack manifest declares an unsupported visibility.',
+    );
+  }
 
   if (requiresDocx && !docx) {
     throw new FormpackLoaderError(
@@ -176,6 +188,7 @@ export const parseManifest = (
     titleKey: payload.titleKey,
     descriptionKey: payload.descriptionKey,
     exports,
+    visibility,
     docx,
   };
 };

@@ -85,6 +85,7 @@ vi.mock('../../src/formpacks/loader', () => ({
     defaultLocale: 'de',
     locales: ['de', 'en'],
     exports: ['docx'],
+    visibility: 'public',
     docx: {
       templates: {
         a4: 'template-a4.docx',

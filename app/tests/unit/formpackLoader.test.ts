@@ -21,4 +21,9 @@ describe('parseManifest', () => {
       ),
     );
   });
+
+  it('defaults visibility to public when missing', () => {
+    const manifest = parseManifest(validPayload, 'test-formpack');
+    expect(manifest.visibility).toBe('public');
+  });
 });
