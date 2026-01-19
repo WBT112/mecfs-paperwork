@@ -229,6 +229,9 @@ To hide a pack from production UI listings, set the manifest visibility:
 Preview dev-only packs locally:
 - In dev mode (`npm run dev`), dev packs are visible by default.
 - In production-like builds, set `VITE_SHOW_DEV_FORMPACKS=true` to show dev packs.
+  - Example (Unix/macOS): `VITE_SHOW_DEV_FORMPACKS=true npm run dev`
+  - Example (Windows PowerShell): `$env:VITE_SHOW_DEV_FORMPACKS="true"; npm run dev`
+  - You can also add `VITE_SHOW_DEV_FORMPACKS=true` to an `.env.local` file at the repo root for local overrides.
 
 ## Formpack validation (contract + preflight)
 `npm run formpack:validate` performs contract validation for each pack and then runs the DOCX preflight.
