@@ -59,13 +59,13 @@ falls back to `https://github.com/your-org/mecfs-paperwork`. Set
 All checks run from the `app/` directory:
 
 ```bash
-npm run lint
 npm run format:check
+npm run lint
 npm run typecheck
-npm run build
 npm test
 npm run test:e2e
 npm run formpack:validate
+npm run build
 ```
 
 If E2E tests (`test:e2e`) fail due to missing dependencies, you may need to install browser binaries: `npx playwright install`.

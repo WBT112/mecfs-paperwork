@@ -24,15 +24,29 @@ const ALLOWED_ELEMENTS = [
   'ul',
 ];
 
+// RATIONALE: To prevent XSS attacks, we must ensure that link URLs do not
+// contain dangerous protocols like `javascript:`. This check ensures that only
+// safe, whitelisted protocols are allowed in rendered links.
+const isSafeHref = (href: string) => {
+  try {
+    const url = new URL(href, window.location.origin);
+    return ['http:', 'https:', 'mailto:'].includes(url.protocol);
+  } catch {
+    // Malformed URLs are considered unsafe.
+    return false;
+  }
+};
+
 const isExternalHref = (href: string) => {
-  if (href.startsWith('/')) return false;
-  if (href.startsWith('#')) return false;
-  if (href.startsWith('mailto:')) return false;
+  // We can leverage the safety check here as well. If it's not a safe
+  // protocol, it's not a valid external link.
+  if (!isSafeHref(href)) return false;
 
   try {
     const resolved = new URL(href, window.location.origin);
     return resolved.origin !== window.location.origin;
   } catch {
+    // Should not happen due to isSafeHref, but as a fallback.
     return false;
   }
 };
@@ -48,7 +62,9 @@ const MarkdownRenderer = memo(function MarkdownRenderer({
       allowedElements={ALLOWED_ELEMENTS}
       components={{
         a({ href, children, ...props }) {
-          if (!href) {
+          // SECURITY: To prevent XSS, we must validate the href. If it's
+          // missing or unsafe, render a non-interactive span instead of a link.
+          if (!href || !isSafeHref(href)) {
             return <span {...props}>{children}</span>;
           }
 

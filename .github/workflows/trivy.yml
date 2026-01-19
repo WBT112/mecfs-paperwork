@@ -10,28 +10,9 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
-  trivy-fs:
-    name: Trivy (FS scan - repo)
-    runs-on: ubuntu-latest
-    needs: [trivy-image]
-    if: ${{ always() && (github.event_name == 'pull_request' || needs.trivy-image.result != 'skipped') }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Trivy FS scan (HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          scan-type: fs
-          scan-ref: .
-          ignore-unfixed: true
-          vuln-type: os,library
-          severity: HIGH,CRITICAL
-          format: table
-          exit-code: 1
-
   trivy-image:
     name: Trivy (Image scan - built container)
     runs-on: ubuntu-latest
@@ -46,18 +27,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check DHI secrets (main pushes must fail if missing)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Check DHI secrets
+        id: check-secrets
         env:
           DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
           DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
         run: |
-          if [ -z "$DHI_USERNAME" ] || [ -z "$DHI_TOKEN" ]; then
-            echo "Missing DHI secrets. Set DHI_USERNAME and DHI_TOKEN in repository secrets."
-            exit 1
+          if [ -n "$DHI_USERNAME" ] && [ -n "$DHI_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Fail if DHI secrets are missing (push/schedule/manual must fail)
+        if: steps.check-secrets.outputs.available != 'true' && github.event_name != 'pull_request'
+        run: |
+          echo "::error::Missing DHI secrets. Set DHI_USERNAME and DHI_TOKEN in repository secrets."
+          exit 1
+
+      - name: Notice (PRs without secrets)
+        if: steps.check-secrets.outputs.available != 'true' && github.event_name == 'pull_request'
+        run: |
+          echo "::notice::Skipping Trivy image scan because DHI registry credentials are not available on pull_request events (e.g., Dependabot). FS scan will still run."
+
       - name: Login to DHI registry
+        if: steps.check-secrets.outputs.available == 'true'
         timeout-minutes: 5
         env:
           DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
@@ -76,14 +70,50 @@ jobs:
           exit 1
 
       - name: Build image
+        if: steps.check-secrets.outputs.available == 'true'
         run: docker build -t mecfs-paperwork:${{ github.sha }} .
 
       - name: Trivy image scan (HIGH/CRITICAL)
-        uses: aquasecurity/trivy-action@0.33.1
+        if: steps.check-secrets.outputs.available == 'true'
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: mecfs-paperwork:${{ github.sha }}
           ignore-unfixed: true
           vuln-type: os,library
           severity: HIGH,CRITICAL
-          format: table
+          format: sarif
+          output: trivy-image.sarif
           exit-code: 1
+
+      - name: Upload Trivy SARIF (image)
+        if: always() && steps.check-secrets.outputs.available == 'true' && github.actor != 'dependabot[bot]'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-image.sarif
+
+  trivy-fs:
+    name: Trivy (FS scan - repo)
+    runs-on: ubuntu-latest
+    needs: [trivy-image]
+    if: ${{ always() && (github.event_name == 'pull_request' || needs.trivy-image.result != 'skipped') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trivy FS scan (HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          format: sarif
+          output: trivy-fs.sarif
+          exit-code: 1
+
+      - name: Upload Trivy SARIF (fs)
+        if: always() && github.actor != 'dependabot[bot]'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs.sarif
