@@ -2,14 +2,15 @@
 
 ## Diensteanbieter
 
-**[Vorname Nachname]**  
-[Straße Hausnummer]  
-[PLZ Ort]  
-Deutschland
+**Tobias Greifzu** (Privatperson)
+
+Erfurter Str. 31E |   
+98693 Ilmenau |
+Deutschland  
 
 ## Kontakt
 
-**E-Mail:** deine-mail(at)beispiel.de
+**E-Mail:** info **(at)** mecfs-paperwork.de
 
 ## Hinweis zum Angebot
 
@@ -35,4 +36,4 @@ Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerha
 
 ## Datenschutz
 
-Informationen zur Verarbeitung personenbezogener Daten findest du in der: [[**Datenschutzerklärung**](/privacy)]
+Informationen zur Verarbeitung personenbezogener Daten findest du in der: [**Datenschutzerklärung**](/privacy)

@@ -1,6 +1,6 @@
 # Datenschutzerklärung (Deutschland)
 
-_Stand: 16. Januar 2026_
+_Stand: 19. Januar 2026_
 
 Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeitung personenbezogener Daten beim Aufruf und bei der Nutzung der Webanwendung **mecfs-paperwork**.
 
@@ -12,13 +12,13 @@ Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeit
 
 Verantwortlich im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:
 
-**[[Vollständiger Name]]** (Privatperson)
+**Tobias Greifzu** (Privatperson)
 
-[[Anschrift]]
+Erfurter Str. 31E |
+98693 Ilmenau |
+Deutschland
 
-E-Mail: deine-mail(at)beispiel.de
-
-> Wenn du diese Anwendung öffentlich betreibst, ersetze die Platzhalter vollständig.
+E-Mail: info **(at)** mecfs-paperwork.de
 
 ## 2. Grundprinzipien
 
@@ -30,9 +30,9 @@ E-Mail: deine-mail(at)beispiel.de
 
 ### 3.1 Bereitstellung über Webhosting (NGINX)
 
-Beim Aufruf der Website verarbeitet der Hosting-Anbieter technisch notwendige Verbindungsdaten (Server-Logfiles), um die Website auszuliefern sowie Stabilität und Sicherheit zu gewährleisten.
+Beim Aufruf der Website verarbeitet der Hosting-Anbieter **(1blu)** technisch notwendige Verbindungsdaten (Server-Logfiles), um die Website auszuliefern sowie Stabilität und Sicherheit zu gewährleisten.
 
-**Typische Logfile-Daten (können je nach Hosting variieren):**
+**Typische Logfile-Daten:**
 
 - IP-Adresse
 - Datum und Uhrzeit der Anfrage
@@ -44,17 +44,54 @@ Beim Aufruf der Website verarbeitet der Hosting-Anbieter technisch notwendige Ve
 
 ### 3.2 Hosting-Anbieter / Auftragsverarbeitung
 
-Geplantes Hosting: **1blu** (1blu AG / 1blu GmbH, je nach Vertrag). Der Hosting-Anbieter verarbeitet die Logfile-Daten als **Auftragsverarbeiter**.
+**1blu GmbH**, Riedemannweg 60, 13627 Berlin, Deutschland.
+
+Der Hosting-Anbieter verarbeitet personenbezogene Daten (insbesondere Server-Logfiles) als **Auftragsverarbeiter** auf Grundlage eines **Vertrags über die Auftragsverarbeitung gemäß Art. 28 DSGVO**.
 
 ### 3.3 Rechtsgrundlage
 
 Die Verarbeitung von Server-Logfiles erfolgt auf Grundlage von **Art. 6 Abs. 1 lit. f DSGVO** (berechtigtes Interesse an der sicheren und störungsfreien Bereitstellung der Website).
 
-### 3.4 Speicherdauer
+### 3.4 Speicherdauer / Log-Rotation / IP-Pseudonymisierung
 
-Server-Logfiles werden vom Hosting-Anbieter nur so lange gespeichert, wie es für Betrieb und IT-Sicherheit erforderlich ist. Die genaue Dauer hängt vom Hosting-Produkt und den Einstellungen beim Anbieter ab.
+Server-Logfiles werden vom Hosting-Anbieter nur so lange gespeichert, wie es für Betrieb und IT-Sicherheit erforderlich ist.
 
-**Orientierungswert (1blu):** Nach den Datenschutzhinweisen von 1blu können IP-Adressen zur Nachverfolgung von Angriffen/Fehlern gespeichert werden; Auswertungen zur Webstatistik können mit anonymisierter IP erfolgen und werden typischerweise für einen begrenzten Zeitraum vorgehalten (Details bitte im konkreten Hosting-Vertrag bzw. den 1blu-Hinweisen prüfen).
+Zur Datenminimierung und Pseudonymisierung werden u. a. folgende Maßnahmen beschrieben:
+- IP-Adressen werden nur **vollständig** erfasst, soweit dies für den ordnungsgemäßen Serverbetrieb erforderlich ist (z. B. Abwehr von Angriffen / Missbrauchserkennung).
+- Logdateien mit **unverfälschten** IP-Adressen werden automatisiert **rotiert**.
+- Bei länger gespeicherten IP-Adressen (z. B. für Statistikzwecke) erfolgt eine **Unkenntlichmachung** (Maskierung) eines Oktetts (IPv4) bzw. eines Hextetts (IPv6), sodass keine eindeutige Zuordnung zu einer Person mehr möglich ist.
+
+### 3.5 Verarbeitung innerhalb EU/EWR und Drittlandtransfers
+
+Die vertraglich vereinbarten Leistungen werden **ausschließlich in der EU bzw. im EWR** erbracht.  
+Eine Verlagerung der Dienstleistung oder von Teilarbeiten in ein **Drittland** erfolgt nur auf dokumentierte Weisung und nur, wenn die Voraussetzungen der **Art. 44 ff. DSGVO** erfüllt sind.
+
+### 3.6 Unterauftragsverarbeiter (Subunternehmer)
+
+Der Hosting-Anbieter setzt für bestimmte Leistungen (z. B. Server-/Netzwerkverwaltung, Support, IT-Beratung, Domainregistrierung) **Unterauftragsverarbeiter** ein. Im AV-Vertrag werden derzeit u. a. genannt:
+
+- **1blu business GmbH**, Riedemannweg 60, 13627 Berlin, Deutschland  
+- **Greatnet.de GmbH**, Riedemannweg 60, 13627 Berlin, Deutschland  
+- **OMCnet Internet Service GmbH**, Ernst-Abbe-Straße 10, 25451 Quickborn, Deutschland  
+
+Änderungen (Hinzuziehung/Ersetzung) von Unterauftragnehmern werden vorab angekündigt; es besteht eine Widerspruchsmöglichkeit aus sachlichem Grund.
+
+### 3.7 Technische und organisatorische Maßnahmen (TOM)
+
+Der Hosting-Anbieter setzt technische und organisatorische Maßnahmen nach **Art. 32 DSGVO** ein. Dazu zählen zusammengefasst u. a.:
+- **Zutritts- und Zugangskontrollen** (z. B. gesicherter Rechenzentrumszugang, personalisierte Accounts, rollenbasierte Berechtigungen, Protokollierung)
+- **Verschlüsselung/gesicherte Übertragung** für administrative Zugriffe (z. B. VPN/SSH) und, wo möglich, Verschlüsselung (z. B. PGP für E-Mail)
+- **Integrität & Nachvollziehbarkeit** (Protokollierung zentraler Vorgänge, Versionierung für essentielle Systeme)
+- **Verfügbarkeit & Resilienz** (Backup-/Recovery-Konzept, tägliche Backups, RAID, USV/Notstrom, redundante Netzanbindung)
+- **Regelmäßige Überprüfung/Evaluation** der Wirksamkeit der TOM (mindestens jährlich) und Aktualisierung nach Stand der Technik
+- **Dokumentierte Datenträgervernichtung** durch zertifizierte Dienstleister
+
+Weitere Details können im Vertrag über die Auftragsverarbeitung (inkl. Anlagen) eingesehen werden.
+
+### 3.8 Datenschutzbeauftragter des Hosting-Anbieters
+
+Kontakt laut AV-Vertrag:  
+**1blu GmbH – Datenschutzbeauftragter**, Riedemannweg 60, 13627 Berlin, Deutschland
 
 ---
 
@@ -69,7 +106,7 @@ Die Anwendung unterstützt dich beim Ausfüllen von Anträgen/Formularen. Die vo
 - **nicht** an den Betreiber übertragen,
 - **nicht** an Dritte übermittelt.
 
-Zusätzlich speichert die Anwendung technische Präferenzen lokal (z. B. Spracheinstellung `mecfs-paperwork.locale` sowie pro Formpack die zuletzt aktive Record-ID `mecfs-paperwork.activeRecordId.<formpackId>` in `localStorage`).
+Zusätzlich speichert die Anwendung technische Präferenzen lokal (z. B. die zuletzte gewählte Spracheinstellung).
 
 ### 4.2 Rechtsgrundlage
 
@@ -133,7 +170,7 @@ Du hast – soweit personenbezogene Daten durch den Betreiber verarbeitet werden
 
 ## 10. Datensicherheit
 
-Wir setzen technische und organisatorische Maßnahmen ein, um die Anwendung und den Betrieb zu sichern (z. B. aktuelle Server-Software, Transportverschlüsselung per HTTPS, restriktive Security-Header im NGINX-Setup). Bitte beachte, dass die Datensicherheit auch von deinem Endgerät, Browser und deiner eigenen Handhabung (insbesondere bei Exporten) abhängt.
+Ich setze technische und organisatorische Maßnahmen ein, um die Anwendung und den Betrieb zu sichern (z. B. aktuelle Server-Software, Transportverschlüsselung per HTTPS, restriktive Security-Header im NGINX-Setup). Bitte beachte, dass die Datensicherheit auch von deinem Endgerät, Browser und deiner eigenen Handhabung (insbesondere bei Exporten) abhängt.
 
 ---
 
