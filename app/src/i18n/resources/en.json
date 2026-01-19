@@ -56,6 +56,7 @@
   "formpackDocxErrorInvalidCommand": "DOCX template error: A command is invalid or mismatched.",
   "formpackFormHeading": "Form",
   "formpackFormReset": "Reset form",
+    "formpackFormResetConfirm": "Are you sure you want to reset the form? All unsaved changes will be lost.",
   "formpackFormNoActiveRecord": "Select or create a draft to start editing.",
   "formpackFormPreviewHeading": "Form data preview",
   "formpackFormPreviewEmpty": "No data entered yet.",

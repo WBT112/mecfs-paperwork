@@ -152,6 +152,9 @@ describe('FormpackDetailPage', () => {
   });
 
   it('clears the draft and persists the reset', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    confirmSpy.mockReturnValue(true);
+
     render(
       <MemoryRouter initialEntries={['/formpacks/notfallpass']}>
         <Routes>
