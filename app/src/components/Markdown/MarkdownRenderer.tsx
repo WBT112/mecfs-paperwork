@@ -37,6 +37,27 @@ const isExternalHref = (href: string) => {
   }
 };
 
+// By defining the components object outside the component, we ensure it's not
+// recreated on every render, which prevents unnecessary re-rendering cycles
+// in the ReactMarkdown component.
+const MARKDOWN_COMPONENTS = {
+  a({ href, children, ...props }) {
+    if (!href) {
+      return <span {...props}>{children}</span>;
+    }
+
+    const external = isExternalHref(href);
+    const rel = external ? 'noreferrer noopener' : undefined;
+    const target = external ? '_blank' : undefined;
+
+    return (
+      <a href={href} rel={rel} target={target} {...props}>
+        {children}
+      </a>
+    );
+  },
+};
+
 const MarkdownRenderer = memo(function MarkdownRenderer({
   content,
   className,
@@ -46,23 +67,7 @@ const MarkdownRenderer = memo(function MarkdownRenderer({
       className={className}
       skipHtml
       allowedElements={ALLOWED_ELEMENTS}
-      components={{
-        a({ href, children, ...props }) {
-          if (!href) {
-            return <span {...props}>{children}</span>;
-          }
-
-          const external = isExternalHref(href);
-          const rel = external ? 'noreferrer noopener' : undefined;
-          const target = external ? '_blank' : undefined;
-
-          return (
-            <a href={href} rel={rel} target={target} {...props}>
-              {children}
-            </a>
-          );
-        },
-      }}
+      components={MARKDOWN_COMPONENTS}
     >
       {content}
     </ReactMarkdown>
