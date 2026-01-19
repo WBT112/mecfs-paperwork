@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { isExternalHref } from '../../lib/utils';
 
 type MarkdownRendererProps = {
   content: string;
@@ -23,19 +24,6 @@ const ALLOWED_ELEMENTS = [
   'strong',
   'ul',
 ];
-
-const isExternalHref = (href: string) => {
-  if (href.startsWith('/')) return false;
-  if (href.startsWith('#')) return false;
-  if (href.startsWith('mailto:')) return false;
-
-  try {
-    const resolved = new URL(href, window.location.origin);
-    return resolved.origin !== window.location.origin;
-  } catch {
-    return false;
-  }
-};
 
 const MarkdownRenderer = memo(function MarkdownRenderer({
   content,

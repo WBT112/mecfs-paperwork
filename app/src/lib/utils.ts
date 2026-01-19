@@ -41,3 +41,21 @@ export const sanitizeHTML = (str: string): string => {
     allowedAttributes: {},
   });
 };
+
+/**
+ * Checks if a URL is external to the current window's origin.
+ * @param href The URL to check.
+ * @returns True if the URL is external, false otherwise.
+ */
+export const isExternalHref = (href: string) => {
+  if (href.startsWith('/')) return false;
+  if (href.startsWith('#')) return false;
+  if (href.startsWith('mailto:')) return false;
+
+  try {
+    const resolved = new URL(href, window.location.origin);
+    return resolved.origin !== window.location.origin;
+  } catch {
+    return false;
+  }
+};
