@@ -69,7 +69,7 @@ jobs:
       - name: Run container
         if: steps.check-secrets.outputs.available == 'true'
         run: |
-          docker run -d --name mecfs-paperwork -p 8080:80 mecfs-paperwork
+          docker run -d --name mecfs-paperwork -p 8080:8080 mecfs-paperwork
           sleep 2
 
       - name: Smoke checks

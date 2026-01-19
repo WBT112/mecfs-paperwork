@@ -1,5 +1,5 @@
 # Replace the site address with your real domain (A/AAAA points to this server).
 # Example: mecfs-paperwork.de
 mecfs-paperwork.de {
-  reverse_proxy web:80
+  reverse_proxy web:8080
 }
