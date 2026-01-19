@@ -24,11 +24,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    healthcheck:
-      test: ["CMD-SHELL", "nginx -t"]
-      interval: 10s
-      timeout: 2s
-      retries: 10
 
   caddy:
     image: caddy:2-alpine
@@ -58,10 +53,14 @@ services:
         max-size: "10m"
         max-file: "3"
     healthcheck:
-      test: ["CMD", "caddy", "version"]
+  # Checks both that Caddy is alive and that the upstream app is reachable.
+      test: ["CMD-SHELL", "caddy version >/dev/null 2>&1 && wget -qO- http://web:8080/ >/dev/null 2>&1"]
       interval: 30s
       timeout: 5s
       retries: 5
+      start_period: 20s
+
+
 
 volumes:
   caddy_data:
