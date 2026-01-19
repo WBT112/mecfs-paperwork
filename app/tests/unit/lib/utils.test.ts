@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { emptyStringToNull } from '../../../src/lib/utils';
+import { emptyStringToNull, sanitizeHTML } from '../../../src/lib/utils';
 
 describe('utils', () => {
   describe('emptyStringToNull', () => {
@@ -25,6 +25,21 @@ describe('utils', () => {
 
     it('should return the same string if it has no leading/trailing whitespace', () => {
       expect(emptyStringToNull('hello')).toBe('hello');
+    });
+  });
+  describe('sanitizeHTML', () => {
+    it('should return an empty string for null input', () => {
+      expect(sanitizeHTML(null)).toBe('');
+    });
+
+    it('should return an empty string for undefined input', () => {
+      expect(sanitizeHTML(undefined)).toBe('');
+    });
+
+    it('should strip HTML tags from the input string', () => {
+      const input = '<p>Hello, <strong>World!</strong></p>';
+      const expected = 'Hello, World!';
+      expect(sanitizeHTML(input)).toBe(expected);
     });
   });
 });

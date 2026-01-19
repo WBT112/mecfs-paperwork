@@ -35,7 +35,10 @@ import sanitizeHtml from 'sanitize-html';
  * @param {string} str - The input string to be sanitized.
  * @returns {string} The sanitized string.
  */
-export const sanitizeHTML = (str: string): string => {
+export const sanitizeHTML = (str: string | null | undefined): string => {
+  if (!str) {
+    return '';
+  }
   return sanitizeHtml(str, {
     allowedTags: [],
     allowedAttributes: {},
