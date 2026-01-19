@@ -38,6 +38,7 @@ import {
   loadFormpackSchema,
   loadFormpackUiSchema,
 } from '../formpacks/loader';
+import { isFormpackVisible } from '../formpacks/visibility';
 import type { FormpackManifest } from '../formpacks/types';
 import {
   type StorageErrorCode,
@@ -448,6 +449,13 @@ export default function FormpackDetailPage() {
       try {
         const data = await loadFormpackManifest(formpackId);
         if (!isActive) {
+          return;
+        }
+        if (!isFormpackVisible(data)) {
+          setManifest(null);
+          setSchema(null);
+          setUiSchema(null);
+          setErrorMessage(t('formpackNotFound'));
           return;
         }
         await loadFormpackI18n(formpackId, locale);

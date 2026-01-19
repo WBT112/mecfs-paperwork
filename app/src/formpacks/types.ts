@@ -1,6 +1,7 @@
 import type { SupportedLocale } from '../i18n/locale';
 
 export type FormpackExportType = 'docx' | 'json';
+export type FormpackVisibility = 'public' | 'dev';
 
 export interface FormpackDocxManifest {
   templates: {
@@ -18,6 +19,7 @@ export interface FormpackManifest {
   titleKey: string;
   descriptionKey: string;
   exports: FormpackExportType[];
+  visibility: FormpackVisibility;
   docx?: FormpackDocxManifest;
 }
 
@@ -32,5 +34,6 @@ export interface FormpackManifestPayload {
   titleKey: string;
   descriptionKey: string;
   exports: unknown;
+  visibility?: unknown;
   docx?: unknown;
 }

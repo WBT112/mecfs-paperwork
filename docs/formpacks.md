@@ -37,6 +37,9 @@ Required fields:
 - `docx.templates.wallet`: Path to the wallet template (only supported for `notfallpass`).
 - `docx.mapping`: Path to the DOCX mapping file.
 
+Optional fields:
+- `visibility`: `public` (default) or `dev`. Dev packs are hidden from UI listings unless `VITE_SHOW_DEV_FORMPACKS=true` or the app runs in dev mode.
+
 ## i18n
 - All labels, section titles, and help texts are referenced by i18n keys.
 - Key namespace: `<packId>.*` (for example `notfallpass.section.contacts.title`).
@@ -215,12 +218,27 @@ Then review the generated files and adjust:
 - DOCX templates and mapping
 - Example data (must be fake)
 
+## Dev-only packs
+To hide a pack from production UI listings, set the manifest visibility:
+```
+{
+  "visibility": "dev"
+}
+```
+
+Preview dev-only packs locally:
+- In dev mode (`npm run dev`), dev packs are visible by default.
+- In production-like builds, set `VITE_SHOW_DEV_FORMPACKS=true` to show dev packs.
+  - Example (Unix/macOS): `VITE_SHOW_DEV_FORMPACKS=true npm run dev`
+  - Example (Windows PowerShell): `$env:VITE_SHOW_DEV_FORMPACKS="true"; npm run dev`
+  - You can also add `VITE_SHOW_DEV_FORMPACKS=true` to an `.env.local` file at the repo root for local overrides.
+
 ## Formpack validation (contract + preflight)
 `npm run formpack:validate` performs contract validation for each pack and then runs the DOCX preflight.
 
 Contract checks include:
 - Required files and JSON parsing for manifest/schema/ui schema/i18n/examples.
-- `manifest.json` fields (`id`, `version`, `defaultLocale`, `locales`, `titleKey`, `descriptionKey`, `exports`, `docx`).
+ - `manifest.json` fields (`id`, `version`, `defaultLocale`, `locales`, `titleKey`, `descriptionKey`, `exports`, `docx`, `visibility`).
 - `exports` includes `docx` and `json`, with safe asset paths for `docx.templates.a4` and `docx.mapping`.
 - Strict i18n parity between `i18n/de.json` and `i18n/en.json`.
 - Coverage of `t:` keys referenced in `schema.json` and `ui.schema.json`.

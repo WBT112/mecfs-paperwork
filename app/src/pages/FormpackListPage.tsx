@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { loadFormpackI18n } from '../i18n/formpack';
 import { useLocale } from '../i18n/useLocale';
 import { listFormpacks } from '../formpacks/loader';
+import { filterVisibleFormpacks } from '../formpacks/visibility';
 import type { FormpackManifest } from '../formpacks/types';
 import type { SupportedLocale } from '../i18n/locale';
 
@@ -39,7 +40,7 @@ export default function FormpackListPage() {
         if (!isActive) {
           return;
         }
-        setManifests(data);
+        setManifests(filterVisibleFormpacks(data));
       } catch (error) {
         if (!isActive) {
           return;

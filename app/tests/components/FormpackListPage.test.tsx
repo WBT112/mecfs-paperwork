@@ -8,13 +8,23 @@ vi.mock('../../src/formpacks/loader', () => ({
   listFormpacks: vi.fn().mockResolvedValue([
     {
       id: 'formpack-1',
+      version: '1.0.0',
+      defaultLocale: 'en',
+      locales: ['en'],
       titleKey: 'Formpack 1',
       descriptionKey: 'Description 1',
+      exports: ['json'],
+      visibility: 'public',
     },
     {
       id: 'formpack-2',
+      version: '1.0.0',
+      defaultLocale: 'en',
+      locales: ['en'],
       titleKey: 'Formpack 2',
       descriptionKey: 'Description 2',
+      exports: ['json'],
+      visibility: 'public',
     },
   ]),
 }));

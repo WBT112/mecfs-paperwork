@@ -54,6 +54,7 @@ const MANIFEST_SCHEMA = {
       minItems: 1,
       uniqueItems: true,
     },
+    visibility: { enum: ['public', 'dev'] },
     docx: {
       type: 'object',
       additionalProperties: false,
