@@ -1,0 +1,6 @@
+services:
+  caddy:
+    ports:
+      - "8080:80"
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro

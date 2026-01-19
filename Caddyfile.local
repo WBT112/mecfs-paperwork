@@ -1,0 +1,10 @@
+# Local/CI HTTP-only reverse proxy (no TLS). Use with:
+#   docker compose -f compose.prod.yaml -f compose.local-proxy.yaml up -d --build
+# or just ignore if you use compose.yaml for local dev.
+{
+  auto_https off
+}
+
+:80 {
+  reverse_proxy web:80
+}

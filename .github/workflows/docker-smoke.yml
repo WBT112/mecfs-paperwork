@@ -148,3 +148,12 @@ jobs:
       - name: Compose down
         if: always() && steps.check-secrets.outputs.available == 'true'
         run: docker compose down
+
+      - name: Build prod image (compose.prod.yaml)
+        if: steps.check-secrets.outputs.available == 'true'
+        run: |
+          if [ -f compose.prod.yaml ]; then
+            docker compose -f compose.prod.yaml build web
+          else
+            echo "::notice::compose.prod.yaml not present; skipping."
+          fi
