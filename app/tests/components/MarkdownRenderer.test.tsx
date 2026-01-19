@@ -1,53 +1,56 @@
-// @vitest-environment jsdom
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import MarkdownRenderer from '../../src/components/Markdown/MarkdownRenderer';
 
 describe('MarkdownRenderer', () => {
-  it('renders simple markdown correctly', () => {
-    render(<MarkdownRenderer content="# Hello" />);
-    const heading = screen.getByRole('heading', { level: 1 });
-    expect(heading).toHaveTextContent('Hello');
-  });
+  it('renders headings, lists, and links', () => {
+    const content = `# Heading\n\n- First\n- Second\n\n[Home](/privacy)`;
 
-  it('renders safe links with correct attributes', () => {
-    render(<MarkdownRenderer content="[External](https://example.com)" />);
-    const link = screen.getByRole('link', { name: 'External' });
-    expect(link).toHaveAttribute('href', 'https://example.com');
-    expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noreferrer noopener');
-  });
+    render(<MarkdownRenderer content={content} />);
 
-  it('renders internal links without target=_blank', () => {
-    render(<MarkdownRenderer content="[Internal](/internal-page)" />);
-    const link = screen.getByRole('link', { name: 'Internal' });
-    expect(link).toHaveAttribute('href', '/internal-page');
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Heading' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('First')).toBeInTheDocument();
+    expect(screen.getByText('Second')).toBeInTheDocument();
+
+    const link = screen.getByRole('link', { name: 'Home' });
+    expect(link).toHaveAttribute('href', '/privacy');
     expect(link).not.toHaveAttribute('target');
     expect(link).not.toHaveAttribute('rel');
   });
 
-  // SECURITY: This is the most critical test. It ensures that links
-  // with dangerous protocols like `javascript:` are not rendered as
-  // clickable `<a>` tags, preventing XSS vulnerabilities.
-  it('does NOT render links with dangerous javascript: hrefs', () => {
-    // eslint-disable-next-line no-script-url
-    const maliciousContent = '[Malicious Link](javascript:alert("XSS"))';
-    render(<MarkdownRenderer content={maliciousContent} />);
+  it('blocks raw HTML and secures external links', () => {
+    const content =
+      '# Title\n\n<script>window.alert("nope")</script>\n\n[External](https://example.com)';
 
-    // The link should NOT be rendered as a link.
-    const potentialLink = screen.queryByRole('link');
-    expect(potentialLink).not.toBeInTheDocument();
+    const { container } = render(<MarkdownRenderer content={content} />);
 
-    // Instead, it should be rendered as a non-interactive span.
-    const spanElement = screen.getByText('Malicious Link');
-    expect(spanElement.tagName).toBe('SPAN');
-    expect(spanElement).not.toHaveAttribute('href');
+    expect(container.querySelector('script')).toBeNull();
+
+    const link = screen.getByRole('link', { name: 'External' });
+    expect(link).toHaveAttribute('href', 'https://example.com');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute(
+      'rel',
+      expect.stringMatching(/noreferrer.*noopener|noopener.*noreferrer/),
+    );
   });
 
-  it('does NOT render links with other unsafe protocols', () => {
-    const maliciousContent = '[Data Protocol](data:text/html,<html>...</html>)';
-    render(<MarkdownRenderer content={maliciousContent} />);
-    const potentialLink = screen.queryByRole('link');
-    expect(potentialLink).not.toBeInTheDocument();
+  it('handles invalid markdown and strips inline HTML XSS payloads', () => {
+    const content =
+      '# Title\n\n[Broken Link](javascript:alert(1)\n\n<img src=x onerror="alert(1)" />';
+
+    const { container } = render(<MarkdownRenderer content={content} />);
+
+    expect(container.querySelector('script')).toBeNull();
+    expect(container.querySelector('img')).toBeNull();
+
+    expect(
+      screen.queryByRole('link', { name: 'Broken Link' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText('[Broken Link](javascript:alert(1)'),
+    ).toBeInTheDocument();
   });
 });

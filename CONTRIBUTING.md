@@ -39,13 +39,13 @@ npm run dev
 Run from `app/`:
 
 ```bash
-npm run format:check
 npm run lint
+npm run format:check
 npm run typecheck
+npm run build
 npm test
 npm run test:e2e
 npm run formpack:validate
-npm run build
 ```
 
 If E2E tests (`test:e2e`) fail due to missing dependencies, you may need to install browser binaries: `npx playwright install`.

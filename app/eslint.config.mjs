@@ -60,6 +60,16 @@ export default [
     },
   },
 
+  // Vitest Unit/Component
+  {
+    files: ['tests/**/*.{ts,tsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.vitest,
+      },
+    },
+  },
+
   // App TS/TSX
   {
     files: ['**/*.{ts,tsx}'],

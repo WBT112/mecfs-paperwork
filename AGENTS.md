@@ -17,13 +17,13 @@ Codex reads this file before doing any work. Follow it as the default standard f
 ## 3) Quality gates (must be green before you propose a PR)
 For every change that touches `app/`:
 1. `cd app`
-2. `npm run format:check`
-3. `npm run lint`
+2. `npm run lint`
+3. `npm run format:check`
 4. `npm run typecheck`
-5. `npm test`
-6. `npm run test:e2e`
-7. `npm run formpack:validate`
-8. `npm run build`
+5. `npm run build`
+6. `npm test`
+7. `npm run test:e2e`
+8. `npm run formpack:validate`
 9. If tests cannot be run because dependencies are missing try to isntall them e.g. npx playwright install
 
 If any step fails: fix it before finishing.
