@@ -1,8 +1,5 @@
 name: Docker smoke test
 
-permissions:
-  contents: read
-
 on:
   pull_request:
   push:
@@ -33,9 +30,15 @@ jobs:
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Notice (PRs without secrets)
+        if: steps.check-secrets.outputs.available != 'true' && github.event_name == 'pull_request'
+        run: |
+          echo "::notice::Skipping Docker smoke tests on pull_request because DHI secrets are not available (e.g., Dependabot)."
+
+
 
       - name: Fail if DHI secrets are missing
-        if: steps.check-secrets.outputs.available != 'true'
+        if: steps.check-secrets.outputs.available != 'true' && github.event_name != 'pull_request'
         run: |
           echo "::error::Missing DHI secrets. Configure DHI_USERNAME and DHI_TOKEN to run Docker smoke tests."
           exit 1
@@ -99,9 +102,15 @@ jobs:
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Notice (PRs without secrets)
+        if: steps.check-secrets.outputs.available != 'true' && github.event_name == 'pull_request'
+        run: |
+          echo "::notice::Skipping Docker smoke tests on pull_request because DHI secrets are not available (e.g., Dependabot)."
+
+
 
       - name: Fail if DHI secrets are missing
-        if: steps.check-secrets.outputs.available != 'true'
+        if: steps.check-secrets.outputs.available != 'true' && github.event_name != 'pull_request'
         run: |
           echo "::error::Missing DHI secrets. Configure DHI_USERNAME and DHI_TOKEN to run Docker smoke tests."
           exit 1
