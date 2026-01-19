@@ -1,5 +1,12 @@
 /* eslint-env node */
 /* global console */
+
+// RATIONALE: This script synchronizes the canonical formpacks from the
+// repository root into the app's public assets directory.
+// DO NOT EDIT files in `app/public/formpacks` directly; they are overwritten
+// during the build process.
+// The canonical source is at `/formpacks`.
+
 import { cp, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
