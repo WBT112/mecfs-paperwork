@@ -115,16 +115,14 @@ const setPathValue = (target, pathValue, value) => {
     }
 
     cursor = cursor[segment];
-    // Abort if any segment is unsafe to prevent prototype pollution.
-    if (!segments.every((segment) => isSafePathSegment(segment))) {
-      return;
-    }
   });
 };
 
 const setNested = (target, dottedKey, value) => {
   const segments = dottedKey.split('.').filter(Boolean);
   if (!segments.length) return;
+  // Abort if any segment is unsafe to prevent prototype pollution.
+  if (!segments.every((segment) => isSafePathSegment(segment))) return;
 
   let cursor = target;
 
