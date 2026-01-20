@@ -61,7 +61,7 @@ body {
 
 .app__topbar-actions {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   flex-wrap: wrap;
   gap: 0.75rem;
 }
@@ -71,6 +71,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  min-width: 7.5rem;
+  justify-content: center;
 }
 
 .app__share-fallback {
