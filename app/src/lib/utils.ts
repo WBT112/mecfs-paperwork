@@ -37,7 +37,8 @@ import sanitizeHtml from 'sanitize-html';
  */
 export const sanitizeHTML = (str: string): string => {
   return sanitizeHtml(str, {
-    allowedTags: [],
-    allowedAttributes: {},
+    allowedTags: ['a'],
+    allowedAttributes: { a: ['href'] },
+    allowedSchemes: ['http', 'https', 'mailto'],
   });
 };

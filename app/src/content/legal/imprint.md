@@ -4,9 +4,9 @@
 
 **Tobias Greifzu** (Privatperson)
 
-Erfurter Str. 31E |   
+Erfurter Str. 31E |
 98693 Ilmenau |
-Deutschland  
+Deutschland
 
 ## Kontakt
 
