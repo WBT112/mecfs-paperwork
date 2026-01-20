@@ -27,9 +27,12 @@ const ALLOWED_ELEMENTS = [
 // RATIONALE: To prevent XSS attacks, we must ensure that link URLs do not
 // contain dangerous protocols like `javascript:`. This check ensures that only
 // safe, whitelisted protocols are allowed in rendered links.
+// It must also be environment-agnostic (not rely on `window`).
 const isSafeHref = (href: string) => {
   try {
-    const url = new URL(href, window.location.origin);
+    // Use a dummy base to handle relative URLs correctly. The base itself
+    // is irrelevant; we only care about the resulting protocol.
+    const url = new URL(href, 'https://dummy.base');
     return ['http:', 'https:', 'mailto:'].includes(url.protocol);
   } catch {
     // Malformed URLs are considered unsafe.
@@ -38,17 +41,9 @@ const isSafeHref = (href: string) => {
 };
 
 const isExternalHref = (href: string) => {
-  // We can leverage the safety check here as well. If it's not a safe
-  // protocol, it's not a valid external link.
-  if (!isSafeHref(href)) return false;
-
-  try {
-    const resolved = new URL(href, window.location.origin);
-    return resolved.origin !== window.location.origin;
-  } catch {
-    // Should not happen due to isSafeHref, but as a fallback.
-    return false;
-  }
+  // An external link is one that starts with a protocol. This is a simpler
+  // and more robust check than trying to compare origins.
+  return /^(?:https?|mailto):|^\/\//i.test(href);
 };
 
 const MarkdownRenderer = memo(function MarkdownRenderer({
