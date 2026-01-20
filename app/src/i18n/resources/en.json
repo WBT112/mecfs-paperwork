@@ -1,6 +1,6 @@
 {
   "appTitle": "mecfs-paperwork",
-  "appSubtitle": "Offline-first paperwork workspace",
+  "appSubtitle": "Forms for ME/CFS. In your Browser. All data stays on your device.",
   "languageLabel": "Language",
   "languageOptions": {
     "de": "Deutsch",
@@ -11,8 +11,8 @@
   "footerPrivacy": "Privacy Policy",
   "footerGithub": "GitHub",
   "footerSponsor": "Sponsor",
-  "formpackListTitle": "Formpacks",
-  "formpackListDescription": "Available form bundles ready for use.",
+  "formpackListTitle": "Forms",
+  "formpackListDescription": "Available forms are displayed below.",
   "formpackListEmpty": "No formpacks are available yet.",
   "formpackDetailTitle": "Formpack details",
   "formpackLoading": "Loading formpack data...",
