@@ -1,7 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { applyTheme, resolveTheme } from '../../src/theme/applyTheme';
+import {
+  applyTheme,
+  getSystemTheme,
+  getThemeMediaQuery,
+  resolveTheme,
+} from '../../src/theme/applyTheme';
 import {
   getInitialThemeMode,
+  getStoredThemeMode,
+  isThemeMode,
   setStoredThemeMode,
   type ResolvedTheme,
   themeStorageKey,
@@ -35,10 +42,47 @@ describe('theme utilities', () => {
     expect(getInitialThemeMode()).toBe('dark');
   });
 
+  it('validates supported theme modes', () => {
+    expect(isThemeMode('dark')).toBe(true);
+    expect(isThemeMode('light')).toBe(true);
+    expect(isThemeMode('system')).toBe(true);
+    expect(isThemeMode('unknown')).toBe(false);
+  });
+
   it('persists the selected theme mode', () => {
     setStoredThemeMode('light');
 
     expect(window.localStorage.getItem(themeStorageKey)).toBe('light');
+  });
+
+  it('ignores invalid stored theme values', () => {
+    window.localStorage.setItem(themeStorageKey, 'neon');
+
+    expect(getStoredThemeMode()).toBeNull();
+  });
+
+  it('returns null when storage access fails', () => {
+    const getItemSpy = vi
+      .spyOn(Storage.prototype, 'getItem')
+      .mockImplementation(() => {
+        throw new Error('Storage failure');
+      });
+
+    expect(getStoredThemeMode()).toBeNull();
+
+    getItemSpy.mockRestore();
+  });
+
+  it('ignores failures when storing theme selection', () => {
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('Storage failure');
+      });
+
+    expect(() => setStoredThemeMode('dark')).not.toThrow();
+
+    setItemSpy.mockRestore();
   });
 
   it('applies the resolved theme to the document', () => {
@@ -57,5 +101,17 @@ describe('theme utilities', () => {
     window.matchMedia = vi.fn().mockReturnValue(buildMatchMedia(false));
 
     expect(resolveTheme('system')).toBe<ResolvedTheme>('light');
+  });
+
+  it('falls back to dark when matchMedia is unavailable', () => {
+    window.matchMedia = undefined as unknown as typeof window.matchMedia;
+
+    expect(getSystemTheme()).toBe<ResolvedTheme>('dark');
+  });
+
+  it('returns null when media queries are not supported', () => {
+    window.matchMedia = undefined as unknown as typeof window.matchMedia;
+
+    expect(getThemeMediaQuery()).toBeNull();
   });
 });
