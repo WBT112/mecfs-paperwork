@@ -45,10 +45,19 @@ const normalizePathname = (pathname: string): string => {
   return trimmed.length > 0 ? trimmed : '/';
 };
 
+const isFormpackDetailPath = (pathname: string): boolean => {
+  if (!pathname.startsWith('/formpacks/')) {
+    return false;
+  }
+  const segments = pathname.split('/').filter(Boolean);
+  return segments.length === 2;
+};
+
 export const getShareUrl = ({ origin, pathname }: ShareUrlOptions): string => {
   const normalizedPathname = normalizePathname(pathname);
-  const isFormpackDetail = /^\/formpacks\/[^/]+$/.test(normalizedPathname);
-  const sharePath = isFormpackDetail ? normalizedPathname : '/formpacks';
+  const sharePath = isFormpackDetailPath(normalizedPathname)
+    ? normalizedPathname
+    : '/formpacks';
 
   return new URL(sharePath, origin).toString();
 };
