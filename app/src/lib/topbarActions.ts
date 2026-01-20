@@ -41,7 +41,11 @@ export type ShareUrlOptions = {
 };
 
 const normalizePathname = (pathname: string): string => {
-  const trimmed = pathname.replace(/\/+$/, '');
+  let end = pathname.length;
+  while (end > 0 && pathname[end - 1] === '/') {
+    end -= 1;
+  }
+  const trimmed = pathname.slice(0, end);
   return trimmed.length > 0 ? trimmed : '/';
 };
 
