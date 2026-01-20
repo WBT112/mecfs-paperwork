@@ -50,4 +50,20 @@ describe('MarkdownRenderer', () => {
     const potentialLink = screen.queryByRole('link');
     expect(potentialLink).not.toBeInTheDocument();
   });
+
+  it('renders safe mailto links correctly', () => {
+    render(<MarkdownRenderer content="[Contact](mailto:test@example.com)" />);
+    const link = screen.getByRole('link', { name: 'Contact' });
+    expect(link).toHaveAttribute('href', 'mailto:test@example.com');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noreferrer noopener');
+  });
+
+  it('renders protocol-relative URLs as external links', () => {
+    render(<MarkdownRenderer content="[Proto Rel](//example.com)" />);
+    const link = screen.getByRole('link', { name: 'Proto Rel' });
+    expect(link).toHaveAttribute('href', '//example.com');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noreferrer noopener');
+  });
 });
