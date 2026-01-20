@@ -1,0 +1,58 @@
+name: SonarCloud (main scheduled)
+
+on:
+  push:
+    branches: ["main"]
+  schedule:
+    # 02:17 UTC täglich (entspricht i.d.R. 03:17 in Deutschland im Winter)
+    - cron: "17 2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sonarcloud-main
+  cancel-in-progress: true
+
+jobs:
+  sonarcloud:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Sonar empfiehlt vollständige Historie für relevanteres Reporting
+          fetch-depth: 0
+        # fetch-depth Empfehlung in Sonar Doku/Beispielen für GitHub Actions
+        # (siehe SonarQube Cloud GitHub Actions Doku)
+        # Quelle: Sonar Docs
+        # (Cite below)
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies (app)
+        working-directory: app
+        env:
+          HUSKY: "0"
+        run: npm ci
+
+      - name: Unit tests + coverage (lcov)
+        working-directory: app
+        run: |
+          npm run test:coverage -- \
+            --coverage.reporter=lcov \
+            --coverage.reporter=text \
+            --coverage.reporter=json \
+            --coverage.reporter=html
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

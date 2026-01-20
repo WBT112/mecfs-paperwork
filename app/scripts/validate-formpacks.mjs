@@ -87,6 +87,7 @@ const isSafeAssetPath = (value) => {
 };
 
 const isSafePathSegment = (segment) =>
+  segment &&
   segment !== '__proto__' &&
   segment !== 'constructor' &&
   segment !== 'prototype';
@@ -104,19 +105,22 @@ const setPathValue = (target, pathValue, value) => {
 
   let cursor = target;
 
-  segments.forEach((segment, index) => {
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = segments[index];
     const isLeaf = index === segments.length - 1;
     if (isLeaf) {
       cursor[segment] = value;
       return;
     }
 
-    if (!isRecord(cursor[segment])) {
-      cursor[segment] = {};
+    const hasOwn = Object.prototype.hasOwnProperty.call(cursor, segment);
+    if (!hasOwn || !isRecord(cursor[segment])) {
+      // Create a prototype-less object to avoid prototype pollution.
+      cursor[segment] = Object.create(null);
     }
 
     cursor = cursor[segment];
-  });
+  }
 };
 
 const setNested = (target, dottedKey, value) => {
@@ -127,19 +131,22 @@ const setNested = (target, dottedKey, value) => {
 
   let cursor = target;
 
-  segments.forEach((segment, index) => {
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = segments[index];
     const isLeaf = index === segments.length - 1;
     if (isLeaf) {
       cursor[segment] = value;
       return;
     }
 
-    if (!isRecord(cursor[segment])) {
-      cursor[segment] = {};
+    const hasOwn = Object.prototype.hasOwnProperty.call(cursor, segment);
+    if (!hasOwn || !isRecord(cursor[segment])) {
+      // Create a prototype-less object to avoid prototype pollution.
+      cursor[segment] = Object.create(null);
     }
 
     cursor = cursor[segment];
-  });
+  }
 };
 
 const getNested = (target, dottedKey) => {
