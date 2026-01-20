@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  emptyStringToNull,
-  isRecord,
-} from '../../../src/lib/utils';
+import { emptyStringToNull, isRecord } from '../../../src/lib/utils';
 
 describe('utils', () => {
   describe('emptyStringToNull', () => {
@@ -65,5 +62,4 @@ describe('utils', () => {
       expect(isRecord(undefined)).toBe(false);
     });
   });
-
 });
