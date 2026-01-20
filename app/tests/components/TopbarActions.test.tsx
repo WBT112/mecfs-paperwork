@@ -67,7 +67,7 @@ describe('TopbarActions', () => {
       name: 'Send feedback via email',
     });
     const href = feedbackLink.getAttribute('href');
-    expect(href).toContain('mailto:feedback@example.com?');
+    expect(href).toContain('mailto:info@mecfs-paperwork.de?');
 
     const query = href?.split('?')[1] ?? '';
     const params = new URLSearchParams(query);
