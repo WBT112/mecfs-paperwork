@@ -18,7 +18,7 @@
 Offline-first tool for creating and managing ME/CFS-related forms ("formpacks") including export (e.g., DOCX, JSON).
 
 **Important:** This repository must **not contain any real patient data** (not in issues, logs, screenshots, fixtures, or export files).
-
+ 
 Use **Discussions** for general topics/feature requests. Use **Issues** for bugs.
 
 ---
