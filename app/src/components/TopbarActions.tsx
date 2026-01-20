@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { emptyStringToNull } from '../lib/utils';
 import { buildMailtoHref, getShareUrl } from '../lib/topbarActions';
 
-const DEFAULT_FEEDBACK_EMAIL = 'feedback@example.com';
+const DEFAULT_FEEDBACK_EMAIL = 'info@mecfs-paperwork.de';
 
 type ShareFallbackState = {
   url: string;
