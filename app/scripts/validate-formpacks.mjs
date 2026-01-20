@@ -87,6 +87,7 @@ const isSafeAssetPath = (value) => {
 };
 
 const isSafePathSegment = (segment) =>
+  segment &&
   segment !== '__proto__' &&
   segment !== 'constructor' &&
   segment !== 'prototype';
@@ -112,7 +113,8 @@ const setPathValue = (target, pathValue, value) => {
     }
 
     if (!isRecord(cursor[segment])) {
-      cursor[segment] = {};
+      // Create a prototype-less object to avoid prototype pollution.
+      cursor[segment] = Object.create(null);
     }
 
     cursor = cursor[segment];
@@ -135,7 +137,8 @@ const setNested = (target, dottedKey, value) => {
     }
 
     if (!isRecord(cursor[segment])) {
-      cursor[segment] = {};
+      // Create a prototype-less object to avoid prototype pollution.
+      cursor[segment] = Object.create(null);
     }
 
     cursor = cursor[segment];
