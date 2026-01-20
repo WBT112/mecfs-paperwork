@@ -5,7 +5,6 @@
 
 [![License: Apache-2.0](https://img.shields.io/github/license/WBT112/mecfs-paperwork)](https://github.com/WBT112/mecfs-paperwork/blob/main/LICENSE)
 [![Release](https://img.shields.io/github/v/release/WBT112/mecfs-paperwork?sort=semver)](https://github.com/WBT112/mecfs-paperwork/releases)
-
 [![Dependabot Updates](https://github.com/WBT112/mecfs-paperwork/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/dependabot/dependabot-updates)
 [![CodeQL](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql)
 
