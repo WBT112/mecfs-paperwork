@@ -46,6 +46,70 @@ body {
   flex-wrap: wrap;
 }
 
+.app__header-brand {
+  flex: 1;
+  min-width: 240px;
+}
+
+.app__header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.app__topbar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.app__topbar-action {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.app__share-fallback {
+  width: min(320px, 100%);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+.app__share-fallback-description {
+  margin: 0;
+  color: #475569;
+}
+
+.app__share-fallback-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+.app__share-fallback-label input {
+  border: 1px solid #cbd5f5;
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+.app__share-fallback-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .app__header h1 {
   margin: 0 0 0.25rem;
   font-size: 2rem;

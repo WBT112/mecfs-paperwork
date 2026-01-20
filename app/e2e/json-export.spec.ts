@@ -130,7 +130,9 @@ for (const locale of locales) {
       await fillTextInputStable(page, '#root_person_name', fakeName);
       await fillTextInputStable(page, '#root_person_birthDate', fakeBirthDate);
       await fillTextInputStable(page, '#root_doctor_phone', fakePhone);
-      await page.locator('#root_diagnoses_meCfs').check();
+      const diagnosisCheckbox = page.locator('#root_diagnoses_meCfs');
+      await diagnosisCheckbox.scrollIntoViewIfNeeded();
+      await diagnosisCheckbox.check({ timeout: 60_000 });
 
       // Ensure autosave has persisted the changes before exporting.
       await waitForRecordField(
