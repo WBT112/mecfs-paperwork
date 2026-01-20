@@ -765,6 +765,11 @@ export default function FormpackDetailPage() {
       return;
     }
 
+    const confirmed = window.confirm(t('formpackFormResetConfirm'));
+    if (!confirmed) {
+      return;
+    }
+
     const clearedData: FormDataState = {};
     setFormData(clearedData);
 
@@ -775,7 +780,7 @@ export default function FormpackDetailPage() {
     if (updated) {
       markAsSaved(updated.data);
     }
-  }, [activeRecord, locale, markAsSaved, updateActiveRecord]);
+  }, [activeRecord, locale, markAsSaved, t, updateActiveRecord]);
 
   const handleCreateRecord = useCallback(async () => {
     if (!manifest) {

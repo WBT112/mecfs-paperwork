@@ -104,7 +104,7 @@ vi.mock('../../src/formpacks/loader', () => ({
 vi.mock('../../src/storage/hooks', () => ({
   useRecords: () => ({
     records: [record],
-    activeRecord: record,
+    activeRecord: { ...record, data: { field: 'value' } },
     isLoading: false,
     hasLoaded: true,
     errorCode: null,
@@ -153,6 +153,9 @@ describe('FormpackDetailPage', () => {
   });
 
   it('clears the draft and persists the reset', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    confirmSpy.mockReturnValue(true);
+
     render(
       <MemoryRouter initialEntries={['/formpacks/notfallpass']}>
         <Routes>
@@ -165,7 +168,7 @@ describe('FormpackDetailPage', () => {
 
     await waitFor(() =>
       expect(screen.getByTestId('form-data')).toHaveTextContent(
-        JSON.stringify({}),
+        JSON.stringify(record.data),
       ),
     );
 
@@ -194,6 +197,33 @@ describe('FormpackDetailPage', () => {
     );
 
     expect(mockMarkAsSaved).toHaveBeenCalledWith({});
+  });
+
+  it('does not clear the draft if the reset is cancelled', async () => {
+    const confirmSpy = vi.spyOn(window, 'confirm');
+    confirmSpy.mockReturnValue(false);
+
+    render(
+      <MemoryRouter initialEntries={['/formpacks/notfallpass']}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        JSON.stringify(record.data),
+      ),
+    );
+
+    await userEvent.click(await screen.findByText('formpackFormReset'));
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(mockUpdateActiveRecord).not.toHaveBeenCalled();
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      JSON.stringify(record.data),
+    );
   });
 
   it('logs an error if DOCX export fails', async () => {
