@@ -7,7 +7,8 @@
 [![Release](https://img.shields.io/github/v/release/WBT112/mecfs-paperwork?sort=semver)](https://github.com/WBT112/mecfs-paperwork/releases)
 
 [![Dependabot Updates](https://github.com/WBT112/mecfs-paperwork/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/dependabot/dependabot-updates)
-[![CodeQL](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql)  
+[![CodeQL](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql)
+[![Coverage Status](https://coveralls.io/repos/github/WBT112/mecfs-paperwork/badge.svg)](https://coveralls.io/github/WBT112/mecfs-paperwork)
 
 
 # mecfs-paperwork
