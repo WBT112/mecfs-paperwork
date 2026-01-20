@@ -7,7 +7,7 @@ const DB_VERSION = 1;
 /**
  * Typed schema for the IndexedDB storage.
  */
-interface MecfsPaperworkDB extends DBSchema {
+export interface MecfsPaperworkDB extends DBSchema {
   records: {
     key: string;
     value: RecordEntry;
