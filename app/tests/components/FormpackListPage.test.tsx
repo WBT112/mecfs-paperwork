@@ -44,6 +44,7 @@ vi.mock('react-i18next', () => ({
 
 describe('FormpackListPage', () => {
   it('renders a list of formpacks and navigates to the detail page on click', async () => {
+    const user = userEvent.setup();
     render(
       <MemoryRouter initialEntries={['/']}>
         <Routes>
@@ -64,8 +65,11 @@ describe('FormpackListPage', () => {
       expect(screen.queryByText('formpackLoading')).not.toBeInTheDocument();
     });
 
-    const formpack1Link = await screen.findByText('Formpack 1');
-    await userEvent.click(formpack1Link);
+    const formpack1Heading = await screen.findByText('Formpack 1');
+    const formpack1Link = formpack1Heading.closest('a');
+
+    expect(formpack1Link).toBeTruthy();
+    await user.click(formpack1Link as HTMLElement);
 
     await waitFor(() => {
       expect(screen.getByText('Formpack Detail Page')).toBeInTheDocument();
