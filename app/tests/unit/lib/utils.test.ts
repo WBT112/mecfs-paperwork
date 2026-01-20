@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   emptyStringToNull,
   isRecord,
-  sanitizeHTML,
 } from '../../../src/lib/utils';
 
 describe('utils', () => {
@@ -67,38 +66,4 @@ describe('utils', () => {
     });
   });
 
-  describe('sanitizeHTML', () => {
-    it('should return an empty string if given an empty string', () => {
-      expect(sanitizeHTML('')).toBe('');
-    });
-
-    it('should strip basic HTML tags', () => {
-      const input = '<p>Hello, <b>world</b>!</p>';
-      const expected = 'Hello, world!';
-      expect(sanitizeHTML(input)).toBe(expected);
-    });
-
-    it('should handle multiple lines and tags', () => {
-      const input = `
-        <div>
-          <h1>Title</h1>
-          <p>This is a paragraph.</p>
-        </div>
-      `;
-      const expected = 'Title\n          This is a paragraph.';
-      expect(sanitizeHTML(input)).toContain(expected);
-    });
-
-    it('should strip script tags to prevent XSS', () => {
-      const input =
-        '<p>safe</p><script>alert("xss")</script><style>body{}</style>';
-      const expected = 'safe';
-      expect(sanitizeHTML(input)).toBe(expected);
-    });
-
-    it('should not change a string with no HTML', () => {
-      const input = 'This is a clean string.';
-      expect(sanitizeHTML(input)).toBe(input);
-    });
-  });
 });
