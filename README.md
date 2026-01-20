@@ -12,7 +12,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=coverage)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
 
-
+ 
 # mecfs-paperwork
 
 Offline-first tool for creating and managing ME/CFS-related forms ("formpacks") including export (e.g., DOCX, JSON).
