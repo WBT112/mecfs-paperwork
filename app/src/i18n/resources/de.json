@@ -18,8 +18,7 @@
     "appVersion": "App-Version",
     "appCommit": "Commit",
     "mode": "Modus",
-    "path": "Pfad",
-    "userAgent": "User-Agent"
+    "path": "Pfad"
   },
   "shareAction": "Teilen",
   "shareAriaLabel": "Formpack-Link teilen",

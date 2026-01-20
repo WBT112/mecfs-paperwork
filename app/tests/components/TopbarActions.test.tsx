@@ -17,7 +17,6 @@ const translations: Record<string, string> = {
   'feedbackField.appCommit': 'Commit',
   'feedbackField.mode': 'Mode',
   'feedbackField.path': 'Path',
-  'feedbackField.userAgent': 'User agent',
   shareAction: 'Share',
   shareAriaLabel: 'Share formpack link',
   shareTitle: 'Share formpack',

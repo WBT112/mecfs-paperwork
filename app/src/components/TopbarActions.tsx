@@ -11,13 +11,6 @@ type ShareFallbackState = {
   copied: boolean;
 };
 
-const resolveUserAgent = (fallback: string): string => {
-  if (typeof navigator === 'undefined') {
-    return fallback;
-  }
-  return navigator.userAgent || fallback;
-};
-
 const tryCopyShareUrl = async (url: string): Promise<boolean> => {
   if (!navigator.clipboard?.writeText) {
     return false;
@@ -60,11 +53,11 @@ export default function TopbarActions() {
   const feedbackEmail =
     emptyStringToNull(import.meta.env.VITE_FEEDBACK_EMAIL) ??
     DEFAULT_FEEDBACK_EMAIL;
+  const feedbackUnknown = t('feedbackUnknown');
   const appVersion =
-    emptyStringToNull(import.meta.env.VITE_APP_VERSION) ?? t('feedbackUnknown');
+    emptyStringToNull(import.meta.env.VITE_APP_VERSION) ?? feedbackUnknown;
   const appCommit =
-    emptyStringToNull(import.meta.env.VITE_APP_COMMIT) ?? t('feedbackUnknown');
-  const userAgent = resolveUserAgent(t('feedbackUnknown'));
+    emptyStringToNull(import.meta.env.VITE_APP_COMMIT) ?? feedbackUnknown;
 
   const mailtoHref = useMemo(
     () =>
@@ -78,11 +71,10 @@ export default function TopbarActions() {
           { label: t('feedbackField.appCommit'), value: appCommit },
           { label: t('feedbackField.mode'), value: import.meta.env.MODE },
           { label: t('feedbackField.path'), value: pathname },
-          { label: t('feedbackField.userAgent'), value: userAgent },
-        ],
+        ].filter((field) => field.value !== feedbackUnknown),
         prompt: t('feedbackPrompt'),
       }),
-    [feedbackEmail, t, pathname, appVersion, appCommit, userAgent],
+    [feedbackEmail, t, pathname, appVersion, appCommit, feedbackUnknown],
   );
 
   const handleShare = async () => {

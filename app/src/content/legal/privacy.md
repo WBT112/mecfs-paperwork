@@ -40,7 +40,6 @@ Beim Aufruf der Website verarbeitet der Hosting-Anbieter **(1blu)** technisch no
 - HTTP-Statuscode
 - übertragene Datenmenge
 - Referrer (falls vom Browser übermittelt)
-- Browser-/Betriebssystem-Informationen (User-Agent)
 
 ### 3.2 Hosting-Anbieter / Auftragsverarbeitung
 

@@ -29,12 +29,10 @@ export const buildMailtoHref = ({
     prompt,
   ];
 
-  const params = new URLSearchParams({
-    subject,
-    body: bodyLines.join('\n'),
-  });
+  const encodedSubject = encodeURIComponent(subject);
+  const encodedBody = encodeURIComponent(bodyLines.join('\n'));
 
-  return `mailto:${to}?${params.toString()}`;
+  return `mailto:${to}?subject=${encodedSubject}&body=${encodedBody}`;
 };
 
 export type ShareUrlOptions = {
