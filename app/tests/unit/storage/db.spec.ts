@@ -10,10 +10,7 @@ import {
   type Mock,
 } from 'vitest';
 import { openDB, type IDBPDatabase, type OpenDBCallbacks } from 'idb';
-import {
-  openStorage,
-  StorageUnavailableError,
-} from '../../../src/storage/db';
+import { openStorage, StorageUnavailableError } from '../../../src/storage/db';
 
 // Mock the 'idb' library
 vi.mock('idb', () => ({

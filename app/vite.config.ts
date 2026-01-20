@@ -45,6 +45,9 @@ const config: AppConfig = {
   server: {
     cors: false,
   },
+  build: {
+    chunkSizeWarningLimit: 1200,
+  },
   test: {
     globals: true,
     environment: 'jsdom',

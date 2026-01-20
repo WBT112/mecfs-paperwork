@@ -40,7 +40,6 @@ Beim Aufruf der Website verarbeitet der Hosting-Anbieter **(1blu)** technisch no
 - HTTP-Statuscode
 - übertragene Datenmenge
 - Referrer (falls vom Browser übermittelt)
-- Browser-/Betriebssystem-Informationen (User-Agent)
 
 ### 3.2 Hosting-Anbieter / Auftragsverarbeitung
 
@@ -57,6 +56,7 @@ Die Verarbeitung von Server-Logfiles erfolgt auf Grundlage von **Art. 6 Abs. 1 l
 Server-Logfiles werden vom Hosting-Anbieter nur so lange gespeichert, wie es für Betrieb und IT-Sicherheit erforderlich ist.
 
 Zur Datenminimierung und Pseudonymisierung werden u. a. folgende Maßnahmen beschrieben:
+
 - IP-Adressen werden nur **vollständig** erfasst, soweit dies für den ordnungsgemäßen Serverbetrieb erforderlich ist (z. B. Abwehr von Angriffen / Missbrauchserkennung).
 - Logdateien mit **unverfälschten** IP-Adressen werden automatisiert **rotiert**.
 - Bei länger gespeicherten IP-Adressen (z. B. für Statistikzwecke) erfolgt eine **Unkenntlichmachung** (Maskierung) eines Oktetts (IPv4) bzw. eines Hextetts (IPv6), sodass keine eindeutige Zuordnung zu einer Person mehr möglich ist.
@@ -70,15 +70,16 @@ Eine Verlagerung der Dienstleistung oder von Teilarbeiten in ein **Drittland** e
 
 Der Hosting-Anbieter setzt für bestimmte Leistungen (z. B. Server-/Netzwerkverwaltung, Support, IT-Beratung, Domainregistrierung) **Unterauftragsverarbeiter** ein. Im AV-Vertrag werden derzeit u. a. genannt:
 
-- **1blu business GmbH**, Riedemannweg 60, 13627 Berlin, Deutschland  
-- **Greatnet.de GmbH**, Riedemannweg 60, 13627 Berlin, Deutschland  
-- **OMCnet Internet Service GmbH**, Ernst-Abbe-Straße 10, 25451 Quickborn, Deutschland  
+- **1blu business GmbH**, Riedemannweg 60, 13627 Berlin, Deutschland
+- **Greatnet.de GmbH**, Riedemannweg 60, 13627 Berlin, Deutschland
+- **OMCnet Internet Service GmbH**, Ernst-Abbe-Straße 10, 25451 Quickborn, Deutschland
 
 Änderungen (Hinzuziehung/Ersetzung) von Unterauftragnehmern werden vorab angekündigt; es besteht eine Widerspruchsmöglichkeit aus sachlichem Grund.
 
 ### 3.7 Technische und organisatorische Maßnahmen (TOM)
 
 Der Hosting-Anbieter setzt technische und organisatorische Maßnahmen nach **Art. 32 DSGVO** ein. Dazu zählen zusammengefasst u. a.:
+
 - **Zutritts- und Zugangskontrollen** (z. B. gesicherter Rechenzentrumszugang, personalisierte Accounts, rollenbasierte Berechtigungen, Protokollierung)
 - **Verschlüsselung/gesicherte Übertragung** für administrative Zugriffe (z. B. VPN/SSH) und, wo möglich, Verschlüsselung (z. B. PGP für E-Mail)
 - **Integrität & Nachvollziehbarkeit** (Protokollierung zentraler Vorgänge, Versionierung für essentielle Systeme)

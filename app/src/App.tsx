@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocale } from './i18n/useLocale';
 import { SupportedLocale } from './i18n/locale';
 import Footer from './components/Footer';
+import TopbarActions from './components/TopbarActions';
 import FormpackDetailPage from './pages/FormpackDetailPage';
 import FormpackListPage from './pages/FormpackListPage';
 import LegalPage from './pages/LegalPage';
@@ -26,7 +27,7 @@ export default function App() {
     <div className="app">
       <header className="app__header">
         <div className="app__header-content">
-          <div>
+          <div className="app__header-brand">
             <h1>
               <Link to="/formpacks" className="app__brand-link">
                 {t('appTitle')}
@@ -34,37 +35,40 @@ export default function App() {
             </h1>
             <p className="app__subtitle">{t('appSubtitle')}</p>
           </div>
-          <div className="app__locale-switch">
-            <label htmlFor="locale-select">{t('languageLabel')}</label>
-            <div className="app__select-wrapper">
-              <select
-                id="locale-select"
-                value={locale}
-                onChange={handleLocaleChange}
-              >
-                {supportedLocales.map((optionLocale) => (
-                  <option key={optionLocale} value={optionLocale}>
-                    {t(`languageOptions.${optionLocale}`)}
-                  </option>
-                ))}
-              </select>
-              <svg
-                className="app__select-chevron"
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M4.66602 6.66602L7.99935 9.99935L11.3327 6.66602"
-                  stroke="#6B7280"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+          <div className="app__header-actions">
+            <TopbarActions />
+            <div className="app__locale-switch">
+              <label htmlFor="locale-select">{t('languageLabel')}</label>
+              <div className="app__select-wrapper">
+                <select
+                  id="locale-select"
+                  value={locale}
+                  onChange={handleLocaleChange}
+                >
+                  {supportedLocales.map((optionLocale) => (
+                    <option key={optionLocale} value={optionLocale}>
+                      {t(`languageOptions.${optionLocale}`)}
+                    </option>
+                  ))}
+                </select>
+                <svg
+                  className="app__select-chevron"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M4.66602 6.66602L7.99935 9.99935L11.3327 6.66602"
+                    stroke="#6B7280"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
