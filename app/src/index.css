@@ -217,6 +217,7 @@ body {
   border: 1px solid #cbd5f5;
   background: #eef2ff;
   color: #1d4ed8;
+  font: inherit;
   font-weight: 600;
   border-radius: 8px;
   padding: 0.45rem 0.9rem;
