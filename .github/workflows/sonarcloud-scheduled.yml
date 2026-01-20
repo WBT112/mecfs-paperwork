@@ -1,6 +1,8 @@
 name: SonarCloud (main scheduled)
 
 on:
+  push:
+    branches: ["main"]
   schedule:
     # 02:17 UTC täglich (entspricht i.d.R. 03:17 in Deutschland im Winter)
     - cron: "17 2 * * *"
