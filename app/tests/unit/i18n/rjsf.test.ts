@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+import type { UiSchema } from '@rjsf/utils';
 import { translateUiSchema } from '../../../src/i18n/rjsf';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -11,7 +13,7 @@ describe('translateUiSchema', () => {
         'ui:title': 't:nested.title',
       },
     };
-    const t = vi.fn((key) => `translated:${key}`);
+    const t = vi.fn((key) => `translated:${key}`) as unknown as TFunction;
     const translated = translateUiSchema(uiSchema, t, 'test');
     expect(translated).toEqual({
       'ui:title': 'translated:title',
@@ -29,7 +31,10 @@ describe('translateUiSchema', () => {
       ns: 'test',
       defaultValue: 'description',
     });
-    expect(t).toHaveBeenCalledWith('help', { ns: 'test', defaultValue: 'help' });
+    expect(t).toHaveBeenCalledWith('help', {
+      ns: 'test',
+      defaultValue: 'help',
+    });
     expect(t).toHaveBeenCalledWith('nested.title', {
       ns: 'test',
       defaultValue: 'nested.title',
@@ -42,8 +47,8 @@ describe('translateUiSchema', () => {
       'ui:description': null,
       'ui:help': undefined,
       'ui:widget': 'custom',
-    };
-    const t = vi.fn();
+    } as unknown as UiSchema;
+    const t = vi.fn() as unknown as TFunction;
     const translated = translateUiSchema(uiSchema, t, 'test');
     expect(translated).toEqual(uiSchema);
     expect(t).not.toHaveBeenCalled();
@@ -54,8 +59,8 @@ describe('translateUiSchema', () => {
       'ui:title': 'Not a key',
       'ui:description': ' also not a key ',
       'ui:help': '',
-    };
-    const t = vi.fn();
+    } as UiSchema;
+    const t = vi.fn() as unknown as TFunction;
     const translated = translateUiSchema(uiSchema, t, 'test');
     expect(translated).toEqual(uiSchema);
     expect(t).not.toHaveBeenCalled();
@@ -71,8 +76,8 @@ describe('translateUiSchema', () => {
           'ui:title': 't:item2',
         },
       ],
-    };
-    const t = vi.fn((key) => `translated:${key}`);
+    } as unknown as UiSchema;
+    const t = vi.fn((key) => `translated:${key}`) as unknown as TFunction;
     const translated = translateUiSchema(uiSchema, t, 'test');
     expect(translated).toEqual({
       items: [
