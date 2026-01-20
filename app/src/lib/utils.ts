@@ -29,13 +29,13 @@ export const isRecord = (value: unknown): value is Record<string, unknown> =>
 import sanitizeHtml from 'sanitize-html';
 
 /**
- * Sanitizes a string by escaping HTML characters to prevent XSS.
+ * Strips all HTML from a string, returning only the text content.
  * This implementation is safe for server-side rendering (SSR) environments.
  *
  * @param {string} str - The input string to be sanitized.
- * @returns {string} The sanitized string.
+ * @returns {string} The sanitized string with all HTML tags removed.
  */
-export const sanitizeHTML = (str: string): string => {
+export const stripHtml = (str: string): string => {
   return sanitizeHtml(str, {
     allowedTags: [],
     allowedAttributes: {},
