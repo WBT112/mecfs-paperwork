@@ -450,17 +450,54 @@ export const loadDocxTemplate = async (
 const formatExportDate = (value: Date) =>
   value.toISOString().slice(0, 10).replace(/-/g, '');
 
+const RESERVED_FILENAME_CHARS = new Set([
+  '\\',
+  '/',
+  ':',
+  '*',
+  '?',
+  '"',
+  '<',
+  '>',
+  '|',
+  '_',
+]);
+
 const sanitizeFilenamePart = (value: string | null | undefined) => {
   if (!value) return '';
-  return (
-    value
-      .trim()
-      // Replace any sequence of reserved characters or whitespace with a single hyphen.
-      .replace(/[\\/:*?"<>|_\s]+/g, '-')
-      // Remove leading/trailing hyphens.
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 80)
-  );
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  // SECURITY: Use a linear-time sanitizer to avoid regex backtracking on user input.
+  let result = '';
+  let inReplacement = false;
+
+  for (const char of trimmed) {
+    const isWhitespace = char.trim().length === 0;
+    const isReserved = RESERVED_FILENAME_CHARS.has(char);
+
+    if (isWhitespace || isReserved) {
+      if (!inReplacement) {
+        result += '-';
+        inReplacement = true;
+      }
+      continue;
+    }
+
+    result += char;
+    inReplacement = false;
+  }
+
+  let start = 0;
+  let end = result.length;
+  while (start < end && result[start] === '-') {
+    start += 1;
+  }
+  while (end > start && result[end - 1] === '-') {
+    end -= 1;
+  }
+
+  return result.slice(start, end).slice(0, 80);
 };
 
 /**
