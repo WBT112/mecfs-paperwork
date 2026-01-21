@@ -40,7 +40,7 @@ const getActiveRecordId = async (page: Page) => {
   );
 };
 
-const waitForActiveRecordId = async (page: Page) => {
+const waitForActiveRecordId = async (page: Page, timeoutMs = 10_000) => {
   let activeId = '';
   await expect
     .poll(
@@ -48,10 +48,46 @@ const waitForActiveRecordId = async (page: Page) => {
         activeId = (await getActiveRecordId(page)) ?? '';
         return activeId;
       },
-      { timeout: 10_000, intervals: POLL_INTERVALS },
+      { timeout: timeoutMs, intervals: POLL_INTERVALS },
     )
     .not.toBe('');
   return activeId;
+};
+
+/**
+ * Ensures the activeRecordId is not only present, but stable (does not change)
+ * across multiple reads. This avoids flakiness when the app replaces the
+ * active draft shortly after bootstrap (timing-sensitive in Chromium under CI load).
+ */
+const waitForStableActiveRecordId = async (page: Page, timeoutMs = 10_000) => {
+  let last = '';
+  let stableCount = 0;
+
+  await expect
+    .poll(
+      async () => {
+        const current = (await getActiveRecordId(page)) ?? '';
+        if (!current) {
+          last = '';
+          stableCount = 0;
+          return false;
+        }
+
+        if (current === last) {
+          stableCount += 1;
+        } else {
+          last = current;
+          stableCount = 0;
+        }
+
+        // Require the same id for 3 consecutive reads.
+        return stableCount >= 2;
+      },
+      { timeout: timeoutMs, intervals: POLL_INTERVALS },
+    )
+    .toBe(true);
+
+  return last;
 };
 
 const waitForRecordListReady = async (page: Page) => {
@@ -67,6 +103,7 @@ const waitForRecordListReady = async (page: Page) => {
 
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
+
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
     await expect(nameInput).toBeVisible();
@@ -75,7 +112,17 @@ const clickNewDraftIfNeeded = async (page: Page) => {
 
   await waitForRecordListReady(page);
 
-  const activeIdAfterLoad = await getActiveRecordId(page);
+  // Prefer waiting for the app-created initial draft to avoid creating duplicates
+  // (which can cause an activeRecordId swap mid-test).
+  let activeIdAfterLoad = await getActiveRecordId(page);
+  if (!activeIdAfterLoad) {
+    try {
+      activeIdAfterLoad = await waitForActiveRecordId(page, 8_000);
+    } catch {
+      // ignore and fall back to manual draft creation below
+    }
+  }
+
   if (activeIdAfterLoad) {
     await expect(nameInput).toBeVisible();
     return;
@@ -124,15 +171,21 @@ for (const locale of locales) {
       await switchLocale(page, locale);
       await clickNewDraftIfNeeded(page);
 
-      const recordId = await waitForActiveRecordId(page);
+      // Use a stable activeRecordId to avoid races where the app swaps drafts after bootstrap.
+      let recordId = await waitForStableActiveRecordId(page);
       await waitForRecordById(page, recordId, { timeout: POLL_TIMEOUT });
 
       await fillTextInputStable(page, '#root_person_name', fakeName);
       await fillTextInputStable(page, '#root_person_birthDate', fakeBirthDate);
       await fillTextInputStable(page, '#root_doctor_phone', fakePhone);
+
       const diagnosisCheckbox = page.locator('#root_diagnoses_meCfs');
       await diagnosisCheckbox.scrollIntoViewIfNeeded();
       await diagnosisCheckbox.check({ timeout: 60_000 });
+
+      // Refresh recordId in case the app swapped the active draft during/after input handling.
+      recordId = await waitForStableActiveRecordId(page);
+      await waitForRecordById(page, recordId, { timeout: POLL_TIMEOUT });
 
       // Ensure autosave has persisted the changes before exporting.
       await waitForRecordField(
@@ -171,6 +224,7 @@ for (const locale of locales) {
         .first();
       await expect(exportButton).toBeEnabled();
       await exportButton.click();
+
       const download = await downloadPromise;
       const filePath = await download.path();
       expect(filePath).not.toBeNull();
@@ -224,6 +278,7 @@ for (const locale of locales) {
       await page
         .locator('#formpack-import-file')
         .setInputFiles(filePath as string);
+
       const importButton = page
         .getByRole('button', { name: /JSON importieren|Import JSON/i })
         .first();
@@ -241,6 +296,7 @@ for (const locale of locales) {
           intervals: POLL_INTERVALS,
         })
         .not.toBe(activeIdBeforeImport);
+
       await expect(page.locator('#root_person_name')).toHaveValue(fakeName);
       await expect(page.locator('#root_person_birthDate')).toHaveValue(
         fakeBirthDate,
