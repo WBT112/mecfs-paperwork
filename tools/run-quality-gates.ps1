@@ -16,10 +16,10 @@ param(
   [string]$E2eCommand = "test:e2e",
 
   # How many times to run E2E
-  [int]$E2eRuns = 2,
+  [int]$E2eRuns = 1,
 
   # Docker image smoke test port (uses docker run -p)
-  [int]$DockerImagePort = 18080,
+  [int]$DockerImagePort = 8080,
 
   # Docker Compose published port (should match compose.yaml)
   [int]$ComposePort = 8080,
@@ -202,7 +202,7 @@ try {
   if (-not $SkipDockerChecks -and -not $SkipComposeChecks -and $DockerImagePort -eq $ComposePort) {
     Write-Host ""
     Write-Host "==> Note: DockerImagePort equals ComposePort; switching DockerImagePort to 18080 to avoid port conflict." -ForegroundColor Yellow
-    $DockerImagePort = 18080
+    $DockerImagePort = 8080
   }
 
   # --- Docker image checks ---
@@ -213,8 +213,8 @@ try {
     Invoke-Checked -Label "docker build (mecfs-paperwork:local)" -Exe "docker" -Args @("build", "-t", "mecfs-paperwork:local", ".")
 
     Write-Host ""
-    Write-Host ("==> docker run (detached) -p {0}:80" -f $DockerImagePort) -ForegroundColor Cyan
-    $runOut = (& docker run -d --rm -p ("{0}:80" -f $DockerImagePort) "mecfs-paperwork:local") 2>&1
+    Write-Host ("==> docker run (detached) -p {0}:8080" -f $DockerImagePort) -ForegroundColor Cyan
+    $runOut = (& docker run -d --rm -p ("{0}:8080" -f $DockerImagePort) "mecfs-paperwork:local") 2>&1
     if ($LASTEXITCODE -ne 0) {
       throw "docker run failed (exit code $LASTEXITCODE): $runOut"
     }
