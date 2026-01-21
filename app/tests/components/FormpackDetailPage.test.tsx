@@ -213,7 +213,9 @@ describe('FormpackDetailPage', () => {
     await userEvent.click(exportButton);
 
     await waitFor(() =>
-      expect(consoleSpy).toHaveBeenCalledWith('DOCX export failed:', error),
+      expect(consoleSpy).toHaveBeenCalledWith(
+        `DOCX export failed: ${error.message}`,
+      ),
     );
     expect(
       await screen.findByText('formpackDocxExportError'),

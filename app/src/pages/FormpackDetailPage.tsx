@@ -1088,7 +1088,9 @@ export default function FormpackDetailPage() {
       downloadDocxExport(report, filename);
       setDocxSuccess(t('formpackDocxExportSuccess'));
     } catch (error) {
-      console.error('DOCX export failed:', error);
+      // PRIVACY: Log only the error message, not the full error object.
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`DOCX export failed: ${message}`);
       setDocxError(t(getDocxErrorKey(error)));
     } finally {
       setIsDocxExporting(false);
