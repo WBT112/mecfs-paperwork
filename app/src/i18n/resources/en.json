@@ -2,6 +2,14 @@
   "appTitle": "mecfs-paperwork",
   "appSubtitle": "Forms for ME/CFS. In your Browser. All data stays on your device.",
   "languageLabel": "Language",
+  "theme": {
+    "label": "Theme",
+    "options": {
+      "dark": "Dark",
+      "light": "Light",
+      "system": "System"
+    }
+  },
   "languageOptions": {
     "de": "Deutsch",
     "en": "English"
