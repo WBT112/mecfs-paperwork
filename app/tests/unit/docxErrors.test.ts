@@ -45,4 +45,9 @@ describe('getDocxErrorKey', () => {
       'formpackDocxExportError',
     );
   });
+
+  it('handles plain objects with a message property', () => {
+    const error = { message: 'Plain object error' };
+    expect(getDocxErrorKey(error)).toBe('formpackDocxExportError');
+  });
 });
