@@ -31,7 +31,7 @@ If any step fails: fix it before finishing.
 ## Tests (phased)
 - If `npm run test` exists, run it and fix failures before proposing a PR.
 - If no test runner is configured yet (no `test` script), state that explicitly in the PR description and do not invent a large test suite unless the issue asks for it.
-- Create Unit tests if possible
+- Create Unit tests if possible (80% coverage is good and should be a target)
 - Check if any existing tests need to be changed
 - Minimum test coverage expectations:
   - P0 bugfix: add at least one regression test (unit or integration) and run the relevant manual checklist.
@@ -97,5 +97,6 @@ Do not block feature work on this unless the issue explicitly targets security t
 - Storage: IndexedDB with `records` + `revisions` (snapshots). Keep migrations explicit.
 - Export: primary DOCX (A4 + Wallet as separate downloads), plus JSON backup/import.
 - i18n: DE + EN from the start; locale stored per record and kept in exports.
+
 
 
