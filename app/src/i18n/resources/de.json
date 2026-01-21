@@ -1,7 +1,15 @@
 {
   "appTitle": "mecfs-paperwork",
-  "appSubtitle": "Formulare für ME/CFS. In deinem Browser. Alle Daten bleiben auf deinem Gerät.",
+  "appSubtitle": "Papierkram bei ME/CFS leicht gemacht. Formulare schnell erstellen. Sicher in deinem Browser - alle Daten bleiben auf deinem Gerät.",
   "languageLabel": "Sprache",
+  "theme": {
+    "label": "Design",
+    "options": {
+      "dark": "Dunkel",
+      "light": "Hell",
+      "system": "System"
+    }
+  },
   "languageOptions": {
     "de": "Deutsch",
     "en": "Englisch"
