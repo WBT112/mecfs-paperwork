@@ -4,6 +4,7 @@ import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import sonarjs from 'eslint-plugin-sonarjs';
 
 export default [
   {
@@ -90,6 +91,22 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+    },
+  },
+
+  // NOTE: Restrict SonarJS rules to code covered by SonarQube.
+  {
+    files: ['src/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
+    plugins: {
+      sonarjs,
+    },
+    rules: {
+      ...sonarjs.configs.recommended.rules,
+      'sonarjs/cognitive-complexity': ['warn', 15],
+      'sonarjs/no-collapsible-if': 'warn',
+      'sonarjs/no-duplicate-string': 'warn',
+      'sonarjs/no-redundant-jump': 'warn',
+      'sonarjs/prefer-single-boolean-return': 'warn',
     },
   },
 ];
