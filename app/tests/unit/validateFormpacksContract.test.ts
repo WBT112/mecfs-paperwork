@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
+// @ts-ignore - importing a JS script without type declarations
+import {
+  collectTranslationKeys,
+  getMissingKeys,
+  getTranslationKeySet,
+} from '../../scripts/validate-formpacks.mjs';
 
 describe('formpack validation helpers', () => {
-  it('collects i18n keys referenced by t: values', async () => {
-    // @ts-ignore -- importing CLI script without type declarations.
-    // prettier-ignore
-    const { collectTranslationKeys } = await import('../../scripts/validate-formpacks.mjs');
+  it('collects i18n keys referenced by t: values', () => {
     const keys = new Set<string>();
     collectTranslationKeys(
       {
@@ -22,10 +25,7 @@ describe('formpack validation helpers', () => {
     );
   });
 
-  it('detects missing keys between translation sets', async () => {
-    // @ts-ignore -- importing CLI script without type declarations.
-    // prettier-ignore
-    const { getMissingKeys, getTranslationKeySet } = await import('../../scripts/validate-formpacks.mjs');
+  it('detects missing keys between translation sets', () => {
     const expected = getTranslationKeySet({
       'pack.title': 'Title',
       'pack.description': 'Description',
