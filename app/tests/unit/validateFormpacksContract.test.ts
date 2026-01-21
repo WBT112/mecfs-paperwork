@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-// @ts-ignore - importing a JS script without type declarations
 import {
   collectTranslationKeys,
   getMissingKeys,
