@@ -1360,7 +1360,9 @@ export default function FormpackDetailPage() {
           </div>
           <div className="formpack-detail__section">
             <h3>{t('formpackImportHeading')}</h3>
-            <p className="formpack-import__hint">{t('formpackImportHint')}</p>
+            <p className="formpack-import__hint" id="formpack-import-hint">
+              {t('formpackImportHint')}
+            </p>
             <div className="formpack-import__field">
               <label htmlFor="formpack-import-file">
                 {t('formpackImportLabel')}
@@ -1372,6 +1374,7 @@ export default function FormpackDetailPage() {
                 type="file"
                 accept="application/json,.json"
                 onChange={handleImportFileChange}
+                aria-describedby="formpack-import-hint"
               />
               {importFileName && (
                 <p className="formpack-import__file-name">
