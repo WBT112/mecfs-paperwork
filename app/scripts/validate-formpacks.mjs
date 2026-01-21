@@ -796,7 +796,11 @@ const run = async () => {
   }
 
   if (errors.size > 0) {
-    logger.fail('\nFormpack validation failed.');
+    const totalErrors = [...errors.values()].reduce(
+      (sum, packErrors) => sum + packErrors.length,
+      0,
+    );
+    logger.fail(`\nFormpack validation failed with ${totalErrors} error(s).`);
     for (const [formpackId, packErrors] of errors.entries()) {
       logger.group(`\n- ${formpackId}:`);
       packErrors.forEach(({ contextPath, error }) => {
