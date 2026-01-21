@@ -1,5 +1,7 @@
-// This file contains the core logic for exporting data to DOCX format.
-// It handles DOCX template loading, data mapping, and report generation.
+/**
+ * @file Contains the core logic for exporting data to DOCX format.
+ * It handles DOCX template loading, data mapping, and report generation.
+ */
 
 import { createReport } from 'docx-templates/lib/browser.js';
 import i18n from '../i18n';
@@ -190,13 +192,17 @@ const buildDocxAdditionalContext = (
 };
 
 const coerceDocxError = (error: unknown): Error | null => {
+  if (error instanceof Error) {
+    return error;
+  }
+
   if (Array.isArray(error)) {
     const first = error.find((entry) => entry instanceof Error);
     return first ?? null;
   }
 
-  if (error instanceof Error) {
-    return error;
+  if (isRecord(error) && typeof error.message === 'string') {
+    return new Error(error.message);
   }
 
   return null;
