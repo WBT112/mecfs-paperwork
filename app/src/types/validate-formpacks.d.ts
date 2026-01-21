@@ -11,5 +11,3 @@ declare module '*validate-formpacks.mjs' {
     actual: Set<string>,
   ): string[];
 }
-
-export {};
