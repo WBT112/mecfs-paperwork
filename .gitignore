@@ -21,3 +21,6 @@ test-results/
 
 #Secrets
 secrets
+
+#VSCode Settings
+.vscode
