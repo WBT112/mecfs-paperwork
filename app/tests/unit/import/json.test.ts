@@ -104,6 +104,25 @@ describe('validateJsonImport', () => {
     expect(result.error?.code).toBe('invalid_json');
   });
 
+  it('returns an error for invalid app metadata', () => {
+    const invalidAppJson = JSON.stringify({
+      app: { id: 123 },
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'en',
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      invalidAppJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_payload');
+  });
+
   it('returns an error for a formpack ID mismatch', () => {
     const mismatchedJson = JSON.stringify({
       formpack: { id: SECONDARY_FORMPACK_ID },
@@ -122,6 +141,24 @@ describe('validateJsonImport', () => {
     expect(result.error?.code).toBe('formpack_mismatch');
   });
 
+  it('returns an error for an unknown formpack ID', () => {
+    const unknownFormpackJson = JSON.stringify({
+      formpack: { id: 'unknown-formpack' },
+      record: {
+        locale: 'en',
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      unknownFormpackJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('unknown_formpack');
+  });
+
   it('returns an error for a schema mismatch', () => {
     const schemaMismatchJson = JSON.stringify({
       formpack: { id: PRIMARY_FORMPACK_ID },
@@ -138,6 +175,59 @@ describe('validateJsonImport', () => {
     );
     expect(result.payload).toBe(null);
     expect(result.error?.code).toBe('schema_mismatch');
+  });
+
+  it('returns an error when record data is missing', () => {
+    const missingDataJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'en',
+      },
+    });
+
+    const result = validateJsonImport(
+      missingDataJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_payload');
+  });
+
+  it('returns an error for invalid record metadata', () => {
+    const invalidRecordJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'en',
+        title: 123,
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      invalidRecordJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_payload');
+  });
+
+  it('returns an error when record metadata is not an object', () => {
+    const invalidRecordJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: 'not-an-object',
+      data: { name: 'Test' },
+      locale: 'en',
+    });
+
+    const result = validateJsonImport(
+      invalidRecordJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_payload');
   });
 
   it('returns an error for an unsupported locale', () => {

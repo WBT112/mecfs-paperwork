@@ -5,19 +5,70 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FormpackDetailPage from '../../src/pages/FormpackDetailPage';
 import { exportDocx } from '../../src/export/docx';
+import type { FormpackManifest } from '../../src/formpacks/types';
 
-const mockUpdateActiveRecord = vi.fn();
-const mockMarkAsSaved = vi.fn();
+const formpackState = vi.hoisted(() => ({
+  manifest: {
+    id: 'notfallpass',
+    version: '1.0.0',
+    titleKey: 'formpackTitle',
+    descriptionKey: 'formpackDescription',
+    defaultLocale: 'de',
+    locales: ['de', 'en'],
+    exports: ['docx'],
+    visibility: 'public',
+    docx: {
+      templates: {
+        a4: 'template-a4.docx',
+        wallet: 'template-wallet.docx',
+      },
+      mapping: 'mapping.json',
+    },
+  } as FormpackManifest,
+  schema: {
+    type: 'object',
+    properties: {},
+  },
+  uiSchema: {},
+}));
 
-const record = {
-  id: 'record-1',
-  formpackId: 'notfallpass',
-  title: 'Draft',
-  locale: 'de',
-  data: { field: 'value' },
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-};
+const storageState = vi.hoisted(() => {
+  const record = {
+    id: 'record-1',
+    formpackId: 'notfallpass',
+    title: 'Draft',
+    locale: 'de',
+    data: { field: 'value' },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  return {
+    record,
+    records: [record],
+    activeRecord: record as typeof record | null,
+    isRecordsLoading: false,
+    hasLoaded: true,
+    recordsError: null as string | null,
+    createRecord: vi.fn(),
+    loadRecord: vi.fn(),
+    updateActiveRecord: vi.fn(),
+    applyRecordUpdate: vi.fn(),
+    setActiveRecord: vi.fn(),
+    snapshots: [] as Array<unknown>,
+    isSnapshotsLoading: false,
+    snapshotsError: null as string | null,
+    createSnapshot: vi.fn(),
+    loadSnapshot: vi.fn(),
+    refreshSnapshots: vi.fn(),
+    markAsSaved: vi.fn(),
+    setLocale: vi.fn(),
+  };
+});
+
+const record = storageState.record;
+const mockUpdateActiveRecord = storageState.updateActiveRecord;
+const mockMarkAsSaved = storageState.markAsSaved;
+const FORMPACK_ROUTE = '/formpacks/notfallpass';
 
 vi.mock('../../src/export/docx', async (importOriginal) => {
   const original =
@@ -58,7 +109,7 @@ vi.mock('../../src/i18n/formpack', () => ({
 vi.mock('../../src/i18n/useLocale', () => ({
   useLocale: () => ({
     locale: 'de',
-    setLocale: vi.fn(),
+    setLocale: storageState.setLocale,
   }),
 }));
 
@@ -77,53 +128,40 @@ vi.mock('../../src/formpacks/documentModel', () => ({
 
 vi.mock('../../src/formpacks/loader', () => ({
   FormpackLoaderError: class extends Error {},
-  loadFormpackManifest: vi.fn().mockResolvedValue({
-    id: 'notfallpass',
-    version: '1.0.0',
-    titleKey: 'formpackTitle',
-    descriptionKey: 'formpackDescription',
-    defaultLocale: 'de',
-    locales: ['de', 'en'],
-    exports: ['docx'],
-    visibility: 'public',
-    docx: {
-      templates: {
-        a4: 'template-a4.docx',
-        wallet: 'template-wallet.docx',
-      },
-      mapping: 'mapping.json',
-    },
-  }),
-  loadFormpackSchema: vi.fn().mockResolvedValue({
-    type: 'object',
-    properties: {},
-  }),
-  loadFormpackUiSchema: vi.fn().mockResolvedValue({}),
+  loadFormpackManifest: vi
+    .fn()
+    .mockImplementation(async () => formpackState.manifest),
+  loadFormpackSchema: vi
+    .fn()
+    .mockImplementation(async () => formpackState.schema),
+  loadFormpackUiSchema: vi
+    .fn()
+    .mockImplementation(async () => formpackState.uiSchema),
 }));
 
 vi.mock('../../src/storage/hooks', () => ({
   useRecords: () => ({
-    records: [record],
-    activeRecord: record,
-    isLoading: false,
-    hasLoaded: true,
-    errorCode: null,
-    createRecord: vi.fn(),
-    loadRecord: vi.fn(),
-    updateActiveRecord: mockUpdateActiveRecord,
-    applyRecordUpdate: vi.fn(),
-    setActiveRecord: vi.fn(),
+    records: storageState.records,
+    activeRecord: storageState.activeRecord,
+    isLoading: storageState.isRecordsLoading,
+    hasLoaded: storageState.hasLoaded,
+    errorCode: storageState.recordsError,
+    createRecord: storageState.createRecord,
+    loadRecord: storageState.loadRecord,
+    updateActiveRecord: storageState.updateActiveRecord,
+    applyRecordUpdate: storageState.applyRecordUpdate,
+    setActiveRecord: storageState.setActiveRecord,
   }),
   useSnapshots: () => ({
-    snapshots: [],
-    isLoading: false,
-    errorCode: null,
-    createSnapshot: vi.fn(),
-    loadSnapshot: vi.fn(),
-    refresh: vi.fn(),
+    snapshots: storageState.snapshots,
+    isLoading: storageState.isSnapshotsLoading,
+    errorCode: storageState.snapshotsError,
+    createSnapshot: storageState.createSnapshot,
+    loadSnapshot: storageState.loadSnapshot,
+    refresh: storageState.refreshSnapshots,
   }),
   useAutosaveRecord: () => ({
-    markAsSaved: mockMarkAsSaved,
+    markAsSaved: storageState.markAsSaved,
   }),
 }));
 
@@ -142,6 +180,45 @@ vi.mock('react-i18next', () => ({
 
 describe('FormpackDetailPage', () => {
   beforeEach(() => {
+    storageState.records = [storageState.record];
+    storageState.activeRecord = storageState.record;
+    storageState.isRecordsLoading = false;
+    storageState.hasLoaded = true;
+    storageState.recordsError = null;
+    storageState.snapshots = [];
+    storageState.isSnapshotsLoading = false;
+    storageState.snapshotsError = null;
+    storageState.createRecord.mockReset();
+    storageState.loadRecord.mockReset();
+    storageState.applyRecordUpdate.mockReset();
+    storageState.setActiveRecord.mockReset();
+    storageState.createSnapshot.mockReset();
+    storageState.loadSnapshot.mockReset();
+    storageState.refreshSnapshots.mockReset();
+    storageState.markAsSaved.mockReset();
+    storageState.setLocale.mockReset();
+    formpackState.manifest = {
+      id: 'notfallpass',
+      version: '1.0.0',
+      titleKey: 'formpackTitle',
+      descriptionKey: 'formpackDescription',
+      defaultLocale: 'de',
+      locales: ['de', 'en'],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: {
+          a4: 'template-a4.docx',
+          wallet: 'template-wallet.docx',
+        },
+        mapping: 'mapping.json',
+      },
+    };
+    formpackState.schema = {
+      type: 'object',
+      properties: {},
+    };
+    formpackState.uiSchema = {};
     mockUpdateActiveRecord.mockResolvedValue({
       ...record,
       data: {},
@@ -154,7 +231,7 @@ describe('FormpackDetailPage', () => {
 
   it('clears the draft and persists the reset', async () => {
     render(
-      <MemoryRouter initialEntries={['/formpacks/notfallpass']}>
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
@@ -202,7 +279,7 @@ describe('FormpackDetailPage', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
-      <MemoryRouter initialEntries={['/formpacks/notfallpass']}>
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
@@ -220,5 +297,48 @@ describe('FormpackDetailPage', () => {
     ).toBeInTheDocument();
 
     consoleSpy.mockRestore();
+  });
+
+  it('renders empty states when no records are available', async () => {
+    storageState.records = [];
+    storageState.activeRecord = null;
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('formpackRecordsEmpty')).toBeInTheDocument();
+    expect(screen.getByText('formpackFormNoActiveRecord')).toBeInTheDocument();
+    expect(screen.getByText('formpackSnapshotsNoRecord')).toBeInTheDocument();
+    expect(
+      screen.getByText('formpackImportModeOverwriteHint'),
+    ).toBeInTheDocument();
+  });
+
+  it('hides DOCX controls when export is not available', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: ['json'],
+      docx: undefined,
+    };
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText('formpackRecordExportJson'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('formpackRecordExportDocx'),
+    ).not.toBeInTheDocument();
   });
 });
