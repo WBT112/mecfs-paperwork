@@ -4,12 +4,19 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FormpackDetailPage from '../../src/pages/FormpackDetailPage';
-import { exportDocx } from '../../src/export/docx';
+import { downloadDocxExport, exportDocx } from '../../src/export/docx';
 import type { FormpackManifest } from '../../src/formpacks/types';
+
+const testConstants = vi.hoisted(() => ({
+  FORMPACK_ID: 'notfallpass',
+  DOCX_MAPPING_PATH: 'mapping.json',
+  IMPORT_FILE_NAME: 'import.json',
+  IMPORT_FILE_CONTENT: '{"data":true}',
+}));
 
 const formpackState = vi.hoisted(() => ({
   manifest: {
-    id: 'notfallpass',
+    id: testConstants.FORMPACK_ID,
     version: '1.0.0',
     titleKey: 'formpackTitle',
     descriptionKey: 'formpackDescription',
@@ -22,7 +29,7 @@ const formpackState = vi.hoisted(() => ({
         a4: 'template-a4.docx',
         wallet: 'template-wallet.docx',
       },
-      mapping: 'mapping.json',
+      mapping: testConstants.DOCX_MAPPING_PATH,
     },
   } as FormpackManifest,
   schema: {
@@ -35,7 +42,7 @@ const formpackState = vi.hoisted(() => ({
 const storageState = vi.hoisted(() => {
   const record = {
     id: 'record-1',
-    formpackId: 'notfallpass',
+    formpackId: testConstants.FORMPACK_ID,
     title: 'Draft',
     locale: 'de',
     data: { field: 'value' },
@@ -65,10 +72,52 @@ const storageState = vi.hoisted(() => {
   };
 });
 
+const {
+  FORMPACK_ID,
+  DOCX_MAPPING_PATH,
+  IMPORT_FILE_NAME,
+  IMPORT_FILE_CONTENT,
+} = testConstants;
+
+const importState = vi.hoisted(() => ({
+  validateJsonImport: vi.fn(),
+}));
+
+const storageImportState = vi.hoisted(() => ({
+  importRecordWithSnapshots: vi.fn(),
+}));
+
 const record = storageState.record;
 const mockUpdateActiveRecord = storageState.updateActiveRecord;
 const mockMarkAsSaved = storageState.markAsSaved;
-const FORMPACK_ROUTE = '/formpacks/notfallpass';
+const FORMPACK_ROUTE = `/formpacks/${FORMPACK_ID}`;
+const DOCX_EXPORT_BUTTON_LABEL = 'formpackRecordExportDocx';
+const DOCX_TEMPLATE_A4_OPTION = 'formpackDocxTemplateA4Option';
+const DOCX_TEMPLATE_WALLET_OPTION = 'formpackDocxTemplateWalletOption';
+const IMPORT_ACTION_LABEL = 'formpackImportAction';
+const IMPORT_SUCCESS_LABEL = 'importSuccess';
+const STORAGE_UNAVAILABLE_LABEL = 'storageUnavailable';
+
+const mockFileText = (content: string) => {
+  const descriptor = Object.getOwnPropertyDescriptor(File.prototype, 'text');
+  if (descriptor?.value) {
+    const spy = vi.spyOn(File.prototype, 'text').mockResolvedValue(content);
+    return () => spy.mockRestore();
+  }
+
+  Object.defineProperty(File.prototype, 'text', {
+    configurable: true,
+    value: () => Promise.resolve(content),
+  });
+
+  return () => {
+    if (descriptor) {
+      Object.defineProperty(File.prototype, 'text', descriptor);
+    } else {
+      delete (File.prototype as { text?: unknown }).text;
+    }
+  };
+};
 
 vi.mock('../../src/export/docx', async (importOriginal) => {
   const original =
@@ -76,8 +125,17 @@ vi.mock('../../src/export/docx', async (importOriginal) => {
   return {
     ...original,
     exportDocx: vi.fn(),
+    downloadDocxExport: vi.fn(),
   };
 });
+
+vi.mock('../../src/import/json', () => ({
+  validateJsonImport: importState.validateJsonImport,
+}));
+
+vi.mock('../../src/storage/import', () => ({
+  importRecordWithSnapshots: storageImportState.importRecordWithSnapshots,
+}));
 
 vi.mock('@rjsf/core', () => ({
   default: ({
@@ -197,8 +255,10 @@ describe('FormpackDetailPage', () => {
     storageState.refreshSnapshots.mockReset();
     storageState.markAsSaved.mockReset();
     storageState.setLocale.mockReset();
+    importState.validateJsonImport.mockReset();
+    storageImportState.importRecordWithSnapshots.mockReset();
     formpackState.manifest = {
-      id: 'notfallpass',
+      id: record.formpackId,
       version: '1.0.0',
       titleKey: 'formpackTitle',
       descriptionKey: 'formpackDescription',
@@ -211,7 +271,7 @@ describe('FormpackDetailPage', () => {
           a4: 'template-a4.docx',
           wallet: 'template-wallet.docx',
         },
-        mapping: 'mapping.json',
+        mapping: DOCX_MAPPING_PATH,
       },
     };
     formpackState.schema = {
@@ -286,7 +346,7 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
-    const exportButton = await screen.findByText('formpackRecordExportDocx');
+    const exportButton = await screen.findByText(DOCX_EXPORT_BUTTON_LABEL);
     await userEvent.click(exportButton);
 
     await waitFor(() =>
@@ -316,6 +376,215 @@ describe('FormpackDetailPage', () => {
     expect(screen.getByText('formpackSnapshotsNoRecord')).toBeInTheDocument();
     expect(
       screen.getByText('formpackImportModeOverwriteHint'),
+    ).toBeInTheDocument();
+  });
+
+  it('renders DOCX metadata and template options', async () => {
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText(DOCX_MAPPING_PATH)).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: DOCX_TEMPLATE_A4_OPTION }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: DOCX_TEMPLATE_WALLET_OPTION }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows success after DOCX export completes', async () => {
+    const report = new Blob(['docx']);
+    vi.mocked(exportDocx).mockResolvedValue(report);
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const exportButton = await screen.findByText(DOCX_EXPORT_BUTTON_LABEL);
+    await userEvent.click(exportButton);
+
+    await waitFor(() => {
+      expect(exportDocx).toHaveBeenCalledWith({
+        formpackId: record.formpackId,
+        recordId: record.id,
+        variant: 'a4',
+        locale: 'de',
+        manifest: formpackState.manifest,
+      });
+    });
+    expect(downloadDocxExport).toHaveBeenCalledWith(
+      report,
+      expect.stringContaining(`${FORMPACK_ID}-a4-`),
+    );
+    expect(
+      await screen.findByText('formpackDocxExportSuccess'),
+    ).toBeInTheDocument();
+  });
+
+  it('imports JSON as a new record and shows success', async () => {
+    const payload = {
+      version: 1,
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        title: 'Imported',
+        locale: 'en',
+        data: { name: 'Ada' },
+      },
+      revisions: [],
+    };
+    importState.validateJsonImport.mockReturnValue({
+      payload,
+      error: null,
+    });
+    const importedRecord = {
+      id: 'record-2',
+      formpackId: record.formpackId,
+      title: 'Imported',
+      locale: 'en',
+      data: { name: 'Ada' },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    storageImportState.importRecordWithSnapshots.mockResolvedValue(
+      importedRecord,
+    );
+    const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+    const restoreText = mockFileText(IMPORT_FILE_CONTENT);
+
+    try {
+      render(
+        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await userEvent.upload(
+        await screen.findByLabelText('formpackImportLabel'),
+        file,
+      );
+      expect(
+        await screen.findByText('formpackImportFileName'),
+      ).toBeInTheDocument();
+
+      await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+
+      await waitFor(() =>
+        expect(
+          storageImportState.importRecordWithSnapshots,
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            formpackId: record.formpackId,
+            mode: 'new',
+            data: payload.record.data,
+            locale: payload.record.locale,
+            title: payload.record.title,
+          }),
+        ),
+      );
+      expect(storageState.applyRecordUpdate).toHaveBeenCalledWith(
+        importedRecord,
+      );
+      expect(storageState.markAsSaved).toHaveBeenCalledWith(
+        payload.record.data,
+      );
+      expect(storageState.setLocale).toHaveBeenCalledWith(
+        payload.record.locale,
+      );
+      expect(await screen.findByText(IMPORT_SUCCESS_LABEL)).toBeInTheDocument();
+    } finally {
+      restoreText();
+    }
+  });
+
+  it('imports JSON overwrite and refreshes snapshots', async () => {
+    const payload = {
+      version: 1,
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        title: 'Imported',
+        locale: 'de',
+        data: { name: 'Ada' },
+      },
+      revisions: [{ label: 'Rev', data: { name: 'Ada' } }],
+    };
+    importState.validateJsonImport.mockReturnValue({
+      payload,
+      error: null,
+    });
+    storageImportState.importRecordWithSnapshots.mockResolvedValue({
+      ...record,
+      data: payload.record.data,
+    });
+    const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+    const restoreText = mockFileText(IMPORT_FILE_CONTENT);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    try {
+      render(
+        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await userEvent.upload(
+        await screen.findByLabelText('formpackImportLabel'),
+        file,
+      );
+      await userEvent.click(
+        screen.getByLabelText('formpackImportModeOverwrite'),
+      );
+      await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+
+      await waitFor(() =>
+        expect(
+          storageImportState.importRecordWithSnapshots,
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            formpackId: record.formpackId,
+            mode: 'overwrite',
+            recordId: record.id,
+            revisions: payload.revisions,
+          }),
+        ),
+      );
+      expect(storageState.refreshSnapshots).toHaveBeenCalled();
+      expect(confirmSpy).toHaveBeenCalledWith('importOverwriteConfirm');
+    } finally {
+      restoreText();
+      confirmSpy.mockRestore();
+    }
+  });
+
+  it('shows storage unavailable message when storage is blocked', async () => {
+    storageState.recordsError = 'unavailable';
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText(STORAGE_UNAVAILABLE_LABEL),
     ).toBeInTheDocument();
   });
 
