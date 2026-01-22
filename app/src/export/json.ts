@@ -88,6 +88,54 @@ const normalizeDateString = (value: string): string => {
   return value;
 };
 
+const normalizeSchemaDateValue = (
+  schema: RJSFSchema,
+  value: unknown,
+): unknown => {
+  if (schema.format === 'date' && typeof value === 'string') {
+    return normalizeDateString(value);
+  }
+  return value;
+};
+
+const normalizeSchemaArray = (schema: RJSFSchema, value: unknown): unknown => {
+  if (!schema.items || !Array.isArray(value)) {
+    return value;
+  }
+  const itemSchema = schema.items as RJSFSchema | boolean;
+  return value.map((entry) => normalizeSchemaDates(itemSchema, entry));
+};
+
+const normalizeSchemaObject = (schema: RJSFSchema, value: unknown): unknown => {
+  if (!schema.properties || !isRecord(value)) {
+    return value;
+  }
+
+  const updated: Record<string, unknown> = { ...value };
+  for (const [key, propertySchema] of Object.entries(schema.properties)) {
+    if (!Object.prototype.hasOwnProperty.call(updated, key)) {
+      continue;
+    }
+    updated[key] = normalizeSchemaDates(
+      propertySchema as RJSFSchema | boolean,
+      updated[key],
+    );
+  }
+  return updated;
+};
+
+const normalizeSchemaAllOf = (schema: RJSFSchema, value: unknown): unknown => {
+  if (!Array.isArray(schema.allOf)) {
+    return value;
+  }
+
+  return schema.allOf.reduce(
+    (current, entry) =>
+      normalizeSchemaDates(entry as RJSFSchema | boolean, current),
+    value,
+  );
+};
+
 // Normalize date-formatted fields to YYYY-MM-DD for export compatibility.
 const normalizeSchemaDates = (
   schema: RJSFSchema | boolean | undefined,
@@ -97,43 +145,10 @@ const normalizeSchemaDates = (
     return value;
   }
 
-  let normalized = value;
-
-  if (schema.format === 'date' && typeof normalized === 'string') {
-    normalized = normalizeDateString(normalized);
-  }
-
-  if (schema.items && Array.isArray(normalized)) {
-    const itemSchema = schema.items as RJSFSchema | boolean;
-    normalized = normalized.map((entry) =>
-      normalizeSchemaDates(itemSchema, entry),
-    );
-  }
-
-  if (schema.properties && isRecord(normalized)) {
-    const updated: Record<string, unknown> = { ...normalized };
-    for (const [key, propertySchema] of Object.entries(schema.properties)) {
-      if (!Object.prototype.hasOwnProperty.call(updated, key)) {
-        continue;
-      }
-      updated[key] = normalizeSchemaDates(
-        propertySchema as RJSFSchema | boolean,
-        updated[key],
-      );
-    }
-    normalized = updated;
-  }
-
-  if (Array.isArray(schema.allOf)) {
-    for (const entry of schema.allOf) {
-      normalized = normalizeSchemaDates(
-        entry as RJSFSchema | boolean,
-        normalized,
-      );
-    }
-  }
-
-  return normalized;
+  const withDate = normalizeSchemaDateValue(schema, value);
+  const withArray = normalizeSchemaArray(schema, withDate);
+  const withObject = normalizeSchemaObject(schema, withArray);
+  return normalizeSchemaAllOf(schema, withObject);
 };
 
 const normalizeExportData = (

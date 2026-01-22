@@ -66,8 +66,6 @@ export const useTheme = (): ThemeState => {
       legacyMediaQuery.addListener(handleChange);
       return () => legacyMediaQuery.removeListener?.(handleChange);
     }
-
-    return;
   }, [themeMode]);
 
   return { themeMode, resolvedTheme, setThemeMode: handleSetThemeMode };

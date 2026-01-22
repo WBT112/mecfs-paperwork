@@ -5,20 +5,22 @@
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import { isRecord } from './utils';
 
+const UI_OPTIONS_KEY = 'ui:options';
+
 const ensureUiOptions = (uiSchema: UiSchema): UiSchema => {
-  const uiOptions = isRecord(uiSchema['ui:options'])
-    ? { ...uiSchema['ui:options'] }
+  const uiOptions = isRecord(uiSchema[UI_OPTIONS_KEY])
+    ? { ...uiSchema[UI_OPTIONS_KEY] }
     : {};
 
   return {
     ...uiSchema,
-    'ui:options': uiOptions,
+    [UI_OPTIONS_KEY]: uiOptions,
   };
 };
 
 const ensureItemLabelHidden = (uiSchema: UiSchema): UiSchema => {
   const nextSchema = ensureUiOptions(uiSchema);
-  const uiOptions = nextSchema['ui:options'] as Record<string, unknown>;
+  const uiOptions = nextSchema[UI_OPTIONS_KEY] as Record<string, unknown>;
 
   if (uiOptions.label === undefined) {
     uiOptions.label = false;
@@ -63,7 +65,7 @@ export const applyArrayUiSchemaDefaults = (
 
   if (schema.type === 'array' && schema.items) {
     const withOptions = ensureUiOptions(nextSchema);
-    const uiOptions = withOptions['ui:options'] as Record<string, unknown>;
+    const uiOptions = withOptions[UI_OPTIONS_KEY] as Record<string, unknown>;
 
     if (uiOptions.orderable === undefined) {
       uiOptions.orderable = false;
