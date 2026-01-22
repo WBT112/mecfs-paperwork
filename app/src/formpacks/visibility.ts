@@ -5,6 +5,12 @@ export const getShowDevFormpacks = (
   override: string | undefined = import.meta.env.VITE_SHOW_DEV_FORMPACKS,
 ): boolean => isDev || override === 'true';
 
+export const getDevUiEnabled = (
+  isDev: boolean = import.meta.env.DEV,
+): boolean => isDev;
+
+export const isDevUiEnabled = getDevUiEnabled();
+
 export const showDevFormpacks = getShowDevFormpacks();
 
 export const isFormpackVisible = (

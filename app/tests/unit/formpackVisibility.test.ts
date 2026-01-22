@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { filterVisibleFormpacks } from '../../src/formpacks/visibility';
+import {
+  filterVisibleFormpacks,
+  getDevUiEnabled,
+} from '../../src/formpacks/visibility';
 import type { FormpackManifest } from '../../src/formpacks/types';
 
 const PUBLIC_PACK_ID = 'public-pack';
@@ -20,6 +23,14 @@ const buildManifest = (
 });
 
 describe('formpack visibility', () => {
+  it('enables dev UI in non-production', () => {
+    expect(getDevUiEnabled(true)).toBe(true);
+  });
+
+  it('disables dev UI in production', () => {
+    expect(getDevUiEnabled(false)).toBe(false);
+  });
+
   it('hides dev packs when showDevFormpacks is false', () => {
     const manifests = [
       buildManifest({ id: PUBLIC_PACK_ID }),

@@ -39,7 +39,7 @@ import {
   loadFormpackSchema,
   loadFormpackUiSchema,
 } from '../formpacks/loader';
-import { isFormpackVisible } from '../formpacks/visibility';
+import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
 import type { FormpackManifest } from '../formpacks/types';
 import {
   type StorageErrorCode,
@@ -1308,6 +1308,9 @@ export default function FormpackDetailPage() {
     return null;
   }
 
+  // RATIONALE: Hide dev-only UI in production to reduce exposed metadata and UI surface.
+  const showDevSections = isDevUiEnabled();
+
   const renderFormpackDocxDetails = () => {
     if (!manifest.docx) {
       return null;
@@ -1647,37 +1650,41 @@ export default function FormpackDetailPage() {
         onClickCapture={handleActionClickCapture}
       >
         <div className="formpack-detail__assets">
-          <div className="formpack-detail__section">
-            <h3>{t('formpackDetailsHeading')}</h3>
-            <dl>
-              <div>
-                <dt>{t('formpackId')}</dt>
-                <dd>{manifest.id}</dd>
+          {showDevSections && (
+            <>
+              <div className="formpack-detail__section">
+                <h3>{t('formpackDetailsHeading')}</h3>
+                <dl>
+                  <div>
+                    <dt>{t('formpackId')}</dt>
+                    <dd>{manifest.id}</dd>
+                  </div>
+                  <div>
+                    <dt>{t('formpackVersion')}</dt>
+                    <dd>{manifest.version}</dd>
+                  </div>
+                  <div>
+                    <dt>{t('formpackDefaultLocale')}</dt>
+                    <dd>{manifest.defaultLocale}</dd>
+                  </div>
+                  <div>
+                    <dt>{t('formpackLocales')}</dt>
+                    <dd>{manifest.locales.join(', ')}</dd>
+                  </div>
+                </dl>
               </div>
-              <div>
-                <dt>{t('formpackVersion')}</dt>
-                <dd>{manifest.version}</dd>
+              <div className="formpack-detail__section">
+                <h3>{t('formpackExportsHeading')}</h3>
+                <dl>
+                  <div>
+                    <dt>{t('formpackExports')}</dt>
+                    <dd>{manifest.exports.join(', ')}</dd>
+                  </div>
+                </dl>
               </div>
-              <div>
-                <dt>{t('formpackDefaultLocale')}</dt>
-                <dd>{manifest.defaultLocale}</dd>
-              </div>
-              <div>
-                <dt>{t('formpackLocales')}</dt>
-                <dd>{manifest.locales.join(', ')}</dd>
-              </div>
-            </dl>
-          </div>
-          <div className="formpack-detail__section">
-            <h3>{t('formpackExportsHeading')}</h3>
-            <dl>
-              <div>
-                <dt>{t('formpackExports')}</dt>
-                <dd>{manifest.exports.join(', ')}</dd>
-              </div>
-            </dl>
-          </div>
-          {renderFormpackDocxDetails()}
+              {renderFormpackDocxDetails()}
+            </>
+          )}
         </div>
         <div className="formpack-detail__form">
           <div className="formpack-detail__section">
@@ -1765,10 +1772,12 @@ export default function FormpackDetailPage() {
             <h3>{t('formpackSnapshotsHeading')}</h3>
             {renderSnapshotsContent()}
           </div>
-          <div className="formpack-detail__section">
-            <h3>{t('formpackFormPreviewHeading')}</h3>
-            <pre className="formpack-preview">{getJsonPreviewContent()}</pre>
-          </div>
+          {showDevSections && (
+            <div className="formpack-detail__section">
+              <h3>{t('formpackFormPreviewHeading')}</h3>
+              <pre className="formpack-preview">{getJsonPreviewContent()}</pre>
+            </div>
+          )}
           <div className="formpack-detail__section">
             <h3>{t('formpackDocumentPreviewHeading')}</h3>
             {renderDocumentPreviewContent()}
