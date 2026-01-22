@@ -24,7 +24,7 @@ For every change that touches `app/`:
 6. `npm run test:e2e` (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)
 7. `npm run formpack:validate`
 8. `npm run build`
-9. If tests cannot be run because dependencies are missing try to isntall them e.g. npx playwright install
+9. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
 
 If any step fails: fix it before finishing.
 
@@ -37,6 +37,7 @@ If any step fails: fix it before finishing.
   - P0 bugfix: add at least one regression test (unit or integration) and run the relevant manual checklist.
   - P0/P1 feature: add at least one integration test for the primary user flow plus unit tests for pure logic/validators.
   - Docs-only changes: no tests required, but CI must remain green.
+- Node 24 is needed to run all tests, if Node 24 is not available stop the not available checks and inform the user
 
 ### Test locations
 - Vitest-based unit and component tests are located in `/app/tests`.
@@ -97,6 +98,7 @@ Do not block feature work on this unless the issue explicitly targets security t
 - Storage: IndexedDB with `records` + `revisions` (snapshots). Keep migrations explicit.
 - Export: primary DOCX (A4 + Wallet as separate downloads), plus JSON backup/import.
 - i18n: DE + EN from the start; locale stored per record and kept in exports.
+
 
 
 
