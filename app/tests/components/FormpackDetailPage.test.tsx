@@ -114,6 +114,10 @@ const importState = vi.hoisted(() => ({
   validateJsonImport: vi.fn(),
 }));
 
+const visibilityState = vi.hoisted(() => ({
+  isDevUiEnabled: true,
+}));
+
 const storageImportState = vi.hoisted(() => ({
   importRecordWithSnapshots: vi.fn(),
 }));
@@ -257,6 +261,17 @@ vi.mock('../../src/formpacks/loader', () => ({
     .mockImplementation(async () => formpackState.uiSchema),
 }));
 
+vi.mock('../../src/formpacks/visibility', async (importOriginal) => {
+  const original =
+    await importOriginal<typeof import('../../src/formpacks/visibility')>();
+  return {
+    ...original,
+    get isDevUiEnabled() {
+      return visibilityState.isDevUiEnabled;
+    },
+  };
+});
+
 vi.mock('../../src/storage/hooks', () => ({
   useRecords: () => ({
     records: storageState.records,
@@ -320,6 +335,7 @@ describe('FormpackDetailPage', () => {
     jsonExportState.buildJsonExportPayload.mockReset();
     jsonExportState.buildJsonExportFilename.mockReset();
     jsonExportState.downloadJsonExport.mockReset();
+    visibilityState.isDevUiEnabled = true;
     formpackState.manifest = {
       id: record.formpackId,
       version: '1.0.0',
@@ -458,6 +474,31 @@ describe('FormpackDetailPage', () => {
     expect(
       screen.getByRole('option', { name: DOCX_TEMPLATE_WALLET_OPTION }),
     ).toBeInTheDocument();
+  });
+
+  it('hides dev-only sections in production', async () => {
+    visibilityState.isDevUiEnabled = false;
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('formpackRecordsHeading');
+
+    expect(
+      screen.queryByText('formpackDetailsHeading'),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('formpackExportsHeading'),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('formpackDocxHeading')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('formpackFormPreviewHeading'),
+    ).not.toBeInTheDocument();
   });
 
   it('shows success after DOCX export completes', async () => {
