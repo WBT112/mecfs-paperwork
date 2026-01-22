@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import js from '@eslint/js';
 import globals from 'globals';
 import tsParser from '@typescript-eslint/parser';
@@ -5,6 +7,11 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import sonarjs from 'eslint-plugin-sonarjs';
+
+const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
+const sonarjsAllRules = Object.fromEntries(
+  Object.keys(sonarjs.rules ?? {}).map((rule) => [`sonarjs/${rule}`, 'error']),
+);
 
 export default [
   {
@@ -94,6 +101,40 @@ export default [
     },
   },
 
+  // Type-aware rules to match SonarQube findings.
+  {
+    files: ['src/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        project: ['./tsconfig.json'],
+        tsconfigRootDir,
+      },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      '@typescript-eslint/no-unnecessary-type-assertion': 'error',
+      '@typescript-eslint/no-unnecessary-condition': 'error',
+      '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+      '@typescript-eslint/no-unnecessary-type-arguments': 'error',
+      '@typescript-eslint/no-unnecessary-type-constraint': 'error',
+      '@typescript-eslint/no-unnecessary-type-parameters': 'error',
+      '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { attributes: false } },
+      ],
+      '@typescript-eslint/no-unsafe-assignment': 'error',
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-member-access': 'error',
+      '@typescript-eslint/no-unsafe-return': 'error',
+      'no-void': 'error',
+    },
+  },
+
   // NOTE: Restrict SonarJS rules to code covered by SonarQube.
   {
     files: ['src/**/*.{ts,tsx}', 'tests/**/*.{ts,tsx}'],
@@ -101,12 +142,8 @@ export default [
       sonarjs,
     },
     rules: {
-      ...sonarjs.configs.recommended.rules,
-      'sonarjs/cognitive-complexity': ['warn', 15],
-      'sonarjs/no-collapsible-if': 'warn',
-      'sonarjs/no-duplicate-string': 'warn',
-      'sonarjs/no-redundant-jump': 'warn',
-      'sonarjs/prefer-single-boolean-return': 'warn',
+      ...sonarjsAllRules,
+      'sonarjs/cognitive-complexity': ['error', 15],
     },
   },
 ];
