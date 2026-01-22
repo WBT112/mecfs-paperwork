@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -117,6 +123,35 @@ const importState = vi.hoisted(() => ({
 const visibilityState = vi.hoisted(() => ({
   isDevUiEnabled: true,
 }));
+
+const ARIA_EXPANDED = 'aria-expanded';
+
+const sectionLabels = {
+  records: 'formpackRecordsHeading',
+  import: 'formpackImportHeading',
+  snapshots: 'formpackSnapshotsHeading',
+  documentPreview: 'formpackDocumentPreviewHeading',
+};
+
+const openSection = async (label: string) => {
+  const toggle = await screen.findByRole('button', { name: label });
+  if (toggle.getAttribute(ARIA_EXPANDED) !== 'true') {
+    await userEvent.click(toggle);
+  }
+  return toggle;
+};
+
+const openImportSection = async () => {
+  await openSection(sectionLabels.import);
+};
+
+const openSnapshotsSection = async () => {
+  await openSection(sectionLabels.snapshots);
+};
+
+const openRecordsSection = async () => {
+  await openSection(sectionLabels.records);
+};
 
 const storageImportState = vi.hoisted(() => ({
   importRecordWithSnapshots: vi.fn(),
@@ -377,7 +412,9 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
-    const triggerButton = await screen.findByText('trigger-change');
+    const triggerButton = await screen.findByText('trigger-change', undefined, {
+      timeout: 3000,
+    });
 
     await waitFor(() =>
       expect(screen.getByTestId('form-data')).toHaveTextContent(
@@ -410,7 +447,7 @@ describe('FormpackDetailPage', () => {
     );
 
     expect(mockMarkAsSaved).toHaveBeenCalledWith({});
-  });
+  }, 10000);
 
   it('logs an error if DOCX export fails', async () => {
     const error = new Error('DOCX export failed');
@@ -501,6 +538,74 @@ describe('FormpackDetailPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('renders document preview above the tools group', async () => {
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const previewToggle = await screen.findByRole('button', {
+      name: sectionLabels.documentPreview,
+    });
+    const toolsHeading = await screen.findByRole('heading', {
+      name: 'formpackToolsHeading',
+    });
+
+    expect(
+      previewToggle.compareDocumentPosition(toolsHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    const toolsSection = toolsHeading.closest('.formpack-detail__section');
+    expect(toolsSection).not.toBeNull();
+
+    if (toolsSection instanceof HTMLElement) {
+      const toolsScope = within(toolsSection);
+      expect(
+        toolsScope.getByRole('button', { name: sectionLabels.records }),
+      ).toBeInTheDocument();
+      expect(
+        toolsScope.getByRole('button', { name: sectionLabels.import }),
+      ).toBeInTheDocument();
+      expect(
+        toolsScope.getByRole('button', { name: sectionLabels.snapshots }),
+      ).toBeInTheDocument();
+    }
+  });
+
+  it('defaults to collapsed drafts, import, and history with preview expanded', async () => {
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const recordsToggle = await screen.findByRole('button', {
+      name: sectionLabels.records,
+    });
+    const importToggle = await screen.findByRole('button', {
+      name: sectionLabels.import,
+    });
+    const snapshotsToggle = await screen.findByRole('button', {
+      name: sectionLabels.snapshots,
+    });
+    const previewToggle = await screen.findByRole('button', {
+      name: sectionLabels.documentPreview,
+    });
+
+    expect(recordsToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
+    expect(importToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
+    expect(snapshotsToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
+    expect(previewToggle).toHaveAttribute(ARIA_EXPANDED, 'true');
+
+    expect(screen.getByLabelText('formpackImportLabel')).not.toBeVisible();
+  });
+
   it('shows success after DOCX export completes', async () => {
     const report = new Blob(['docx']);
     vi.mocked(exportDocx).mockResolvedValue(report);
@@ -575,6 +680,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -647,6 +753,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -724,6 +831,7 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
+    await openImportSection();
     const input = await screen.findByLabelText('formpackImportLabel');
     fireEvent.change(input, { target: { files: [] } });
 
@@ -750,6 +858,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -781,6 +890,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -816,6 +926,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -858,6 +969,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -911,6 +1023,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -969,6 +1082,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -1028,6 +1142,7 @@ describe('FormpackDetailPage', () => {
         await screen.findByText('formpackDocxExportSuccess'),
       ).toBeInTheDocument();
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -1066,6 +1181,7 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
+    await openSnapshotsSection();
     await userEvent.click(await screen.findByText('formpackSnapshotRestore'));
 
     await waitFor(() =>
@@ -1094,6 +1210,7 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
+    await openRecordsSection();
     const loadButtons = await screen.findAllByText('formpackRecordLoad');
     await userEvent.click(loadButtons[1]);
 
@@ -1192,6 +1309,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -1246,6 +1364,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -1259,5 +1378,5 @@ describe('FormpackDetailPage', () => {
     } finally {
       restoreText();
     }
-  });
+  }, 10000);
 });

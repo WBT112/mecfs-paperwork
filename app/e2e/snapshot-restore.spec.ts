@@ -8,6 +8,7 @@ import {
   waitForRecordById,
   waitForRecordField,
 } from './helpers/records';
+import { openCollapsibleSection } from './helpers/sections';
 
 type DbOptions = { dbName: string; storeName: string };
 const FORM_PACK_ID = 'notfallpass';
@@ -90,6 +91,14 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
+const openDraftsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
+};
+
+const openSnapshotsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /verlauf|history/i);
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   const existingActiveId = await getActiveRecordId(page);
@@ -98,6 +107,7 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     return;
   }
 
+  await openDraftsSection(page);
   await waitForRecordListReady(page);
 
   const activeIdAfterLoad = await getActiveRecordId(page);
@@ -124,6 +134,7 @@ const clickNewDraftIfNeeded = async (page: Page) => {
 };
 
 const createSnapshot = async (page: Page) => {
+  await openSnapshotsSection(page);
   const createBtn = page.getByRole('button', {
     name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i,
   });
@@ -142,6 +153,7 @@ const createSnapshot = async (page: Page) => {
 };
 
 const restoreFirstSnapshot = async (page: Page) => {
+  await openSnapshotsSection(page);
   const snapshotItem = page.locator('.formpack-snapshots__item').first();
   await expect(snapshotItem).toBeVisible();
 
@@ -185,6 +197,7 @@ for (const locale of locales) {
       await deleteDatabase(page, DB.dbName);
 
       await page.goto(`/formpacks/${FORM_PACK_ID}`);
+      await openDraftsSection(page);
       await switchLocale(page, locale);
       await expect(
         page.getByRole('heading', {

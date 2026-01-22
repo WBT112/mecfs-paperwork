@@ -2,12 +2,14 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { deleteDatabase } from './helpers';
+import { openCollapsibleSection } from './helpers/sections';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 20_000;
 
 const createNewDraft = async (page: Page) => {
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
   const newDraftButton = page.getByRole('button', {
     name: /new\s*draft|neuer\s*entwurf/i,
   });
@@ -85,6 +87,7 @@ test('dismisses success messages when other action buttons are clicked', async (
   const payload = await loadExamplePayload();
   const importPath = testInfo.outputPath('import.json');
   await writeFile(importPath, JSON.stringify(payload, null, 2), 'utf-8');
+  await openCollapsibleSection(page, /import/i);
   await page.locator('#formpack-import-file').setInputFiles(importPath);
   const importButton = page
     .getByRole('button', { name: /JSON importieren|Import JSON/i })

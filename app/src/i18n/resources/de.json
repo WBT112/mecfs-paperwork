@@ -86,6 +86,7 @@
   "formpackDocxErrorInvalidSyntax": "DOCX-Vorlage: Die Template-Syntax ist ungültig.",
   "formpackDocxErrorInvalidCommand": "DOCX-Vorlage: Ein Befehl ist ungültig oder falsch geschlossen.",
   "formpackFormHeading": "Formular",
+  "formpackToolsHeading": "Werkzeuge",
   "formpackFormReset": "Formular zurücksetzen",
   "formpackFormNoActiveRecord": "Wähle oder erstelle einen Entwurf, um mit der Eingabe zu beginnen.",
   "formpackFormPreviewHeading": "Formulardaten-Vorschau",
