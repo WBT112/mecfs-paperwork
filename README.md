@@ -63,7 +63,7 @@ falls back to `https://github.com/your-org/mecfs-paperwork`. Set
 
 ## Quality gates (local)
 
-All checks run from the `app/` directory:
+All checks run from the `app/` directory (Node 24 and Playwright needed):
 
 ```bash
 npm run format:check
