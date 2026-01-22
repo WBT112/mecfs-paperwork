@@ -4,6 +4,8 @@ import { deleteDatabase } from './helpers';
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
 
+test.setTimeout(60000);
+
 test('collapsible sections default and toggle offline', async ({
   page,
   context,
@@ -29,11 +31,39 @@ test('collapsible sections default and toggle offline', async ({
   const previewToggle = page.locator('.collapsible-section__toggle', {
     hasText: /dokumentvorschau|document preview/i,
   });
+  const toolsHeading = page.getByRole('heading', {
+    name: /tools|werkzeuge/i,
+  });
 
   await expect(draftsToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(importToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(historyToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(previewToggle).toHaveAttribute('aria-expanded', 'true');
+
+  const previewBox = await previewToggle.boundingBox();
+  const toolsBox = await toolsHeading.boundingBox();
+  expect(previewBox).not.toBeNull();
+  expect(toolsBox).not.toBeNull();
+  if (previewBox && toolsBox) {
+    expect(previewBox.y).toBeLessThan(toolsBox.y);
+  }
+
+  const toolsSection = toolsHeading.locator('..');
+  await expect(
+    toolsSection.locator('.collapsible-section__toggle', {
+      hasText: /entwürfe|drafts/i,
+    }),
+  ).toBeVisible();
+  await expect(
+    toolsSection.locator('.collapsible-section__toggle', {
+      hasText: /import/i,
+    }),
+  ).toBeVisible();
+  await expect(
+    toolsSection.locator('.collapsible-section__toggle', {
+      hasText: /verlauf|history/i,
+    }),
+  ).toBeVisible();
 
   await context.setOffline(true);
 

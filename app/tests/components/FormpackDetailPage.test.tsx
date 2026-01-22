@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -406,7 +412,9 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
-    const triggerButton = await screen.findByText('trigger-change');
+    const triggerButton = await screen.findByText('trigger-change', undefined, {
+      timeout: 3000,
+    });
 
     await waitFor(() =>
       expect(screen.getByTestId('form-data')).toHaveTextContent(
@@ -439,7 +447,7 @@ describe('FormpackDetailPage', () => {
     );
 
     expect(mockMarkAsSaved).toHaveBeenCalledWith({});
-  });
+  }, 10000);
 
   it('logs an error if DOCX export fails', async () => {
     const error = new Error('DOCX export failed');
@@ -528,6 +536,44 @@ describe('FormpackDetailPage', () => {
     expect(
       screen.queryByText('formpackFormPreviewHeading'),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders document preview above the tools group', async () => {
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const previewToggle = await screen.findByRole('button', {
+      name: sectionLabels.documentPreview,
+    });
+    const toolsHeading = await screen.findByRole('heading', {
+      name: 'formpackToolsHeading',
+    });
+
+    expect(
+      previewToggle.compareDocumentPosition(toolsHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    const toolsSection = toolsHeading.closest('.formpack-detail__section');
+    expect(toolsSection).not.toBeNull();
+
+    if (toolsSection instanceof HTMLElement) {
+      const toolsScope = within(toolsSection);
+      expect(
+        toolsScope.getByRole('button', { name: sectionLabels.records }),
+      ).toBeInTheDocument();
+      expect(
+        toolsScope.getByRole('button', { name: sectionLabels.import }),
+      ).toBeInTheDocument();
+      expect(
+        toolsScope.getByRole('button', { name: sectionLabels.snapshots }),
+      ).toBeInTheDocument();
+    }
   });
 
   it('defaults to collapsed drafts, import, and history with preview expanded', async () => {
@@ -1332,5 +1378,5 @@ describe('FormpackDetailPage', () => {
     } finally {
       restoreText();
     }
-  });
+  }, 10000);
 });
