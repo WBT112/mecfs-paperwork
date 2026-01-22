@@ -34,6 +34,12 @@ export default function CollapsibleSection({
           aria-expanded={isOpen}
           aria-controls={ids.content}
           onClick={() => setIsOpen((prev) => !prev)}
+          onKeyUp={(event) => {
+            if (event.key === ' ' || event.key === 'Spacebar') {
+              event.preventDefault();
+              setIsOpen((prev) => !prev);
+            }
+          }}
         >
           <span className="collapsible-section__title">{title}</span>
           <span className="collapsible-section__icon" aria-hidden="true" />
