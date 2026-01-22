@@ -115,7 +115,7 @@ const importState = vi.hoisted(() => ({
 }));
 
 const visibilityState = vi.hoisted(() => ({
-  getDevUiEnabled: vi.fn(() => true),
+  isDevUiEnabled: true,
 }));
 
 const storageImportState = vi.hoisted(() => ({
@@ -266,7 +266,9 @@ vi.mock('../../src/formpacks/visibility', async (importOriginal) => {
     await importOriginal<typeof import('../../src/formpacks/visibility')>();
   return {
     ...original,
-    getDevUiEnabled: visibilityState.getDevUiEnabled,
+    get isDevUiEnabled() {
+      return visibilityState.isDevUiEnabled;
+    },
   };
 });
 
@@ -333,8 +335,7 @@ describe('FormpackDetailPage', () => {
     jsonExportState.buildJsonExportPayload.mockReset();
     jsonExportState.buildJsonExportFilename.mockReset();
     jsonExportState.downloadJsonExport.mockReset();
-    visibilityState.getDevUiEnabled.mockReset();
-    visibilityState.getDevUiEnabled.mockReturnValue(true);
+    visibilityState.isDevUiEnabled = true;
     formpackState.manifest = {
       id: record.formpackId,
       version: '1.0.0',
@@ -476,7 +477,7 @@ describe('FormpackDetailPage', () => {
   });
 
   it('hides dev-only sections in production', async () => {
-    visibilityState.getDevUiEnabled.mockReturnValue(false);
+    visibilityState.isDevUiEnabled = false;
 
     render(
       <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>

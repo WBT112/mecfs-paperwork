@@ -39,7 +39,7 @@ import {
   loadFormpackSchema,
   loadFormpackUiSchema,
 } from '../formpacks/loader';
-import { getDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
+import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
 import type { FormpackManifest } from '../formpacks/types';
 import {
   type StorageErrorCode,
@@ -1309,7 +1309,7 @@ export default function FormpackDetailPage() {
   }
 
   // RATIONALE: Hide dev-only UI in production to reduce exposed metadata and UI surface.
-  const showDevSections = getDevUiEnabled();
+  const showDevSections = isDevUiEnabled;
 
   const renderFormpackDocxDetails = () => {
     if (!manifest.docx) {
