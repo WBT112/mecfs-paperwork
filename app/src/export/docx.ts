@@ -90,10 +90,13 @@ const isSafeAssetPath = (value: string) => {
   // It prevents path traversal attacks when loading DOCX assets.
   // Assets are loaded via fetch(), so a malicious formpack could otherwise
   // construct a path to access unintended files from the public/ directory.
-  if (!value || value.trim().length === 0) return false;
-  if (value.startsWith('/') || value.startsWith('\\')) return false;
-  if (value.includes('..')) return false;
-  return true;
+  return Boolean(
+    value &&
+    value.trim().length > 0 &&
+    !value.startsWith('/') &&
+    !value.startsWith('\\') &&
+    !value.includes('..'),
+  );
 };
 
 const parseDocxMapping = (payload: unknown): DocxMapping => {

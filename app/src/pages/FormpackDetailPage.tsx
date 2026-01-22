@@ -13,7 +13,8 @@ import Ajv2020 from 'ajv/dist/2020';
 import { loadFormpackI18n } from '../i18n/formpack';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
-import { validateJsonImport } from '../import/json';
+import type { SupportedLocale } from '../i18n/locale';
+import { validateJsonImport, type JsonImportPayload } from '../import/json';
 import {
   buildJsonExportFilename,
   buildJsonExportPayload,
@@ -47,6 +48,7 @@ import {
   useSnapshots,
 } from '../storage/hooks';
 import { importRecordWithSnapshots } from '../storage/import';
+import type { RecordEntry } from '../storage/types';
 import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
@@ -60,45 +62,64 @@ const LazyForm = lazy(async () => {
   return { default: module.default as ComponentType<RjsfFormProps> };
 });
 
+type ManifestLoadResult = {
+  manifest: FormpackManifest | null;
+  schema: RJSFSchema | null;
+  uiSchema: UiSchema | null;
+  errorMessage: string | null;
+};
+
+const loadFormpackAssets = async (
+  formpackId: string,
+  locale: SupportedLocale,
+  t: (key: string) => string,
+): Promise<ManifestLoadResult> => {
+  const manifest = await loadFormpackManifest(formpackId);
+  if (!isFormpackVisible(manifest)) {
+    return {
+      manifest: null,
+      schema: null,
+      uiSchema: null,
+      errorMessage: t('formpackNotFound'),
+    };
+  }
+
+  await loadFormpackI18n(formpackId, locale);
+  const [schemaData, uiSchemaData] = await Promise.all([
+    loadFormpackSchema(formpackId),
+    loadFormpackUiSchema(formpackId),
+  ]);
+
+  return {
+    manifest,
+    schema: schemaData as RJSFSchema,
+    uiSchema: uiSchemaData as UiSchema,
+    errorMessage: null,
+  };
+};
+
+const FORMPACK_ERROR_KEYS: Partial<
+  Record<FormpackLoaderError['code'], string>
+> = {
+  schema_not_found: 'formpackSchemaNotFound',
+  schema_invalid: 'formpackSchemaInvalid',
+  schema_unavailable: 'formpackSchemaUnavailable',
+  ui_schema_not_found: 'formpackUiSchemaNotFound',
+  ui_schema_invalid: 'formpackUiSchemaInvalid',
+  ui_schema_unavailable: 'formpackUiSchemaUnavailable',
+  not_found: 'formpackNotFound',
+  unsupported: 'formpackUnsupported',
+  invalid: 'formpackInvalid',
+};
+
 const buildErrorMessage = (
   error: unknown,
   t: (key: string) => string,
 ): string => {
   if (error instanceof FormpackLoaderError) {
-    if (error.code === 'schema_not_found') {
-      return t('formpackSchemaNotFound');
-    }
-
-    if (error.code === 'schema_invalid') {
-      return t('formpackSchemaInvalid');
-    }
-
-    if (error.code === 'schema_unavailable') {
-      return t('formpackSchemaUnavailable');
-    }
-
-    if (error.code === 'ui_schema_not_found') {
-      return t('formpackUiSchemaNotFound');
-    }
-
-    if (error.code === 'ui_schema_invalid') {
-      return t('formpackUiSchemaInvalid');
-    }
-
-    if (error.code === 'ui_schema_unavailable') {
-      return t('formpackUiSchemaUnavailable');
-    }
-
-    if (error.code === 'not_found') {
-      return t('formpackNotFound');
-    }
-
-    if (error.code === 'unsupported') {
-      return t('formpackUnsupported');
-    }
-
-    if (error.code === 'invalid') {
-      return t('formpackInvalid');
+    const key = FORMPACK_ERROR_KEYS[error.code];
+    if (key) {
+      return t(key);
     }
   }
 
@@ -233,6 +254,92 @@ const getLabel = (
   return key;
 };
 
+type PreviewEntry =
+  | { type: 'row'; node: ReactNode }
+  | { type: 'nested'; node: ReactNode };
+
+const buildPreviewRow = (key: string, label: string, entry: unknown) => (
+  <div key={`row-${key}`}>
+    <dt>{label}</dt>
+    <dd>{formatPreviewValue(entry)}</dd>
+  </div>
+);
+
+const buildPreviewEntry = (
+  entry: unknown,
+  key: string,
+  childSchema: RJSFSchema | undefined,
+  childUi: UiSchema | undefined,
+  childLabel: string,
+  sectionKey?: string,
+): PreviewEntry | null => {
+  if (!hasPreviewValue(entry)) {
+    return null;
+  }
+
+  const nestedKey = `${sectionKey ?? 'section'}-${key}`;
+  if (Array.isArray(entry)) {
+    const section = renderPreviewArray(
+      entry,
+      childSchema,
+      childUi,
+      childLabel,
+      nestedKey,
+    );
+    return section ? { type: 'nested', node: section } : null;
+  }
+
+  if (isRecord(entry)) {
+    const section = renderPreviewObject(
+      entry,
+      childSchema,
+      childUi,
+      childLabel,
+      nestedKey,
+    );
+    return section ? { type: 'nested', node: section } : null;
+  }
+
+  return { type: 'row', node: buildPreviewRow(key, childLabel, entry) };
+};
+
+const buildArrayItem = (
+  entry: unknown,
+  index: number,
+  itemSchema: RJSFSchema | undefined,
+  itemUi: UiSchema | undefined,
+  sectionKey?: string,
+): ReactNode | null => {
+  if (!hasPreviewValue(entry)) {
+    return null;
+  }
+
+  const nestedKey = `${sectionKey ?? 'array'}-${index}`;
+  if (Array.isArray(entry)) {
+    const nested = renderPreviewArray(
+      entry,
+      itemSchema,
+      itemUi,
+      undefined,
+      nestedKey,
+    );
+    return nested ? <li key={`nested-${index}`}>{nested}</li> : null;
+  }
+
+  if (isRecord(entry)) {
+    const nested = renderPreviewObject(
+      entry,
+      itemSchema,
+      itemUi,
+      undefined,
+      nestedKey,
+    );
+    return nested ? <li key={`object-${index}`}>{nested}</li> : null;
+  }
+
+  return <li key={`value-${index}`}>{formatPreviewValue(entry)}</li>;
+};
+
 // RATIONALE: These functions are pure and do not depend on component state.
 // Defining them outside the component prevents them from being re-created on every
 // render, which improves performance by reducing garbage collection and avoiding
@@ -253,47 +360,25 @@ function renderPreviewObject(
 
   keys.forEach((key) => {
     const entry = value[key];
-    if (!hasPreviewValue(entry)) {
-      return;
-    }
     const childSchema = schemaProps ? schemaProps[key] : undefined;
     const childUi = getUiSchemaNode(uiNode, key);
     const childLabel = getLabel(key, childSchema, childUi);
-
-    if (Array.isArray(entry)) {
-      const section = renderPreviewArray(
-        entry,
-        childSchema,
-        childUi,
-        childLabel,
-        `${sectionKey ?? 'section'}-${key}`,
-      );
-      if (section) {
-        nested.push(section);
-      }
-      return;
-    }
-
-    if (isRecord(entry)) {
-      const section = renderPreviewObject(
-        entry,
-        childSchema,
-        childUi,
-        childLabel,
-        `${sectionKey ?? 'section'}-${key}`,
-      );
-      if (section) {
-        nested.push(section);
-      }
-      return;
-    }
-
-    rows.push(
-      <div key={`row-${key}`}>
-        <dt>{childLabel}</dt>
-        <dd>{formatPreviewValue(entry)}</dd>
-      </div>,
+    const preview = buildPreviewEntry(
+      entry,
+      key,
+      childSchema,
+      childUi,
+      childLabel,
+      sectionKey,
     );
+    if (!preview) {
+      return;
+    }
+    if (preview.type === 'row') {
+      rows.push(preview.node);
+    } else {
+      nested.push(preview.node);
+    }
   });
 
   if (!rows.length && !nested.length) {
@@ -330,30 +415,7 @@ function renderPreviewArray(
   const itemUi = getItemUiSchema(uiNode);
   const items = values
     .map<ReactNode>((entry, index) => {
-      if (!hasPreviewValue(entry)) {
-        return null;
-      }
-      if (Array.isArray(entry)) {
-        const nested = renderPreviewArray(
-          entry,
-          itemSchema,
-          itemUi,
-          undefined,
-          `${sectionKey ?? 'array'}-${index}`,
-        );
-        return nested ? <li key={`nested-${index}`}>{nested}</li> : null;
-      }
-      if (isRecord(entry)) {
-        const nested = renderPreviewObject(
-          entry,
-          itemSchema,
-          itemUi,
-          undefined,
-          `${sectionKey ?? 'array'}-${index}`,
-        );
-        return nested ? <li key={`object-${index}`}>{nested}</li> : null;
-      }
-      return <li key={`value-${index}`}>{formatPreviewValue(entry)}</li>;
+      return buildArrayItem(entry, index, itemSchema, itemUi, sectionKey);
     })
     .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
       Boolean(entry),
@@ -442,38 +504,31 @@ export default function FormpackDetailPage() {
   useEffect(() => {
     let isActive = true;
 
+    const resetFormpack = () => {
+      setManifest(null);
+      setSchema(null);
+      setUiSchema(null);
+    };
+
     const loadManifest = async (formpackId: string) => {
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
-        const data = await loadFormpackManifest(formpackId);
+        const result = await loadFormpackAssets(formpackId, locale, t);
         if (!isActive) {
           return;
         }
-        if (!isFormpackVisible(data)) {
-          setManifest(null);
-          setSchema(null);
-          setUiSchema(null);
-          setErrorMessage(t('formpackNotFound'));
-          return;
-        }
-        await loadFormpackI18n(formpackId, locale);
-        if (!isActive) {
+        if (result.errorMessage) {
+          resetFormpack();
+          setErrorMessage(result.errorMessage);
           return;
         }
         setFormpackTranslationsVersion((version) => version + 1);
-        const [schemaData, uiSchemaData] = await Promise.all([
-          loadFormpackSchema(formpackId),
-          loadFormpackUiSchema(formpackId),
-        ]);
-        if (!isActive) {
-          return;
-        }
         const shouldResetFormData = lastFormpackIdRef.current !== formpackId;
-        setManifest(data);
-        setSchema(schemaData as RJSFSchema);
-        setUiSchema(uiSchemaData as UiSchema);
+        setManifest(result.manifest);
+        setSchema(result.schema);
+        setUiSchema(result.uiSchema);
         if (shouldResetFormData) {
           setFormData({});
           lastFormpackIdRef.current = formpackId;
@@ -482,9 +537,7 @@ export default function FormpackDetailPage() {
         if (!isActive) {
           return;
         }
-        setManifest(null);
-        setSchema(null);
-        setUiSchema(null);
+        resetFormpack();
         setErrorMessage(buildErrorMessage(error, t));
       } finally {
         if (isActive) {
@@ -496,9 +549,7 @@ export default function FormpackDetailPage() {
     if (id) {
       void loadManifest(id);
     } else {
-      setManifest(null);
-      setSchema(null);
-      setUiSchema(null);
+      resetFormpack();
       setFormData({});
       setValidator(null);
       setFormpackTranslationsVersion(0);
@@ -651,6 +702,34 @@ export default function FormpackDetailPage() {
     [activeRecordStorageKey],
   );
 
+  const getLastActiveRecord = useCallback(
+    async (currentFormpackId: string) => {
+      const lastId = readActiveRecordId();
+      if (!lastId) {
+        return null;
+      }
+
+      const record = await loadRecord(lastId);
+      if (record && record.formpackId === currentFormpackId) {
+        return record;
+      }
+
+      return null;
+    },
+    [loadRecord, readActiveRecordId],
+  );
+
+  const getFallbackRecord = useCallback(
+    (currentFormpackId: string) => {
+      const fallbackRecord = records[0];
+      if (fallbackRecord?.formpackId === currentFormpackId) {
+        return fallbackRecord;
+      }
+      return null;
+    },
+    [records],
+  );
+
   const title = manifest
     ? t(manifest.titleKey, {
         ns: namespace,
@@ -664,6 +743,52 @@ export default function FormpackDetailPage() {
         defaultValue: manifest.descriptionKey,
       })
     : '';
+
+  const restoreActiveRecord = useCallback(
+    async (currentFormpackId: string, isActive: () => boolean) => {
+      const restoredRecord = await getLastActiveRecord(currentFormpackId);
+      if (isActive() && restoredRecord) {
+        setActiveRecord(restoredRecord);
+        persistActiveRecordId(restoredRecord.id);
+        return;
+      }
+
+      if (!isActive()) {
+        return;
+      }
+
+      const fallbackRecord = getFallbackRecord(currentFormpackId);
+      if (fallbackRecord) {
+        setActiveRecord(fallbackRecord);
+        persistActiveRecordId(fallbackRecord.id);
+        return;
+      }
+
+      if (!manifest || storageError === 'unavailable') {
+        setActiveRecord(null);
+        return;
+      }
+
+      const recordTitle = title || t('formpackRecordUntitled');
+      const record = await createRecord(locale, formData, recordTitle);
+      if (isActive() && record?.formpackId === currentFormpackId) {
+        persistActiveRecordId(record.id);
+      }
+    },
+    [
+      createRecord,
+      formData,
+      getFallbackRecord,
+      getLastActiveRecord,
+      locale,
+      manifest,
+      persistActiveRecordId,
+      setActiveRecord,
+      storageError,
+      t,
+      title,
+    ],
+  );
 
   useEffect(() => {
     if (!formpackId) {
@@ -684,63 +809,12 @@ export default function FormpackDetailPage() {
     const currentFormpackId = formpackId;
     hasRestoredRecordRef.current = formpackId;
 
-    const restoreActiveRecord = async () => {
-      const lastId = readActiveRecordId();
-      if (lastId) {
-        const record = await loadRecord(lastId);
-        if (isActive && record && record.formpackId === currentFormpackId) {
-          persistActiveRecordId(record.id);
-          return;
-        }
-      }
-
-      if (!isActive) {
-        return;
-      }
-
-      if (records.length) {
-        const fallbackRecord = records[0];
-        if (fallbackRecord.formpackId === currentFormpackId) {
-          setActiveRecord(fallbackRecord);
-          persistActiveRecordId(fallbackRecord.id);
-        }
-        return;
-      }
-
-      if (!manifest || storageError === 'unavailable' || !isActive) {
-        setActiveRecord(null);
-        return;
-      }
-
-      const recordTitle = title || t('formpackRecordUntitled');
-      const record = await createRecord(locale, formData, recordTitle);
-      if (isActive && record && record.formpackId === currentFormpackId) {
-        persistActiveRecordId(record.id);
-      }
-    };
-
-    void restoreActiveRecord();
+    void restoreActiveRecord(currentFormpackId, () => isActive);
 
     return () => {
       isActive = false;
     };
-  }, [
-    formpackId,
-    hasLoadedRecords,
-    isRecordsLoading,
-    createRecord,
-    formData,
-    locale,
-    loadRecord,
-    manifest,
-    persistActiveRecordId,
-    readActiveRecordId,
-    records,
-    setActiveRecord,
-    storageError,
-    t,
-    title,
-  ]);
+  }, [formpackId, hasLoadedRecords, isRecordsLoading, restoreActiveRecord]);
 
   // RATIONALE: Memoize form event handlers to prevent unnecessary re-renders of the
   // expensive Form component, which receives these callbacks as props.
@@ -856,6 +930,74 @@ export default function FormpackDetailPage() {
     [activeRecord, loadSnapshot, markAsSaved, updateActiveRecord],
   );
 
+  const applyImportedRecord = useCallback(
+    (record: RecordEntry) => {
+      applyRecordUpdate(record);
+      markAsSaved(record.data);
+      setFormData(record.data);
+      persistActiveRecordId(record.id);
+    },
+    [applyRecordUpdate, markAsSaved, persistActiveRecordId],
+  );
+
+  const importOverwriteRecord = useCallback(
+    async (payload: JsonImportPayload): Promise<RecordEntry | null> => {
+      if (!formpackId || !activeRecord) {
+        setImportError(t('importNoActiveRecord'));
+        return null;
+      }
+
+      const confirmed = window.confirm(t('importOverwriteConfirm'));
+      if (!confirmed) {
+        return null;
+      }
+
+      const updated = await importRecordWithSnapshots({
+        formpackId,
+        mode: 'overwrite',
+        recordId: activeRecord.id,
+        data: payload.record.data,
+        locale: payload.record.locale,
+        title: payload.record.title ?? activeRecord.title,
+        revisions: importIncludeRevisions ? payload.revisions : [],
+      });
+
+      applyImportedRecord(updated);
+      return updated;
+    },
+    [
+      activeRecord,
+      applyImportedRecord,
+      formpackId,
+      importIncludeRevisions,
+      setImportError,
+      t,
+    ],
+  );
+
+  const importNewRecord = useCallback(
+    async (payload: JsonImportPayload): Promise<RecordEntry | null> => {
+      if (!formpackId) {
+        return null;
+      }
+
+      const recordTitle =
+        payload.record.title ?? title ?? t('formpackRecordUntitled');
+      const record = await importRecordWithSnapshots({
+        formpackId,
+        mode: 'new',
+        data: payload.record.data,
+        locale: payload.record.locale,
+        title: recordTitle,
+        revisions: importIncludeRevisions ? payload.revisions : [],
+      });
+
+      applyImportedRecord(record);
+      return record;
+    },
+    [applyImportedRecord, formpackId, importIncludeRevisions, t, title],
+  );
+
   const handleImport = useCallback(async () => {
     if (!manifest || !schema) {
       return;
@@ -874,62 +1016,21 @@ export default function FormpackDetailPage() {
       }
 
       const payload = result.payload;
-      let targetRecordId: string | null = null;
+      const record =
+        importMode === 'overwrite'
+          ? await importOverwriteRecord(payload)
+          : await importNewRecord(payload);
 
-      if (importMode === 'overwrite') {
-        if (!activeRecord) {
-          setImportError(t('importNoActiveRecord'));
-          return;
-        }
-
-        const confirmed = window.confirm(t('importOverwriteConfirm'));
-        if (!confirmed) {
-          return;
-        }
-
-        const updated = await importRecordWithSnapshots({
-          formpackId: manifest.id,
-          mode: 'overwrite',
-          recordId: activeRecord.id,
-          data: payload.record.data,
-          locale: payload.record.locale,
-          title: payload.record.title ?? activeRecord.title,
-          revisions: importIncludeRevisions ? payload.revisions : [],
-        });
-
-        applyRecordUpdate(updated);
-        markAsSaved(updated.data);
-        setFormData(updated.data);
-        persistActiveRecordId(updated.id);
-        targetRecordId = updated.id;
-      } else {
-        const recordTitle =
-          payload.record.title ?? title ?? t('formpackRecordUntitled');
-        const record = await importRecordWithSnapshots({
-          formpackId: manifest.id,
-          mode: 'new',
-          data: payload.record.data,
-          locale: payload.record.locale,
-          title: recordTitle,
-          revisions: importIncludeRevisions ? payload.revisions : [],
-        });
-
-        applyRecordUpdate(record);
-        markAsSaved(record.data);
-        setFormData(record.data);
-        persistActiveRecordId(record.id);
-        targetRecordId = record.id;
+      if (!record) {
+        return;
       }
 
       if (
         importIncludeRevisions &&
-        targetRecordId &&
-        payload.revisions &&
-        payload.revisions.length
+        payload.revisions?.length &&
+        importMode === 'overwrite'
       ) {
-        if (importMode === 'overwrite') {
-          await refreshSnapshots();
-        }
+        await refreshSnapshots();
       }
 
       await setLocale(payload.record.locale);
@@ -945,20 +1046,17 @@ export default function FormpackDetailPage() {
       setIsImporting(false);
     }
   }, [
-    activeRecord,
     buildImportErrorMessage,
-    applyRecordUpdate,
     importIncludeRevisions,
     importJson,
     importMode,
+    importNewRecord,
+    importOverwriteRecord,
     manifest,
-    markAsSaved,
-    persistActiveRecordId,
     refreshSnapshots,
     schema,
     setLocale,
     t,
-    title,
   ]);
 
   const handleImportFileChange = useCallback(
@@ -1210,6 +1308,329 @@ export default function FormpackDetailPage() {
     return null;
   }
 
+  const renderFormpackDocxDetails = () => {
+    if (!manifest.docx) {
+      return null;
+    }
+
+    return (
+      <div className="formpack-detail__section">
+        <h3>{t('formpackDocxHeading')}</h3>
+        <dl>
+          <div>
+            <dt>{t('formpackDocxTemplateA4')}</dt>
+            <dd>{manifest.docx.templates.a4}</dd>
+          </div>
+          <div>
+            <dt>{t('formpackDocxTemplateWallet')}</dt>
+            <dd>
+              {manifest.docx.templates.wallet
+                ? manifest.docx.templates.wallet
+                : t('formpackDocxTemplateWalletUnavailable')}
+            </dd>
+          </div>
+          <div>
+            <dt>{t('formpackDocxMapping')}</dt>
+            <dd>{manifest.docx.mapping}</dd>
+          </div>
+        </dl>
+      </div>
+    );
+  };
+
+  const renderRecordsList = () => {
+    if (records.length) {
+      return (
+        <>
+          <div className="formpack-records__actions">
+            <button
+              type="button"
+              className="app__button"
+              onClick={handleCreateRecord}
+              disabled={storageError === 'unavailable'}
+            >
+              {t('formpackRecordNew')}
+            </button>
+          </div>
+          <ul className="formpack-records__list">
+            {records.map((record) => {
+              const isActive = activeRecord?.id === record.id;
+              return (
+                <li
+                  key={record.id}
+                  className={`formpack-records__item${
+                    isActive ? ' formpack-records__item--active' : ''
+                  }`}
+                >
+                  <div>
+                    <p className="formpack-records__title">
+                      {record.title ?? t('formpackRecordUntitled')}
+                    </p>
+                    <p className="formpack-records__meta">
+                      {t('formpackRecordUpdatedAt', {
+                        timestamp: formatTimestamp(record.updatedAt),
+                      })}
+                    </p>
+                  </div>
+                  <div className="formpack-records__item-actions">
+                    <button
+                      type="button"
+                      className="app__button"
+                      onClick={() => handleLoadRecord(record.id)}
+                      disabled={storageError === 'unavailable'}
+                    >
+                      {t('formpackRecordLoad')}
+                    </button>
+                    {isActive && (
+                      <span className="formpack-records__badge">
+                        {t('formpackRecordActive')}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      );
+    }
+
+    const emptyMessage = isRecordsLoading
+      ? t('formpackRecordsLoading')
+      : t('formpackRecordsEmpty');
+
+    return (
+      <div>
+        <p className="formpack-records__empty">{emptyMessage}</p>
+        <div className="formpack-records__actions">
+          <button
+            type="button"
+            className="app__button"
+            onClick={handleCreateRecord}
+            disabled={storageError === 'unavailable'}
+          >
+            {t('formpackRecordNew')}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderImportFileName = () =>
+    importFileName ? (
+      <p className="formpack-import__file-name">
+        {t('formpackImportFileName', { name: importFileName })}
+      </p>
+    ) : null;
+
+  const renderImportOverwriteHint = () =>
+    activeRecord ? null : (
+      <p className="formpack-import__note">
+        {t('formpackImportModeOverwriteHint')}
+      </p>
+    );
+
+  const renderImportStatus = () => (
+    <>
+      {importError && <p className="app__error">{importError}</p>}
+      {importSuccess && (
+        <p className="formpack-import__success">{importSuccess}</p>
+      )}
+    </>
+  );
+
+  const getImportButtonLabel = () =>
+    isImporting ? t('formpackImportInProgress') : t('formpackImportAction');
+
+  const renderStorageErrorMessage = () =>
+    storageErrorMessage ? (
+      <p className="app__error">{storageErrorMessage}</p>
+    ) : null;
+
+  const renderDocxExportControls = () => {
+    if (
+      !manifest.exports.includes('docx') ||
+      !manifest.docx ||
+      docxTemplateOptions.length === 0
+    ) {
+      return null;
+    }
+
+    return (
+      <div className="formpack-docx-export">
+        <label
+          className="formpack-docx-export__label"
+          htmlFor="docx-template-select"
+        >
+          {t('formpackDocxTemplateLabel')}
+          <select
+            id="docx-template-select"
+            className="formpack-docx-export__select"
+            value={docxTemplateId}
+            onChange={(event) =>
+              setDocxTemplateId(event.target.value as DocxTemplateId)
+            }
+          >
+            {docxTemplateOptions.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button
+          type="button"
+          className="app__button"
+          onClick={handleExportDocx}
+          data-action="docx-export"
+          disabled={storageError === 'unavailable' || isDocxExporting}
+        >
+          {isDocxExporting
+            ? t('formpackDocxExportInProgress')
+            : t('formpackRecordExportDocx')}
+        </button>
+        {docxError && <span className="app__error">{docxError}</span>}
+        {docxSuccess && (
+          <span className="formpack-docx-export__success">{docxSuccess}</span>
+        )}
+      </div>
+    );
+  };
+
+  const renderJsonExportButton = () =>
+    manifest.exports.includes('json') ? (
+      <button
+        type="button"
+        className="app__button"
+        onClick={handleExportJson}
+        disabled={storageError === 'unavailable'}
+      >
+        {t('formpackRecordExportJson')}
+      </button>
+    ) : null;
+
+  const renderFormContent = () => {
+    if (!activeRecord) {
+      return (
+        <p className="formpack-records__empty">
+          {t('formpackFormNoActiveRecord')}
+        </p>
+      );
+    }
+
+    if (!schema || !normalizedUiSchema || !validator) {
+      return null;
+    }
+
+    return (
+      <Suspense fallback={<p>{t('formpackLoading')}</p>}>
+        <LazyForm
+          className="formpack-form"
+          schema={schema}
+          uiSchema={normalizedUiSchema}
+          templates={formpackTemplates}
+          validator={validator}
+          formData={formData}
+          omitExtraData
+          liveOmit
+          onChange={handleFormChange}
+          onSubmit={handleFormSubmit}
+          formContext={formContext}
+          noHtml5Validate
+          showErrorList={false}
+        >
+          <div className="formpack-form__actions">
+            {renderDocxExportControls()}
+            <button
+              type="button"
+              className="app__button"
+              onClick={handleResetForm}
+            >
+              {t('formpackFormReset')}
+            </button>
+            {renderJsonExportButton()}
+          </div>
+        </LazyForm>
+      </Suspense>
+    );
+  };
+
+  const renderSnapshotsList = () => {
+    if (snapshots.length) {
+      return (
+        <ul className="formpack-snapshots__list">
+          {snapshots.map((snapshot) => (
+            <li key={snapshot.id} className="formpack-snapshots__item">
+              <div>
+                <p className="formpack-snapshots__title">
+                  {snapshot.label ?? t('formpackSnapshotUntitled')}
+                </p>
+                <p className="formpack-snapshots__meta">
+                  {t('formpackSnapshotCreatedAt', {
+                    timestamp: formatTimestamp(snapshot.createdAt),
+                  })}
+                </p>
+              </div>
+              <div className="formpack-snapshots__item-actions">
+                <button
+                  type="button"
+                  className="app__button"
+                  onClick={() => handleRestoreSnapshot(snapshot.id)}
+                  disabled={storageError === 'unavailable'}
+                >
+                  {t('formpackSnapshotRestore')}
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    const emptyMessage = isSnapshotsLoading
+      ? t('formpackSnapshotsLoading')
+      : t('formpackSnapshotsEmpty');
+    return <p className="formpack-snapshots__empty">{emptyMessage}</p>;
+  };
+
+  const renderSnapshotsContent = () => {
+    if (!activeRecord) {
+      return (
+        <p className="formpack-snapshots__empty">
+          {t('formpackSnapshotsNoRecord')}
+        </p>
+      );
+    }
+
+    return (
+      <>
+        <div className="formpack-snapshots__actions">
+          <button
+            type="button"
+            className="app__button"
+            onClick={handleCreateSnapshot}
+            disabled={storageError === 'unavailable'}
+          >
+            {t('formpackSnapshotCreate')}
+          </button>
+        </div>
+        {renderSnapshotsList()}
+      </>
+    );
+  };
+
+  const getJsonPreviewContent = () =>
+    Object.keys(formData).length ? jsonPreview : t('formpackFormPreviewEmpty');
+
+  const renderDocumentPreviewContent = () =>
+    hasDocumentContent ? (
+      <div className="formpack-document-preview">{documentPreview}</div>
+    ) : (
+      <p className="formpack-document-preview__empty">
+        {t('formpackDocumentPreviewEmpty')}
+      </p>
+    );
+
   return (
     <section className="app__card">
       <div className="app__card-header">
@@ -1256,107 +1677,13 @@ export default function FormpackDetailPage() {
               </div>
             </dl>
           </div>
-          {manifest.docx && (
-            <div className="formpack-detail__section">
-              <h3>{t('formpackDocxHeading')}</h3>
-              <dl>
-                <div>
-                  <dt>{t('formpackDocxTemplateA4')}</dt>
-                  <dd>{manifest.docx.templates.a4}</dd>
-                </div>
-                <div>
-                  <dt>{t('formpackDocxTemplateWallet')}</dt>
-                  <dd>
-                    {manifest.docx.templates.wallet
-                      ? manifest.docx.templates.wallet
-                      : t('formpackDocxTemplateWalletUnavailable')}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{t('formpackDocxMapping')}</dt>
-                  <dd>{manifest.docx.mapping}</dd>
-                </div>
-              </dl>
-            </div>
-          )}
+          {renderFormpackDocxDetails()}
         </div>
         <div className="formpack-detail__form">
           <div className="formpack-detail__section">
             <h3>{t('formpackRecordsHeading')}</h3>
-            {storageErrorMessage && (
-              <p className="app__error">{storageErrorMessage}</p>
-            )}
-            {records.length ? (
-              <>
-                <div className="formpack-records__actions">
-                  <button
-                    type="button"
-                    className="app__button"
-                    onClick={handleCreateRecord}
-                    disabled={!manifest || storageError === 'unavailable'}
-                  >
-                    {t('formpackRecordNew')}
-                  </button>
-                </div>
-                <ul className="formpack-records__list">
-                  {records.map((record) => {
-                    const isActive = activeRecord?.id === record.id;
-                    return (
-                      <li
-                        key={record.id}
-                        className={`formpack-records__item${
-                          isActive ? ' formpack-records__item--active' : ''
-                        }`}
-                      >
-                        <div>
-                          <p className="formpack-records__title">
-                            {record.title ?? t('formpackRecordUntitled')}
-                          </p>
-                          <p className="formpack-records__meta">
-                            {t('formpackRecordUpdatedAt', {
-                              timestamp: formatTimestamp(record.updatedAt),
-                            })}
-                          </p>
-                        </div>
-                        <div className="formpack-records__item-actions">
-                          <button
-                            type="button"
-                            className="app__button"
-                            onClick={() => handleLoadRecord(record.id)}
-                            disabled={storageError === 'unavailable'}
-                          >
-                            {t('formpackRecordLoad')}
-                          </button>
-                          {isActive && (
-                            <span className="formpack-records__badge">
-                              {t('formpackRecordActive')}
-                            </span>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </>
-            ) : (
-              <div>
-                <p className="formpack-records__empty">
-                  {isRecordsLoading
-                    ? t('formpackRecordsLoading')
-                    : t('formpackRecordsEmpty')}
-                </p>
-                <div className="formpack-records__actions">
-                  <button
-                    type="button"
-                    className="app__button"
-                    onClick={handleCreateRecord}
-                    disabled={!manifest || storageError === 'unavailable'}
-                  >
-                    {t('formpackRecordNew')}
-                  </button>
-                </div>
-              </div>
-            )}
+            {renderStorageErrorMessage()}
+            {renderRecordsList()}
           </div>
           <div className="formpack-detail__section">
             <h3>{t('formpackImportHeading')}</h3>
@@ -1376,11 +1703,7 @@ export default function FormpackDetailPage() {
                 onChange={handleImportFileChange}
                 aria-describedby="formpack-import-hint"
               />
-              {importFileName && (
-                <p className="formpack-import__file-name">
-                  {t('formpackImportFileName', { name: importFileName })}
-                </p>
-              )}
+              {renderImportFileName()}
             </div>
             <fieldset className="formpack-import__options">
               <legend>{t('formpackImportModeLabel')}</legend>
@@ -1405,11 +1728,7 @@ export default function FormpackDetailPage() {
                 />
                 {t('formpackImportModeOverwrite')}
               </label>
-              {!activeRecord && (
-                <p className="formpack-import__note">
-                  {t('formpackImportModeOverwriteHint')}
-                </p>
-              )}
+              {renderImportOverwriteHint()}
             </fieldset>
             <label className="formpack-import__option">
               <input
@@ -1421,10 +1740,7 @@ export default function FormpackDetailPage() {
               />
               {t('formpackImportIncludeRevisions')}
             </label>
-            {importError && <p className="app__error">{importError}</p>}
-            {importSuccess && (
-              <p className="formpack-import__success">{importSuccess}</p>
-            )}
+            {renderImportStatus()}
             <div className="formpack-import__actions">
               <button
                 type="button"
@@ -1437,187 +1753,25 @@ export default function FormpackDetailPage() {
                   isImporting
                 }
               >
-                {isImporting
-                  ? t('formpackImportInProgress')
-                  : t('formpackImportAction')}
+                {getImportButtonLabel()}
               </button>
             </div>
           </div>
           <div className="formpack-detail__section">
             <h3>{t('formpackFormHeading')}</h3>
-            {activeRecord ? (
-              schema &&
-              normalizedUiSchema &&
-              validator && (
-                <Suspense fallback={<p>{t('formpackLoading')}</p>}>
-                  <LazyForm
-                    className="formpack-form"
-                    schema={schema}
-                    uiSchema={normalizedUiSchema}
-                    templates={formpackTemplates}
-                    validator={validator}
-                    formData={formData}
-                    omitExtraData
-                    liveOmit
-                    onChange={handleFormChange}
-                    onSubmit={handleFormSubmit}
-                    formContext={formContext}
-                    noHtml5Validate
-                    showErrorList={false}
-                  >
-                    <div className="formpack-form__actions">
-                      {manifest.exports.includes('docx') &&
-                        manifest.docx &&
-                        docxTemplateOptions.length > 0 && (
-                          <div className="formpack-docx-export">
-                            <label
-                              className="formpack-docx-export__label"
-                              htmlFor="docx-template-select"
-                            >
-                              {t('formpackDocxTemplateLabel')}
-                              <select
-                                id="docx-template-select"
-                                className="formpack-docx-export__select"
-                                value={docxTemplateId}
-                                onChange={(event) =>
-                                  setDocxTemplateId(
-                                    event.target.value as DocxTemplateId,
-                                  )
-                                }
-                              >
-                                {docxTemplateOptions.map((option) => (
-                                  <option key={option.id} value={option.id}>
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <button
-                              type="button"
-                              className="app__button"
-                              onClick={handleExportDocx}
-                              data-action="docx-export"
-                              disabled={
-                                storageError === 'unavailable' ||
-                                isDocxExporting
-                              }
-                            >
-                              {isDocxExporting
-                                ? t('formpackDocxExportInProgress')
-                                : t('formpackRecordExportDocx')}
-                            </button>
-                            {docxError && (
-                              <span className="app__error">{docxError}</span>
-                            )}
-                            {docxSuccess && (
-                              <span className="formpack-docx-export__success">
-                                {docxSuccess}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      <button
-                        type="button"
-                        className="app__button"
-                        onClick={handleResetForm}
-                      >
-                        {t('formpackFormReset')}
-                      </button>
-                      {manifest.exports.includes('json') && (
-                        <button
-                          type="button"
-                          className="app__button"
-                          onClick={handleExportJson}
-                          disabled={storageError === 'unavailable'}
-                        >
-                          {t('formpackRecordExportJson')}
-                        </button>
-                      )}
-                    </div>
-                  </LazyForm>
-                </Suspense>
-              )
-            ) : (
-              <p className="formpack-records__empty">
-                {t('formpackFormNoActiveRecord')}
-              </p>
-            )}
+            {renderFormContent()}
           </div>
           <div className="formpack-detail__section">
             <h3>{t('formpackSnapshotsHeading')}</h3>
-            {activeRecord ? (
-              <>
-                <div className="formpack-snapshots__actions">
-                  <button
-                    type="button"
-                    className="app__button"
-                    onClick={handleCreateSnapshot}
-                    disabled={storageError === 'unavailable'}
-                  >
-                    {t('formpackSnapshotCreate')}
-                  </button>
-                </div>
-                {snapshots.length ? (
-                  <ul className="formpack-snapshots__list">
-                    {snapshots.map((snapshot) => (
-                      <li
-                        key={snapshot.id}
-                        className="formpack-snapshots__item"
-                      >
-                        <div>
-                          <p className="formpack-snapshots__title">
-                            {snapshot.label ?? t('formpackSnapshotUntitled')}
-                          </p>
-                          <p className="formpack-snapshots__meta">
-                            {t('formpackSnapshotCreatedAt', {
-                              timestamp: formatTimestamp(snapshot.createdAt),
-                            })}
-                          </p>
-                        </div>
-                        <div className="formpack-snapshots__item-actions">
-                          <button
-                            type="button"
-                            className="app__button"
-                            onClick={() => handleRestoreSnapshot(snapshot.id)}
-                            disabled={storageError === 'unavailable'}
-                          >
-                            {t('formpackSnapshotRestore')}
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="formpack-snapshots__empty">
-                    {isSnapshotsLoading
-                      ? t('formpackSnapshotsLoading')
-                      : t('formpackSnapshotsEmpty')}
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="formpack-snapshots__empty">
-                {t('formpackSnapshotsNoRecord')}
-              </p>
-            )}
+            {renderSnapshotsContent()}
           </div>
           <div className="formpack-detail__section">
             <h3>{t('formpackFormPreviewHeading')}</h3>
-            <pre className="formpack-preview">
-              {Object.keys(formData).length
-                ? jsonPreview
-                : t('formpackFormPreviewEmpty')}
-            </pre>
+            <pre className="formpack-preview">{getJsonPreviewContent()}</pre>
           </div>
           <div className="formpack-detail__section">
             <h3>{t('formpackDocumentPreviewHeading')}</h3>
-            {hasDocumentContent ? (
-              <div className="formpack-document-preview">{documentPreview}</div>
-            ) : (
-              <p className="formpack-document-preview__empty">
-                {t('formpackDocumentPreviewEmpty')}
-              </p>
-            )}
+            {renderDocumentPreviewContent()}
           </div>
         </div>
       </div>

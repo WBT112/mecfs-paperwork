@@ -7,6 +7,9 @@ import {
 } from '../../../src/storage/records';
 import { openStorage } from '../../../src/storage/db';
 
+const TEST_FORMPACK_ID = 'test-formpack';
+const INITIAL_TIMESTAMP = '2023-01-01T00:00:00.000Z';
+
 vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
 }));
@@ -22,7 +25,7 @@ describe('createRecord', () => {
   });
 
   it('should create a new record with the correct data', async () => {
-    const formpackId = 'test-formpack';
+    const formpackId = TEST_FORMPACK_ID;
     const locale = 'en';
     const data = { a: 1 };
     const title = 'Test Record';
@@ -80,22 +83,22 @@ describe('listRecords', () => {
 
   it('should return a sorted list of records', async () => {
     const records = [
-      { id: '1', updatedAt: '2023-01-01T00:00:00.000Z' },
+      { id: '1', updatedAt: INITIAL_TIMESTAMP },
       { id: '2', updatedAt: '2023-01-02T00:00:00.000Z' },
     ];
     mockDb.getAllFromIndex.mockResolvedValue(records);
-    const result = await listRecords('test-formpack');
+    const result = await listRecords(TEST_FORMPACK_ID);
     expect(result).toEqual([records[1], records[0]]);
     expect(mockDb.getAllFromIndex).toHaveBeenCalledWith(
       'records',
       'by_formpackId',
-      'test-formpack',
+      TEST_FORMPACK_ID,
     );
   });
 
   it('should return an empty array if no records are found', async () => {
     mockDb.getAllFromIndex.mockResolvedValue([]);
-    const result = await listRecords('test-formpack');
+    const result = await listRecords(TEST_FORMPACK_ID);
     expect(result).toEqual([]);
   });
 });
@@ -118,8 +121,8 @@ describe('updateRecord', () => {
       data: { a: 1 },
       title: 'Old Title',
       locale: 'en',
-      createdAt: '2023-01-01T00:00:00.000Z',
-      updatedAt: '2023-01-01T00:00:00.000Z',
+      createdAt: INITIAL_TIMESTAMP,
+      updatedAt: INITIAL_TIMESTAMP,
     };
     mockDb.get.mockResolvedValue(existingRecord);
 

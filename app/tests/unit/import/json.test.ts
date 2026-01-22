@@ -4,9 +4,19 @@ import {
   validateJsonImport,
 } from '../../../src/import/json';
 
-vi.mock('../../../src/formpacks/registry', () => ({
-  FORMPACK_IDS: ['my-formpack', 'another-formpack'],
+const formpackIds = vi.hoisted(() => ({
+  PRIMARY_FORMPACK_ID: 'my-formpack',
+  SECONDARY_FORMPACK_ID: 'another-formpack',
 }));
+
+vi.mock('../../../src/formpacks/registry', () => ({
+  FORMPACK_IDS: [
+    formpackIds.PRIMARY_FORMPACK_ID,
+    formpackIds.SECONDARY_FORMPACK_ID,
+  ],
+}));
+
+const { PRIMARY_FORMPACK_ID, SECONDARY_FORMPACK_ID } = formpackIds;
 
 describe('normalizeExportRevisions', () => {
   it('returns an empty array for undefined input', () => {
@@ -67,24 +77,28 @@ describe('validateJsonImport', () => {
 
   it('returns a payload for valid JSON', () => {
     const validJson = JSON.stringify({
-      formpack: { id: 'my-formpack' },
+      formpack: { id: PRIMARY_FORMPACK_ID },
       record: {
         locale: 'en',
         data: { name: 'Test' },
       },
     });
 
-    const result = validateJsonImport(validJson, mockSchema, 'my-formpack');
+    const result = validateJsonImport(
+      validJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
     expect(result.error).toBe(null);
     expect(result.payload).toBeDefined();
-    expect(result.payload?.formpack.id).toBe('my-formpack');
+    expect(result.payload?.formpack.id).toBe(PRIMARY_FORMPACK_ID);
   });
 
   it('returns an error for invalid JSON', () => {
     const result = validateJsonImport(
       '{ invalid json }',
       mockSchema,
-      'my-formpack',
+      PRIMARY_FORMPACK_ID,
     );
     expect(result.payload).toBe(null);
     expect(result.error?.code).toBe('invalid_json');
@@ -92,7 +106,7 @@ describe('validateJsonImport', () => {
 
   it('returns an error for a formpack ID mismatch', () => {
     const mismatchedJson = JSON.stringify({
-      formpack: { id: 'another-formpack' },
+      formpack: { id: SECONDARY_FORMPACK_ID },
       record: {
         locale: 'en',
         data: { name: 'Test' },
@@ -102,7 +116,7 @@ describe('validateJsonImport', () => {
     const result = validateJsonImport(
       mismatchedJson,
       mockSchema,
-      'my-formpack',
+      PRIMARY_FORMPACK_ID,
     );
     expect(result.payload).toBe(null);
     expect(result.error?.code).toBe('formpack_mismatch');
@@ -110,7 +124,7 @@ describe('validateJsonImport', () => {
 
   it('returns an error for a schema mismatch', () => {
     const schemaMismatchJson = JSON.stringify({
-      formpack: { id: 'my-formpack' },
+      formpack: { id: PRIMARY_FORMPACK_ID },
       record: {
         locale: 'en',
         data: { name: 123 },
@@ -120,7 +134,7 @@ describe('validateJsonImport', () => {
     const result = validateJsonImport(
       schemaMismatchJson,
       mockSchema,
-      'my-formpack',
+      PRIMARY_FORMPACK_ID,
     );
     expect(result.payload).toBe(null);
     expect(result.error?.code).toBe('schema_mismatch');
@@ -128,7 +142,7 @@ describe('validateJsonImport', () => {
 
   it('returns an error for an unsupported locale', () => {
     const unsupportedLocaleJson = JSON.stringify({
-      formpack: { id: 'my-formpack' },
+      formpack: { id: PRIMARY_FORMPACK_ID },
       record: {
         locale: 'xx-XX',
         data: { name: 'Test' },
@@ -138,7 +152,7 @@ describe('validateJsonImport', () => {
     const result = validateJsonImport(
       unsupportedLocaleJson,
       mockSchema,
-      'my-formpack',
+      PRIMARY_FORMPACK_ID,
     );
     expect(result.payload).toBe(null);
     expect(result.error?.code).toBe('unsupported_locale');
