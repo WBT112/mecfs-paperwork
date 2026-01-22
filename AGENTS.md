@@ -24,7 +24,8 @@ For every change that touches `app/`:
 6. `npm run test:e2e` (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)
 7. `npm run formpack:validate`
 8. `npm run build`
-9. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
+9. minimum 80% Test coverage for new code
+10. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
 
 If any step fails: fix it before finishing.
 
@@ -98,6 +99,7 @@ Do not block feature work on this unless the issue explicitly targets security t
 - Storage: IndexedDB with `records` + `revisions` (snapshots). Keep migrations explicit.
 - Export: primary DOCX (A4 + Wallet as separate downloads), plus JSON backup/import.
 - i18n: DE + EN from the start; locale stored per record and kept in exports.
+
 
 
 
