@@ -9,6 +9,7 @@ import {
   waitForRecordField,
 } from './helpers/records';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
+import { openCollapsibleSection } from './helpers/sections';
 
 type DbOptions = {
   dbName: string;
@@ -101,6 +102,14 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
+const openDraftsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
+};
+
+const openImportSection = async (page: Page) => {
+  await openCollapsibleSection(page, /import/i);
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
 
@@ -110,6 +119,7 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     return;
   }
 
+  await openDraftsSection(page);
   await waitForRecordListReady(page);
 
   // Prefer waiting for the app-created initial draft to avoid creating duplicates
@@ -168,6 +178,7 @@ for (const locale of locales) {
       await deleteDatabase(page, DB.dbName);
 
       await page.goto(`/formpacks/${FORM_PACK_ID}`);
+      await openDraftsSection(page);
       await switchLocale(page, locale);
       await clickNewDraftIfNeeded(page);
 
@@ -275,6 +286,7 @@ for (const locale of locales) {
       expect(payload.revisions).toBeUndefined();
 
       // Import the exported payload to verify the round-trip flow stays functional.
+      await openImportSection(page);
       await page
         .locator('#formpack-import-file')
         .setInputFiles(filePath as string);

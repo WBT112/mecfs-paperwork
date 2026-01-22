@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { writeFile } from 'node:fs/promises';
 import { deleteDatabase } from './helpers';
+import { openCollapsibleSection } from './helpers/sections';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
@@ -42,6 +43,7 @@ const loadFormpack = async (page: Page) => {
   });
   await deleteDatabase(page, DB_NAME);
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await openCollapsibleSection(page, /import/i);
 };
 
 const triggerImport = async (page: Page, filePath: string) => {

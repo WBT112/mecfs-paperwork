@@ -118,6 +118,35 @@ const visibilityState = vi.hoisted(() => ({
   isDevUiEnabled: true,
 }));
 
+const ARIA_EXPANDED = 'aria-expanded';
+
+const sectionLabels = {
+  records: 'formpackRecordsHeading',
+  import: 'formpackImportHeading',
+  snapshots: 'formpackSnapshotsHeading',
+  documentPreview: 'formpackDocumentPreviewHeading',
+};
+
+const openSection = async (label: string) => {
+  const toggle = await screen.findByRole('button', { name: label });
+  if (toggle.getAttribute(ARIA_EXPANDED) !== 'true') {
+    await userEvent.click(toggle);
+  }
+  return toggle;
+};
+
+const openImportSection = async () => {
+  await openSection(sectionLabels.import);
+};
+
+const openSnapshotsSection = async () => {
+  await openSection(sectionLabels.snapshots);
+};
+
+const openRecordsSection = async () => {
+  await openSection(sectionLabels.records);
+};
+
 const storageImportState = vi.hoisted(() => ({
   importRecordWithSnapshots: vi.fn(),
 }));
@@ -501,6 +530,36 @@ describe('FormpackDetailPage', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('defaults to collapsed drafts, import, and history with preview expanded', async () => {
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const recordsToggle = await screen.findByRole('button', {
+      name: sectionLabels.records,
+    });
+    const importToggle = await screen.findByRole('button', {
+      name: sectionLabels.import,
+    });
+    const snapshotsToggle = await screen.findByRole('button', {
+      name: sectionLabels.snapshots,
+    });
+    const previewToggle = await screen.findByRole('button', {
+      name: sectionLabels.documentPreview,
+    });
+
+    expect(recordsToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
+    expect(importToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
+    expect(snapshotsToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
+    expect(previewToggle).toHaveAttribute(ARIA_EXPANDED, 'true');
+
+    expect(screen.getByLabelText('formpackImportLabel')).not.toBeVisible();
+  });
+
   it('shows success after DOCX export completes', async () => {
     const report = new Blob(['docx']);
     vi.mocked(exportDocx).mockResolvedValue(report);
@@ -575,6 +634,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -647,6 +707,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -724,6 +785,7 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
+    await openImportSection();
     const input = await screen.findByLabelText('formpackImportLabel');
     fireEvent.change(input, { target: { files: [] } });
 
@@ -750,6 +812,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -781,6 +844,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -816,6 +880,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -858,6 +923,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -911,6 +977,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -969,6 +1036,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -1028,6 +1096,7 @@ describe('FormpackDetailPage', () => {
         await screen.findByText('formpackDocxExportSuccess'),
       ).toBeInTheDocument();
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -1066,6 +1135,7 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
+    await openSnapshotsSection();
     await userEvent.click(await screen.findByText('formpackSnapshotRestore'));
 
     await waitFor(() =>
@@ -1094,6 +1164,7 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
+    await openRecordsSection();
     const loadButtons = await screen.findAllByText('formpackRecordLoad');
     await userEvent.click(loadButtons[1]);
 
@@ -1192,6 +1263,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,
@@ -1246,6 +1318,7 @@ describe('FormpackDetailPage', () => {
         </MemoryRouter>,
       );
 
+      await openImportSection();
       await userEvent.upload(
         await screen.findByLabelText('formpackImportLabel'),
         file,

@@ -3,6 +3,7 @@ import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
 import { fillTextInputStable } from './helpers/form';
 import { switchLocale } from './helpers/locale';
+import { openCollapsibleSection } from './helpers/sections';
 
 type DbOptions = {
   dbName: string;
@@ -49,12 +50,21 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
+const openDraftsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
+};
+
+const openSnapshotsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /verlauf|history/i);
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   if (await nameInput.isVisible()) {
     return;
   }
 
+  await openDraftsSection(page);
   await waitForRecordListReady(page);
   const newDraftButton = page.getByRole('button', {
     name: /new\s*draft|neuer\s*entwurf/i,
@@ -72,6 +82,7 @@ const clickNewDraftIfNeeded = async (page: Page) => {
 };
 
 const createSnapshot = async (page: Page) => {
+  await openSnapshotsSection(page);
   const createButton = page.getByRole('button', {
     name: /create\s*snapshot|snapshot\s*erstellen|momentaufnahme/i,
   });
@@ -87,6 +98,7 @@ const createSnapshot = async (page: Page) => {
 };
 
 const restoreFirstSnapshot = async (page: Page) => {
+  await openSnapshotsSection(page);
   const snapshotItem = page.locator('.formpack-snapshots__item').first();
   await expect(snapshotItem).toBeVisible({ timeout: POLL_TIMEOUT });
   const restoreButton = snapshotItem.getByRole('button', {
@@ -115,6 +127,7 @@ test.describe('offline-first extensions', () => {
     await deleteDatabase(page, DB.dbName);
 
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await openDraftsSection(page);
     await clickNewDraftIfNeeded(page);
     await fillTextInputStable(
       page,
@@ -146,6 +159,7 @@ test.describe('offline-first extensions', () => {
     await deleteDatabase(page, DB.dbName);
 
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await openDraftsSection(page);
     await clickNewDraftIfNeeded(page);
 
     const nameInput = page.locator('#root_person_name');
@@ -184,6 +198,7 @@ test.describe('offline-first extensions', () => {
     await deleteDatabase(page, DB.dbName);
 
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await openDraftsSection(page);
     await context.setOffline(true);
     await switchLocale(page, 'en');
     await switchLocale(page, 'de');

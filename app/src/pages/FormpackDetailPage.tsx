@@ -49,6 +49,7 @@ import {
 } from '../storage/hooks';
 import { importRecordWithSnapshots } from '../storage/import';
 import type { RecordEntry } from '../storage/types';
+import CollapsibleSection from '../components/CollapsibleSection';
 import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
@@ -1687,13 +1688,19 @@ export default function FormpackDetailPage() {
           )}
         </div>
         <div className="formpack-detail__form">
-          <div className="formpack-detail__section">
-            <h3>{t('formpackRecordsHeading')}</h3>
+          <CollapsibleSection
+            id="formpack-records"
+            title={t('formpackRecordsHeading')}
+            className="formpack-detail__section"
+          >
             {renderStorageErrorMessage()}
             {renderRecordsList()}
-          </div>
-          <div className="formpack-detail__section">
-            <h3>{t('formpackImportHeading')}</h3>
+          </CollapsibleSection>
+          <CollapsibleSection
+            id="formpack-import"
+            title={t('formpackImportHeading')}
+            className="formpack-detail__section"
+          >
             <p className="formpack-import__hint" id="formpack-import-hint">
               {t('formpackImportHint')}
             </p>
@@ -1763,25 +1770,32 @@ export default function FormpackDetailPage() {
                 {getImportButtonLabel()}
               </button>
             </div>
-          </div>
+          </CollapsibleSection>
           <div className="formpack-detail__section">
             <h3>{t('formpackFormHeading')}</h3>
             {renderFormContent()}
           </div>
-          <div className="formpack-detail__section">
-            <h3>{t('formpackSnapshotsHeading')}</h3>
+          <CollapsibleSection
+            id="formpack-snapshots"
+            title={t('formpackSnapshotsHeading')}
+            className="formpack-detail__section"
+          >
             {renderSnapshotsContent()}
-          </div>
+          </CollapsibleSection>
           {showDevSections && (
             <div className="formpack-detail__section">
               <h3>{t('formpackFormPreviewHeading')}</h3>
               <pre className="formpack-preview">{getJsonPreviewContent()}</pre>
             </div>
           )}
-          <div className="formpack-detail__section">
-            <h3>{t('formpackDocumentPreviewHeading')}</h3>
+          <CollapsibleSection
+            id="formpack-document-preview"
+            title={t('formpackDocumentPreviewHeading')}
+            className="formpack-detail__section"
+            defaultOpen
+          >
             {renderDocumentPreviewContent()}
-          </div>
+          </CollapsibleSection>
         </div>
       </div>
     </section>

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
+import { openCollapsibleSection } from './helpers/sections';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
@@ -17,12 +18,17 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
+const openDraftsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   if (await nameInput.isVisible()) {
     return;
   }
 
+  await openDraftsSection(page);
   await waitForRecordListReady(page);
   const newDraftButton = page.getByRole('button', {
     name: /new\s*draft|neuer\s*entwurf/i,
@@ -49,6 +55,7 @@ test('json export followed by docx export re-enables actions', async ({
   await deleteDatabase(page, DB_NAME);
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await openDraftsSection(page);
   await clickNewDraftIfNeeded(page);
 
   await page.locator('#root_person_name').fill('Export Regression');
