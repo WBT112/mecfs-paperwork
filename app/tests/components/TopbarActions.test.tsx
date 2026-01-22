@@ -4,6 +4,9 @@ import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import TopbarActions from '../../src/components/TopbarActions';
 
+const SHARE_LINK_LABEL = 'Share formpack link';
+const TEST_FORMPACK_PATH = '/formpacks/alpha';
+
 const translations: Record<string, string> = {
   topbarActionsLabel: 'Top bar actions',
   feedbackAction: 'Feedback',
@@ -18,7 +21,7 @@ const translations: Record<string, string> = {
   'feedbackField.mode': 'Mode',
   'feedbackField.path': 'Path',
   shareAction: 'Share',
-  shareAriaLabel: 'Share formpack link',
+  shareAriaLabel: SHARE_LINK_LABEL,
   shareTitle: 'Share formpack',
   shareText: 'Link to the formpack',
   shareFallbackTitle: 'Share this link',
@@ -61,7 +64,7 @@ afterEach(() => {
 
 describe('TopbarActions', () => {
   it('renders a feedback mailto link with the current path', () => {
-    renderActions('/formpacks/alpha');
+    renderActions(TEST_FORMPACK_PATH);
 
     const feedbackLink = screen.getByRole('link', {
       name: 'Send feedback via email',
@@ -72,9 +75,9 @@ describe('TopbarActions', () => {
     const query = href?.split('?')[1] ?? '';
     const params = new URLSearchParams(query);
     expect(params.get('subject')).toBe(
-      'mecfs-paperwork feedback: /formpacks/alpha',
+      `mecfs-paperwork feedback: ${TEST_FORMPACK_PATH}`,
     );
-    expect(params.get('body')).toContain('Path: /formpacks/alpha');
+    expect(params.get('body')).toContain(`Path: ${TEST_FORMPACK_PATH}`);
   });
 
   it('uses the Web Share API when available', async () => {
@@ -85,18 +88,16 @@ describe('TopbarActions', () => {
     });
 
     const user = userEvent.setup();
-    renderActions('/formpacks/alpha');
+    renderActions(TEST_FORMPACK_PATH);
     const origin = window.location.origin;
 
-    await user.click(
-      screen.getByRole('button', { name: 'Share formpack link' }),
-    );
+    await user.click(screen.getByRole('button', { name: SHARE_LINK_LABEL }));
 
     await waitFor(() => {
       expect(shareMock).toHaveBeenCalledWith({
         title: 'Share formpack',
         text: 'Link to the formpack',
-        url: `${origin}/formpacks/alpha`,
+        url: `${origin}${TEST_FORMPACK_PATH}`,
       });
     });
   });
@@ -112,16 +113,14 @@ describe('TopbarActions', () => {
     });
 
     const user = userEvent.setup();
-    renderActions('/formpacks/alpha');
+    renderActions(TEST_FORMPACK_PATH);
     const origin = window.location.origin;
 
-    await user.click(
-      screen.getByRole('button', { name: 'Share formpack link' }),
-    );
+    await user.click(screen.getByRole('button', { name: SHARE_LINK_LABEL }));
 
     expect(screen.getByText('Link copied')).toBeInTheDocument();
     expect(
-      screen.getByDisplayValue(`${origin}/formpacks/alpha`),
+      screen.getByDisplayValue(`${origin}${TEST_FORMPACK_PATH}`),
     ).toBeInTheDocument();
   });
 });

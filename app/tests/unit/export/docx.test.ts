@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildDocxExportFilename } from '../../../src/export/docx';
 
+const DEFAULT_DOCX_FILENAME = 'document-a4-20231027.docx';
+
 describe('buildDocxExportFilename', () => {
   const testDate = new Date('2023-10-27T10:00:00Z');
 
@@ -17,7 +19,7 @@ describe('buildDocxExportFilename', () => {
 
     // Fallback for formpackId that sanitizes to an empty string
     expect(buildDocxExportFilename(' :/\\*?"<>|_ ', 'a4', testDate)).toBe(
-      'document-a4-20231027.docx',
+      DEFAULT_DOCX_FILENAME,
     );
 
     // Correctly removes leading/trailing hyphens that result from sanitization
@@ -34,10 +36,10 @@ describe('buildDocxExportFilename', () => {
 
     // Handles null/undefined-like inputs gracefully despite TS types
     expect(buildDocxExportFilename(null as any, 'a4', testDate)).toBe(
-      'document-a4-20231027.docx',
+      DEFAULT_DOCX_FILENAME,
     );
     expect(buildDocxExportFilename(undefined as any, 'a4', testDate)).toBe(
-      'document-a4-20231027.docx',
+      DEFAULT_DOCX_FILENAME,
     );
   });
 });

@@ -4,6 +4,8 @@ import {
   type JsonExportPayload,
 } from '../../../src/export/json';
 
+const TEST_TIMESTAMP = '2023-10-27T10:00:00Z';
+
 describe('buildJsonExportFilename', () => {
   it('should generate a correctly formatted and sanitized filename', () => {
     const payload: JsonExportPayload = {
@@ -12,12 +14,12 @@ describe('buildJsonExportFilename', () => {
       record: {
         id: 'record-abc-123',
         name: '  My/Test\\Record Name  ',
-        updatedAt: '2023-10-27T10:00:00Z',
+        updatedAt: TEST_TIMESTAMP,
         locale: 'en',
         data: {},
       },
       locale: 'de',
-      exportedAt: '2023-10-27T10:00:00Z',
+      exportedAt: TEST_TIMESTAMP,
       data: {},
     };
 
@@ -33,12 +35,12 @@ describe('buildJsonExportFilename', () => {
       formpack: { id: 'test-formpack', version: '1.1.0' },
       record: {
         id: 'record-abc-123',
-        updatedAt: '2023-10-27T10:00:00Z',
+        updatedAt: TEST_TIMESTAMP,
         locale: 'en',
         data: {},
       },
       locale: 'de',
-      exportedAt: '2023-10-27T10:00:00Z',
+      exportedAt: TEST_TIMESTAMP,
       data: {},
     };
 

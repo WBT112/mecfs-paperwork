@@ -4,6 +4,7 @@ import { buildDocumentModel } from '../../src/formpacks/documentModel';
 import enTranslations from '../../../formpacks/notfallpass/i18n/en.json';
 
 const namespace = 'formpack:notfallpass';
+const ME_CFS_PARAGRAPH_KEY = 'notfallpass.export.diagnoses.meCfs.paragraph';
 
 describe('buildDocumentModel', () => {
   beforeAll(() => {
@@ -23,7 +24,7 @@ describe('buildDocumentModel', () => {
       diagnoses: { meCfs: true },
     });
     expect(result.diagnosisParagraphs).toEqual([
-      enTranslations['notfallpass.export.diagnoses.meCfs.paragraph'],
+      enTranslations[ME_CFS_PARAGRAPH_KEY],
     ]);
   });
 
@@ -32,7 +33,7 @@ describe('buildDocumentModel', () => {
       diagnoses: { meCfs: true, pots: true },
     });
     expect(result.diagnosisParagraphs).toEqual([
-      enTranslations['notfallpass.export.diagnoses.meCfs.paragraph'],
+      enTranslations[ME_CFS_PARAGRAPH_KEY],
       enTranslations['notfallpass.export.diagnoses.pots.paragraph'],
     ]);
   });
@@ -49,7 +50,7 @@ describe('buildDocumentModel', () => {
       diagnoses: { meCfs: true, longCovid: true },
     });
     expect(result.diagnosisParagraphs).toEqual([
-      enTranslations['notfallpass.export.diagnoses.meCfs.paragraph'],
+      enTranslations[ME_CFS_PARAGRAPH_KEY],
       enTranslations['notfallpass.export.diagnoses.longCovid.paragraph'],
     ]);
   });

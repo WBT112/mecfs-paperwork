@@ -2,6 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { importRecordWithSnapshots } from '../../../src/storage/import';
 import { openStorage } from '../../../src/storage/db';
 
+const TEST_FORMPACK_ID = 'test-formpack';
+const EXISTING_RECORD_ID = 'existing-id';
+
 vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
 }));
@@ -40,7 +43,7 @@ describe('importRecordWithSnapshots', () => {
 
   it('should create a new record when mode is "new"', async () => {
     const options = {
-      formpackId: 'test-formpack',
+      formpackId: TEST_FORMPACK_ID,
       data: { a: 1 },
       locale: 'en' as const,
       title: 'Test Record',
@@ -51,17 +54,17 @@ describe('importRecordWithSnapshots', () => {
 
     expect(recordStore.add).toHaveBeenCalledWith(
       expect.objectContaining({
-        formpackId: 'test-formpack',
+        formpackId: TEST_FORMPACK_ID,
         title: 'Test Record',
       }),
     );
-    expect(result.formpackId).toBe('test-formpack');
+    expect(result.formpackId).toBe(TEST_FORMPACK_ID);
   });
 
   it('should overwrite an existing record when mode is "overwrite"', async () => {
     const existingRecord = {
-      id: 'existing-id',
-      formpackId: 'test-formpack',
+      id: EXISTING_RECORD_ID,
+      formpackId: TEST_FORMPACK_ID,
       title: 'Old Title',
       locale: 'en',
       data: { a: 0 },
@@ -71,19 +74,19 @@ describe('importRecordWithSnapshots', () => {
     recordStore.get.mockResolvedValue(existingRecord);
 
     const options = {
-      formpackId: 'test-formpack',
+      formpackId: TEST_FORMPACK_ID,
       data: { a: 2 },
       locale: 'de' as const,
       title: 'New Title',
       mode: 'overwrite' as const,
-      recordId: 'existing-id',
+      recordId: EXISTING_RECORD_ID,
     };
 
     await importRecordWithSnapshots(options);
 
     expect(recordStore.put).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: 'existing-id',
+        id: EXISTING_RECORD_ID,
         title: 'New Title',
         locale: 'de',
         data: { a: 2 },
@@ -93,7 +96,7 @@ describe('importRecordWithSnapshots', () => {
 
   it('throws an error for overwrite mode if recordId is missing', async () => {
     const options = {
-      formpackId: 'test-formpack',
+      formpackId: TEST_FORMPACK_ID,
       data: { a: 1 },
       locale: 'en' as const,
       mode: 'overwrite' as const,
@@ -108,7 +111,7 @@ describe('importRecordWithSnapshots', () => {
     recordStore.get.mockResolvedValue(undefined);
 
     const options = {
-      formpackId: 'test-formpack',
+      formpackId: TEST_FORMPACK_ID,
       data: { a: 1 },
       locale: 'en' as const,
       mode: 'overwrite' as const,
@@ -122,7 +125,7 @@ describe('importRecordWithSnapshots', () => {
 
   it('should import revisions for a new record', async () => {
     const options = {
-      formpackId: 'test-formpack',
+      formpackId: TEST_FORMPACK_ID,
       data: { a: 1 },
       locale: 'en' as const,
       mode: 'new' as const,
