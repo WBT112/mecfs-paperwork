@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import MarkdownRenderer from '../../src/components/Markdown/MarkdownRenderer';
 
+const EXTERNAL_LINK_REL = 'noreferrer noopener';
+
 describe('MarkdownRenderer', () => {
   it('renders simple markdown correctly', () => {
     render(<MarkdownRenderer content="# Hello" />);
@@ -15,7 +17,7 @@ describe('MarkdownRenderer', () => {
     const link = screen.getByRole('link', { name: 'External' });
     expect(link).toHaveAttribute('href', 'https://example.com');
     expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noreferrer noopener');
+    expect(link).toHaveAttribute('rel', EXTERNAL_LINK_REL);
   });
 
   it('renders internal links without target=_blank', () => {
@@ -56,7 +58,7 @@ describe('MarkdownRenderer', () => {
     const link = screen.getByRole('link', { name: 'Contact' });
     expect(link).toHaveAttribute('href', 'mailto:test@example.com');
     expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noreferrer noopener');
+    expect(link).toHaveAttribute('rel', EXTERNAL_LINK_REL);
   });
 
   it('renders protocol-relative URLs as external links', () => {
@@ -64,6 +66,6 @@ describe('MarkdownRenderer', () => {
     const link = screen.getByRole('link', { name: 'Proto Rel' });
     expect(link).toHaveAttribute('href', '//example.com');
     expect(link).toHaveAttribute('target', '_blank');
-    expect(link).toHaveAttribute('rel', 'noreferrer noopener');
+    expect(link).toHaveAttribute('rel', EXTERNAL_LINK_REL);
   });
 });

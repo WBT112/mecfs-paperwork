@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { buildDocxExportFilename } from '../../src/export/docx';
 
+const DEFAULT_FILENAME = 'document-my-template-20231120.docx';
+
 describe('buildDocxExportFilename', () => {
   it('sanitizes special characters from formpack and template IDs', () => {
     const formpackId = 'formpack/123?';
@@ -23,7 +25,7 @@ describe('buildDocxExportFilename', () => {
       templateId as any,
       date,
     );
-    expect(filename).toBe('document-my-template-20231120.docx');
+    expect(filename).toBe(DEFAULT_FILENAME);
   });
 
   it('handles null and undefined formpackId', () => {
@@ -39,7 +41,7 @@ describe('buildDocxExportFilename', () => {
       templateId as any,
       date,
     );
-    expect(filenameNull).toBe('document-my-template-20231120.docx');
-    expect(filenameUndefined).toBe('document-my-template-20231120.docx');
+    expect(filenameNull).toBe(DEFAULT_FILENAME);
+    expect(filenameUndefined).toBe(DEFAULT_FILENAME);
   });
 });

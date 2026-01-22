@@ -198,102 +198,171 @@ const applySchemaDefaults = (
   return normalized;
 };
 
-const normalizeExportPayload = (
-  payload: Record<string, unknown>,
-  schema: RJSFSchema,
-  expectedFormpackId: string,
-): ImportValidationResult => {
-  const app = payload.app;
-  const formpack = payload.formpack;
-  const record = payload.record;
+type ValidationOutcome<T> =
+  | { ok: true; value: T }
+  | { ok: false; error: ImportErrorCode };
 
-  if (app !== undefined) {
-    if (!isRecord(app) || typeof app.id !== 'string') {
-      return { payload: null, error: { code: 'invalid_payload' } };
-    }
+const getInvalidResult = (code: ImportErrorCode): ImportValidationResult => ({
+  payload: null,
+  error: { code },
+});
+
+const validateAppMetadata = (
+  app: unknown,
+): ValidationOutcome<ImportAppMetadata | undefined> => {
+  if (app === undefined) {
+    return { ok: true, value: undefined };
   }
 
+  if (!isRecord(app) || typeof app.id !== 'string') {
+    return { ok: false, error: 'invalid_payload' };
+  }
+
+  return { ok: true, value: app as ImportAppMetadata };
+};
+
+const validateFormpackMetadata = (
+  formpack: unknown,
+  expectedFormpackId: string,
+): ValidationOutcome<ImportFormpackMetadata> => {
   if (!isRecord(formpack) || typeof formpack.id !== 'string') {
-    return { payload: null, error: { code: 'invalid_payload' } };
+    return { ok: false, error: 'invalid_payload' };
   }
 
   if (!FORMPACK_IDS.includes(formpack.id as (typeof FORMPACK_IDS)[number])) {
-    return { payload: null, error: { code: 'unknown_formpack' } };
+    return { ok: false, error: 'unknown_formpack' };
   }
 
   if (formpack.id !== expectedFormpackId) {
-    return { payload: null, error: { code: 'formpack_mismatch' } };
+    return { ok: false, error: 'formpack_mismatch' };
   }
 
+  return { ok: true, value: formpack as ImportFormpackMetadata };
+};
+
+const resolveRecordData = (
+  payload: Record<string, unknown>,
+  record: unknown,
+): ValidationOutcome<Record<string, unknown>> => {
   let recordData: unknown = payload.data;
   if (recordData === undefined && isRecord(record) && 'data' in record) {
     recordData = record.data;
   }
 
-  if (recordData === undefined || recordData === null) {
-    return { payload: null, error: { code: 'invalid_payload' } };
-  }
-
   if (!isRecord(recordData)) {
-    return { payload: null, error: { code: 'invalid_payload' } };
+    return { ok: false, error: 'invalid_payload' };
   }
 
+  return { ok: true, value: recordData };
+};
+
+const resolveLocale = (
+  payload: Record<string, unknown>,
+  record: unknown,
+): ValidationOutcome<SupportedLocale> => {
   let localeValue: unknown = payload.locale;
   if (localeValue === undefined && isRecord(record) && 'locale' in record) {
     localeValue = record.locale;
   }
 
   if (localeValue === undefined) {
-    return { payload: null, error: { code: 'invalid_payload' } };
+    return { ok: false, error: 'invalid_payload' };
   }
 
   if (typeof localeValue !== 'string' || !isSupportedLocale(localeValue)) {
-    return { payload: null, error: { code: 'unsupported_locale' } };
+    return { ok: false, error: 'unsupported_locale' };
+  }
+
+  return { ok: true, value: localeValue };
+};
+
+const resolveRecordTitle = (
+  record: unknown,
+): ValidationOutcome<string | undefined> => {
+  if (record === undefined) {
+    return { ok: true, value: undefined };
+  }
+
+  if (!isRecord(record)) {
+    return { ok: false, error: 'invalid_payload' };
+  }
+
+  if (record.title !== undefined && typeof record.title !== 'string') {
+    return { ok: false, error: 'invalid_payload' };
+  }
+
+  if (record.name !== undefined && typeof record.name !== 'string') {
+    return { ok: false, error: 'invalid_payload' };
+  }
+
+  return {
+    ok: true,
+    value:
+      (record.title as string | undefined) ??
+      (record.name as string | undefined),
+  };
+};
+
+const normalizeExportPayload = (
+  payload: Record<string, unknown>,
+  schema: RJSFSchema,
+  expectedFormpackId: string,
+): ImportValidationResult => {
+  const appResult = validateAppMetadata(payload.app);
+  if (!appResult.ok) {
+    return getInvalidResult(appResult.error);
+  }
+
+  const formpackResult = validateFormpackMetadata(
+    payload.formpack,
+    expectedFormpackId,
+  );
+  if (!formpackResult.ok) {
+    return getInvalidResult(formpackResult.error);
+  }
+
+  const record = payload.record;
+  const recordDataResult = resolveRecordData(payload, record);
+  if (!recordDataResult.ok) {
+    return getInvalidResult(recordDataResult.error);
+  }
+
+  const localeResult = resolveLocale(payload, record);
+  if (!localeResult.ok) {
+    return getInvalidResult(localeResult.error);
   }
 
   void payload.createdAt;
   void payload.exportedAt;
 
-  let recordTitle: string | undefined;
-  if (record !== undefined) {
-    if (!isRecord(record)) {
-      return { payload: null, error: { code: 'invalid_payload' } };
-    }
-
-    if (record.title !== undefined && typeof record.title !== 'string') {
-      return { payload: null, error: { code: 'invalid_payload' } };
-    }
-
-    if (record.name !== undefined && typeof record.name !== 'string') {
-      return { payload: null, error: { code: 'invalid_payload' } };
-    }
-
-    recordTitle =
-      (record.title as string | undefined) ??
-      (record.name as string | undefined);
+  const recordTitleResult = resolveRecordTitle(record);
+  if (!recordTitleResult.ok) {
+    return getInvalidResult(recordTitleResult.error);
   }
 
   const revisions = normalizeExportRevisions(payload.revisions);
   if (revisions === 'invalid_revisions') {
-    return { payload: null, error: { code: 'invalid_revisions' } };
+    return getInvalidResult('invalid_revisions');
   }
 
-  const normalizedData = applySchemaDefaults(schema, recordData);
+  const normalizedData = applySchemaDefaults(schema, recordDataResult.value);
   const isValid = validateSchema(schema, normalizedData);
   if (!isValid) {
-    return { payload: null, error: { code: 'schema_mismatch' } };
+    return getInvalidResult('schema_mismatch');
   }
 
   const normalizedPayload: JsonImportPayload = migrateExport({
     version: 1,
     formpack: {
-      id: formpack.id,
+      id: formpackResult.value.id,
       version:
-        typeof formpack.version === 'string' ? formpack.version : undefined,
+        typeof formpackResult.value.version === 'string'
+          ? formpackResult.value.version
+          : undefined,
     },
     record: {
-      title: recordTitle,
-      locale: localeValue,
+      title: recordTitleResult.value,
+      locale: localeResult.value,
       data: normalizedData as Record<string, unknown>,
     },
     revisions,
