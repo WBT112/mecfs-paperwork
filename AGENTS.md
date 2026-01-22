@@ -1,4 +1,4 @@
-# mecfs-paperwork — Agent Guide (Codex)
+# mecfs-paperwork — Agent Guide
 
 Codex reads this file before doing any work. Follow it as the default standard for this repository.
 
@@ -98,6 +98,7 @@ Do not block feature work on this unless the issue explicitly targets security t
 - Storage: IndexedDB with `records` + `revisions` (snapshots). Keep migrations explicit.
 - Export: primary DOCX (A4 + Wallet as separate downloads), plus JSON backup/import.
 - i18n: DE + EN from the start; locale stored per record and kept in exports.
+
 
 
 
