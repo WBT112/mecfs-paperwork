@@ -3,3 +3,6 @@
 mecfs-paperwork.de {
   reverse_proxy web:8080
 }
+www.mecfs-paperwork.de {
+  reverse_proxy web:8080
+}
