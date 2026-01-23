@@ -64,7 +64,11 @@ export const useTheme = (): ThemeState => {
 
     if (typeof legacyMediaQuery.addListener === 'function') {
       legacyMediaQuery.addListener(handleChange);
-      return () => legacyMediaQuery.removeListener?.(handleChange);
+      return () => {
+        if (typeof legacyMediaQuery.removeListener === 'function') {
+          legacyMediaQuery.removeListener(handleChange);
+        }
+      };
     }
   }, [themeMode]);
 

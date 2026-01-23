@@ -73,14 +73,14 @@ jobs:
         if: steps.check-secrets.outputs.available == 'true'
         run: docker build -t mecfs-paperwork:${{ github.sha }} .
 
-      - name: Trivy image scan (HIGH/CRITICAL)
+      - name: Trivy image scan (MEDIUM/HIGH/CRITICAL)
         if: steps.check-secrets.outputs.available == 'true'
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: mecfs-paperwork:${{ github.sha }}
           ignore-unfixed: true
           vuln-type: os,library
-          severity: HIGH,CRITICAL
+          severity: MEDIUM,HIGH,CRITICAL
           format: sarif
           output: trivy-image.sarif
           exit-code: 1
@@ -100,14 +100,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Trivy FS scan (HIGH/CRITICAL)
+      - name: Trivy FS scan (MEDIUM/HIGH/CRITICAL)
         uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: fs
           scan-ref: .
           ignore-unfixed: true
           vuln-type: os,library
-          severity: HIGH,CRITICAL
+          severity: MEDIUM,HIGH,CRITICAL
           format: sarif
           output: trivy-fs.sarif
           exit-code: 1

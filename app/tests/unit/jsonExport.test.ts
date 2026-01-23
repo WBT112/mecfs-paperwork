@@ -63,12 +63,13 @@ describe('buildJsonExportPayload', () => {
     });
 
     const payloadData = payload.data as { person?: { birthDate?: string } };
-    const revisionData = payload.revisions?.[0].data as {
+    const payloadRevisions = payload.revisions as Array<{ data: unknown }>;
+    const revisionData = payloadRevisions[0].data as {
       person?: { birthDate?: string };
     };
 
     expect(payloadData.person?.birthDate).toBe(NORMALIZED_BIRTHDATE);
-    expect(revisionData?.person?.birthDate).toBe(NORMALIZED_BIRTHDATE);
+    expect(revisionData.person?.birthDate).toBe(NORMALIZED_BIRTHDATE);
   });
 
   it('normalizes date values in arrays and allOf schemas', () => {

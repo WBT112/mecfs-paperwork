@@ -11,18 +11,21 @@ import {
 
 const initialLocale = getStoredLocale() ?? defaultLocale;
 
-i18n.use(initReactI18next).init({
-  resources: {
-    de: { app: de },
-    en: { app: en },
-  },
-  lng: initialLocale,
-  fallbackLng: fallbackLocale,
-  supportedLngs: supportedLocales,
-  defaultNS: 'app',
-  interpolation: {
-    escapeValue: false,
-  },
-});
+i18n
+  .use(initReactI18next)
+  .init({
+    resources: {
+      de: { app: de },
+      en: { app: en },
+    },
+    lng: initialLocale,
+    fallbackLng: fallbackLocale,
+    supportedLngs: supportedLocales,
+    defaultNS: 'app',
+    interpolation: {
+      escapeValue: false,
+    },
+  })
+  .catch(() => undefined);
 
 export default i18n;

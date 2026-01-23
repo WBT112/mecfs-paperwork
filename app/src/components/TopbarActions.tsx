@@ -11,12 +11,23 @@ type ShareFallbackState = {
   copied: boolean;
 };
 
+const getClipboard = (): Clipboard | null =>
+  'clipboard' in navigator ? navigator.clipboard : null;
+
+const getShare = ():
+  | ((data: { title: string; text: string; url: string }) => Promise<void>)
+  | null =>
+  typeof navigator.share === 'function'
+    ? navigator.share.bind(navigator)
+    : null;
+
 const tryCopyShareUrl = async (url: string): Promise<boolean> => {
-  if (!navigator.clipboard?.writeText) {
+  const clipboard = getClipboard();
+  if (!clipboard) {
     return false;
   }
   try {
-    await navigator.clipboard.writeText(url);
+    await clipboard.writeText(url);
     return true;
   } catch {
     return false;
@@ -28,11 +39,12 @@ const tryNativeShare = async (
   title: string,
   text: string,
 ): Promise<boolean> => {
-  if (!navigator.share) {
+  const share = getShare();
+  if (!share) {
     return false;
   }
   try {
-    await navigator.share({ title, text, url });
+    await share({ title, text, url });
     return true;
   } catch {
     return false;

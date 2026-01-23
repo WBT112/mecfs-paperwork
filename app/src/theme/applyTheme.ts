@@ -2,12 +2,18 @@ import type { ResolvedTheme, ThemeMode } from './theme';
 
 const systemThemeQuery = '(prefers-color-scheme: dark)';
 
+const getMatchMedia = (): ((query: string) => MediaQueryList) | null => {
+  const { matchMedia } = window as Partial<Window>;
+  return matchMedia ? matchMedia.bind(window) : null;
+};
+
 export const getSystemTheme = (): ResolvedTheme => {
-  if (typeof window === 'undefined' || !window.matchMedia) {
+  const matchMedia = getMatchMedia();
+  if (!matchMedia) {
     return 'dark';
   }
 
-  return window.matchMedia(systemThemeQuery).matches ? 'dark' : 'light';
+  return matchMedia(systemThemeQuery).matches ? 'dark' : 'light';
 };
 
 export const resolveTheme = (mode: ThemeMode): ResolvedTheme =>
@@ -24,9 +30,6 @@ export const applyTheme = (mode: ThemeMode): ResolvedTheme => {
 };
 
 export const getThemeMediaQuery = (): MediaQueryList | null => {
-  if (typeof window === 'undefined' || !window.matchMedia) {
-    return null;
-  }
-
-  return window.matchMedia(systemThemeQuery);
+  const matchMedia = getMatchMedia();
+  return matchMedia ? matchMedia(systemThemeQuery) : null;
 };

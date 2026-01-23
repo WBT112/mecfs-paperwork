@@ -5,7 +5,8 @@ import type { FormpackManifest } from '../formpacks/types';
 import type { RecordEntry, SnapshotEntry } from '../storage/types';
 
 const APP_ID = 'mecfs-paperwork';
-const APP_VERSION = appPackage.version ?? '0.0.0';
+const { version: appVersion } = appPackage as { version?: string };
+const APP_VERSION = appVersion ?? '0.0.0';
 
 export type JsonExportRevision = {
   id: string;

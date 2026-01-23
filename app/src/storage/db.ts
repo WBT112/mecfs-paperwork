@@ -36,8 +36,7 @@ export class StorageUnavailableError extends Error {
   }
 }
 
-const isIndexedDbAvailable = (): boolean =>
-  typeof indexedDB !== 'undefined' && indexedDB !== null;
+const isIndexedDbAvailable = (): boolean => typeof indexedDB !== 'undefined';
 
 /**
  * Opens the IndexedDB connection for the app.

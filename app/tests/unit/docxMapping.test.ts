@@ -66,7 +66,11 @@ describe('mapDocumentDataToTemplate', () => {
       diagnosisParagraphs: ['Example paragraph'],
     });
     // NEW: Option A uses nested "t" object
-    const t = (context as any).t;
+    const { t } = context as {
+      t?: {
+        notfallpass?: { section?: { contacts?: { title?: string } } };
+      };
+    };
     expect(t?.notfallpass?.section?.contacts?.title).toBe(
       enTranslations['notfallpass.section.contacts.title'],
     );

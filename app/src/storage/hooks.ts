@@ -102,7 +102,7 @@ export const useRecords = (formpackId: string | null) => {
 
   useEffect(() => {
     setHasLoaded(false);
-    void refresh();
+    refresh().catch(() => undefined);
   }, [refresh]);
 
   const createRecord = useCallback(
@@ -228,7 +228,7 @@ export const useSnapshots = (recordId: string | null) => {
   }, [recordId]);
 
   useEffect(() => {
-    void refresh();
+    refresh().catch(() => undefined);
   }, [refresh]);
 
   const createSnapshot = useCallback(
@@ -339,7 +339,7 @@ export const useAutosaveRecord = (
         return;
       }
 
-      void updateRecordEntry(recordId, {
+      updateRecordEntry(recordId, {
         data: formData,
         locale,
       })

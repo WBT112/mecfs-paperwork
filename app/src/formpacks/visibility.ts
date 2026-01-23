@@ -1,13 +1,16 @@
 import type { FormpackManifest } from './types';
 
+const env = import.meta.env as {
+  DEV: boolean;
+  VITE_SHOW_DEV_FORMPACKS?: string;
+};
+
 export const getShowDevFormpacks = (
-  isDev: boolean = import.meta.env.DEV,
-  override: string | undefined = import.meta.env.VITE_SHOW_DEV_FORMPACKS,
+  isDev: boolean = env.DEV,
+  override: string | undefined = env.VITE_SHOW_DEV_FORMPACKS,
 ): boolean => isDev || override === 'true';
 
-export const getDevUiEnabled = (
-  isDev: boolean = import.meta.env.DEV,
-): boolean => isDev;
+export const getDevUiEnabled = (isDev: boolean = env.DEV): boolean => isDev;
 
 export const isDevUiEnabled = getDevUiEnabled();
 
