@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { fillTextInputStable } from './helpers/form';
+import { openCollapsibleSection } from './helpers/sections';
 
 type DbOptions = {
   dbName: string;
@@ -121,6 +122,10 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
+const openDraftsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   const existingActiveId = await getActiveRecordId(page);
@@ -129,6 +134,7 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     return;
   }
 
+  await openDraftsSection(page);
   await waitForRecordListReady(page);
   const activeIdAfterLoad = await getActiveRecordId(page);
   if (activeIdAfterLoad) {
@@ -161,6 +167,7 @@ test.describe('reset form', () => {
     });
     await deleteDatabase(page, DB.dbName);
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await openDraftsSection(page);
 
     await clickNewDraftIfNeeded(page);
 

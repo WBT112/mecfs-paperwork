@@ -6,6 +6,7 @@ import {
   switchLocale,
   type SupportedTestLocale,
 } from './helpers/locale';
+import { openCollapsibleSection } from './helpers/sections';
 
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
@@ -43,6 +44,14 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
+const openDraftsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
+};
+
+const openImportSection = async (page: Page) => {
+  await openCollapsibleSection(page, /import/i);
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   const existingActiveId = await getActiveRecordId(page);
@@ -51,6 +60,7 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     return;
   }
 
+  await openDraftsSection(page);
   await waitForRecordListReady(page);
 
   const activeIdAfterLoad = await getActiveRecordId(page);
@@ -91,6 +101,7 @@ for (const locale of locales) {
       await deleteDatabase(page, DB_NAME);
 
       await page.goto(`/formpacks/${FORM_PACK_ID}`);
+      await openDraftsSection(page);
       await switchLocale(page, locale);
       await clickNewDraftIfNeeded(page);
 
@@ -118,6 +129,7 @@ for (const locale of locales) {
       await switchLocale(page, oppositeLocale);
       await expectLocaleLabel(page, oppositeLocale);
 
+      await openImportSection(page);
       const overwriteRadio = page.getByRole('radio', {
         name: /overwrite|überschreiben/i,
       });
@@ -127,9 +139,9 @@ for (const locale of locales) {
       await page
         .locator('#formpack-import-file')
         .setInputFiles(filePath as string);
-      const importButton = page
-        .getByRole('button', { name: /JSON importieren|Import JSON/i })
-        .first();
+      const importButton = page.locator(
+        '.formpack-import__actions .app__button',
+      );
       await expect(importButton).toBeEnabled();
 
       // Overwrite mode uses a native confirm dialog. Stubbing it makes the E2E

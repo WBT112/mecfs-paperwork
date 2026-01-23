@@ -86,6 +86,7 @@
   "formpackDocxErrorInvalidSyntax": "DOCX template error: The template syntax is invalid.",
   "formpackDocxErrorInvalidCommand": "DOCX template error: A command is invalid or mismatched.",
   "formpackFormHeading": "Form",
+  "formpackToolsHeading": "Tools",
   "formpackFormReset": "Reset form",
   "formpackFormNoActiveRecord": "Select or create a draft to start editing.",
   "formpackFormPreviewHeading": "Form data preview",

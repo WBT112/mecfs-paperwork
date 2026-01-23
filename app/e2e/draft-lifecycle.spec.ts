@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
 import { fillTextInputStable } from './helpers/form';
+import { openCollapsibleSection } from './helpers/sections';
 import {
   POLL_INTERVALS,
   POLL_TIMEOUT,
@@ -71,7 +72,12 @@ const waitForNamePersisted = async (
   );
 };
 
+const openDraftsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
+};
+
 const clickNewDraft = async (page: Page) => {
+  await openDraftsSection(page);
   await waitForRecordListReady(page);
   const newDraftButton = page
     .locator('.formpack-records__actions .app__button')
@@ -93,6 +99,7 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await deleteDatabase(page, DB_NAME);
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await openDraftsSection(page);
 
   // On an empty DB, the app creates the first draft automatically after
   // records have loaded. Avoid clicking "new draft" too early, as that can
@@ -159,6 +166,7 @@ test('draft lifecycle supports switching between multiple drafts', async ({
   await expect(activeBadge).toHaveText(/active|aktiv/i);
 
   await page.reload();
+  await openDraftsSection(page);
   await expect
     .poll(async () => getActiveRecordId(page), {
       timeout: POLL_TIMEOUT,

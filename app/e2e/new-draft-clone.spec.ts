@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
+import { openCollapsibleSection } from './helpers/sections';
 
 type DbOptions = { dbName: string; storeName: string };
 
@@ -157,6 +158,10 @@ const waitForRecordListReady = async (page: Page) => {
   });
 };
 
+const openDraftsSection = async (page: Page) => {
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
+};
+
 const clickNewDraftIfNeeded = async (page: Page) => {
   const nameInput = page.locator('#root_person_name');
   const existingActiveId = await getActiveRecordId(page);
@@ -165,6 +170,7 @@ const clickNewDraftIfNeeded = async (page: Page) => {
     return;
   }
 
+  await openDraftsSection(page);
   await waitForRecordListReady(page);
 
   const autoDraftId = await waitForActiveRecordIdOrNull(page);
@@ -207,6 +213,7 @@ const clickNewDraftIfNeeded = async (page: Page) => {
 };
 
 const clickNewDraft = async (page: Page) => {
+  await openDraftsSection(page);
   await waitForRecordListReady(page);
 
   const newDraftButton = page.getByRole('button', {
@@ -240,6 +247,7 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
 };
 
 const loadNonActiveDraftViaUI = async (page: Page) => {
+  await openDraftsSection(page);
   const nonActiveItem = page
     .locator('.formpack-records__item:not(.formpack-records__item--active)')
     .first();
@@ -265,6 +273,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   await deleteDatabase(page, DB.dbName);
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await openDraftsSection(page);
 
   // Required behavior: user must click “New draft” to start
   await clickNewDraftIfNeeded(page);

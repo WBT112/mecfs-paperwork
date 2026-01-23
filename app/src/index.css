@@ -476,6 +476,93 @@ body {
   margin: 0 0 0.75rem;
 }
 
+.formpack-detail__tools-section {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.formpack-detail__tools-panel {
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 1rem;
+  background: var(--color-surface);
+  display: grid;
+  gap: 0.75rem;
+}
+
+.formpack-detail__tools-title {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.formpack-detail__tools {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.formpack-detail__tools > section + section {
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 0.75rem;
+}
+
+.formpack-detail__tools .collapsible-section__heading {
+  margin: 0;
+}
+
+.collapsible-section__heading {
+  margin: 0 0 0.75rem;
+}
+
+.collapsible-section__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.collapsible-section__toggle:hover {
+  background-color: var(--color-surface-subtle);
+}
+
+.collapsible-section__toggle:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 8px;
+  background-color: var(--color-surface-subtle);
+}
+
+.collapsible-section__title {
+  font-weight: 600;
+  color: var(--color-text-strong);
+}
+
+.collapsible-section__icon {
+  margin-left: auto;
+  width: 0.65rem;
+  height: 0.65rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.collapsible-section__toggle[aria-expanded='true'] .collapsible-section__icon {
+  transform: rotate(225deg);
+}
+
+.collapsible-section__content[hidden] {
+  display: none;
+}
+
 .formpack-detail__section > dl {
   margin: 0;
   display: grid;
