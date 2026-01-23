@@ -13,6 +13,8 @@ import type { RecordEntry } from '../../src/storage/types';
 const testConstants = vi.hoisted(() => ({
   FORMPACK_ID: 'notfallpass',
   DOCX_MAPPING_PATH: 'mapping.json',
+  TEMPLATE_A4: 'template-a4.docx',
+  TEMPLATE_WALLET: 'template-wallet.docx',
   IMPORT_FILE_NAME: 'import.json',
   IMPORT_FILE_CONTENT: '{"data":true}',
 }));
@@ -34,8 +36,8 @@ const formpackState = vi.hoisted(
       visibility: 'public',
       docx: {
         templates: {
-          a4: 'template-a4.docx',
-          wallet: 'template-wallet.docx',
+          a4: testConstants.TEMPLATE_A4,
+          wallet: testConstants.TEMPLATE_WALLET,
         },
         mapping: testConstants.DOCX_MAPPING_PATH,
       },
@@ -106,6 +108,8 @@ const storageState = vi.hoisted(
 const {
   FORMPACK_ID,
   DOCX_MAPPING_PATH,
+  TEMPLATE_A4,
+  TEMPLATE_WALLET,
   IMPORT_FILE_NAME,
   IMPORT_FILE_CONTENT,
 } = testConstants;
@@ -347,8 +351,8 @@ describe('FormpackDetailPage', () => {
       visibility: 'public',
       docx: {
         templates: {
-          a4: 'template-a4.docx',
-          wallet: 'template-wallet.docx',
+          a4: TEMPLATE_A4,
+          wallet: TEMPLATE_WALLET,
         },
         mapping: DOCX_MAPPING_PATH,
       },
@@ -458,6 +462,28 @@ describe('FormpackDetailPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('shows record and snapshot loading states', async () => {
+    storageState.records = [];
+    storageState.activeRecord = storageState.record;
+    storageState.isRecordsLoading = true;
+    storageState.hasLoaded = false;
+    storageState.snapshots = [];
+    storageState.isSnapshotsLoading = true;
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText('formpackRecordsLoading'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('formpackSnapshotsLoading')).toBeInTheDocument();
+  });
+
   it('renders DOCX metadata and template options', async () => {
     render(
       <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -473,6 +499,30 @@ describe('FormpackDetailPage', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole('option', { name: DOCX_TEMPLATE_WALLET_OPTION }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows a fallback label when the wallet template is unavailable', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      docx: {
+        templates: {
+          a4: TEMPLATE_A4,
+        },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByText('formpackDocxTemplateWalletUnavailable'),
     ).toBeInTheDocument();
   });
 
@@ -690,6 +740,20 @@ describe('FormpackDetailPage', () => {
     expect(
       await screen.findByText(STORAGE_UNAVAILABLE_LABEL),
     ).toBeInTheDocument();
+  });
+
+  it('shows the generic storage error message for non-unavailable errors', async () => {
+    storageState.recordsError = 'unknown';
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('storageError')).toBeInTheDocument();
   });
 
   it('hides DOCX controls when export is not available', async () => {
@@ -1103,6 +1167,85 @@ describe('FormpackDetailPage', () => {
     expect(storageState.markAsSaved).toHaveBeenCalledWith(secondRecord.data);
   });
 
+  it('restores the last active record from local storage', async () => {
+    const getItemSpy = vi
+      .spyOn(Storage.prototype, 'getItem')
+      .mockReturnValue(record.id);
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => undefined);
+    storageState.loadRecord.mockResolvedValue(record);
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(storageState.setActiveRecord).toHaveBeenCalledWith(record),
+    );
+    expect(setItemSpy).toHaveBeenCalledWith(
+      `mecfs-paperwork.activeRecordId.${record.formpackId}`,
+      record.id,
+    );
+
+    getItemSpy.mockRestore();
+    setItemSpy.mockRestore();
+  });
+
+  it('creates a new draft when no records exist', async () => {
+    storageState.records = [];
+    storageState.activeRecord = null;
+    storageState.createRecord.mockResolvedValue(record);
+    const setItemSpy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => undefined);
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() =>
+      expect(storageState.createRecord).toHaveBeenCalledWith(
+        'de',
+        {},
+        'formpackTitle',
+      ),
+    );
+    expect(setItemSpy).toHaveBeenCalledWith(
+      `mecfs-paperwork.activeRecordId.${record.formpackId}`,
+      record.id,
+    );
+
+    setItemSpy.mockRestore();
+  });
+
+  it('does not create a new record when updating the active record fails', async () => {
+    storageState.updateActiveRecord.mockResolvedValue(null);
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await userEvent.click(await screen.findByText('formpackRecordNew'));
+
+    await waitFor(() =>
+      expect(storageState.updateActiveRecord).toHaveBeenCalled(),
+    );
+    expect(storageState.createRecord).not.toHaveBeenCalled();
+  });
+
   it('updates DOCX template selection when changed', async () => {
     render(
       <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1173,6 +1316,19 @@ describe('FormpackDetailPage', () => {
     );
 
     expect(await screen.findByText('Load failed')).toBeInTheDocument();
+    expect(screen.getByText('formpackBackToList')).toBeInTheDocument();
+  });
+
+  it('shows an error when the formpack id is missing', async () => {
+    render(
+      <MemoryRouter initialEntries={['/formpacks']}>
+        <Routes>
+          <Route path="/formpacks" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('formpackMissingId')).toBeInTheDocument();
     expect(screen.getByText('formpackBackToList')).toBeInTheDocument();
   });
 
