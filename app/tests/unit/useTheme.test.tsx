@@ -18,14 +18,18 @@ const createMediaQueryList = (matches: boolean): MockMediaQueryList => {
     },
     media: '(prefers-color-scheme: dark)',
     onchange: null,
-    addEventListener: vi.fn((_event, callback) => {
-      listener = callback;
-    }),
-    removeEventListener: vi.fn((_event, callback) => {
-      if (listener === callback) {
-        listener = null;
-      }
-    }),
+    addEventListener: vi.fn(
+      (_event: string, callback: (event: MediaQueryListEvent) => void) => {
+        listener = callback;
+      },
+    ),
+    removeEventListener: vi.fn(
+      (_event: string, callback: (event: MediaQueryListEvent) => void) => {
+        if (listener === callback) {
+          listener = null;
+        }
+      },
+    ),
     addListener: undefined as unknown as MediaQueryList['addListener'],
     removeListener: undefined as unknown as MediaQueryList['removeListener'],
     dispatchEvent: vi.fn(),
@@ -50,10 +54,10 @@ const createLegacyMediaQueryList = (matches: boolean): MockMediaQueryList => {
       undefined as unknown as MediaQueryList['addEventListener'],
     removeEventListener:
       undefined as unknown as MediaQueryList['removeEventListener'],
-    addListener: vi.fn((callback) => {
+    addListener: vi.fn((callback: (event: MediaQueryListEvent) => void) => {
       listener = callback;
     }),
-    removeListener: vi.fn((callback) => {
+    removeListener: vi.fn((callback: (event: MediaQueryListEvent) => void) => {
       if (listener === callback) {
         listener = null;
       }

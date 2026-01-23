@@ -1,14 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { applyArrayUiSchemaDefaults } from '../../src/lib/rjsfUiSchema';
-import type { RJSFSchema } from '@rjsf/utils';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 const UI_OPTIONS_KEY = 'ui:options';
 
 describe('applyArrayUiSchemaDefaults', () => {
   it('should return uiSchema if schema is not an object', () => {
-    const schema = true;
-    const uiSchema = { foo: 'bar' };
-    const result = applyArrayUiSchemaDefaults(schema as any, uiSchema);
+    const schema = true as unknown as RJSFSchema;
+    const uiSchema: UiSchema = { foo: 'bar' };
+    const result = applyArrayUiSchemaDefaults(schema, uiSchema);
     expect(result).toBe(uiSchema);
   });
 
@@ -26,7 +26,10 @@ describe('applyArrayUiSchemaDefaults', () => {
       items: { type: 'string' },
     };
     const result = applyArrayUiSchemaDefaults(schema, {});
-    expect(result[UI_OPTIONS_KEY]?.orderable).toBe(false);
+    const options = result[UI_OPTIONS_KEY] as
+      | Record<string, unknown>
+      | undefined;
+    expect(options?.orderable).toBe(false);
   });
 
   it('should not override existing orderable option', () => {
@@ -34,9 +37,12 @@ describe('applyArrayUiSchemaDefaults', () => {
       type: 'array',
       items: { type: 'string' },
     };
-    const uiSchema = { [UI_OPTIONS_KEY]: { orderable: true } };
+    const uiSchema: UiSchema = { [UI_OPTIONS_KEY]: { orderable: true } };
     const result = applyArrayUiSchemaDefaults(schema, uiSchema);
-    expect(result[UI_OPTIONS_KEY]?.orderable).toBe(true);
+    const options = result[UI_OPTIONS_KEY] as
+      | Record<string, unknown>
+      | undefined;
+    expect(options?.orderable).toBe(true);
   });
 
   it('should set item label to false', () => {
@@ -45,7 +51,11 @@ describe('applyArrayUiSchemaDefaults', () => {
       items: { type: 'string' },
     };
     const result = applyArrayUiSchemaDefaults(schema, {});
-    expect((result.items as any)?.[UI_OPTIONS_KEY]?.label).toBe(false);
+    const items = result.items as UiSchema | undefined;
+    const options = items?.[UI_OPTIONS_KEY] as
+      | Record<string, unknown>
+      | undefined;
+    expect(options?.label).toBe(false);
   });
 
   it('should not override existing item label option', () => {
@@ -53,9 +63,13 @@ describe('applyArrayUiSchemaDefaults', () => {
       type: 'array',
       items: { type: 'string' },
     };
-    const uiSchema = { items: { [UI_OPTIONS_KEY]: { label: true } } };
+    const uiSchema: UiSchema = { items: { [UI_OPTIONS_KEY]: { label: true } } };
     const result = applyArrayUiSchemaDefaults(schema, uiSchema);
-    expect((result.items as any)?.[UI_OPTIONS_KEY]?.label).toBe(true);
+    const items = result.items as UiSchema | undefined;
+    const options = items?.[UI_OPTIONS_KEY] as
+      | Record<string, unknown>
+      | undefined;
+    expect(options?.label).toBe(true);
   });
 
   it('should handle array with no items property', () => {
@@ -67,7 +81,10 @@ describe('applyArrayUiSchemaDefaults', () => {
   it('should handle non-object items in array schema', () => {
     const schema: RJSFSchema = { type: 'array', items: true };
     const result = applyArrayUiSchemaDefaults(schema, {});
-    expect(result[UI_OPTIONS_KEY]?.orderable).toBe(false);
+    const options = result[UI_OPTIONS_KEY] as
+      | Record<string, unknown>
+      | undefined;
+    expect(options?.orderable).toBe(false);
     expect(result.items).toBeUndefined();
   });
 
@@ -82,6 +99,10 @@ describe('applyArrayUiSchemaDefaults', () => {
       },
     };
     const result = applyArrayUiSchemaDefaults(schema, {});
-    expect(result.nested?.[UI_OPTIONS_KEY]?.orderable).toBe(false);
+    const nested = result.nested as UiSchema | undefined;
+    const options = nested?.[UI_OPTIONS_KEY] as
+      | Record<string, unknown>
+      | undefined;
+    expect(options?.orderable).toBe(false);
   });
 });

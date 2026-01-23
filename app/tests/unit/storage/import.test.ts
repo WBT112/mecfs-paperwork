@@ -1,4 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type Mock,
+} from 'vitest';
 import { importRecordWithSnapshots } from '../../../src/storage/import';
 import { openStorage } from '../../../src/storage/db';
 
@@ -10,10 +18,27 @@ vi.mock('../../../src/storage/db', () => ({
 }));
 
 describe('importRecordWithSnapshots', () => {
-  let db: any;
-  let recordStore: any;
-  let snapshotStore: any;
-  let transaction: any;
+  type MockRecordStore = {
+    get: Mock;
+    put: Mock;
+    add: Mock;
+  };
+  type MockSnapshotStore = {
+    add: Mock;
+  };
+  type MockTransaction = {
+    objectStore: Mock;
+    done: Promise<void>;
+  };
+  type MockDb = {
+    transaction: Mock;
+  };
+
+  let db: MockDb;
+  let recordStore: MockRecordStore;
+  let snapshotStore: MockSnapshotStore;
+  let transaction: MockTransaction;
+  type OpenStorageResult = Awaited<ReturnType<typeof openStorage>>;
 
   beforeEach(() => {
     recordStore = {
@@ -25,16 +50,23 @@ describe('importRecordWithSnapshots', () => {
       add: vi.fn(),
     };
     transaction = {
-      objectStore: vi.fn((storeName) => {
-        if (storeName === 'records') return recordStore;
-        if (storeName === 'snapshots') return snapshotStore;
+      objectStore: vi.fn((storeName: string) => {
+        if (storeName === 'records') {
+          return recordStore;
+        }
+        if (storeName === 'snapshots') {
+          return snapshotStore;
+        }
+        return undefined;
       }),
       done: Promise.resolve(),
     };
     db = {
       transaction: vi.fn(() => transaction),
     };
-    vi.mocked(openStorage).mockResolvedValue(db);
+    vi.mocked(openStorage).mockResolvedValue(
+      db as unknown as OpenStorageResult,
+    );
   });
 
   afterEach(() => {

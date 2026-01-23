@@ -9,7 +9,12 @@ import {
   afterEach,
   type Mock,
 } from 'vitest';
-import { openDB, type IDBPDatabase, type OpenDBCallbacks } from 'idb';
+import {
+  openDB,
+  type IDBPDatabase,
+  type IDBPTransaction,
+  type OpenDBCallbacks,
+} from 'idb';
 import { openStorage, StorageUnavailableError } from '../../../src/storage/db';
 
 // Mock the 'idb' library
@@ -18,22 +23,43 @@ vi.mock('idb', () => ({
 }));
 
 describe('storage/db', () => {
+  type MockFunction<T extends (...args: never[]) => unknown> = Mock<T>;
+  type MockObjectStore = {
+    createIndex: MockFunction<
+      (
+        name: string,
+        keyPath: string | string[],
+        options?: IDBIndexParameters,
+      ) => void
+    >;
+  };
+  type MockDatabase = {
+    objectStoreNames: { contains: MockFunction<(name: string) => boolean> };
+    createObjectStore: MockFunction<
+      (name: string, options: { keyPath: string }) => MockObjectStore
+    >;
+    close: MockFunction<() => void>;
+    transaction?: MockFunction<() => unknown>;
+  };
+
+  const globalWithIndexedDb = globalThis as { indexedDB?: IDBFactory };
+
   // Store original indexedDB. `global` types don't see our JSDOM env.
-  let originalIndexedDB: IDBFactory | undefined = (global as any).indexedDB;
+  let originalIndexedDB: IDBFactory | undefined = globalWithIndexedDb.indexedDB;
 
   beforeEach(() => {
-    originalIndexedDB = (global as any).indexedDB;
+    originalIndexedDB = globalWithIndexedDb.indexedDB;
     vi.clearAllMocks();
   });
 
   afterEach(() => {
     // Restore original indexedDB
-    (global as any).indexedDB = originalIndexedDB;
+    globalWithIndexedDb.indexedDB = originalIndexedDB;
   });
 
   describe('openStorage', () => {
     it('should throw StorageUnavailableError if indexedDB is not available', async () => {
-      (global as any).indexedDB = undefined;
+      delete globalWithIndexedDb.indexedDB;
 
       await expect(openStorage()).rejects.toThrow(StorageUnavailableError);
       await expect(openStorage()).rejects.toThrow('IndexedDB is unavailable.');
@@ -54,17 +80,20 @@ describe('storage/db', () => {
     });
 
     it('should call the upgrade callback to create object stores and indexes', async () => {
-      const mockDb = {
+      const createdStores: MockObjectStore[] = [];
+      const mockDb: MockDatabase = {
         objectStoreNames: { contains: vi.fn().mockReturnValue(false) },
-        createObjectStore: vi.fn().mockReturnValue({
-          createIndex: vi.fn(),
+        createObjectStore: vi.fn().mockImplementation(() => {
+          const store = { createIndex: vi.fn() };
+          createdStores.push(store);
+          return store;
         }),
         close: vi.fn(),
         transaction: vi.fn(),
       };
 
       // Capture the upgrade callback
-      let upgradeCallback: OpenDBCallbacks<any>['upgrade'];
+      let upgradeCallback: OpenDBCallbacks<unknown>['upgrade'] | undefined;
 
       (openDB as Mock).mockImplementation(
         (
@@ -72,28 +101,37 @@ describe('storage/db', () => {
           _version: number,
           options: OpenDBCallbacks<unknown>,
         ) => {
-          if (options && typeof options.upgrade === 'function') {
+          if (typeof options.upgrade === 'function') {
             upgradeCallback = options.upgrade;
           }
-          return Promise.resolve(mockDb);
+          return Promise.resolve(mockDb as unknown as IDBPDatabase);
         },
       );
 
       await openStorage();
 
       // Simulate the upgrade process by calling the captured callback
-      if (upgradeCallback) {
-        // We cast because we are in a test environment and don't need a full event
-        upgradeCallback(mockDb as any, 0, 1, null as any, {} as any);
-      } else {
-        throw new Error('Upgrade callback was not captured');
-      }
+      expect(upgradeCallback).toBeDefined();
+      const runUpgrade = upgradeCallback!;
+      const upgradeEvent = new Event('upgrade') as IDBVersionChangeEvent;
+      const upgradeTransaction = {} as IDBPTransaction<
+        unknown,
+        string[],
+        'versionchange'
+      >;
+      runUpgrade(
+        mockDb as unknown as IDBPDatabase,
+        0,
+        1,
+        upgradeTransaction,
+        upgradeEvent,
+      );
 
       // Check for 'records' store and its indexes
       expect(mockDb.createObjectStore).toHaveBeenCalledWith('records', {
         keyPath: 'id',
       });
-      const recordStoreMock = mockDb.createObjectStore.mock.results[0].value;
+      const recordStoreMock = createdStores[0];
       expect(recordStoreMock.createIndex).toHaveBeenCalledWith(
         'by_formpackId',
         'formpackId',
@@ -107,7 +145,7 @@ describe('storage/db', () => {
       expect(mockDb.createObjectStore).toHaveBeenCalledWith('snapshots', {
         keyPath: 'id',
       });
-      const snapshotStoreMock = mockDb.createObjectStore.mock.results[1].value;
+      const snapshotStoreMock = createdStores[1];
       expect(snapshotStoreMock.createIndex).toHaveBeenCalledWith(
         'by_recordId',
         'recordId',
@@ -120,13 +158,13 @@ describe('storage/db', () => {
     });
 
     it('should not create object stores if they already exist', async () => {
-      const mockDb = {
+      const mockDb: MockDatabase = {
         objectStoreNames: { contains: vi.fn().mockReturnValue(true) }, // They exist
         createObjectStore: vi.fn(),
         close: vi.fn(),
       };
 
-      let upgradeCallback: OpenDBCallbacks<any>['upgrade'];
+      let upgradeCallback: OpenDBCallbacks<unknown>['upgrade'] | undefined;
 
       (openDB as Mock).mockImplementation(
         (
@@ -134,20 +172,30 @@ describe('storage/db', () => {
           _version: number,
           options: OpenDBCallbacks<unknown>,
         ) => {
-          if (options && typeof options.upgrade === 'function') {
+          if (typeof options.upgrade === 'function') {
             upgradeCallback = options.upgrade;
           }
-          return Promise.resolve(mockDb);
+          return Promise.resolve(mockDb as unknown as IDBPDatabase);
         },
       );
 
       await openStorage();
 
-      if (upgradeCallback) {
-        upgradeCallback(mockDb as any, 0, 1, null as any, {} as any);
-      } else {
-        throw new Error('Upgrade callback was not captured');
-      }
+      expect(upgradeCallback).toBeDefined();
+      const runUpgrade = upgradeCallback!;
+      const upgradeEvent = new Event('upgrade') as IDBVersionChangeEvent;
+      const upgradeTransaction = {} as IDBPTransaction<
+        unknown,
+        string[],
+        'versionchange'
+      >;
+      runUpgrade(
+        mockDb as unknown as IDBPDatabase,
+        0,
+        1,
+        upgradeTransaction,
+        upgradeEvent,
+      );
 
       expect(mockDb.objectStoreNames.contains).toHaveBeenCalledWith('records');
       expect(mockDb.objectStoreNames.contains).toHaveBeenCalledWith(

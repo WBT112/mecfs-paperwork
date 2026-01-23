@@ -33,32 +33,6 @@ export type JsonImportPayload = {
   revisions?: ImportRevisionPayload[];
 };
 
-type ExportRecordMetadata = {
-  id?: string;
-  name?: string;
-  updatedAt?: string;
-  locale?: SupportedLocale;
-  data?: Record<string, unknown>;
-};
-
-type ExportRevisionPayload = {
-  id?: string;
-  label?: string;
-  createdAt?: string;
-  data: Record<string, unknown>;
-};
-
-type JsonExportContainer = {
-  app?: ImportAppMetadata;
-  formpack?: ImportFormpackMetadata;
-  record?: ExportRecordMetadata;
-  locale?: SupportedLocale;
-  createdAt?: string;
-  exportedAt?: string;
-  data?: unknown;
-  revisions?: ExportRevisionPayload[];
-};
-
 export type ImportErrorCode =
   | 'invalid_json'
   | 'invalid_payload'
@@ -96,6 +70,30 @@ const parseJson = (
   }
 };
 
+const normalizeRevisionEntry = (
+  entry: unknown,
+): ImportRevisionPayload | 'invalid_revisions' => {
+  if (!isRecord(entry) || !isRecord(entry.data)) {
+    return 'invalid_revisions';
+  }
+
+  const label = entry.label;
+  if (label !== undefined && typeof label !== 'string') {
+    return 'invalid_revisions';
+  }
+
+  const createdAt = entry.createdAt;
+  if (createdAt !== undefined && typeof createdAt !== 'string') {
+    return 'invalid_revisions';
+  }
+
+  return {
+    label: typeof label === 'string' ? label : undefined,
+    data: entry.data,
+    createdAt: typeof createdAt === 'string' ? createdAt : undefined,
+  };
+};
+
 export const normalizeExportRevisions = (
   revisions: unknown,
 ): ImportRevisionPayload[] | 'invalid_revisions' => {
@@ -109,23 +107,11 @@ export const normalizeExportRevisions = (
 
   const normalized: ImportRevisionPayload[] = [];
   for (const entry of revisions) {
-    if (!isRecord(entry) || !isRecord(entry.data)) {
+    const normalizedEntry = normalizeRevisionEntry(entry);
+    if (normalizedEntry === 'invalid_revisions') {
       return 'invalid_revisions';
     }
-
-    if (entry.label !== undefined && typeof entry.label !== 'string') {
-      return 'invalid_revisions';
-    }
-
-    if (entry.createdAt !== undefined && typeof entry.createdAt !== 'string') {
-      return 'invalid_revisions';
-    }
-
-    normalized.push({
-      label: entry.label as string | undefined,
-      data: entry.data,
-      createdAt: entry.createdAt as string | undefined,
-    });
+    normalized.push(normalizedEntry);
   }
 
   return normalized;
@@ -218,7 +204,11 @@ const validateAppMetadata = (
     return { ok: false, error: 'invalid_payload' };
   }
 
-  return { ok: true, value: app as ImportAppMetadata };
+  const metadata: ImportAppMetadata = { id: app.id };
+  if (typeof app.version === 'string') {
+    metadata.version = app.version;
+  }
+  return { ok: true, value: metadata };
 };
 
 const validateFormpackMetadata = (
@@ -237,7 +227,11 @@ const validateFormpackMetadata = (
     return { ok: false, error: 'formpack_mismatch' };
   }
 
-  return { ok: true, value: formpack as ImportFormpackMetadata };
+  const metadata: ImportFormpackMetadata = { id: formpack.id };
+  if (typeof formpack.version === 'string') {
+    metadata.version = formpack.version;
+  }
+  return { ok: true, value: metadata };
 };
 
 const resolveRecordData = (
@@ -295,12 +289,12 @@ const resolveRecordTitle = (
     return { ok: false, error: 'invalid_payload' };
   }
 
-  return {
-    ok: true,
-    value:
-      (record.title as string | undefined) ??
-      (record.name as string | undefined),
-  };
+  const title = record.title;
+  if (typeof title === 'string') {
+    return { ok: true, value: title };
+  }
+  const name = record.name;
+  return { ok: true, value: typeof name === 'string' ? name : undefined };
 };
 
 const normalizeExportPayload = (
@@ -332,9 +326,6 @@ const normalizeExportPayload = (
     return getInvalidResult(localeResult.error);
   }
 
-  void payload.createdAt;
-  void payload.exportedAt;
-
   const recordTitleResult = resolveRecordTitle(record);
   if (!recordTitleResult.ok) {
     return getInvalidResult(recordTitleResult.error);
@@ -363,7 +354,7 @@ const normalizeExportPayload = (
     record: {
       title: recordTitleResult.value,
       locale: localeResult.value,
-      data: normalizedData as Record<string, unknown>,
+      data: normalizedData,
     },
     revisions,
   });
@@ -397,9 +388,5 @@ export const validateJsonImport = (
     return { payload: null, error: { code: 'invalid_payload' } };
   }
 
-  return normalizeExportPayload(
-    parsed.payload as JsonExportContainer,
-    schema,
-    expectedFormpackId,
-  );
+  return normalizeExportPayload(parsed.payload, schema, expectedFormpackId);
 };

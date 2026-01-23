@@ -171,9 +171,10 @@ const getOrderedKeys = (
   uiNode: UiSchema | null | undefined,
   value: Record<string, unknown>,
 ): string[] => {
-  const schemaProps = isRecord(schemaNode?.properties)
-    ? (schemaNode?.properties as Record<string, RJSFSchema>)
-    : null;
+  const schemaProps =
+    schemaNode && isRecord(schemaNode.properties)
+      ? (schemaNode.properties as Record<string, RJSFSchema>)
+      : null;
   const keys = Array.from(
     new Set([
       ...(schemaProps ? Object.keys(schemaProps) : []),
@@ -194,7 +195,9 @@ const getOrderedKeys = (
     order.forEach((entry) => {
       if (entry === '*') {
         ordered.push(...remaining);
-      } else if (keys.includes(entry)) {
+        return;
+      }
+      if (keys.includes(entry)) {
         ordered.push(entry);
       }
     });
@@ -210,7 +213,7 @@ const getUiSchemaNode = (
   if (!isRecord(uiNode)) {
     return undefined;
   }
-  const entry = uiNode[key];
+  const entry = (uiNode as Record<string, unknown>)[key];
   return isRecord(entry) ? (entry as UiSchema) : undefined;
 };
 
@@ -352,9 +355,10 @@ function renderPreviewObject(
   label?: string,
   sectionKey?: string,
 ): ReactNode {
-  const schemaProps = isRecord(schemaNode?.properties)
-    ? (schemaNode?.properties as Record<string, RJSFSchema>)
-    : null;
+  const schemaProps =
+    schemaNode && isRecord(schemaNode.properties)
+      ? (schemaNode.properties as Record<string, RJSFSchema>)
+      : null;
   const keys = getOrderedKeys(schemaNode, uiNode, value);
   const rows: ReactNode[] = [];
   const nested: ReactNode[] = [];
@@ -548,7 +552,7 @@ export default function FormpackDetailPage() {
     };
 
     if (id) {
-      void loadManifest(id);
+      loadManifest(id).catch(() => undefined);
     } else {
       resetFormpack();
       setFormData({});
@@ -575,7 +579,7 @@ export default function FormpackDetailPage() {
     }
 
     // Preload DOCX assets so export still works after going offline.
-    void preloadDocxAssets(formpackId, manifest.docx).catch(() => undefined);
+    preloadDocxAssets(formpackId, manifest.docx).catch(() => undefined);
   }, [formpackId, manifest]);
 
   useEffect(() => {
@@ -595,9 +599,15 @@ export default function FormpackDetailPage() {
   );
   const activeLanguage = i18n.language;
   const translatedUiSchema = useMemo(() => {
-    void activeLanguage;
-    void formpackTranslationsVersion;
-    return uiSchema ? translateUiSchema(uiSchema, t, namespace) : null;
+    if (!uiSchema) {
+      return null;
+    }
+    if (formpackTranslationsVersion < 0) {
+      return null;
+    }
+    const translate = ((key: string, options?: Record<string, unknown>) =>
+      t(key, { ...options, lng: activeLanguage })) as typeof t;
+    return translateUiSchema(uiSchema, translate, namespace);
   }, [activeLanguage, formpackTranslationsVersion, namespace, t, uiSchema]);
   const normalizedUiSchema = useMemo(
     () =>
@@ -722,11 +732,13 @@ export default function FormpackDetailPage() {
 
   const getFallbackRecord = useCallback(
     (currentFormpackId: string) => {
-      const fallbackRecord = records[0];
-      if (fallbackRecord?.formpackId === currentFormpackId) {
-        return fallbackRecord;
+      if (records.length === 0) {
+        return null;
       }
-      return null;
+      const fallbackRecord = records[0];
+      return fallbackRecord.formpackId === currentFormpackId
+        ? fallbackRecord
+        : null;
     },
     [records],
   );
@@ -810,7 +822,9 @@ export default function FormpackDetailPage() {
     const currentFormpackId = formpackId;
     hasRestoredRecordRef.current = formpackId;
 
-    void restoreActiveRecord(currentFormpackId, () => isActive);
+    restoreActiveRecord(currentFormpackId, () => isActive).catch(
+      () => undefined,
+    );
 
     return () => {
       isActive = false;
@@ -829,7 +843,7 @@ export default function FormpackDetailPage() {
 
   const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = useCallback(
     (event, submitEvent) => {
-      submitEvent?.preventDefault();
+      submitEvent.preventDefault();
       setFormData(event.formData as FormDataState);
     },
     [setFormData],
@@ -983,7 +997,7 @@ export default function FormpackDetailPage() {
       }
 
       const recordTitle =
-        payload.record.title ?? title ?? t('formpackRecordUntitled');
+        payload.record.title ?? (title || t('formpackRecordUntitled'));
       const record = await importRecordWithSnapshots({
         formpackId,
         mode: 'new',
@@ -1243,7 +1257,7 @@ export default function FormpackDetailPage() {
       }
     };
 
-    void loadValidator();
+    loadValidator().catch(() => undefined);
 
     return () => {
       isActive = false;
