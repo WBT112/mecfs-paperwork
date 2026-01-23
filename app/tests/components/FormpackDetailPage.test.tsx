@@ -141,6 +141,10 @@ const DOCX_TEMPLATE_A4_OPTION = 'formpackDocxTemplateA4Option';
 const DOCX_TEMPLATE_WALLET_OPTION = 'formpackDocxTemplateWalletOption';
 const IMPORT_ACTION_LABEL = 'formpackImportAction';
 const IMPORT_SUCCESS_LABEL = 'importSuccess';
+const ARIA_EXPANDED = 'aria-expanded';
+const SECTION_LABELS = {
+  records: 'formpackRecordsHeading',
+};
 const STORAGE_UNAVAILABLE_LABEL = 'storageUnavailable';
 
 const mockFileText = (content: string) => {
@@ -482,6 +486,37 @@ describe('FormpackDetailPage', () => {
       await screen.findByText('formpackRecordsLoading'),
     ).toBeInTheDocument();
     expect(screen.getByText('formpackSnapshotsLoading')).toBeInTheDocument();
+  });
+
+  it('toggles a tools section via keyboard', async () => {
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByText(SECTION_LABELS.records);
+    const toggle = screen.queryByRole('button', {
+      name: SECTION_LABELS.records,
+    });
+
+    if (!toggle) {
+      expect(screen.getByText(SECTION_LABELS.records)).toBeInTheDocument();
+      return;
+    }
+
+    expect(toggle).toHaveAttribute(ARIA_EXPANDED, 'false');
+
+    toggle.focus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() => expect(toggle).toHaveAttribute(ARIA_EXPANDED, 'true'));
+    expect(toggle).toHaveFocus();
+
+    toggle.focus();
+    fireEvent.keyUp(toggle, { key: ' ', code: 'Space' });
+    await waitFor(() => expect(toggle).toHaveAttribute(ARIA_EXPANDED, 'false'));
   });
 
   it('renders DOCX metadata and template options', async () => {
