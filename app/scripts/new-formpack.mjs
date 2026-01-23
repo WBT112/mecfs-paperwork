@@ -11,18 +11,61 @@ const skeletonDir = path.join(repoRoot, 'tools', 'formpack-skeleton');
 
 const parseArgs = (args) => {
   const result = { id: null, title: null, register: false };
+  const positional = [];
   for (let index = 0; index < args.length; index += 1) {
     const token = args[index];
     if (token === '--id') {
       result.id = args[index + 1] ?? null;
       index += 1;
+    } else if (token.startsWith('--id=')) {
+      result.id = token.slice('--id='.length) || null;
     } else if (token === '--title') {
       result.title = args[index + 1] ?? null;
       index += 1;
+    } else if (token.startsWith('--title=')) {
+      result.title = token.slice('--title='.length) || null;
     } else if (token === '--register') {
       result.register = true;
+    } else if (!token.startsWith('--')) {
+      positional.push(token);
     }
   }
+
+  const normalizeConfigValue = (value) => {
+    if (!value) {
+      return null;
+    }
+    const trimmed = String(value).trim();
+    if (!trimmed || trimmed === 'true' || trimmed === 'false') {
+      return null;
+    }
+    return trimmed;
+  };
+
+  const envId = normalizeConfigValue(process.env.npm_config_id);
+  const envTitle = normalizeConfigValue(process.env.npm_config_title);
+
+  if (!result.register && process.env.npm_config_register !== undefined) {
+    const envValue = process.env.npm_config_register;
+    result.register = envValue !== '0' && envValue !== 'false';
+  }
+
+  if (!result.id) {
+    result.id = positional[0] ?? null;
+  }
+
+  if (!result.title) {
+    result.title = positional[1] ?? null;
+  }
+
+  if (!result.id && envId) {
+    result.id = envId;
+  }
+
+  if (!result.title && envTitle) {
+    result.title = envTitle;
+  }
+
   return result;
 };
 
