@@ -202,13 +202,13 @@ Rules:
 To add a new pack, use the scaffold command:
 ```
 cd app
-npm run formpack:new -- --id my-pack --title "My Pack"
+node scripts/new-formpack.mjs my-pack "My Pack"
 ```
 
 Optionally register the pack with the app catalog:
 ```
 cd app
-npm run formpack:new -- --id my-pack --title "My Pack" --register
+node scripts/new-formpack.mjs my-pack "My Pack" --register
 ```
 
 Then review the generated files and adjust:

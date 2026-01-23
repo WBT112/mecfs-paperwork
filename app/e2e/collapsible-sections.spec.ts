@@ -40,6 +40,12 @@ test('collapsible sections default and toggle offline', async ({
   await expect(historyToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(previewToggle).toHaveAttribute('aria-expanded', 'true');
 
+  await draftsToggle.focus();
+  await page.keyboard.press('Enter');
+  await expect(draftsToggle).toHaveAttribute('aria-expanded', 'true');
+  await page.keyboard.press('Space');
+  await expect(draftsToggle).toHaveAttribute('aria-expanded', 'false');
+
   const previewBox = await previewToggle.boundingBox();
   const toolsBox = await toolsHeading.boundingBox();
   expect(previewBox).not.toBeNull();

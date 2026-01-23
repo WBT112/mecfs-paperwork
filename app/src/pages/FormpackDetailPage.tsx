@@ -1700,99 +1700,106 @@ export default function FormpackDetailPage() {
           >
             {renderDocumentPreviewContent()}
           </CollapsibleSection>
-          <div className="formpack-detail__section">
-            <h3>{t('formpackToolsHeading')}</h3>
-            <div className="formpack-detail__tools">
-              <CollapsibleSection
-                id="formpack-records"
-                title={t('formpackRecordsHeading')}
-                className="formpack-detail__section"
-              >
-                {renderStorageErrorMessage()}
-                {renderRecordsList()}
-              </CollapsibleSection>
-              <CollapsibleSection
-                id="formpack-import"
-                title={t('formpackImportHeading')}
-                className="formpack-detail__section"
-              >
-                <p className="formpack-import__hint" id="formpack-import-hint">
-                  {t('formpackImportHint')}
-                </p>
-                <div className="formpack-import__field">
-                  <label htmlFor="formpack-import-file">
-                    {t('formpackImportLabel')}
-                  </label>
-                  <input
-                    ref={importInputRef}
-                    id="formpack-import-file"
-                    className="formpack-import__file"
-                    type="file"
-                    accept="application/json,.json"
-                    onChange={handleImportFileChange}
-                    aria-describedby="formpack-import-hint"
-                  />
-                  {renderImportFileName()}
-                </div>
-                <fieldset className="formpack-import__options">
-                  <legend>{t('formpackImportModeLabel')}</legend>
-                  <label className="formpack-import__option">
-                    <input
-                      type="radio"
-                      name="import-mode"
-                      value="new"
-                      checked={importMode === 'new'}
-                      onChange={() => setImportMode('new')}
-                    />
-                    {t('formpackImportModeNew')}
-                  </label>
-                  <label className="formpack-import__option">
-                    <input
-                      type="radio"
-                      name="import-mode"
-                      value="overwrite"
-                      checked={importMode === 'overwrite'}
-                      onChange={() => setImportMode('overwrite')}
-                      disabled={!activeRecord}
-                    />
-                    {t('formpackImportModeOverwrite')}
-                  </label>
-                  {renderImportOverwriteHint()}
-                </fieldset>
-                <label className="formpack-import__option">
-                  <input
-                    type="checkbox"
-                    checked={importIncludeRevisions}
-                    onChange={(event) =>
-                      setImportIncludeRevisions(event.target.checked)
-                    }
-                  />
-                  {t('formpackImportIncludeRevisions')}
-                </label>
-                {renderImportStatus()}
-                <div className="formpack-import__actions">
-                  <button
-                    type="button"
-                    className="app__button"
-                    onClick={handleImport}
-                    data-action="json-import"
-                    disabled={
-                      !importJson.trim() ||
-                      storageError === 'unavailable' ||
-                      isImporting
-                    }
+          <div className="formpack-detail__section formpack-detail__tools-section">
+            <div className="formpack-detail__tools-panel">
+              <h3 className="formpack-detail__tools-title">
+                {t('formpackToolsHeading')}
+              </h3>
+              <div className="formpack-detail__tools">
+                <CollapsibleSection
+                  id="formpack-records"
+                  title={t('formpackRecordsHeading')}
+                  className="formpack-detail__section"
+                >
+                  {renderStorageErrorMessage()}
+                  {renderRecordsList()}
+                </CollapsibleSection>
+                <CollapsibleSection
+                  id="formpack-import"
+                  title={t('formpackImportHeading')}
+                  className="formpack-detail__section"
+                >
+                  <p
+                    className="formpack-import__hint"
+                    id="formpack-import-hint"
                   >
-                    {getImportButtonLabel()}
-                  </button>
-                </div>
-              </CollapsibleSection>
-              <CollapsibleSection
-                id="formpack-snapshots"
-                title={t('formpackSnapshotsHeading')}
-                className="formpack-detail__section"
-              >
-                {renderSnapshotsContent()}
-              </CollapsibleSection>
+                    {t('formpackImportHint')}
+                  </p>
+                  <div className="formpack-import__field">
+                    <label htmlFor="formpack-import-file">
+                      {t('formpackImportLabel')}
+                    </label>
+                    <input
+                      ref={importInputRef}
+                      id="formpack-import-file"
+                      className="formpack-import__file"
+                      type="file"
+                      accept="application/json,.json"
+                      onChange={handleImportFileChange}
+                      aria-describedby="formpack-import-hint"
+                    />
+                    {renderImportFileName()}
+                  </div>
+                  <fieldset className="formpack-import__options">
+                    <legend>{t('formpackImportModeLabel')}</legend>
+                    <label className="formpack-import__option">
+                      <input
+                        type="radio"
+                        name="import-mode"
+                        value="new"
+                        checked={importMode === 'new'}
+                        onChange={() => setImportMode('new')}
+                      />
+                      {t('formpackImportModeNew')}
+                    </label>
+                    <label className="formpack-import__option">
+                      <input
+                        type="radio"
+                        name="import-mode"
+                        value="overwrite"
+                        checked={importMode === 'overwrite'}
+                        onChange={() => setImportMode('overwrite')}
+                        disabled={!activeRecord}
+                      />
+                      {t('formpackImportModeOverwrite')}
+                    </label>
+                    {renderImportOverwriteHint()}
+                  </fieldset>
+                  <label className="formpack-import__option">
+                    <input
+                      type="checkbox"
+                      checked={importIncludeRevisions}
+                      onChange={(event) =>
+                        setImportIncludeRevisions(event.target.checked)
+                      }
+                    />
+                    {t('formpackImportIncludeRevisions')}
+                  </label>
+                  {renderImportStatus()}
+                  <div className="formpack-import__actions">
+                    <button
+                      type="button"
+                      className="app__button"
+                      onClick={handleImport}
+                      data-action="json-import"
+                      disabled={
+                        !importJson.trim() ||
+                        storageError === 'unavailable' ||
+                        isImporting
+                      }
+                    >
+                      {getImportButtonLabel()}
+                    </button>
+                  </div>
+                </CollapsibleSection>
+                <CollapsibleSection
+                  id="formpack-snapshots"
+                  title={t('formpackSnapshotsHeading')}
+                  className="formpack-detail__section"
+                >
+                  {renderSnapshotsContent()}
+                </CollapsibleSection>
+              </div>
             </div>
           </div>
           {showDevSections && (
