@@ -33,6 +33,7 @@ Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Bet
 
 Die durch den Seitenbetreiber erstellten Inhalte und Werke unterliegen dem deutschen Urheberrecht.  
 Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechts bedürfen der schriftlichen Zustimmung.
+Die entsprechenden Maßgaben der Open-Source Lizenz sind zu berücksichtigen.
 
 ## Datenschutz
 

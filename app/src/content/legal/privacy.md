@@ -4,7 +4,7 @@ _Stand: 19. Januar 2026_
 
 Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeitung personenbezogener Daten beim Aufruf und bei der Nutzung der Webanwendung **mecfs-paperwork**.
 
-> **Wichtiger Hinweis (offline-first):** Inhalte, die du in der Anwendung eingibst, werden standardmäßig **nur lokal in deinem Browser** gespeichert (z. B. im IndexedDB-/LocalStorage-Speicher) und **nicht an den Betreiber übertragen**.
+> **Wichtiger Hinweis:** Inhalte, die du in der Anwendung eingibst, werden standardmäßig **nur lokal in deinem Browser** gespeichert (z. B. im IndexedDB-/LocalStorage-Speicher) und **nicht an den Betreiber übertragen**.
 
 ---
 
@@ -28,7 +28,7 @@ E-Mail: info **(at)** mecfs-paperwork.de
 
 ## 3. Hosting und Server-Logfiles
 
-### 3.1 Bereitstellung über Webhosting (NGINX)
+### 3.1 Bereitstellung über Webhosting
 
 Beim Aufruf der Website verarbeitet der Hosting-Anbieter **(1blu)** technisch notwendige Verbindungsdaten (Server-Logfiles), um die Website auszuliefern sowie Stabilität und Sicherheit zu gewährleisten.
 
@@ -107,7 +107,7 @@ Die Anwendung unterstützt dich beim Ausfüllen von Anträgen/Formularen. Die vo
 - **nicht** an den Betreiber übertragen,
 - **nicht** an Dritte übermittelt.
 
-Zusätzlich speichert die Anwendung technische Präferenzen lokal (z. B. die zuletzte gewählte Spracheinstellung).
+Zusätzlich speichert die Anwendung technische Präferenzen lokal (z. B. die zuletzte gewählte Spracheinstellung oder Darkmode).
 
 ### 4.2 Rechtsgrundlage
 
