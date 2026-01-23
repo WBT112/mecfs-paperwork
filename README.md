@@ -102,7 +102,7 @@ Formpacks live at the repo root under `formpacks/<id>/...`.
 
 ```bash
 cd app
-npm run formpack:new -- --id <packId> --title "<Title>" [--register]
+node scripts/new-formpack.mjs <packId> "<Title>" [--register]
 ```
 
 - Default: `exports: ["docx","json"]`
