@@ -5,6 +5,12 @@ import deTranslations from '../../../formpacks/doctor-letter/i18n/de.json';
 import enTranslations from '../../../formpacks/doctor-letter/i18n/en.json';
 
 const namespace = 'formpack:doctor-letter';
+const FORMPACK_ID = 'doctor-letter';
+const TEST_PRACTICE = 'Test Practice';
+const JOHN = 'John';
+const DOE = 'Doe';
+const DR_TITLE = 'Dr.';
+const COVID_19_VACCINATION = 'COVID-19 vaccination';
 
 describe('buildDocumentModel for doctor-letter', () => {
   beforeAll(() => {
@@ -30,17 +36,17 @@ describe('buildDocumentModel for doctor-letter', () => {
 
   describe('patient and doctor data mapping', () => {
     it('maps patient data correctly', () => {
-      const result = buildDocumentModel('doctor-letter', 'en', {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
         patient: {
-          firstName: 'John',
-          lastName: 'Doe',
+          firstName: JOHN,
+          lastName: DOE,
           streetAndNumber: 'Main St 123',
           postalCode: '12345',
           city: 'Berlin',
         },
         doctor: {
-          practice: 'Test Practice',
-          title: 'Dr.',
+          practice: TEST_PRACTICE,
+          title: DR_TITLE,
           gender: 'Herr',
           name: 'Smith',
         },
@@ -48,8 +54,8 @@ describe('buildDocumentModel for doctor-letter', () => {
       });
 
       expect(result.patient).toEqual({
-        firstName: 'John',
-        lastName: 'Doe',
+        firstName: JOHN,
+        lastName: DOE,
         streetAndNumber: 'Main St 123',
         postalCode: '12345',
         city: 'Berlin',
@@ -57,13 +63,13 @@ describe('buildDocumentModel for doctor-letter', () => {
     });
 
     it('maps doctor data correctly', () => {
-      const result = buildDocumentModel('doctor-letter', 'en', {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
         patient: {
-          firstName: 'John',
-          lastName: 'Doe',
+          firstName: JOHN,
+          lastName: DOE,
         },
         doctor: {
-          practice: 'Test Practice',
+          practice: TEST_PRACTICE,
           title: 'Prof. Dr.',
           gender: 'Frau',
           name: 'Schmidt',
@@ -75,7 +81,7 @@ describe('buildDocumentModel for doctor-letter', () => {
       });
 
       expect(result.doctor).toMatchObject({
-        practice: 'Test Practice',
+        practice: TEST_PRACTICE,
         title: 'Prof. Dr.',
         gender: 'Frau',
         name: 'Schmidt',
@@ -86,14 +92,14 @@ describe('buildDocumentModel for doctor-letter', () => {
     });
 
     it('handles missing optional patient fields', () => {
-      const result = buildDocumentModel('doctor-letter', 'en', {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
         patient: {
-          firstName: 'John',
-          lastName: 'Doe',
+          firstName: JOHN,
+          lastName: DOE,
         },
         doctor: {
-          practice: 'Test Practice',
-          title: 'Dr.',
+          practice: TEST_PRACTICE,
+          title: DR_TITLE,
           gender: 'Herr',
           name: 'Smith',
         },
@@ -101,8 +107,8 @@ describe('buildDocumentModel for doctor-letter', () => {
       });
 
       expect(result.patient).toEqual({
-        firstName: 'John',
-        lastName: 'Doe',
+        firstName: JOHN,
+        lastName: DOE,
         streetAndNumber: null,
         postalCode: null,
         city: null,
@@ -110,25 +116,25 @@ describe('buildDocumentModel for doctor-letter', () => {
     });
 
     it('handles missing optional doctor fields', () => {
-      const result = buildDocumentModel('doctor-letter', 'en', {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
         patient: {
-          firstName: 'John',
-          lastName: 'Doe',
+          firstName: JOHN,
+          lastName: DOE,
         },
         doctor: {
-          practice: 'Test Practice',
+          practice: TEST_PRACTICE,
           title: 'kein',
           gender: 'Frau',
-          name: 'Doe',
+          name: DOE,
         },
         decision: {},
       });
 
       expect(result.doctor).toMatchObject({
-        practice: 'Test Practice',
+        practice: TEST_PRACTICE,
         title: 'kein',
         gender: 'Frau',
-        name: 'Doe',
+        name: DOE,
         streetAndNumber: null,
         postalCode: null,
         city: null,
@@ -138,14 +144,14 @@ describe('buildDocumentModel for doctor-letter', () => {
 
   describe('decision tree integration', () => {
     it('resolves Case 0 and provides localized text in German', () => {
-      const result = buildDocumentModel('doctor-letter', 'de', {
+      const result = buildDocumentModel(FORMPACK_ID, 'de', {
         patient: {
           firstName: 'Max',
           lastName: 'Mustermann',
         },
         doctor: {
           practice: 'Praxis Test',
-          title: 'Dr.',
+          title: DR_TITLE,
           gender: 'Herr',
           name: 'Test',
         },
@@ -164,14 +170,14 @@ describe('buildDocumentModel for doctor-letter', () => {
     });
 
     it('resolves Case 3 (COVID-19 infection) and provides localized text in English', () => {
-      const result = buildDocumentModel('doctor-letter', 'en', {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
         patient: {
           firstName: 'Jane',
           lastName: 'Smith',
         },
         doctor: {
           practice: 'Practice Test',
-          title: 'Dr.',
+          title: DR_TITLE,
           gender: 'Frau',
           name: 'Test',
         },
@@ -192,7 +198,7 @@ describe('buildDocumentModel for doctor-letter', () => {
     });
 
     it('resolves Case 11 (cause unknown) correctly', () => {
-      const result = buildDocumentModel('doctor-letter', 'de', {
+      const result = buildDocumentModel(FORMPACK_ID, 'de', {
         patient: {
           firstName: 'Anna',
           lastName: 'Test',
@@ -217,14 +223,14 @@ describe('buildDocumentModel for doctor-letter', () => {
     });
 
     it('resolves Case 1 (EBV infection) correctly', () => {
-      const result = buildDocumentModel('doctor-letter', 'en', {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
         patient: {
           firstName: 'Tom',
           lastName: 'Brown',
         },
         doctor: {
           practice: 'Brown Practice',
-          title: 'Dr.',
+          title: DR_TITLE,
           gender: 'Herr',
           name: 'Wilson',
         },
@@ -242,14 +248,14 @@ describe('buildDocumentModel for doctor-letter', () => {
     });
 
     it('resolves Case 12 (no known cause with PEM) correctly', () => {
-      const result = buildDocumentModel('doctor-letter', 'de', {
+      const result = buildDocumentModel(FORMPACK_ID, 'de', {
         patient: {
           firstName: 'Lisa',
           lastName: 'Müller',
         },
         doctor: {
           practice: 'Praxis Müller',
-          title: 'Dr.',
+          title: DR_TITLE,
           gender: 'Frau',
           name: 'Wagner',
         },
@@ -269,14 +275,14 @@ describe('buildDocumentModel for doctor-letter', () => {
     });
 
     it('resolves Case 8 (COVID-19 vaccination with PEM) correctly', () => {
-      const result = buildDocumentModel('doctor-letter', 'en', {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
         patient: {
           firstName: 'Sarah',
           lastName: 'Johnson',
         },
         doctor: {
           practice: 'Johnson Clinic',
-          title: 'Dr.',
+          title: DR_TITLE,
           gender: 'Frau',
           name: 'Taylor',
         },
@@ -284,13 +290,13 @@ describe('buildDocumentModel for doctor-letter', () => {
           q1: false,
           q6: true,
           q7: true,
-          q8: 'COVID-19 vaccination',
+          q8: COVID_19_VACCINATION,
         },
       });
 
       expect(result.decision).toBeDefined();
       expect(result.decision?.caseId).toBe(8);
-      expect(result.decision?.caseText).toContain('COVID-19 vaccination');
+      expect(result.decision?.caseText).toContain(COVID_19_VACCINATION);
     });
   });
 
@@ -306,7 +312,7 @@ describe('buildDocumentModel for doctor-letter', () => {
         },
         doctor: {
           practice: 'Praxis Dr. Schmidt',
-          title: 'Dr.',
+          title: DR_TITLE,
           gender: 'Frau',
           name: 'Schmidt',
           streetAndNumber: 'Ärzteweg 1',
@@ -321,7 +327,7 @@ describe('buildDocumentModel for doctor-letter', () => {
         },
       };
 
-      const result = buildDocumentModel('doctor-letter', 'de', formData);
+      const result = buildDocumentModel(FORMPACK_ID, 'de', formData);
 
       expect(result.patient).toBeDefined();
       expect(result.patient?.firstName).toBe('Max');
@@ -349,14 +355,14 @@ describe('buildDocumentModel for doctor-letter', () => {
     });
 
     it('ensures caseText is never a raw boolean or ID', () => {
-      const result = buildDocumentModel('doctor-letter', 'en', {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
         patient: {
           firstName: 'Test',
           lastName: 'User',
         },
         doctor: {
           practice: 'Test',
-          title: 'Dr.',
+          title: DR_TITLE,
           gender: 'Herr',
           name: 'Test',
         },
@@ -364,7 +370,7 @@ describe('buildDocumentModel for doctor-letter', () => {
           q1: true,
           q2: true,
           q3: false,
-          q5: 'COVID-19 vaccination',
+          q5: COVID_19_VACCINATION,
         },
       });
 
@@ -373,7 +379,7 @@ describe('buildDocumentModel for doctor-letter', () => {
       expect(result.decision?.caseText).not.toBe('true');
       expect(result.decision?.caseText).not.toBe('false');
       expect(result.decision?.caseText).not.toBe('4');
-      expect(result.decision?.caseText).toContain('COVID-19 vaccination');
+      expect(result.decision?.caseText).toContain(COVID_19_VACCINATION);
     });
   });
 });

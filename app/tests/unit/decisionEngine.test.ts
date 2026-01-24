@@ -4,6 +4,8 @@ import {
   type DecisionAnswers,
 } from '../../src/formpacks/decisionEngine';
 
+const CASE_0_KEY = 'doctor-letter.case.0.paragraph';
+
 describe('resolveDecisionTree', () => {
   describe('Q1=true path (full ME/CFS)', () => {
     it('resolves to Case 11 when Q1=true, Q2=false (cause unknown)', () => {
@@ -97,7 +99,7 @@ describe('resolveDecisionTree', () => {
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
-      expect(result.caseKey).toBe('doctor-letter.case.0.paragraph');
+      expect(result.caseKey).toBe(CASE_0_KEY);
     });
 
     it('resolves to Case 0 when Q1=false, Q6=true, Q7=false (no PEM)', () => {
@@ -108,7 +110,7 @@ describe('resolveDecisionTree', () => {
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
-      expect(result.caseKey).toBe('doctor-letter.case.0.paragraph');
+      expect(result.caseKey).toBe(CASE_0_KEY);
     });
 
     it('resolves to Case 12 when Q1=false, Q6=true, Q7=true, Q8=No known cause', () => {
@@ -189,7 +191,7 @@ describe('resolveDecisionTree', () => {
       const answers: DecisionAnswers = {};
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
-      expect(result.caseKey).toBe('doctor-letter.case.0.paragraph');
+      expect(result.caseKey).toBe(CASE_0_KEY);
     });
 
     it('resolves to Case 0 when Q1=true but no Q2 provided', () => {
@@ -198,7 +200,7 @@ describe('resolveDecisionTree', () => {
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
-      expect(result.caseKey).toBe('doctor-letter.case.0.paragraph');
+      expect(result.caseKey).toBe(CASE_0_KEY);
     });
 
     it('resolves to Case 0 when Q1=true, Q2=true, Q3=true but no Q4 provided', () => {
@@ -209,7 +211,7 @@ describe('resolveDecisionTree', () => {
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
-      expect(result.caseKey).toBe('doctor-letter.case.0.paragraph');
+      expect(result.caseKey).toBe(CASE_0_KEY);
     });
 
     it('resolves to Case 0 when Q1=true, Q2=true, Q3=false but no Q5 provided', () => {
@@ -220,7 +222,7 @@ describe('resolveDecisionTree', () => {
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
-      expect(result.caseKey).toBe('doctor-letter.case.0.paragraph');
+      expect(result.caseKey).toBe(CASE_0_KEY);
     });
 
     it('resolves to Case 0 when Q1=false, Q6=true, Q7=true but no Q8 provided', () => {
@@ -231,7 +233,7 @@ describe('resolveDecisionTree', () => {
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
-      expect(result.caseKey).toBe('doctor-letter.case.0.paragraph');
+      expect(result.caseKey).toBe(CASE_0_KEY);
     });
   });
 
