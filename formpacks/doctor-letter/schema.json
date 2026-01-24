@@ -4,6 +4,7 @@
   "title": "doctor-letter",
   "type": "object",
   "required": ["patient", "doctor", "decision"],
+  "additionalProperties": false,
   "properties": {
     "patient": {
       "type": "object",
@@ -95,22 +96,6 @@
           "type": "string",
           "title": "Resolved Case",
           "readOnly": true
-        }
-      },
-      "additionalProperties": false
-    },
-    "infoBoxes": {
-      "type": "object",
-      "properties": {
-        "q1": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            }
-          },
-          "additionalProperties": false
         }
       },
       "additionalProperties": false

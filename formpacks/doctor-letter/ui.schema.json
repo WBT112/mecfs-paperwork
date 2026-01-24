@@ -2,8 +2,7 @@
   "ui:order": [
     "patient",
     "doctor",
-    "decision",
-    "infoBoxes"
+    "decision"
   ],
   "patient": {
     "ui:title": "doctor-letter.section.patient.title",
@@ -122,8 +121,5 @@
       },
       "ui:readonly": true
     }
-  },
-  "infoBoxes": {
-    "ui:widget": "hidden"
   }
 }
