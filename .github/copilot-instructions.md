@@ -144,6 +144,7 @@ ReactDOM.createRoot(rootElement).render(
 ```
 
 ## Docs worth reading first
+- `AGENTS.md` (additional AGENT information)
 - `README.md` (project overview + quality gates)
 - `CONTRIBUTING.md` and `AGENTS.md` (non-negotiables + QA gates)
 - `docs/qa/dod.md`, `docs/qa/manual-checklists.md`, `docs/qa/testdaten.md`
