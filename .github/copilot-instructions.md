@@ -45,6 +45,7 @@ npm run formpack:validate
 npm run build
 npm run test:e2e
 ```
+If `format:check` fails, run `npm run format` and re-run `npm run format:check`.
 Notes from verified runs:
 - **lint:** Warns that TypeScript 5.9 is newer than @typescript-eslint support, but exits 0.
 - **build:** Vite warns about `eval` usage in `docx-templates` (expected).
@@ -55,7 +56,7 @@ Notes from verified runs:
 ```bash
 npx playwright install
 ```
-- First attempt to `cdn.playwright.dev` returned **403** in this sandbox; Playwright automatically fell back to `playwright.download.prss.microsoft.com` and succeeded.
+- First attempt to `cdn.playwright.dev` returned **403** in this sandbox; Playwright automatically fell back to a Microsoft CDN and succeeded.
 - After install, Playwright warned about missing system libs (GTK/GStreamer/etc). Use:
   ```bash
   npx playwright install --with-deps
@@ -80,7 +81,7 @@ docker compose up --build
 ```
 
 ## CI / workflows (replicable locally)
-- **QA Gates (`.github/workflows/qa.yml`)**: `npm ci` → lint → format → format:check → typecheck → formpack:validate → test → build.
+- **QA Gates (`.github/workflows/qa.yml`)**: `npm ci` → lint → format (write) → format:check → typecheck → formpack:validate → test → build.
 - **E2E (`.github/workflows/e2e.yml`)**: Playwright matrix (chromium required; firefox/webkit allowed to fail).
 - **SonarCloud (`.github/workflows/sonarcloud.yml`)**: `npm run test:coverage` + scan (needs `SONAR_TOKEN`).
 - **Trivy + Docker smoke** require DHI registry secrets; skip on PRs without secrets.
