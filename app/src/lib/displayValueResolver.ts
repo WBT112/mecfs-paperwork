@@ -121,6 +121,48 @@ const resolveParagraphValue = (
   return '';
 };
 
+const getItemSchemaFromArray = (
+  schema: RJSFSchema | undefined,
+): RJSFSchema | undefined => {
+  if (!schema?.items) {
+    return undefined;
+  }
+  return Array.isArray(schema.items)
+    ? (schema.items[0] as RJSFSchema)
+    : (schema.items as RJSFSchema);
+};
+
+const getItemUiSchemaFromArray = (
+  uiSchema: UiSchema | undefined,
+): UiSchema | undefined => {
+  if (!uiSchema?.items) {
+    return undefined;
+  }
+  return Array.isArray(uiSchema.items)
+    ? (uiSchema.items[0] as UiSchema)
+    : (uiSchema.items as UiSchema);
+};
+
+const resolveArrayItem = (
+  item: unknown,
+  itemOptions: DisplayValueResolverOptions,
+): string | null => {
+  const enumLabel = resolveEnumLabel(item, itemOptions);
+  if (enumLabel !== null) {
+    return enumLabel;
+  }
+
+  if (typeof item === 'string' && item.trim()) {
+    return item;
+  }
+
+  if (typeof item === 'number') {
+    return String(item);
+  }
+
+  return null;
+};
+
 const resolveArrayValue = (
   values: unknown[],
   options: DisplayValueResolverOptions,
@@ -129,35 +171,15 @@ const resolveArrayValue = (
     return '';
   }
 
-  // For array types, schema.items contains the item schema (enum definitions, etc.)
-  const itemSchema = options.schema?.items;
-  const itemUiSchema = options.uiSchema?.items;
   const itemOptions = {
     ...options,
-    schema: itemSchema
-      ? Array.isArray(itemSchema)
-        ? (itemSchema[0] as RJSFSchema)
-        : (itemSchema as RJSFSchema)
-      : undefined,
-    uiSchema: itemUiSchema
-      ? Array.isArray(itemUiSchema)
-        ? (itemUiSchema[0] as UiSchema)
-        : (itemUiSchema as UiSchema)
-      : undefined,
+    schema: getItemSchemaFromArray(options.schema),
+    uiSchema: getItemUiSchemaFromArray(options.uiSchema),
   };
 
-  // Resolve each array item to its display value
-  const resolvedItems: string[] = [];
-  for (const item of values) {
-    const enumLabel = resolveEnumLabel(item, itemOptions);
-    if (enumLabel !== null) {
-      resolvedItems.push(enumLabel);
-    } else if (typeof item === 'string' && item.trim()) {
-      resolvedItems.push(item);
-    } else if (typeof item === 'number') {
-      resolvedItems.push(String(item));
-    }
-  }
+  const resolvedItems = values
+    .map((item) => resolveArrayItem(item, itemOptions))
+    .filter((item): item is string => item !== null);
 
   if (!resolvedItems.length) {
     return '';
@@ -168,7 +190,6 @@ const resolveArrayValue = (
     return resolvedItems.map((item) => `• ${item}`).join('\n');
   }
 
-  // Default 'join' mode with comma-space separator
   return resolvedItems.join(', ');
 };
 

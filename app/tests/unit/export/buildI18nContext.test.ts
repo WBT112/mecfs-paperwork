@@ -1,5 +1,8 @@
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
-import { buildI18nContext, setNested } from '../../../src/export/buildI18nContext';
+import {
+  buildI18nContext,
+  setNested,
+} from '../../../src/export/buildI18nContext';
 import i18n from '../../../src/i18n';
 
 describe('buildI18nContext', () => {
