@@ -57,7 +57,7 @@ export function PersonForm({ initialData, onSave, locale }: PersonFormProps) {
 - **Local state:** `useState` for component-specific state
 - **Side effects:** `useEffect` with proper dependency arrays
 - **Context:** Only for truly global concerns (theme, i18n)
-- **No external state libraries** (Redux, Zustand, etc.) unless issue explicitly requires
+- **No external state libraries** (Redux, Zustand, Jotai, etc.) - the app uses local state and IndexedDB for persistence
 
 ### Performance
 - **Memoization:** Use `useMemo`/`useCallback` only when measured to be necessary

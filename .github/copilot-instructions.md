@@ -204,13 +204,12 @@ const pack = await loadFormpack('notfallpass', 'de');
 
 ### Export flow (DOCX)
 ```typescript
-import { exportToDocx } from '@/export/docx';
+import { exportDocx } from '@/export/docx';
 
-const blob = await exportToDocx({
-  formpackId: 'notfallpass',
-  data: record.data,
-  locale: 'de',
-  template: 'a4' // or 'wallet'
+const blob = await exportDocx({
+  recordId: record.id,
+  variant: 'a4', // or 'wallet'
+  locale: 'de'
 });
 ```
 

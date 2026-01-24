@@ -45,6 +45,7 @@ When editing or creating formpack content:
 ### Delimiter Rules (Mandatory)
 - **Use only:** `{{ ... }}` command delimiters
 - **Never use:** `+++...+++`, mustache syntax (`{{#...}}`, `{{/...}}`), or `{{.}}`
+- **Rationale:** Our export code configures `docx-templates` with `cmdDelimiter: ['{{','}}']`. Mustache-style block helpers (`{{#if}}`, `{{#each}}`) are not supported by docx-templates; use `{{IF...}}`, `{{FOR...}}` commands instead.
 
 ### Commands
 - Value insertion: `{{INS person.name}}` (preferred) or `{{person.name}}`
