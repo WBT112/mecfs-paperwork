@@ -1586,6 +1586,7 @@ describe('FormpackDetailPage', () => {
         data: {
           diagnoses: {
             meCfs: true,
+            pots: false,
           },
         },
       },
@@ -1615,6 +1616,7 @@ describe('FormpackDetailPage', () => {
           type: 'object',
           properties: {
             meCfs: { type: 'boolean' },
+            pots: { type: 'boolean' },
           },
         },
       },
@@ -1624,6 +1626,9 @@ describe('FormpackDetailPage', () => {
         'ui:title': 'diagnoses',
         meCfs: {
           'ui:title': 'meCfs',
+        },
+        pots: {
+          'ui:title': 'POTS',
         },
       },
     };
@@ -1645,6 +1650,13 @@ describe('FormpackDetailPage', () => {
       await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
 
       expect(await screen.findByText('ME/CFS Paragraph')).toBeInTheDocument();
+      const previewContent = document.getElementById(
+        'formpack-document-preview-content',
+      );
+      expect(previewContent).toBeTruthy();
+      if (previewContent) {
+        expect(within(previewContent).queryByText('POTS')).toBeNull();
+      }
     } finally {
       restoreText();
     }
