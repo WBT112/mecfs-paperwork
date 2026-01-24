@@ -35,7 +35,7 @@ npm run dev
 - Vite dev server defaults to http://localhost:5173.
 - `predev` syncs `formpacks/` → `app/public/formpacks` and `.github/FUNDING.yml` → `app/src/lib/funding.generated.ts`.
 
-### Quality gates (order used locally + CI)
+### Quality gates (order used locally + CI) need to be run for everything but document-only changes
 ```bash
 npm run format:check
 npm run lint
