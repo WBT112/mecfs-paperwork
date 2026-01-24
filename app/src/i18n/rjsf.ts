@@ -41,6 +41,24 @@ const translateUiSchemaString = (
   return t(key, { ns: namespace, defaultValue: key });
 };
 
+const translateTranslatableValue = (
+  entry: unknown,
+  t: TFunction,
+  namespace?: string,
+): unknown => {
+  if (typeof entry === 'string') {
+    return translateUiSchemaString(entry, t, namespace);
+  }
+  if (Array.isArray(entry)) {
+    return entry.map((item: unknown) =>
+      typeof item === 'string'
+        ? translateUiSchemaString(item, t, namespace)
+        : item,
+    );
+  }
+  return translateUiSchemaNode(entry, t, namespace);
+};
+
 const translateUiSchemaNode = (
   value: unknown,
   t: TFunction,
@@ -57,21 +75,9 @@ const translateUiSchemaNode = (
   const translated: Record<string, unknown> = {};
 
   Object.entries(value).forEach(([key, entry]) => {
-    if (TRANSLATABLE_KEYS.has(key)) {
-      if (typeof entry === 'string') {
-        translated[key] = translateUiSchemaString(entry, t, namespace);
-      } else if (Array.isArray(entry)) {
-        translated[key] = entry.map((item) =>
-          typeof item === 'string'
-            ? translateUiSchemaString(item, t, namespace)
-            : item,
-        );
-      } else {
-        translated[key] = translateUiSchemaNode(entry, t, namespace);
-      }
-    } else {
-      translated[key] = translateUiSchemaNode(entry, t, namespace);
-    }
+    translated[key] = TRANSLATABLE_KEYS.has(key)
+      ? translateTranslatableValue(entry, t, namespace)
+      : translateUiSchemaNode(entry, t, namespace);
   });
 
   return translated;

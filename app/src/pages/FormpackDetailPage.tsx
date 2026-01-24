@@ -879,12 +879,32 @@ export default function FormpackDetailPage() {
   }, [formpackId, hasLoadedRecords, isRecordsLoading, restoreActiveRecord]);
 
   // Type guards for decision tree enum values
-  const isValidQ4 = (val: unknown): val is 'EBV' | 'Influenza' | 'COVID-19' | 'Other infection' =>
-    val === 'EBV' || val === 'Influenza' || val === 'COVID-19' || val === 'Other infection';
-  const isValidQ5 = (val: unknown): val is 'COVID-19 vaccination' | 'Other cause' =>
+  const isValidQ4 = (
+    val: unknown,
+  ): val is 'EBV' | 'Influenza' | 'COVID-19' | 'Other infection' =>
+    val === 'EBV' ||
+    val === 'Influenza' ||
+    val === 'COVID-19' ||
+    val === 'Other infection';
+  const isValidQ5 = (
+    val: unknown,
+  ): val is 'COVID-19 vaccination' | 'Other cause' =>
     val === 'COVID-19 vaccination' || val === 'Other cause';
-  const isValidQ8 = (val: unknown): val is 'No known cause' | 'EBV' | 'Influenza' | 'COVID-19 infection' | 'COVID-19 vaccination' | 'Other cause' =>
-    val === 'No known cause' || val === 'EBV' || val === 'Influenza' || val === 'COVID-19 infection' || val === 'COVID-19 vaccination' || val === 'Other cause';
+  const isValidQ8 = (
+    val: unknown,
+  ): val is
+    | 'No known cause'
+    | 'EBV'
+    | 'Influenza'
+    | 'COVID-19 infection'
+    | 'COVID-19 vaccination'
+    | 'Other cause' =>
+    val === 'No known cause' ||
+    val === 'EBV' ||
+    val === 'Influenza' ||
+    val === 'COVID-19 infection' ||
+    val === 'COVID-19 vaccination' ||
+    val === 'Other cause';
 
   const resolveAndPopulateDoctorLetterCase = useCallback(
     (decision: Record<string, unknown>): string => {
