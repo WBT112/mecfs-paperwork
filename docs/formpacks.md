@@ -259,3 +259,193 @@ npm run formpack:validate -- --id my-pack
 ## App registry (MVP)
 The app only loads formpacks listed in `app/src/formpacks/registry.ts`. Add the
 new pack id to `FORMPACK_IDS` so it appears in the catalog.
+
+## Shared code in `/app/src/formpacks/`
+
+The following modules provide reusable infrastructure for all formpacks:
+
+### `loader.ts`
+Loads formpack assets (manifest, schema, UI schema, i18n) from the public directory at runtime.
+
+**Key exports:**
+- `loadFormpack(id: string, locale: SupportedLocale): Promise<FormpackData>` - Loads all assets for a formpack
+- Handles async fetching of JSON files
+- Validates manifest structure
+- Returns a complete `FormpackData` object with all assets
+
+**Used by:** All formpacks when rendering forms or preparing exports.
+
+### `registry.ts`
+Static registry of available formpacks.
+
+**Key exports:**
+- `FORMPACK_IDS` - Array of formpack IDs (e.g., `['doctor-letter', 'notfallpass']`)
+- `FormpackId` - TypeScript type for valid formpack IDs
+
+**Used by:** UI catalog, routing, validation.
+
+**Note:** New formpacks must be registered here to appear in the app.
+
+### `documentModel.ts`
+Transforms form data into a document model suitable for exports (preview, DOCX, JSON).
+
+**Key exports:**
+- `buildDocumentModel(formpackId: string | null, locale: SupportedLocale, formData: Record<string, unknown>): DocumentModel`
+- `DocumentModel` - TypeScript type for the document projection
+
+**Architecture:**
+- **Base model builder** (`buildBaseDocumentModel`): Extracts common fields (person, contacts, medications, etc.) that exist across most formpacks
+- **Formpack-specific builders**: 
+  - `buildDoctorLetterModel`: Handles patient, doctor with extended fields, and decision tree resolution
+  - `buildNotfallpassModel`: Handles diagnosis flags and generates diagnosis paragraphs
+- Uses i18n to resolve display text (e.g., case paragraphs, diagnosis text)
+
+**Used by:** Export functions (DOCX, JSON), document preview.
+
+**Extension pattern:**
+```typescript
+if (formpackId === 'my-formpack') {
+  return buildMyFormpackModel(formData, locale, baseModel);
+}
+```
+
+### `decisionEngine.ts`
+Decision tree resolver for the `doctor-letter` formpack (introduced in v0.1.0).
+
+**Key exports:**
+- `resolveDecisionTree(answers: DecisionAnswers): DecisionResult`
+- `DecisionAnswers` - Input type for Q1-Q8 answers
+- `DecisionResult` - Output type with `caseId` and `caseKey` (i18n key)
+
+**Purpose:** Pure function that maps decision tree answers (boolean/enum) to a case ID (0-13) and an i18n key for the case paragraph.
+
+**Used by:** `buildDoctorLetterModel` in `documentModel.ts`.
+
+**Note:** This is formpack-specific and only used by `doctor-letter`. Other formpacks with decision logic would implement their own engine.
+
+### `types.ts`
+Shared TypeScript types for formpack infrastructure.
+
+**Key exports:**
+- `FormpackData` - Complete structure of a loaded formpack
+- `FormpackManifest` - Manifest file structure
+- And other common types
+
+**Used by:** All modules that work with formpacks.
+
+### `visibility.ts`
+Determines if a formpack should be visible in the UI based on its `visibility` field.
+
+**Key exports:**
+- `isFormpackVisible(manifest: FormpackManifest, isDev: boolean): boolean`
+
+**Rules:**
+- `visibility: "public"` → always visible
+- `visibility: "dev"` → only visible in dev mode or if `VITE_SHOW_DEV_FORMPACKS=true`
+
+**Used by:** Formpack listing/catalog UI.
+
+## Available formpacks
+
+### `notfallpass` (Emergency Pass)
+**Purpose:** Quick-reference card for emergency responders with patient health information.
+
+**Data model:**
+- Person (name, birthDate)
+- Emergency contacts (array)
+- Diagnoses (ME/CFS, POTS, Long Covid flags + formatted text)
+- Symptoms (free text)
+- Medications (array)
+- Allergies (free text)
+- Doctor (name, phone)
+
+**Shared code usage:**
+- Uses `buildNotfallpassModel` in `documentModel.ts`
+- Generates `diagnosisParagraphs[]` based on diagnosis flags (meCfs, pots, longCovid)
+- Uses i18n keys: `notfallpass.export.diagnoses.{meCfs,pots,longCovid}.paragraph`
+
+**Templates:**
+- `a4.docx` - Standard A4 page format
+- `wallet.docx` - Compact wallet-sized format (special case, only for notfallpass)
+
+**Export behavior:**
+- If `meCfs` flag is false, `diagnosisParagraphs` is empty
+- Otherwise, adds paragraph(s) based on enabled flags
+- All fields are optional except `person.name`
+
+### `doctor-letter` (Arztbrief)
+**Purpose:** Decision-tree driven doctor letter for ME/CFS diagnosis documentation.
+
+**Data model:**
+- Patient (firstName, lastName, streetAndNumber, postalCode, city)
+- Doctor/Practice (practice, name, title dropdown: "kein"|"Dr."|"Prof. Dr.", gender dropdown: "Frau"|"Herr", streetAndNumber, postalCode, city)
+- Decision tree (Q1-Q8: boolean/enum questions)
+- Infoboxes (maintainer-controlled visibility per question)
+
+**Decision tree:**
+- Q1 (full ME/CFS) → branches to Q2 or Q6
+- Q2-Q5: Cause identification path → Cases 1-4, 9-11
+- Q6-Q8: Partial symptom path → Cases 0, 5-8, 12-13
+- Total: 14 cases (0-13)
+
+**Shared code usage:**
+- Uses `decisionEngine.ts` to resolve Q1-Q8 answers → `{ caseId, caseKey }`
+- Uses `buildDoctorLetterModel` in `documentModel.ts`
+- Resolves localized `caseText` via i18n: `doctor-letter.case.{0-13}.paragraph`
+- Exposes `decision.caseId` (number) and `decision.caseText` (localized string) in document model
+
+**Templates:**
+- `a4.docx` - Doctor letter format (auto-generated skeleton, needs manual refinement)
+
+**Export behavior:**
+- Decision tree always resolves (no abort/error state)
+- Case 0 is valid output for non-matching paths
+- Preview and DOCX receive the same `decision.caseText` (never raw boolean/ID)
+- All master data fields are mapped for template injection
+
+**i18n coverage:**
+- 14 case paragraphs (DE/EN): `doctor-letter.case.{0-13}.paragraph`
+- Field labels for patient, doctor, and decision questions
+- Infobox help text for Q1
+
+**Testing:**
+- 22 unit tests for `decisionEngine.ts` (100% coverage)
+- 12 integration tests for `buildDocumentModel` (doctor-letter path)
+
+## Adding formpack-specific logic
+
+### When to extend shared code
+
+**Add to `documentModel.ts`** if:
+- Your formpack needs custom computed fields (e.g., decision resolution, diagnosis paragraphs)
+- You need formpack-specific i18n lookups for export text
+- Follow the pattern: `if (formpackId === 'my-pack') return buildMyPackModel(...)`
+
+**Create a new module** (e.g., `myEngine.ts`) if:
+- Your formpack has complex business logic (decision trees, calculators, validators)
+- The logic is testable in isolation
+- Example: `decisionEngine.ts` for `doctor-letter`
+
+**Do NOT modify** `loader.ts`, `registry.ts`, `types.ts`, or `visibility.ts` unless:
+- You're adding new core infrastructure needed by all formpacks
+- You're fixing a bug
+
+### Testing requirements
+
+- **New formpack-specific modules**: Aim for ≥80% line coverage
+- **Document model extensions**: Integration tests proving form data → document model → export payload
+- Use Vitest for unit/integration tests
+- E2E (Playwright) optional unless touching navigation
+
+### Extension checklist
+
+When adding a new formpack with custom logic:
+
+1. Create formpack assets in `formpacks/<id>/`
+2. Register in `app/src/formpacks/registry.ts`
+3. If needed, add business logic module (e.g., `app/src/formpacks/myEngine.ts`)
+4. Extend `documentModel.ts` with formpack-specific builder
+5. Write unit tests for business logic (≥80% coverage)
+6. Write integration tests for document model mapping
+7. Run `npm run formpack:validate` to check contract compliance
+8. Test exports (JSON, DOCX) manually

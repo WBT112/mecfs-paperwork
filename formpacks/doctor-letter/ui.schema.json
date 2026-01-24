@@ -1,0 +1,129 @@
+{
+  "ui:order": [
+    "patient",
+    "doctor",
+    "decision",
+    "infoBoxes"
+  ],
+  "patient": {
+    "ui:title": "doctor-letter.section.patient.title",
+    "ui:order": ["firstName", "lastName", "streetAndNumber", "postalCode", "city"],
+    "firstName": {
+      "ui:title": "doctor-letter.patient.firstName.label",
+      "ui:help": "doctor-letter.patient.firstName.help"
+    },
+    "lastName": {
+      "ui:title": "doctor-letter.patient.lastName.label",
+      "ui:help": "doctor-letter.patient.lastName.help"
+    },
+    "streetAndNumber": {
+      "ui:title": "doctor-letter.patient.streetAndNumber.label",
+      "ui:help": "doctor-letter.patient.streetAndNumber.help"
+    },
+    "postalCode": {
+      "ui:title": "doctor-letter.patient.postalCode.label",
+      "ui:help": "doctor-letter.patient.postalCode.help"
+    },
+    "city": {
+      "ui:title": "doctor-letter.patient.city.label",
+      "ui:help": "doctor-letter.patient.city.help"
+    }
+  },
+  "doctor": {
+    "ui:title": "doctor-letter.section.doctor.title",
+    "ui:order": ["practice", "title", "gender", "name", "streetAndNumber", "postalCode", "city"],
+    "practice": {
+      "ui:title": "doctor-letter.doctor.practice.label",
+      "ui:help": "doctor-letter.doctor.practice.help"
+    },
+    "title": {
+      "ui:title": "doctor-letter.doctor.title.label",
+      "ui:help": "doctor-letter.doctor.title.help"
+    },
+    "gender": {
+      "ui:title": "doctor-letter.doctor.gender.label",
+      "ui:help": "doctor-letter.doctor.gender.help"
+    },
+    "name": {
+      "ui:title": "doctor-letter.doctor.name.label",
+      "ui:help": "doctor-letter.doctor.name.help"
+    },
+    "streetAndNumber": {
+      "ui:title": "doctor-letter.doctor.streetAndNumber.label",
+      "ui:help": "doctor-letter.doctor.streetAndNumber.help"
+    },
+    "postalCode": {
+      "ui:title": "doctor-letter.doctor.postalCode.label",
+      "ui:help": "doctor-letter.doctor.postalCode.help"
+    },
+    "city": {
+      "ui:title": "doctor-letter.doctor.city.label",
+      "ui:help": "doctor-letter.doctor.city.help"
+    }
+  },
+  "decision": {
+    "ui:title": "doctor-letter.section.decision.title",
+    "ui:order": ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "resolvedCaseText"],
+    "q1": {
+      "ui:title": "doctor-letter.decision.q1.label",
+      "ui:help": "doctor-letter.decision.q1.help"
+    },
+    "q2": {
+      "ui:title": "doctor-letter.decision.q2.label",
+      "ui:help": "doctor-letter.decision.q2.help"
+    },
+    "q3": {
+      "ui:title": "doctor-letter.decision.q3.label",
+      "ui:help": "doctor-letter.decision.q3.help"
+    },
+    "q4": {
+      "ui:title": "doctor-letter.decision.q4.label",
+      "ui:help": "doctor-letter.decision.q4.help",
+      "ui:enumNames": [
+        "doctor-letter.decision.q4.option.EBV",
+        "doctor-letter.decision.q4.option.Influenza",
+        "doctor-letter.decision.q4.option.COVID-19",
+        "doctor-letter.decision.q4.option.OtherInfection"
+      ]
+    },
+    "q5": {
+      "ui:title": "doctor-letter.decision.q5.label",
+      "ui:help": "doctor-letter.decision.q5.help",
+      "ui:enumNames": [
+        "doctor-letter.decision.q5.option.COVID19Vaccination",
+        "doctor-letter.decision.q5.option.OtherCause"
+      ]
+    },
+    "q6": {
+      "ui:title": "doctor-letter.decision.q6.label",
+      "ui:help": "doctor-letter.decision.q6.help"
+    },
+    "q7": {
+      "ui:title": "doctor-letter.decision.q7.label",
+      "ui:help": "doctor-letter.decision.q7.help"
+    },
+    "q8": {
+      "ui:title": "doctor-letter.decision.q8.label",
+      "ui:help": "doctor-letter.decision.q8.help",
+      "ui:enumNames": [
+        "doctor-letter.decision.q8.option.NoKnownCause",
+        "doctor-letter.decision.q8.option.EBV",
+        "doctor-letter.decision.q8.option.Influenza",
+        "doctor-letter.decision.q8.option.COVID19Infection",
+        "doctor-letter.decision.q8.option.COVID19Vaccination",
+        "doctor-letter.decision.q8.option.OtherCause"
+      ]
+    },
+    "resolvedCaseText": {
+      "ui:title": "doctor-letter.decision.resolvedCaseText.label",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 5
+      },
+      "ui:readonly": true
+    }
+  },
+  "infoBoxes": {
+    "ui:widget": "hidden"
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mecfs-paperwork.local/formpacks/doctor-letter/schema.json",
+  "title": "doctor-letter",
+  "type": "object",
+  "required": ["patient", "doctor", "decision"],
+  "properties": {
+    "patient": {
+      "type": "object",
+      "required": ["firstName", "lastName"],
+      "properties": {
+        "firstName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lastName": {
+          "type": "string",
+          "minLength": 1
+        },
+        "streetAndNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "doctor": {
+      "type": "object",
+      "required": ["practice", "name", "title", "gender"],
+      "properties": {
+        "practice": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "enum": ["kein", "Dr.", "Prof. Dr."]
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["Frau", "Herr"]
+        },
+        "streetAndNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "decision": {
+      "type": "object",
+      "properties": {
+        "q1": {
+          "type": "boolean"
+        },
+        "q2": {
+          "type": "boolean"
+        },
+        "q3": {
+          "type": "boolean"
+        },
+        "q4": {
+          "type": "string",
+          "enum": ["EBV", "Influenza", "COVID-19", "Other infection"]
+        },
+        "q5": {
+          "type": "string",
+          "enum": ["COVID-19 vaccination", "Other cause"]
+        },
+        "q6": {
+          "type": "boolean"
+        },
+        "q7": {
+          "type": "boolean"
+        },
+        "q8": {
+          "type": "string",
+          "enum": ["No known cause", "EBV", "Influenza", "COVID-19 infection", "COVID-19 vaccination", "Other cause"]
+        },
+        "resolvedCaseText": {
+          "type": "string",
+          "title": "Resolved Case",
+          "readOnly": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "infoBoxes": {
+      "type": "object",
+      "properties": {
+        "q1": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

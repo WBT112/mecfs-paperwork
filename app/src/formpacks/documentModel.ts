@@ -1,5 +1,6 @@
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
+import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
 
 type DiagnosisFlags = {
   meCfs?: boolean;
@@ -33,6 +34,23 @@ export type DocumentModel = {
   doctor: {
     name: string | null;
     phone: string | null;
+    practice?: string | null;
+    title?: string | null;
+    gender?: string | null;
+    streetAndNumber?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+  };
+  patient?: {
+    firstName: string | null;
+    lastName: string | null;
+    streetAndNumber?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+  };
+  decision?: {
+    caseId: number;
+    caseText: string;
   };
 };
 
@@ -152,32 +170,90 @@ const buildBaseDocumentModel = (
   };
 };
 
-/**
- * Builds a document projection for exports using formpack i18n content.
- */
-export const buildDocumentModel = (
-  formpackId: string | null,
-  locale: SupportedLocale,
+const getBooleanValue = (value: unknown): boolean | undefined => {
+  if (value === true) return true;
+  if (value === false) return false;
+  return undefined;
+};
+
+const getDecisionAnswers = (
+  decision: Record<string, unknown> | null,
+): DecisionAnswers => ({
+  q1: getBooleanValue(decision?.q1),
+  q2: getBooleanValue(decision?.q2),
+  q3: getBooleanValue(decision?.q3),
+  q4:
+    typeof decision?.q4 === 'string'
+      ? (decision.q4 as DecisionAnswers['q4'])
+      : undefined,
+  q5:
+    typeof decision?.q5 === 'string'
+      ? (decision.q5 as DecisionAnswers['q5'])
+      : undefined,
+  q6: getBooleanValue(decision?.q6),
+  q7: getBooleanValue(decision?.q7),
+  q8:
+    typeof decision?.q8 === 'string'
+      ? (decision.q8 as DecisionAnswers['q8'])
+      : undefined,
+});
+
+const buildDoctorLetterModel = (
   formData: Record<string, unknown>,
+  locale: SupportedLocale,
+  baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
 ): DocumentModel => {
-  const baseModel = buildBaseDocumentModel(formData);
+  const patient = getRecordValue(formData.patient);
+  const doctor = getRecordValue(formData.doctor);
+  const decision = getRecordValue(formData.decision);
 
-  if (!formpackId) {
-    return { diagnosisParagraphs: [], ...baseModel };
-  }
+  const decisionAnswers = getDecisionAnswers(decision);
+  const result = resolveDecisionTree(decisionAnswers);
+  const t = i18n.getFixedT(locale, 'formpack:doctor-letter');
+  const caseText = t(result.caseKey, {
+    defaultValue: result.caseKey,
+  });
 
-  const t = i18n.getFixedT(locale, `formpack:${formpackId}`);
+  return {
+    diagnosisParagraphs: [],
+    ...baseModel,
+    patient: {
+      firstName: getStringValue(patient?.firstName),
+      lastName: getStringValue(patient?.lastName),
+      streetAndNumber: getStringValue(patient?.streetAndNumber),
+      postalCode: getStringValue(patient?.postalCode),
+      city: getStringValue(patient?.city),
+    },
+    doctor: {
+      ...baseModel.doctor,
+      practice: getStringValue(doctor?.practice),
+      title: getStringValue(doctor?.title),
+      gender: getStringValue(doctor?.gender),
+      name: getStringValue(doctor?.name),
+      streetAndNumber: getStringValue(doctor?.streetAndNumber),
+      postalCode: getStringValue(doctor?.postalCode),
+      city: getStringValue(doctor?.city),
+    },
+    decision: {
+      caseId: result.caseId,
+      caseText,
+    },
+  };
+};
 
-  if (formpackId !== 'notfallpass') {
-    return { diagnosisParagraphs: [], ...baseModel };
-  }
-
+const buildNotfallpassModel = (
+  formData: Record<string, unknown>,
+  locale: SupportedLocale,
+  baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
+): DocumentModel => {
   const diagnosisParagraphs: string[] = [];
   const { meCfs, pots, longCovid } = getDiagnosisFlags(formData);
 
   if (!meCfs) {
     return { diagnosisParagraphs, ...baseModel };
   }
+
+  const t = i18n.getFixedT(locale, 'formpack:notfallpass');
 
   diagnosisParagraphs.push(
     t('notfallpass.export.diagnoses.meCfs.paragraph', {
@@ -202,4 +278,29 @@ export const buildDocumentModel = (
   }
 
   return { diagnosisParagraphs, ...baseModel };
+};
+
+/**
+ * Builds a document projection for exports using formpack i18n content.
+ */
+export const buildDocumentModel = (
+  formpackId: string | null,
+  locale: SupportedLocale,
+  formData: Record<string, unknown>,
+): DocumentModel => {
+  const baseModel = buildBaseDocumentModel(formData);
+
+  if (!formpackId) {
+    return { diagnosisParagraphs: [], ...baseModel };
+  }
+
+  if (formpackId === 'doctor-letter') {
+    return buildDoctorLetterModel(formData, locale, baseModel);
+  }
+
+  if (formpackId === 'notfallpass') {
+    return buildNotfallpassModel(formData, locale, baseModel);
+  }
+
+  return { diagnosisParagraphs: [], ...baseModel };
 };

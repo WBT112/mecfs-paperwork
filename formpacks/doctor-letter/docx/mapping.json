@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "fields": [
+    {
+      "var": "patient.firstName",
+      "path": "patient.firstName"
+    },
+    {
+      "var": "patient.lastName",
+      "path": "patient.lastName"
+    },
+    {
+      "var": "patient.streetAndNumber",
+      "path": "patient.streetAndNumber"
+    },
+    {
+      "var": "patient.postalCode",
+      "path": "patient.postalCode"
+    },
+    {
+      "var": "patient.city",
+      "path": "patient.city"
+    },
+    {
+      "var": "doctor.practice",
+      "path": "doctor.practice"
+    },
+    {
+      "var": "doctor.title",
+      "path": "doctor.title"
+    },
+    {
+      "var": "doctor.gender",
+      "path": "doctor.gender"
+    },
+    {
+      "var": "doctor.name",
+      "path": "doctor.name"
+    },
+    {
+      "var": "doctor.streetAndNumber",
+      "path": "doctor.streetAndNumber"
+    },
+    {
+      "var": "doctor.postalCode",
+      "path": "doctor.postalCode"
+    },
+    {
+      "var": "doctor.city",
+      "path": "doctor.city"
+    },
+    {
+      "var": "decision.caseId",
+      "path": "decision.caseId"
+    },
+    {
+      "var": "decision.caseText",
+      "path": "decision.caseText"
+    }
+  ],
+  "loops": [],
+  "i18n": {
+    "prefix": "doctor-letter"
+  }
+}

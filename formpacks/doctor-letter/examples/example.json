@@ -1,0 +1,29 @@
+{
+  "patient": {
+    "firstName": "Max",
+    "lastName": "Mustermann",
+    "streetAndNumber": "Musterstraße 123",
+    "postalCode": "12345",
+    "city": "Berlin"
+  },
+  "doctor": {
+    "practice": "Praxis Dr. Schmidt",
+    "title": "Dr.",
+    "gender": "Frau",
+    "name": "Schmidt",
+    "streetAndNumber": "Ärzteweg 1",
+    "postalCode": "12345",
+    "city": "Berlin"
+  },
+  "decision": {
+    "q1": true,
+    "q2": true,
+    "q3": true,
+    "q4": "COVID-19"
+  },
+  "infoBoxes": {
+    "q1": {
+      "enabled": true
+    }
+  }
+}
