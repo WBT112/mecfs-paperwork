@@ -1140,8 +1140,19 @@ export default function FormpackDetailPage() {
         uiSchema: uiNode,
         namespace,
         t: (key, options) => {
-          const withNs = t(key, { ...options, ns: namespace });
-          return withNs === key ? t(key, options) : withNs;
+          if (key.startsWith('common.')) {
+            const appResult = t(key, { ...options, ns: 'app' });
+            if (appResult !== key) {
+              return appResult;
+            }
+          }
+          if (namespace) {
+            const packResult = t(key, { ...options, ns: namespace });
+            if (packResult !== key) {
+              return packResult;
+            }
+          }
+          return t(key, options);
         },
       }),
     [namespace, t],

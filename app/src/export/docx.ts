@@ -549,18 +549,23 @@ export const mapDocumentDataToTemplate = async (
   const locale = options.locale ?? (i18n.language as SupportedLocale);
   const mappingPath = options.mappingPath ?? 'docx/mapping.json';
   const mapping = await loadDocxMapping(formpackId, mappingPath);
-  const schema =
+  const [schema, uiSchema] = await Promise.all([
     options.schema ??
-    ((await loadFormpackSchema(formpackId)) as RJSFSchema | null);
-  const uiSchema =
+      (loadFormpackSchema(formpackId).catch(() => null) as Promise<
+        RJSFSchema | null
+      >),
     options.uiSchema ??
-    ((await loadFormpackUiSchema(formpackId)) as UiSchema | null);
+      (loadFormpackUiSchema(formpackId).catch(() => null) as Promise<
+        UiSchema | null
+      >),
+  ]);
   const resolveValue = (value: unknown) =>
     resolveDisplayValue(value, {
       t: (key, options) =>
-        i18n
-          .getFixedT(locale, `formpack:${formpackId}`)(key, options),
-      namespace: `formpack:${formpackId}`,
+        key.startsWith('common.')
+          ? i18n.getFixedT(locale, 'app')(key, options)
+          : i18n.getFixedT(locale, `formpack:${formpackId}`)(key, options),
+      namespace: 'app',
     });
 
   const context: DocxTemplateContext = {
