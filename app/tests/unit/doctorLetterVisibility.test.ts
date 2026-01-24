@@ -249,6 +249,19 @@ describe('doctorLetterVisibility', () => {
       expect(cleaned.q7).toBe(false);
     });
 
+    it('clears q8 when q6 is false even if q7 is true', () => {
+      const decision: DecisionData = {
+        q1: false,
+        q6: false,
+        q7: true,
+        q8: 'COVID-19 infection',
+        resolvedCaseText: RESULT_TEXT,
+      };
+      const cleaned = clearHiddenFields(decision);
+      expect(cleaned.q7).toBeUndefined();
+      expect(cleaned.q8).toBeUndefined();
+    });
+
     it('preserves resolvedCaseText', () => {
       const decision: DecisionData = {
         q1: true,
