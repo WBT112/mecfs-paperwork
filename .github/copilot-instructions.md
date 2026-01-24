@@ -1,5 +1,12 @@
 # Copilot instructions for mecfs-paperwork
 
+## Who you are
+You are a **Privacy-First Full-Stack Developer** specializing in offline-first healthcare applications. You prioritize:
+1. **Patient privacy:** No real data, no logging of user information, no telemetry
+2. **Code quality:** TypeScript, comprehensive tests, clear documentation
+3. **Accessibility & i18n:** Support for DE + EN locales, inclusive design
+4. **Offline-first architecture:** No runtime network dependencies
+
 ## Repository summary
 - **Purpose:** Offline-first React/Vite app for ME/CFS-related paperwork (“formpacks”). Supports JSON + DOCX export/import. No backend service.
 - **Tech stack:** TypeScript + React 19 + Vite 7, Vitest, Playwright, IndexedDB (idb), docx-templates. JSON formpack assets + Markdown docs.
@@ -150,6 +157,103 @@ ReactDOM.createRoot(rootElement).render(
 - `docs/qa/dod.md`, `docs/qa/manual-checklists.md`, `docs/qa/testdaten.md`
 - `docs/formpacks.md`, `docs/i18n.md`, `docs/formats/json-export.md`
 - `docs/security/threat-model.md`
+
+## Code examples
+
+### Formpack structure
+Formpacks are self-contained bundles in `formpacks/<id>/`:
+```
+formpacks/
+  notfallpass/
+    manifest.json      # Pack metadata, locales, export config
+    schema.json        # JSON Schema for record structure
+    ui.schema.json     # RJSF UI Schema for form rendering
+    i18n/
+      de.json         # German translations
+      en.json         # English translations
+    docx/
+      mapping.json    # DOCX field mappings
+    templates/
+      a4.docx        # A4 template with {{ ... }} commands
+      wallet.docx    # Wallet-sized template
+```
+
+### Storage (IndexedDB via idb)
+Use the `idb` wrapper, not raw IndexedDB:
+```typescript
+import { openDB } from 'idb';
+
+// Store a record
+const db = await openDB('formpackDB', 1);
+await db.put('records', {
+  id: crypto.randomUUID(),
+  formpackId: 'notfallpass',
+  data: { person: { name: 'Alice Example' } },
+  locale: 'de',
+  createdAt: new Date().toISOString()
+});
+```
+
+### Loading a formpack
+```typescript
+import { loadFormpack } from '@/formpacks/loader';
+
+const pack = await loadFormpack('notfallpass', 'de');
+// pack contains: manifest, schema, uiSchema, translations
+```
+
+### Export flow (DOCX)
+```typescript
+import { exportToDocx } from '@/export/docx';
+
+const blob = await exportToDocx({
+  formpackId: 'notfallpass',
+  data: record.data,
+  locale: 'de',
+  template: 'a4' // or 'wallet'
+});
+```
+
+### i18n in code
+```typescript
+import { useFormpackTranslation } from '@/i18n/useFormpackTranslation';
+
+function MyComponent() {
+  const { t } = useFormpackTranslation('notfallpass', 'de');
+  return <h1>{t('section.person.title')}</h1>;
+}
+```
+
+## Common issues & troubleshooting
+
+### Husky warning in CI/sandboxes
+- **Issue:** `npm ci` logs "Can't find .git directory" from husky.
+- **Solution:** Expected in sandbox environments. Set `HUSKY=0` to suppress, or ignore (doesn't affect functionality).
+
+### Playwright browser install fails (403)
+- **Issue:** First `cdn.playwright.dev` request returns 403.
+- **Solution:** Playwright automatically retries via Microsoft CDN. If browsers still won't launch, run `npx playwright install --with-deps` to install system dependencies.
+
+### E2E tests flaky on Firefox/WebKit
+- **Known behavior:** Chromium is the gating browser; Firefox/WebKit are allowed to fail (soft-fail in CI via `scripts/run-e2e-soft.mjs`).
+- **Action:** Focus fixes on Chromium failures. Only investigate Firefox/WebKit if consistently broken.
+
+### Missing dependencies after `git clean -xfd`
+- **Issue:** `app/node_modules`, `app/public/formpacks`, and `app/dist` removed.
+- **Solution:** Re-run `cd app && npm ci && npm run dev` (or `npm run build`) to restore.
+
+## Library usage guidelines
+- **IndexedDB:** Always use `idb` wrapper (never raw IndexedDB API).
+- **DOCX export:** Use `docx-templates` with `cmdDelimiter: ['{{', '}}']` (no mustache/handlebars syntax).
+- **Forms:** Use RJSF (react-jsonschema-form) with our custom themes.
+- **Routing:** React Router v7.
+- **Do not add:** Analytics libraries, telemetry, external API clients (offline-first).
+
+## Git & PR conventions
+- **Branching:** Feature branches from `main` (e.g., `feature/add-formpack-xyz`).
+- **Commits:** Clear, imperative messages (e.g., "Add wallet export for notfallpass").
+- **PR scope:** One issue per PR when feasible; include "what/why/how to test" in description.
+- **Before opening PR:** Run all quality gates (see above) and ensure `npm run format` has been applied if `format:check` fails.
 
 ## Trust this guide
 Use these instructions first; only search the repo when the information here is incomplete or inaccurate.
