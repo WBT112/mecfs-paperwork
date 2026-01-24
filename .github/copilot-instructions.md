@@ -65,7 +65,11 @@ npx playwright install
 
 ### Coverage (used by SonarCloud)
 ```bash
-npm run test:coverage -- --coverage.reporter=lcov
+npm run test:coverage -- \
+  --coverage.reporter lcov \
+  --coverage.reporter text \
+  --coverage.reporter json \
+  --coverage.reporter html
 ```
 
 ### Docker (optional)
@@ -128,10 +132,13 @@ docker compose up --build
 ```tsx
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element not found');
+applyTheme(getInitialThemeMode());
 ReactDOM.createRoot(rootElement).render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>,
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>,
 );
 ```
 
