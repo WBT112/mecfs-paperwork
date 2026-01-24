@@ -15,6 +15,20 @@ import enTranslations from '../../../formpacks/notfallpass/i18n/en.json';
 import mapping from '../../../formpacks/notfallpass/docx/mapping.json';
 
 const namespace = 'formpack:notfallpass';
+const EXAMPLE_NAME = 'Ada Example';
+const EXAMPLE_DATE = '01-01-2000';
+const EXAMPLE_PHONE = '555-0101';
+const EXAMPLE_SYMPTOMS = 'Example symptoms';
+const EXAMPLE_DOCTOR = 'Dr Example';
+const EXAMPLE_DIAGNOSIS = 'Additional diagnosis';
+const EXAMPLE_MED = 'Med A';
+const EXAMPLE_DOSAGE = '10 mg';
+const EXAMPLE_SCHEDULE = 'Daily';
+const EXAMPLE_NONE = 'None';
+const EXAMPLE_LANGUAGE = 'en';
+const EXAMPLE_MAPPING_PATH = 'docx/mapping.json';
+const EXAMPLE_RELATION = 'Family';
+const EXAMPLE_CONTACT = '+49 123';
 
 describe('mapDocumentDataToTemplate', () => {
   beforeAll(() => {
@@ -43,24 +57,32 @@ describe('mapDocumentDataToTemplate', () => {
   it('maps fields, loops, and i18n placeholders into the template context', async () => {
     const documentData: DocumentModel = {
       diagnosisParagraphs: ['Example paragraph'],
-      person: { name: 'Ada Example', birthDate: '01-01-2000' },
-      contacts: [{ name: 'Alex', phone: '+49 123', relation: 'Family' }],
-      diagnoses: { formatted: 'Additional diagnosis' },
-      symptoms: 'Example symptoms',
-      medications: [{ name: 'Med A', dosage: '10 mg', schedule: 'Daily' }],
-      allergies: 'None',
-      doctor: { name: 'Dr Example', phone: '555-0101' },
+      person: { name: EXAMPLE_NAME, birthDate: EXAMPLE_DATE },
+      contacts: [
+        { name: 'Alex', phone: EXAMPLE_CONTACT, relation: EXAMPLE_RELATION },
+      ],
+      diagnoses: { formatted: EXAMPLE_DIAGNOSIS },
+      symptoms: EXAMPLE_SYMPTOMS,
+      medications: [
+        {
+          name: EXAMPLE_MED,
+          dosage: EXAMPLE_DOSAGE,
+          schedule: EXAMPLE_SCHEDULE,
+        },
+      ],
+      allergies: EXAMPLE_NONE,
+      doctor: { name: EXAMPLE_DOCTOR, phone: EXAMPLE_PHONE },
     };
 
     const context = await mapDocumentDataToTemplate(
       'notfallpass',
       'a4',
       documentData,
-      { mappingPath: 'docx/mapping.json', locale: 'en' },
+      { mappingPath: EXAMPLE_MAPPING_PATH, locale: EXAMPLE_LANGUAGE },
     );
 
     expect(context).toMatchObject({
-      person: { name: 'Ada Example', birthDate: '01-01-2000' },
+      person: { name: EXAMPLE_NAME, birthDate: EXAMPLE_DATE },
       diagnoses: { formatted: 'Additional diagnosis' },
       contacts: [{ name: 'Alex', phone: '+49 123', relation: 'Family' }],
       medications: [{ name: 'Med A', dosage: '10 mg', schedule: 'Daily' }],
@@ -82,11 +104,11 @@ describe('mapDocumentDataToTemplate', () => {
       diagnosisParagraphs: [],
       person: { name: 'Ada Example', birthDate: '01-01-2000' },
       contacts: [],
-      diagnoses: { formatted: 'Yes' },
-      symptoms: 'Example symptoms',
+      diagnoses: { formatted: EXAMPLE_DIAGNOSIS },
+      symptoms: EXAMPLE_SYMPTOMS,
       medications: [],
-      allergies: 'None',
-      doctor: { name: 'Dr Example', phone: '555-0101' },
+      allergies: EXAMPLE_NONE,
+      doctor: { name: EXAMPLE_DOCTOR, phone: EXAMPLE_PHONE },
     };
 
     const schema: RJSFSchema = {
@@ -106,37 +128,27 @@ describe('mapDocumentDataToTemplate', () => {
       'a4',
       documentData,
       {
-        mappingPath: 'docx/mapping.json',
-        locale: 'en',
+        mappingPath: EXAMPLE_MAPPING_PATH,
+        locale: EXAMPLE_LANGUAGE,
         schema,
       },
     );
 
-    expect(context.diagnoses).toEqual({ formatted: 'Yes' });
+    expect(context.diagnoses).toEqual({ formatted: EXAMPLE_DIAGNOSIS });
   });
 
-  it('maps diagnosis booleans to paragraph text', async () => {
+  it('maps diagnosis paragraphs to template context', async () => {
     const documentData: DocumentModel = {
-      diagnosisParagraphs: [],
-      person: { name: 'Ada Example', birthDate: '01-01-2000' },
+      diagnosisParagraphs: [
+        enTranslations['notfallpass.export.diagnoses.meCfs.paragraph'],
+      ],
+      person: { name: EXAMPLE_NAME, birthDate: EXAMPLE_DATE },
       contacts: [],
-      diagnoses: { formatted: null, meCfs: true },
-      symptoms: 'Example symptoms',
+      diagnoses: { formatted: null },
+      symptoms: EXAMPLE_SYMPTOMS,
       medications: [],
-      allergies: 'None',
-      doctor: { name: 'Dr Example', phone: '555-0101' },
-    };
-
-    const schema: RJSFSchema = {
-      type: 'object',
-      properties: {
-        diagnoses: {
-          type: 'object',
-          properties: {
-            meCfs: { type: 'boolean' },
-          },
-        },
-      },
+      allergies: EXAMPLE_NONE,
+      doctor: { name: EXAMPLE_DOCTOR, phone: EXAMPLE_PHONE },
     };
 
     const context = await mapDocumentDataToTemplate(
@@ -144,14 +156,13 @@ describe('mapDocumentDataToTemplate', () => {
       'a4',
       documentData,
       {
-        mappingPath: 'docx/mapping.json',
-        locale: 'en',
-        schema,
+        mappingPath: EXAMPLE_MAPPING_PATH,
+        locale: EXAMPLE_LANGUAGE,
       },
     );
 
-    expect(context.diagnoses?.meCfs).toBe(
+    expect(context.diagnosisParagraphs).toEqual([
       enTranslations['notfallpass.export.diagnoses.meCfs.paragraph'],
-    );
+    ]);
   });
 });

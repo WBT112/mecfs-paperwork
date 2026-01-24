@@ -340,19 +340,19 @@ const mockT = (key: string, options?: { ns?: string }) => {
   if (!options?.ns) {
     return key;
   }
-    if (options.ns === 'formpack:notfallpass') {
-      if (key === 'notfallpass.export.diagnoses.meCfs.paragraph') {
-        return 'ME/CFS Paragraph';
-      }
-      if (key === 'notfallpass.export.diagnoses.pots.paragraph') {
-        return 'POTS Paragraph';
-      }
-      if (key === 'notfallpass.export.diagnoses.longCovid.paragraph') {
-        return 'Long Covid Paragraph';
-      }
+  if (options.ns === 'formpack:notfallpass') {
+    if (key === 'notfallpass.export.diagnoses.meCfs.paragraph') {
+      return 'ME/CFS Paragraph';
     }
-    return key;
-  };
+    if (key === 'notfallpass.export.diagnoses.pots.paragraph') {
+      return 'POTS Paragraph';
+    }
+    if (key === 'notfallpass.export.diagnoses.longCovid.paragraph') {
+      return 'Long Covid Paragraph';
+    }
+  }
+  return key;
+};
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

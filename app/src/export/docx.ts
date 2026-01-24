@@ -87,6 +87,8 @@ const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
 // Session cache keeps DOCX assets available when the app is offline.
 const docxMappingCache = new Map<string, DocxMapping>();
 const docxTemplateCache = new Map<string, Uint8Array>();
+const docxSchemaCache = new Map<string, RJSFSchema | null>();
+const docxUiSchemaCache = new Map<string, UiSchema | null>();
 
 const buildAssetPath = (formpackId: string, assetPath: string) =>
   `/formpacks/${formpackId}/${assetPath}`;
@@ -347,27 +349,35 @@ const normalizeFieldValue = (
   return '';
 };
 
-const normalizeLoopEntry = (
+const normalizePrimitive = (
   entry: unknown,
   resolveValue?: TemplateValueResolver,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
   fieldPath?: string,
-): unknown => {
+): string | null => {
   if (entry === null || entry === undefined) {
     return null;
   }
-
-  if (!isRecord(entry)) {
-    if (typeof entry === 'string') return entry;
-    if (resolveValue) {
-      return resolveValue(entry, schemaNode, uiNode, fieldPath);
-    }
-    if (typeof entry === 'number' || typeof entry === 'boolean')
-      return String(entry);
-    return null;
+  if (typeof entry === 'string') {
+    return entry;
   }
+  if (resolveValue) {
+    return resolveValue(entry, schemaNode, uiNode, fieldPath);
+  }
+  if (typeof entry === 'number' || typeof entry === 'boolean') {
+    return String(entry);
+  }
+  return null;
+};
 
+const normalizeLoopRecord = (
+  entry: Record<string, unknown>,
+  resolveValue?: TemplateValueResolver,
+  schemaNode?: RJSFSchema,
+  uiNode?: UiSchema,
+  fieldPath?: string,
+): Record<string, unknown> => {
   const normalized: Record<string, unknown> = {};
   const schemaProps =
     schemaNode && isRecord(schemaNode.properties)
@@ -386,8 +396,54 @@ const normalizeLoopEntry = (
       nextPath,
     );
   });
-
   return normalized;
+};
+
+const normalizeLoopEntry = (
+  entry: unknown,
+  resolveValue?: TemplateValueResolver,
+  schemaNode?: RJSFSchema,
+  uiNode?: UiSchema,
+  fieldPath?: string,
+): unknown => {
+  if (entry === null || entry === undefined) {
+    return null;
+  }
+
+  if (isRecord(entry)) {
+    return normalizeLoopRecord(
+      entry,
+      resolveValue,
+      schemaNode,
+      uiNode,
+      fieldPath,
+    );
+  }
+
+  return normalizePrimitive(entry, resolveValue, schemaNode, uiNode, fieldPath);
+};
+
+const pickChildSchema = (
+  schemaProps: Record<string, RJSFSchema> | null,
+  segment: string,
+): RJSFSchema | null => {
+  if (
+    !schemaProps ||
+    !Object.prototype.hasOwnProperty.call(schemaProps, segment)
+  ) {
+    return null;
+  }
+  return schemaProps[segment];
+};
+
+const pickArrayItemSchema = (schemaNode: RJSFSchema): RJSFSchema | null => {
+  if (!schemaNode.items) {
+    return null;
+  }
+  const items = Array.isArray(schemaNode.items)
+    ? schemaNode.items[0]
+    : schemaNode.items;
+  return isRecord(items) ? (items as RJSFSchema) : null;
 };
 
 const getSchemaNodeForPath = (
@@ -398,38 +454,22 @@ const getSchemaNodeForPath = (
     return undefined;
   }
 
-  const segments = path.split('.').filter(Boolean);
   let current: RJSFSchema | undefined = schema;
-
-  for (const segment of segments) {
-    if (!current || typeof current !== 'object') {
-      return undefined;
-    }
-
-    if (isRecord(current.properties) && segment in current.properties) {
-      current = current.properties[segment] as RJSFSchema;
+  for (const segment of path.split('.').filter(Boolean)) {
+    const schemaProps = isRecord(current.properties)
+      ? (current.properties as Record<string, RJSFSchema>)
+      : null;
+    const nextSchema = pickChildSchema(schemaProps, segment);
+    if (nextSchema) {
+      current = nextSchema;
       continue;
     }
 
-    if (current.items) {
-      const items = Array.isArray(current.items)
-        ? current.items[0]
-        : current.items;
-      if (!isRecord(items)) {
-        return undefined;
-      }
-      current = items as RJSFSchema;
-      if (isRecord(current.properties) && segment in current.properties) {
-        current = current.properties[segment] as RJSFSchema;
-        continue;
-      }
-      if (!Number.isNaN(Number(segment))) {
-        continue;
-      }
-      return current;
+    const itemSchema = pickArrayItemSchema(current);
+    if (!itemSchema) {
+      return undefined;
     }
-
-    return undefined;
+    current = itemSchema;
   }
 
   return current;
@@ -443,29 +483,28 @@ const getUiSchemaNodeForPath = (
     return undefined;
   }
 
-  const segments = path.split('.').filter(Boolean);
   let current: UiSchema | undefined = uiSchema;
-
-  for (const segment of segments) {
+  for (const segment of path.split('.').filter(Boolean)) {
     if (!isRecord(current)) {
       return undefined;
     }
-    const record = current as Record<string, unknown>;
-    const next = record[segment];
-    if (isRecord(next)) {
-      current = next as UiSchema;
+
+    const record = current;
+    if (isRecord(record[segment])) {
+      current = record[segment] as UiSchema;
       continue;
     }
+
     if (record.items && isRecord(record.items)) {
-      current = record.items as UiSchema;
-      if (isRecord((current as Record<string, unknown>)[segment])) {
-        current = (current as Record<string, UiSchema>)[segment];
+      const items = record.items as Record<string, unknown>;
+      if (isRecord(items[segment])) {
+        current = items[segment] as UiSchema;
         continue;
       }
-    }
-    if (!Number.isNaN(Number(segment))) {
+      current = record.items as UiSchema;
       continue;
     }
+
     return undefined;
   }
 
@@ -540,6 +579,36 @@ const loadDocxMapping = async (
   return mapping;
 };
 
+const loadDocxSchema = async (formpackId: string): Promise<RJSFSchema | null> => {
+  const cached = docxSchemaCache.get(formpackId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  try {
+    const schema = (await loadFormpackSchema(formpackId)) as RJSFSchema;
+    docxSchemaCache.set(formpackId, schema);
+    return schema;
+  } catch {
+    docxSchemaCache.set(formpackId, null);
+    return null;
+  }
+};
+
+const loadDocxUiSchema = async (formpackId: string): Promise<UiSchema | null> => {
+  const cached = docxUiSchemaCache.get(formpackId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  try {
+    const uiSchema = (await loadFormpackUiSchema(formpackId)) as UiSchema;
+    docxUiSchemaCache.set(formpackId, uiSchema);
+    return uiSchema;
+  } catch {
+    docxUiSchemaCache.set(formpackId, null);
+    return null;
+  }
+};
+
 /**
  * Maps a document model into template-ready context data.
  */
@@ -555,14 +624,8 @@ export const mapDocumentDataToTemplate = async (
   const mappingPath = options.mappingPath ?? 'docx/mapping.json';
   const mapping = await loadDocxMapping(formpackId, mappingPath);
   const [schema, uiSchema] = await Promise.all([
-    options.schema ??
-      (loadFormpackSchema(formpackId).catch(() => null) as Promise<
-        RJSFSchema | null
-      >),
-    options.uiSchema ??
-      (loadFormpackUiSchema(formpackId).catch(() => null) as Promise<
-        UiSchema | null
-      >),
+    options.schema ?? loadDocxSchema(formpackId),
+    options.uiSchema ?? loadDocxUiSchema(formpackId),
   ]);
   const resolveValue = (
     value: unknown,
@@ -844,6 +907,8 @@ export const preloadDocxAssets = async (
   const tasks = [
     loadDocxMapping(formpackId, docx.mapping),
     loadDocxTemplate(formpackId, docx.templates.a4),
+    loadDocxSchema(formpackId),
+    loadDocxUiSchema(formpackId),
   ];
 
   if (docx.templates.wallet) {

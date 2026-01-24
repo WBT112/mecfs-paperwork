@@ -390,6 +390,14 @@ function renderPreviewObject(
   fieldPath?: string,
   sectionKey?: string,
 ): ReactNode {
+  const resolveWithFallback =
+    resolveValue ??
+    ((value, schemaNode, uiNode, fieldPath) =>
+      resolveDisplayValue(value, {
+        schema: schemaNode,
+        uiSchema: uiNode,
+        fieldPath,
+      }));
   const schemaProps =
     schemaNode && isRecord(schemaNode.properties)
       ? (schemaNode.properties as Record<string, RJSFSchema>)
@@ -410,7 +418,7 @@ function renderPreviewObject(
       childSchema,
       childUi,
       childLabel,
-      resolveValue ?? resolveDisplayValue,
+      resolveWithFallback,
       childPath,
       sectionKey,
     );
@@ -458,6 +466,14 @@ function renderPreviewArray(
 ): ReactNode {
   const itemSchema = getItemSchema(schemaNode);
   const itemUi = getItemUiSchema(uiNode);
+  const resolveWithFallback =
+    resolveValue ??
+    ((value, schemaNode, uiNode, fieldPath) =>
+      resolveDisplayValue(value, {
+        schema: schemaNode,
+        uiSchema: uiNode,
+        fieldPath,
+      }));
   const items = values
     .map<ReactNode>((entry, index) => {
       return buildArrayItem(
@@ -465,7 +481,7 @@ function renderPreviewArray(
         index,
         itemSchema,
         itemUi,
-        resolveValue ?? resolveDisplayValue,
+        resolveWithFallback,
         fieldPath ?? '',
         sectionKey,
       );
@@ -1152,6 +1168,9 @@ export default function FormpackDetailPage() {
     () => JSON.stringify(formData, null, 2),
     [formData],
   );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const resolvePreviewValue = useCallback<PreviewValueResolver>(
     (value, schemaNode, uiNode, fieldPath) =>
       resolveDisplayValue(value, {
@@ -1286,7 +1305,16 @@ export default function FormpackDetailPage() {
     } finally {
       setIsDocxExporting(false);
     }
-  }, [activeRecord, docxTemplateId, formpackId, locale, manifest, t]);
+  }, [
+    activeRecord,
+    docxTemplateId,
+    formpackId,
+    locale,
+    manifest,
+    previewUiSchema,
+    schema,
+    t,
+  ]);
 
   const handleActionClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {

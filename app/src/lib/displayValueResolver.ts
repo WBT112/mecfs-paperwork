@@ -1,4 +1,9 @@
-import { optionsList, deepEquals, type RJSFSchema, type UiSchema } from '@rjsf/utils';
+import {
+  optionsList,
+  deepEquals,
+  type RJSFSchema,
+  type UiSchema,
+} from '@rjsf/utils';
 
 export type DisplayValueResolverOptions = {
   schema?: RJSFSchema;
@@ -71,7 +76,8 @@ const resolveEnumLabel = (
     return null;
   }
 
-  const label = typeof match.label === 'string' ? match.label : String(match.label);
+  const label =
+    typeof match.label === 'string' ? match.label : String(match.label);
   return translateLabel(label, options.t, options.namespace);
 };
 

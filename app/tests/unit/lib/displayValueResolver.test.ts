@@ -4,6 +4,10 @@ import type { RJSFSchema } from '@rjsf/utils';
 import { resolveDisplayValue } from '../../../src/lib/displayValueResolver';
 
 describe('resolveDisplayValue', () => {
+  const PACK_NS = 'formpack:notfallpass';
+  const PARAGRAPH_KEY = 'notfallpass.export.diagnoses.meCfs.paragraph';
+  const POTS_PARAGRAPH_KEY = 'notfallpass.export.diagnoses.pots.paragraph';
+
   it('returns empty string for nullish values', () => {
     expect(resolveDisplayValue(null)).toBe('');
     expect(resolveDisplayValue(undefined)).toBe('');
@@ -12,20 +16,23 @@ describe('resolveDisplayValue', () => {
   it('formats booleans with translation fallback', () => {
     const t = vi.fn(
       (key: string, options?: { ns?: string; defaultValue?: string }) => {
-        if (options?.ns !== 'formpack:notfallpass') {
-          return options?.defaultValue ?? key;
+        if (!options) {
+          return key;
         }
-        if (key === 'notfallpass.export.diagnoses.meCfs.paragraph') {
+        if (options.ns !== PACK_NS) {
+          return options.defaultValue ?? key;
+        }
+        if (key === PARAGRAPH_KEY) {
           return 'Paragraph';
         }
-        return options?.defaultValue ?? key;
+        return options.defaultValue ?? key;
       },
     );
 
     expect(
       resolveDisplayValue(true, {
         t,
-        namespace: 'formpack:notfallpass',
+        namespace: PACK_NS,
         formpackId: 'notfallpass',
         fieldPath: 'diagnoses.meCfs',
       }),
@@ -33,7 +40,7 @@ describe('resolveDisplayValue', () => {
     expect(
       resolveDisplayValue(false, {
         t,
-        namespace: 'formpack:notfallpass',
+        namespace: PACK_NS,
         formpackId: 'notfallpass',
         fieldPath: 'diagnoses.meCfs',
       }),
@@ -67,38 +74,49 @@ describe('resolveDisplayValue', () => {
     };
     const t = vi.fn(
       (key: string, options?: { ns?: string; defaultValue?: string }) => {
-        if (options?.ns !== 'formpack') {
-          return options?.defaultValue ?? key;
+        if (!options) {
+          return key;
+        }
+        if (options.ns !== 'formpack') {
+          return options.defaultValue ?? key;
         }
         if (key === 'option.yes') {
           return 'Oui';
         }
-        return options?.defaultValue ?? key;
+        return options.defaultValue ?? key;
       },
     );
 
     expect(
-      resolveDisplayValue('yes', { schema, uiSchema, t, namespace: 'formpack' }),
+      resolveDisplayValue('yes', {
+        schema,
+        uiSchema,
+        t,
+        namespace: 'formpack',
+      }),
     ).toBe('Oui');
   });
 
   it('resolves an additional diagnosis paragraph key', () => {
     const t = vi.fn(
       (key: string, options?: { ns?: string; defaultValue?: string }) => {
-        if (options?.ns !== 'formpack:notfallpass') {
-          return options?.defaultValue ?? key;
+        if (!options) {
+          return key;
         }
-        if (key === 'notfallpass.export.diagnoses.pots.paragraph') {
+        if (options.ns !== PACK_NS) {
+          return options.defaultValue ?? key;
+        }
+        if (key === POTS_PARAGRAPH_KEY) {
           return 'POTS paragraph';
         }
-        return options?.defaultValue ?? key;
+        return options.defaultValue ?? key;
       },
     );
 
     expect(
       resolveDisplayValue(true, {
         t,
-        namespace: 'formpack:notfallpass',
+        namespace: PACK_NS,
         formpackId: 'notfallpass',
         fieldPath: 'diagnoses.pots',
       }),
