@@ -123,7 +123,7 @@ docker compose up --build
 
 ## README highlights (condensed)
 - Offline-first ME/CFS paperwork tool with JSON/DOCX export.
-- Local dev: `cd app && npm install && npm run dev`.
+- Local dev: `cd app && npm ci && npm run dev`.
 - Quality gates in `app/`: `format:check`, `lint`, `typecheck`, `test`, `test:e2e`, `formpack:validate`, `build`.
 - Formpacks live in `formpacks/<id>/...` with schema/i18n/templates.
 - Docker and NGINX deployment details for optional container builds.
