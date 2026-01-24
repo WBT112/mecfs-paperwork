@@ -386,16 +386,19 @@ const normalizeLoopRecord = (
   const uiProps = isRecord(uiNode)
     ? (uiNode as Record<string, UiSchema>)
     : null;
-  Object.entries(entry).forEach(([key, value]) => {
-    const nextPath = fieldPath ? `${fieldPath}.${key}` : key;
-    normalized[key] = normalizeFieldValue(
-      value,
-      resolveValue,
-      schemaProps ? schemaProps[key] : undefined,
-      uiProps ? uiProps[key] : undefined,
-      nextPath,
-    );
-  });
+  // RATIONALE: Sort entries for deterministic output ordering
+  Object.entries(entry)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .forEach(([key, value]) => {
+      const nextPath = fieldPath ? `${fieldPath}.${key}` : key;
+      normalized[key] = normalizeFieldValue(
+        value,
+        resolveValue,
+        schemaProps ? schemaProps[key] : undefined,
+        uiProps ? uiProps[key] : undefined,
+        nextPath,
+      );
+    });
   return normalized;
 };
 

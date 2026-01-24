@@ -5,12 +5,15 @@ import {
   type UiSchema,
 } from '@rjsf/utils';
 
+export type ArrayFormatMode = 'join' | 'bullets';
+
 export type DisplayValueResolverOptions = {
   schema?: RJSFSchema;
   uiSchema?: UiSchema;
   namespace?: string;
   formpackId?: string;
   fieldPath?: string;
+  formatMode?: ArrayFormatMode;
   t?: (
     key: string,
     options?: {
@@ -118,12 +121,96 @@ const resolveParagraphValue = (
   return '';
 };
 
+const getItemSchemaFromArray = (
+  schema: RJSFSchema | undefined,
+): RJSFSchema | undefined => {
+  if (!schema?.items) {
+    return undefined;
+  }
+  if (Array.isArray(schema.items)) {
+    return schema.items.length > 0
+      ? (schema.items[0] as RJSFSchema)
+      : undefined;
+  }
+  return schema.items as RJSFSchema;
+};
+
+const getItemUiSchemaFromArray = (
+  uiSchema: UiSchema | undefined,
+): UiSchema | undefined => {
+  if (!uiSchema?.items) {
+    return undefined;
+  }
+  if (Array.isArray(uiSchema.items)) {
+    return uiSchema.items.length > 0
+      ? (uiSchema.items[0] as UiSchema)
+      : undefined;
+  }
+  return uiSchema.items as UiSchema;
+};
+
+const resolveArrayItem = (
+  item: unknown,
+  itemOptions: DisplayValueResolverOptions,
+): string | null => {
+  const enumLabel = resolveEnumLabel(item, itemOptions);
+  if (enumLabel !== null) {
+    return enumLabel;
+  }
+
+  if (typeof item === 'string' && item.trim()) {
+    return item;
+  }
+
+  if (typeof item === 'number') {
+    return String(item);
+  }
+
+  return null;
+};
+
+const resolveArrayValue = (
+  values: unknown[],
+  options: DisplayValueResolverOptions,
+): string | null => {
+  if (!values.length) {
+    return '';
+  }
+
+  const itemOptions = {
+    ...options,
+    schema: getItemSchemaFromArray(options.schema),
+    uiSchema: getItemUiSchemaFromArray(options.uiSchema),
+  };
+
+  const resolvedItems = values
+    .map((item) => resolveArrayItem(item, itemOptions))
+    .filter((item): item is string => item !== null);
+
+  if (!resolvedItems.length) {
+    return '';
+  }
+
+  const formatMode = options.formatMode ?? 'join';
+  if (formatMode === 'bullets') {
+    return resolvedItems.map((item) => `• ${item}`).join('\n');
+  }
+
+  return resolvedItems.join(', ');
+};
+
 export const resolveDisplayValue = (
   value: unknown,
   options: DisplayValueResolverOptions = {},
 ): string => {
   if (value === null || value === undefined) {
     return '';
+  }
+
+  // RATIONALE: Handle arrays (e.g., multi-select, checkbox groups) before primitives
+  if (Array.isArray(value)) {
+    const arrayResult = resolveArrayValue(value, options);
+    return arrayResult ?? '';
   }
 
   const enumLabel = resolveEnumLabel(value, options);
