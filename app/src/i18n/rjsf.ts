@@ -2,7 +2,12 @@ import type { TFunction } from 'i18next';
 import type { UiSchema } from '@rjsf/utils';
 
 const TRANSLATION_PREFIX = 't:';
-const TRANSLATABLE_KEYS = new Set(['ui:title', 'ui:description', 'ui:help']);
+const TRANSLATABLE_KEYS = new Set([
+  'ui:title',
+  'ui:description',
+  'ui:help',
+  'ui:enumNames',
+]);
 
 const looksLikeTranslationKey = (value: string): boolean => {
   if (value.startsWith(TRANSLATION_PREFIX)) {
@@ -52,8 +57,18 @@ const translateUiSchemaNode = (
   const translated: Record<string, unknown> = {};
 
   Object.entries(value).forEach(([key, entry]) => {
-    if (TRANSLATABLE_KEYS.has(key) && typeof entry === 'string') {
-      translated[key] = translateUiSchemaString(entry, t, namespace);
+    if (TRANSLATABLE_KEYS.has(key)) {
+      if (typeof entry === 'string') {
+        translated[key] = translateUiSchemaString(entry, t, namespace);
+      } else if (Array.isArray(entry)) {
+        translated[key] = entry.map((item) =>
+          typeof item === 'string'
+            ? translateUiSchemaString(item, t, namespace)
+            : item,
+        );
+      } else {
+        translated[key] = translateUiSchemaNode(entry, t, namespace);
+      }
     } else {
       translated[key] = translateUiSchemaNode(entry, t, namespace);
     }
@@ -63,7 +78,7 @@ const translateUiSchemaNode = (
 };
 
 /**
- * Translates ui:title, ui:description, and ui:help values in a uiSchema tree.
+ * Translates ui:title, ui:description, ui:help, and ui:enumNames values in a uiSchema tree.
  */
 export const translateUiSchema = (
   uiSchema: UiSchema,
