@@ -56,7 +56,7 @@ Notes from verified runs:
 ```bash
 npx playwright install
 ```
-- First attempt to `cdn.playwright.dev` returned **403** in this sandbox; Playwright automatically fell back to a Microsoft CDN and succeeded.
+- First attempt to `cdn.playwright.dev` may return **403** in some environments; Playwright automatically falls back to a Microsoft CDN.
 - After install, Playwright warned about missing system libs (GTK/GStreamer/etc). Use:
   ```bash
   npx playwright install --with-deps
