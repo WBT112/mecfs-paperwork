@@ -31,23 +31,23 @@ export default function CollapsibleSection(
           aria-controls={ids.content}
           onClick={() => setIsOpen((prev) => !prev)}
           onKeyDown={(event) => {
-            if (event.code === 'Space' || event.code === 'Enter') {
-              if (!keyDownHandledRef.current) {
-                keyDownHandledRef.current = true;
-                event.preventDefault();
-                setIsOpen((prev) => !prev);
-              }
+            if (
+              (event.code === 'Space' || event.code === 'Enter') &&
+              !keyDownHandledRef.current
+            ) {
+              keyDownHandledRef.current = true;
+              event.preventDefault();
+              setIsOpen((prev) => !prev);
             }
           }}
           onKeyUp={(event) => {
-            if (event.code === 'Space' || event.code === 'Enter') {
-              if (keyDownHandledRef.current) {
-                keyDownHandledRef.current = false;
-              } else {
-                event.preventDefault();
-                setIsOpen((prev) => !prev);
-              }
+            if (!(event.code === 'Space' || event.code === 'Enter')) return;
+            if (keyDownHandledRef.current) {
+              keyDownHandledRef.current = false;
+              return;
             }
+            event.preventDefault();
+            setIsOpen((prev) => !prev);
           }}
         >
           <span className="collapsible-section__title">{title}</span>
