@@ -33,6 +33,8 @@ import {
   formpackTemplates,
   type FormpackFormContext,
 } from '../lib/rjsfTemplates';
+import { resolveDisplayValue } from '../lib/displayValueResolver';
+import { hasPreviewValue } from '../lib/preview';
 import {
   FormpackLoaderError,
   loadFormpackManifest,
@@ -134,37 +136,12 @@ const buildErrorMessage = (
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const hasPreviewValue = (value: unknown): boolean => {
-  if (value === null || value === undefined) {
-    return false;
-  }
-  if (typeof value === 'string') {
-    return value.trim().length > 0;
-  }
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return true;
-  }
-  if (Array.isArray(value)) {
-    return value.some((entry) => hasPreviewValue(entry));
-  }
-  if (isRecord(value)) {
-    return Object.values(value).some((entry) => hasPreviewValue(entry));
-  }
-  return false;
-};
-
-const formatPreviewValue = (value: unknown): string => {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  if (typeof value === 'string') {
-    return value;
-  }
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
-  }
-  return JSON.stringify(value);
-};
+type PreviewValueResolver = (
+  value: unknown,
+  schema?: RJSFSchema,
+  uiSchema?: UiSchema,
+  fieldPath?: string,
+) => string;
 
 const getOrderedKeys = (
   schemaNode: RJSFSchema | undefined,
@@ -244,6 +221,9 @@ const getItemUiSchema = (
   return isRecord(items) ? (items as UiSchema) : undefined;
 };
 
+const buildFieldPath = (segment: string, prefix?: string): string =>
+  prefix ? `${prefix}.${segment}` : segment;
+
 const getLabel = (
   key: string,
   schemaNode: RJSFSchema | undefined,
@@ -262,10 +242,18 @@ type PreviewEntry =
   | { type: 'row'; node: ReactNode }
   | { type: 'nested'; node: ReactNode };
 
-const buildPreviewRow = (key: string, label: string, entry: unknown) => (
+const buildPreviewRow = (
+  key: string,
+  label: string,
+  entry: unknown,
+  schemaNode: RJSFSchema | undefined,
+  uiNode: UiSchema | undefined,
+  resolveValue: PreviewValueResolver,
+  fieldPath: string,
+) => (
   <div key={`row-${key}`}>
     <dt>{label}</dt>
-    <dd>{formatPreviewValue(entry)}</dd>
+    <dd>{resolveValue(entry, schemaNode, uiNode, fieldPath)}</dd>
   </div>
 );
 
@@ -275,6 +263,8 @@ const buildPreviewEntry = (
   childSchema: RJSFSchema | undefined,
   childUi: UiSchema | undefined,
   childLabel: string,
+  resolveValue: PreviewValueResolver,
+  fieldPath: string,
   sectionKey?: string,
 ): PreviewEntry | null => {
   if (!hasPreviewValue(entry)) {
@@ -288,6 +278,8 @@ const buildPreviewEntry = (
       childSchema,
       childUi,
       childLabel,
+      resolveValue,
+      fieldPath,
       nestedKey,
     );
     return section ? { type: 'nested', node: section } : null;
@@ -299,12 +291,25 @@ const buildPreviewEntry = (
       childSchema,
       childUi,
       childLabel,
+      resolveValue,
+      fieldPath,
       nestedKey,
     );
     return section ? { type: 'nested', node: section } : null;
   }
 
-  return { type: 'row', node: buildPreviewRow(key, childLabel, entry) };
+  return {
+    type: 'row',
+    node: buildPreviewRow(
+      key,
+      childLabel,
+      entry,
+      childSchema,
+      childUi,
+      resolveValue,
+      fieldPath,
+    ),
+  };
 };
 
 const buildArrayItem = (
@@ -312,6 +317,8 @@ const buildArrayItem = (
   index: number,
   itemSchema: RJSFSchema | undefined,
   itemUi: UiSchema | undefined,
+  resolveValue: PreviewValueResolver,
+  fieldPath: string,
   sectionKey?: string,
 ): ReactNode | null => {
   if (!hasPreviewValue(entry)) {
@@ -325,6 +332,8 @@ const buildArrayItem = (
       itemSchema,
       itemUi,
       undefined,
+      resolveValue,
+      fieldPath,
       nestedKey,
     );
     return nested ? <li key={`nested-${index}`}>{nested}</li> : null;
@@ -336,12 +345,18 @@ const buildArrayItem = (
       itemSchema,
       itemUi,
       undefined,
+      resolveValue,
+      fieldPath,
       nestedKey,
     );
     return nested ? <li key={`object-${index}`}>{nested}</li> : null;
   }
 
-  return <li key={`value-${index}`}>{formatPreviewValue(entry)}</li>;
+  return (
+    <li key={`value-${index}`}>
+      {resolveValue(entry, itemSchema, itemUi, fieldPath)}
+    </li>
+  );
 };
 
 // RATIONALE: These functions are pure and do not depend on component state.
@@ -353,8 +368,18 @@ function renderPreviewObject(
   schemaNode: RJSFSchema | undefined,
   uiNode: UiSchema | null | undefined,
   label?: string,
+  resolveValue?: PreviewValueResolver,
+  fieldPath?: string,
   sectionKey?: string,
 ): ReactNode {
+  const resolveWithFallback =
+    resolveValue ??
+    ((value, schemaNode, uiNode, fieldPath) =>
+      resolveDisplayValue(value, {
+        schema: schemaNode,
+        uiSchema: uiNode,
+        fieldPath,
+      }));
   const schemaProps =
     schemaNode && isRecord(schemaNode.properties)
       ? (schemaNode.properties as Record<string, RJSFSchema>)
@@ -368,12 +393,15 @@ function renderPreviewObject(
     const childSchema = schemaProps ? schemaProps[key] : undefined;
     const childUi = getUiSchemaNode(uiNode, key);
     const childLabel = getLabel(key, childSchema, childUi);
+    const childPath = buildFieldPath(key, fieldPath);
     const preview = buildPreviewEntry(
       entry,
       key,
       childSchema,
       childUi,
       childLabel,
+      resolveWithFallback,
+      childPath,
       sectionKey,
     );
     if (!preview) {
@@ -414,13 +442,31 @@ function renderPreviewArray(
   schemaNode: RJSFSchema | undefined,
   uiNode: UiSchema | null | undefined,
   label?: string,
+  resolveValue?: PreviewValueResolver,
+  fieldPath?: string,
   sectionKey?: string,
 ): ReactNode {
   const itemSchema = getItemSchema(schemaNode);
   const itemUi = getItemUiSchema(uiNode);
+  const resolveWithFallback =
+    resolveValue ??
+    ((value, schemaNode, uiNode, fieldPath) =>
+      resolveDisplayValue(value, {
+        schema: schemaNode,
+        uiSchema: uiNode,
+        fieldPath,
+      }));
   const items = values
     .map<ReactNode>((entry, index) => {
-      return buildArrayItem(entry, index, itemSchema, itemUi, sectionKey);
+      return buildArrayItem(
+        entry,
+        index,
+        itemSchema,
+        itemUi,
+        resolveWithFallback,
+        fieldPath ?? '',
+        sectionKey,
+      );
     })
     .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
       Boolean(entry),
@@ -1104,6 +1150,35 @@ export default function FormpackDetailPage() {
     () => JSON.stringify(formData, null, 2),
     [formData],
   );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const resolvePreviewValue = useCallback<PreviewValueResolver>(
+    (value, schemaNode, uiNode, fieldPath) =>
+      resolveDisplayValue(value, {
+        schema: schemaNode,
+        uiSchema: uiNode,
+        namespace,
+        formpackId: manifest?.id ?? undefined,
+        fieldPath,
+        t: (key, options) => {
+          if (key.startsWith('common.')) {
+            const appResult = t(key, { ...options, ns: 'app' });
+            if (appResult !== key) {
+              return appResult;
+            }
+          }
+          if (namespace) {
+            const packResult = t(key, { ...options, ns: namespace });
+            if (packResult !== key) {
+              return packResult;
+            }
+          }
+          return t(key, options);
+        },
+      }),
+    [manifest?.id, namespace, t],
+  );
   const documentPreview = useMemo(() => {
     if (!isRecord(formData)) {
       return null;
@@ -1129,6 +1204,8 @@ export default function FormpackDetailPage() {
             childSchema,
             childUi,
             label,
+            resolvePreviewValue,
+            key,
             `root-${key}`,
           );
         }
@@ -1138,6 +1215,8 @@ export default function FormpackDetailPage() {
             childSchema,
             childUi,
             label,
+            resolvePreviewValue,
+            key,
             `root-${key}`,
           );
         }
@@ -1147,7 +1226,7 @@ export default function FormpackDetailPage() {
             key={`root-${key}`}
           >
             <h4>{label}</h4>
-            <p>{formatPreviewValue(entry)}</p>
+            <p>{resolvePreviewValue(entry, childSchema, childUi, key)}</p>
           </div>
         );
       })
@@ -1156,7 +1235,7 @@ export default function FormpackDetailPage() {
       );
 
     return sections.length ? <>{sections}</> : null;
-  }, [formData, previewUiSchema, schema]);
+  }, [formData, previewUiSchema, resolvePreviewValue, schema]);
   const handleExportJson = useCallback(() => {
     if (!manifest || !activeRecord) {
       return;
@@ -1195,6 +1274,8 @@ export default function FormpackDetailPage() {
         recordId: activeRecord.id,
         variant: docxTemplateId,
         locale,
+        schema,
+        uiSchema: previewUiSchema,
         manifest,
       });
       const filename = buildDocxExportFilename(formpackId, docxTemplateId);
@@ -1206,7 +1287,16 @@ export default function FormpackDetailPage() {
     } finally {
       setIsDocxExporting(false);
     }
-  }, [activeRecord, docxTemplateId, formpackId, locale, manifest, t]);
+  }, [
+    activeRecord,
+    docxTemplateId,
+    formpackId,
+    locale,
+    manifest,
+    previewUiSchema,
+    schema,
+    t,
+  ]);
 
   const handleActionClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {

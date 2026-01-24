@@ -336,7 +336,23 @@ vi.mock('../../src/storage/hooks', () => ({
   }),
 }));
 
-const mockT = (key: string) => key;
+const mockT = (key: string, options?: { ns?: string }) => {
+  if (!options?.ns) {
+    return key;
+  }
+  if (options.ns === 'formpack:notfallpass') {
+    if (key === 'notfallpass.export.diagnoses.meCfs.paragraph') {
+      return 'ME/CFS Paragraph';
+    }
+    if (key === 'notfallpass.export.diagnoses.pots.paragraph') {
+      return 'POTS Paragraph';
+    }
+    if (key === 'notfallpass.export.diagnoses.longCovid.paragraph') {
+      return 'Long Covid Paragraph';
+    }
+  }
+  return key;
+};
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -700,6 +716,8 @@ describe('FormpackDetailPage', () => {
         variant: 'a4',
         locale: 'de',
         manifest: formpackState.manifest,
+        schema: formpackState.schema,
+        uiSchema: formpackState.uiSchema,
       });
     });
     expect(downloadDocxExport).toHaveBeenCalledWith(
@@ -1553,6 +1571,92 @@ describe('FormpackDetailPage', () => {
       expect(await screen.findByText('Hello')).toBeInTheDocument();
       expect(screen.getByText('Alpha')).toBeInTheDocument();
       expect(screen.getByText('details')).toBeInTheDocument();
+    } finally {
+      restoreText();
+    }
+  }, 10000);
+
+  it('localizes boolean values in the document preview', async () => {
+    const payload = {
+      version: 1,
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        title: 'Booleans',
+        locale: 'de',
+        data: {
+          diagnoses: {
+            meCfs: true,
+            pots: false,
+          },
+        },
+      },
+      revisions: [],
+    };
+    importState.validateJsonImport.mockReturnValue({
+      payload,
+      error: null,
+    });
+    const importedRecord = {
+      ...record,
+      id: 'record-3',
+      title: payload.record.title,
+      data: payload.record.data,
+    };
+    storageImportState.importRecordWithSnapshots.mockResolvedValue(
+      importedRecord,
+    );
+    const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+    const restoreText = mockFileText(IMPORT_FILE_CONTENT);
+    formpackState.schema = {
+      type: 'object',
+      properties: {
+        diagnoses: {
+          type: 'object',
+          properties: {
+            meCfs: { type: 'boolean' },
+            pots: { type: 'boolean' },
+          },
+        },
+      },
+    };
+    formpackState.uiSchema = {
+      diagnoses: {
+        'ui:title': 'diagnoses',
+        meCfs: {
+          'ui:title': 'meCfs',
+        },
+        pots: {
+          'ui:title': 'POTS',
+        },
+      },
+    };
+
+    try {
+      render(
+        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await openImportSection();
+      await userEvent.upload(
+        await screen.findByLabelText('formpackImportLabel'),
+        file,
+      );
+      await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+
+      expect(await screen.findByText('ME/CFS Paragraph')).toBeInTheDocument();
+      const previewContent = document.getElementById(
+        'formpack-document-preview-content',
+      );
+      expect(previewContent).toBeTruthy();
+      if (previewContent) {
+        expect(within(previewContent).queryByText('POTS')).toBeNull();
+      }
     } finally {
       restoreText();
     }

@@ -8,14 +8,20 @@ import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
 import { buildDocumentModel } from '../formpacks/documentModel';
 import type { DocumentModel } from '../formpacks/documentModel';
-import { loadFormpackManifest } from '../formpacks/loader';
+import {
+  loadFormpackManifest,
+  loadFormpackSchema,
+  loadFormpackUiSchema,
+} from '../formpacks/loader';
 import type {
   FormpackDocxManifest,
   FormpackManifest,
 } from '../formpacks/types';
 import { getRecord } from '../storage/records';
 import { isRecord } from '../lib/utils';
+import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { buildI18nContext } from './buildI18nContext';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 export type DocxTemplateId = 'a4' | 'wallet';
 export type DocxExportVariant = DocxTemplateId;
@@ -55,6 +61,8 @@ export type DocxErrorKey =
 type MapTemplateOptions = {
   mappingPath?: string;
   locale?: SupportedLocale;
+  schema?: RJSFSchema | null;
+  uiSchema?: UiSchema | null;
 };
 
 /**
@@ -79,6 +87,8 @@ const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
 // Session cache keeps DOCX assets available when the app is offline.
 const docxMappingCache = new Map<string, DocxMapping>();
 const docxTemplateCache = new Map<string, Uint8Array>();
+const docxSchemaCache = new Map<string, RJSFSchema | null>();
+const docxUiSchemaCache = new Map<string, UiSchema | null>();
 
 const buildAssetPath = (formpackId: string, assetPath: string) =>
   `/formpacks/${formpackId}/${assetPath}`;
@@ -310,13 +320,26 @@ const setPathValue = (
  * docx-templates evaluates expressions and serializes XML; keeping values strings
  * avoids browser-side encoding surprises.
  */
-const normalizeFieldValue = (value: unknown): string => {
+type TemplateValueResolver = (
+  value: unknown,
+  schema?: RJSFSchema,
+  uiSchema?: UiSchema,
+  fieldPath?: string,
+) => string;
+
+const normalizeFieldValue = (
+  value: unknown,
+  resolveValue?: TemplateValueResolver,
+  schemaNode?: RJSFSchema,
+  uiNode?: UiSchema,
+  fieldPath?: string,
+): string => {
   if (value === null || value === undefined) {
     return '';
   }
 
-  if (typeof value === 'string') {
-    return value;
+  if (resolveValue) {
+    return resolveValue(value, schemaNode, uiNode, fieldPath);
   }
 
   if (typeof value === 'number' || typeof value === 'boolean') {
@@ -326,24 +349,193 @@ const normalizeFieldValue = (value: unknown): string => {
   return '';
 };
 
-const normalizeLoopEntry = (entry: unknown): unknown => {
+const normalizePrimitive = (
+  entry: unknown,
+  resolveValue?: TemplateValueResolver,
+  schemaNode?: RJSFSchema,
+  uiNode?: UiSchema,
+  fieldPath?: string,
+): string | null => {
+  if (entry === null || entry === undefined) {
+    return null;
+  }
+  if (typeof entry === 'string') {
+    return entry;
+  }
+  if (resolveValue) {
+    return resolveValue(entry, schemaNode, uiNode, fieldPath);
+  }
+  if (typeof entry === 'number' || typeof entry === 'boolean') {
+    return String(entry);
+  }
+  return null;
+};
+
+const normalizeLoopRecord = (
+  entry: Record<string, unknown>,
+  resolveValue?: TemplateValueResolver,
+  schemaNode?: RJSFSchema,
+  uiNode?: UiSchema,
+  fieldPath?: string,
+): Record<string, unknown> => {
+  const normalized: Record<string, unknown> = {};
+  const schemaProps =
+    schemaNode && isRecord(schemaNode.properties)
+      ? (schemaNode.properties as Record<string, RJSFSchema>)
+      : null;
+  const uiProps = isRecord(uiNode)
+    ? (uiNode as Record<string, UiSchema>)
+    : null;
+  Object.entries(entry).forEach(([key, value]) => {
+    const nextPath = fieldPath ? `${fieldPath}.${key}` : key;
+    normalized[key] = normalizeFieldValue(
+      value,
+      resolveValue,
+      schemaProps ? schemaProps[key] : undefined,
+      uiProps ? uiProps[key] : undefined,
+      nextPath,
+    );
+  });
+  return normalized;
+};
+
+const normalizeLoopEntry = (
+  entry: unknown,
+  resolveValue?: TemplateValueResolver,
+  schemaNode?: RJSFSchema,
+  uiNode?: UiSchema,
+  fieldPath?: string,
+): unknown => {
   if (entry === null || entry === undefined) {
     return null;
   }
 
-  if (!isRecord(entry)) {
-    if (typeof entry === 'string') return entry;
-    if (typeof entry === 'number' || typeof entry === 'boolean')
-      return String(entry);
-    return null;
+  if (isRecord(entry)) {
+    return normalizeLoopRecord(
+      entry,
+      resolveValue,
+      schemaNode,
+      uiNode,
+      fieldPath,
+    );
   }
 
-  const normalized: Record<string, unknown> = {};
-  Object.entries(entry).forEach(([key, value]) => {
-    normalized[key] = normalizeFieldValue(value);
-  });
+  return normalizePrimitive(entry, resolveValue, schemaNode, uiNode, fieldPath);
+};
 
-  return normalized;
+const pickChildSchema = (
+  schemaProps: Record<string, RJSFSchema> | null,
+  segment: string,
+): RJSFSchema | null => {
+  if (
+    !schemaProps ||
+    !Object.prototype.hasOwnProperty.call(schemaProps, segment)
+  ) {
+    return null;
+  }
+  return schemaProps[segment];
+};
+
+const pickArrayItemSchema = (schemaNode: RJSFSchema): RJSFSchema | null => {
+  if (!schemaNode.items) {
+    return null;
+  }
+  const items = Array.isArray(schemaNode.items)
+    ? schemaNode.items[0]
+    : schemaNode.items;
+  return isRecord(items) ? (items as RJSFSchema) : null;
+};
+
+const getSchemaNodeForPath = (
+  schema: RJSFSchema | null | undefined,
+  path: string,
+): RJSFSchema | undefined => {
+  if (!schema || !path) {
+    return undefined;
+  }
+
+  let current: RJSFSchema | undefined = schema;
+  for (const segment of path.split('.').filter(Boolean)) {
+    const schemaProps = isRecord(current.properties)
+      ? (current.properties as Record<string, RJSFSchema>)
+      : null;
+    const nextSchema = pickChildSchema(schemaProps, segment);
+    if (nextSchema) {
+      current = nextSchema;
+      continue;
+    }
+
+    const itemSchema = pickArrayItemSchema(current);
+    if (!itemSchema) {
+      return undefined;
+    }
+    current = itemSchema;
+  }
+
+  return current;
+};
+
+const getUiSchemaNodeForPath = (
+  uiSchema: UiSchema | null | undefined,
+  path: string,
+): UiSchema | undefined => {
+  if (!uiSchema || !path) {
+    return undefined;
+  }
+
+  let current: UiSchema | undefined = uiSchema;
+  for (const segment of path.split('.').filter(Boolean)) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+
+    const record = current;
+    if (isRecord(record[segment])) {
+      current = record[segment] as UiSchema;
+      continue;
+    }
+
+    if (record.items && isRecord(record.items)) {
+      const items = record.items as Record<string, unknown>;
+      if (isRecord(items[segment])) {
+        current = items[segment] as UiSchema;
+        continue;
+      }
+      current = record.items as UiSchema;
+      continue;
+    }
+
+    return undefined;
+  }
+
+  return current;
+};
+
+const getArrayItemSchema = (
+  schemaNode: RJSFSchema | undefined,
+): RJSFSchema | undefined => {
+  if (!schemaNode?.items) {
+    return undefined;
+  }
+  if (Array.isArray(schemaNode.items)) {
+    return schemaNode.items[0] as RJSFSchema | undefined;
+  }
+  return isRecord(schemaNode.items)
+    ? (schemaNode.items as RJSFSchema)
+    : undefined;
+};
+
+const getArrayItemUiSchema = (
+  uiNode: UiSchema | undefined,
+): UiSchema | undefined => {
+  if (!isRecord(uiNode)) {
+    return undefined;
+  }
+  const items = uiNode.items;
+  if (Array.isArray(items)) {
+    return isRecord(items[0]) ? (items[0] as UiSchema) : undefined;
+  }
+  return isRecord(items) ? (items as UiSchema) : undefined;
 };
 
 const loadDocxMapping = async (
@@ -387,6 +579,40 @@ const loadDocxMapping = async (
   return mapping;
 };
 
+const loadDocxSchema = async (
+  formpackId: string,
+): Promise<RJSFSchema | null> => {
+  const cached = docxSchemaCache.get(formpackId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  try {
+    const schema = (await loadFormpackSchema(formpackId)) as RJSFSchema;
+    docxSchemaCache.set(formpackId, schema);
+    return schema;
+  } catch {
+    docxSchemaCache.set(formpackId, null);
+    return null;
+  }
+};
+
+const loadDocxUiSchema = async (
+  formpackId: string,
+): Promise<UiSchema | null> => {
+  const cached = docxUiSchemaCache.get(formpackId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  try {
+    const uiSchema = (await loadFormpackUiSchema(formpackId)) as UiSchema;
+    docxUiSchemaCache.set(formpackId, uiSchema);
+    return uiSchema;
+  } catch {
+    docxUiSchemaCache.set(formpackId, null);
+    return null;
+  }
+};
+
 /**
  * Maps a document model into template-ready context data.
  */
@@ -401,21 +627,62 @@ export const mapDocumentDataToTemplate = async (
   const locale = options.locale ?? (i18n.language as SupportedLocale);
   const mappingPath = options.mappingPath ?? 'docx/mapping.json';
   const mapping = await loadDocxMapping(formpackId, mappingPath);
+  const [schema, uiSchema] = await Promise.all([
+    options.schema ?? loadDocxSchema(formpackId),
+    options.uiSchema ?? loadDocxUiSchema(formpackId),
+  ]);
+  const resolveValue = (
+    value: unknown,
+    schemaNode?: RJSFSchema,
+    uiNode?: UiSchema,
+    fieldPath?: string,
+  ) =>
+    resolveDisplayValue(value, {
+      t: (key, options) =>
+        key.startsWith('common.')
+          ? i18n.getFixedT(locale, 'app')(key, options)
+          : i18n.getFixedT(locale, `formpack:${formpackId}`)(key, options),
+      namespace: 'app',
+      formpackId,
+      fieldPath,
+      schema: schemaNode,
+      uiSchema: uiNode,
+    });
 
   const context: DocxTemplateContext = {
     ...buildI18nContext(formpackId, locale, mapping.i18n?.prefix),
   };
 
   mapping.fields.forEach((field) => {
-    const value = normalizeFieldValue(getPathValue(documentData, field.path));
+    const fieldSchema = getSchemaNodeForPath(schema, field.path);
+    const fieldUiSchema = getUiSchemaNodeForPath(uiSchema, field.path);
+    const value = normalizeFieldValue(
+      getPathValue(documentData, field.path),
+      resolveValue,
+      fieldSchema,
+      fieldUiSchema,
+      field.path,
+    );
     setPathValue(context, field.var, value);
   });
 
   mapping.loops?.forEach((loop) => {
     const value = getPathValue(documentData, loop.path);
+    const loopSchema = getSchemaNodeForPath(schema, loop.path);
+    const loopUiSchema = getUiSchemaNodeForPath(uiSchema, loop.path);
+    const itemSchema = getArrayItemSchema(loopSchema);
+    const itemUiSchema = getArrayItemUiSchema(loopUiSchema);
     const entries = Array.isArray(value)
       ? value
-          .map(normalizeLoopEntry)
+          .map((entry) =>
+            normalizeLoopEntry(
+              entry,
+              resolveValue,
+              itemSchema,
+              itemUiSchema,
+              loop.path,
+            ),
+          )
           .filter((entry) => entry !== null && entry !== undefined)
       : [];
     setPathValue(context, loop.var, entries);
@@ -577,6 +844,8 @@ export type ExportDocxOptions = {
   variant: DocxExportVariant;
   locale: SupportedLocale;
   manifest?: FormpackManifest;
+  schema?: RJSFSchema | null;
+  uiSchema?: UiSchema | null;
 };
 
 /**
@@ -588,6 +857,8 @@ export const exportDocx = async ({
   variant,
   locale,
   manifest: manifestOverride,
+  schema,
+  uiSchema,
 }: ExportDocxOptions): Promise<Blob> => {
   const manifest = manifestOverride ?? (await loadFormpackManifest(formpackId));
   if (!manifest.docx) {
@@ -614,6 +885,8 @@ export const exportDocx = async ({
     mapDocumentDataToTemplate(formpackId, variant, documentModel, {
       mappingPath: manifest.docx.mapping,
       locale,
+      schema,
+      uiSchema,
     }),
   ]);
 
@@ -645,4 +918,14 @@ export const preloadDocxAssets = async (
   }
 
   await Promise.all(tasks);
+
+  // Ensure schema caches are populated to avoid additional network calls
+  // when exporting while offline. If schemas are unavailable, store null
+  // so subsequent callers won't attempt network fetches.
+  if (!docxSchemaCache.has(formpackId)) {
+    docxSchemaCache.set(formpackId, null);
+  }
+  if (!docxUiSchemaCache.has(formpackId)) {
+    docxUiSchemaCache.set(formpackId, null);
+  }
 };
