@@ -14,6 +14,16 @@
   npm ci
   ```
   - `npm ci` emits `husky` warning (`.git can't be found`) in this sandbox but succeeds; set `HUSKY=0` to silence if needed.
+  - After `git clean -xfd`, re-run `npm ci` to restore `node_modules` and rerun `npm run dev` or `npm run build` to regenerate `app/public/`.
+
+## Fresh repo cleanup (verified)
+```bash
+git clean -xfd
+cd app
+npm ci
+```
+- This removes generated directories such as `app/dist/`, `app/public/`, `app/playwright-report/`, and `app/test-results/`.
+- Run the quality gates (below) afterward to restore build output.
 
 ## Build / run / validation (verified)
 Run from `app/` unless stated otherwise.
@@ -81,6 +91,7 @@ docker compose up --build
   - `src/formpacks/` loader, registry, document model.
   - `src/i18n/` app + formpack i18n helpers.
   - `src/theme/` theme handling.
+  - `src/` top-level contents: `App.tsx`, `main.tsx`, `index.css`, plus folders `components/`, `content/`, `export/`, `formpacks/`, `i18n/`, `import/`, `lib/`, `pages/`, `storage/`, `theme/`, `types/`.
   - `tests/` Vitest unit/component tests; `tests/setup/setup.ts` test config.
   - `e2e/` Playwright specs; `playwright.config.ts` spins up dev server on `127.0.0.1:5173`.
   - `scripts/` automation: `sync-formpacks.mjs`, `sync-funding.mjs`, `validate-formpacks.mjs`, `new-formpack.mjs`, `run-e2e-soft.mjs`.
@@ -104,6 +115,25 @@ docker compose up --build
 `Caddyfile.local`, `compose.yaml`, `compose.prod.yaml`, `compose.local-proxy.yaml`,
 `app/`, `formpacks/`, `docs/`, `tools/`, `nginx/`, `package.json`, `package-lock.json`,
 `sonar-project.properties`, `LICENSE`, `NOTICE`.
+
+## README highlights (condensed)
+- Offline-first ME/CFS paperwork tool with JSON/DOCX export.
+- Local dev: `cd app && npm install && npm run dev`.
+- Quality gates in `app/`: `format:check`, `lint`, `typecheck`, `test`, `test:e2e`, `formpack:validate`, `build`.
+- Formpacks live in `formpacks/<id>/...` with schema/i18n/templates.
+- Docker and NGINX deployment details for optional container builds.
+
+## Key source snippets
+`app/src/main.tsx` (entrypoint):
+```tsx
+const rootElement = document.getElementById('root');
+if (!rootElement) throw new Error('Root element not found');
+ReactDOM.createRoot(rootElement).render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>,
+);
+```
 
 ## Docs worth reading first
 - `README.md` (project overview + quality gates)
