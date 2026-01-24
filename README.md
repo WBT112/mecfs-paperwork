@@ -192,6 +192,18 @@ This project is developed in part with AI assistance (e.g., agents/Codex/Jules).
 
 Important: AI does not replace quality or security measures. Changes are not accepted "blindly"; they go through review and the existing quality gates (see "Quality gates" and CONTRIBUTING/AGENTS).
 
+### GitHub Copilot Instructions
+
+This repository includes comprehensive instructions for GitHub Copilot coding agent:
+
+- **`.github/copilot-instructions.md`** - Repository-wide instructions with code examples, troubleshooting, and quality guidelines
+- **`AGENTS.md`** - Agent persona definitions, boundaries, and quality gate requirements
+- **`.github/instructions/`** - Path-specific instructions:
+  - `formpacks.md` - Guidelines for formpack content (JSON schemas, DOCX templates)
+  - `typescript-react.md` - TypeScript/React code standards and testing requirements
+
+These instructions help ensure consistent code quality, maintain privacy standards, and follow best practices automatically.
+
 ---
 
 ## License
