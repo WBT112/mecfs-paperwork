@@ -8,14 +8,20 @@ import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
 import { buildDocumentModel } from '../formpacks/documentModel';
 import type { DocumentModel } from '../formpacks/documentModel';
-import { loadFormpackManifest } from '../formpacks/loader';
+import {
+  loadFormpackManifest,
+  loadFormpackSchema,
+  loadFormpackUiSchema,
+} from '../formpacks/loader';
 import type {
   FormpackDocxManifest,
   FormpackManifest,
 } from '../formpacks/types';
 import { getRecord } from '../storage/records';
 import { isRecord } from '../lib/utils';
+import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { buildI18nContext } from './buildI18nContext';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 export type DocxTemplateId = 'a4' | 'wallet';
 export type DocxExportVariant = DocxTemplateId;
@@ -55,6 +61,8 @@ export type DocxErrorKey =
 type MapTemplateOptions = {
   mappingPath?: string;
   locale?: SupportedLocale;
+  schema?: RJSFSchema | null;
+  uiSchema?: UiSchema | null;
 };
 
 /**
@@ -310,13 +318,24 @@ const setPathValue = (
  * docx-templates evaluates expressions and serializes XML; keeping values strings
  * avoids browser-side encoding surprises.
  */
-const normalizeFieldValue = (value: unknown): string => {
+type TemplateValueResolver = (
+  value: unknown,
+  schema?: RJSFSchema,
+  uiSchema?: UiSchema,
+) => string;
+
+const normalizeFieldValue = (
+  value: unknown,
+  resolveValue?: TemplateValueResolver,
+  schemaNode?: RJSFSchema,
+  uiNode?: UiSchema,
+): string => {
   if (value === null || value === undefined) {
     return '';
   }
 
-  if (typeof value === 'string') {
-    return value;
+  if (resolveValue) {
+    return resolveValue(value, schemaNode, uiNode);
   }
 
   if (typeof value === 'number' || typeof value === 'boolean') {
@@ -326,24 +345,153 @@ const normalizeFieldValue = (value: unknown): string => {
   return '';
 };
 
-const normalizeLoopEntry = (entry: unknown): unknown => {
+const normalizeLoopEntry = (
+  entry: unknown,
+  resolveValue?: TemplateValueResolver,
+  schemaNode?: RJSFSchema,
+  uiNode?: UiSchema,
+): unknown => {
   if (entry === null || entry === undefined) {
     return null;
   }
 
   if (!isRecord(entry)) {
     if (typeof entry === 'string') return entry;
+    if (resolveValue) {
+      return resolveValue(entry, schemaNode, uiNode);
+    }
     if (typeof entry === 'number' || typeof entry === 'boolean')
       return String(entry);
     return null;
   }
 
   const normalized: Record<string, unknown> = {};
+  const schemaProps =
+    schemaNode && isRecord(schemaNode.properties)
+      ? (schemaNode.properties as Record<string, RJSFSchema>)
+      : null;
+  const uiProps = isRecord(uiNode)
+    ? (uiNode as Record<string, UiSchema>)
+    : null;
   Object.entries(entry).forEach(([key, value]) => {
-    normalized[key] = normalizeFieldValue(value);
+    normalized[key] = normalizeFieldValue(
+      value,
+      resolveValue,
+      schemaProps ? schemaProps[key] : undefined,
+      uiProps ? uiProps[key] : undefined,
+    );
   });
 
   return normalized;
+};
+
+const getSchemaNodeForPath = (
+  schema: RJSFSchema | null | undefined,
+  path: string,
+): RJSFSchema | undefined => {
+  if (!schema || !path) {
+    return undefined;
+  }
+
+  const segments = path.split('.').filter(Boolean);
+  let current: RJSFSchema | undefined = schema;
+
+  for (const segment of segments) {
+    if (!current || typeof current !== 'object') {
+      return undefined;
+    }
+
+    if (isRecord(current.properties) && segment in current.properties) {
+      current = current.properties[segment] as RJSFSchema;
+      continue;
+    }
+
+    if (current.items) {
+      const items = Array.isArray(current.items)
+        ? current.items[0]
+        : current.items;
+      if (!isRecord(items)) {
+        return undefined;
+      }
+      current = items as RJSFSchema;
+      if (isRecord(current.properties) && segment in current.properties) {
+        current = current.properties[segment] as RJSFSchema;
+        continue;
+      }
+      if (!Number.isNaN(Number(segment))) {
+        continue;
+      }
+      return current;
+    }
+
+    return undefined;
+  }
+
+  return current;
+};
+
+const getUiSchemaNodeForPath = (
+  uiSchema: UiSchema | null | undefined,
+  path: string,
+): UiSchema | undefined => {
+  if (!uiSchema || !path) {
+    return undefined;
+  }
+
+  const segments = path.split('.').filter(Boolean);
+  let current: UiSchema | undefined = uiSchema;
+
+  for (const segment of segments) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+    const record = current as Record<string, unknown>;
+    const next = record[segment];
+    if (isRecord(next)) {
+      current = next as UiSchema;
+      continue;
+    }
+    if (record.items && isRecord(record.items)) {
+      current = record.items as UiSchema;
+      if (isRecord((current as Record<string, unknown>)[segment])) {
+        current = (current as Record<string, UiSchema>)[segment];
+        continue;
+      }
+    }
+    if (!Number.isNaN(Number(segment))) {
+      continue;
+    }
+    return undefined;
+  }
+
+  return current;
+};
+
+const getArrayItemSchema = (
+  schemaNode: RJSFSchema | undefined,
+): RJSFSchema | undefined => {
+  if (!schemaNode?.items) {
+    return undefined;
+  }
+  if (Array.isArray(schemaNode.items)) {
+    return schemaNode.items[0] as RJSFSchema | undefined;
+  }
+  return isRecord(schemaNode.items)
+    ? (schemaNode.items as RJSFSchema)
+    : undefined;
+};
+
+const getArrayItemUiSchema = (
+  uiNode: UiSchema | undefined,
+): UiSchema | undefined => {
+  if (!isRecord(uiNode)) {
+    return undefined;
+  }
+  const items = uiNode.items;
+  if (Array.isArray(items)) {
+    return isRecord(items[0]) ? (items[0] as UiSchema) : undefined;
+  }
+  return isRecord(items) ? (items as UiSchema) : undefined;
 };
 
 const loadDocxMapping = async (
@@ -401,21 +549,47 @@ export const mapDocumentDataToTemplate = async (
   const locale = options.locale ?? (i18n.language as SupportedLocale);
   const mappingPath = options.mappingPath ?? 'docx/mapping.json';
   const mapping = await loadDocxMapping(formpackId, mappingPath);
+  const schema =
+    options.schema ??
+    ((await loadFormpackSchema(formpackId)) as RJSFSchema | null);
+  const uiSchema =
+    options.uiSchema ??
+    ((await loadFormpackUiSchema(formpackId)) as UiSchema | null);
+  const resolveValue = (value: unknown) =>
+    resolveDisplayValue(value, {
+      t: (key, options) =>
+        i18n
+          .getFixedT(locale, `formpack:${formpackId}`)(key, options),
+      namespace: `formpack:${formpackId}`,
+    });
 
   const context: DocxTemplateContext = {
     ...buildI18nContext(formpackId, locale, mapping.i18n?.prefix),
   };
 
   mapping.fields.forEach((field) => {
-    const value = normalizeFieldValue(getPathValue(documentData, field.path));
+    const fieldSchema = getSchemaNodeForPath(schema, field.path);
+    const fieldUiSchema = getUiSchemaNodeForPath(uiSchema, field.path);
+    const value = normalizeFieldValue(
+      getPathValue(documentData, field.path),
+      resolveValue,
+      fieldSchema,
+      fieldUiSchema,
+    );
     setPathValue(context, field.var, value);
   });
 
   mapping.loops?.forEach((loop) => {
     const value = getPathValue(documentData, loop.path);
+    const loopSchema = getSchemaNodeForPath(schema, loop.path);
+    const loopUiSchema = getUiSchemaNodeForPath(uiSchema, loop.path);
+    const itemSchema = getArrayItemSchema(loopSchema);
+    const itemUiSchema = getArrayItemUiSchema(loopUiSchema);
     const entries = Array.isArray(value)
       ? value
-          .map(normalizeLoopEntry)
+          .map((entry) =>
+            normalizeLoopEntry(entry, resolveValue, itemSchema, itemUiSchema),
+          )
           .filter((entry) => entry !== null && entry !== undefined)
       : [];
     setPathValue(context, loop.var, entries);
@@ -577,6 +751,8 @@ export type ExportDocxOptions = {
   variant: DocxExportVariant;
   locale: SupportedLocale;
   manifest?: FormpackManifest;
+  schema?: RJSFSchema | null;
+  uiSchema?: UiSchema | null;
 };
 
 /**
@@ -588,6 +764,8 @@ export const exportDocx = async ({
   variant,
   locale,
   manifest: manifestOverride,
+  schema,
+  uiSchema,
 }: ExportDocxOptions): Promise<Blob> => {
   const manifest = manifestOverride ?? (await loadFormpackManifest(formpackId));
   if (!manifest.docx) {
@@ -614,6 +792,8 @@ export const exportDocx = async ({
     mapDocumentDataToTemplate(formpackId, variant, documentModel, {
       mappingPath: manifest.docx.mapping,
       locale,
+      schema,
+      uiSchema,
     }),
   ]);
 

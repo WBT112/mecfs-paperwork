@@ -137,6 +137,8 @@
   "storageError": "We could not access local storage. Please try again.",
   "common.add": "Add",
   "common.close": "Close",
+  "common.true": "Yes",
+  "common.false": "No",
   "common.remove": "Remove",
   "common.item": "Item",
   "common.itemWithIndex": "{{item}} {{index}}",

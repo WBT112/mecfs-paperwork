@@ -88,7 +88,16 @@ export const resolveDisplayValue = (
 
   if (typeof value === 'boolean') {
     if (options.t) {
-      return options.t(value ? 'common.true' : 'common.false', {
+      const key = value ? 'common.true' : 'common.false';
+      const translated = options.t(key, {
+        ns: options.namespace,
+        defaultValue: key,
+      });
+      if (translated !== key) {
+        return translated;
+      }
+      return options.t(key, {
+        ns: options.namespace,
         defaultValue: value ? 'true' : 'false',
       });
     }
