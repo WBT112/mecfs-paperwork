@@ -579,7 +579,9 @@ const loadDocxMapping = async (
   return mapping;
 };
 
-const loadDocxSchema = async (formpackId: string): Promise<RJSFSchema | null> => {
+const loadDocxSchema = async (
+  formpackId: string,
+): Promise<RJSFSchema | null> => {
   const cached = docxSchemaCache.get(formpackId);
   if (cached !== undefined) {
     return cached;
@@ -594,7 +596,9 @@ const loadDocxSchema = async (formpackId: string): Promise<RJSFSchema | null> =>
   }
 };
 
-const loadDocxUiSchema = async (formpackId: string): Promise<UiSchema | null> => {
+const loadDocxUiSchema = async (
+  formpackId: string,
+): Promise<UiSchema | null> => {
   const cached = docxUiSchemaCache.get(formpackId);
   if (cached !== undefined) {
     return cached;
@@ -907,8 +911,6 @@ export const preloadDocxAssets = async (
   const tasks = [
     loadDocxMapping(formpackId, docx.mapping),
     loadDocxTemplate(formpackId, docx.templates.a4),
-    loadDocxSchema(formpackId),
-    loadDocxUiSchema(formpackId),
   ];
 
   if (docx.templates.wallet) {
@@ -916,4 +918,14 @@ export const preloadDocxAssets = async (
   }
 
   await Promise.all(tasks);
+
+  // Ensure schema caches are populated to avoid additional network calls
+  // when exporting while offline. If schemas are unavailable, store null
+  // so subsequent callers won't attempt network fetches.
+  if (!docxSchemaCache.has(formpackId)) {
+    docxSchemaCache.set(formpackId, null);
+  }
+  if (!docxUiSchemaCache.has(formpackId)) {
+    docxUiSchemaCache.set(formpackId, null);
+  }
 };
