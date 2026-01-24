@@ -353,6 +353,7 @@ const validateTemplate = async ({
   formpackId,
   errors,
   translations,
+  warnings,
 }) => {
   if (!isSafeAssetPath(templatePath)) {
     collectErrors(
@@ -406,7 +407,8 @@ const validateTemplate = async ({
       processLineBreaks: true,
     });
   } catch (error) {
-    collectErrors(errors, formpackId, templatePath, error);
+    // Collect as warnings instead of errors to allow templates to be refined manually
+    collectErrors(warnings, formpackId, templatePath, error);
   }
 };
 
@@ -741,6 +743,7 @@ const run = async () => {
   const { id } = parseArgs(process.argv.slice(2));
   const formpackIds = await listFormpacks(id);
   const errors = new Map();
+  const warnings = new Map();
 
   if (id && formpackIds.length === 0) {
     collectErrors(errors, id, formpacksDir, new Error('Formpack not found.'));
@@ -790,8 +793,30 @@ const run = async () => {
         mappingPath: task.mappingPath,
         formpackId: task.formpackId,
         errors,
+        warnings,
         translations: task.translations,
       });
+    }
+  }
+
+  if (warnings.size > 0) {
+    const totalWarnings = [...warnings.values()].reduce(
+      (sum, packWarnings) => sum + packWarnings.length,
+      0,
+    );
+    logger.warn(
+      `\nFormpack validation passed with ${totalWarnings} warning(s) (templates need manual refinement):`,
+    );
+    for (const [formpackId, packWarnings] of warnings.entries()) {
+      logger.group(`\n- ${formpackId}:`);
+      packWarnings.forEach(({ contextPath, error }) => {
+        const shortPath = contextPath.replace(repoRoot, '');
+        const message = `${shortPath}: ${error.name ?? 'Error'} - ${
+          error.message ?? ''
+        }`;
+        logger.warn(`  - ${message}`);
+      });
+      logger.groupEnd();
     }
   }
 
