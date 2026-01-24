@@ -5,12 +5,15 @@ import {
   type UiSchema,
 } from '@rjsf/utils';
 
+export type ArrayFormatMode = 'join' | 'bullets';
+
 export type DisplayValueResolverOptions = {
   schema?: RJSFSchema;
   uiSchema?: UiSchema;
   namespace?: string;
   formpackId?: string;
   fieldPath?: string;
+  formatMode?: ArrayFormatMode;
   t?: (
     key: string,
     options?: {
@@ -118,12 +121,69 @@ const resolveParagraphValue = (
   return '';
 };
 
+const resolveArrayValue = (
+  values: unknown[],
+  options: DisplayValueResolverOptions,
+): string | null => {
+  if (!values.length) {
+    return '';
+  }
+
+  // For array types, schema.items contains the item schema (enum definitions, etc.)
+  const itemSchema = options.schema?.items;
+  const itemUiSchema = options.uiSchema?.items;
+  const itemOptions = {
+    ...options,
+    schema: itemSchema
+      ? Array.isArray(itemSchema)
+        ? (itemSchema[0] as RJSFSchema)
+        : (itemSchema as RJSFSchema)
+      : undefined,
+    uiSchema: itemUiSchema
+      ? Array.isArray(itemUiSchema)
+        ? (itemUiSchema[0] as UiSchema)
+        : (itemUiSchema as UiSchema)
+      : undefined,
+  };
+
+  // Resolve each array item to its display value
+  const resolvedItems: string[] = [];
+  for (const item of values) {
+    const enumLabel = resolveEnumLabel(item, itemOptions);
+    if (enumLabel !== null) {
+      resolvedItems.push(enumLabel);
+    } else if (typeof item === 'string' && item.trim()) {
+      resolvedItems.push(item);
+    } else if (typeof item === 'number') {
+      resolvedItems.push(String(item));
+    }
+  }
+
+  if (!resolvedItems.length) {
+    return '';
+  }
+
+  const formatMode = options.formatMode ?? 'join';
+  if (formatMode === 'bullets') {
+    return resolvedItems.map((item) => `• ${item}`).join('\n');
+  }
+
+  // Default 'join' mode with comma-space separator
+  return resolvedItems.join(', ');
+};
+
 export const resolveDisplayValue = (
   value: unknown,
   options: DisplayValueResolverOptions = {},
 ): string => {
   if (value === null || value === undefined) {
     return '';
+  }
+
+  // RATIONALE: Handle arrays (e.g., multi-select, checkbox groups) before primitives
+  if (Array.isArray(value)) {
+    const arrayResult = resolveArrayValue(value, options);
+    return arrayResult ?? '';
   }
 
   const enumLabel = resolveEnumLabel(value, options);

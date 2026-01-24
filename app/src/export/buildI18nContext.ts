@@ -105,7 +105,10 @@ export const buildI18nContext = (
   const tObj: Record<string, unknown> = {};
   const prefixFilter = prefix ? `${prefix}.` : null;
 
-  for (const [key, value] of Object.entries(resources)) {
+  // RATIONALE: Sort entries for deterministic output ordering
+  for (const [key, value] of Object.entries(resources).sort(([a], [b]) =>
+    a.localeCompare(b),
+  )) {
     if (prefixFilter && !key.startsWith(prefixFilter)) continue;
     if (typeof value !== 'string') continue;
 
