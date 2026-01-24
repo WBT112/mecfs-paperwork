@@ -13,13 +13,10 @@ export default function CollapsibleSection(
 ) {
   const { id, title, defaultOpen = false, className, children } = props;
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const ids = useMemo(
-    () => ({
-      toggle: `${id}-toggle`,
-      content: `${id}-content`,
-    }),
-    [id],
-  );
+  const ids = {
+    toggle: `${id}-toggle`,
+    content: `${id}-content`,
+  };
 
   return (
     <section className={className}>
@@ -29,10 +26,11 @@ export default function CollapsibleSection(
           id={ids.toggle}
           className="collapsible-section__toggle"
           aria-expanded={isOpen}
+          aria-pressed={isOpen}
           aria-controls={ids.content}
           onClick={() => setIsOpen((prev) => !prev)}
-          onKeyUp={(event) => {
-            if (event.key === ' ' || event.key === 'Spacebar') {
+          onKeyDown={(event) => {
+            if (event.code === 'Space' || event.code === 'Enter') {
               event.preventDefault();
               setIsOpen((prev) => !prev);
             }
