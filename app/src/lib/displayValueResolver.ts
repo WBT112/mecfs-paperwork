@@ -127,9 +127,12 @@ const getItemSchemaFromArray = (
   if (!schema?.items) {
     return undefined;
   }
-  return Array.isArray(schema.items)
-    ? (schema.items[0] as RJSFSchema)
-    : (schema.items as RJSFSchema);
+  if (Array.isArray(schema.items)) {
+    return schema.items.length > 0
+      ? (schema.items[0] as RJSFSchema)
+      : undefined;
+  }
+  return schema.items as RJSFSchema;
 };
 
 const getItemUiSchemaFromArray = (
@@ -138,9 +141,12 @@ const getItemUiSchemaFromArray = (
   if (!uiSchema?.items) {
     return undefined;
   }
-  return Array.isArray(uiSchema.items)
-    ? (uiSchema.items[0] as UiSchema)
-    : (uiSchema.items as UiSchema);
+  if (Array.isArray(uiSchema.items)) {
+    return uiSchema.items.length > 0
+      ? (uiSchema.items[0] as UiSchema)
+      : undefined;
+  }
+  return uiSchema.items as UiSchema;
 };
 
 const resolveArrayItem = (
