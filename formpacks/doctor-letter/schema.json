@@ -90,6 +90,11 @@
         "q8": {
           "type": "string",
           "enum": ["No known cause", "EBV", "Influenza", "COVID-19 infection", "COVID-19 vaccination", "Other cause"]
+        },
+        "resolvedCaseText": {
+          "type": "string",
+          "title": "Resolved Case",
+          "readOnly": true
         }
       },
       "additionalProperties": false

@@ -63,7 +63,7 @@
   },
   "decision": {
     "ui:title": "doctor-letter.section.decision.title",
-    "ui:order": ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8"],
+    "ui:order": ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "resolvedCaseText"],
     "q1": {
       "ui:title": "doctor-letter.decision.q1.label",
       "ui:help": "doctor-letter.decision.q1.help"
@@ -78,11 +78,21 @@
     },
     "q4": {
       "ui:title": "doctor-letter.decision.q4.label",
-      "ui:help": "doctor-letter.decision.q4.help"
+      "ui:help": "doctor-letter.decision.q4.help",
+      "ui:enumNames": [
+        "doctor-letter.decision.q4.option.EBV",
+        "doctor-letter.decision.q4.option.Influenza",
+        "doctor-letter.decision.q4.option.COVID-19",
+        "doctor-letter.decision.q4.option.OtherInfection"
+      ]
     },
     "q5": {
       "ui:title": "doctor-letter.decision.q5.label",
-      "ui:help": "doctor-letter.decision.q5.help"
+      "ui:help": "doctor-letter.decision.q5.help",
+      "ui:enumNames": [
+        "doctor-letter.decision.q5.option.COVID19Vaccination",
+        "doctor-letter.decision.q5.option.OtherCause"
+      ]
     },
     "q6": {
       "ui:title": "doctor-letter.decision.q6.label",
@@ -94,7 +104,23 @@
     },
     "q8": {
       "ui:title": "doctor-letter.decision.q8.label",
-      "ui:help": "doctor-letter.decision.q8.help"
+      "ui:help": "doctor-letter.decision.q8.help",
+      "ui:enumNames": [
+        "doctor-letter.decision.q8.option.NoKnownCause",
+        "doctor-letter.decision.q8.option.EBV",
+        "doctor-letter.decision.q8.option.Influenza",
+        "doctor-letter.decision.q8.option.COVID19Infection",
+        "doctor-letter.decision.q8.option.COVID19Vaccination",
+        "doctor-letter.decision.q8.option.OtherCause"
+      ]
+    },
+    "resolvedCaseText": {
+      "ui:title": "doctor-letter.decision.resolvedCaseText.label",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 5
+      },
+      "ui:readonly": true
     }
   },
   "infoBoxes": {

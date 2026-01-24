@@ -43,6 +43,7 @@ import {
 } from '../formpacks/loader';
 import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
 import type { FormpackManifest } from '../formpacks/types';
+import { resolveDecisionTree } from '../formpacks/decisionEngine';
 import {
   type StorageErrorCode,
   useAutosaveRecord,
@@ -877,14 +878,55 @@ export default function FormpackDetailPage() {
     };
   }, [formpackId, hasLoadedRecords, isRecordsLoading, restoreActiveRecord]);
 
+  // Type guards for decision tree enum values
+  const isValidQ4 = (val: unknown): val is 'EBV' | 'Influenza' | 'COVID-19' | 'Other infection' =>
+    val === 'EBV' || val === 'Influenza' || val === 'COVID-19' || val === 'Other infection';
+  const isValidQ5 = (val: unknown): val is 'COVID-19 vaccination' | 'Other cause' =>
+    val === 'COVID-19 vaccination' || val === 'Other cause';
+  const isValidQ8 = (val: unknown): val is 'No known cause' | 'EBV' | 'Influenza' | 'COVID-19 infection' | 'COVID-19 vaccination' | 'Other cause' =>
+    val === 'No known cause' || val === 'EBV' || val === 'Influenza' || val === 'COVID-19 infection' || val === 'COVID-19 vaccination' || val === 'Other cause';
+
+  const resolveAndPopulateDoctorLetterCase = useCallback(
+    (decision: Record<string, unknown>): string => {
+      const result = resolveDecisionTree({
+        q1: typeof decision.q1 === 'boolean' ? decision.q1 : undefined,
+        q2: typeof decision.q2 === 'boolean' ? decision.q2 : undefined,
+        q3: typeof decision.q3 === 'boolean' ? decision.q3 : undefined,
+        q4: isValidQ4(decision.q4) ? decision.q4 : undefined,
+        q5: isValidQ5(decision.q5) ? decision.q5 : undefined,
+        q6: typeof decision.q6 === 'boolean' ? decision.q6 : undefined,
+        q7: typeof decision.q7 === 'boolean' ? decision.q7 : undefined,
+        q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
+      });
+
+      return t(result.caseKey, {
+        ns: `formpack:${formpackId}`,
+        defaultValue: result.caseKey,
+      });
+    },
+    [formpackId, t],
+  );
+
   // RATIONALE: Memoize form event handlers to prevent unnecessary re-renders of the
   // expensive Form component, which receives these callbacks as props.
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = useCallback(
     (event) => {
       const nextData = event.formData as FormDataState;
+
+      // For doctor-letter formpack, automatically resolve decision tree and populate resolvedCaseText
+      if (formpackId === 'doctor-letter' && isRecord(nextData.decision)) {
+        const decision = nextData.decision;
+        const caseText = resolveAndPopulateDoctorLetterCase(decision);
+
+        nextData.decision = {
+          ...decision,
+          resolvedCaseText: caseText,
+        };
+      }
+
       setFormData(nextData);
     },
-    [setFormData],
+    [formpackId, resolveAndPopulateDoctorLetterCase, setFormData],
   );
 
   const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = useCallback(
