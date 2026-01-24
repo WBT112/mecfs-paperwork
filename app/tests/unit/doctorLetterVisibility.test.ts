@@ -5,6 +5,10 @@ import {
   type DecisionData,
 } from '../../src/formpacks/doctorLetterVisibility';
 
+const RESULT_TEXT = 'Some result';
+const COVID19_INFECTION = 'COVID-19';
+const OTHER_CAUSE_TEXT = 'Other cause';
+
 describe('doctorLetterVisibility', () => {
   describe('getFieldVisibility', () => {
     it('shows only q1 and resolvedCaseText when no answers provided', () => {
@@ -137,8 +141,8 @@ describe('doctorLetterVisibility', () => {
         q1: true,
         q2: true,
         q3: true,
-        q4: 'COVID-19',
-        resolvedCaseText: 'Some result',
+        q4: COVID19_INFECTION,
+        resolvedCaseText: RESULT_TEXT,
       };
       const cleaned = clearHiddenFields(decision);
       expect(cleaned).toEqual(decision);
@@ -149,9 +153,9 @@ describe('doctorLetterVisibility', () => {
         q1: false,
         q2: true,
         q3: true,
-        q4: 'COVID-19',
+        q4: COVID19_INFECTION,
         q6: true,
-        resolvedCaseText: 'Some result',
+        resolvedCaseText: RESULT_TEXT,
       };
       const cleaned = clearHiddenFields(decision);
       expect(cleaned.q2).toBeUndefined();
@@ -167,7 +171,7 @@ describe('doctorLetterVisibility', () => {
         q6: true,
         q7: true,
         q8: 'EBV',
-        resolvedCaseText: 'Some result',
+        resolvedCaseText: RESULT_TEXT,
       };
       const cleaned = clearHiddenFields(decision);
       expect(cleaned.q6).toBeUndefined();
@@ -181,9 +185,9 @@ describe('doctorLetterVisibility', () => {
         q1: true,
         q2: false,
         q3: true,
-        q4: 'COVID-19',
-        q5: 'Other cause',
-        resolvedCaseText: 'Some result',
+        q4: COVID19_INFECTION,
+        q5: OTHER_CAUSE_TEXT,
+        resolvedCaseText: RESULT_TEXT,
       };
       const cleaned = clearHiddenFields(decision);
       expect(cleaned.q3).toBeUndefined();
@@ -196,9 +200,9 @@ describe('doctorLetterVisibility', () => {
         q1: true,
         q2: true,
         q3: true,
-        q4: 'COVID-19',
-        q5: 'Other cause',
-        resolvedCaseText: 'Some result',
+        q4: COVID19_INFECTION,
+        q5: OTHER_CAUSE_TEXT,
+        resolvedCaseText: RESULT_TEXT,
       };
       const cleaned = clearHiddenFields(decision);
       expect(cleaned.q4).toBe('COVID-19');
@@ -210,13 +214,13 @@ describe('doctorLetterVisibility', () => {
         q1: true,
         q2: true,
         q3: false,
-        q4: 'COVID-19',
-        q5: 'Other cause',
-        resolvedCaseText: 'Some result',
+        q4: COVID19_INFECTION,
+        q5: OTHER_CAUSE_TEXT,
+        resolvedCaseText: RESULT_TEXT,
       };
       const cleaned = clearHiddenFields(decision);
       expect(cleaned.q4).toBeUndefined();
-      expect(cleaned.q5).toBe('Other cause');
+      expect(cleaned.q5).toBe(OTHER_CAUSE_TEXT);
     });
 
     it('clears q7-q8 when q6 is false', () => {
@@ -225,7 +229,7 @@ describe('doctorLetterVisibility', () => {
         q6: false,
         q7: true,
         q8: 'EBV',
-        resolvedCaseText: 'Some result',
+        resolvedCaseText: RESULT_TEXT,
       };
       const cleaned = clearHiddenFields(decision);
       expect(cleaned.q7).toBeUndefined();
@@ -238,7 +242,7 @@ describe('doctorLetterVisibility', () => {
         q6: true,
         q7: false,
         q8: 'EBV',
-        resolvedCaseText: 'Some result',
+        resolvedCaseText: RESULT_TEXT,
       };
       const cleaned = clearHiddenFields(decision);
       expect(cleaned.q8).toBeUndefined();
@@ -263,8 +267,8 @@ describe('doctorLetterVisibility', () => {
         q1: true,
         q2: true,
         q3: false,
-        q4: 'COVID-19', // Should be cleared
-        q5: 'Other cause',
+        q4: COVID19_INFECTION, // Should be cleared
+        q5: OTHER_CAUSE_TEXT,
         q6: true, // Should be cleared
         resolvedCaseText: 'Result',
       };

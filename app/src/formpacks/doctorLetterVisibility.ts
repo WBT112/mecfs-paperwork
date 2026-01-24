@@ -1,6 +1,6 @@
 /**
  * Conditional visibility logic for doctor-letter decision tree.
- * 
+ *
  * Decision tree structure:
  * - Q1 (full ME/CFS): always visible
  *   - If Q1 = Yes:
@@ -61,41 +61,61 @@ export function getFieldVisibility(decision: DecisionData): FieldVisibility {
 
   // Q1 branching
   if (decision.q1 === true) {
-    // Full ME/CFS path
-    visibility.q2 = true; // Show "Is cause known?"
-
-    if (decision.q2 === true) {
-      visibility.q3 = true; // Show "After infection?"
-
-      if (decision.q3 === true) {
-        visibility.q4 = true; // Show "Which infection?"
-      } else if (decision.q3 === false) {
-        visibility.q5 = true; // Show "Other cause?"
-      }
-    }
-    // If q2 === false, no further questions (Case 11)
+    applyQ1TruePath(decision, visibility);
   } else if (decision.q1 === false) {
-    // No full ME/CFS path
-    visibility.q6 = true; // Show "Chronic fatigue?"
-
-    if (decision.q6 === true) {
-      visibility.q7 = true; // Show "PEM?"
-
-      if (decision.q7 === true) {
-        visibility.q8 = true; // Show "Cause?"
-      }
-      // If q7 === false, no further questions (Case 0)
-    }
-    // If q6 === false, no further questions (Case 0)
+    applyQ1FalsePath(decision, visibility);
   }
+  // else: q1 undefined - no further questions yet
 
   return visibility;
 }
 
 /**
+ * Apply visibility rules for Q1=true path (full ME/CFS)
+ */
+function applyQ1TruePath(
+  decision: DecisionData,
+  visibility: FieldVisibility,
+): void {
+  visibility.q2 = true; // Show "Is cause known?"
+
+  if (decision.q2 === true) {
+    visibility.q3 = true; // Show "After infection?"
+
+    if (decision.q3 === true) {
+      visibility.q4 = true; // Show "Which infection?"
+    } else if (decision.q3 === false) {
+      visibility.q5 = true; // Show "Other cause?"
+    }
+    // else: q3 undefined - no further questions yet
+  }
+  // else: q2 === false or undefined - no further questions (Case 11 if false)
+}
+
+/**
+ * Apply visibility rules for Q1=false path (no full ME/CFS)
+ */
+function applyQ1FalsePath(
+  decision: DecisionData,
+  visibility: FieldVisibility,
+): void {
+  visibility.q6 = true; // Show "Chronic fatigue?"
+
+  if (decision.q6 === true) {
+    visibility.q7 = true; // Show "PEM?"
+
+    if (decision.q7 === true) {
+      visibility.q8 = true; // Show "Cause?"
+    }
+    // else: q7 === false or undefined - no further questions (Case 0 if false)
+  }
+  // else: q6 === false or undefined - no further questions (Case 0 if false)
+}
+
+/**
  * Clears hidden fields from decision data to prevent stale values
  * from affecting the decision tree resolution.
- * 
+ *
  * RATIONALE: When a parent answer changes such that a child field becomes hidden,
  * we must clear that field's value to ensure the decision tree result is based
  * only on visible/relevant answers.

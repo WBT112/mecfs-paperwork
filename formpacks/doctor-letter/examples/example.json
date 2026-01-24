@@ -20,10 +20,5 @@
     "q2": true,
     "q3": true,
     "q4": "COVID-19"
-  },
-  "infoBoxes": {
-    "q1": {
-      "enabled": true
-    }
   }
 }

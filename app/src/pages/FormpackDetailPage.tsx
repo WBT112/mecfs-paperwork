@@ -668,7 +668,7 @@ export default function FormpackDetailPage() {
         : null,
     [schema, translatedUiSchema],
   );
-  
+
   // Apply conditional visibility for doctor-letter decision tree
   const conditionalUiSchema = useMemo(() => {
     if (!normalizedUiSchema || formpackId !== 'doctor-letter') {
@@ -695,8 +695,8 @@ export default function FormpackDetailPage() {
     }
 
     // Apply visibility rules by setting ui:widget to "hidden" for invisible fields
-    const decisionUiSchema = clonedUiSchema.decision as Record<string, unknown>;
-    
+    const decisionUiSchema = clonedUiSchema.decision;
+
     (['q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'] as const).forEach((field) => {
       if (!visibility[field]) {
         if (!isRecord(decisionUiSchema[field])) {
@@ -709,7 +709,7 @@ export default function FormpackDetailPage() {
 
     return clonedUiSchema;
   }, [normalizedUiSchema, formpackId, formData]);
-  
+
   const dateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(activeLanguage, {
@@ -983,10 +983,10 @@ export default function FormpackDetailPage() {
       // For doctor-letter formpack, automatically resolve decision tree and populate resolvedCaseText
       if (formpackId === 'doctor-letter' && isRecord(nextData.decision)) {
         let decision = nextData.decision as DecisionData;
-        
+
         // Clear hidden fields to prevent stale values from affecting decision tree
         decision = clearHiddenFields(decision);
-        
+
         const caseText = resolveAndPopulateDoctorLetterCase(decision);
 
         nextData.decision = {
@@ -1258,7 +1258,8 @@ export default function FormpackDetailPage() {
     [t],
   );
   const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
-  const previewUiSchema = conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
+  const previewUiSchema =
+    conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
   const jsonPreview = useMemo(
     () => JSON.stringify(formData, null, 2),
     [formData],
