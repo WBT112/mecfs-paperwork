@@ -6,6 +6,7 @@
   "titleKey": "notfallpass.title",
   "descriptionKey": "notfallpass.description",
   "exports": ["docx", "json"],
+  "visibility": "dev",
   "docx": {
     "templates": {
       "a4": "templates/a4.docx",
