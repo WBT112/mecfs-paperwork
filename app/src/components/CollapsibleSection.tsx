@@ -8,13 +8,10 @@ type CollapsibleSectionProps = {
   children: React.ReactNode;
 };
 
-export default function CollapsibleSection({
-  id,
-  title,
-  defaultOpen = false,
-  className,
-  children,
-}: CollapsibleSectionProps) {
+export default function CollapsibleSection(
+  props: Readonly<CollapsibleSectionProps>,
+) {
+  const { id, title, defaultOpen = false, className, children } = props;
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const ids = useMemo(
     () => ({
