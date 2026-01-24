@@ -1,0 +1,21 @@
+{
+  "id": "doctor-letter",
+  "version": "0.1.0",
+  "defaultLocale": "de",
+  "locales": [
+    "de",
+    "en"
+  ],
+  "titleKey": "doctor-letter.title",
+  "descriptionKey": "doctor-letter.description",
+  "exports": [
+    "docx",
+    "json"
+  ],
+  "docx": {
+    "templates": {
+      "a4": "templates/a4.docx"
+    },
+    "mapping": "docx/mapping.json"
+  }
+}

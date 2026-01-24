@@ -1,5 +1,6 @@
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
+import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
 
 type DiagnosisFlags = {
   meCfs?: boolean;
@@ -33,6 +34,23 @@ export type DocumentModel = {
   doctor: {
     name: string | null;
     phone: string | null;
+    practice?: string | null;
+    title?: string | null;
+    gender?: string | null;
+    streetAndNumber?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+  };
+  patient?: {
+    firstName: string | null;
+    lastName: string | null;
+    streetAndNumber?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+  };
+  decision?: {
+    caseId: number;
+    caseText: string;
   };
 };
 
@@ -167,6 +185,54 @@ export const buildDocumentModel = (
   }
 
   const t = i18n.getFixedT(locale, `formpack:${formpackId}`);
+
+  if (formpackId === 'doctor-letter') {
+    const patient = getRecordValue(formData.patient);
+    const doctor = getRecordValue(formData.doctor);
+    const decision = getRecordValue(formData.decision);
+
+    const decisionAnswers: DecisionAnswers = {
+      q1: decision?.q1 === true ? true : decision?.q1 === false ? false : undefined,
+      q2: decision?.q2 === true ? true : decision?.q2 === false ? false : undefined,
+      q3: decision?.q3 === true ? true : decision?.q3 === false ? false : undefined,
+      q4: typeof decision?.q4 === 'string' ? (decision.q4 as DecisionAnswers['q4']) : undefined,
+      q5: typeof decision?.q5 === 'string' ? (decision.q5 as DecisionAnswers['q5']) : undefined,
+      q6: decision?.q6 === true ? true : decision?.q6 === false ? false : undefined,
+      q7: decision?.q7 === true ? true : decision?.q7 === false ? false : undefined,
+      q8: typeof decision?.q8 === 'string' ? (decision.q8 as DecisionAnswers['q8']) : undefined,
+    };
+
+    const result = resolveDecisionTree(decisionAnswers);
+    const caseText = t(result.caseKey, {
+      defaultValue: result.caseKey,
+    });
+
+    return {
+      diagnosisParagraphs: [],
+      ...baseModel,
+      patient: {
+        firstName: getStringValue(patient?.firstName),
+        lastName: getStringValue(patient?.lastName),
+        streetAndNumber: getStringValue(patient?.streetAndNumber),
+        postalCode: getStringValue(patient?.postalCode),
+        city: getStringValue(patient?.city),
+      },
+      doctor: {
+        ...baseModel.doctor,
+        practice: getStringValue(doctor?.practice),
+        title: getStringValue(doctor?.title),
+        gender: getStringValue(doctor?.gender),
+        name: getStringValue(doctor?.name),
+        streetAndNumber: getStringValue(doctor?.streetAndNumber),
+        postalCode: getStringValue(doctor?.postalCode),
+        city: getStringValue(doctor?.city),
+      },
+      decision: {
+        caseId: result.caseId,
+        caseText,
+      },
+    };
+  }
 
   if (formpackId !== 'notfallpass') {
     return { diagnosisParagraphs: [], ...baseModel };
