@@ -137,8 +137,6 @@
   "storageError": "Auf den lokalen Speicher konnte nicht zugegriffen werden. Bitte versuche es erneut.",
   "common.add": "Hinzufügen",
   "common.close": "Schließen",
-  "common.true": "Ja",
-  "common.false": "Nein",
   "common.remove": "Entfernen",
   "common.item": "Eintrag",
   "common.itemWithIndex": "{{item}} {{index}}",

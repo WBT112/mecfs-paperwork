@@ -114,4 +114,44 @@ describe('mapDocumentDataToTemplate', () => {
 
     expect(context.diagnoses).toEqual({ formatted: 'Yes' });
   });
+
+  it('maps diagnosis booleans to paragraph text', async () => {
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: { name: 'Ada Example', birthDate: '01-01-2000' },
+      contacts: [],
+      diagnoses: { formatted: null, meCfs: true },
+      symptoms: 'Example symptoms',
+      medications: [],
+      allergies: 'None',
+      doctor: { name: 'Dr Example', phone: '555-0101' },
+    };
+
+    const schema: RJSFSchema = {
+      type: 'object',
+      properties: {
+        diagnoses: {
+          type: 'object',
+          properties: {
+            meCfs: { type: 'boolean' },
+          },
+        },
+      },
+    };
+
+    const context = await mapDocumentDataToTemplate(
+      'notfallpass',
+      'a4',
+      documentData,
+      {
+        mappingPath: 'docx/mapping.json',
+        locale: 'en',
+        schema,
+      },
+    );
+
+    expect(context.diagnoses?.meCfs).toBe(
+      enTranslations['notfallpass.export.diagnoses.meCfs.paragraph'],
+    );
+  });
 });

@@ -340,16 +340,19 @@ const mockT = (key: string, options?: { ns?: string }) => {
   if (!options?.ns) {
     return key;
   }
-  if (options.ns === 'app') {
-    if (key === 'common.true') {
-      return 'Ja';
+    if (options.ns === 'formpack:notfallpass') {
+      if (key === 'notfallpass.export.diagnoses.meCfs.paragraph') {
+        return 'ME/CFS Paragraph';
+      }
+      if (key === 'notfallpass.export.diagnoses.pots.paragraph') {
+        return 'POTS Paragraph';
+      }
+      if (key === 'notfallpass.export.diagnoses.longCovid.paragraph') {
+        return 'Long Covid Paragraph';
+      }
     }
-    if (key === 'common.false') {
-      return 'Nein';
-    }
-  }
-  return key;
-};
+    return key;
+  };
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -1641,7 +1644,7 @@ describe('FormpackDetailPage', () => {
       );
       await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
 
-      expect(await screen.findByText('Ja')).toBeInTheDocument();
+      expect(await screen.findByText('ME/CFS Paragraph')).toBeInTheDocument();
     } finally {
       restoreText();
     }

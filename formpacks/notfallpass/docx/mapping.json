@@ -4,6 +4,7 @@
     {"var": "person.name", "path": "person.name"},
     {"var": "person.birthDate", "path": "person.birthDate"},
     {"var": "diagnoses.formatted", "path": "diagnoses.formatted"},
+    {"var": "diagnoses.meCfs", "path": "diagnoses.meCfs"},
     {"var": "symptoms", "path": "symptoms"},
     {"var": "allergies", "path": "allergies"},
     {"var": "doctor.name", "path": "doctor.name"},

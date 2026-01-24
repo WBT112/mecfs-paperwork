@@ -4,6 +4,8 @@ export type DisplayValueResolverOptions = {
   schema?: RJSFSchema;
   uiSchema?: UiSchema;
   namespace?: string;
+  formpackId?: string;
+  fieldPath?: string;
   t?: (
     key: string,
     options?: {
@@ -73,6 +75,43 @@ const resolveEnumLabel = (
   return translateLabel(label, options.t, options.namespace);
 };
 
+const resolveParagraphValue = (
+  value: boolean,
+  options: DisplayValueResolverOptions,
+): string | null => {
+  if (!options.t || !options.formpackId || !options.fieldPath) {
+    return null;
+  }
+
+  const namespace = options.namespace ?? `formpack:${options.formpackId}`;
+  const baseKey = `${options.formpackId}.export.${options.fieldPath}`;
+
+  if (value) {
+    const paragraphKey = `${baseKey}.paragraph`;
+    const paragraph = options.t(paragraphKey, {
+      ns: namespace,
+      defaultValue: paragraphKey,
+    });
+    return paragraph === paragraphKey ? '' : paragraph;
+  }
+
+  const falseKeys = [
+    `${baseKey}.false.paragraph`,
+    `${baseKey}.paragraph.false`,
+  ];
+  for (const key of falseKeys) {
+    const paragraph = options.t(key, {
+      ns: namespace,
+      defaultValue: key,
+    });
+    if (paragraph !== key) {
+      return paragraph;
+    }
+  }
+
+  return '';
+};
+
 export const resolveDisplayValue = (
   value: unknown,
   options: DisplayValueResolverOptions = {},
@@ -87,21 +126,11 @@ export const resolveDisplayValue = (
   }
 
   if (typeof value === 'boolean') {
-    if (options.t) {
-      const key = value ? 'common.true' : 'common.false';
-      const translated = options.t(key, {
-        ns: options.namespace,
-        defaultValue: key,
-      });
-      if (translated !== key) {
-        return translated;
-      }
-      return options.t(key, {
-        ns: options.namespace,
-        defaultValue: value ? 'true' : 'false',
-      });
+    const paragraph = resolveParagraphValue(value, options);
+    if (paragraph !== null) {
+      return paragraph;
     }
-    return value ? 'true' : 'false';
+    return '';
   }
 
   if (typeof value === 'number' || typeof value === 'string') {

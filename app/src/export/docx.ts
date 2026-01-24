@@ -322,6 +322,7 @@ type TemplateValueResolver = (
   value: unknown,
   schema?: RJSFSchema,
   uiSchema?: UiSchema,
+  fieldPath?: string,
 ) => string;
 
 const normalizeFieldValue = (
@@ -329,13 +330,14 @@ const normalizeFieldValue = (
   resolveValue?: TemplateValueResolver,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
+  fieldPath?: string,
 ): string => {
   if (value === null || value === undefined) {
     return '';
   }
 
   if (resolveValue) {
-    return resolveValue(value, schemaNode, uiNode);
+    return resolveValue(value, schemaNode, uiNode, fieldPath);
   }
 
   if (typeof value === 'number' || typeof value === 'boolean') {
@@ -350,6 +352,7 @@ const normalizeLoopEntry = (
   resolveValue?: TemplateValueResolver,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
+  fieldPath?: string,
 ): unknown => {
   if (entry === null || entry === undefined) {
     return null;
@@ -358,7 +361,7 @@ const normalizeLoopEntry = (
   if (!isRecord(entry)) {
     if (typeof entry === 'string') return entry;
     if (resolveValue) {
-      return resolveValue(entry, schemaNode, uiNode);
+      return resolveValue(entry, schemaNode, uiNode, fieldPath);
     }
     if (typeof entry === 'number' || typeof entry === 'boolean')
       return String(entry);
@@ -374,11 +377,13 @@ const normalizeLoopEntry = (
     ? (uiNode as Record<string, UiSchema>)
     : null;
   Object.entries(entry).forEach(([key, value]) => {
+    const nextPath = fieldPath ? `${fieldPath}.${key}` : key;
     normalized[key] = normalizeFieldValue(
       value,
       resolveValue,
       schemaProps ? schemaProps[key] : undefined,
       uiProps ? uiProps[key] : undefined,
+      nextPath,
     );
   });
 
@@ -559,13 +564,22 @@ export const mapDocumentDataToTemplate = async (
         UiSchema | null
       >),
   ]);
-  const resolveValue = (value: unknown) =>
+  const resolveValue = (
+    value: unknown,
+    schemaNode?: RJSFSchema,
+    uiNode?: UiSchema,
+    fieldPath?: string,
+  ) =>
     resolveDisplayValue(value, {
       t: (key, options) =>
         key.startsWith('common.')
           ? i18n.getFixedT(locale, 'app')(key, options)
           : i18n.getFixedT(locale, `formpack:${formpackId}`)(key, options),
       namespace: 'app',
+      formpackId,
+      fieldPath,
+      schema: schemaNode,
+      uiSchema: uiNode,
     });
 
   const context: DocxTemplateContext = {
@@ -580,6 +594,7 @@ export const mapDocumentDataToTemplate = async (
       resolveValue,
       fieldSchema,
       fieldUiSchema,
+      field.path,
     );
     setPathValue(context, field.var, value);
   });
@@ -593,7 +608,13 @@ export const mapDocumentDataToTemplate = async (
     const entries = Array.isArray(value)
       ? value
           .map((entry) =>
-            normalizeLoopEntry(entry, resolveValue, itemSchema, itemUiSchema),
+            normalizeLoopEntry(
+              entry,
+              resolveValue,
+              itemSchema,
+              itemUiSchema,
+              loop.path,
+            ),
           )
           .filter((entry) => entry !== null && entry !== undefined)
       : [];
