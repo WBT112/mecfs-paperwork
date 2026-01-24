@@ -43,7 +43,7 @@ npm run typecheck
 npm test
 npm run formpack:validate
 npm run build
-npm run test:e2e (NOTE: E2E tests take very long so only do them once after all coding work is done and all other quality gates pass)
+npm run test:e2e (NOTE: E2E tests take very long so only do them once after all coding work is done and all other quality gates pass (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)) 
 ```
 If `format:check` fails, run `npm run format` and re-run `npm run format:check`.
 Notes from verified runs:
