@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 type CollapsibleSectionProps = {
   id: string;
@@ -17,6 +17,7 @@ export default function CollapsibleSection(
     toggle: `${id}-toggle`,
     content: `${id}-content`,
   };
+  const keyDownHandledRef = useRef(false);
 
   return (
     <section className={className}>
@@ -31,8 +32,21 @@ export default function CollapsibleSection(
           onClick={() => setIsOpen((prev) => !prev)}
           onKeyDown={(event) => {
             if (event.code === 'Space' || event.code === 'Enter') {
-              event.preventDefault();
-              setIsOpen((prev) => !prev);
+              if (!keyDownHandledRef.current) {
+                keyDownHandledRef.current = true;
+                event.preventDefault();
+                setIsOpen((prev) => !prev);
+              }
+            }
+          }}
+          onKeyUp={(event) => {
+            if (event.code === 'Space' || event.code === 'Enter') {
+              if (keyDownHandledRef.current) {
+                keyDownHandledRef.current = false;
+              } else {
+                event.preventDefault();
+                setIsOpen((prev) => !prev);
+              }
             }
           }}
         >
