@@ -5,6 +5,7 @@ import type {
   FormpackExportType,
   FormpackManifest,
   FormpackManifestPayload,
+  FormpackUiConfig,
 } from './types';
 import type { FormpackVisibility } from './types';
 
@@ -190,6 +191,7 @@ export const parseManifest = (
     exports,
     visibility,
     docx,
+    ui: payload.ui as FormpackUiConfig | undefined,
   };
 };
 

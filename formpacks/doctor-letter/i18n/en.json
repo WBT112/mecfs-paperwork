@@ -1,6 +1,8 @@
 {
   "doctor-letter.title": "Doctor Letter",
   "doctor-letter.description": "Decision-tree based doctor letter for ME/CFS",
+  "doctor-letter.common.yes": "Yes",
+  "doctor-letter.common.no": "No",
   "doctor-letter.section.patient.title": "Patient",
   "doctor-letter.section.doctor.title": "Doctor / Practice",
   "doctor-letter.section.decision.title": "Decision Tree",
@@ -57,6 +59,7 @@
   "doctor-letter.decision.q8.option.COVID19Vaccination": "COVID-19 vaccination",
   "doctor-letter.decision.q8.option.OtherCause": "Other cause",
   "doctor-letter.decision.resolvedCaseText.label": "Evaluation Result",
+  "doctor-letter.infobox.q1": "Infobox 1 Text",
   "doctor-letter.case.0.paragraph": "The patient does not meet the full ME/CFS criteria or post-exertional malaise (PEM) is missing. It is recommended to consider differential diagnosis and conduct further investigations to clarify the cause of symptoms.",
   "doctor-letter.case.1.paragraph": "The patient presents with a full ME/CFS picture that developed after an EBV infection. The symptoms correspond to established diagnostic criteria (CCC/IOM) with characteristic post-exertional malaise.",
   "doctor-letter.case.2.paragraph": "The patient presents with a full ME/CFS picture that developed after an Influenza infection. The symptoms correspond to established diagnostic criteria (CCC/IOM) with characteristic post-exertional malaise.",

@@ -1,11 +1,11 @@
 export type DecisionAnswers = {
-  q1?: boolean;
-  q2?: boolean;
-  q3?: boolean;
+  q1?: 'yes' | 'no';
+  q2?: 'yes' | 'no';
+  q3?: 'yes' | 'no';
   q4?: 'EBV' | 'Influenza' | 'COVID-19' | 'Other infection';
   q5?: 'COVID-19 vaccination' | 'Other cause';
-  q6?: boolean;
-  q7?: boolean;
+  q6?: 'yes' | 'no';
+  q7?: 'yes' | 'no';
   q8?:
     | 'No known cause'
     | 'EBV'
@@ -73,15 +73,15 @@ const resolveQ8 = (q8?: DecisionAnswers['q8']): DecisionResult | null => {
 };
 
 const resolveQ1True = (answers: DecisionAnswers): DecisionResult | null => {
-  if (answers.q2 === false) {
+  if (answers.q2 === 'no') {
     return createResult(11, 'doctor-letter.case.11.paragraph');
   }
 
-  if (answers.q2 === true) {
-    if (answers.q3 === true) {
+  if (answers.q2 === 'yes') {
+    if (answers.q3 === 'yes') {
       return resolveQ4(answers.q4);
     }
-    if (answers.q3 === false) {
+    if (answers.q3 === 'no') {
       return resolveQ5(answers.q5);
     }
   }
@@ -90,15 +90,15 @@ const resolveQ1True = (answers: DecisionAnswers): DecisionResult | null => {
 };
 
 const resolveQ1False = (answers: DecisionAnswers): DecisionResult | null => {
-  if (answers.q6 === false) {
+  if (answers.q6 === 'no') {
     return createResult(0, CASE_0_KEY);
   }
 
-  if (answers.q6 === true) {
-    if (answers.q7 === false) {
+  if (answers.q6 === 'yes') {
+    if (answers.q7 === 'no') {
       return createResult(0, CASE_0_KEY);
     }
-    if (answers.q7 === true) {
+    if (answers.q7 === 'yes') {
       return resolveQ8(answers.q8);
     }
   }
@@ -123,12 +123,12 @@ const resolveQ1False = (answers: DecisionAnswers): DecisionResult | null => {
 export const resolveDecisionTree = (
   answers: DecisionAnswers,
 ): DecisionResult => {
-  if (answers.q1 === true) {
+  if (answers.q1 === 'yes') {
     const result = resolveQ1True(answers);
     if (result) return result;
   }
 
-  if (answers.q1 === false) {
+  if (answers.q1 === 'no') {
     const result = resolveQ1False(answers);
     if (result) return result;
   }

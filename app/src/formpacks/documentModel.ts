@@ -170,18 +170,18 @@ const buildBaseDocumentModel = (
   };
 };
 
-const getBooleanValue = (value: unknown): boolean | undefined => {
-  if (value === true) return true;
-  if (value === false) return false;
+const getYesNoValue = (value: unknown): 'yes' | 'no' | undefined => {
+  if (value === 'yes' || value === true) return 'yes';
+  if (value === 'no' || value === false) return 'no';
   return undefined;
 };
 
 const getDecisionAnswers = (
   decision: Record<string, unknown> | null,
 ): DecisionAnswers => ({
-  q1: getBooleanValue(decision?.q1),
-  q2: getBooleanValue(decision?.q2),
-  q3: getBooleanValue(decision?.q3),
+  q1: getYesNoValue(decision?.q1),
+  q2: getYesNoValue(decision?.q2),
+  q3: getYesNoValue(decision?.q3),
   q4:
     typeof decision?.q4 === 'string'
       ? (decision.q4 as DecisionAnswers['q4'])
@@ -190,8 +190,8 @@ const getDecisionAnswers = (
     typeof decision?.q5 === 'string'
       ? (decision.q5 as DecisionAnswers['q5'])
       : undefined,
-  q6: getBooleanValue(decision?.q6),
-  q7: getBooleanValue(decision?.q7),
+  q6: getYesNoValue(decision?.q6),
+  q7: getYesNoValue(decision?.q7),
   q8:
     typeof decision?.q8 === 'string'
       ? (decision.q8 as DecisionAnswers['q8'])

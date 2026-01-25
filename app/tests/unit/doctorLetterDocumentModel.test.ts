@@ -156,8 +156,8 @@ describe('buildDocumentModel for doctor-letter', () => {
           name: 'Test',
         },
         decision: {
-          q1: false,
-          q6: false,
+          q1: 'no',
+          q6: 'no',
         },
       });
 
@@ -182,9 +182,9 @@ describe('buildDocumentModel for doctor-letter', () => {
           name: 'Test',
         },
         decision: {
-          q1: true,
-          q2: true,
-          q3: true,
+          q1: 'yes',
+          q2: 'yes',
+          q3: 'yes',
           q4: 'COVID-19',
         },
       });
@@ -210,8 +210,8 @@ describe('buildDocumentModel for doctor-letter', () => {
           name: 'Schmidt',
         },
         decision: {
-          q1: true,
-          q2: false,
+          q1: 'yes',
+          q2: 'no',
         },
       });
 
@@ -235,9 +235,9 @@ describe('buildDocumentModel for doctor-letter', () => {
           name: 'Wilson',
         },
         decision: {
-          q1: true,
-          q2: true,
-          q3: true,
+          q1: 'yes',
+          q2: 'yes',
+          q3: 'yes',
           q4: 'EBV',
         },
       });
@@ -260,9 +260,9 @@ describe('buildDocumentModel for doctor-letter', () => {
           name: 'Wagner',
         },
         decision: {
-          q1: false,
-          q6: true,
-          q7: true,
+          q1: 'no',
+          q6: 'yes',
+          q7: 'yes',
           q8: 'No known cause',
         },
       });
@@ -287,9 +287,9 @@ describe('buildDocumentModel for doctor-letter', () => {
           name: 'Taylor',
         },
         decision: {
-          q1: false,
-          q6: true,
-          q7: true,
+          q1: 'no',
+          q6: 'yes',
+          q7: 'yes',
           q8: COVID_19_VACCINATION,
         },
       });
@@ -320,9 +320,9 @@ describe('buildDocumentModel for doctor-letter', () => {
           city: 'Berlin',
         },
         decision: {
-          q1: true,
-          q2: true,
-          q3: true,
+          q1: 'yes',
+          q2: 'yes',
+          q3: 'yes',
           q4: 'COVID-19',
         },
       };
@@ -367,9 +367,9 @@ describe('buildDocumentModel for doctor-letter', () => {
           name: 'Test',
         },
         decision: {
-          q1: true,
-          q2: true,
-          q3: false,
+          q1: 'yes',
+          q2: 'yes',
+          q3: 'no',
           q5: COVID_19_VACCINATION,
         },
       });
