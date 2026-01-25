@@ -16,14 +16,9 @@
     "city": "Berlin"
   },
   "decision": {
-    "q1": true,
-    "q2": true,
-    "q3": true,
+    "q1": "yes",
+    "q2": "yes",
+    "q3": "yes",
     "q4": "COVID-19"
-  },
-  "infoBoxes": {
-    "q1": {
-      "enabled": true
-    }
   }
 }

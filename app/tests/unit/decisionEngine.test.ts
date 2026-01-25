@@ -10,8 +10,8 @@ describe('resolveDecisionTree', () => {
   describe('Q1=true path (full ME/CFS)', () => {
     it('resolves to Case 11 when Q1=true, Q2=false (cause unknown)', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: false,
+        q1: 'yes',
+        q2: 'no',
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(11);
@@ -20,9 +20,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 1 when Q1=true, Q2=true, Q3=true, Q4=EBV', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: true,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'yes',
         q4: 'EBV',
       };
       const result = resolveDecisionTree(answers);
@@ -32,9 +32,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 2 when Q1=true, Q2=true, Q3=true, Q4=Influenza', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: true,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'yes',
         q4: 'Influenza',
       };
       const result = resolveDecisionTree(answers);
@@ -44,9 +44,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 3 when Q1=true, Q2=true, Q3=true, Q4=COVID-19', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: true,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'yes',
         q4: 'COVID-19',
       };
       const result = resolveDecisionTree(answers);
@@ -56,9 +56,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 9 when Q1=true, Q2=true, Q3=true, Q4=Other infection', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: true,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'yes',
         q4: 'Other infection',
       };
       const result = resolveDecisionTree(answers);
@@ -68,9 +68,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 4 when Q1=true, Q2=true, Q3=false, Q5=COVID-19 vaccination', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: false,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'no',
         q5: 'COVID-19 vaccination',
       };
       const result = resolveDecisionTree(answers);
@@ -80,9 +80,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 10 when Q1=true, Q2=true, Q3=false, Q5=Other cause', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: false,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'no',
         q5: 'Other cause',
       };
       const result = resolveDecisionTree(answers);
@@ -94,8 +94,8 @@ describe('resolveDecisionTree', () => {
   describe('Q1=false path (no full ME/CFS)', () => {
     it('resolves to Case 0 when Q1=false, Q6=false (no chronic fatigue)', () => {
       const answers: DecisionAnswers = {
-        q1: false,
-        q6: false,
+        q1: 'no',
+        q6: 'no',
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
@@ -104,9 +104,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 0 when Q1=false, Q6=true, Q7=false (no PEM)', () => {
       const answers: DecisionAnswers = {
-        q1: false,
-        q6: true,
-        q7: false,
+        q1: 'no',
+        q6: 'yes',
+        q7: 'no',
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
@@ -115,9 +115,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 12 when Q1=false, Q6=true, Q7=true, Q8=No known cause', () => {
       const answers: DecisionAnswers = {
-        q1: false,
-        q6: true,
-        q7: true,
+        q1: 'no',
+        q6: 'yes',
+        q7: 'yes',
         q8: 'No known cause',
       };
       const result = resolveDecisionTree(answers);
@@ -127,9 +127,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 5 when Q1=false, Q6=true, Q7=true, Q8=EBV', () => {
       const answers: DecisionAnswers = {
-        q1: false,
-        q6: true,
-        q7: true,
+        q1: 'no',
+        q6: 'yes',
+        q7: 'yes',
         q8: 'EBV',
       };
       const result = resolveDecisionTree(answers);
@@ -139,9 +139,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 6 when Q1=false, Q6=true, Q7=true, Q8=Influenza', () => {
       const answers: DecisionAnswers = {
-        q1: false,
-        q6: true,
-        q7: true,
+        q1: 'no',
+        q6: 'yes',
+        q7: 'yes',
         q8: 'Influenza',
       };
       const result = resolveDecisionTree(answers);
@@ -151,9 +151,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 7 when Q1=false, Q6=true, Q7=true, Q8=COVID-19 infection', () => {
       const answers: DecisionAnswers = {
-        q1: false,
-        q6: true,
-        q7: true,
+        q1: 'no',
+        q6: 'yes',
+        q7: 'yes',
         q8: 'COVID-19 infection',
       };
       const result = resolveDecisionTree(answers);
@@ -163,9 +163,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 8 when Q1=false, Q6=true, Q7=true, Q8=COVID-19 vaccination', () => {
       const answers: DecisionAnswers = {
-        q1: false,
-        q6: true,
-        q7: true,
+        q1: 'no',
+        q6: 'yes',
+        q7: 'yes',
         q8: 'COVID-19 vaccination',
       };
       const result = resolveDecisionTree(answers);
@@ -175,9 +175,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 13 when Q1=false, Q6=true, Q7=true, Q8=Other cause', () => {
       const answers: DecisionAnswers = {
-        q1: false,
-        q6: true,
-        q7: true,
+        q1: 'no',
+        q6: 'yes',
+        q7: 'yes',
         q8: 'Other cause',
       };
       const result = resolveDecisionTree(answers);
@@ -196,7 +196,7 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 0 when Q1=true but no Q2 provided', () => {
       const answers: DecisionAnswers = {
-        q1: true,
+        q1: 'yes',
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
@@ -205,9 +205,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 0 when Q1=true, Q2=true, Q3=true but no Q4 provided', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: true,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'yes',
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
@@ -216,9 +216,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 0 when Q1=true, Q2=true, Q3=false but no Q5 provided', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: false,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'no',
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
@@ -227,9 +227,9 @@ describe('resolveDecisionTree', () => {
 
     it('resolves to Case 0 when Q1=false, Q6=true, Q7=true but no Q8 provided', () => {
       const answers: DecisionAnswers = {
-        q1: false,
-        q6: true,
-        q7: true,
+        q1: 'no',
+        q6: 'yes',
+        q7: 'yes',
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);
@@ -240,9 +240,9 @@ describe('resolveDecisionTree', () => {
   describe('determinism and stability', () => {
     it('returns same result for identical inputs', () => {
       const answers: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: true,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'yes',
         q4: 'COVID-19',
       };
       const result1 = resolveDecisionTree(answers);
@@ -252,15 +252,15 @@ describe('resolveDecisionTree', () => {
 
     it('returns different results for different inputs', () => {
       const answers1: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: true,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'yes',
         q4: 'EBV',
       };
       const answers2: DecisionAnswers = {
-        q1: true,
-        q2: true,
-        q3: true,
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'yes',
         q4: 'Influenza',
       };
       const result1 = resolveDecisionTree(answers1);

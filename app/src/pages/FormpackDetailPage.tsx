@@ -33,6 +33,7 @@ import {
   formpackTemplates,
   type FormpackFormContext,
 } from '../lib/rjsfTemplates';
+import { DoctorLetterFieldTemplate } from '../lib/rjsfDoctorLetterFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
 import {
@@ -42,8 +43,16 @@ import {
   loadFormpackUiSchema,
 } from '../formpacks/loader';
 import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
-import type { FormpackManifest } from '../formpacks/types';
-import { resolveDecisionTree } from '../formpacks/decisionEngine';
+import type { FormpackManifest, InfoBoxConfig } from '../formpacks/types';
+import {
+  resolveDecisionTree,
+  type DecisionAnswers,
+} from '../formpacks/decisionEngine';
+import {
+  getFieldVisibility,
+  clearHiddenFields,
+  type DecisionData,
+} from '../formpacks/doctorLetterVisibility';
 import {
   type StorageErrorCode,
   useAutosaveRecord,
@@ -136,6 +145,75 @@ const buildErrorMessage = (
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const DOCTOR_LETTER_ID = 'doctor-letter';
+
+const isValidQ4 = (val: unknown): val is DecisionAnswers['q4'] =>
+  val === 'EBV' ||
+  val === 'Influenza' ||
+  val === 'COVID-19' ||
+  val === 'Other infection';
+
+const isValidQ5 = (val: unknown): val is DecisionAnswers['q5'] =>
+  val === 'COVID-19 vaccination' || val === 'Other cause';
+
+const isValidQ8 = (val: unknown): val is DecisionAnswers['q8'] =>
+  val === 'No known cause' ||
+  val === 'EBV' ||
+  val === 'Influenza' ||
+  val === 'COVID-19 infection' ||
+  val === 'COVID-19 vaccination' ||
+  val === 'Other cause';
+
+const isYesNo = (val: unknown): val is 'yes' | 'no' =>
+  val === 'yes' || val === 'no';
+
+const buildDecisionAnswers = (
+  decision: Record<string, unknown>,
+): DecisionAnswers => ({
+  q1: isYesNo(decision.q1) ? decision.q1 : undefined,
+  q2: isYesNo(decision.q2) ? decision.q2 : undefined,
+  q3: isYesNo(decision.q3) ? decision.q3 : undefined,
+  q4: isValidQ4(decision.q4) ? decision.q4 : undefined,
+  q5: isValidQ5(decision.q5) ? decision.q5 : undefined,
+  q6: isYesNo(decision.q6) ? decision.q6 : undefined,
+  q7: isYesNo(decision.q7) ? decision.q7 : undefined,
+  q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
+});
+
+// Helper: Apply field visibility rules to decision tree UI schema
+const applyFieldVisibility = (
+  decisionUiSchema: Record<string, unknown>,
+  visibility: ReturnType<typeof getFieldVisibility>,
+): void => {
+  (['q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'] as const).forEach((field) => {
+    if (!visibility[field]) {
+      if (!isRecord(decisionUiSchema[field])) {
+        decisionUiSchema[field] = {};
+      }
+      const fieldSchema = decisionUiSchema[field] as Record<string, unknown>;
+      fieldSchema['ui:widget'] = 'hidden';
+    }
+  });
+};
+
+// Helper: Check if Case 0 result should be hidden
+const shouldHideCase0Result = (decision: DecisionData): boolean => {
+  const result = resolveDecisionTree(buildDecisionAnswers(decision));
+  const isCase0 = result.caseId === 0;
+
+  if (!isCase0) {
+    return false;
+  }
+
+  // Check if Case 0 is a valid completed path
+  const isValidCase0 =
+    (decision.q1 === 'no' && decision.q6 === 'no') ||
+    (decision.q1 === 'no' && decision.q6 === 'yes' && decision.q7 === 'no');
+
+  // Only hide if Case 0 is due to incomplete tree, not a valid path
+  return !isValidCase0;
+};
 
 type PreviewValueResolver = (
   value: unknown,
@@ -663,6 +741,45 @@ export default function FormpackDetailPage() {
         : null,
     [schema, translatedUiSchema],
   );
+
+  // Apply conditional visibility for doctor-letter decision tree
+  const conditionalUiSchema = useMemo(() => {
+    if (!normalizedUiSchema || formpackId !== DOCTOR_LETTER_ID) {
+      return normalizedUiSchema;
+    }
+
+    // Treat missing or invalid decision as empty object to apply visibility rules
+    const decision = (
+      isRecord(formData.decision) ? formData.decision : {}
+    ) as DecisionData;
+    const visibility = getFieldVisibility(decision);
+
+    // Clone the UI schema to avoid mutations
+    const clonedUiSchema = JSON.parse(
+      JSON.stringify(normalizedUiSchema),
+    ) as UiSchema;
+
+    if (!isRecord(clonedUiSchema.decision)) {
+      return normalizedUiSchema;
+    }
+
+    const decisionUiSchema = clonedUiSchema.decision;
+
+    // Apply field visibility rules
+    applyFieldVisibility(decisionUiSchema, visibility);
+
+    // Hide result field for incomplete decision tree (but show for valid Case 0)
+    if (
+      shouldHideCase0Result(decision) &&
+      isRecord(decisionUiSchema.resolvedCaseText)
+    ) {
+      const resultSchema = decisionUiSchema.resolvedCaseText;
+      resultSchema['ui:widget'] = 'hidden';
+    }
+
+    return clonedUiSchema;
+  }, [normalizedUiSchema, formpackId, formData]);
+
   const dateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(activeLanguage, {
@@ -878,46 +995,9 @@ export default function FormpackDetailPage() {
     };
   }, [formpackId, hasLoadedRecords, isRecordsLoading, restoreActiveRecord]);
 
-  // Type guards for decision tree enum values
-  const isValidQ4 = (
-    val: unknown,
-  ): val is 'EBV' | 'Influenza' | 'COVID-19' | 'Other infection' =>
-    val === 'EBV' ||
-    val === 'Influenza' ||
-    val === 'COVID-19' ||
-    val === 'Other infection';
-  const isValidQ5 = (
-    val: unknown,
-  ): val is 'COVID-19 vaccination' | 'Other cause' =>
-    val === 'COVID-19 vaccination' || val === 'Other cause';
-  const isValidQ8 = (
-    val: unknown,
-  ): val is
-    | 'No known cause'
-    | 'EBV'
-    | 'Influenza'
-    | 'COVID-19 infection'
-    | 'COVID-19 vaccination'
-    | 'Other cause' =>
-    val === 'No known cause' ||
-    val === 'EBV' ||
-    val === 'Influenza' ||
-    val === 'COVID-19 infection' ||
-    val === 'COVID-19 vaccination' ||
-    val === 'Other cause';
-
   const resolveAndPopulateDoctorLetterCase = useCallback(
     (decision: Record<string, unknown>): string => {
-      const result = resolveDecisionTree({
-        q1: typeof decision.q1 === 'boolean' ? decision.q1 : undefined,
-        q2: typeof decision.q2 === 'boolean' ? decision.q2 : undefined,
-        q3: typeof decision.q3 === 'boolean' ? decision.q3 : undefined,
-        q4: isValidQ4(decision.q4) ? decision.q4 : undefined,
-        q5: isValidQ5(decision.q5) ? decision.q5 : undefined,
-        q6: typeof decision.q6 === 'boolean' ? decision.q6 : undefined,
-        q7: typeof decision.q7 === 'boolean' ? decision.q7 : undefined,
-        q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
-      });
+      const result = resolveDecisionTree(buildDecisionAnswers(decision));
 
       return t(result.caseKey, {
         ns: `formpack:${formpackId}`,
@@ -933,21 +1013,46 @@ export default function FormpackDetailPage() {
     (event) => {
       const nextData = event.formData as FormDataState;
 
-      // For doctor-letter formpack, automatically resolve decision tree and populate resolvedCaseText
-      if (formpackId === 'doctor-letter' && isRecord(nextData.decision)) {
-        const decision = nextData.decision;
-        const caseText = resolveAndPopulateDoctorLetterCase(decision);
+      // For doctor-letter formpack, clear hidden fields to prevent stale values
+      if (formpackId === DOCTOR_LETTER_ID && isRecord(nextData.decision)) {
+        const originalDecision = nextData.decision as DecisionData;
 
-        nextData.decision = {
-          ...decision,
-          resolvedCaseText: caseText,
-        };
+        // Clear hidden fields to prevent stale values from affecting decision tree
+        const clearedDecision = clearHiddenFields(originalDecision);
+
+        // Only update if clearing actually changed something
+        const hasChanges =
+          JSON.stringify(originalDecision) !== JSON.stringify(clearedDecision);
+
+        if (hasChanges) {
+          nextData.decision = clearedDecision;
+        }
       }
 
       setFormData(nextData);
     },
-    [formpackId, resolveAndPopulateDoctorLetterCase, setFormData],
+    [formpackId, setFormData],
   );
+
+  // Resolve decision tree after formData changes (for doctor-letter only)
+  useEffect(() => {
+    if (formpackId === DOCTOR_LETTER_ID && isRecord(formData.decision)) {
+      const decision = formData.decision as DecisionData;
+      const currentCaseText = decision.resolvedCaseText;
+      const newCaseText = resolveAndPopulateDoctorLetterCase(decision);
+
+      // Only update if the case text actually changed
+      if (currentCaseText !== newCaseText) {
+        setFormData((prev) => ({
+          ...prev,
+          decision: {
+            ...decision,
+            resolvedCaseText: newCaseText,
+          },
+        }));
+      }
+    }
+  }, [formData, formpackId, resolveAndPopulateDoctorLetterCase, setFormData]);
 
   const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = useCallback(
     (event, submitEvent) => {
@@ -1206,8 +1311,34 @@ export default function FormpackDetailPage() {
     },
     [t],
   );
-  const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
-  const previewUiSchema = normalizedUiSchema ?? translatedUiSchema;
+  const formContext = useMemo<
+    FormpackFormContext & {
+      formpackId?: string;
+      infoBoxes?: InfoBoxConfig[];
+      formData?: Record<string, unknown>;
+    }
+  >(
+    () => ({
+      t,
+      formpackId: formpackId || undefined,
+      infoBoxes: manifest?.ui?.infoBoxes || [],
+      formData,
+    }),
+    [t, formpackId, manifest, formData],
+  );
+
+  // Use custom field template for doctor-letter to support InfoBoxes
+  const templates = useMemo(() => {
+    if (formpackId === 'doctor-letter') {
+      return {
+        ...formpackTemplates,
+        FieldTemplate: DoctorLetterFieldTemplate,
+      };
+    }
+    return formpackTemplates;
+  }, [formpackId]);
+  const previewUiSchema =
+    conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
   const jsonPreview = useMemo(
     () => JSON.stringify(formData, null, 2),
     [formData],
@@ -1688,7 +1819,7 @@ export default function FormpackDetailPage() {
       );
     }
 
-    if (!schema || !normalizedUiSchema || !validator) {
+    if (!schema || !conditionalUiSchema || !validator) {
       return null;
     }
 
@@ -1697,8 +1828,8 @@ export default function FormpackDetailPage() {
         <LazyForm
           className="formpack-form"
           schema={schema}
-          uiSchema={normalizedUiSchema}
-          templates={formpackTemplates}
+          uiSchema={conditionalUiSchema}
+          templates={templates}
           validator={validator}
           formData={formData}
           omitExtraData

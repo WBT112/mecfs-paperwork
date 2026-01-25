@@ -72,6 +72,38 @@ const MANIFEST_SCHEMA = {
         mapping: { type: 'string', minLength: 1 },
       },
     },
+    ui: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        infoBoxes: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['id', 'anchor', 'enabled', 'i18nKey'],
+            properties: {
+              id: { type: 'string', minLength: 1 },
+              anchor: { type: 'string', minLength: 1 },
+              enabled: { type: 'boolean' },
+              i18nKey: { type: 'string', minLength: 1 },
+              showIf: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  required: ['path', 'op', 'value'],
+                  properties: {
+                    path: { type: 'string', minLength: 1 },
+                    op: { enum: ['eq', 'neq'] },
+                    value: {},
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
   },
 };
 const validateManifestSchema = manifestAjv.compile(MANIFEST_SCHEMA);

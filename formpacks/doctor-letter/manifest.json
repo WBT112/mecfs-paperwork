@@ -17,5 +17,15 @@
       "a4": "templates/a4.docx"
     },
     "mapping": "docx/mapping.json"
+  },
+  "ui": {
+    "infoBoxes": [
+      {
+        "id": "q1-info",
+        "anchor": "decision.q1",
+        "enabled": true,
+        "i18nKey": "doctor-letter.infobox.q1"
+      }
+    ]
   }
 }
