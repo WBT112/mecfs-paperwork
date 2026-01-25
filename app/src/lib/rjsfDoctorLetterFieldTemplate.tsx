@@ -22,6 +22,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const isTranslator = (value: unknown): value is TFunction =>
   typeof value === 'function';
 
+const defaultTranslator = ((key: string) => key) as TFunction;
+
 const getDoctorLetterFormContext = (
   formContext: unknown,
 ): DoctorLetterFormContext => {
@@ -70,7 +72,7 @@ export function DoctorLetterFieldTemplate(
 
   const formContext = getDoctorLetterFormContext(registry.formContext);
   const infoBoxes = formContext.infoBoxes ?? [];
-  const t = formContext.t ?? ((key: string) => key);
+  const t = formContext.t ?? defaultTranslator;
   const namespace = `formpack:${formContext.formpackId ?? 'doctor-letter'}`;
 
   // Construct the field anchor from the field ID
