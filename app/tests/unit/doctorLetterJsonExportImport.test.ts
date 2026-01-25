@@ -1,0 +1,271 @@
+import { describe, it, expect } from 'vitest';
+import { buildJsonExportPayload } from '../../src/export/json';
+import { validateJsonImport } from '../../src/import/json';
+import type { RecordEntry } from '../../src/storage/types';
+
+// Load the doctor-letter schema
+import doctorLetterSchema from '../../../formpacks/doctor-letter/schema.json';
+
+describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
+  const FORMPACK_ID = 'doctor-letter';
+  const FORMPACK_VERSION = '0.1.0';
+
+  const createMockRecord = (data: Record<string, unknown>): RecordEntry => ({
+    id: 'test-record-id',
+    formpackId: FORMPACK_ID,
+    title: 'Test Patient',
+    locale: 'de',
+    data,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  });
+
+  it('should export and re-import doctor-letter with enum string values (Case 3: COVID-19)', () => {
+    const testData = {
+      patient: {
+        firstName: 'Max',
+        lastName: 'Mustermann',
+        streetAndNumber: 'Musterstraße 123',
+        postalCode: '12345',
+        city: 'Berlin',
+      },
+      doctor: {
+        practice: 'Praxis Dr. Schmidt',
+        title: 'Dr.',
+        gender: 'Frau',
+        name: 'Schmidt',
+        streetAndNumber: 'Ärzteweg 1',
+        postalCode: '12345',
+        city: 'Berlin',
+      },
+      decision: {
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'yes',
+        q4: 'COVID-19',
+        resolvedCaseText: 'Der Patient weist ein vollständiges ME/CFS-Bild auf...',
+      },
+    };
+
+    const record = createMockRecord(testData);
+
+    // Export
+    const exportPayload = buildJsonExportPayload({
+      formpack: { id: FORMPACK_ID, version: FORMPACK_VERSION },
+      record,
+      data: testData,
+      locale: 'de',
+      schema: doctorLetterSchema,
+    });
+
+    // Verify export structure
+    expect(exportPayload.formpack.id).toBe(FORMPACK_ID);
+    expect(exportPayload.record.data.decision).toEqual(testData.decision);
+
+    // Convert to JSON string (simulating file save/load)
+    const exportedJson = JSON.stringify(exportPayload, null, 2);
+
+    // Re-import
+    const importResult = validateJsonImport(
+      exportedJson,
+      doctorLetterSchema,
+      FORMPACK_ID,
+    );
+
+    // Verify import succeeds
+    expect(importResult.error).toBeNull();
+    expect(importResult.payload).not.toBeNull();
+
+    if (importResult.payload) {
+      expect(importResult.payload.formpack.id).toBe(FORMPACK_ID);
+      expect(importResult.payload.record.locale).toBe('de');
+
+      // Verify decision tree data is preserved
+      const importedDecision = importResult.payload.record.data.decision as Record<
+        string,
+        unknown
+      >;
+      expect(importedDecision.q1).toBe('yes');
+      expect(importedDecision.q2).toBe('yes');
+      expect(importedDecision.q3).toBe('yes');
+      expect(importedDecision.q4).toBe('COVID-19');
+    }
+  });
+
+  it('should export and re-import doctor-letter with q1=no path (Case 0)', () => {
+    const testData = {
+      patient: {
+        firstName: 'Anna',
+        lastName: 'Beispiel',
+        streetAndNumber: 'Beispielweg 456',
+        postalCode: '54321',
+        city: 'Hamburg',
+      },
+      doctor: {
+        practice: 'Praxis Dr. Müller',
+        title: 'Dr.',
+        gender: 'Herr',
+        name: 'Müller',
+        streetAndNumber: 'Arztstraße 2',
+        postalCode: '54321',
+        city: 'Hamburg',
+      },
+      decision: {
+        q1: 'no',
+        q6: 'no',
+        resolvedCaseText: 'Fall 0...',
+      },
+    };
+
+    const record = createMockRecord(testData);
+
+    // Export
+    const exportPayload = buildJsonExportPayload({
+      formpack: { id: FORMPACK_ID, version: FORMPACK_VERSION },
+      record,
+      data: testData,
+      locale: 'de',
+      schema: doctorLetterSchema,
+    });
+
+    const exportedJson = JSON.stringify(exportPayload, null, 2);
+
+    // Re-import
+    const importResult = validateJsonImport(
+      exportedJson,
+      doctorLetterSchema,
+      FORMPACK_ID,
+    );
+
+    // Verify import succeeds
+    expect(importResult.error).toBeNull();
+    expect(importResult.payload).not.toBeNull();
+
+    if (importResult.payload) {
+      const importedDecision = importResult.payload.record.data.decision as Record<
+        string,
+        unknown
+      >;
+      expect(importedDecision.q1).toBe('no');
+      expect(importedDecision.q6).toBe('no');
+    }
+  });
+
+  it('should export and re-import doctor-letter with complete no-path (Case 5: EBV)', () => {
+    const testData = {
+      patient: {
+        firstName: 'Test',
+        lastName: 'User',
+        streetAndNumber: 'Test St 1',
+        postalCode: '11111',
+        city: 'TestCity',
+      },
+      doctor: {
+        practice: 'Test Practice',
+        title: 'Dr.',
+        gender: 'Frau',
+        name: 'TestDoctor',
+        streetAndNumber: 'Doctor St 1',
+        postalCode: '11111',
+        city: 'TestCity',
+      },
+      decision: {
+        q1: 'no',
+        q6: 'yes',
+        q7: 'yes',
+        q8: 'EBV',
+        resolvedCaseText: 'Der Patient zeigt chronische Müdigkeit...',
+      },
+    };
+
+    const record = createMockRecord(testData);
+
+    // Export
+    const exportPayload = buildJsonExportPayload({
+      formpack: { id: FORMPACK_ID, version: FORMPACK_VERSION },
+      record,
+      data: testData,
+      locale: 'de',
+      schema: doctorLetterSchema,
+    });
+
+    const exportedJson = JSON.stringify(exportPayload, null, 2);
+
+    // Re-import
+    const importResult = validateJsonImport(
+      exportedJson,
+      doctorLetterSchema,
+      FORMPACK_ID,
+    );
+
+    // Verify import succeeds
+    expect(importResult.error).toBeNull();
+    expect(importResult.payload).not.toBeNull();
+
+    if (importResult.payload) {
+      const importedDecision = importResult.payload.record.data.decision as Record<
+        string,
+        unknown
+      >;
+      expect(importedDecision.q1).toBe('no');
+      expect(importedDecision.q6).toBe('yes');
+      expect(importedDecision.q7).toBe('yes');
+      expect(importedDecision.q8).toBe('EBV');
+    }
+  });
+
+  it('should handle all enum values (yes/no) correctly', () => {
+    const testData = {
+      patient: {
+        firstName: 'Enum',
+        lastName: 'Test',
+        streetAndNumber: 'Enum St 1',
+        postalCode: '22222',
+        city: 'EnumCity',
+      },
+      doctor: {
+        practice: 'Enum Practice',
+        title: 'Dr.',
+        gender: 'Herr',
+        name: 'EnumDoctor',
+        streetAndNumber: 'Enum Dr St 1',
+        postalCode: '22222',
+        city: 'EnumCity',
+      },
+      decision: {
+        q1: 'yes',
+        q2: 'no',
+        resolvedCaseText: 'Fall 11...',
+      },
+    };
+
+    const record = createMockRecord(testData);
+
+    const exportPayload = buildJsonExportPayload({
+      formpack: { id: FORMPACK_ID, version: FORMPACK_VERSION },
+      record,
+      data: testData,
+      locale: 'de',
+      schema: doctorLetterSchema,
+    });
+
+    const exportedJson = JSON.stringify(exportPayload, null, 2);
+    const importResult = validateJsonImport(
+      exportedJson,
+      doctorLetterSchema,
+      FORMPACK_ID,
+    );
+
+    expect(importResult.error).toBeNull();
+    expect(importResult.payload).not.toBeNull();
+
+    if (importResult.payload) {
+      const importedDecision = importResult.payload.record.data.decision as Record<
+        string,
+        unknown
+      >;
+      expect(importedDecision.q1).toBe('yes');
+      expect(importedDecision.q2).toBe('no');
+    }
+  });
+});
