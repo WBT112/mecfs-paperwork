@@ -74,3 +74,14 @@ export function getInfoBoxesForField(
     (box) => box.anchor === anchor && shouldShowInfoBox(box, formData),
   );
 }
+
+/**
+ * Gets all visible infoBoxes from a formpack manifest based on form data.
+ */
+export function getVisibleInfoBoxes(
+  manifest: { ui?: { infoBoxes?: InfoBoxConfig[] } },
+  formData: Record<string, unknown>,
+): InfoBoxConfig[] {
+  const infoBoxes = manifest.ui?.infoBoxes || [];
+  return infoBoxes.filter((box) => shouldShowInfoBox(box, formData));
+}
