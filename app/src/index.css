@@ -691,15 +691,12 @@ body {
   outline-offset: 2px;
 }
 
-.formpack-form input[type="radio"],
-.formpack-form input[type="checkbox"] {
+.formpack-form input[type='checkbox'] {
   width: auto;
   max-width: none;
-  padding: 2;
-  margin: 2;
-  margin-inline-end: 5.85rem; 
+  padding: 0;
+  margin: 0;
 }
-
 
 .formpack-form label:has(> input[type='checkbox']) {
   display: inline-flex;
@@ -720,19 +717,6 @@ body {
   padding: 0.5rem 0.85rem;
   border-radius: 8px;
   min-height: 2.5rem;
-}
-
-.formpack-form input[type='radio'] {
-  width: auto;
-  max-width: none;
-  padding: 0;
-  margin: 0;
-}
-
-.formpack-form label:has(> input[type='radio']) {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .formpack-array {
@@ -1026,6 +1010,7 @@ body {
   gap: 1.5rem;
   align-items: center;
 }
+
 .form-group .field-radio-group .radio {
   display: inline-flex;
   align-items: center;
@@ -1043,25 +1028,4 @@ body {
 .form-group .field-radio-group .radio input[type='radio'] {
   margin: 0;
   flex-shrink: 0;
-}
-
-/* Ensure the inner wrapper that RJSF creates is a two-column grid so
-   the radio control stays in column 1 and the label text in column 2. */
-.form-group .field-radio-group .radio label > span {
-  display: grid;
-  grid-template-columns: 1.6rem 1fr;
-  gap: 0.5rem;
-  align-items: start;
-  width: 100%;
-}
-
-.form-group .field-radio-group .radio label > span > input[type='radio'] {
-  grid-column: 1 / 2;
-  align-self: start;
-  margin-top: 0.06rem;
-}
-
-.form-group .field-radio-group .radio label > span > span {
-  grid-column: 2 / 3;
-  display: block;
 }
