@@ -1,14 +1,45 @@
 import type { FieldTemplateProps } from '@rjsf/utils';
+import type { TFunction } from 'i18next';
 import { InfoBox } from '../components/InfoBox';
 import type { InfoBoxConfig } from '../formpacks/types';
 
-interface DoctorLetterFieldTemplateProps extends FieldTemplateProps {
-  formContext?: {
-    t?: (key: string) => string;
-    formpackId?: string;
-    infoBoxes?: InfoBoxConfig[];
+type DoctorLetterFieldTemplateProps = Omit<
+  FieldTemplateProps,
+  'fieldPathId'
+> & {
+  fieldPathId?: FieldTemplateProps['fieldPathId'];
+};
+
+type DoctorLetterFormContext = {
+  t?: TFunction;
+  formpackId?: string;
+  infoBoxes?: InfoBoxConfig[];
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const isTranslator = (value: unknown): value is TFunction =>
+  typeof value === 'function';
+
+const getDoctorLetterFormContext = (
+  formContext: unknown,
+): DoctorLetterFormContext => {
+  if (!isRecord(formContext)) {
+    return {};
+  }
+
+  return {
+    t: isTranslator(formContext.t) ? formContext.t : undefined,
+    formpackId:
+      typeof formContext.formpackId === 'string'
+        ? formContext.formpackId
+        : undefined,
+    infoBoxes: Array.isArray(formContext.infoBoxes)
+      ? (formContext.infoBoxes as InfoBoxConfig[])
+      : undefined,
   };
-}
+};
 
 /**
  * Custom field template for doctor-letter formpack that supports InfoBox rendering.
@@ -27,30 +58,30 @@ export function DoctorLetterFieldTemplate(
     description,
     errors,
     children,
-    formContext,
     hidden,
     uiSchema,
+    registry,
+    fieldPathId,
   } = props;
 
   if (hidden || uiSchema?.['ui:widget'] === 'hidden') {
     return null;
   }
 
-  const infoBoxes = formContext?.infoBoxes || [];
-  const t = formContext?.t || ((key: string) => key);
+  const formContext = getDoctorLetterFormContext(registry.formContext);
+  const infoBoxes = formContext.infoBoxes ?? [];
+  const t = formContext.t ?? ((key: string) => key);
+  const namespace = `formpack:${formContext.formpackId ?? 'doctor-letter'}`;
 
   // Construct the field anchor from the field ID
   // RJSF IDs are like "root_decision_q1", we need "decision.q1"
-  const fieldAnchor = id.replace(/^root_/, '').replace(/_/g, '.');
-
-  // DEBUG: Log to understand what's happening
-  if (fieldAnchor === 'decision.q1') {
-    console.log('DoctorLetterFieldTemplate DEBUG for decision.q1:', {
-      fieldAnchor,
-      infoBoxes,
-      formContext,
-    });
-  }
+  const pathSegments = Array.isArray(fieldPathId?.path)
+    ? fieldPathId.path.filter((segment) => segment !== 'root' && segment !== '')
+    : [];
+  const fieldAnchor =
+    pathSegments.length > 0
+      ? pathSegments.join('.')
+      : id.replace(/^root_/, '').replace(/_/g, '.');
 
   // Get applicable infoBoxes for this field (only if enabled and anchor matches)
   const applicableInfoBoxes = infoBoxes.filter(
@@ -70,7 +101,13 @@ export function DoctorLetterFieldTemplate(
       {errors}
       {help}
       {applicableInfoBoxes.map((infoBox) => (
-        <InfoBox key={infoBox.id} message={t(infoBox.i18nKey)} />
+        <InfoBox
+          key={infoBox.id}
+          message={t(infoBox.i18nKey, {
+            ns: namespace,
+            defaultValue: infoBox.i18nKey,
+          })}
+        />
       ))}
     </div>
   );

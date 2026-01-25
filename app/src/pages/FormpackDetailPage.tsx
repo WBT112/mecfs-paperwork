@@ -43,7 +43,7 @@ import {
   loadFormpackUiSchema,
 } from '../formpacks/loader';
 import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
-import type { FormpackManifest } from '../formpacks/types';
+import type { FormpackManifest, InfoBoxConfig } from '../formpacks/types';
 import { resolveDecisionTree } from '../formpacks/decisionEngine';
 import {
   getFieldVisibility,
@@ -1006,13 +1006,7 @@ export default function FormpackDetailPage() {
         q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
       };
 
-      // Debug logging
-      console.log('Decision input:', decision);
-      console.log('Parsed answers:', answers);
-
       const result = resolveDecisionTree(answers);
-
-      console.log('Resolved result:', result);
 
       return t(result.caseKey, {
         ns: `formpack:${formpackId}`,
@@ -1329,30 +1323,18 @@ export default function FormpackDetailPage() {
   const formContext = useMemo<
     FormpackFormContext & {
       formpackId?: string;
-      infoBoxes?: unknown[];
+      infoBoxes?: InfoBoxConfig[];
     }
   >(
-    () => {
-      const ctx = {
-        t,
-        formpackId: formpackId || undefined,
-        infoBoxes: manifest?.ui?.infoBoxes || [],
-      };
-      // DEBUG: Log formContext when it's for doctor-letter
-      if (formpackId === 'doctor-letter') {
-        console.log('FormpackDetailPage formContext for doctor-letter:', {
-          formpackId,
-          infoBoxes: ctx.infoBoxes,
-          manifestUi: manifest?.ui,
-        });
-      }
-      return ctx;
-    },
+    () => ({
+      t,
+      formpackId: formpackId || undefined,
+      infoBoxes: manifest?.ui?.infoBoxes || [],
+    }),
     [t, formpackId, manifest],
   );
 
   // Use custom field template for doctor-letter to support InfoBoxes
-  // Temporarily disabled due to rendering issue - need to investigate
   const templates = useMemo(() => {
     if (formpackId === 'doctor-letter') {
       return {

@@ -15,26 +15,34 @@ describe('DoctorLetterFieldTemplate', () => {
   const createMockProps = (
     overrides: Partial<FieldTemplateProps> = {},
   ): FieldTemplateProps =>
-    ({
-      id: 'root_decision_q1',
-      classNames: 'test-class',
-      label: 'Test Label',
-      help: <div>Help text</div>,
-      required: false,
-      description: <div>Description</div>,
-      errors: <div>Errors</div>,
-      children: <input />,
-      schema: {},
-      uiSchema: {},
-      registry: {} as FieldTemplateProps['registry'],
-      // @ts-ignore formContext is a custom extension
-      formContext: {},
-      formData: undefined,
-      disabled: false,
-      readonly: false,
-      displayLabel: true,
-      ...overrides,
-    }) as FieldTemplateProps;
+    (() => {
+      const formContext =
+        (overrides as { formContext?: unknown }).formContext ?? {};
+      const registry =
+        (overrides as { registry?: FieldTemplateProps['registry'] }).registry ??
+        ({ formContext } as FieldTemplateProps['registry']);
+
+      return {
+        id: 'root_decision_q1',
+        classNames: 'test-class',
+        label: 'Test Label',
+        help: <div>Help text</div>,
+        required: false,
+        description: <div>Description</div>,
+        errors: <div>Errors</div>,
+        children: <input />,
+        schema: {},
+        uiSchema: {},
+        registry,
+        // @ts-ignore formContext is a custom extension
+        formContext: {},
+        formData: undefined,
+        disabled: false,
+        readonly: false,
+        displayLabel: true,
+        ...overrides,
+      } as FieldTemplateProps;
+    })();
 
   it('renders without crashing', () => {
     const props = createMockProps();
