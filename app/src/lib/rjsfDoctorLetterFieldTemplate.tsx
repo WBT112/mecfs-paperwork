@@ -28,7 +28,13 @@ export function DoctorLetterFieldTemplate(
     errors,
     children,
     formContext,
+    hidden,
+    uiSchema,
   } = props;
+
+  if (hidden || uiSchema?.['ui:widget'] === 'hidden') {
+    return null;
+  }
 
   const infoBoxes = formContext?.infoBoxes || [];
   const t = formContext?.t || ((key: string) => key);
