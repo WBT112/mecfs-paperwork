@@ -3,20 +3,16 @@
   "$id": "https://mecfs-paperwork.local/formpacks/doctor-letter/schema.json",
   "title": "doctor-letter",
   "type": "object",
-  "required": ["patient", "doctor", "decision"],
   "additionalProperties": false,
   "properties": {
     "patient": {
       "type": "object",
-      "required": ["firstName", "lastName"],
       "properties": {
         "firstName": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "lastName": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "streetAndNumber": {
           "type": "string"
@@ -32,15 +28,12 @@
     },
     "doctor": {
       "type": "object",
-      "required": ["practice", "name", "title", "gender"],
       "properties": {
         "practice": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "minLength": 1
+          "type": "string"
         },
         "title": {
           "type": "string",
