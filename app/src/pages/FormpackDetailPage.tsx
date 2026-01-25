@@ -33,7 +33,6 @@ import {
   formpackTemplates,
   type FormpackFormContext,
 } from '../lib/rjsfTemplates';
-import { DoctorLetterFieldTemplate } from '../lib/rjsfDoctorLetterFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
 import {
@@ -953,16 +952,19 @@ export default function FormpackDetailPage() {
     val === 'COVID-19 vaccination' ||
     val === 'Other cause';
 
+  const isYesNo = (val: unknown): val is 'yes' | 'no' =>
+    val === 'yes' || val === 'no';
+
   const resolveAndPopulateDoctorLetterCase = useCallback(
     (decision: Record<string, unknown>): string => {
       const result = resolveDecisionTree({
-        q1: typeof decision.q1 === 'boolean' ? decision.q1 : undefined,
-        q2: typeof decision.q2 === 'boolean' ? decision.q2 : undefined,
-        q3: typeof decision.q3 === 'boolean' ? decision.q3 : undefined,
+        q1: isYesNo(decision.q1) ? decision.q1 : undefined,
+        q2: isYesNo(decision.q2) ? decision.q2 : undefined,
+        q3: isYesNo(decision.q3) ? decision.q3 : undefined,
         q4: isValidQ4(decision.q4) ? decision.q4 : undefined,
         q5: isValidQ5(decision.q5) ? decision.q5 : undefined,
-        q6: typeof decision.q6 === 'boolean' ? decision.q6 : undefined,
-        q7: typeof decision.q7 === 'boolean' ? decision.q7 : undefined,
+        q6: isYesNo(decision.q6) ? decision.q6 : undefined,
+        q7: isYesNo(decision.q7) ? decision.q7 : undefined,
         q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
       });
 
@@ -1290,10 +1292,10 @@ export default function FormpackDetailPage() {
     //   return {
     //     ...formpackTemplates,
     //     FieldTemplate: DoctorLetterFieldTemplate,
-    //   };
+    //     };
     // }
     return formpackTemplates;
-  }, [formpackId]);
+  }, []);
   const previewUiSchema =
     conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
   const jsonPreview = useMemo(

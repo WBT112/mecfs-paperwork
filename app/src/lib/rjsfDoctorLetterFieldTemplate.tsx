@@ -30,7 +30,7 @@ export function DoctorLetterFieldTemplate(
     formContext,
   } = props;
 
-  const infoBoxes = (formContext?.infoBoxes || []) as InfoBoxConfig[];
+  const infoBoxes = formContext?.infoBoxes || [];
   const t = formContext?.t || ((key: string) => key);
 
   // Construct the field anchor from the field ID

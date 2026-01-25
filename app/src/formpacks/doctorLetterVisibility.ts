@@ -64,8 +64,9 @@ export function getFieldVisibility(decision: DecisionData): FieldVisibility {
     applyQ1TruePath(decision, visibility);
   } else if (decision.q1 === 'no') {
     applyQ1FalsePath(decision, visibility);
+  } else {
+    // q1 undefined - no further questions yet
   }
-  // else: q1 undefined - no further questions yet
 
   return visibility;
 }
@@ -86,10 +87,12 @@ function applyQ1TruePath(
       visibility.q4 = true; // Show "Which infection?"
     } else if (decision.q3 === 'no') {
       visibility.q5 = true; // Show "Other cause?"
+    } else {
+      // q3 undefined - no further questions yet
     }
-    // else: q3 undefined - no further questions yet
+  } else {
+    // q2 === 'no' or undefined - no further questions (Case 11 if 'no')
   }
-  // else: q2 === false or undefined - no further questions (Case 11 if false)
 }
 
 /**
