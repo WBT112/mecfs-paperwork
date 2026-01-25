@@ -957,7 +957,7 @@ export default function FormpackDetailPage() {
 
   const resolveAndPopulateDoctorLetterCase = useCallback(
     (decision: Record<string, unknown>): string => {
-      const result = resolveDecisionTree({
+      const answers = {
         q1: isYesNo(decision.q1) ? decision.q1 : undefined,
         q2: isYesNo(decision.q2) ? decision.q2 : undefined,
         q3: isYesNo(decision.q3) ? decision.q3 : undefined,
@@ -966,7 +966,15 @@ export default function FormpackDetailPage() {
         q6: isYesNo(decision.q6) ? decision.q6 : undefined,
         q7: isYesNo(decision.q7) ? decision.q7 : undefined,
         q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
-      });
+      };
+
+      // Debug logging
+      console.log('Decision input:', decision);
+      console.log('Parsed answers:', answers);
+
+      const result = resolveDecisionTree(answers);
+
+      console.log('Resolved result:', result);
 
       return t(result.caseKey, {
         ns: `formpack:${formpackId}`,
