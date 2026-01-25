@@ -20,7 +20,6 @@ describe('funding', () => {
     });
 
     it('should return null if FUNDING_URL is null', () => {
-      mockFundingUrl = null;
       expect(getSponsorUrl()).toBeNull();
     });
 
