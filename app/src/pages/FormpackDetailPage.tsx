@@ -990,37 +990,52 @@ export default function FormpackDetailPage() {
     (event) => {
       const nextData = event.formData as FormDataState;
 
-      // For doctor-letter formpack, automatically resolve decision tree and populate resolvedCaseText
+      // For doctor-letter formpack, clear hidden fields to prevent stale values
       if (formpackId === 'doctor-letter' && isRecord(nextData.decision)) {
         const originalDecision = nextData.decision as DecisionData;
 
         // Clear hidden fields to prevent stale values from affecting decision tree
         const clearedDecision = clearHiddenFields(originalDecision);
 
-        // Only update if clearing actually changed something (to avoid infinite loops)
+        // Only update if clearing actually changed something
         const hasChanges =
           JSON.stringify(originalDecision) !== JSON.stringify(clearedDecision);
 
         if (hasChanges) {
-          const caseText = resolveAndPopulateDoctorLetterCase(clearedDecision);
-          nextData.decision = {
-            ...clearedDecision,
-            resolvedCaseText: caseText,
-          };
-        } else {
-          // No hidden fields were cleared, just resolve the case text
-          const caseText = resolveAndPopulateDoctorLetterCase(originalDecision);
-          nextData.decision = {
-            ...originalDecision,
-            resolvedCaseText: caseText,
-          };
+          nextData.decision = clearedDecision;
         }
       }
 
       setFormData(nextData);
     },
-    [formpackId, resolveAndPopulateDoctorLetterCase, setFormData],
+    [formpackId, setFormData],
   );
+
+  // Resolve decision tree after formData changes (for doctor-letter only)
+  useEffect(() => {
+    if (
+      formpackId === 'doctor-letter' &&
+      isRecord(formData.decision) &&
+      formData.decision
+    ) {
+      const decision = formData.decision as DecisionData;
+      const currentCaseText = decision.resolvedCaseText;
+      const newCaseText = resolveAndPopulateDoctorLetterCase(decision);
+
+      // Only update if the case text actually changed
+      if (currentCaseText !== newCaseText) {
+        console.log('Decision input:', decision);
+        console.log('Resolved result:', newCaseText);
+        setFormData((prev) => ({
+          ...prev,
+          decision: {
+            ...decision,
+            resolvedCaseText: newCaseText,
+          },
+        }));
+      }
+    }
+  }, [formData, formpackId, resolveAndPopulateDoctorLetterCase, setFormData]);
 
   const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = useCallback(
     (event, submitEvent) => {
