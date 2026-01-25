@@ -706,13 +706,23 @@ export default function FormpackDetailPage() {
       }
     });
 
-    // Hide "Ergebnis der Auswertung" (resolvedCaseText) when it's Case 0 (fallback/incomplete)
+    // Hide "Ergebnis der Auswertung" only when decision tree is INCOMPLETE
+    // Case 0 is a valid result when: Q1=no AND Q6=no, OR Q1=no AND Q6=yes AND Q7=no
+    // Case 0 is fallback/incomplete in all other scenarios
     const caseText = decision.resolvedCaseText || '';
     const isCase0 = caseText.includes('Fall 0') || caseText.includes('Case 0') || caseText === '';
     
-    if (isCase0 && isRecord(decisionUiSchema.resolvedCaseText)) {
-      const resultSchema = decisionUiSchema.resolvedCaseText as Record<string, unknown>;
-      resultSchema['ui:widget'] = 'hidden';
+    if (isCase0) {
+      // Check if Case 0 is a valid completed path
+      const isValidCase0 =
+        (decision.q1 === 'no' && decision.q6 === 'no') ||
+        (decision.q1 === 'no' && decision.q6 === 'yes' && decision.q7 === 'no');
+      
+      // Only hide if Case 0 is due to incomplete tree, not a valid path
+      if (!isValidCase0 && isRecord(decisionUiSchema.resolvedCaseText)) {
+        const resultSchema = decisionUiSchema.resolvedCaseText as Record<string, unknown>;
+        resultSchema['ui:widget'] = 'hidden';
+      }
     }
 
     return clonedUiSchema;
