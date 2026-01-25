@@ -24,3 +24,6 @@ secrets
 
 #VSCode Settings
 .vscode
+
+# Incremental TS Info
+.tsbuildinfo
