@@ -37,7 +37,9 @@ describe('validate-formpacks helpers', () => {
 
     // attempt prototype pollution should be ignored
     setPathValue(target, '__proto__.polluted', true);
-    expect(Object.prototype.hasOwnProperty.call(Object.prototype, 'polluted')).toBe(false);
+    expect(
+      Object.prototype.hasOwnProperty.call(Object.prototype, 'polluted'),
+    ).toBe(false);
   });
 
   it('setNested/getNested create and read nested values', () => {
@@ -84,7 +86,10 @@ describe('validate-formpacks helpers', () => {
   });
 
   it('collectErrors accumulates errors for a formpack', () => {
-    const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+    const errors: Map<
+      string,
+      Array<{ contextPath: string; error: Error }>
+    > = new Map();
     collectErrors(errors, 'pack1', '/p', 'oops');
     expect(errors.has('pack1')).toBe(true);
     const list1 = errors.get('pack1') ?? [];
@@ -96,7 +101,10 @@ describe('validate-formpacks helpers', () => {
   });
 
   it('validateManifest accepts valid manifest and rejects invalid ones', () => {
-    const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+    const errors: Map<
+      string,
+      Array<{ contextPath: string; error: Error }>
+    > = new Map();
     const valid = {
       id: 'test',
       version: '1.0',
@@ -113,7 +121,10 @@ describe('validate-formpacks helpers', () => {
     expect(validateManifest(valid, 'test', '/fake', errors)).toBe(true);
     expect(errors.size).toBe(0);
 
-    const errors2: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+    const errors2: Map<
+      string,
+      Array<{ contextPath: string; error: Error }>
+    > = new Map();
     const { id: _removed, ...invalid } = valid;
     expect(validateManifest(invalid, 'test', '/fake', errors2)).toBe(false);
     expect(errors2.size).toBeGreaterThan(0);
@@ -137,7 +148,9 @@ describe('validate-formpacks helpers', () => {
 
   it('createLogger writes colored messages to provided stream', () => {
     const lines: string[] = [];
-    const stream: { write: (s: string) => void } = { write: (s: string) => lines.push(String(s)) };
+    const stream: { write: (s: string) => void } = {
+      write: (s: string) => lines.push(String(s)),
+    };
     const logger = createLogger(stream);
     logger.info('hello');
     logger.pass('ok');

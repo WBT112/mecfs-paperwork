@@ -4,7 +4,8 @@ import path from 'node:path';
 
 const repoRoot = path.resolve(process.cwd(), '..');
 const formpacksDir = path.join(repoRoot, 'formpacks');
-const uniqueId = (prefix = 'tpack') => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const uniqueId = (prefix = 'tpack') =>
+  `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const DOCX_A4 = 'docx/a4.docx';
 const DOCX_MAPPING = 'docx/mapping.json';
 const PACK_TITLE = 'pack.title';
@@ -15,7 +16,10 @@ const UI_SCHEMA_JSON = 'ui.schema.json';
 const EXAMPLE_JSON = path.join('examples', 'example.json');
 const WALLET_DOCX = 'docx/wallet.docx';
 
-async function writeStandardFiles(base: string, manifest: Record<string, unknown>) {
+async function writeStandardFiles(
+  base: string,
+  manifest: Record<string, unknown>,
+) {
   await fs.mkdir(path.join(base, 'i18n'), { recursive: true });
   await fs.mkdir(path.join(base, 'docx'), { recursive: true });
   await fs.mkdir(path.join(base, 'examples'), { recursive: true });
@@ -68,10 +72,14 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
 
-    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateContract } = mod;
     try {
-      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       await validateContract({ formpackId: id, errors });
       const pack = errors.get(id) || [];
       expect(
@@ -100,10 +108,14 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
 
-    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateContract } = mod;
     try {
-      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       await validateContract({ formpackId: id, errors });
       const pack = errors.get(id) || [];
       expect(
@@ -134,10 +146,14 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
 
-    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateContract } = mod;
     try {
-      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       await validateContract({ formpackId: id, errors });
       const pack = errors.get(id) || [];
       // expects message about missing exports
@@ -167,10 +183,14 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
 
-    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateContract } = mod;
     try {
-      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       await validateContract({ formpackId: id, errors });
       const pack = errors.get(id) || [];
       expect(
@@ -228,10 +248,14 @@ describe('validate-formpacks: extra branches', () => {
     );
     await fs.writeFile(path.join(base, DOCX_A4), Buffer.from('fake'));
 
-    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateContract } = mod;
     try {
-      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       await validateContract({ formpackId: id, errors });
       const pack = errors.get(id) || [];
       expect(
@@ -255,11 +279,18 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(path.join(base, 'docx'), { recursive: true });
     // mapping is invalid JSON
     await fs.writeFile(path.join(base, 'docx', 'mapping.json'), '{ not: json');
-    const mod1 = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod1 =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateTemplate } = mod1;
     try {
-      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
-      const warnings: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
+      const warnings: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       await validateTemplate({
         templatePath: 'docx/missing.docx',
         mappingPath: 'docx/mapping.json',
@@ -277,7 +308,8 @@ describe('validate-formpacks: extra branches', () => {
   it('run() sets exit code when id not found and passes when templates preflight ok', async () => {
     // case 1: id not found -> exitCode = 1
     vi.resetModules();
-    const modA = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const modA =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { run } = modA;
     const oldArgv = process.argv;
     const oldExit = process.exitCode;
@@ -297,7 +329,8 @@ describe('validate-formpacks: extra branches', () => {
     vi.doMock('docx-templates', () => ({
       createReport: vi.fn().mockResolvedValue(Buffer.from('ok')),
     }));
-    const modB = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const modB =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { run: run2 } = modB;
 
     const id = uniqueId('runok');
@@ -327,10 +360,7 @@ describe('validate-formpacks: extra branches', () => {
       JSON.stringify({ type: 'object' }),
     );
     await fs.writeFile(path.join(base, UI_SCHEMA_JSON), JSON.stringify({}));
-    await fs.writeFile(
-      path.join(base, EXAMPLE_JSON),
-      JSON.stringify({}),
-    );
+    await fs.writeFile(path.join(base, EXAMPLE_JSON), JSON.stringify({}));
     await fs.writeFile(
       path.join(base, 'i18n', 'de.json'),
       JSON.stringify({ [PACK_TITLE]: 'TDE', [PACK_DESC]: 'DDE' }),
@@ -344,10 +374,7 @@ describe('validate-formpacks: extra branches', () => {
       JSON.stringify({ fields: [] }),
     );
     await fs.writeFile(path.join(base, DOCX_A4), Buffer.from('ok'));
-    await fs.writeFile(
-      path.join(base, WALLET_DOCX),
-      Buffer.from('ok'),
-    );
+    await fs.writeFile(path.join(base, WALLET_DOCX), Buffer.from('ok'));
 
     const oldArgv2 = process.argv;
     const oldExit2 = process.exitCode;
