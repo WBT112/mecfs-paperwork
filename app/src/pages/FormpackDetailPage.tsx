@@ -706,6 +706,15 @@ export default function FormpackDetailPage() {
       }
     });
 
+    // Hide "Ergebnis der Auswertung" (resolvedCaseText) when it's Case 0 (fallback/incomplete)
+    const caseText = decision.resolvedCaseText || '';
+    const isCase0 = caseText.includes('Fall 0') || caseText.includes('Case 0') || caseText === '';
+    
+    if (isCase0 && isRecord(decisionUiSchema.resolvedCaseText)) {
+      const resultSchema = decisionUiSchema.resolvedCaseText as Record<string, unknown>;
+      resultSchema['ui:widget'] = 'hidden';
+    }
+
     return clonedUiSchema;
   }, [normalizedUiSchema, formpackId, formData]);
 
@@ -1024,8 +1033,6 @@ export default function FormpackDetailPage() {
 
       // Only update if the case text actually changed
       if (currentCaseText !== newCaseText) {
-        console.log('Decision input:', decision);
-        console.log('Resolved result:', newCaseText);
         setFormData((prev) => ({
           ...prev,
           decision: {
