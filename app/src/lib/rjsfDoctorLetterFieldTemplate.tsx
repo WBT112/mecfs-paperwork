@@ -1,6 +1,7 @@
 import type { FieldTemplateProps } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
 import { InfoBox } from '../components/InfoBox';
+import { getInfoBoxesForField } from '../formpacks/doctorLetterInfoBox';
 import type { InfoBoxConfig } from '../formpacks/types';
 
 type DoctorLetterFieldTemplateProps = Omit<
@@ -14,6 +15,7 @@ type DoctorLetterFormContext = {
   t?: TFunction;
   formpackId?: string;
   infoBoxes?: InfoBoxConfig[];
+  formData?: Record<string, unknown>;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -40,6 +42,7 @@ const getDoctorLetterFormContext = (
     infoBoxes: Array.isArray(formContext.infoBoxes)
       ? (formContext.infoBoxes as InfoBoxConfig[])
       : undefined,
+    formData: isRecord(formContext.formData) ? formContext.formData : undefined,
   };
 };
 
@@ -72,6 +75,7 @@ export function DoctorLetterFieldTemplate(
 
   const formContext = getDoctorLetterFormContext(registry.formContext);
   const infoBoxes = formContext.infoBoxes ?? [];
+  const formData = formContext.formData ?? {};
   const t = formContext.t ?? defaultTranslator;
   const namespace = `formpack:${formContext.formpackId ?? 'doctor-letter'}`;
 
@@ -85,9 +89,11 @@ export function DoctorLetterFieldTemplate(
       ? pathSegments.join('.')
       : id.replace(/^root_/, '').replace(/_/g, '.');
 
-  // Get applicable infoBoxes for this field (only if enabled and anchor matches)
-  const applicableInfoBoxes = infoBoxes.filter(
-    (infoBox) => infoBox.enabled && infoBox.anchor === fieldAnchor,
+  // Get applicable infoBoxes for this field (only if enabled, anchored, and showIf matches)
+  const applicableInfoBoxes = getInfoBoxesForField(
+    fieldAnchor,
+    infoBoxes,
+    formData,
   );
 
   return (

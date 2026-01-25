@@ -1,4 +1,6 @@
 const TEST_INFOBOX_KEY = 'test.infobox.key';
+const FIELD_ID = 'root_decision_q1';
+const DECISION_Q1_ANCHOR = 'decision.q1';
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FieldTemplateProps } from '@rjsf/utils';
@@ -23,7 +25,7 @@ describe('DoctorLetterFieldTemplate', () => {
         ({ formContext } as FieldTemplateProps['registry']);
 
       return {
-        id: 'root_decision_q1',
+        id: FIELD_ID,
         classNames: 'test-class',
         label: 'Test Label',
         help: <div>Help text</div>,
@@ -110,7 +112,7 @@ describe('DoctorLetterFieldTemplate', () => {
   it('renders infoBox when enabled and anchor matches', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const props = createMockProps({
-      id: 'root_decision_q1',
+      id: FIELD_ID,
       // @ts-ignore formContext is a custom extension
       // @ts-ignore formContext is a custom extension
       formContext: {
@@ -118,7 +120,7 @@ describe('DoctorLetterFieldTemplate', () => {
         infoBoxes: [
           {
             id: 'q1-info',
-            anchor: 'decision.q1',
+            anchor: DECISION_Q1_ANCHOR,
             enabled: true,
             i18nKey: TEST_INFOBOX_KEY,
           },
@@ -132,15 +134,74 @@ describe('DoctorLetterFieldTemplate', () => {
     );
   });
 
+  it('renders infoBox when showIf matches', () => {
+    const props = createMockProps({
+      id: FIELD_ID,
+      // @ts-ignore formContext is a custom extension
+      formContext: {
+        t: (key: string) => `translated:${key}`,
+        formData: {
+          decision: { q1: true },
+        },
+        infoBoxes: [
+          {
+            id: 'q1-info',
+            anchor: DECISION_Q1_ANCHOR,
+            enabled: true,
+            i18nKey: TEST_INFOBOX_KEY,
+            showIf: [
+              {
+                path: DECISION_Q1_ANCHOR,
+                op: 'eq',
+                value: true,
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const { getByTestId } = render(<DoctorLetterFieldTemplate {...props} />);
+    expect(getByTestId('infobox')).toBeInTheDocument();
+  });
+
+  it('does not render infoBox when showIf does not match', () => {
+    const props = createMockProps({
+      id: FIELD_ID,
+      // @ts-ignore formContext is a custom extension
+      formContext: {
+        formData: {
+          decision: { q1: false },
+        },
+        infoBoxes: [
+          {
+            id: 'q1-info',
+            anchor: DECISION_Q1_ANCHOR,
+            enabled: true,
+            i18nKey: TEST_INFOBOX_KEY,
+            showIf: [
+              {
+                path: DECISION_Q1_ANCHOR,
+                op: 'eq',
+                value: true,
+              },
+            ],
+          },
+        ],
+      },
+    });
+    const { queryByTestId } = render(<DoctorLetterFieldTemplate {...props} />);
+    expect(queryByTestId('infobox')).not.toBeInTheDocument();
+  });
+
   it('does not render infoBox when disabled', () => {
     const props = createMockProps({
-      id: 'root_decision_q1',
+      id: FIELD_ID,
       // @ts-ignore formContext is a custom extension
       formContext: {
         infoBoxes: [
           {
             id: 'q1-info',
-            anchor: 'decision.q1',
+            anchor: DECISION_Q1_ANCHOR,
             enabled: false,
             i18nKey: TEST_INFOBOX_KEY,
           },
@@ -153,7 +214,7 @@ describe('DoctorLetterFieldTemplate', () => {
 
   it('does not render infoBox when anchor does not match', () => {
     const props = createMockProps({
-      id: 'root_decision_q1',
+      id: FIELD_ID,
       // @ts-ignore formContext is a custom extension
       formContext: {
         infoBoxes: [

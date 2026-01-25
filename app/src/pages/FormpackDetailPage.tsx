@@ -44,7 +44,10 @@ import {
 } from '../formpacks/loader';
 import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
 import type { FormpackManifest, InfoBoxConfig } from '../formpacks/types';
-import { resolveDecisionTree } from '../formpacks/decisionEngine';
+import {
+  resolveDecisionTree,
+  type DecisionAnswers,
+} from '../formpacks/decisionEngine';
 import {
   getFieldVisibility,
   clearHiddenFields,
@@ -145,6 +148,39 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const DOCTOR_LETTER_ID = 'doctor-letter';
 
+const isValidQ4 = (val: unknown): val is DecisionAnswers['q4'] =>
+  val === 'EBV' ||
+  val === 'Influenza' ||
+  val === 'COVID-19' ||
+  val === 'Other infection';
+
+const isValidQ5 = (val: unknown): val is DecisionAnswers['q5'] =>
+  val === 'COVID-19 vaccination' || val === 'Other cause';
+
+const isValidQ8 = (val: unknown): val is DecisionAnswers['q8'] =>
+  val === 'No known cause' ||
+  val === 'EBV' ||
+  val === 'Influenza' ||
+  val === 'COVID-19 infection' ||
+  val === 'COVID-19 vaccination' ||
+  val === 'Other cause';
+
+const isYesNo = (val: unknown): val is 'yes' | 'no' =>
+  val === 'yes' || val === 'no';
+
+const buildDecisionAnswers = (
+  decision: Record<string, unknown>,
+): DecisionAnswers => ({
+  q1: isYesNo(decision.q1) ? decision.q1 : undefined,
+  q2: isYesNo(decision.q2) ? decision.q2 : undefined,
+  q3: isYesNo(decision.q3) ? decision.q3 : undefined,
+  q4: isValidQ4(decision.q4) ? decision.q4 : undefined,
+  q5: isValidQ5(decision.q5) ? decision.q5 : undefined,
+  q6: isYesNo(decision.q6) ? decision.q6 : undefined,
+  q7: isYesNo(decision.q7) ? decision.q7 : undefined,
+  q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
+});
+
 // Helper: Apply field visibility rules to decision tree UI schema
 const applyFieldVisibility = (
   decisionUiSchema: Record<string, unknown>,
@@ -163,11 +199,8 @@ const applyFieldVisibility = (
 
 // Helper: Check if Case 0 result should be hidden
 const shouldHideCase0Result = (decision: DecisionData): boolean => {
-  const caseText = decision.resolvedCaseText || '';
-  const isCase0 =
-    caseText.includes('Fall 0') ||
-    caseText.includes('Case 0') ||
-    caseText === '';
+  const result = resolveDecisionTree(buildDecisionAnswers(decision));
+  const isCase0 = result.caseId === 0;
 
   if (!isCase0) {
     return false;
@@ -962,51 +995,9 @@ export default function FormpackDetailPage() {
     };
   }, [formpackId, hasLoadedRecords, isRecordsLoading, restoreActiveRecord]);
 
-  // Type guards for decision tree enum values
-  const isValidQ4 = (
-    val: unknown,
-  ): val is 'EBV' | 'Influenza' | 'COVID-19' | 'Other infection' =>
-    val === 'EBV' ||
-    val === 'Influenza' ||
-    val === 'COVID-19' ||
-    val === 'Other infection';
-  const isValidQ5 = (
-    val: unknown,
-  ): val is 'COVID-19 vaccination' | 'Other cause' =>
-    val === 'COVID-19 vaccination' || val === 'Other cause';
-  const isValidQ8 = (
-    val: unknown,
-  ): val is
-    | 'No known cause'
-    | 'EBV'
-    | 'Influenza'
-    | 'COVID-19 infection'
-    | 'COVID-19 vaccination'
-    | 'Other cause' =>
-    val === 'No known cause' ||
-    val === 'EBV' ||
-    val === 'Influenza' ||
-    val === 'COVID-19 infection' ||
-    val === 'COVID-19 vaccination' ||
-    val === 'Other cause';
-
-  const isYesNo = (val: unknown): val is 'yes' | 'no' =>
-    val === 'yes' || val === 'no';
-
   const resolveAndPopulateDoctorLetterCase = useCallback(
     (decision: Record<string, unknown>): string => {
-      const answers = {
-        q1: isYesNo(decision.q1) ? decision.q1 : undefined,
-        q2: isYesNo(decision.q2) ? decision.q2 : undefined,
-        q3: isYesNo(decision.q3) ? decision.q3 : undefined,
-        q4: isValidQ4(decision.q4) ? decision.q4 : undefined,
-        q5: isValidQ5(decision.q5) ? decision.q5 : undefined,
-        q6: isYesNo(decision.q6) ? decision.q6 : undefined,
-        q7: isYesNo(decision.q7) ? decision.q7 : undefined,
-        q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
-      };
-
-      const result = resolveDecisionTree(answers);
+      const result = resolveDecisionTree(buildDecisionAnswers(decision));
 
       return t(result.caseKey, {
         ns: `formpack:${formpackId}`,
@@ -1324,14 +1315,16 @@ export default function FormpackDetailPage() {
     FormpackFormContext & {
       formpackId?: string;
       infoBoxes?: InfoBoxConfig[];
+      formData?: Record<string, unknown>;
     }
   >(
     () => ({
       t,
       formpackId: formpackId || undefined,
       infoBoxes: manifest?.ui?.infoBoxes || [],
+      formData,
     }),
-    [t, formpackId, manifest],
+    [t, formpackId, manifest, formData],
   );
 
   // Use custom field template for doctor-letter to support InfoBoxes
