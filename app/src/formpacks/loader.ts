@@ -193,8 +193,7 @@ export const parseManifest = (
     docx,
     ui: payload.ui as FormpackUiConfig | undefined,
   };
-};
-};
+}
 
 /**
  * Fetches a single formpack manifest by id.
