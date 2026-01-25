@@ -99,7 +99,10 @@ test('shows an error when schema validation fails', async ({
     ...baseExportPayload,
     data: {
       ...baseExportPayload.data,
-      person: {},
+      person: {
+        ...baseExportPayload.data.person,
+        invalidField: 'This field is not allowed by the schema',
+      },
     },
   };
   await writeFile(schemaMismatchPath, JSON.stringify(payload), 'utf-8');
