@@ -982,17 +982,29 @@ export default function FormpackDetailPage() {
 
       // For doctor-letter formpack, automatically resolve decision tree and populate resolvedCaseText
       if (formpackId === 'doctor-letter' && isRecord(nextData.decision)) {
-        let decision = nextData.decision as DecisionData;
+        const originalDecision = nextData.decision as DecisionData;
 
         // Clear hidden fields to prevent stale values from affecting decision tree
-        decision = clearHiddenFields(decision);
+        const clearedDecision = clearHiddenFields(originalDecision);
 
-        const caseText = resolveAndPopulateDoctorLetterCase(decision);
+        // Only update if clearing actually changed something (to avoid infinite loops)
+        const hasChanges =
+          JSON.stringify(originalDecision) !== JSON.stringify(clearedDecision);
 
-        nextData.decision = {
-          ...decision,
-          resolvedCaseText: caseText,
-        };
+        if (hasChanges) {
+          const caseText = resolveAndPopulateDoctorLetterCase(clearedDecision);
+          nextData.decision = {
+            ...clearedDecision,
+            resolvedCaseText: caseText,
+          };
+        } else {
+          // No hidden fields were cleared, just resolve the case text
+          const caseText = resolveAndPopulateDoctorLetterCase(originalDecision);
+          nextData.decision = {
+            ...originalDecision,
+            resolvedCaseText: caseText,
+          };
+        }
       }
 
       setFormData(nextData);
@@ -1261,26 +1273,25 @@ export default function FormpackDetailPage() {
     FormpackFormContext & {
       formpackId?: string;
       infoBoxes?: unknown[];
-      formData?: Record<string, unknown>;
     }
   >(
     () => ({
       t,
       formpackId: formpackId || undefined,
       infoBoxes: manifest?.ui?.infoBoxes || [],
-      formData,
     }),
-    [t, formpackId, manifest, formData],
+    [t, formpackId, manifest],
   );
 
   // Use custom field template for doctor-letter to support InfoBoxes
+  // Temporarily disabled due to rendering issue - need to investigate
   const templates = useMemo(() => {
-    if (formpackId === 'doctor-letter') {
-      return {
-        ...formpackTemplates,
-        FieldTemplate: DoctorLetterFieldTemplate,
-      };
-    }
+    // if (formpackId === 'doctor-letter') {
+    //   return {
+    //     ...formpackTemplates,
+    //     FieldTemplate: DoctorLetterFieldTemplate,
+    //   };
+    // }
     return formpackTemplates;
   }, [formpackId]);
   const previewUiSchema =
