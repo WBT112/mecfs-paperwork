@@ -689,6 +689,7 @@ body {
 .formpack-form select:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+  gap: 0.5rem;
 }
 
 .formpack-form input[type='checkbox'] {
@@ -699,6 +700,20 @@ body {
 }
 
 .formpack-form label:has(> input[type='checkbox']) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.formpack-form input[type='radio'] {
+  width: auto;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  gap: 0.5rem;
+}
+
+.formpack-form label:has(> input[type='radio']) {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
