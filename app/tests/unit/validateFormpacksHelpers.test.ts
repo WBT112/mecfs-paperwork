@@ -114,8 +114,7 @@ describe('validate-formpacks helpers', () => {
     expect(errors.size).toBe(0);
 
     const errors2: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
-    const invalid: any = { ...valid };
-    delete invalid.id;
+    const { id: _removed, ...invalid } = valid;
     expect(validateManifest(invalid, 'test', '/fake', errors2)).toBe(false);
     expect(errors2.size).toBeGreaterThan(0);
   });
