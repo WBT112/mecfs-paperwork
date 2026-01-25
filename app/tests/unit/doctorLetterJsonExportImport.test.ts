@@ -1,13 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, test } from 'vitest';
 import { buildJsonExportPayload } from '../../src/export/json';
 import { validateJsonImport } from '../../src/import/json';
 import type { RecordEntry } from '../../src/storage/types';
+import type { RJSFSchema } from '@rjsf/utils';
 
 // Load the doctor-letter schema
 import doctorLetterSchema from '../../../formpacks/doctor-letter/schema.json';
 
+const FORMPACK_ID = 'doctor-letter';
+
 describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
-  const FORMPACK_ID = 'doctor-letter';
   const FORMPACK_VERSION = '0.1.0';
 
   const createMockRecord = (data: Record<string, unknown>): RecordEntry => ({
@@ -43,7 +45,8 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
         q2: 'yes',
         q3: 'yes',
         q4: 'COVID-19',
-        resolvedCaseText: 'Der Patient weist ein vollständiges ME/CFS-Bild auf...',
+        resolvedCaseText:
+          'Der Patient weist ein vollständiges ME/CFS-Bild auf...',
       },
     };
 
@@ -55,7 +58,7 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
       record,
       data: testData,
       locale: 'de',
-      schema: doctorLetterSchema,
+      schema: doctorLetterSchema as unknown as RJSFSchema,
     });
 
     // Verify export structure
@@ -68,7 +71,7 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     // Re-import
     const importResult = validateJsonImport(
       exportedJson,
-      doctorLetterSchema,
+      doctorLetterSchema as unknown as RJSFSchema,
       FORMPACK_ID,
     );
 
@@ -81,10 +84,8 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
       expect(importResult.payload.record.locale).toBe('de');
 
       // Verify decision tree data is preserved
-      const importedDecision = importResult.payload.record.data.decision as Record<
-        string,
-        unknown
-      >;
+      const importedDecision = importResult.payload.record.data
+        .decision as Record<string, unknown>;
       expect(importedDecision.q1).toBe('yes');
       expect(importedDecision.q2).toBe('yes');
       expect(importedDecision.q3).toBe('yes');
@@ -125,7 +126,7 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
       record,
       data: testData,
       locale: 'de',
-      schema: doctorLetterSchema,
+      schema: doctorLetterSchema as unknown as RJSFSchema,
     });
 
     const exportedJson = JSON.stringify(exportPayload, null, 2);
@@ -133,7 +134,7 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     // Re-import
     const importResult = validateJsonImport(
       exportedJson,
-      doctorLetterSchema,
+      doctorLetterSchema as unknown as RJSFSchema,
       FORMPACK_ID,
     );
 
@@ -142,10 +143,8 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     expect(importResult.payload).not.toBeNull();
 
     if (importResult.payload) {
-      const importedDecision = importResult.payload.record.data.decision as Record<
-        string,
-        unknown
-      >;
+      const importedDecision = importResult.payload.record.data
+        .decision as Record<string, unknown>;
       expect(importedDecision.q1).toBe('no');
       expect(importedDecision.q6).toBe('no');
     }
@@ -186,7 +185,7 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
       record,
       data: testData,
       locale: 'de',
-      schema: doctorLetterSchema,
+      schema: doctorLetterSchema as unknown as RJSFSchema,
     });
 
     const exportedJson = JSON.stringify(exportPayload, null, 2);
@@ -194,7 +193,7 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     // Re-import
     const importResult = validateJsonImport(
       exportedJson,
-      doctorLetterSchema,
+      doctorLetterSchema as unknown as RJSFSchema,
       FORMPACK_ID,
     );
 
@@ -203,10 +202,8 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     expect(importResult.payload).not.toBeNull();
 
     if (importResult.payload) {
-      const importedDecision = importResult.payload.record.data.decision as Record<
-        string,
-        unknown
-      >;
+      const importedDecision = importResult.payload.record.data
+        .decision as Record<string, unknown>;
       expect(importedDecision.q1).toBe('no');
       expect(importedDecision.q6).toBe('yes');
       expect(importedDecision.q7).toBe('yes');
@@ -246,13 +243,13 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
       record,
       data: testData,
       locale: 'de',
-      schema: doctorLetterSchema,
+      schema: doctorLetterSchema as unknown as RJSFSchema,
     });
 
     const exportedJson = JSON.stringify(exportPayload, null, 2);
     const importResult = validateJsonImport(
       exportedJson,
-      doctorLetterSchema,
+      doctorLetterSchema as unknown as RJSFSchema,
       FORMPACK_ID,
     );
 
@@ -260,10 +257,8 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     expect(importResult.payload).not.toBeNull();
 
     if (importResult.payload) {
-      const importedDecision = importResult.payload.record.data.decision as Record<
-        string,
-        unknown
-      >;
+      const importedDecision = importResult.payload.record.data
+        .decision as Record<string, unknown>;
       expect(importedDecision.q1).toBe('yes');
       expect(importedDecision.q2).toBe('no');
     }
@@ -272,7 +267,7 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
   test('should strip readOnly fields (resolvedCaseText) during import', async () => {
     // Simulate an export that includes the auto-generated resolvedCaseText
     const exportedJson = {
-      formpack: { id: 'doctor-letter', version: '0.1.0' },
+      formpack: { id: FORMPACK_ID, version: '0.1.0' },
       record: {
         locale: 'de',
         data: {
@@ -291,11 +286,10 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     };
 
     const jsonString = JSON.stringify(exportedJson);
-    const formpack = await loadFormpack('doctor-letter', 'de');
     const importResult = validateJsonImport(
       jsonString,
-      formpack.schema,
-      'doctor-letter',
+      doctorLetterSchema as RJSFSchema,
+      FORMPACK_ID,
     );
 
     // Import should succeed despite readOnly field in exported data
@@ -303,10 +297,8 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     expect(importResult.payload).not.toBeNull();
 
     if (importResult.payload) {
-      const importedDecision = importResult.payload.record.data.decision as Record<
-        string,
-        unknown
-      >;
+      const importedDecision = importResult.payload.record.data
+        .decision as Record<string, unknown>;
       // Enum values should be preserved
       expect(importedDecision.q1).toBe('no');
       expect(importedDecision.q6).toBe('yes');
@@ -322,15 +314,15 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     // and empty patient/doctor objects (missing required fields)
     const exportedJson = {
       app: { id: 'mecfs-paperwork', version: '0.0.0' },
-      formpack: { id: 'doctor-letter', version: '0.1.0' },
+      formpack: { id: FORMPACK_ID, version: '0.1.0' },
       record: {
         id: 'c49acbdb-50dd-4bdd-8381-33da9bbbd371',
         name: 'Arztbrief',
         updatedAt: '2026-01-25T09:24:39.292Z',
         locale: 'de',
         data: {
-          patient: {},  // Empty - missing required firstName, lastName
-          doctor: {},   // Empty - missing required practice, name, title, gender
+          patient: {}, // Empty - missing required firstName, lastName
+          doctor: {}, // Empty - missing required practice, name, title, gender
           decision: {
             q1: 'no',
             q6: 'yes',
@@ -352,11 +344,10 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
     };
 
     const jsonString = JSON.stringify(exportedJson);
-    const formpack = await loadFormpack('doctor-letter', 'de');
     const importResult = validateJsonImport(
       jsonString,
-      formpack.schema,
-      'doctor-letter',
+      doctorLetterSchema as RJSFSchema,
+      FORMPACK_ID,
     );
 
     // Import should succeed - lenient schema validation allows partial data

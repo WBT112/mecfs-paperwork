@@ -142,6 +142,45 @@ const buildErrorMessage = (
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const DOCTOR_LETTER_ID = 'doctor-letter';
+
+// Helper: Apply field visibility rules to decision tree UI schema
+const applyFieldVisibility = (
+  decisionUiSchema: Record<string, unknown>,
+  visibility: ReturnType<typeof getFieldVisibility>,
+): void => {
+  (['q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'] as const).forEach((field) => {
+    if (!visibility[field]) {
+      if (!isRecord(decisionUiSchema[field])) {
+        decisionUiSchema[field] = {};
+      }
+      const fieldSchema = decisionUiSchema[field] as Record<string, unknown>;
+      fieldSchema['ui:widget'] = 'hidden';
+    }
+  });
+};
+
+// Helper: Check if Case 0 result should be hidden
+const shouldHideCase0Result = (decision: DecisionData): boolean => {
+  const caseText = decision.resolvedCaseText || '';
+  const isCase0 =
+    caseText.includes('Fall 0') ||
+    caseText.includes('Case 0') ||
+    caseText === '';
+
+  if (!isCase0) {
+    return false;
+  }
+
+  // Check if Case 0 is a valid completed path
+  const isValidCase0 =
+    (decision.q1 === 'no' && decision.q6 === 'no') ||
+    (decision.q1 === 'no' && decision.q6 === 'yes' && decision.q7 === 'no');
+
+  // Only hide if Case 0 is due to incomplete tree, not a valid path
+  return !isValidCase0;
+};
+
 type PreviewValueResolver = (
   value: unknown,
   schema?: RJSFSchema,
@@ -671,12 +710,9 @@ export default function FormpackDetailPage() {
 
   // Apply conditional visibility for doctor-letter decision tree
   const conditionalUiSchema = useMemo(() => {
-    if (!normalizedUiSchema || formpackId !== 'doctor-letter') {
+    if (!normalizedUiSchema || formpackId !== DOCTOR_LETTER_ID) {
       return normalizedUiSchema;
     }
-
-    const isRecord = (val: unknown): val is Record<string, unknown> =>
-      typeof val === 'object' && val !== null && !Array.isArray(val);
 
     // Treat missing or invalid decision as empty object to apply visibility rules
     const decision = (
@@ -693,36 +729,18 @@ export default function FormpackDetailPage() {
       return normalizedUiSchema;
     }
 
-    // Apply visibility rules by setting ui:widget to "hidden" for invisible fields
     const decisionUiSchema = clonedUiSchema.decision;
 
-    (['q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'] as const).forEach((field) => {
-      if (!visibility[field]) {
-        if (!isRecord(decisionUiSchema[field])) {
-          decisionUiSchema[field] = {};
-        }
-        const fieldSchema = decisionUiSchema[field] as Record<string, unknown>;
-        fieldSchema['ui:widget'] = 'hidden';
-      }
-    });
+    // Apply field visibility rules
+    applyFieldVisibility(decisionUiSchema, visibility);
 
-    // Hide "Ergebnis der Auswertung" only when decision tree is INCOMPLETE
-    // Case 0 is a valid result when: Q1=no AND Q6=no, OR Q1=no AND Q6=yes AND Q7=no
-    // Case 0 is fallback/incomplete in all other scenarios
-    const caseText = decision.resolvedCaseText || '';
-    const isCase0 = caseText.includes('Fall 0') || caseText.includes('Case 0') || caseText === '';
-    
-    if (isCase0) {
-      // Check if Case 0 is a valid completed path
-      const isValidCase0 =
-        (decision.q1 === 'no' && decision.q6 === 'no') ||
-        (decision.q1 === 'no' && decision.q6 === 'yes' && decision.q7 === 'no');
-      
-      // Only hide if Case 0 is due to incomplete tree, not a valid path
-      if (!isValidCase0 && isRecord(decisionUiSchema.resolvedCaseText)) {
-        const resultSchema = decisionUiSchema.resolvedCaseText as Record<string, unknown>;
-        resultSchema['ui:widget'] = 'hidden';
-      }
+    // Hide result field for incomplete decision tree (but show for valid Case 0)
+    if (
+      shouldHideCase0Result(decision) &&
+      isRecord(decisionUiSchema.resolvedCaseText)
+    ) {
+      const resultSchema = decisionUiSchema.resolvedCaseText;
+      resultSchema['ui:widget'] = 'hidden';
     }
 
     return clonedUiSchema;
@@ -1010,7 +1028,7 @@ export default function FormpackDetailPage() {
       const nextData = event.formData as FormDataState;
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
-      if (formpackId === 'doctor-letter' && isRecord(nextData.decision)) {
+      if (formpackId === DOCTOR_LETTER_ID && isRecord(nextData.decision)) {
         const originalDecision = nextData.decision as DecisionData;
 
         // Clear hidden fields to prevent stale values from affecting decision tree
@@ -1032,11 +1050,7 @@ export default function FormpackDetailPage() {
 
   // Resolve decision tree after formData changes (for doctor-letter only)
   useEffect(() => {
-    if (
-      formpackId === 'doctor-letter' &&
-      isRecord(formData.decision) &&
-      formData.decision
-    ) {
+    if (formpackId === DOCTOR_LETTER_ID && isRecord(formData.decision)) {
       const decision = formData.decision as DecisionData;
       const currentCaseText = decision.resolvedCaseText;
       const newCaseText = resolveAndPopulateDoctorLetterCase(decision);

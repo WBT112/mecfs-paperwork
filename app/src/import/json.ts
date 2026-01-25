@@ -134,10 +134,10 @@ const validateSchema = (schema: RJSFSchema, data: unknown): boolean => {
 // Removes 'required' and 'minLength' constraints to allow partial data import
 const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
   const lenient = { ...schema };
-  
+
   // Remove top-level 'required' constraint
   delete lenient.required;
-  
+
   // Remove 'minLength' from string properties
   if (lenient.properties) {
     const properties = { ...lenient.properties };
@@ -146,7 +146,7 @@ const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
       if (prop && typeof prop === 'object' && !Array.isArray(prop)) {
         const propCopy = { ...prop };
         delete propCopy.minLength;
-        
+
         // Recursively handle nested objects
         if (propCopy.type === 'object') {
           properties[key] = makeLenientSchema(propCopy as RJSFSchema);
@@ -157,7 +157,7 @@ const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
     }
     lenient.properties = properties;
   }
-  
+
   return lenient;
 };
 
@@ -214,14 +214,8 @@ const removeReadOnlyFields = (
     }
 
     // Recursively handle nested objects
-    if (
-      propertySchema.type === 'object' &&
-      isRecord(normalized[key])
-    ) {
-      normalized[key] = removeReadOnlyFields(
-        propertySchema,
-        normalized[key] as Record<string, unknown>,
-      );
+    if (propertySchema.type === 'object' && isRecord(normalized[key])) {
+      normalized[key] = removeReadOnlyFields(propertySchema, normalized[key]);
     }
   }
 
@@ -230,6 +224,59 @@ const removeReadOnlyFields = (
 
 // Ensure required fields exist when older exports omit empty values.
 // Recursively applies defaults to nested objects.
+// Helper: Add defaults for missing required fields
+const addRequiredDefaults = (
+  schema: RJSFSchema,
+  normalized: Record<string, unknown>,
+): void => {
+  if (!Array.isArray(schema.required) || !schema.properties) {
+    return;
+  }
+
+  for (const key of schema.required) {
+    if (typeof key !== 'string') {
+      continue;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(normalized, key)) {
+      continue;
+    }
+
+    const propertySchema = (schema.properties as Record<string, unknown>)[
+      key
+    ] as RJSFSchema | boolean | undefined;
+    const defaultValue = resolveSchemaDefaultValue(propertySchema);
+    if (defaultValue !== undefined) {
+      normalized[key] = defaultValue;
+    }
+  }
+};
+
+// Helper: Recursively apply defaults to nested objects
+const applyNestedDefaults = (
+  schema: RJSFSchema,
+  normalized: Record<string, unknown>,
+): void => {
+  if (!schema.properties) {
+    return;
+  }
+
+  for (const key of Object.keys(normalized)) {
+    const propertySchema = (schema.properties as Record<string, unknown>)[
+      key
+    ] as RJSFSchema | boolean | undefined;
+
+    if (
+      propertySchema &&
+      typeof propertySchema === 'object' &&
+      propertySchema.type === 'object' &&
+      isRecord(normalized[key])
+    ) {
+      normalized[key] = applySchemaDefaults(propertySchema, normalized[key]);
+    }
+  }
+};
+
 const applySchemaDefaults = (
   schema: RJSFSchema,
   data: Record<string, unknown>,
@@ -239,46 +286,12 @@ const applySchemaDefaults = (
   }
 
   const normalized = { ...data };
-  
+
   // Add defaults for missing required fields
-  if (Array.isArray(schema.required)) {
-    for (const key of schema.required) {
-      if (typeof key !== 'string') {
-        continue;
-      }
-
-      if (Object.prototype.hasOwnProperty.call(normalized, key)) {
-        continue;
-      }
-
-      const propertySchema = (schema.properties as Record<string, unknown>)[
-        key
-      ] as RJSFSchema | boolean | undefined;
-      const defaultValue = resolveSchemaDefaultValue(propertySchema);
-      if (defaultValue !== undefined) {
-        normalized[key] = defaultValue;
-      }
-    }
-  }
+  addRequiredDefaults(schema, normalized);
 
   // Recursively apply defaults to nested objects
-  for (const key of Object.keys(normalized)) {
-    const propertySchema = (schema.properties as Record<string, unknown>)[
-      key
-    ] as RJSFSchema | boolean | undefined;
-    
-    if (
-      propertySchema &&
-      typeof propertySchema === 'object' &&
-      propertySchema.type === 'object' &&
-      isRecord(normalized[key])
-    ) {
-      normalized[key] = applySchemaDefaults(
-        propertySchema,
-        normalized[key] as Record<string, unknown>,
-      );
-    }
-  }
+  applyNestedDefaults(schema, normalized);
 
   return normalized;
 };
@@ -438,7 +451,7 @@ const normalizeExportPayload = (
   // Remove readOnly fields before validation (they're auto-generated, not user input)
   const withoutReadOnly = removeReadOnlyFields(schema, recordDataResult.value);
   const normalizedData = applySchemaDefaults(schema, withoutReadOnly);
-  
+
   // Use lenient schema for import validation (allows partial/incomplete data)
   const lenientSchema = makeLenientSchema(schema);
   const isValid = validateSchema(lenientSchema, normalizedData);

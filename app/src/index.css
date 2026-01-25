@@ -1025,7 +1025,7 @@ body {
   gap: 0.375rem;
 }
 
-.form-group .field-radio-group .radio input[type="radio"] {
+.form-group .field-radio-group .radio input[type='radio'] {
   margin: 0;
   flex-shrink: 0;
 }
