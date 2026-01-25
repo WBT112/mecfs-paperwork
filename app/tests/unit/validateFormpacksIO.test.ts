@@ -5,7 +5,8 @@ import path from 'node:path';
 const repoRoot = path.resolve(process.cwd(), '..');
 const formpacksDir = path.join(repoRoot, 'formpacks');
 
-const uniqueId = (prefix = 'tpack') => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const uniqueId = (prefix = 'tpack') =>
+  `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const DOCX_A4 = 'docx/a4.docx';
 const DOCX_MAPPING = 'docx/mapping.json';
 const PACK_TITLE = 'pack.title';
@@ -75,14 +76,18 @@ async function createFormpackFixture(id: string) {
 
 describe('validate-formpacks I/O integration', () => {
   it('validateContract returns manifest and translations for a valid formpack', async () => {
-    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateContract } = mod;
 
     const id = uniqueId('valid');
     const base = await createFormpackFixture(id);
 
     try {
-      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       const result = await validateContract({ formpackId: id, errors });
       expect(result.manifest).toBeDefined();
       expect(JSON.stringify(result.manifest)).toContain(id);
@@ -94,7 +99,8 @@ describe('validate-formpacks I/O integration', () => {
   });
 
   it('validateContract collects errors for missing required files', async () => {
-    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateContract } = mod;
 
     const id = uniqueId('missing');
@@ -117,7 +123,10 @@ describe('validate-formpacks I/O integration', () => {
     );
 
     try {
-      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       await validateContract({ formpackId: id, errors });
       expect(errors.has(id)).toBe(true);
       const packErrors = errors.get(id) || [];
@@ -133,15 +142,22 @@ describe('validate-formpacks I/O integration', () => {
     vi.doMock('docx-templates', () => ({
       createReport: vi.fn().mockRejectedValue(new Error('boom')),
     }));
-    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateTemplate } = mod;
 
     const id = uniqueId('tpl');
     const base = await createFormpackFixture(id);
 
     try {
-    const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
-    const warnings: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
+      const warnings: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       // unsafe template path should produce an error
       await validateTemplate({
         templatePath: '/abs/path.docx',
@@ -154,8 +170,14 @@ describe('validate-formpacks I/O integration', () => {
       expect(errors.has(id)).toBe(true);
 
       // valid relative path but createReport throws -> recorded as warning
-      const errors2: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
-      const warnings2: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const errors2: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
+      const warnings2: Map<
+        string,
+        Array<{ contextPath: string; error: Error }>
+      > = new Map();
       await validateTemplate({
         templatePath: DOCX_A4,
         mappingPath: DOCX_MAPPING,
@@ -190,7 +212,10 @@ describe('validate-formpacks I/O integration', () => {
   });
 
   it('readJson parses a JSON file correctly', async () => {
-    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as { readJson: (p: string) => Promise<unknown> };
+    const mod =
+      (await import('../../scripts/validate-formpacks.mjs')) as unknown as {
+        readJson: (p: string) => Promise<unknown>;
+      };
     const { readJson } = mod;
 
     const tmp = path.join(process.cwd(), 'tmp-read-json.json');
