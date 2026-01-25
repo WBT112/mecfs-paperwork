@@ -57,6 +57,7 @@
   "doctor-letter.decision.q8.option.COVID19Vaccination": "COVID-19-Impfung",
   "doctor-letter.decision.q8.option.OtherCause": "Andere Ursache",
   "doctor-letter.decision.resolvedCaseText.label": "Ergebnis der Auswertung",
+  "doctor-letter.infobox.q1": "Hinweis: Bitte beantworten Sie diese Frage sorgfältig. Sie bestimmt den weiteren Verlauf der Befragung.",
   "doctor-letter.case.0.paragraph": "Fall 0 - Der Patient erfüllt nicht die vollständigen ME/CFS-Kriterien oder es fehlt die Post-Exertional Malaise (PEM). Es wird empfohlen, eine Differentialdiagnose in Betracht zu ziehen und weitere Untersuchungen durchzuführen, um die Ursache der Symptome zu klären.",
   "doctor-letter.case.1.paragraph": "Fall 1 - Der Patient weist ein vollständiges ME/CFS-Bild auf, das sich nach einer EBV-Infektion entwickelt hat. Die Symptomatik entspricht den etablierten diagnostischen Kriterien (CCC/IOM) mit charakteristischer Post-Exertional Malaise.",
   "doctor-letter.case.2.paragraph": "Fall 2 - Der Patient weist ein vollständiges ME/CFS-Bild auf, das sich nach einer Influenza-Infektion entwickelt hat. Die Symptomatik entspricht den etablierten diagnostischen Kriterien (CCC/IOM) mit charakteristischer Post-Exertional Malaise.",

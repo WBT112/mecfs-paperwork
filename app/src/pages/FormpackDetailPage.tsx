@@ -33,6 +33,7 @@ import {
   formpackTemplates,
   type FormpackFormContext,
 } from '../lib/rjsfTemplates';
+import { DoctorLetterFieldTemplate } from '../lib/rjsfDoctorLetterFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
 import {
@@ -679,9 +680,9 @@ export default function FormpackDetailPage() {
       typeof val === 'object' && val !== null && !Array.isArray(val);
 
     // Treat missing or invalid decision as empty object to apply visibility rules
-    const decision = (isRecord(formData.decision)
-      ? formData.decision
-      : {}) as DecisionData;
+    const decision = (
+      isRecord(formData.decision) ? formData.decision : {}
+    ) as DecisionData;
     const visibility = getFieldVisibility(decision);
 
     // Clone the UI schema to avoid mutations
@@ -1256,7 +1257,32 @@ export default function FormpackDetailPage() {
     },
     [t],
   );
-  const formContext = useMemo<FormpackFormContext>(() => ({ t }), [t]);
+  const formContext = useMemo<
+    FormpackFormContext & {
+      formpackId?: string;
+      infoBoxes?: unknown[];
+      formData?: Record<string, unknown>;
+    }
+  >(
+    () => ({
+      t,
+      formpackId: formpackId || undefined,
+      infoBoxes: manifest?.ui?.infoBoxes || [],
+      formData,
+    }),
+    [t, formpackId, manifest, formData],
+  );
+
+  // Use custom field template for doctor-letter to support InfoBoxes
+  const templates = useMemo(() => {
+    if (formpackId === 'doctor-letter') {
+      return {
+        ...formpackTemplates,
+        FieldTemplate: DoctorLetterFieldTemplate,
+      };
+    }
+    return formpackTemplates;
+  }, [formpackId]);
   const previewUiSchema =
     conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
   const jsonPreview = useMemo(
@@ -1749,7 +1775,7 @@ export default function FormpackDetailPage() {
           className="formpack-form"
           schema={schema}
           uiSchema={conditionalUiSchema}
-          templates={formpackTemplates}
+          templates={templates}
           validator={validator}
           formData={formData}
           omitExtraData

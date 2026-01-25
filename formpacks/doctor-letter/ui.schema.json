@@ -65,15 +65,27 @@
     "ui:order": ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "resolvedCaseText"],
     "q1": {
       "ui:title": "doctor-letter.decision.q1.label",
-      "ui:help": "doctor-letter.decision.q1.help"
+      "ui:help": "doctor-letter.decision.q1.help",
+      "ui:widget": "radio",
+      "ui:options": {
+        "inline": true
+      }
     },
     "q2": {
       "ui:title": "doctor-letter.decision.q2.label",
-      "ui:help": "doctor-letter.decision.q2.help"
+      "ui:help": "doctor-letter.decision.q2.help",
+      "ui:widget": "radio",
+      "ui:options": {
+        "inline": true
+      }
     },
     "q3": {
       "ui:title": "doctor-letter.decision.q3.label",
-      "ui:help": "doctor-letter.decision.q3.help"
+      "ui:help": "doctor-letter.decision.q3.help",
+      "ui:widget": "radio",
+      "ui:options": {
+        "inline": true
+      }
     },
     "q4": {
       "ui:title": "doctor-letter.decision.q4.label",
@@ -95,11 +107,19 @@
     },
     "q6": {
       "ui:title": "doctor-letter.decision.q6.label",
-      "ui:help": "doctor-letter.decision.q6.help"
+      "ui:help": "doctor-letter.decision.q6.help",
+      "ui:widget": "radio",
+      "ui:options": {
+        "inline": true
+      }
     },
     "q7": {
       "ui:title": "doctor-letter.decision.q7.label",
-      "ui:help": "doctor-letter.decision.q7.help"
+      "ui:help": "doctor-letter.decision.q7.help",
+      "ui:widget": "radio",
+      "ui:options": {
+        "inline": true
+      }
     },
     "q8": {
       "ui:title": "doctor-letter.decision.q8.label",

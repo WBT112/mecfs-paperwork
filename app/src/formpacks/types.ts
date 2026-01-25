@@ -11,6 +11,22 @@ export interface FormpackDocxManifest {
   mapping: string;
 }
 
+export interface InfoBoxConfig {
+  id: string;
+  anchor: string;
+  enabled: boolean;
+  i18nKey: string;
+  showIf?: Array<{
+    path: string;
+    op: 'eq' | 'neq';
+    value: unknown;
+  }>;
+}
+
+export interface FormpackUiConfig {
+  infoBoxes?: InfoBoxConfig[];
+}
+
 export interface FormpackManifest {
   id: string;
   version: string;
@@ -21,6 +37,7 @@ export interface FormpackManifest {
   exports: FormpackExportType[];
   visibility: FormpackVisibility;
   docx?: FormpackDocxManifest;
+  ui?: FormpackUiConfig;
 }
 
 /**
@@ -36,4 +53,5 @@ export interface FormpackManifestPayload {
   exports: unknown;
   visibility?: unknown;
   docx?: unknown;
+  ui?: unknown;
 }

@@ -66,13 +66,25 @@
       "type": "object",
       "properties": {
         "q1": {
-          "type": "boolean"
+          "type": "boolean",
+          "oneOf": [
+            { "const": true, "title": "Ja" },
+            { "const": false, "title": "Nein" }
+          ]
         },
         "q2": {
-          "type": "boolean"
+          "type": "boolean",
+          "oneOf": [
+            { "const": true, "title": "Ja" },
+            { "const": false, "title": "Nein" }
+          ]
         },
         "q3": {
-          "type": "boolean"
+          "type": "boolean",
+          "oneOf": [
+            { "const": true, "title": "Ja" },
+            { "const": false, "title": "Nein" }
+          ]
         },
         "q4": {
           "type": "string",
@@ -83,10 +95,18 @@
           "enum": ["COVID-19 vaccination", "Other cause"]
         },
         "q6": {
-          "type": "boolean"
+          "type": "boolean",
+          "oneOf": [
+            { "const": true, "title": "Ja" },
+            { "const": false, "title": "Nein" }
+          ]
         },
         "q7": {
-          "type": "boolean"
+          "type": "boolean",
+          "oneOf": [
+            { "const": true, "title": "Ja" },
+            { "const": false, "title": "Nein" }
+          ]
         },
         "q8": {
           "type": "string",
