@@ -883,4 +883,26 @@ if (
   await run();
 }
 
-export { collectTranslationKeys, getMissingKeys, getTranslationKeySet, run };
+export {
+  isRecord,
+  isSafeAssetPath,
+  setPathValue,
+  setNested,
+  getNested,
+  buildI18nContext,
+  buildDummyContext,
+  buildAdditionalJsContext,
+  collectErrors,
+  validateManifest,
+  readJson,
+  parseArgs,
+  listFormpacks,
+  collectTranslationKeys,
+  getTranslationKeySet,
+  getMissingKeys,
+  validateExample,
+  validateTemplate,
+  validateContract,
+  createLogger,
+  run,
+};
