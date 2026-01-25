@@ -58,6 +58,7 @@ For every change that touches `app/`:
 8. `npm run build`
 9. minimum 80% Test coverage for new code
 10. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
+11. Ignoring files or silencing errors is not a solution. All quality gates must be met.
 
 If any step fails: fix it before finishing.
 

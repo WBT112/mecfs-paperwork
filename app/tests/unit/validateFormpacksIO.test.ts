@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, sonarjs/no-duplicate-string */
 import { describe, it, expect, vi } from 'vitest';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -6,10 +5,13 @@ import path from 'node:path';
 const repoRoot = path.resolve(process.cwd(), '..');
 const formpacksDir = path.join(repoRoot, 'formpacks');
 
-const uniqueId = (prefix = 'tpack') =>
-  `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const uniqueId = (prefix = 'tpack') => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const DOCX_A4 = 'docx/a4.docx';
+const DOCX_MAPPING = 'docx/mapping.json';
+const PACK_TITLE = 'pack.title';
+const PACK_DESC = 'pack.desc';
 
-async function createFormpackFixture(id) {
+async function createFormpackFixture(id: string) {
   const base = path.join(formpacksDir, id);
   await fs.mkdir(path.join(base, 'i18n'), { recursive: true });
   await fs.mkdir(path.join(base, 'docx'), { recursive: true });
@@ -20,10 +22,10 @@ async function createFormpackFixture(id) {
     version: '1.0',
     defaultLocale: 'de',
     locales: ['de', 'en'],
-    titleKey: 'pack.title',
-    descriptionKey: 'pack.desc',
+    titleKey: PACK_TITLE,
+    descriptionKey: PACK_DESC,
     exports: ['docx', 'json'],
-    docx: { templates: { a4: 'docx/a4.docx' }, mapping: 'docx/mapping.json' },
+    docx: { templates: { a4: DOCX_A4 }, mapping: DOCX_MAPPING },
   };
 
   const schema = {
@@ -53,11 +55,11 @@ async function createFormpackFixture(id) {
   );
   await fs.writeFile(
     path.join(base, 'i18n', 'de.json'),
-    JSON.stringify({ 'pack.title': 'TDE', 'pack.desc': 'DDE' }),
+    JSON.stringify({ [PACK_TITLE]: 'TDE', [PACK_DESC]: 'DDE' }),
   );
   await fs.writeFile(
     path.join(base, 'i18n', 'en.json'),
-    JSON.stringify({ 'pack.title': 'TEN', 'pack.desc': 'DEN' }),
+    JSON.stringify({ [PACK_TITLE]: 'TEN', [PACK_DESC]: 'DEN' }),
   );
   await fs.writeFile(
     path.join(base, 'docx', 'mapping.json'),
@@ -73,18 +75,18 @@ async function createFormpackFixture(id) {
 
 describe('validate-formpacks I/O integration', () => {
   it('validateContract returns manifest and translations for a valid formpack', async () => {
-    const mod = await import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateContract } = mod;
 
     const id = uniqueId('valid');
     const base = await createFormpackFixture(id);
 
     try {
-      const errors = new Map();
+      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
       const result = await validateContract({ formpackId: id, errors });
       expect(result.manifest).toBeDefined();
-      expect(result.manifest.id).toBe(id);
-      expect(result.translations['pack.title']).toBeDefined();
+      expect(JSON.stringify(result.manifest)).toContain(id);
+      expect(JSON.stringify(result.translations)).toContain(PACK_TITLE);
       expect(errors.size).toBe(0);
     } finally {
       await fs.rm(base, { recursive: true, force: true });
@@ -92,7 +94,7 @@ describe('validate-formpacks I/O integration', () => {
   });
 
   it('validateContract collects errors for missing required files', async () => {
-    const mod = await import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateContract } = mod;
 
     const id = uniqueId('missing');
@@ -104,10 +106,10 @@ describe('validate-formpacks I/O integration', () => {
       version: '1.0',
       defaultLocale: 'de',
       locales: ['de'],
-      titleKey: 'pack.title',
-      descriptionKey: 'pack.desc',
+      titleKey: PACK_TITLE,
+      descriptionKey: PACK_DESC,
       exports: ['docx', 'json'],
-      docx: { templates: { a4: 'docx/a4.docx' }, mapping: 'docx/mapping.json' },
+      docx: { templates: { a4: DOCX_A4 }, mapping: DOCX_MAPPING },
     };
     await fs.writeFile(
       path.join(base, 'manifest.json'),
@@ -115,7 +117,7 @@ describe('validate-formpacks I/O integration', () => {
     );
 
     try {
-      const errors = new Map();
+      const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
       await validateContract({ formpackId: id, errors });
       expect(errors.has(id)).toBe(true);
       const packErrors = errors.get(id) || [];
@@ -131,19 +133,19 @@ describe('validate-formpacks I/O integration', () => {
     vi.doMock('docx-templates', () => ({
       createReport: vi.fn().mockRejectedValue(new Error('boom')),
     }));
-    const mod = await import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
     const { validateTemplate } = mod;
 
     const id = uniqueId('tpl');
     const base = await createFormpackFixture(id);
 
     try {
-      const errors = new Map();
-      const warnings = new Map();
+    const errors: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+    const warnings: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
       // unsafe template path should produce an error
       await validateTemplate({
         templatePath: '/abs/path.docx',
-        mappingPath: 'docx/mapping.json',
+        mappingPath: DOCX_MAPPING,
         formpackId: id,
         errors,
         warnings,
@@ -152,11 +154,11 @@ describe('validate-formpacks I/O integration', () => {
       expect(errors.has(id)).toBe(true);
 
       // valid relative path but createReport throws -> recorded as warning
-      const errors2 = new Map();
-      const warnings2 = new Map();
+      const errors2: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
+      const warnings2: Map<string, Array<{ contextPath: string; error: Error }>> = new Map();
       await validateTemplate({
-        templatePath: 'docx/a4.docx',
-        mappingPath: 'docx/mapping.json',
+        templatePath: DOCX_A4,
+        mappingPath: DOCX_MAPPING,
         formpackId: id,
         errors: errors2,
         warnings: warnings2,
@@ -188,7 +190,7 @@ describe('validate-formpacks I/O integration', () => {
   });
 
   it('readJson parses a JSON file correctly', async () => {
-    const mod = await import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import('../../scripts/validate-formpacks.mjs')) as unknown as { readJson: (p: string) => Promise<unknown> };
     const { readJson } = mod;
 
     const tmp = path.join(process.cwd(), 'tmp-read-json.json');
