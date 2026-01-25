@@ -33,6 +33,7 @@ import {
   formpackTemplates,
   type FormpackFormContext,
 } from '../lib/rjsfTemplates';
+import { DoctorLetterFieldTemplate } from '../lib/rjsfDoctorLetterFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
 import {
@@ -1342,14 +1343,14 @@ export default function FormpackDetailPage() {
   // Use custom field template for doctor-letter to support InfoBoxes
   // Temporarily disabled due to rendering issue - need to investigate
   const templates = useMemo(() => {
-    // if (formpackId === 'doctor-letter') {
-    //   return {
-    //     ...formpackTemplates,
-    //     FieldTemplate: DoctorLetterFieldTemplate,
-    //     };
-    // }
+    if (formpackId === 'doctor-letter') {
+      return {
+        ...formpackTemplates,
+        FieldTemplate: DoctorLetterFieldTemplate,
+      };
+    }
     return formpackTemplates;
-  }, []);
+  }, [formpackId]);
   const previewUiSchema =
     conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
   const jsonPreview = useMemo(

@@ -1,3 +1,4 @@
+const TEST_INFOBOX_KEY = 'test.infobox.key';
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FieldTemplateProps } from '@rjsf/utils';
@@ -5,29 +6,35 @@ import { DoctorLetterFieldTemplate } from '../../src/lib/rjsfDoctorLetterFieldTe
 
 // Mock InfoBox component
 vi.mock('../../src/components/InfoBox', () => ({
-  InfoBox: ({ message }: { message: string }) => <div data-testid="infobox">{message}</div>,
+  InfoBox: ({ message }: { message: string }) => (
+    <div data-testid="infobox">{message}</div>
+  ),
 }));
 
 describe('DoctorLetterFieldTemplate', () => {
-  const createMockProps = (overrides: Partial<FieldTemplateProps> = {}): FieldTemplateProps => ({
-    id: 'root_decision_q1',
-    classNames: 'test-class',
-    label: 'Test Label',
-    help: <div>Help text</div>,
-    required: false,
-    description: <div>Description</div>,
-    errors: <div>Errors</div>,
-    children: <input />,
-    schema: {},
-    uiSchema: {},
-    registry: {} as any,
-    formContext: {},
-    formData: undefined,
-    disabled: false,
-    readonly: false,
-    displayLabel: true,
-    ...overrides,
-  });
+  const createMockProps = (
+    overrides: Partial<FieldTemplateProps> = {},
+  ): FieldTemplateProps =>
+    ({
+      id: 'root_decision_q1',
+      classNames: 'test-class',
+      label: 'Test Label',
+      help: <div>Help text</div>,
+      required: false,
+      description: <div>Description</div>,
+      errors: <div>Errors</div>,
+      children: <input />,
+      schema: {},
+      uiSchema: {},
+      registry: {} as FieldTemplateProps['registry'],
+      // @ts-ignore formContext is a custom extension
+      formContext: {},
+      formData: undefined,
+      disabled: false,
+      readonly: false,
+      displayLabel: true,
+      ...overrides,
+    }) as FieldTemplateProps;
 
   it('renders without crashing', () => {
     const props = createMockProps();
@@ -93,8 +100,11 @@ describe('DoctorLetterFieldTemplate', () => {
   });
 
   it('renders infoBox when enabled and anchor matches', () => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const props = createMockProps({
       id: 'root_decision_q1',
+      // @ts-ignore formContext is a custom extension
+      // @ts-ignore formContext is a custom extension
       formContext: {
         t: (key: string) => `translated:${key}`,
         infoBoxes: [
@@ -102,26 +112,29 @@ describe('DoctorLetterFieldTemplate', () => {
             id: 'q1-info',
             anchor: 'decision.q1',
             enabled: true,
-            i18nKey: 'test.infobox.key',
+            i18nKey: TEST_INFOBOX_KEY,
           },
         ],
       },
     });
     const { getByTestId } = render(<DoctorLetterFieldTemplate {...props} />);
     expect(getByTestId('infobox')).toBeInTheDocument();
-    expect(getByTestId('infobox').textContent).toBe('translated:test.infobox.key');
+    expect(getByTestId('infobox').textContent).toBe(
+      'translated:test.infobox.key',
+    );
   });
 
   it('does not render infoBox when disabled', () => {
     const props = createMockProps({
       id: 'root_decision_q1',
+      // @ts-ignore formContext is a custom extension
       formContext: {
         infoBoxes: [
           {
             id: 'q1-info',
             anchor: 'decision.q1',
             enabled: false,
-            i18nKey: 'test.infobox.key',
+            i18nKey: TEST_INFOBOX_KEY,
           },
         ],
       },
@@ -133,13 +146,14 @@ describe('DoctorLetterFieldTemplate', () => {
   it('does not render infoBox when anchor does not match', () => {
     const props = createMockProps({
       id: 'root_decision_q1',
+      // @ts-ignore formContext is a custom extension
       formContext: {
         infoBoxes: [
           {
             id: 'q2-info',
             anchor: 'decision.q2',
             enabled: true,
-            i18nKey: 'test.infobox.key',
+            i18nKey: TEST_INFOBOX_KEY,
           },
         ],
       },

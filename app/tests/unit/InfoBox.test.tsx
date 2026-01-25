@@ -27,7 +27,9 @@ describe('InfoBox', () => {
   });
 
   it('applies custom className', () => {
-    const { container } = render(<InfoBox message="Test" className="custom-class" />);
+    const { container } = render(
+      <InfoBox message="Test" className="custom-class" />,
+    );
     const noteDiv = container.querySelector('.info-box');
     expect(noteDiv).toHaveClass('custom-class');
   });
