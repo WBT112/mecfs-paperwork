@@ -130,6 +130,37 @@ const validateSchema = (schema: RJSFSchema, data: unknown): boolean => {
   return validate(data);
 };
 
+// Create a lenient version of schema for import validation
+// Removes 'required' and 'minLength' constraints to allow partial data import
+const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
+  const lenient = { ...schema };
+  
+  // Remove top-level 'required' constraint
+  delete lenient.required;
+  
+  // Remove 'minLength' from string properties
+  if (lenient.properties) {
+    const properties = { ...lenient.properties };
+    for (const key of Object.keys(properties)) {
+      const prop = properties[key];
+      if (prop && typeof prop === 'object' && !Array.isArray(prop)) {
+        const propCopy = { ...prop };
+        delete propCopy.minLength;
+        
+        // Recursively handle nested objects
+        if (propCopy.type === 'object') {
+          properties[key] = makeLenientSchema(propCopy as RJSFSchema);
+        } else {
+          properties[key] = propCopy;
+        }
+      }
+    }
+    lenient.properties = properties;
+  }
+  
+  return lenient;
+};
+
 const resolveSchemaDefaultValue = (
   schema: RJSFSchema | boolean | undefined,
 ): unknown => {
@@ -139,6 +170,11 @@ const resolveSchemaDefaultValue = (
 
   if (schema.default !== undefined) {
     return schema.default;
+  }
+
+  // Don't auto-default enum fields - they need explicit user selection
+  if (schema.enum !== undefined) {
+    return undefined;
   }
 
   switch (schema.type) {
@@ -192,31 +228,55 @@ const removeReadOnlyFields = (
   return normalized;
 };
 
-// Ensure required top-level fields exist when older exports omit empty values.
+// Ensure required fields exist when older exports omit empty values.
+// Recursively applies defaults to nested objects.
 const applySchemaDefaults = (
   schema: RJSFSchema,
   data: Record<string, unknown>,
 ): Record<string, unknown> => {
-  if (!Array.isArray(schema.required) || !schema.properties) {
+  if (!schema.properties) {
     return data;
   }
 
   const normalized = { ...data };
-  for (const key of schema.required) {
-    if (typeof key !== 'string') {
-      continue;
-    }
+  
+  // Add defaults for missing required fields
+  if (Array.isArray(schema.required)) {
+    for (const key of schema.required) {
+      if (typeof key !== 'string') {
+        continue;
+      }
 
-    if (Object.prototype.hasOwnProperty.call(normalized, key)) {
-      continue;
-    }
+      if (Object.prototype.hasOwnProperty.call(normalized, key)) {
+        continue;
+      }
 
+      const propertySchema = (schema.properties as Record<string, unknown>)[
+        key
+      ] as RJSFSchema | boolean | undefined;
+      const defaultValue = resolveSchemaDefaultValue(propertySchema);
+      if (defaultValue !== undefined) {
+        normalized[key] = defaultValue;
+      }
+    }
+  }
+
+  // Recursively apply defaults to nested objects
+  for (const key of Object.keys(normalized)) {
     const propertySchema = (schema.properties as Record<string, unknown>)[
       key
     ] as RJSFSchema | boolean | undefined;
-    const defaultValue = resolveSchemaDefaultValue(propertySchema);
-    if (defaultValue !== undefined) {
-      normalized[key] = defaultValue;
+    
+    if (
+      propertySchema &&
+      typeof propertySchema === 'object' &&
+      propertySchema.type === 'object' &&
+      isRecord(normalized[key])
+    ) {
+      normalized[key] = applySchemaDefaults(
+        propertySchema,
+        normalized[key] as Record<string, unknown>,
+      );
     }
   }
 
@@ -378,7 +438,10 @@ const normalizeExportPayload = (
   // Remove readOnly fields before validation (they're auto-generated, not user input)
   const withoutReadOnly = removeReadOnlyFields(schema, recordDataResult.value);
   const normalizedData = applySchemaDefaults(schema, withoutReadOnly);
-  const isValid = validateSchema(schema, normalizedData);
+  
+  // Use lenient schema for import validation (allows partial/incomplete data)
+  const lenientSchema = makeLenientSchema(schema);
+  const isValid = validateSchema(lenientSchema, normalizedData);
   if (!isValid) {
     return getInvalidResult('schema_mismatch');
   }

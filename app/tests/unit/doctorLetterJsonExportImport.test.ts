@@ -316,4 +316,68 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
       expect(importedDecision.resolvedCaseText).toBeUndefined();
     }
   });
+
+  test('should import partial data with empty patient/doctor objects', async () => {
+    // User's exact scenario: export with partially filled decision tree
+    // and empty patient/doctor objects (missing required fields)
+    const exportedJson = {
+      app: { id: 'mecfs-paperwork', version: '0.0.0' },
+      formpack: { id: 'doctor-letter', version: '0.1.0' },
+      record: {
+        id: 'c49acbdb-50dd-4bdd-8381-33da9bbbd371',
+        name: 'Arztbrief',
+        updatedAt: '2026-01-25T09:24:39.292Z',
+        locale: 'de',
+        data: {
+          patient: {},  // Empty - missing required firstName, lastName
+          doctor: {},   // Empty - missing required practice, name, title, gender
+          decision: {
+            q1: 'no',
+            q6: 'yes',
+            resolvedCaseText: 'Fall 0 - ...',
+          },
+        },
+      },
+      locale: 'de',
+      exportedAt: '2026-01-25T09:31:44.861Z',
+      data: {
+        patient: {},
+        doctor: {},
+        decision: {
+          q1: 'no',
+          q6: 'yes',
+          resolvedCaseText: 'Fall 0 - ...',
+        },
+      },
+    };
+
+    const jsonString = JSON.stringify(exportedJson);
+    const formpack = await loadFormpack('doctor-letter', 'de');
+    const importResult = validateJsonImport(
+      jsonString,
+      formpack.schema,
+      'doctor-letter',
+    );
+
+    // Import should succeed - lenient schema validation allows partial data
+    expect(importResult.error).toBeNull();
+    expect(importResult.payload).not.toBeNull();
+
+    if (importResult.payload) {
+      const importedData = importResult.payload.record.data;
+      const importedPatient = importedData.patient as Record<string, unknown>;
+      const importedDoctor = importedData.doctor as Record<string, unknown>;
+      const importedDecision = importedData.decision as Record<string, unknown>;
+
+      // Empty objects are preserved (lenient validation allows incomplete data)
+      expect(Object.keys(importedPatient).length).toBe(0);
+      expect(Object.keys(importedDoctor).length).toBe(0);
+
+      // Decision data preserved
+      expect(importedDecision.q1).toBe('no');
+      expect(importedDecision.q6).toBe('yes');
+      // ReadOnly field stripped
+      expect(importedDecision.resolvedCaseText).toBeUndefined();
+    }
+  });
 });
