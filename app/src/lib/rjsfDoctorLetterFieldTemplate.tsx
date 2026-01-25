@@ -43,6 +43,15 @@ export function DoctorLetterFieldTemplate(
   // RJSF IDs are like "root_decision_q1", we need "decision.q1"
   const fieldAnchor = id.replace(/^root_/, '').replace(/_/g, '.');
 
+  // DEBUG: Log to understand what's happening
+  if (fieldAnchor === 'decision.q1') {
+    console.log('DoctorLetterFieldTemplate DEBUG for decision.q1:', {
+      fieldAnchor,
+      infoBoxes,
+      formContext,
+    });
+  }
+
   // Get applicable infoBoxes for this field (only if enabled and anchor matches)
   const applicableInfoBoxes = infoBoxes.filter(
     (infoBox) => infoBox.enabled && infoBox.anchor === fieldAnchor,

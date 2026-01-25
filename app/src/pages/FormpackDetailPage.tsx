@@ -1332,11 +1332,22 @@ export default function FormpackDetailPage() {
       infoBoxes?: unknown[];
     }
   >(
-    () => ({
-      t,
-      formpackId: formpackId || undefined,
-      infoBoxes: manifest?.ui?.infoBoxes || [],
-    }),
+    () => {
+      const ctx = {
+        t,
+        formpackId: formpackId || undefined,
+        infoBoxes: manifest?.ui?.infoBoxes || [],
+      };
+      // DEBUG: Log formContext when it's for doctor-letter
+      if (formpackId === 'doctor-letter') {
+        console.log('FormpackDetailPage formContext for doctor-letter:', {
+          formpackId,
+          infoBoxes: ctx.infoBoxes,
+          manifestUi: manifest?.ui,
+        });
+      }
+      return ctx;
+    },
     [t, formpackId, manifest],
   );
 
