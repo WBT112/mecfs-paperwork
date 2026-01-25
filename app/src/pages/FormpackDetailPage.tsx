@@ -678,11 +678,10 @@ export default function FormpackDetailPage() {
     const isRecord = (val: unknown): val is Record<string, unknown> =>
       typeof val === 'object' && val !== null && !Array.isArray(val);
 
-    if (!isRecord(formData.decision)) {
-      return normalizedUiSchema;
-    }
-
-    const decision = formData.decision as DecisionData;
+    // Treat missing or invalid decision as empty object to apply visibility rules
+    const decision = (isRecord(formData.decision)
+      ? formData.decision
+      : {}) as DecisionData;
     const visibility = getFieldVisibility(decision);
 
     // Clone the UI schema to avoid mutations
