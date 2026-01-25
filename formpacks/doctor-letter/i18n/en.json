@@ -1,6 +1,8 @@
 {
   "doctor-letter.title": "Doctor Letter",
   "doctor-letter.description": "Decision-tree based doctor letter for ME/CFS",
+  "doctor-letter.common.yes": "Yes",
+  "doctor-letter.common.no": "No",
   "doctor-letter.section.patient.title": "Patient",
   "doctor-letter.section.doctor.title": "Doctor / Practice",
   "doctor-letter.section.decision.title": "Decision Tree",

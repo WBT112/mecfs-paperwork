@@ -20,13 +20,13 @@
  */
 
 export type DecisionData = {
-  q1?: boolean;
-  q2?: boolean;
-  q3?: boolean;
+  q1?: 'yes' | 'no';
+  q2?: 'yes' | 'no';
+  q3?: 'yes' | 'no';
   q4?: string;
   q5?: string;
-  q6?: boolean;
-  q7?: boolean;
+  q6?: 'yes' | 'no';
+  q7?: 'yes' | 'no';
   q8?: string;
   resolvedCaseText?: string;
 };
@@ -60,9 +60,9 @@ export function getFieldVisibility(decision: DecisionData): FieldVisibility {
   };
 
   // Q1 branching
-  if (decision.q1 === true) {
+  if (decision.q1 === 'yes') {
     applyQ1TruePath(decision, visibility);
-  } else if (decision.q1 === false) {
+  } else if (decision.q1 === 'no') {
     applyQ1FalsePath(decision, visibility);
   }
   // else: q1 undefined - no further questions yet
@@ -71,7 +71,7 @@ export function getFieldVisibility(decision: DecisionData): FieldVisibility {
 }
 
 /**
- * Apply visibility rules for Q1=true path (full ME/CFS)
+ * Apply visibility rules for Q1=yes path (full ME/CFS)
  */
 function applyQ1TruePath(
   decision: DecisionData,
@@ -79,12 +79,12 @@ function applyQ1TruePath(
 ): void {
   visibility.q2 = true; // Show "Is cause known?"
 
-  if (decision.q2 === true) {
+  if (decision.q2 === 'yes') {
     visibility.q3 = true; // Show "After infection?"
 
-    if (decision.q3 === true) {
+    if (decision.q3 === 'yes') {
       visibility.q4 = true; // Show "Which infection?"
-    } else if (decision.q3 === false) {
+    } else if (decision.q3 === 'no') {
       visibility.q5 = true; // Show "Other cause?"
     }
     // else: q3 undefined - no further questions yet
@@ -93,7 +93,7 @@ function applyQ1TruePath(
 }
 
 /**
- * Apply visibility rules for Q1=false path (no full ME/CFS)
+ * Apply visibility rules for Q1=no path (no full ME/CFS)
  */
 function applyQ1FalsePath(
   decision: DecisionData,
@@ -101,15 +101,15 @@ function applyQ1FalsePath(
 ): void {
   visibility.q6 = true; // Show "Chronic fatigue?"
 
-  if (decision.q6 === true) {
+  if (decision.q6 === 'yes') {
     visibility.q7 = true; // Show "PEM?"
 
-    if (decision.q7 === true) {
+    if (decision.q7 === 'yes') {
       visibility.q8 = true; // Show "Cause?"
     }
-    // else: q7 === false or undefined - no further questions (Case 0 if false)
+    // else: q7 === 'no' or undefined - no further questions (Case 0 if 'no')
   }
-  // else: q6 === false or undefined - no further questions (Case 0 if false)
+  // else: q6 === 'no' or undefined - no further questions (Case 0 if 'no')
 }
 
 /**
