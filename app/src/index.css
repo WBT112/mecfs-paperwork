@@ -691,15 +691,14 @@ body {
   outline-offset: 2px;
 }
 
-.formpack-form input[type="radio"],
-.formpack-form input[type="checkbox"] {
+.formpack-form input[type='radio'],
+.formpack-form input[type='checkbox'] {
   width: auto;
   max-width: none;
   padding: 2;
   margin: 2;
-  margin-inline-end: 5.85rem; 
+  margin-inline-end: 5.85rem;
 }
-
 
 .formpack-form label:has(> input[type='checkbox']) {
   display: inline-flex;
