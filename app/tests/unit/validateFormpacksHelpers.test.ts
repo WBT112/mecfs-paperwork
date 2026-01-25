@@ -53,7 +53,11 @@ describe('validate-formpacks helpers', () => {
   });
 
   it('buildI18nContext produces nested t and __PACK_ID__ alias', () => {
-    const translations = { 'pack.title': 'T', 'pack.description': 'D', other: 123 };
+    const translations = {
+      'pack.title': 'T',
+      'pack.description': 'D',
+      other: 123,
+    };
     const { t } = buildI18nContext(translations, 'pack');
     expect(t.pack.title).toBe('T');
     expect(t.__PACK_ID__).toBe(t.pack);
@@ -102,7 +106,10 @@ describe('validate-formpacks helpers', () => {
       titleKey: 'p.title',
       descriptionKey: 'p.desc',
       exports: ['docx', 'json'],
-      docx: { templates: { a4: 'templates/a4.docx' }, mapping: 'docx/mapping.json' },
+      docx: {
+        templates: { a4: 'templates/a4.docx' },
+        mapping: 'docx/mapping.json',
+      },
     };
     expect(validateManifest(valid, 'test', '/fake', errors)).toBe(true);
     expect(errors.size).toBe(0);
@@ -120,7 +127,11 @@ describe('validate-formpacks helpers', () => {
   });
 
   it('validateExample returns no errors for valid examples', () => {
-    const schema = { type: 'object', properties: { name: { type: 'string' } }, required: ['name'] };
+    const schema = {
+      type: 'object',
+      properties: { name: { type: 'string' } },
+      required: ['name'],
+    };
     expect(validateExample(schema, { name: 'x' })).toEqual([]);
     const msgs = validateExample(schema, { name: 123 });
     expect(msgs.length).toBeGreaterThan(0);

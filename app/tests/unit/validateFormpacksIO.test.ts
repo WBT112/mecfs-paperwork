@@ -5,7 +5,8 @@ import path from 'node:path';
 const repoRoot = path.resolve(process.cwd(), '..');
 const formpacksDir = path.join(repoRoot, 'formpacks');
 
-const uniqueId = (prefix = 'tpack') => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+const uniqueId = (prefix = 'tpack') =>
+  `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 async function createFormpackFixture(id) {
   const base = path.join(formpacksDir, id);
@@ -30,16 +31,41 @@ async function createFormpackFixture(id) {
     required: ['name'],
   };
 
-  const mapping = { fields: [{ var: 'name' }], loops: [], i18n: { prefix: 'pack' } };
+  const mapping = {
+    fields: [{ var: 'name' }],
+    loops: [],
+    i18n: { prefix: 'pack' },
+  };
 
-  await fs.writeFile(path.join(base, 'manifest.json'), JSON.stringify(manifest, null, 2));
-  await fs.writeFile(path.join(base, 'schema.json'), JSON.stringify(schema, null, 2));
+  await fs.writeFile(
+    path.join(base, 'manifest.json'),
+    JSON.stringify(manifest, null, 2),
+  );
+  await fs.writeFile(
+    path.join(base, 'schema.json'),
+    JSON.stringify(schema, null, 2),
+  );
   await fs.writeFile(path.join(base, 'ui.schema.json'), JSON.stringify({}));
-  await fs.writeFile(path.join(base, 'examples', 'example.json'), JSON.stringify({ name: 'Alice' }));
-  await fs.writeFile(path.join(base, 'i18n', 'de.json'), JSON.stringify({ 'pack.title': 'TDE', 'pack.desc': 'DDE' }));
-  await fs.writeFile(path.join(base, 'i18n', 'en.json'), JSON.stringify({ 'pack.title': 'TEN', 'pack.desc': 'DEN' }));
-  await fs.writeFile(path.join(base, 'docx', 'mapping.json'), JSON.stringify(mapping, null, 2));
-  await fs.writeFile(path.join(base, 'docx', 'a4.docx'), Buffer.from('fake docx'));
+  await fs.writeFile(
+    path.join(base, 'examples', 'example.json'),
+    JSON.stringify({ name: 'Alice' }),
+  );
+  await fs.writeFile(
+    path.join(base, 'i18n', 'de.json'),
+    JSON.stringify({ 'pack.title': 'TDE', 'pack.desc': 'DDE' }),
+  );
+  await fs.writeFile(
+    path.join(base, 'i18n', 'en.json'),
+    JSON.stringify({ 'pack.title': 'TEN', 'pack.desc': 'DEN' }),
+  );
+  await fs.writeFile(
+    path.join(base, 'docx', 'mapping.json'),
+    JSON.stringify(mapping, null, 2),
+  );
+  await fs.writeFile(
+    path.join(base, 'docx', 'a4.docx'),
+    Buffer.from('fake docx'),
+  );
 
   return base;
 }
@@ -82,7 +108,10 @@ describe('validate-formpacks I/O integration', () => {
       exports: ['docx', 'json'],
       docx: { templates: { a4: 'docx/a4.docx' }, mapping: 'docx/mapping.json' },
     };
-    await fs.writeFile(path.join(base, 'manifest.json'), JSON.stringify(manifest, null, 2));
+    await fs.writeFile(
+      path.join(base, 'manifest.json'),
+      JSON.stringify(manifest, null, 2),
+    );
 
     try {
       const errors = new Map();
@@ -98,7 +127,9 @@ describe('validate-formpacks I/O integration', () => {
   it('validateTemplate records warnings when createReport throws and rejects unsafe paths', async () => {
     // Ensure module is freshly loaded with mocked docx-templates
     vi.resetModules();
-    vi.doMock('docx-templates', () => ({ createReport: vi.fn().mockRejectedValue(new Error('boom')) }));
+    vi.doMock('docx-templates', () => ({
+      createReport: vi.fn().mockRejectedValue(new Error('boom')),
+    }));
     const mod = await import('../../scripts/validate-formpacks.mjs');
     const { validateTemplate } = mod;
 
