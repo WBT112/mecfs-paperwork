@@ -153,6 +153,45 @@ const resolveSchemaDefaultValue = (
   }
 };
 
+// Remove readOnly fields that shouldn't be imported (they are auto-generated)
+const removeReadOnlyFields = (
+  schema: RJSFSchema,
+  data: Record<string, unknown>,
+): Record<string, unknown> => {
+  if (!schema.properties) {
+    return data;
+  }
+
+  const normalized = { ...data };
+  const properties = schema.properties as Record<string, unknown>;
+
+  for (const key of Object.keys(normalized)) {
+    const propertySchema = properties[key] as RJSFSchema | boolean | undefined;
+    if (!propertySchema || typeof propertySchema !== 'object') {
+      continue;
+    }
+
+    // Remove readOnly fields from import data
+    if (propertySchema.readOnly === true) {
+      delete normalized[key];
+      continue;
+    }
+
+    // Recursively handle nested objects
+    if (
+      propertySchema.type === 'object' &&
+      isRecord(normalized[key])
+    ) {
+      normalized[key] = removeReadOnlyFields(
+        propertySchema,
+        normalized[key] as Record<string, unknown>,
+      );
+    }
+  }
+
+  return normalized;
+};
+
 // Ensure required top-level fields exist when older exports omit empty values.
 const applySchemaDefaults = (
   schema: RJSFSchema,
@@ -336,7 +375,9 @@ const normalizeExportPayload = (
     return getInvalidResult('invalid_revisions');
   }
 
-  const normalizedData = applySchemaDefaults(schema, recordDataResult.value);
+  // Remove readOnly fields before validation (they're auto-generated, not user input)
+  const withoutReadOnly = removeReadOnlyFields(schema, recordDataResult.value);
+  const normalizedData = applySchemaDefaults(schema, withoutReadOnly);
   const isValid = validateSchema(schema, normalizedData);
   if (!isValid) {
     return getInvalidResult('schema_mismatch');

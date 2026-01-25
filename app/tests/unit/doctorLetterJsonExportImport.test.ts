@@ -268,4 +268,52 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
       expect(importedDecision.q2).toBe('no');
     }
   });
+
+  test('should strip readOnly fields (resolvedCaseText) during import', async () => {
+    // Simulate an export that includes the auto-generated resolvedCaseText
+    const exportedJson = {
+      formpack: { id: 'doctor-letter', version: '0.1.0' },
+      record: {
+        locale: 'de',
+        data: {
+          patient: {},
+          doctor: {},
+          decision: {
+            q1: 'no',
+            q6: 'yes',
+            q7: 'yes',
+            q8: 'EBV',
+            resolvedCaseText:
+              'Fall 5 - Der Patient zeigt chronische Müdigkeit und Post-Exertional Malaise nach einer EBV-Infektion.',
+          },
+        },
+      },
+    };
+
+    const jsonString = JSON.stringify(exportedJson);
+    const formpack = await loadFormpack('doctor-letter', 'de');
+    const importResult = validateJsonImport(
+      jsonString,
+      formpack.schema,
+      'doctor-letter',
+    );
+
+    // Import should succeed despite readOnly field in exported data
+    expect(importResult.error).toBeNull();
+    expect(importResult.payload).not.toBeNull();
+
+    if (importResult.payload) {
+      const importedDecision = importResult.payload.record.data.decision as Record<
+        string,
+        unknown
+      >;
+      // Enum values should be preserved
+      expect(importedDecision.q1).toBe('no');
+      expect(importedDecision.q6).toBe('yes');
+      expect(importedDecision.q7).toBe('yes');
+      expect(importedDecision.q8).toBe('EBV');
+      // ReadOnly field should be stripped during import
+      expect(importedDecision.resolvedCaseText).toBeUndefined();
+    }
+  });
 });
