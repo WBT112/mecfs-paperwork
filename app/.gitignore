@@ -1,2 +1,5 @@
 # Coverage reports
 coverage/
+
+# Cache
+tsconfig.tsbuildinfo
