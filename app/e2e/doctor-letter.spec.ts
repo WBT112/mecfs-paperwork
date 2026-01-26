@@ -227,11 +227,11 @@ const extractDocxText = async (docxPath: string) => {
 
   return textRuns
     .join('')
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'");
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
 };
 
 test.describe.configure({ mode: 'parallel' });
