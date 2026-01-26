@@ -56,16 +56,20 @@ const openFreshDoctorLetter = async (page: Page) => {
 };
 
 const waitForActiveRecordId = async (page: Page, timeoutMs = 10_000) => {
-  const result = await expect
-    .poll(async () => (await getActiveRecordId(page, FORM_PACK_ID)) ?? '', {
-      timeout: timeoutMs,
-      intervals: POLL_INTERVALS,
-    })
-    .not.toBe('');
-  if (typeof result !== 'string' || result.length === 0) {
+  let activeId: string | null = null;
+  await expect
+    .poll(
+      async () => {
+        activeId = await getActiveRecordId(page, FORM_PACK_ID);
+        return activeId;
+      },
+      { timeout: timeoutMs, intervals: POLL_INTERVALS },
+    )
+    .not.toBeNull();
+  if (!activeId) {
     throw new Error('Active record id not available after polling.');
   }
-  return result;
+  return activeId;
 };
 
 const waitForRecordListReady = async (page: Page, loadingLabel: string) => {
@@ -99,8 +103,14 @@ const ensureActiveDraft = async (
     try {
       activeIdAfterLoad = await waitForActiveRecordId(page, 8_000);
     } catch (error) {
-      activeIdAfterLoad = null;
-      throw error;
+      if (
+        error instanceof Error &&
+        error.message.includes('Active record id not available')
+      ) {
+        activeIdAfterLoad = null;
+      } else {
+        throw error;
+      }
     }
   }
 
