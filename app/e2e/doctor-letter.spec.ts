@@ -26,17 +26,28 @@ const DB: DbOptions = {
 
 const locales: SupportedTestLocale[] = ['de', 'en'];
 
-const loadFormpackTranslations = async (locale: SupportedTestLocale) => {
-  const filePath = path.resolve(
-    process.cwd(),
-    '..',
-    'formpacks',
-    FORM_PACK_ID,
-    'i18n',
-    `${locale}.json`,
-  );
-  const contents = await readFile(filePath, 'utf-8');
-  return JSON.parse(contents) as Record<string, string>;
+const loadTranslations = async (locale: SupportedTestLocale) => {
+  const [formpackContents, appContents] = await Promise.all([
+    readFile(
+      path.resolve(
+        process.cwd(),
+        '..',
+        'formpacks',
+        FORM_PACK_ID,
+        'i18n',
+        `${locale}.json`,
+      ),
+      'utf-8',
+    ),
+    readFile(
+      path.resolve(process.cwd(), 'src', 'i18n', 'resources', `${locale}.json`),
+      'utf-8',
+    ),
+  ]);
+  return {
+    formpack: JSON.parse(formpackContents) as Record<string, string>,
+    app: JSON.parse(appContents) as Record<string, string>,
+  };
 };
 
 const openFreshDoctorLetter = async (page: Page) => {
@@ -63,25 +74,31 @@ const waitForActiveRecordId = async (page: Page, timeoutMs = 10_000) => {
   return activeId;
 };
 
-const waitForRecordListReady = async (page: Page) => {
-  await page.waitForFunction(() => {
+const waitForRecordListReady = async (page: Page, loadingLabel: string) => {
+  await page.waitForFunction((label) => {
     const empty = document.querySelector('.formpack-records__empty');
     if (empty) {
       const text = empty.textContent?.toLowerCase() ?? '';
-      return !text.includes('loading') && !text.includes('geladen');
+      return !text.includes(label.toLowerCase());
     }
     return true;
-  });
+  }, loadingLabel);
 };
 
-const ensureActiveDraft = async (page: Page) => {
+const ensureActiveDraft = async (
+  page: Page,
+  appTranslations: Record<string, string>,
+) => {
   const existingActiveId = await getActiveRecordId(page, FORM_PACK_ID);
   if (existingActiveId) {
     return;
   }
 
-  await openCollapsibleSection(page, /entwürfe|drafts/i);
-  await waitForRecordListReady(page);
+  await openCollapsibleSection(
+    page,
+    new RegExp(appTranslations.formpackRecordsHeading, 'i'),
+  );
+  await waitForRecordListReady(page, appTranslations.formpackRecordsLoading);
 
   let activeIdAfterLoad = await getActiveRecordId(page, FORM_PACK_ID);
   if (!activeIdAfterLoad) {
@@ -97,7 +114,7 @@ const ensureActiveDraft = async (page: Page) => {
   }
 
   const newDraftButton = page.getByRole('button', {
-    name: /new\s*draft|neuer\s*entwurf/i,
+    name: appTranslations.formpackRecordNew,
   });
   if (await newDraftButton.count()) {
     await newDraftButton.first().click();
@@ -111,8 +128,11 @@ const ensureActiveDraft = async (page: Page) => {
   await waitForActiveRecordId(page);
 };
 
-const openDecisionTree = async (page: Page) => {
-  await ensureActiveDraft(page);
+const openDecisionTree = async (
+  page: Page,
+  appTranslations: Record<string, string>,
+) => {
+  await ensureActiveDraft(page, appTranslations);
   await expect(page.locator('#root_decision_q1')).toBeVisible({
     timeout: POLL_TIMEOUT,
   });
@@ -152,11 +172,14 @@ const getActiveRecordIdStable = async (page: Page) => {
   return (await getActiveRecordId(page, FORM_PACK_ID)) as string;
 };
 
-const waitForDocxExportReady = async (page: Page) => {
+const waitForDocxExportReady = async (
+  page: Page,
+  appTranslations: Record<string, string>,
+) => {
   const docxSection = page.locator('.formpack-docx-export');
   await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
   const exportButton = docxSection.getByRole('button', {
-    name: /export docx|docx exportieren/i,
+    name: appTranslations.formpackRecordExportDocx,
   });
   await expect(exportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
   return { docxSection, exportButton };
@@ -184,17 +207,17 @@ for (const locale of locales) {
     test('doctor-letter decision tree resolves case and renders infobox', async ({
       page,
     }) => {
-      const translations = await loadFormpackTranslations(locale);
+      const translations = await loadTranslations(locale);
       await openFreshDoctorLetter(page);
       await switchLocale(page, locale);
-      await openDecisionTree(page);
+      await openDecisionTree(page, translations.app);
       await answerDecisionTreeCase3(
         page,
-        translations['doctor-letter.common.yes'],
+        translations.formpack['doctor-letter.common.yes'],
       );
       await waitForResolvedText(
         page,
-        translations['doctor-letter.case.3.paragraph'],
+        translations.formpack['doctor-letter.case.3.paragraph'],
       );
 
       await expect(page.locator('#root_decision_q1')).toBeVisible();
@@ -213,7 +236,7 @@ for (const locale of locales) {
       const infoBox = page.locator('.info-box[role="note"]');
       await expect(infoBox).toBeVisible();
       await expect(infoBox).toContainText(
-        translations['doctor-letter.infobox.q1'],
+        translations.formpack['doctor-letter.infobox.q1'],
       );
     });
 
@@ -221,11 +244,15 @@ for (const locale of locales) {
       page,
       context,
     }) => {
+      const translations = await loadTranslations(locale);
       await openFreshDoctorLetter(page);
       await switchLocale(page, locale);
-      await ensureActiveDraft(page);
+      await ensureActiveDraft(page, translations.app);
 
-      const { docxSection, exportButton } = await waitForDocxExportReady(page);
+      const { docxSection, exportButton } = await waitForDocxExportReady(
+        page,
+        translations.app,
+      );
       const onlineDownload = await exportDocxAndExpectSuccess(
         docxSection,
         exportButton,
@@ -254,27 +281,30 @@ for (const locale of locales) {
 test('doctor-letter clears hidden fields when branch changes and JSON export stays clean', async ({
   page,
 }) => {
-  const translations = await loadFormpackTranslations('en');
+  const translations = await loadTranslations('en');
   await openFreshDoctorLetter(page);
   await switchLocale(page, 'en');
-  await openDecisionTree(page);
-  await answerDecisionTreeCase3(page, translations['doctor-letter.common.yes']);
+  await openDecisionTree(page, translations.app);
+  await answerDecisionTreeCase3(
+    page,
+    translations.formpack['doctor-letter.common.yes'],
+  );
   await waitForResolvedText(
     page,
-    translations['doctor-letter.case.3.paragraph'],
+    translations.formpack['doctor-letter.case.3.paragraph'],
   );
 
   await selectDecisionRadio(
     page,
     'q3',
-    translations['doctor-letter.common.no'],
+    translations.formpack['doctor-letter.common.no'],
   );
   await expect(page.locator('#root_decision_q4')).toHaveCount(0);
   await expect(page.locator('#root_decision_q5')).toBeVisible();
   await page.locator('#root_decision_q5').selectOption('Other cause');
   await waitForResolvedText(
     page,
-    translations['doctor-letter.case.10.paragraph'],
+    translations.formpack['doctor-letter.case.10.paragraph'],
   );
 
   const recordId = await getActiveRecordIdStable(page);
@@ -293,11 +323,9 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
   );
 
   const downloadPromise = page.waitForEvent('download');
-  const exportButton = page
-    .getByRole('button', {
-      name: /Entwurf exportieren \(JSON\)|Export record \(JSON\)/i,
-    })
-    .first();
+  const exportButton = page.getByRole('button', {
+    name: translations.app.formpackRecordExportJson,
+  });
   await expect(exportButton).toBeEnabled();
   await exportButton.click();
 
