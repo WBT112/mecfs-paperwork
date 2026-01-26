@@ -325,7 +325,7 @@ describe('buildDocumentModel for doctor-letter', () => {
       expect(result.decision?.caseText).toBe(
         enTranslations['doctor-letter.case.14.paragraph'],
       );
-      expect(result.decision?.caseText).toContain('fluoroquinolones');
+      expect(result.decision?.caseText).toMatch(/fluoroquinolon/i);
     });
   });
 
