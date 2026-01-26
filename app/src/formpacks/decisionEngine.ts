@@ -3,7 +3,7 @@ export type DecisionAnswers = {
   q2?: 'yes' | 'no';
   q3?: 'yes' | 'no';
   q4?: 'EBV' | 'Influenza' | 'COVID-19' | 'Other infection';
-  q5?: 'COVID-19 vaccination' | 'Other cause';
+  q5?: 'COVID-19 vaccination' | 'Medication: Fluoroquinolones' | 'Other cause';
   q6?: 'yes' | 'no';
   q7?: 'yes' | 'no';
   q8?:
@@ -46,6 +46,8 @@ const resolveQ5 = (q5?: DecisionAnswers['q5']): DecisionResult | null => {
   switch (q5) {
     case 'COVID-19 vaccination':
       return createResult(4, 'doctor-letter.case.4.paragraph');
+    case 'Medication: Fluoroquinolones':
+      return createResult(14, 'doctor-letter.case.14.paragraph');
     case 'Other cause':
       return createResult(10, 'doctor-letter.case.10.paragraph');
     default:
@@ -115,7 +117,7 @@ const resolveQ1False = (answers: DecisionAnswers): DecisionResult | null => {
  * Q2 (cause known) -> YES: Q3, NO: Case 11
  * Q3 (after infection) -> YES: Q4, NO: Q5
  * Q4 (which infection) -> EBV: Case 1, Influenza: Case 2, COVID-19: Case 3, Other: Case 9
- * Q5 (other cause) -> COVID-19 vaccination: Case 4, Other: Case 10
+ * Q5 (other cause) -> COVID-19 vaccination: Case 4, Fluoroquinolones: Case 14, Other: Case 10
  * Q6 (chronic fatigue) -> YES: Q7, NO: Case 0
  * Q7 (PEM) -> YES: Q8, NO: Case 0
  * Q8 (cause) -> No known: Case 12, EBV: Case 5, Influenza: Case 6, COVID-19: Case 7, Vaccination: Case 8, Other: Case 13

@@ -45,6 +45,7 @@
   "doctor-letter.decision.q5.label": "Wählen Sie eine Ursache",
   "doctor-letter.decision.q5.help": "Ursache für ME/CFS",
   "doctor-letter.decision.q5.option.COVID19Vaccination": "COVID-19-Impfung",
+  "doctor-letter.decision.q5.option.Fluoroquinolones": "Medikament: Fluorchinolone",
   "doctor-letter.decision.q5.option.OtherCause": "Andere Ursache",
   "doctor-letter.decision.q6.label": "Haben Sie Fatigue?",
   "doctor-letter.decision.q6.help": "Leiden Sie unter Fatigue?",
@@ -73,5 +74,6 @@
   "doctor-letter.case.10.paragraph": "Fall 10 Patient weist ein vollständiges ME/CFS-Bild auf, das sich nach einer anderen identifizierten Ursache entwickelt hat. Die Symptomatik entspricht den etablierten diagnostischen Kriterien (CCC/IOM) mit charakteristischer Post-Exertional Malaise.",
   "doctor-letter.case.11.paragraph": "Fall 11 Patient weist ein vollständiges ME/CFS-Bild auf. Die Ursache konnte nicht identifiziert werden. Die Symptomatik entspricht den etablierten diagnostischen Kriterien (CCC/IOM) mit charakteristischer Post-Exertional Malaise.",
   "doctor-letter.case.12.paragraph": "Fall 12 Patient zeigt Fatigue und Post-Exertional Malaise ohne bekannte Ursache. Eine weitere Abklärung bezüglich ME/CFS wird empfohlen, um die diagnostischen Kriterien vollständig zu evaluieren.",
-  "doctor-letter.case.13.paragraph": "Fall 13 Patient zeigt Fatigue und Post-Exertional Malaise aufgrund einer anderen identifizierten Ursache. Eine weitere Abklärung bezüglich ME/CFS wird empfohlen, um die diagnostischen Kriterien vollständig zu evaluieren."
+  "doctor-letter.case.13.paragraph": "Fall 13 Patient zeigt Fatigue und Post-Exertional Malaise aufgrund einer anderen identifizierten Ursache. Eine weitere Abklärung bezüglich ME/CFS wird empfohlen, um die diagnostischen Kriterien vollständig zu evaluieren.",
+  "doctor-letter.case.14.paragraph": "Fall 14 Patient weist ein vollständiges ME/CFS-Bild auf, das sich nach einer COVID-19-Impfung mit Medikament: Fluorchinolone entwickelt hat. Die Symptomatik entspricht den etablierten diagnostischen Kriterien (CCC/IOM) mit charakteristischer Post-Exertional Malaise."
 }

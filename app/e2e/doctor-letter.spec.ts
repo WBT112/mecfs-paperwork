@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
+import JSZip from 'jszip';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
 import {
@@ -163,6 +164,19 @@ const answerDecisionTreeCase3 = async (page: Page, yesLabel: string) => {
   await page.locator('#root_decision_q4').selectOption('COVID-19');
 };
 
+const answerDecisionTreeCase14 = async (
+  page: Page,
+  yesLabel: string,
+  noLabel: string,
+) => {
+  await selectDecisionRadio(page, 'q1', yesLabel);
+  await selectDecisionRadio(page, 'q2', yesLabel);
+  await selectDecisionRadio(page, 'q3', noLabel);
+  await page
+    .locator('#root_decision_q5')
+    .selectOption('Medication: Fluoroquinolones');
+};
+
 const waitForResolvedText = async (page: Page, expected: string) => {
   const resolved = page.locator('#root_decision_resolvedCaseText');
   await expect(resolved).toBeVisible({ timeout: POLL_TIMEOUT });
@@ -197,6 +211,27 @@ const exportDocxAndExpectSuccess = async (
   await expect(successMessage).toBeVisible({ timeout: POLL_TIMEOUT });
   await expect(errorMessage).toHaveCount(0);
   return download;
+};
+
+const extractDocxText = async (docxPath: string) => {
+  const buffer = await readFile(docxPath);
+  const zip = await JSZip.loadAsync(buffer);
+  const documentXml = await zip.file('word/document.xml')?.async('string');
+  if (!documentXml) {
+    throw new Error('DOCX document.xml was not found in the export.');
+  }
+
+  const textRuns = Array.from(
+    documentXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g),
+  ).map((match) => match[1]);
+
+  return textRuns
+    .join('')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
 };
 
 test.describe.configure({ mode: 'parallel' });
@@ -276,6 +311,45 @@ for (const locale of locales) {
     });
   });
 }
+
+test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
+  page,
+}) => {
+  const translations = await loadTranslations('en');
+  await openFreshDoctorLetter(page);
+  await switchLocale(page, 'en');
+  await openDecisionTree(page, translations.app);
+  await answerDecisionTreeCase14(
+    page,
+    translations.formpack['doctor-letter.common.yes'],
+    translations.formpack['doctor-letter.common.no'],
+  );
+  await waitForResolvedText(
+    page,
+    translations.formpack['doctor-letter.case.14.paragraph'],
+  );
+
+  const recordId = await waitForActiveRecordId(page, POLL_TIMEOUT);
+  await waitForRecordById(page, recordId);
+  await waitForRecordField(
+    page,
+    recordId,
+    (record) => record?.data?.decision?.q5 ?? null,
+    'Medication: Fluoroquinolones',
+  );
+
+  const { docxSection, exportButton } = await waitForDocxExportReady(
+    page,
+    translations.app,
+  );
+  const download = await exportDocxAndExpectSuccess(docxSection, exportButton);
+  const filePath = await download.path();
+  expect(filePath).not.toBeNull();
+  const docxText = await extractDocxText(filePath as string);
+  expect(docxText).toContain(
+    translations.formpack['doctor-letter.case.14.paragraph'],
+  );
+});
 
 test('doctor-letter clears hidden fields when branch changes and JSON export stays clean', async ({
   page,
