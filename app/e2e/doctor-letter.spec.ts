@@ -55,18 +55,32 @@ const openFreshDoctorLetter = async (page: Page) => {
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 };
 
-const waitForActiveRecordId = async (page: Page, timeoutMs = 10_000) => {
+const waitForActiveRecordId = async (
+  page: Page,
+  timeoutMs = 10_000,
+  allowNull = false,
+) => {
   let activeId: string | null = null;
-  await expect
-    .poll(
-      async () => {
-        activeId = await getActiveRecordId(page, FORM_PACK_ID);
-        return activeId;
-      },
-      { timeout: timeoutMs, intervals: POLL_INTERVALS },
-    )
-    .not.toBeNull();
+  try {
+    await expect
+      .poll(
+        async () => {
+          activeId = await getActiveRecordId(page, FORM_PACK_ID);
+          return activeId;
+        },
+        { timeout: timeoutMs, intervals: POLL_INTERVALS },
+      )
+      .not.toBeNull();
+  } catch (error) {
+    if (allowNull) {
+      return null;
+    }
+    throw error;
+  }
   if (!activeId) {
+    if (allowNull) {
+      return null;
+    }
     throw new Error('Active record id not available after polling.');
   }
   return activeId;
@@ -100,18 +114,7 @@ const ensureActiveDraft = async (
 
   let activeIdAfterLoad = await getActiveRecordId(page, FORM_PACK_ID);
   if (!activeIdAfterLoad) {
-    try {
-      activeIdAfterLoad = await waitForActiveRecordId(page, 8_000);
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message.includes('Active record id not available')
-      ) {
-        activeIdAfterLoad = null;
-      } else {
-        throw error;
-      }
-    }
+    activeIdAfterLoad = await waitForActiveRecordId(page, POLL_TIMEOUT, true);
   }
 
   if (activeIdAfterLoad) {
