@@ -155,7 +155,9 @@ const isValidQ4 = (val: unknown): val is DecisionAnswers['q4'] =>
   val === 'Other infection';
 
 const isValidQ5 = (val: unknown): val is DecisionAnswers['q5'] =>
-  val === 'COVID-19 vaccination' || val === 'Other cause';
+  val === 'COVID-19 vaccination' ||
+  val === 'Medication: Fluoroquinolones' ||
+  val === 'Other cause';
 
 const isValidQ8 = (val: unknown): val is DecisionAnswers['q8'] =>
   val === 'No known cause' ||

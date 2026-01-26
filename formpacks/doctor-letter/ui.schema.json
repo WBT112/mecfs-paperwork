@@ -114,6 +114,7 @@
       "ui:help": "doctor-letter.decision.q5.help",
       "ui:enumNames": [
         "doctor-letter.decision.q5.option.COVID19Vaccination",
+        "doctor-letter.decision.q5.option.Fluoroquinolones",
         "doctor-letter.decision.q5.option.OtherCause"
       ]
     },

@@ -76,7 +76,11 @@
         },
         "q5": {
           "type": "string",
-          "enum": ["COVID-19 vaccination", "Other cause"]
+          "enum": [
+            "COVID-19 vaccination",
+            "Medication: Fluoroquinolones",
+            "Other cause"
+          ]
         },
         "q6": {
           "type": "string",

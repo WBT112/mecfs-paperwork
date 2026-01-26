@@ -11,6 +11,7 @@ const JOHN = 'John';
 const DOE = 'Doe';
 const DR_TITLE = 'Dr.';
 const COVID_19_VACCINATION = 'COVID-19 vaccination';
+const FLUOROQUINOLONES = 'Medication: Fluoroquinolones';
 
 describe('buildDocumentModel for doctor-letter', () => {
   beforeAll(() => {
@@ -297,6 +298,34 @@ describe('buildDocumentModel for doctor-letter', () => {
       expect(result.decision).toBeDefined();
       expect(result.decision?.caseId).toBe(8);
       expect(result.decision?.caseText).toContain(COVID_19_VACCINATION);
+    });
+
+    it('resolves Case 14 (fluoroquinolones) correctly', () => {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
+        patient: {
+          firstName: 'Alex',
+          lastName: 'Meyer',
+        },
+        doctor: {
+          practice: 'Meyer Practice',
+          title: DR_TITLE,
+          gender: 'Herr',
+          name: 'Klein',
+        },
+        decision: {
+          q1: 'yes',
+          q2: 'yes',
+          q3: 'no',
+          q5: FLUOROQUINOLONES,
+        },
+      });
+
+      expect(result.decision).toBeDefined();
+      expect(result.decision?.caseId).toBe(14);
+      expect(result.decision?.caseText).toBe(
+        enTranslations['doctor-letter.case.14.paragraph'],
+      );
+      expect(result.decision?.caseText).toContain('fluoroquinolones');
     });
   });
 
