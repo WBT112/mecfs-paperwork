@@ -13,13 +13,8 @@ import {
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
 import { openCollapsibleSection } from './helpers/sections';
 
-type DbOptions = {
-  dbName: string;
-  storeName: string;
-};
-
 const FORM_PACK_ID = 'doctor-letter';
-const DB: DbOptions = {
+const DB = {
   dbName: 'mecfs-paperwork',
   storeName: 'records',
 };
@@ -166,25 +161,6 @@ const waitForResolvedText = async (page: Page, expected: string) => {
     .toBe(expected);
 };
 
-const getActiveRecordIdStable = async (page: Page) => {
-  let activeId: string | null = null;
-  await expect
-    .poll(
-      async () => {
-        activeId = await getActiveRecordId(page, FORM_PACK_ID);
-        return activeId;
-      },
-      {
-        timeout: POLL_TIMEOUT,
-      },
-    )
-    .not.toBeNull();
-  if (!activeId) {
-    throw new Error('Active record id not available after polling.');
-  }
-  return activeId;
-};
-
 const waitForDocxExportReady = async (
   page: Page,
   appTranslations: Record<string, string>,
@@ -320,7 +296,7 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
     translations.formpack['doctor-letter.case.10.paragraph'],
   );
 
-  const recordId = await getActiveRecordIdStable(page);
+  const recordId = await waitForActiveRecordId(page, POLL_TIMEOUT);
   await waitForRecordById(page, recordId);
   await waitForRecordField(
     page,
