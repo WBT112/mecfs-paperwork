@@ -56,20 +56,16 @@ const openFreshDoctorLetter = async (page: Page) => {
 };
 
 const waitForActiveRecordId = async (page: Page, timeoutMs = 10_000) => {
-  let activeId: string | null = null;
-  await expect
-    .poll(
-      async () => {
-        activeId = await getActiveRecordId(page, FORM_PACK_ID);
-        return activeId ?? '';
-      },
-      { timeout: timeoutMs, intervals: POLL_INTERVALS },
-    )
+  const result = await expect
+    .poll(async () => (await getActiveRecordId(page, FORM_PACK_ID)) ?? '', {
+      timeout: timeoutMs,
+      intervals: POLL_INTERVALS,
+    })
     .not.toBe('');
-  if (!activeId) {
+  if (typeof result !== 'string' || result.length === 0) {
     throw new Error('Active record id not available after polling.');
   }
-  return activeId;
+  return result;
 };
 
 const waitForRecordListReady = async (page: Page, loadingLabel: string) => {
@@ -102,8 +98,9 @@ const ensureActiveDraft = async (
   if (!activeIdAfterLoad) {
     try {
       activeIdAfterLoad = await waitForActiveRecordId(page, 8_000);
-    } catch {
+    } catch (error) {
       activeIdAfterLoad = null;
+      throw error;
     }
   }
 
@@ -323,10 +320,10 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
   expect(filePath).not.toBeNull();
   const contents = await readFile(filePath as string, 'utf-8');
   const payload = JSON.parse(contents) as {
-    formpack?: { id?: string };
-    record?: { locale?: string };
-    locale?: string;
-    data?: { decision?: Record<string, unknown> };
+    formpack: { id: string };
+    record: { locale: string };
+    locale: string;
+    data: { decision: Record<string, unknown> };
   };
 
   expect(payload.formpack?.id).toBe(FORM_PACK_ID);
