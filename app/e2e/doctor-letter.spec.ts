@@ -61,16 +61,19 @@ const openFreshDoctorLetter = async (page: Page) => {
 };
 
 const waitForActiveRecordId = async (page: Page, timeoutMs = 10_000) => {
-  let activeId = '';
+  let activeId: string | null = null;
   await expect
     .poll(
       async () => {
-        activeId = (await getActiveRecordId(page, FORM_PACK_ID)) ?? '';
-        return activeId;
+        activeId = await getActiveRecordId(page, FORM_PACK_ID);
+        return activeId ?? '';
       },
       { timeout: timeoutMs, intervals: POLL_INTERVALS },
     )
     .not.toBe('');
+  if (!activeId) {
+    throw new Error('Active record id not available after polling.');
+  }
   return activeId;
 };
 
@@ -105,7 +108,7 @@ const ensureActiveDraft = async (
     try {
       activeIdAfterLoad = await waitForActiveRecordId(page, 8_000);
     } catch {
-      // ignore and fall back to manual draft creation below
+      activeIdAfterLoad = null;
     }
   }
 
@@ -164,12 +167,22 @@ const waitForResolvedText = async (page: Page, expected: string) => {
 };
 
 const getActiveRecordIdStable = async (page: Page) => {
+  let activeId: string | null = null;
   await expect
-    .poll(async () => getActiveRecordId(page, FORM_PACK_ID), {
-      timeout: POLL_TIMEOUT,
-    })
+    .poll(
+      async () => {
+        activeId = await getActiveRecordId(page, FORM_PACK_ID);
+        return activeId;
+      },
+      {
+        timeout: POLL_TIMEOUT,
+      },
+    )
     .not.toBeNull();
-  return (await getActiveRecordId(page, FORM_PACK_ID)) as string;
+  if (!activeId) {
+    throw new Error('Active record id not available after polling.');
+  }
+  return activeId;
 };
 
 const waitForDocxExportReady = async (
