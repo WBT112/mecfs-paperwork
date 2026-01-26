@@ -4,12 +4,14 @@ import path from 'node:path';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
 import {
+  POLL_INTERVALS,
   POLL_TIMEOUT,
   getActiveRecordId,
   waitForRecordById,
   waitForRecordField,
 } from './helpers/records';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
+import { openCollapsibleSection } from './helpers/sections';
 
 type DbOptions = {
   dbName: string;
@@ -47,16 +49,89 @@ const openFreshDoctorLetter = async (page: Page) => {
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 };
 
+const waitForActiveRecordId = async (page: Page, timeoutMs = 10_000) => {
+  let activeId = '';
+  await expect
+    .poll(
+      async () => {
+        activeId = (await getActiveRecordId(page, FORM_PACK_ID)) ?? '';
+        return activeId;
+      },
+      { timeout: timeoutMs, intervals: POLL_INTERVALS },
+    )
+    .not.toBe('');
+  return activeId;
+};
+
+const waitForRecordListReady = async (page: Page) => {
+  await page.waitForFunction(() => {
+    const empty = document.querySelector('.formpack-records__empty');
+    if (empty) {
+      const text = empty.textContent?.toLowerCase() ?? '';
+      return !text.includes('loading') && !text.includes('geladen');
+    }
+    return true;
+  });
+};
+
+const ensureActiveDraft = async (page: Page) => {
+  const existingActiveId = await getActiveRecordId(page, FORM_PACK_ID);
+  if (existingActiveId) {
+    return;
+  }
+
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
+  await waitForRecordListReady(page);
+
+  let activeIdAfterLoad = await getActiveRecordId(page, FORM_PACK_ID);
+  if (!activeIdAfterLoad) {
+    try {
+      activeIdAfterLoad = await waitForActiveRecordId(page, 8_000);
+    } catch {
+      // ignore and fall back to manual draft creation below
+    }
+  }
+
+  if (activeIdAfterLoad) {
+    return;
+  }
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new\s*draft|neuer\s*entwurf/i,
+  });
+  if (await newDraftButton.count()) {
+    await newDraftButton.first().click();
+  } else {
+    await page
+      .locator('.formpack-records__actions .app__button')
+      .first()
+      .click();
+  }
+
+  await waitForActiveRecordId(page);
+};
+
 const openDecisionTree = async (page: Page) => {
+  await ensureActiveDraft(page);
   await expect(page.locator('#root_decision_q1')).toBeVisible({
     timeout: POLL_TIMEOUT,
   });
 };
 
-const answerDecisionTreeCase3 = async (page: Page) => {
-  await page.locator('input[name="root_decision_q1"][value="yes"]').check();
-  await page.locator('input[name="root_decision_q2"][value="yes"]').check();
-  await page.locator('input[name="root_decision_q3"][value="yes"]').check();
+const selectDecisionRadio = async (
+  page: Page,
+  fieldId: 'q1' | 'q2' | 'q3',
+  label: string,
+) => {
+  const fieldset = page.locator(`#root_decision_${fieldId}`);
+  await expect(fieldset).toBeVisible({ timeout: POLL_TIMEOUT });
+  await fieldset.getByRole('radio', { name: label }).check();
+};
+
+const answerDecisionTreeCase3 = async (page: Page, yesLabel: string) => {
+  await selectDecisionRadio(page, 'q1', yesLabel);
+  await selectDecisionRadio(page, 'q2', yesLabel);
+  await selectDecisionRadio(page, 'q3', yesLabel);
   await page.locator('#root_decision_q4').selectOption('COVID-19');
 };
 
@@ -113,7 +188,10 @@ for (const locale of locales) {
       await openFreshDoctorLetter(page);
       await switchLocale(page, locale);
       await openDecisionTree(page);
-      await answerDecisionTreeCase3(page);
+      await answerDecisionTreeCase3(
+        page,
+        translations['doctor-letter.common.yes'],
+      );
       await waitForResolvedText(
         page,
         translations['doctor-letter.case.3.paragraph'],
@@ -123,7 +201,9 @@ for (const locale of locales) {
       await expect(page.locator('#root_decision_q2')).toBeVisible();
       await expect(page.locator('#root_decision_q3')).toBeVisible();
       await expect(page.locator('#root_decision_q4')).toBeVisible();
-      await expect(page.locator('#root_decision_resolvedCaseText')).toBeVisible();
+      await expect(
+        page.locator('#root_decision_resolvedCaseText'),
+      ).toBeVisible();
 
       await expect(page.locator('#root_decision_q5')).toHaveCount(0);
       await expect(page.locator('#root_decision_q6')).toHaveCount(0);
@@ -143,6 +223,7 @@ for (const locale of locales) {
     }) => {
       await openFreshDoctorLetter(page);
       await switchLocale(page, locale);
+      await ensureActiveDraft(page);
 
       const { docxSection, exportButton } = await waitForDocxExportReady(page);
       const onlineDownload = await exportDocxAndExpectSuccess(
@@ -177,13 +258,17 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
   await openFreshDoctorLetter(page);
   await switchLocale(page, 'en');
   await openDecisionTree(page);
-  await answerDecisionTreeCase3(page);
+  await answerDecisionTreeCase3(page, translations['doctor-letter.common.yes']);
   await waitForResolvedText(
     page,
     translations['doctor-letter.case.3.paragraph'],
   );
 
-  await page.locator('input[name="root_decision_q3"][value="no"]').check();
+  await selectDecisionRadio(
+    page,
+    'q3',
+    translations['doctor-letter.common.no'],
+  );
   await expect(page.locator('#root_decision_q4')).toHaveCount(0);
   await expect(page.locator('#root_decision_q5')).toBeVisible();
   await page.locator('#root_decision_q5').selectOption('Other cause');
