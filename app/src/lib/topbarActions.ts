@@ -1,9 +1,9 @@
-export type MailtoField = {
+type MailtoField = {
   label: string;
   value: string;
 };
 
-export type MailtoOptions = {
+type MailtoOptions = {
   to: string;
   subject: string;
   intro: string;
@@ -35,7 +35,7 @@ export const buildMailtoHref = ({
   return `mailto:${to}?subject=${encodedSubject}&body=${encodedBody}`;
 };
 
-export type ShareUrlOptions = {
+type ShareUrlOptions = {
   origin: string;
   pathname: string;
 };
