@@ -9,6 +9,7 @@ import type {
   IconButtonProps,
   PathSchema,
   Registry,
+  RJSFSchema,
   UiSchema,
   ValidatorType,
 } from '@rjsf/utils';
@@ -103,7 +104,12 @@ const mockValidator: ValidatorType = {
   rawValidation: () => ({ errors: [] }),
 };
 
-type SchemaValue = Record<string, unknown>;
+type SchemaValue = RJSFSchema;
+
+const toSchemaValue = (value: unknown): SchemaValue =>
+  value && typeof value === 'object'
+    ? (value as RJSFSchema)
+    : ({} as RJSFSchema);
 
 const mockSchemaUtils: Registry['schemaUtils'] = {
   getRootSchema: () => ({}),
@@ -115,15 +121,14 @@ const mockSchemaUtils: Registry['schemaUtils'] = {
   getDisplayLabel: () => true,
   getClosestMatchingOption: () => 0,
   getFirstMatchingOption: () => 0,
-  getFromSchema: (_schema, _path, defaultValue) =>
-    defaultValue as unknown as SchemaValue,
+  getFromSchema: (_schema, _path, defaultValue) => toSchemaValue(defaultValue),
   isFilesArray: () => false,
   isMultiSelect: () => false,
   isSelect: () => false,
-  omitExtraData: (_schema, formData) => formData as SchemaValue | undefined,
-  retrieveSchema: (schema) => schema as SchemaValue,
+  omitExtraData: (_schema, formData) => toSchemaValue(formData),
+  retrieveSchema: (schema) => toSchemaValue(schema),
   sanitizeDataForNewSchema: (_newSchema, _oldSchema, data) =>
-    data as SchemaValue,
+    toSchemaValue(data),
   toPathSchema: () => ({}) as PathSchema,
 };
 
@@ -173,7 +178,7 @@ const createRegistry = ({
     formContext,
     rootSchema: {},
     schemaUtils: mockSchemaUtils,
-    translateString: (key: string) => key,
+    translateString: (key: string) => `translated:${key}`,
     globalFormOptions: { idPrefix: 'root', idSeparator: '_' },
   }) as unknown as Registry;
 
