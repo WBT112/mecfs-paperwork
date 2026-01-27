@@ -351,6 +351,9 @@ const mockT = (key: string, options?: { ns?: string }) => {
       return 'Long Covid Paragraph';
     }
   }
+  if (key === 'doctor-letter.case.0.paragraph') {
+    return 'Case paragraph one[[P]]Case paragraph two';
+  }
   return key;
 };
 
@@ -1575,6 +1578,94 @@ describe('FormpackDetailPage', () => {
       restoreText();
     }
   }, 10000);
+
+  it('renders case text paragraphs in the document preview', async () => {
+    const caseParagraphs = ['First paragraph', 'Second paragraph'];
+    const payload = {
+      version: 1,
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        title: 'Decision',
+        locale: 'de',
+        data: {
+          decision: {
+            caseText: 'Fallback text[[P]]Ignored text',
+            caseParagraphs,
+          },
+        },
+      },
+      revisions: [],
+    };
+    importState.validateJsonImport.mockReturnValue({
+      payload,
+      error: null,
+    });
+    const importedRecord = {
+      ...record,
+      id: 'record-2',
+      title: payload.record.title,
+      data: payload.record.data,
+    };
+    storageImportState.importRecordWithSnapshots.mockResolvedValue(
+      importedRecord,
+    );
+    const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+    const restoreText = mockFileText(IMPORT_FILE_CONTENT);
+    formpackState.schema = {
+      type: 'object',
+      properties: {
+        decision: {
+          type: 'object',
+          properties: {
+            caseText: { type: 'string' },
+            caseParagraphs: {
+              type: 'array',
+              items: { type: 'string' },
+            },
+          },
+        },
+      },
+    };
+    formpackState.uiSchema = {
+      decision: {
+        'ui:title': 'decision',
+        caseText: {
+          'ui:title': 'caseText',
+        },
+        caseParagraphs: {
+          'ui:title': 'caseParagraphs',
+        },
+      },
+    };
+
+    try {
+      render(
+        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+
+      await openImportSection();
+      await userEvent.upload(
+        await screen.findByLabelText('formpackImportLabel'),
+        file,
+      );
+      await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+      expect(await screen.findByText(IMPORT_SUCCESS_LABEL)).toBeInTheDocument();
+
+      for (const paragraph of caseParagraphs) {
+        expect(await screen.findByText(paragraph)).toBeInTheDocument();
+      }
+      expect(screen.queryByText('Fallback text')).not.toBeInTheDocument();
+      expect(screen.queryByText('[[P]]')).not.toBeInTheDocument();
+    } finally {
+      restoreText();
+    }
+  });
 
   it('localizes boolean values in the document preview', async () => {
     const payload = {
