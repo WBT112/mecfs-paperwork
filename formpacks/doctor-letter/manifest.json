@@ -24,7 +24,8 @@
         "id": "q1-info",
         "anchor": "decision.q1",
         "enabled": true,
-        "i18nKey": "doctor-letter.infobox.q1"
+        "i18nKey": "doctor-letter.infobox.q1",
+        "format": "markdown"
       }
     ]
   }

@@ -1,14 +1,18 @@
 /* eslint-disable react-refresh/only-export-components */
 
+import type { ReactNode } from 'react';
 import type {
   ArrayFieldItemTemplateProps,
   ArrayFieldTemplateProps,
+  DescriptionFieldProps,
+  FieldHelpProps,
   IconButtonProps,
   TemplatesType,
   UiSchema,
 } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
-import { buttonId, getTemplate, getUiOptions } from '@rjsf/utils';
+import { buttonId, getTemplate, getUiOptions, helpId } from '@rjsf/utils';
+import MarkdownRenderer from '../components/Markdown/MarkdownRenderer';
 
 export type FormpackFormContext = {
   t: TFunction;
@@ -182,6 +186,41 @@ const ArrayFieldItemTemplate = (props: ArrayFieldItemTemplateProps) => {
   );
 };
 
+const renderMarkdownIfString = (content: ReactNode) => {
+  if (typeof content !== 'string') {
+    return content;
+  }
+
+  return <MarkdownRenderer content={content} />;
+};
+
+const DescriptionFieldTemplate = ({
+  id,
+  description,
+}: DescriptionFieldProps) => {
+  if (!description) {
+    return null;
+  }
+
+  return (
+    <div id={id} className="field-description">
+      {renderMarkdownIfString(description)}
+    </div>
+  );
+};
+
+const FieldHelpTemplate = ({ fieldPathId, help }: FieldHelpProps) => {
+  if (!help) {
+    return null;
+  }
+
+  return (
+    <div id={helpId(fieldPathId)} className="help-block">
+      {renderMarkdownIfString(help)}
+    </div>
+  );
+};
+
 /**
  * Templates for array actions to keep controls labeled and accessible.
  */
@@ -192,6 +231,8 @@ type FormpackTemplates = Partial<Omit<TemplatesType, 'ButtonTemplates'>> & {
 export const formpackTemplates: FormpackTemplates = {
   ArrayFieldTemplate,
   ArrayFieldItemTemplate,
+  DescriptionFieldTemplate,
+  FieldHelpTemplate,
   // RATIONALE: Array item reordering and copying are disabled by design.
   // The UI prioritizes simplicity and predictable data entry over complex
   // array management. Most use cases involve append-only data entry.

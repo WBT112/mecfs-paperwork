@@ -117,6 +117,17 @@ describe('validate-formpacks helpers', () => {
         templates: { a4: 'templates/a4.docx' },
         mapping: 'docx/mapping.json',
       },
+      ui: {
+        infoBoxes: [
+          {
+            id: 'q1',
+            anchor: 'decision.q1',
+            enabled: true,
+            i18nKey: 'pack.infobox.q1',
+            format: 'markdown',
+          },
+        ],
+      },
     };
     expect(validateManifest(valid, 'test', '/fake', errors)).toBe(true);
     expect(errors.size).toBe(0);

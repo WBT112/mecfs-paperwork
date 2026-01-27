@@ -1,13 +1,23 @@
+import MarkdownRenderer from './Markdown/MarkdownRenderer';
+
 interface InfoBoxProps {
   message: string;
   className?: string;
+  format?: 'text' | 'markdown';
 }
 
 /**
  * InfoBox component renders a callout/hint message.
  * Used for maintainer-controlled informational messages in forms.
  */
-export function InfoBox({ message, className = '' }: InfoBoxProps) {
+export function InfoBox({
+  message,
+  className = '',
+  format = 'text',
+}: InfoBoxProps) {
+  const content =
+    format === 'markdown' ? <MarkdownRenderer content={message} /> : message;
+
   return (
     <div
       className={`info-box ${className}`}
@@ -25,7 +35,7 @@ export function InfoBox({ message, className = '' }: InfoBoxProps) {
       aria-live="polite"
     >
       <span style={{ marginRight: '0.5rem' }}>ℹ️</span>
-      {message}
+      {content}
     </div>
   );
 }
