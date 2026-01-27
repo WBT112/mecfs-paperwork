@@ -2,6 +2,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import MarkdownRenderer from '../../src/components/Markdown/MarkdownRenderer';
+import { isSafeHref } from '../../src/components/Markdown/markdownLinks';
 
 const EXTERNAL_LINK_REL = 'noreferrer noopener';
 
@@ -67,5 +68,12 @@ describe('MarkdownRenderer', () => {
     expect(link).toHaveAttribute('href', '//example.com');
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', EXTERNAL_LINK_REL);
+  });
+
+  it('validates href protocols for safety checks', () => {
+    expect(isSafeHref('https://example.com')).toBe(true);
+    expect(isSafeHref('mailto:hello@example.com')).toBe(true);
+    expect(isSafeHref('/relative/path')).toBe(true);
+    expect(isSafeHref('javascript:alert(1)')).toBe(false);
   });
 });

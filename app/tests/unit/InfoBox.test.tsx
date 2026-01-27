@@ -42,4 +42,10 @@ describe('InfoBox', () => {
     expect(noteDiv.textContent).toContain('Line 2');
     expect(noteDiv.textContent).toContain('Line 3');
   });
+
+  it('renders markdown when format is markdown', () => {
+    render(<InfoBox message="**Bold** text" format="markdown" />);
+    const noteDiv = screen.getByRole('note');
+    expect(noteDiv.querySelector('strong')).toBeInTheDocument();
+  });
 });

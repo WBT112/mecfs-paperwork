@@ -8,8 +8,16 @@ import { DoctorLetterFieldTemplate } from '../../src/lib/rjsfDoctorLetterFieldTe
 
 // Mock InfoBox component
 vi.mock('../../src/components/InfoBox', () => ({
-  InfoBox: ({ message }: { message: string }) => (
-    <div data-testid="infobox">{message}</div>
+  InfoBox: ({
+    message,
+    format,
+  }: {
+    message: string;
+    format?: 'text' | 'markdown';
+  }) => (
+    <div data-testid="infobox" data-format={format}>
+      {message}
+    </div>
   ),
 }));
 
@@ -132,6 +140,27 @@ describe('DoctorLetterFieldTemplate', () => {
     expect(getByTestId('infobox').textContent).toBe(
       'translated:test.infobox.key',
     );
+  });
+
+  it('passes markdown format to InfoBox when configured', () => {
+    const props = createMockProps({
+      id: FIELD_ID,
+      // @ts-ignore formContext is a custom extension
+      formContext: {
+        t: (key: string) => `translated:${key}`,
+        infoBoxes: [
+          {
+            id: 'q1-info',
+            anchor: DECISION_Q1_ANCHOR,
+            enabled: true,
+            i18nKey: TEST_INFOBOX_KEY,
+            format: 'markdown',
+          },
+        ],
+      },
+    });
+    const { getByTestId } = render(<DoctorLetterFieldTemplate {...props} />);
+    expect(getByTestId('infobox').dataset.format).toBe('markdown');
   });
 
   it('renders infoBox when showIf matches', () => {
