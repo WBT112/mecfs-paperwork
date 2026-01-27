@@ -223,7 +223,7 @@ type PreviewValueResolver = (
   schema?: RJSFSchema,
   uiSchema?: UiSchema,
   fieldPath?: string,
-) => string;
+) => ReactNode;
 
 const getOrderedKeys = (
   schemaNode: RJSFSchema | undefined,
@@ -305,6 +305,113 @@ const getItemUiSchema = (
 
 const buildFieldPath = (segment: string, prefix?: string): string =>
   prefix ? `${prefix}.${segment}` : segment;
+
+const normalizeParagraphs = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter(Boolean);
+};
+
+const isDecisionCaseTextPath = (fieldPath?: string): boolean =>
+  fieldPath === 'decision.caseText' ||
+  fieldPath === 'decision.resolvedCaseText';
+
+const isDecisionCaseParagraphsPath = (fieldPath?: string): boolean =>
+  fieldPath === 'decision.caseParagraphs';
+
+const renderParagraphs = (
+  paragraphs: string[],
+  keyPrefix: string,
+): ReactNode => (
+  <>
+    {paragraphs.map((paragraph, index) => (
+      <p key={`${keyPrefix}-${index}`}>{paragraph}</p>
+    ))}
+  </>
+);
+
+const hasDecisionCaseText = (value: Record<string, unknown>): boolean =>
+  typeof value.caseText === 'string' ||
+  typeof value.resolvedCaseText === 'string';
+
+const getDecisionVisibleKeys = (
+  keys: string[],
+  decisionParagraphs: string[],
+  includesDecisionCaseText: boolean,
+): string[] =>
+  decisionParagraphs.length && includesDecisionCaseText
+    ? keys.filter((key) => key !== 'caseParagraphs')
+    : keys;
+
+const getDecisionParagraphsForEntry = (
+  entry: unknown,
+  decisionParagraphs: string[],
+): string[] => {
+  if (decisionParagraphs.length) {
+    return decisionParagraphs;
+  }
+  if (typeof entry === 'string') {
+    return splitParagraphs(entry);
+  }
+  return [];
+};
+
+const resolveDecisionCaseTextValue = (
+  entry: unknown,
+  childPath: string | undefined,
+  decisionParagraphs: string[],
+): ReactNode | null => {
+  if (!isDecisionCaseTextPath(childPath)) {
+    return null;
+  }
+
+  const paragraphs = getDecisionParagraphsForEntry(entry, decisionParagraphs);
+  if (!paragraphs.length) {
+    return null;
+  }
+
+  return renderParagraphs(paragraphs, childPath ?? 'paragraph');
+};
+
+const buildDecisionPreviewContext = (
+  value: Record<string, unknown>,
+  fieldPath: string | undefined,
+  keys: string[],
+  resolveWithFallback: PreviewValueResolver,
+): { visibleKeys: string[]; resolveValue: PreviewValueResolver } => {
+  if (fieldPath !== 'decision') {
+    return { visibleKeys: keys, resolveValue: resolveWithFallback };
+  }
+
+  const decisionParagraphs = normalizeParagraphs(value.caseParagraphs);
+  const visibleKeys = getDecisionVisibleKeys(
+    keys,
+    decisionParagraphs,
+    hasDecisionCaseText(value),
+  );
+  const resolveValue: PreviewValueResolver = (
+    entry,
+    schemaNode,
+    uiNode,
+    childPath,
+  ) => {
+    const caseText = resolveDecisionCaseTextValue(
+      entry,
+      childPath,
+      decisionParagraphs,
+    );
+    if (caseText) {
+      return caseText;
+    }
+    return resolveWithFallback(entry, schemaNode, uiNode, childPath);
+  };
+
+  return { visibleKeys, resolveValue };
+};
 
 const getLabel = (
   key: string,
@@ -467,10 +574,12 @@ function renderPreviewObject(
       ? (schemaNode.properties as Record<string, RJSFSchema>)
       : null;
   const keys = getOrderedKeys(schemaNode, uiNode, value);
+  const { visibleKeys, resolveValue: resolveWithDecisionParagraphs } =
+    buildDecisionPreviewContext(value, fieldPath, keys, resolveWithFallback);
   const rows: ReactNode[] = [];
   const nested: ReactNode[] = [];
 
-  keys.forEach((key) => {
+  visibleKeys.forEach((key) => {
     const entry = value[key];
     const childSchema = schemaProps ? schemaProps[key] : undefined;
     const childUi = getUiSchemaNode(uiNode, key);
@@ -482,7 +591,7 @@ function renderPreviewObject(
       childSchema,
       childUi,
       childLabel,
-      resolveWithFallback,
+      resolveWithDecisionParagraphs,
       childPath,
       sectionKey,
     );
@@ -528,6 +637,21 @@ function renderPreviewArray(
   fieldPath?: string,
   sectionKey?: string,
 ): ReactNode {
+  if (isDecisionCaseParagraphsPath(fieldPath)) {
+    const paragraphValues = normalizeParagraphs(values);
+    if (paragraphValues.length) {
+      return (
+        <div className="formpack-document-preview__section" key={sectionKey}>
+          {label ? <h4>{label}</h4> : null}
+          {renderParagraphs(
+            paragraphValues,
+            fieldPath ?? sectionKey ?? 'paragraphs',
+          )}
+        </div>
+      );
+    }
+  }
+
   const itemSchema = getItemSchema(schemaNode);
   const itemUi = getItemUiSchema(uiNode);
   const resolveWithFallback =
@@ -1420,13 +1544,23 @@ export default function FormpackDetailPage() {
             `root-${key}`,
           );
         }
+        const resolvedValue = resolvePreviewValue(
+          entry,
+          childSchema,
+          childUi,
+          key,
+        );
         return (
           <div
             className="formpack-document-preview__section"
             key={`root-${key}`}
           >
             <h4>{label}</h4>
-            <p>{resolvePreviewValue(entry, childSchema, childUi, key)}</p>
+            {typeof resolvedValue === 'string' ? (
+              <p>{resolvedValue}</p>
+            ) : (
+              resolvedValue
+            )}
           </div>
         );
       })

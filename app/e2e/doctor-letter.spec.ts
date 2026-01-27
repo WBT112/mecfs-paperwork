@@ -278,6 +278,30 @@ for (const locale of locales) {
       );
     });
 
+    test('doctor-letter preview renders case paragraphs', async ({ page }) => {
+      const translations = await loadTranslations(locale);
+      await openFreshDoctorLetter(page);
+      await switchLocale(page, locale);
+      await openDecisionTree(page, translations.app);
+      await answerDecisionTreeCase3(
+        page,
+        translations.formpack['doctor-letter.common.yes'],
+      );
+      const caseText = translations.formpack['doctor-letter.case.3.paragraph'];
+      await waitForResolvedText(page, caseText);
+
+      await openCollapsibleSection(
+        page,
+        new RegExp(translations.app.formpackDocumentPreviewHeading, 'i'),
+      );
+      const preview = page.locator('.formpack-document-preview');
+      const paragraphs = splitParagraphs(caseText);
+      for (const paragraph of paragraphs) {
+        await expect(preview.getByText(paragraph)).toBeVisible();
+      }
+      await expect(preview).not.toContainText('[[P]]');
+    });
+
     test('doctor-letter docx export works online and offline', async ({
       page,
       context,
