@@ -36,7 +36,8 @@ import {
 import { DoctorLetterFieldTemplate } from '../lib/rjsfDoctorLetterFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
-import { splitParagraphs } from '../lib/text/paragraphs';
+import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
+import { normalizeParagraphText } from '../lib/text/paragraphs';
 import {
   FormpackLoaderError,
   loadFormpackManifest,
@@ -355,7 +356,7 @@ const getDecisionParagraphsForEntry = (
     return decisionParagraphs;
   }
   if (typeof entry === 'string') {
-    return splitParagraphs(entry);
+    return normalizeParagraphText(entry).paragraphs;
   }
   return [];
 };
@@ -1130,10 +1131,7 @@ export default function FormpackDetailPage() {
         ns: `formpack:${formpackId}`,
         defaultValue: result.caseKey,
       });
-      const caseParagraphs = splitParagraphs(rawText);
-      return caseParagraphs.length
-        ? caseParagraphs.join('\n\n')
-        : rawText.trim();
+      return normalizeParagraphText(rawText).text;
     },
     [formpackId, t],
   );
@@ -1971,6 +1969,7 @@ export default function FormpackDetailPage() {
           schema={schema}
           uiSchema={conditionalUiSchema}
           templates={templates}
+          widgets={formpackWidgets}
           validator={validator}
           formData={formData}
           omitExtraData

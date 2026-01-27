@@ -1,9 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { splitParagraphs } from '../../../src/lib/text/paragraphs';
+import {
+  normalizeParagraphText,
+  PARAGRAPH_MARKER,
+  splitParagraphs,
+} from '../../../src/lib/text/paragraphs';
 
 describe('splitParagraphs', () => {
   it('splits by explicit paragraph markers and trims whitespace', () => {
-    const result = splitParagraphs('First [[P]]  Second [[P]] Third  ');
+    const result = splitParagraphs(
+      `First ${PARAGRAPH_MARKER}  Second ${PARAGRAPH_MARKER} Third  `,
+    );
 
     expect(result).toEqual(['First', 'Second', 'Third']);
   });
@@ -18,5 +24,29 @@ describe('splitParagraphs', () => {
     const result = splitParagraphs('  Single paragraph.  ');
 
     expect(result).toEqual(['Single paragraph.']);
+  });
+});
+
+describe('normalizeParagraphText', () => {
+  it('returns joined text alongside paragraphs when markers are present', () => {
+    const result = normalizeParagraphText(
+      `First ${PARAGRAPH_MARKER} Second ${PARAGRAPH_MARKER} Third`,
+    );
+
+    expect(result).toEqual({
+      paragraphs: ['First', 'Second', 'Third'],
+      text: 'First\n\nSecond\n\nThird',
+    });
+  });
+
+  it('normalizes CRLF and trims empty segments', () => {
+    const result = normalizeParagraphText(
+      `First\r\n\r\n${PARAGRAPH_MARKER}${PARAGRAPH_MARKER}Second`,
+    );
+
+    expect(result).toEqual({
+      paragraphs: ['First', 'Second'],
+      text: 'First\n\nSecond',
+    });
   });
 });

@@ -1,6 +1,6 @@
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
-import { splitParagraphs } from '../lib/text/paragraphs';
+import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
 
 type DiagnosisFlags = {
@@ -215,10 +215,8 @@ const buildDoctorLetterModel = (
   const rawCaseText = t(result.caseKey, {
     defaultValue: result.caseKey,
   });
-  const caseParagraphs = splitParagraphs(rawCaseText);
-  const caseText = caseParagraphs.length
-    ? caseParagraphs.join('\n\n')
-    : rawCaseText.trim();
+  const { paragraphs: caseParagraphs, text: caseText } =
+    normalizeParagraphText(rawCaseText);
 
   return {
     diagnosisParagraphs: [],
