@@ -7,8 +7,10 @@ import type {
   ArrayFieldTemplateProps,
   ArrayFieldTitleProps,
   IconButtonProps,
+  PathSchema,
   Registry,
   UiSchema,
+  ValidatorType,
 } from '@rjsf/utils';
 import type { ComponentType } from 'react';
 import { buttonId } from '@rjsf/utils';
@@ -21,11 +23,17 @@ const getComponent = <TProps,>(
     | undefined,
   name: string,
 ): ComponentType<TProps> => {
-  if (typeof component !== 'function') {
-    throw new Error(`Missing ${name} component`);
+  if (typeof component === 'function') {
+    return component;
+  }
+  if (component && typeof component === 'object' && name in component) {
+    const nested = component[name];
+    if (typeof nested === 'function') {
+      return nested as ComponentType<TProps>;
+    }
   }
 
-  return component;
+  throw new Error(`Missing ${name} component`);
 };
 
 const ArrayFieldTemplate = getComponent<ArrayFieldTemplateProps>(
@@ -89,6 +97,34 @@ const defaultDescriptionTemplate = ({
   <div data-testid="array-description">{description}</div>
 );
 
+const mockValidator: ValidatorType = {
+  validateFormData: () => ({ errors: [], errorSchema: {} }),
+  isValid: () => true,
+  rawValidation: () => ({ errors: [] }),
+};
+
+const mockSchemaUtils: Registry['schemaUtils'] = {
+  getRootSchema: () => ({}),
+  getValidator: () => mockValidator,
+  doesSchemaUtilsDiffer: () => false,
+  findFieldInSchema: () => ({}),
+  findSelectedOptionInXxxOf: () => undefined,
+  getDefaultFormState: () => undefined,
+  getDisplayLabel: () => true,
+  getClosestMatchingOption: () => 0,
+  getFirstMatchingOption: () => 0,
+  getFromSchema: (_schema, _path, defaultValue) =>
+    defaultValue as unknown as object,
+  isFilesArray: () => false,
+  isMultiSelect: () => false,
+  isSelect: () => false,
+  omitExtraData: (_schema, formData) => formData as unknown as object,
+  retrieveSchema: (schema) => schema as unknown as object,
+  sanitizeDataForNewSchema: (_newSchema, _oldSchema, data) =>
+    data as unknown as object,
+  toPathSchema: () => ({}) as PathSchema,
+};
+
 const createRegistry = ({
   formContext = {},
   titleTemplate = defaultTitleTemplate,
@@ -134,7 +170,7 @@ const createRegistry = ({
     widgets: {},
     formContext,
     rootSchema: {},
-    schemaUtils: {} as Registry['schemaUtils'],
+    schemaUtils: mockSchemaUtils,
     translateString: (key: string) => key,
     globalFormOptions: { idPrefix: 'root', idSeparator: '_' },
   }) as unknown as Registry;

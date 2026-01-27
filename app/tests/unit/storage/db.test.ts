@@ -23,7 +23,7 @@ vi.mock('idb', () => ({
 }));
 
 describe('storage/db', () => {
-  type MockFunction<T extends (...args: never[]) => unknown> = Mock<T>;
+  type MockFunction<T extends (...args: any[]) => any> = Mock<T>;
   type MockObjectStore = {
     createIndex: MockFunction<
       (
@@ -45,7 +45,7 @@ describe('storage/db', () => {
   const globalWithIndexedDb = globalThis as { indexedDB?: IDBFactory };
 
   // Store original indexedDB. `global` types don't see our JSDOM env.
-  let originalIndexedDB: IDBFactory | undefined = globalWithIndexedDb.indexedDB;
+  let originalIndexedDB: IDBFactory | undefined;
 
   beforeEach(() => {
     originalIndexedDB = globalWithIndexedDb.indexedDB;
