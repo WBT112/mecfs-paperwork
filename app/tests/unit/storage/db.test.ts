@@ -66,6 +66,7 @@ describe('storage/db', () => {
     });
 
     it('should open the database successfully when indexedDB is available', async () => {
+      globalWithIndexedDb.indexedDB = {} as IDBFactory;
       const mockDb = { close: vi.fn() } as unknown as IDBPDatabase;
       (openDB as Mock).mockResolvedValue(mockDb);
 
@@ -80,6 +81,7 @@ describe('storage/db', () => {
     });
 
     it('should call the upgrade callback to create object stores and indexes', async () => {
+      globalWithIndexedDb.indexedDB = {} as IDBFactory;
       const createdStores: MockObjectStore[] = [];
       const mockDb: MockDatabase = {
         objectStoreNames: { contains: vi.fn().mockReturnValue(false) },
@@ -158,6 +160,7 @@ describe('storage/db', () => {
     });
 
     it('should not create object stores if they already exist', async () => {
+      globalWithIndexedDb.indexedDB = {} as IDBFactory;
       const mockDb: MockDatabase = {
         objectStoreNames: { contains: vi.fn().mockReturnValue(true) }, // They exist
         createObjectStore: vi.fn(),
