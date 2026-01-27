@@ -23,9 +23,8 @@ vi.mock('idb', () => ({
 }));
 
 describe('storage/db', () => {
-  type MockFunction<T extends (...args: any[]) => any> = Mock<T>;
   type MockObjectStore = {
-    createIndex: MockFunction<
+    createIndex: Mock<
       (
         name: string,
         keyPath: string | string[],
@@ -34,12 +33,12 @@ describe('storage/db', () => {
     >;
   };
   type MockDatabase = {
-    objectStoreNames: { contains: MockFunction<(name: string) => boolean> };
-    createObjectStore: MockFunction<
+    objectStoreNames: { contains: Mock<(name: string) => boolean> };
+    createObjectStore: Mock<
       (name: string, options: { keyPath: string }) => MockObjectStore
     >;
-    close: MockFunction<() => void>;
-    transaction?: MockFunction<() => unknown>;
+    close: Mock<() => void>;
+    transaction?: Mock<() => unknown>;
   };
 
   const globalWithIndexedDb = globalThis as { indexedDB?: IDBFactory };
@@ -59,7 +58,7 @@ describe('storage/db', () => {
 
   describe('openStorage', () => {
     it('should throw StorageUnavailableError if indexedDB is not available', async () => {
-      delete globalWithIndexedDb.indexedDB;
+      globalWithIndexedDb.indexedDB = undefined;
 
       await expect(openStorage()).rejects.toThrow(StorageUnavailableError);
       await expect(openStorage()).rejects.toThrow('IndexedDB is unavailable.');

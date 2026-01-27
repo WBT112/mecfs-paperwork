@@ -103,6 +103,8 @@ const mockValidator: ValidatorType = {
   rawValidation: () => ({ errors: [] }),
 };
 
+type SchemaValue = Record<string, unknown>;
+
 const mockSchemaUtils: Registry['schemaUtils'] = {
   getRootSchema: () => ({}),
   getValidator: () => mockValidator,
@@ -114,14 +116,14 @@ const mockSchemaUtils: Registry['schemaUtils'] = {
   getClosestMatchingOption: () => 0,
   getFirstMatchingOption: () => 0,
   getFromSchema: (_schema, _path, defaultValue) =>
-    defaultValue as unknown as object,
+    defaultValue as unknown as SchemaValue,
   isFilesArray: () => false,
   isMultiSelect: () => false,
   isSelect: () => false,
-  omitExtraData: (_schema, formData) => formData as unknown as object,
-  retrieveSchema: (schema) => schema as unknown as object,
+  omitExtraData: (_schema, formData) => formData as SchemaValue | undefined,
+  retrieveSchema: (schema) => schema as SchemaValue,
   sanitizeDataForNewSchema: (_newSchema, _oldSchema, data) =>
-    data as unknown as object,
+    data as SchemaValue,
   toPathSchema: () => ({}) as PathSchema,
 };
 
