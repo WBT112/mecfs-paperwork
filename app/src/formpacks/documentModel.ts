@@ -1,5 +1,6 @@
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
+import { splitParagraphs } from '../lib/text/paragraphs';
 import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
 
 type DiagnosisFlags = {
@@ -51,6 +52,7 @@ export type DocumentModel = {
   decision?: {
     caseId: number;
     caseText: string;
+    caseParagraphs: string[];
   };
 };
 
@@ -210,9 +212,13 @@ const buildDoctorLetterModel = (
   const decisionAnswers = getDecisionAnswers(decision);
   const result = resolveDecisionTree(decisionAnswers);
   const t = i18n.getFixedT(locale, 'formpack:doctor-letter');
-  const caseText = t(result.caseKey, {
+  const rawCaseText = t(result.caseKey, {
     defaultValue: result.caseKey,
   });
+  const caseParagraphs = splitParagraphs(rawCaseText);
+  const caseText = caseParagraphs.length
+    ? caseParagraphs.join('\n\n')
+    : rawCaseText.trim();
 
   return {
     diagnosisParagraphs: [],
@@ -237,6 +243,7 @@ const buildDoctorLetterModel = (
     decision: {
       caseId: result.caseId,
       caseText,
+      caseParagraphs,
     },
   };
 };

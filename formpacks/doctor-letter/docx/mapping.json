@@ -58,7 +58,12 @@
       "path": "decision.caseText"
     }
   ],
-  "loops": [],
+  "loops": [
+    {
+      "var": "decision.caseParagraphs",
+      "path": "decision.caseParagraphs"
+    }
+  ],
   "i18n": {
     "prefix": "doctor-letter"
   }

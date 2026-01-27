@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import i18n from '../../src/i18n';
 import { buildDocumentModel } from '../../src/formpacks/documentModel';
+import { splitParagraphs } from '../../src/lib/text/paragraphs';
 import deTranslations from '../../../formpacks/doctor-letter/i18n/de.json';
 import enTranslations from '../../../formpacks/doctor-letter/i18n/en.json';
 
@@ -12,6 +13,13 @@ const DOE = 'Doe';
 const DR_TITLE = 'Dr.';
 const COVID_19_VACCINATION = 'COVID-19 vaccination';
 const FLUOROQUINOLONES = 'Medication: Fluoroquinolones';
+const CASE_0_KEY = 'doctor-letter.case.0.paragraph';
+const CASE_3_KEY = 'doctor-letter.case.3.paragraph';
+const CASE_11_KEY = 'doctor-letter.case.11.paragraph';
+const CASE_12_KEY = 'doctor-letter.case.12.paragraph';
+const CASE_14_KEY = 'doctor-letter.case.14.paragraph';
+const buildExpectedCaseText = (input: string) =>
+  splitParagraphs(input).join('\n\n');
 
 describe('buildDocumentModel for doctor-letter', () => {
   beforeAll(() => {
@@ -164,10 +172,13 @@ describe('buildDocumentModel for doctor-letter', () => {
 
       expect(result.decision).toBeDefined();
       expect(result.decision?.caseId).toBe(0);
-      expect(result.decision?.caseText).toBe(
-        deTranslations['doctor-letter.case.0.paragraph'],
+      const expectedText = buildExpectedCaseText(deTranslations[CASE_0_KEY]);
+      expect(result.decision?.caseText).toBe(expectedText);
+      expect(result.decision?.caseParagraphs).toEqual(
+        splitParagraphs(deTranslations[CASE_0_KEY]),
       );
       expect(result.decision?.caseText).toContain('nicht die vollständigen');
+      expect(result.decision?.caseText).not.toContain('[[P]]');
     });
 
     it('resolves Case 3 (COVID-19 infection) and provides localized text in English', () => {
@@ -192,8 +203,10 @@ describe('buildDocumentModel for doctor-letter', () => {
 
       expect(result.decision).toBeDefined();
       expect(result.decision?.caseId).toBe(3);
-      expect(result.decision?.caseText).toBe(
-        enTranslations['doctor-letter.case.3.paragraph'],
+      const expectedText = buildExpectedCaseText(enTranslations[CASE_3_KEY]);
+      expect(result.decision?.caseText).toBe(expectedText);
+      expect(result.decision?.caseParagraphs).toEqual(
+        splitParagraphs(enTranslations[CASE_3_KEY]),
       );
       expect(result.decision?.caseText).toContain('COVID-19 infection');
     });
@@ -218,8 +231,10 @@ describe('buildDocumentModel for doctor-letter', () => {
 
       expect(result.decision).toBeDefined();
       expect(result.decision?.caseId).toBe(11);
-      expect(result.decision?.caseText).toBe(
-        deTranslations['doctor-letter.case.11.paragraph'],
+      const expectedText = buildExpectedCaseText(deTranslations[CASE_11_KEY]);
+      expect(result.decision?.caseText).toBe(expectedText);
+      expect(result.decision?.caseParagraphs).toEqual(
+        splitParagraphs(deTranslations[CASE_11_KEY]),
       );
     });
 
@@ -270,8 +285,10 @@ describe('buildDocumentModel for doctor-letter', () => {
 
       expect(result.decision).toBeDefined();
       expect(result.decision?.caseId).toBe(12);
-      expect(result.decision?.caseText).toBe(
-        deTranslations['doctor-letter.case.12.paragraph'],
+      const expectedText = buildExpectedCaseText(deTranslations[CASE_12_KEY]);
+      expect(result.decision?.caseText).toBe(expectedText);
+      expect(result.decision?.caseParagraphs).toEqual(
+        splitParagraphs(deTranslations[CASE_12_KEY]),
       );
     });
 
@@ -322,8 +339,10 @@ describe('buildDocumentModel for doctor-letter', () => {
 
       expect(result.decision).toBeDefined();
       expect(result.decision?.caseId).toBe(14);
-      expect(result.decision?.caseText).toBe(
-        enTranslations['doctor-letter.case.14.paragraph'],
+      const expectedText = buildExpectedCaseText(enTranslations[CASE_14_KEY]);
+      expect(result.decision?.caseText).toBe(expectedText);
+      expect(result.decision?.caseParagraphs).toEqual(
+        splitParagraphs(enTranslations[CASE_14_KEY]),
       );
       expect(result.decision?.caseText).toMatch(/fluoroquinolon/i);
     });
@@ -376,11 +395,13 @@ describe('buildDocumentModel for doctor-letter', () => {
 
       expect(result.decision).toBeDefined();
       expect(result.decision?.caseId).toBe(3);
-      expect(result.decision?.caseText).toBe(
-        deTranslations['doctor-letter.case.3.paragraph'],
-      );
+      const expectedText = buildExpectedCaseText(deTranslations[CASE_3_KEY]);
+      expect(result.decision?.caseText).toBe(expectedText);
       expect(typeof result.decision?.caseText).toBe('string');
       expect(result.decision?.caseText.length).toBeGreaterThan(0);
+      expect(result.decision?.caseParagraphs).toEqual(
+        splitParagraphs(deTranslations[CASE_3_KEY]),
+      );
     });
 
     it('ensures caseText is never a raw boolean or ID', () => {

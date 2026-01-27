@@ -36,6 +36,7 @@ import {
 import { DoctorLetterFieldTemplate } from '../lib/rjsfDoctorLetterFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
+import { splitParagraphs } from '../lib/text/paragraphs';
 import {
   FormpackLoaderError,
   loadFormpackManifest,
@@ -1001,10 +1002,14 @@ export default function FormpackDetailPage() {
     (decision: Record<string, unknown>): string => {
       const result = resolveDecisionTree(buildDecisionAnswers(decision));
 
-      return t(result.caseKey, {
+      const rawText = t(result.caseKey, {
         ns: `formpack:${formpackId}`,
         defaultValue: result.caseKey,
       });
+      const caseParagraphs = splitParagraphs(rawText);
+      return caseParagraphs.length
+        ? caseParagraphs.join('\n\n')
+        : rawText.trim();
     },
     [formpackId, t],
   );
