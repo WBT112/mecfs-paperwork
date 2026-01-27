@@ -4,6 +4,7 @@ import path from 'node:path';
 import JSZip from 'jszip';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
+import { splitParagraphs } from '../src/lib/text/paragraphs';
 import {
   POLL_INTERVALS,
   POLL_TIMEOUT,
@@ -177,12 +178,15 @@ const answerDecisionTreeCase14 = async (
     .selectOption('Medication: Fluoroquinolones');
 };
 
+const normalizeCaseText = (input: string) =>
+  splitParagraphs(input).join('\n\n');
+
 const waitForResolvedText = async (page: Page, expected: string) => {
   const resolved = page.locator('#root_decision_resolvedCaseText');
   await expect(resolved).toBeVisible({ timeout: POLL_TIMEOUT });
   await expect
     .poll(async () => resolved.inputValue(), { timeout: POLL_TIMEOUT })
-    .toBe(expected);
+    .toBe(normalizeCaseText(expected));
 };
 
 const waitForDocxExportReady = async (
@@ -346,9 +350,12 @@ test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
   const filePath = await download.path();
   expect(filePath).not.toBeNull();
   const docxText = await extractDocxText(filePath as string);
-  expect(docxText).toContain(
+  const caseParagraphs = splitParagraphs(
     translations.formpack['doctor-letter.case.14.paragraph'],
   );
+  for (const paragraph of caseParagraphs) {
+    expect(docxText).toContain(paragraph);
+  }
 });
 
 test('doctor-letter clears hidden fields when branch changes and JSON export stays clean', async ({
