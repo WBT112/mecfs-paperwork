@@ -115,7 +115,10 @@ describe('storage/db', () => {
       // Simulate the upgrade process by calling the captured callback
       expect(upgradeCallback).toBeDefined();
       const runUpgrade = upgradeCallback!;
-      const upgradeEvent = new Event('upgrade') as IDBVersionChangeEvent;
+      const upgradeEvent = {
+        oldVersion: 0,
+        newVersion: 1,
+      } as IDBVersionChangeEvent;
       const upgradeTransaction = {} as IDBPTransaction<
         unknown,
         string[],
@@ -186,7 +189,10 @@ describe('storage/db', () => {
 
       expect(upgradeCallback).toBeDefined();
       const runUpgrade = upgradeCallback!;
-      const upgradeEvent = new Event('upgrade') as IDBVersionChangeEvent;
+      const upgradeEvent = {
+        oldVersion: 0,
+        newVersion: 1,
+      } as IDBVersionChangeEvent;
       const upgradeTransaction = {} as IDBPTransaction<
         unknown,
         string[],

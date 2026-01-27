@@ -16,31 +16,45 @@ import { formpackTemplates } from '../../../src/lib/rjsfTemplates';
 
 const getComponent = <TProps,>(
   component:
-    | ComponentType<any>
+    | ComponentType<TProps>
     | { [key: string]: ComponentType<any> }
     | undefined,
-): ComponentType<TProps> => component as ComponentType<TProps>;
+  name: string,
+): ComponentType<TProps> => {
+  if (typeof component !== 'function') {
+    throw new Error(`Missing ${name} component`);
+  }
+
+  return component;
+};
 
 const ArrayFieldTemplate = getComponent<ArrayFieldTemplateProps>(
   formpackTemplates.ArrayFieldTemplate,
+  'ArrayFieldTemplate',
 );
 const ArrayFieldItemTemplate = getComponent<ArrayFieldItemTemplateProps>(
   formpackTemplates.ArrayFieldItemTemplate,
+  'ArrayFieldItemTemplate',
 );
 const AddButton = getComponent<IconButtonProps>(
   formpackTemplates.ButtonTemplates?.AddButton,
+  'AddButton',
 );
 const RemoveButton = getComponent<IconButtonProps>(
   formpackTemplates.ButtonTemplates?.RemoveButton,
+  'RemoveButton',
 );
 const MoveUpButton = getComponent<IconButtonProps>(
   formpackTemplates.ButtonTemplates?.MoveUpButton,
+  'MoveUpButton',
 );
 const MoveDownButton = getComponent<IconButtonProps>(
   formpackTemplates.ButtonTemplates?.MoveDownButton,
+  'MoveDownButton',
 );
 const CopyButton = getComponent<IconButtonProps>(
   formpackTemplates.ButtonTemplates?.CopyButton,
+  'CopyButton',
 );
 
 const createTemplateButton = (
@@ -231,6 +245,7 @@ describe('rjsfTemplates', () => {
   });
 
   it('renders array template with translated add label and optional control in the title', () => {
+    const arrayTitle = 'Medication';
     const t = vi.fn((key: string, options?: { item?: string }) => {
       if (key === 'common.addItemWithTitle') {
         return `add:${options?.item ?? 'unknown'}`;
@@ -240,7 +255,7 @@ describe('rjsfTemplates', () => {
     const optionalControl = <span data-testid={optionalControlTestId} />;
     const registry = createRegistry({ formContext: { t } });
     const uiSchema: UiSchema = {
-      'ui:title': 'Medication',
+      'ui:title': arrayTitle,
       'ui:description': 'Ui description',
     };
     const props = createArrayFieldProps(registry, {
@@ -251,7 +266,7 @@ describe('rjsfTemplates', () => {
 
     render(<ArrayFieldTemplate {...props} />);
 
-    expect(screen.getByTestId('array-title')).toHaveTextContent('Medication');
+    expect(screen.getByTestId('array-title')).toHaveTextContent(arrayTitle);
     expect(
       screen.getByRole('button', { name: addMedicationLabel }),
     ).toBeInTheDocument();
