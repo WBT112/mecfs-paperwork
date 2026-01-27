@@ -23,6 +23,26 @@ const DB = {
 
 const locales: SupportedTestLocale[] = ['de', 'en'];
 
+const stripMarkdown = (value: string) =>
+  value
+    .replace(/\[(.*?)\]\([^)]*\)/g, '$1')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/_([^_]+)_/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const getMarkdownLink = (value: string) => {
+  const match = value.match(/\[(.*?)\]\((.*?)\)/);
+  if (!match) {
+    return null;
+  }
+  const [, label, href] = match;
+  return { label, href };
+};
+
 const loadTranslations = async (locale: SupportedTestLocale) => {
   const [formpackContents, appContents] = await Promise.all([
     readFile(
@@ -135,7 +155,9 @@ const ensureActiveDraft = async (
       .click();
   }
 
-  await waitForActiveRecordId(page);
+  await expect(page.locator('.formpack-form')).toBeVisible({
+    timeout: POLL_TIMEOUT,
+  });
 };
 
 const openDecisionTree = async (
@@ -273,9 +295,14 @@ for (const locale of locales) {
 
       const infoBox = page.locator('.info-box[role="note"]');
       await expect(infoBox).toBeVisible();
-      await expect(infoBox).toContainText(
-        translations.formpack['doctor-letter.infobox.q1'],
-      );
+      const infoBoxMessage = translations.formpack['doctor-letter.infobox.q1'];
+      await expect(infoBox).toContainText(stripMarkdown(infoBoxMessage));
+      const link = getMarkdownLink(infoBoxMessage);
+      if (link) {
+        await expect(
+          infoBox.getByRole('link', { name: link.label }),
+        ).toHaveAttribute('href', link.href);
+      }
     });
 
     test('doctor-letter preview renders case paragraphs', async ({ page }) => {
