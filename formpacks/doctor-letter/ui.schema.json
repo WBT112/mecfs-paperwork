@@ -156,9 +156,9 @@
     },
     "resolvedCaseText": {
       "ui:title": "doctor-letter.decision.resolvedCaseText.label",
-      "ui:widget": "textarea",
+      "ui:widget": "autoGrowTextarea",
       "ui:options": {
-        "rows": 5
+        "rows": 6
       },
       "ui:readonly": true
     }

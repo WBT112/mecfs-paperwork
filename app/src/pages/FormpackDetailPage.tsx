@@ -36,6 +36,7 @@ import {
 import { DoctorLetterFieldTemplate } from '../lib/rjsfDoctorLetterFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
+import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import {
   FormpackLoaderError,
@@ -1968,6 +1969,7 @@ export default function FormpackDetailPage() {
           schema={schema}
           uiSchema={conditionalUiSchema}
           templates={templates}
+          widgets={formpackWidgets}
           validator={validator}
           formData={formData}
           omitExtraData

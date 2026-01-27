@@ -684,6 +684,12 @@ body {
   color: var(--color-text);
 }
 
+.formpack-form textarea.formpack-textarea--auto {
+  overflow: hidden;
+  resize: vertical;
+  min-height: 6rem;
+}
+
 .formpack-form input:focus-visible,
 .formpack-form textarea:focus-visible,
 .formpack-form select:focus-visible {
