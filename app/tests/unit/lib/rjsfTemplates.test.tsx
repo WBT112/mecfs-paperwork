@@ -14,20 +14,34 @@ import type { ComponentType } from 'react';
 import { buttonId } from '@rjsf/utils';
 import { formpackTemplates } from '../../../src/lib/rjsfTemplates';
 
-const ArrayFieldTemplate =
-  formpackTemplates.ArrayFieldTemplate as ComponentType<ArrayFieldTemplateProps>;
-const ArrayFieldItemTemplate =
-  formpackTemplates.ArrayFieldItemTemplate as ComponentType<ArrayFieldItemTemplateProps>;
-const AddButton = formpackTemplates.ButtonTemplates
-  ?.AddButton as ComponentType<IconButtonProps>;
-const RemoveButton = formpackTemplates.ButtonTemplates
-  ?.RemoveButton as ComponentType<IconButtonProps>;
-const MoveUpButton = formpackTemplates.ButtonTemplates
-  ?.MoveUpButton as ComponentType<IconButtonProps>;
-const MoveDownButton = formpackTemplates.ButtonTemplates
-  ?.MoveDownButton as ComponentType<IconButtonProps>;
-const CopyButton = formpackTemplates.ButtonTemplates
-  ?.CopyButton as ComponentType<IconButtonProps>;
+const getComponent = <TProps,>(
+  component:
+    | ComponentType<any>
+    | { [key: string]: ComponentType<any> }
+    | undefined,
+): ComponentType<TProps> => component as ComponentType<TProps>;
+
+const ArrayFieldTemplate = getComponent<ArrayFieldTemplateProps>(
+  formpackTemplates.ArrayFieldTemplate,
+);
+const ArrayFieldItemTemplate = getComponent<ArrayFieldItemTemplateProps>(
+  formpackTemplates.ArrayFieldItemTemplate,
+);
+const AddButton = getComponent<IconButtonProps>(
+  formpackTemplates.ButtonTemplates?.AddButton,
+);
+const RemoveButton = getComponent<IconButtonProps>(
+  formpackTemplates.ButtonTemplates?.RemoveButton,
+);
+const MoveUpButton = getComponent<IconButtonProps>(
+  formpackTemplates.ButtonTemplates?.MoveUpButton,
+);
+const MoveDownButton = getComponent<IconButtonProps>(
+  formpackTemplates.ButtonTemplates?.MoveDownButton,
+);
+const CopyButton = getComponent<IconButtonProps>(
+  formpackTemplates.ButtonTemplates?.CopyButton,
+);
 
 const createTemplateButton = (
   label: string,
@@ -184,14 +198,13 @@ describe('rjsfTemplates', () => {
   });
 
   it('uses translated labels for add/remove buttons', () => {
-    const addTranslation = addTranslationKey;
     const removeTranslation = 'translated:common.remove';
     const t = vi.fn((key: string) => `translated:${key}`);
     const registry = createRegistry({ formContext: { t } });
     const { rerender } = render(<AddButton registry={registry} />);
 
     expect(
-      screen.getByRole('button', { name: addTranslation }),
+      screen.getByRole('button', { name: addTranslationKey }),
     ).toBeInTheDocument();
 
     rerender(<RemoveButton registry={registry} />);
