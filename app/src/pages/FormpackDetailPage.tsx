@@ -36,6 +36,7 @@ import {
 import { DoctorLetterFieldTemplate } from '../lib/rjsfDoctorLetterFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
+import { getFirstItem, isRecord } from '../lib/utils';
 import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import {
@@ -144,9 +145,6 @@ const buildErrorMessage = (
 
   return t('formpackLoadError');
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const DOCTOR_LETTER_ID = 'doctor-letter';
 
@@ -279,30 +277,12 @@ const getUiSchemaNode = (
 
 const getItemSchema = (
   schemaNode: RJSFSchema | undefined,
-): RJSFSchema | undefined => {
-  if (!schemaNode?.items) {
-    return undefined;
-  }
-  if (Array.isArray(schemaNode.items)) {
-    return schemaNode.items[0] as RJSFSchema | undefined;
-  }
-  return isRecord(schemaNode.items)
-    ? (schemaNode.items as RJSFSchema)
-    : undefined;
-};
+): RJSFSchema | undefined =>
+  getFirstItem(schemaNode?.items) as RJSFSchema | undefined;
 
 const getItemUiSchema = (
   uiNode: UiSchema | null | undefined,
-): UiSchema | undefined => {
-  if (!isRecord(uiNode)) {
-    return undefined;
-  }
-  const items = uiNode.items;
-  if (Array.isArray(items)) {
-    return isRecord(items[0]) ? (items[0] as UiSchema) : undefined;
-  }
-  return isRecord(items) ? (items as UiSchema) : undefined;
-};
+): UiSchema | undefined => getFirstItem(uiNode?.items) as UiSchema | undefined;
 
 const buildFieldPath = (segment: string, prefix?: string): string =>
   prefix ? `${prefix}.${segment}` : segment;

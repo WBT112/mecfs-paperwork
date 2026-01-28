@@ -4,6 +4,7 @@ import {
   type RJSFSchema,
   type UiSchema,
 } from '@rjsf/utils';
+import { getFirstItem } from './utils';
 
 export type ArrayFormatMode = 'join' | 'bullets';
 
@@ -123,31 +124,13 @@ const resolveParagraphValue = (
 
 const getItemSchemaFromArray = (
   schema: RJSFSchema | undefined,
-): RJSFSchema | undefined => {
-  if (!schema?.items) {
-    return undefined;
-  }
-  if (Array.isArray(schema.items)) {
-    return schema.items.length > 0
-      ? (schema.items[0] as RJSFSchema)
-      : undefined;
-  }
-  return schema.items as RJSFSchema;
-};
+): RJSFSchema | undefined =>
+  getFirstItem(schema?.items) as RJSFSchema | undefined;
 
 const getItemUiSchemaFromArray = (
   uiSchema: UiSchema | undefined,
-): UiSchema | undefined => {
-  if (!uiSchema?.items) {
-    return undefined;
-  }
-  if (Array.isArray(uiSchema.items)) {
-    return uiSchema.items.length > 0
-      ? (uiSchema.items[0] as UiSchema)
-      : undefined;
-  }
-  return uiSchema.items as UiSchema;
-};
+): UiSchema | undefined =>
+  getFirstItem(uiSchema?.items) as UiSchema | undefined;
 
 const resolveArrayItem = (
   item: unknown,
