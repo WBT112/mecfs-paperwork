@@ -13,6 +13,8 @@ const PERSON_NAME_PATH = 'person.name';
 const CONTACTS_NAME_PATH = 'contacts.0.name';
 const MEDICATIONS_PATH = 'medications';
 const RECORD_ID = 'record-1';
+const DOCX_LITERAL_DELIMITER = '§§DOCX_XML§§';
+const DOCX_BR_LITERAL = `${DOCX_LITERAL_DELIMITER}</w:t><w:br w:type="textWrapping"/><w:t xml:space="preserve">${DOCX_LITERAL_DELIMITER}`;
 
 type FetchHandler = {
   ok: boolean;
@@ -104,7 +106,8 @@ describe('docx export coverage', () => {
       expect.objectContaining({
         template,
         data,
-        processLineBreaks: true,
+        literalXmlDelimiter: DOCX_LITERAL_DELIMITER,
+        processLineBreaks: false,
         failFast: true,
       }),
     );
@@ -210,6 +213,51 @@ describe('docx export coverage', () => {
       person: { name: PERSON_NAME },
       contacts: { 0: { name: 'Sam' } },
       medications: [{ name: 'Rx', dosage: '5mg', schedule: '' }],
+    });
+  });
+
+  it('encodes docx line breaks in mapped fields', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-linebreak/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: {
+        name: `Line 1\n${DOCX_LITERAL_DELIMITER}Line 2`,
+        birthDate: null,
+      },
+      contacts: [],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+    };
+
+    const context = await mapDocumentDataToTemplate(
+      'pack-linebreak',
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      },
+    );
+
+    expect(context).toMatchObject({
+      person: {
+        name: `Line 1${DOCX_BR_LITERAL}Line 2`,
+      },
     });
   });
 
@@ -401,8 +449,8 @@ describe('docx export coverage', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(mocks.loadFormpackSchemaMock).toHaveBeenCalledTimes(1);
-    expect(mocks.loadFormpackUiSchemaMock).toHaveBeenCalledTimes(1);
+    expect(mocks.loadFormpackSchemaMock).toHaveBeenCalledTimes(2);
+    expect(mocks.loadFormpackUiSchemaMock).toHaveBeenCalledTimes(2);
   });
 
   it('handles array item schemas and skips unsafe mapping vars', async () => {
