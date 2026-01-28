@@ -74,9 +74,8 @@ jobs:
         # NOTE: Always pull the latest base image digest to avoid scanning stale cached layers.
         run: docker build --pull -t mecfs-paperwork:${{ github.sha }} .
 
-      - name: Trivy image scan (MEDIUM/HIGH/CRITICAL)
+      - name: Trivy image scan (report MEDIUM/HIGH/CRITICAL)
         if: steps.check-secrets.outputs.available == 'true'
-        continue-on-error: ${{ github.event_name == 'pull_request' }}
         uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: mecfs-paperwork:${{ github.sha }}
@@ -85,6 +84,18 @@ jobs:
           severity: MEDIUM,HIGH,CRITICAL
           format: sarif
           output: trivy-image.sarif
+          exit-code: 0
+
+      - name: Trivy image gate (CRITICAL only)
+        if: steps.check-secrets.outputs.available == 'true'
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: mecfs-paperwork:${{ github.sha }}
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL
+          format: table
           exit-code: 1
 
       - name: Upload Trivy SARIF (image)
@@ -102,8 +113,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Trivy FS scan (MEDIUM/HIGH/CRITICAL)
-        continue-on-error: ${{ github.event_name == 'pull_request' }}
+      - name: Trivy FS scan (report MEDIUM/HIGH/CRITICAL)
         uses: aquasecurity/trivy-action@0.33.1
         with:
           scan-type: fs
@@ -113,6 +123,18 @@ jobs:
           severity: MEDIUM,HIGH,CRITICAL
           format: sarif
           output: trivy-fs.sarif
+          exit-code: 0
+
+      - name: Trivy FS gate (CRITICAL only)
+        continue-on-error: ${{ github.event_name == 'pull_request' }}
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          scan-type: fs
+          scan-ref: .
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL
+          format: table
           exit-code: 1
 
       - name: Upload Trivy SARIF (fs)
