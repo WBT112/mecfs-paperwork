@@ -79,6 +79,10 @@ jobs:
           curl -f http://localhost:8080/formpacks
           curl -f http://localhost:8080/some/deep/link
 
+      - name: Header smoke checks
+        if: steps.check-secrets.outputs.available == 'true'
+        run: node tools/header-smoke.mjs
+
       - name: Stop container
         if: always() && steps.check-secrets.outputs.available == 'true'
         run: docker stop mecfs-paperwork
@@ -144,6 +148,10 @@ jobs:
           curl -f http://localhost:8080/
           curl -f http://localhost:8080/formpacks
           curl -f http://localhost:8080/some/deep/link
+
+      - name: Compose header smoke checks
+        if: steps.check-secrets.outputs.available == 'true'
+        run: node tools/header-smoke.mjs
 
       - name: Compose down
         if: always() && steps.check-secrets.outputs.available == 'true'
