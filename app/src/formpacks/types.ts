@@ -16,6 +16,7 @@ export interface InfoBoxConfig {
   anchor: string;
   enabled: boolean;
   i18nKey: string;
+  format?: 'text' | 'markdown';
   showIf?: Array<{
     path: string;
     op: 'eq' | 'neq';

@@ -87,6 +87,7 @@ const MANIFEST_SCHEMA = {
               anchor: { type: 'string', minLength: 1 },
               enabled: { type: 'boolean' },
               i18nKey: { type: 'string', minLength: 1 },
+              format: { enum: ['text', 'markdown'] },
               showIf: {
                 type: 'array',
                 items: {

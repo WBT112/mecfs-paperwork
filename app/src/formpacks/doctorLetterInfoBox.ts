@@ -1,14 +1,6 @@
-export interface InfoBoxConfig {
-  id: string;
-  anchor: string; // e.g., "decision.q1"
-  enabled: boolean;
-  i18nKey: string;
-  showIf?: Array<{
-    path: string;
-    op: 'eq' | 'neq';
-    value: unknown;
-  }>;
-}
+import type { InfoBoxConfig } from './types';
+
+export type { InfoBoxConfig } from './types';
 
 /**
  * Evaluates whether an infoBox should be shown based on its showIf conditions.

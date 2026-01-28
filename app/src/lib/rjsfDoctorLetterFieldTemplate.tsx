@@ -115,6 +115,7 @@ export function DoctorLetterFieldTemplate(
             ns: namespace,
             defaultValue: infoBox.i18nKey,
           })}
+          format={infoBox.format ?? 'text'}
         />
       ))}
     </div>
