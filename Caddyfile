@@ -1,8 +1,14 @@
 # Replace the site address with your real domain (A/AAAA points to this server).
 # Example: mecfs-paperwork.de
 mecfs-paperwork.de {
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  }
   reverse_proxy web:8080
 }
 www.mecfs-paperwork.de {
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  }
   reverse_proxy web:8080
 }
