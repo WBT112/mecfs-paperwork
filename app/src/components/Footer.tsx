@@ -24,6 +24,12 @@ export default function Footer() {
           >
             {t('footerPrivacy')}
           </Link>
+          <Link
+            className="app__footer-link app__footer-link--center"
+            to="/help"
+          >
+            {t('footerHelp')}
+          </Link>
           {sponsorUrl ? (
             <a
               className="app__footer-link app__footer-link--center-right"

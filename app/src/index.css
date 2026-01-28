@@ -359,6 +359,11 @@ body {
   text-align: center;
 }
 
+.app__footer-link--center {
+  justify-self: center;
+  text-align: center;
+}
+
 .app__footer-link--center-right {
   justify-self: center;
   text-align: center;

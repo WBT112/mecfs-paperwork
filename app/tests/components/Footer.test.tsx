@@ -9,6 +9,7 @@ const translations: Record<string, string> = {
   footerNavLabel: 'Footer navigation',
   footerImprint: 'Imprint',
   footerPrivacy: 'Privacy Policy',
+  footerHelp: 'Help',
   footerGithub: 'GitHub',
   footerSponsor: 'Sponsor',
 };
@@ -41,6 +42,10 @@ describe('Footer', () => {
     expect(
       screen.getByRole('link', { name: 'Privacy Policy' }),
     ).toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: 'Help' })).toHaveAttribute(
+      'href',
+      '/help',
+    );
 
     const sponsorLink = screen.getByRole('link', { name: 'Sponsor' });
     expect(sponsorLink).toHaveAttribute('href', 'https://example.com/sponsor');
