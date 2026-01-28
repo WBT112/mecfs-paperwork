@@ -8,6 +8,7 @@ import ThemeSwitcher from './components/ThemeSwitcher';
 import TopbarActions from './components/TopbarActions';
 import FormpackDetailPage from './pages/FormpackDetailPage';
 import FormpackListPage from './pages/FormpackListPage';
+import HelpPage from './pages/HelpPage';
 import LegalPage from './pages/LegalPage';
 import imprintContent from './content/legal/imprint.md?raw';
 import privacyContent from './content/legal/privacy.md?raw';
@@ -91,6 +92,7 @@ export default function App() {
             path="/privacy"
             element={<LegalPage content={privacyContent} />}
           />
+          <Route path="/help" element={<HelpPage />} />
         </Routes>
       </main>
       <Footer />
