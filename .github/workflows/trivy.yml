@@ -71,7 +71,8 @@ jobs:
 
       - name: Build image
         if: steps.check-secrets.outputs.available == 'true'
-        run: docker build -t mecfs-paperwork:${{ github.sha }} .
+        # NOTE: Always pull the latest base image digest to avoid scanning stale cached layers.
+        run: docker build --pull -t mecfs-paperwork:${{ github.sha }} .
 
       - name: Trivy image scan (MEDIUM/HIGH/CRITICAL)
         if: steps.check-secrets.outputs.available == 'true'
