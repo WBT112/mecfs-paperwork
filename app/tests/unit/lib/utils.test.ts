@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { emptyStringToNull, isRecord } from '../../../src/lib/utils';
+import {
+  emptyStringToNull,
+  isRecord,
+  getFirstItem,
+} from '../../../src/lib/utils';
 
 describe('utils', () => {
   describe('emptyStringToNull', () => {
@@ -60,6 +64,26 @@ describe('utils', () => {
 
     it('should return false for undefined', () => {
       expect(isRecord(undefined)).toBe(false);
+    });
+  });
+
+  describe('getFirstItem', () => {
+    it('should return the first item of an array', () => {
+      expect(getFirstItem([1, 2, 3])).toBe(1);
+    });
+
+    it('should return undefined for an empty array', () => {
+      expect(getFirstItem([])).toBeUndefined();
+    });
+
+    it('should return the value itself if it is not an array', () => {
+      expect(getFirstItem('test')).toBe('test');
+      expect(getFirstItem(123)).toBe(123);
+      expect(getFirstItem({ a: 1 })).toEqual({ a: 1 });
+    });
+
+    it('should return undefined for undefined input', () => {
+      expect(getFirstItem(undefined)).toBeUndefined();
     });
   });
 });

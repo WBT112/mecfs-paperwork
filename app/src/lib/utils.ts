@@ -21,3 +21,15 @@ export const emptyStringToNull = (
  */
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Returns the first item if the input is an array, or the input itself otherwise.
+ * @param items The item or array of items.
+ * @returns The first item or the input.
+ */
+export const getFirstItem = <T>(items: T | T[] | undefined): T | undefined => {
+  if (Array.isArray(items)) {
+    return items[0];
+  }
+  return items;
+};
