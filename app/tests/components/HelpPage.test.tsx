@@ -7,7 +7,7 @@ describe('HelpPage', () => {
     render(<HelpPage />);
 
     expect(
-      screen.getByRole('heading', { level: 1, name: /help/i }),
+      screen.getByRole('heading', { level: 1, name: /hilfe/i }),
     ).toBeInTheDocument();
   });
 });
