@@ -55,6 +55,9 @@ const config: AppConfig = {
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      all: true,
+      include: ['src/**/*.{ts,tsx,mjs}'],
+      exclude: ['src/**/*.d.ts', 'src/lib/funding.generated.ts'],
     },
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     exclude: ['node_modules', 'dist', 'e2e', 'public', 'src'],

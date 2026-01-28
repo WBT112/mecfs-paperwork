@@ -1,0 +1,101 @@
+import { describe, expect, it } from 'vitest';
+import { applyDocxExportDefaults } from '../../../src/export/docx';
+
+describe('applyDocxExportDefaults', () => {
+  it('applies doctor-letter placeholders for missing patient and doctor fields', () => {
+    const context = {
+      t: {},
+      patient: {
+        firstName: '',
+        lastName: '',
+        streetAndNumber: '',
+        postalCode: '',
+        city: '',
+      },
+      doctor: {
+        practice: '',
+        name: '',
+        streetAndNumber: '',
+        postalCode: '',
+        city: '',
+      },
+      decision: {
+        caseText: '',
+        caseParagraphs: [],
+      },
+    };
+
+    const normalized = applyDocxExportDefaults(context, 'doctor-letter', 'de', {
+      decision: {},
+    });
+
+    expect(normalized).toMatchObject({
+      patient: {
+        firstName: 'Max',
+        lastName: 'Mustermann',
+        streetAndNumber: 'Musterstraße 1',
+        postalCode: '12345',
+        city: 'Musterstadt',
+      },
+      doctor: {
+        practice: '',
+        name: 'Dr. med. Erika Beispiel',
+        streetAndNumber: 'Praxisstraße 2',
+        postalCode: '12345',
+        city: 'Musterstadt',
+      },
+      decision: {
+        caseText:
+          'HINWEIS: BITTE BEANTWORTEN SIE ZUERST DIE FRAGEN UM EIN ERGEBNIS ZU ERHALTEN.',
+        caseParagraphs: [
+          'HINWEIS: BITTE BEANTWORTEN SIE ZUERST DIE FRAGEN UM EIN ERGEBNIS ZU ERHALTEN.',
+        ],
+      },
+    });
+  });
+
+  it('preserves provided values and skips defaults for non-missing fields', () => {
+    const context = {
+      t: {},
+      patient: {
+        firstName: 'Jane',
+        lastName: 'Doe',
+        streetAndNumber: 'Main St 5',
+        postalCode: '99999',
+        city: 'Sampletown',
+      },
+      doctor: {
+        practice: 'Central Clinic',
+        name: 'Dr. Real',
+        streetAndNumber: 'Health Ave 3',
+        postalCode: '11111',
+        city: 'Care City',
+      },
+      decision: {
+        caseText: 'Resolved case text',
+        caseParagraphs: ['Resolved case text'],
+      },
+    };
+
+    const normalized = applyDocxExportDefaults(context, 'doctor-letter', 'en', {
+      decision: { q1: 'yes' },
+    });
+
+    expect(normalized).toEqual(context);
+  });
+
+  it('does not apply defaults for other formpacks', () => {
+    const context = {
+      t: {},
+      patient: { firstName: '' },
+      doctor: { name: '' },
+      decision: { caseText: '' },
+    };
+
+    const normalized = applyDocxExportDefaults(context, 'notfallpass', 'en', {
+      decision: {},
+    });
+
+    expect(normalized).toEqual(context);
+  });
+});
