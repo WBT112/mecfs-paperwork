@@ -23,9 +23,8 @@ vi.mock('idb', () => ({
 }));
 
 describe('storage/db', () => {
-  type MockFunction<T extends (...args: never[]) => unknown> = Mock<T>;
   type MockObjectStore = {
-    createIndex: MockFunction<
+    createIndex: Mock<
       (
         name: string,
         keyPath: string | string[],
@@ -34,18 +33,18 @@ describe('storage/db', () => {
     >;
   };
   type MockDatabase = {
-    objectStoreNames: { contains: MockFunction<(name: string) => boolean> };
-    createObjectStore: MockFunction<
+    objectStoreNames: { contains: Mock<(name: string) => boolean> };
+    createObjectStore: Mock<
       (name: string, options: { keyPath: string }) => MockObjectStore
     >;
-    close: MockFunction<() => void>;
-    transaction?: MockFunction<() => unknown>;
+    close: Mock<() => void>;
+    transaction?: Mock<() => unknown>;
   };
 
   const globalWithIndexedDb = globalThis as { indexedDB?: IDBFactory };
 
   // Store original indexedDB. `global` types don't see our JSDOM env.
-  let originalIndexedDB: IDBFactory | undefined = globalWithIndexedDb.indexedDB;
+  let originalIndexedDB: IDBFactory | undefined;
 
   beforeEach(() => {
     originalIndexedDB = globalWithIndexedDb.indexedDB;
@@ -59,13 +58,14 @@ describe('storage/db', () => {
 
   describe('openStorage', () => {
     it('should throw StorageUnavailableError if indexedDB is not available', async () => {
-      delete globalWithIndexedDb.indexedDB;
+      globalWithIndexedDb.indexedDB = undefined;
 
       await expect(openStorage()).rejects.toThrow(StorageUnavailableError);
       await expect(openStorage()).rejects.toThrow('IndexedDB is unavailable.');
     });
 
     it('should open the database successfully when indexedDB is available', async () => {
+      globalWithIndexedDb.indexedDB = {} as IDBFactory;
       const mockDb = { close: vi.fn() } as unknown as IDBPDatabase;
       (openDB as Mock).mockResolvedValue(mockDb);
 
@@ -80,6 +80,7 @@ describe('storage/db', () => {
     });
 
     it('should call the upgrade callback to create object stores and indexes', async () => {
+      globalWithIndexedDb.indexedDB = {} as IDBFactory;
       const createdStores: MockObjectStore[] = [];
       const mockDb: MockDatabase = {
         objectStoreNames: { contains: vi.fn().mockReturnValue(false) },
@@ -113,7 +114,10 @@ describe('storage/db', () => {
       // Simulate the upgrade process by calling the captured callback
       expect(upgradeCallback).toBeDefined();
       const runUpgrade = upgradeCallback!;
-      const upgradeEvent = new Event('upgrade') as IDBVersionChangeEvent;
+      const upgradeEvent = {
+        oldVersion: 0,
+        newVersion: 1,
+      } as IDBVersionChangeEvent;
       const upgradeTransaction = {} as IDBPTransaction<
         unknown,
         string[],
@@ -158,6 +162,7 @@ describe('storage/db', () => {
     });
 
     it('should not create object stores if they already exist', async () => {
+      globalWithIndexedDb.indexedDB = {} as IDBFactory;
       const mockDb: MockDatabase = {
         objectStoreNames: { contains: vi.fn().mockReturnValue(true) }, // They exist
         createObjectStore: vi.fn(),
@@ -183,7 +188,10 @@ describe('storage/db', () => {
 
       expect(upgradeCallback).toBeDefined();
       const runUpgrade = upgradeCallback!;
-      const upgradeEvent = new Event('upgrade') as IDBVersionChangeEvent;
+      const upgradeEvent = {
+        oldVersion: 0,
+        newVersion: 1,
+      } as IDBVersionChangeEvent;
       const upgradeTransaction = {} as IDBPTransaction<
         unknown,
         string[],
