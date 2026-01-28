@@ -34,7 +34,7 @@
     ]
   },
   "dependencies": {
-    "@rjsf/core": "^6.1.2",
+    "@rjsf/core": "^6.2.4",
     "@rjsf/utils": "^6.1.2",
     "@rjsf/validator-ajv8": "^6.2.5",
     "@types/sanitize-html": "^2.16.0",
@@ -58,7 +58,7 @@
     "@eslint/js": "^9.39.2",
     "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.1",
+    "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^25.0.9",
     "@types/react": "^19.2.0",
