@@ -84,6 +84,8 @@ const assertTemplateAllowed = (
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
+const DOCX_LITERAL_DELIMITER = '§§DOCX_XML§§';
+const DOCX_BR_LITERAL = `${DOCX_LITERAL_DELIMITER}</w:t><w:br w:type="textWrapping"/><w:t xml:space="preserve">${DOCX_LITERAL_DELIMITER}`;
 // Session cache keeps DOCX assets available when the app is offline.
 const docxMappingCache = new Map<string, DocxMapping>();
 const docxTemplateCache = new Map<string, Uint8Array>();
@@ -221,6 +223,28 @@ const coerceDocxError = (error: unknown): Error | null => {
   return null;
 };
 
+const stripDocxLiteralDelimiter = (value: string): string =>
+  value.split(DOCX_LITERAL_DELIMITER).join('');
+
+const encodeDocxLineBreaks = (value: string): string => {
+  const safe = stripDocxLiteralDelimiter(value);
+  return safe.includes('\n') ? safe.replace(/\n/g, DOCX_BR_LITERAL) : safe;
+};
+
+const pickCachedDocxSchema = <T>(
+  formpackId: string,
+  override: T | null | undefined,
+  cache: Map<string, T | null>,
+): T | null | undefined => {
+  if (override !== undefined) {
+    return override;
+  }
+  if (cache.has(formpackId)) {
+    return cache.get(formpackId) ?? null;
+  }
+  return undefined;
+};
+
 /**
  * Maps docx-templates errors to user-facing i18n keys.
  */
@@ -339,11 +363,13 @@ const normalizeFieldValue = (
   }
 
   if (resolveValue) {
-    return resolveValue(value, schemaNode, uiNode, fieldPath);
+    return encodeDocxLineBreaks(
+      resolveValue(value, schemaNode, uiNode, fieldPath),
+    );
   }
 
   if (typeof value === 'number' || typeof value === 'boolean') {
-    return String(value);
+    return encodeDocxLineBreaks(String(value));
   }
 
   return '';
@@ -360,13 +386,15 @@ const normalizePrimitive = (
     return null;
   }
   if (typeof entry === 'string') {
-    return entry;
+    return encodeDocxLineBreaks(entry);
   }
   if (resolveValue) {
-    return resolveValue(entry, schemaNode, uiNode, fieldPath);
+    return encodeDocxLineBreaks(
+      resolveValue(entry, schemaNode, uiNode, fieldPath),
+    );
   }
   if (typeof entry === 'number' || typeof entry === 'boolean') {
-    return String(entry);
+    return encodeDocxLineBreaks(String(entry));
   }
   return null;
 };
@@ -585,14 +613,17 @@ const loadDocxMapping = async (
 const loadDocxSchema = async (
   formpackId: string,
 ): Promise<RJSFSchema | null> => {
-  const cached = docxSchemaCache.get(formpackId);
-  if (cached !== undefined) {
-    return cached;
+  if (docxSchemaCache.has(formpackId)) {
+    return docxSchemaCache.get(formpackId) ?? null;
   }
   try {
-    const schema = (await loadFormpackSchema(formpackId)) as RJSFSchema;
-    docxSchemaCache.set(formpackId, schema);
-    return schema;
+    const schema = (await loadFormpackSchema(formpackId)) as
+      | RJSFSchema
+      | null
+      | undefined;
+    const normalized = schema ?? null;
+    docxSchemaCache.set(formpackId, normalized);
+    return normalized;
   } catch {
     docxSchemaCache.set(formpackId, null);
     return null;
@@ -602,14 +633,17 @@ const loadDocxSchema = async (
 const loadDocxUiSchema = async (
   formpackId: string,
 ): Promise<UiSchema | null> => {
-  const cached = docxUiSchemaCache.get(formpackId);
-  if (cached !== undefined) {
-    return cached;
+  if (docxUiSchemaCache.has(formpackId)) {
+    return docxUiSchemaCache.get(formpackId) ?? null;
   }
   try {
-    const uiSchema = (await loadFormpackUiSchema(formpackId)) as UiSchema;
-    docxUiSchemaCache.set(formpackId, uiSchema);
-    return uiSchema;
+    const uiSchema = (await loadFormpackUiSchema(formpackId)) as
+      | UiSchema
+      | null
+      | undefined;
+    const normalized = uiSchema ?? null;
+    docxUiSchemaCache.set(formpackId, normalized);
+    return normalized;
   } catch {
     docxUiSchemaCache.set(formpackId, null);
     return null;
@@ -630,10 +664,26 @@ export const mapDocumentDataToTemplate = async (
   const locale = options.locale ?? (i18n.language as SupportedLocale);
   const mappingPath = options.mappingPath ?? 'docx/mapping.json';
   const mapping = await loadDocxMapping(formpackId, mappingPath);
+  const cachedSchema = pickCachedDocxSchema(
+    formpackId,
+    options.schema,
+    docxSchemaCache,
+  );
+  const cachedUiSchema = pickCachedDocxSchema(
+    formpackId,
+    options.uiSchema,
+    docxUiSchemaCache,
+  );
   const [schema, uiSchema] = await Promise.all([
-    options.schema ?? loadDocxSchema(formpackId),
-    options.uiSchema ?? loadDocxUiSchema(formpackId),
+    cachedSchema ?? loadDocxSchema(formpackId),
+    cachedUiSchema ?? loadDocxUiSchema(formpackId),
   ]);
+  if (!docxSchemaCache.has(formpackId)) {
+    docxSchemaCache.set(formpackId, schema ?? null);
+  }
+  if (!docxUiSchemaCache.has(formpackId)) {
+    docxUiSchemaCache.set(formpackId, uiSchema ?? null);
+  }
   const resolveValue = (
     value: unknown,
     schemaNode?: RJSFSchema,
@@ -807,7 +857,8 @@ export const createDocxReport = async (
     template,
     data,
     cmdDelimiter: DOCX_CMD_DELIMITER,
-    processLineBreaks: true,
+    literalXmlDelimiter: DOCX_LITERAL_DELIMITER,
+    processLineBreaks: false,
     additionalJsContext,
     failFast,
   });

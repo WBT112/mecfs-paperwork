@@ -10,7 +10,7 @@ Provide a concise, binding testing strategy so PRs have consistent acceptance cr
 - i18n (DE/EN) and locale persistence in records/exports.
 - Critical flows:
   - Import/Export roundtrip (JSON backup).
-  - DOCX export (A4 + Wallet) stability (functional checks).
+  - DOCX export stability (functional checks).
 
 **Out of scope (unless explicitly required)**
 - Large E2E suites and multi-browser/device matrices.

@@ -26,4 +26,5 @@ secrets
 .vscode
 
 # Incremental TS Info
-.tsbuildinfo
+*.tsbuildinfo
+app/tsconfig.tsbuildinfo
