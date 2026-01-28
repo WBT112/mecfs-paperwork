@@ -2,4 +2,5 @@
 coverage/
 
 # Incremental TS Info
-.tsbuildinfo
+*.tsbuildinfo
+tsconfig.tsbuildinfo
