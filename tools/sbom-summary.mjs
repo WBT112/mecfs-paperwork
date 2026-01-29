@@ -173,16 +173,22 @@ const parseArgs = (args) => {
       continue;
     }
     if (token === '--output') {
-      options.output = args[index + 1] ?? options.output;
-      index += 1;
+      const value = args[index + 1];
+      if (value && !value.startsWith('--')) {
+        options.output = value;
+        index += 1;
+      }
       continue;
     }
     if (token === '--top') {
-      const parsed = Number.parseInt(args[index + 1] ?? '', 10);
-      if (Number.isFinite(parsed) && parsed > 0) {
-        options.topLimit = parsed;
+      const value = args[index + 1];
+      if (value && !value.startsWith('--')) {
+        const parsed = Number.parseInt(value, 10);
+        if (Number.isFinite(parsed) && parsed > 0) {
+          options.topLimit = parsed;
+        }
+        index += 1;
       }
-      index += 1;
       continue;
     }
   }
@@ -252,6 +258,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
 
 export {
   buildSbomMarkdown,
+  buildReportSection,
+  buildTopPackages,
+  normalizeEcosystems,
+  parseArgs,
   parsePurlType,
   summarizeCycloneDx,
   summarizeSpdx,

@@ -40,11 +40,10 @@ jobs:
         run: |
           echo "::notice::Skipping container image SBOM because DHI registry credentials are not available on pull_request events."
 
-      - name: Fail if DHI secrets are missing
+      - name: Notice (events without secrets)
         if: steps.check-secrets.outputs.available != 'true' && github.event_name != 'pull_request'
         run: |
-          echo "::error::Missing DHI secrets. Configure DHI_USERNAME and DHI_TOKEN to generate container image SBOMs."
-          exit 1
+          echo "::notice::Skipping container image SBOM because DHI registry credentials are not available."
 
       - name: Login to DHI registry
         if: steps.check-secrets.outputs.available == 'true'
@@ -105,12 +104,16 @@ jobs:
 
       - name: Build SBOM summary
         run: |
-          node tools/sbom-summary.mjs \
-            --input sbom.workspace.cdx.json \
-            --input sbom.workspace.spdx.json \
-            --input sbom.image.cdx.json \
-            --input sbom.image.spdx.json \
+          set -euo pipefail
+          SUMMARY_ARGS=(
+            --input sbom.workspace.cdx.json
+            --input sbom.workspace.spdx.json
             --output sbom-summary.md
+          )
+          if [ "${{ steps.check-secrets.outputs.available }}" = "true" ]; then
+            SUMMARY_ARGS+=(--input sbom.image.cdx.json --input sbom.image.spdx.json)
+          fi
+          node tools/sbom-summary.mjs "${SUMMARY_ARGS[@]}"
 
       - name: Publish SBOM summary
         run: cat sbom-summary.md >> "$GITHUB_STEP_SUMMARY"
@@ -119,13 +122,21 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: sbom
+          name: sbom-workspace
           path: |
             sbom.workspace.cdx.json
             sbom.workspace.spdx.json
+            sbom-summary.md
+          retention-days: 14
+
+      - name: Upload image SBOM artifacts
+        if: always() && steps.check-secrets.outputs.available == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: sbom-image
+          path: |
             sbom.image.cdx.json
             sbom.image.spdx.json
-            sbom-summary.md
           retention-days: 14
 
       - name: Cleanup image artifacts

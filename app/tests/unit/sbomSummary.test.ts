@@ -1,10 +1,68 @@
 import { describe, expect, it } from 'vitest';
-import {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
+// @ts-expect-error No type declarations for SBOM summary tool.
+const sbomSummary = (await import('../../../tools/sbom-summary.mjs')) as {
+  buildSbomMarkdown: (options: {
+    reports: Array<{
+      label: string;
+      summary: {
+        format: string;
+        total: number;
+        ecosystems: Map<string, number>;
+        packages: string[];
+      };
+      missing: boolean;
+      parseError: boolean;
+    }>;
+    generatedAt: string;
+    sha: string | null;
+    topLimit: number;
+  }) => string;
+  buildReportSection: (options: {
+    label: string;
+    summary: {
+      format: string;
+      total: number;
+      ecosystems: Map<string, number>;
+      packages: string[];
+    };
+    missing: boolean;
+    parseError: boolean;
+    topLimit: number;
+  }) => string[];
+  buildTopPackages: (packages: string[], limit: number) => string[];
+  normalizeEcosystems: (
+    ecosystems: Map<string, number>,
+  ) => Array<[string, number]>;
+  parseArgs: (args: string[]) => {
+    inputs: string[];
+    output: string;
+    topLimit: number;
+  };
+  parsePurlType: (purl: string | null) => string | null;
+  summarizeCycloneDx: (bom: unknown) => {
+    format: string;
+    total: number;
+    ecosystems: Map<string, number>;
+    packages: string[];
+  };
+  summarizeSpdx: (bom: unknown) => {
+    format: string;
+    total: number;
+    ecosystems: Map<string, number>;
+    packages: string[];
+  };
+};
+const {
   buildSbomMarkdown,
+  buildReportSection,
+  buildTopPackages,
+  normalizeEcosystems,
+  parseArgs,
   parsePurlType,
   summarizeCycloneDx,
   summarizeSpdx,
-} from '../../../tools/sbom-summary.mjs';
+} = sbomSummary;
 
 describe('sbom summary helpers', () => {
   const NPM_REACT_PURL = 'pkg:npm/react@18.2.0';
@@ -89,5 +147,52 @@ describe('sbom summary helpers', () => {
     expect(markdown).toContain('Commit: `abc123`');
     expect(markdown).toContain('Packages: **1**');
     expect(markdown).toContain('Ecosystems:');
+  });
+
+  it('handles missing and parse error reports', () => {
+    const summary = summarizeCycloneDx({
+      bomFormat: 'CycloneDX',
+      components: [{ name: 'react', purl: NPM_REACT_PURL }],
+    });
+    const missingReport = buildReportSection({
+      label: 'missing.json',
+      summary,
+      missing: true,
+      parseError: false,
+      topLimit: 5,
+    });
+    expect(missingReport.join('\n')).toContain('SBOM file not found');
+    const errorReport = buildReportSection({
+      label: 'bad.json',
+      summary,
+      missing: false,
+      parseError: true,
+      topLimit: 5,
+    });
+    expect(errorReport.join('\n')).toContain('Unable to parse SBOM data');
+  });
+
+  it('normalizes ecosystem ordering and top packages', () => {
+    const ecosystems = normalizeEcosystems(
+      new Map([
+        ['maven', 1],
+        ['npm', 3],
+        ['unknown', 3],
+      ]),
+    );
+    expect(ecosystems.map(([name]) => name)).toEqual([
+      'npm',
+      'unknown',
+      'maven',
+    ]);
+    const packages = buildTopPackages(['b', 'a', 'b', 'c'], 2);
+    expect(packages).toEqual(['a', 'b']);
+  });
+
+  it('parses arguments with defaults', () => {
+    const parsed = parseArgs(['--input', 'a.json', '--top', '5']);
+    expect(parsed.inputs).toEqual(['a.json']);
+    expect(parsed.output).toBe('sbom-summary.md');
+    expect(parsed.topLimit).toBe(5);
   });
 });

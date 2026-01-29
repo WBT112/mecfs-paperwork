@@ -1,2 +1,1 @@
 declare module '../../../tools/npm-health.mjs';
-declare module '../../../tools/sbom-summary.mjs';
