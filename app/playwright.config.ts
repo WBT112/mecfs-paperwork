@@ -33,16 +33,29 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+      grepInvert: /@mobile/,
     },
     {
       // Gecko-based Firefox
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
+      grepInvert: /@mobile/,
     },
     {
       // WebKit (closest to Safari engine)
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
+      grepInvert: /@mobile/,
+    },
+    {
+      name: 'webkit-mobile',
+      use: { ...devices['iPhone 13'] },
+      grep: /@mobile/,
+    },
+    {
+      name: 'chromium-mobile',
+      use: { ...devices['Pixel 5'] },
+      grep: /@mobile/,
     },
   ],
 });
