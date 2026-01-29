@@ -39,6 +39,7 @@ npm run dev
 Run from `app/`:
 
 ```bash
+npm run format
 npm run format:check
 npm run lint
 npm run typecheck
