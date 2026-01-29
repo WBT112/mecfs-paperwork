@@ -250,8 +250,7 @@ const extractDocxDocumentXml = async (docxPath: string) => {
   return documentXml;
 };
 
-const extractDocxText = async (docxPath: string) => {
-  const documentXml = await extractDocxDocumentXml(docxPath);
+const extractDocxTextFromXml = (documentXml: string) => {
   const textRuns = Array.from(
     documentXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g),
   ).map((match) => match[1]);
@@ -406,10 +405,8 @@ test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
   const filePath = await download.path();
   expect(filePath).not.toBeNull();
   const docxPath = filePath as string;
-  const [docxText, documentXml] = await Promise.all([
-    extractDocxText(docxPath),
-    extractDocxDocumentXml(docxPath),
-  ]);
+  const documentXml = await extractDocxDocumentXml(docxPath);
+  const docxText = extractDocxTextFromXml(documentXml);
   expect(documentXml).not.toContain('[[P]]');
   expect(documentXml).not.toContain('[[BR]]');
   expect(documentXml).toContain('<w:br');
