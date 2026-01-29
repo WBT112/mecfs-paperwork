@@ -10,6 +10,21 @@ import {
   summarizeAudit,
 } from '../../../tools/npm-health.mjs';
 
+type WarningType = 'deprecated' | 'peer' | 'engine' | 'other';
+type WarningEntry = {
+  type: WarningType;
+  message: string;
+};
+type AuditSummary = {
+  counts: Record<'low' | 'moderate' | 'high' | 'critical', number>;
+  packages: Array<{
+    name: string;
+    severity: 'low' | 'moderate' | 'high' | 'critical';
+    title: string | null;
+    fixAvailable: boolean;
+  }>;
+};
+
 describe('npm health helpers', () => {
   const WARN_DEPRECATED = 'npm WARN deprecated foo';
   const WARN_DEPRECATED_LOG = 'npm WARN deprecated foo@1.0.0: old';
@@ -18,22 +33,6 @@ describe('npm health helpers', () => {
   const WARN_OTHER = 'npm WARN something else';
   const LABEL_NPM_HEALTH = 'npm health';
   const LABEL_NPM_WARNINGS = 'npm WARN';
-
-  type WarningEntry = {
-    type: string;
-    message: string;
-  };
-
-  type AuditSummary = {
-    counts: Record<'low' | 'moderate' | 'high' | 'critical', number>;
-    packages: Array<{
-      name: string;
-      severity: string;
-      title: string | null;
-      fixAvailable: boolean;
-    }>;
-  };
-
   it('classifies warning lines by type', () => {
     expect(classifyWarningLine(WARN_DEPRECATED)).toBe('deprecated');
     expect(classifyWarningLine(WARN_PEER)).toBe('peer');
@@ -120,12 +119,12 @@ describe('npm health helpers', () => {
   });
 
   it('builds audit markdown summaries', () => {
-    const summary = {
+    const summary: AuditSummary = {
       counts: { low: 0, moderate: 1, high: 0, critical: 0 },
       packages: [
         {
           name: 'legacy',
-          severity: 'moderate' as const,
+          severity: 'moderate',
           title: 'Legacy vuln',
           fixAvailable: true,
         },

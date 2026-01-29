@@ -9,7 +9,7 @@ This project tracks npm install warnings and npm audit output in CI to keep depe
 - **npm audit results**: vulnerability counts by severity from `npm audit --json`.
 
 ## Where to find the output
-- **GitHub Actions job summary**: "npm health" section with warning counts and audit totals.
+- **GitHub Actions job summary**: "npm health" section with warning counts and audit totals in the dedicated npm health workflow.
 - **Artifacts** (`npm-health`):
   - `npm-install.log`
   - `npm-warnings.json`

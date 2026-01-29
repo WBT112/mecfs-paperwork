@@ -18,5 +18,5 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node", "@playwright/test", "vitest/config", "vite/client"]
   },
-  "include": ["src", "tests"]
+  "include": ["src", "tests", "tests/lib", "tests/unit"]
 }
