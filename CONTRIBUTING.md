@@ -36,7 +36,7 @@ npm run dev
 
 ## Quality gates (required before opening a PR)
 
-Run from `app/`:
+Run from `app/`. CI only runs `npm run format:check`; if it fails locally, run `npm run format` and re-run the check:
 
 ```bash
 npm run format:check
