@@ -8,13 +8,16 @@ const compactParagraphs = (parts: string[]): string[] =>
   parts.map((part) => part.trim()).filter(Boolean);
 
 export const PARAGRAPH_MARKER = '[[P]]';
+export const LINE_BREAK_MARKER = '[[BR]]';
 
 export const normalizeParagraphText = (
   raw: string,
   marker = PARAGRAPH_MARKER,
+  lineBreakMarker = LINE_BREAK_MARKER,
 ): { paragraphs: string[]; text: string } => {
   const normalized = normalizeLineEndings(raw);
-  const trimmed = normalized.trim();
+  const withLineBreaks = normalized.split(lineBreakMarker).join('\n');
+  const trimmed = withLineBreaks.trim();
   if (!trimmed) {
     return { paragraphs: [], text: '' };
   }
