@@ -239,7 +239,7 @@ const exportDocxAndExpectSuccess = async (
   return download;
 };
 
-const extractDocxText = async (docxPath: string) => {
+const extractDocxDocumentXml = async (docxPath: string) => {
   const buffer = await readFile(docxPath);
   const zip = await JSZip.loadAsync(buffer);
   const documentXml = await zip.file('word/document.xml')?.async('string');
@@ -247,6 +247,11 @@ const extractDocxText = async (docxPath: string) => {
     throw new Error('DOCX document.xml was not found in the export.');
   }
 
+  return documentXml;
+};
+
+const extractDocxText = async (docxPath: string) => {
+  const documentXml = await extractDocxDocumentXml(docxPath);
   const textRuns = Array.from(
     documentXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g),
   ).map((match) => match[1]);
@@ -400,7 +405,14 @@ test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
   const download = await exportDocxAndExpectSuccess(docxSection, exportButton);
   const filePath = await download.path();
   expect(filePath).not.toBeNull();
-  const docxText = await extractDocxText(filePath as string);
+  const docxPath = filePath as string;
+  const [docxText, documentXml] = await Promise.all([
+    extractDocxText(docxPath),
+    extractDocxDocumentXml(docxPath),
+  ]);
+  expect(documentXml).not.toContain('[[P]]');
+  expect(documentXml).not.toContain('[[BR]]');
+  expect(documentXml).toContain('<w:br');
   const caseParagraphs = splitParagraphs(
     translations.formpack['doctor-letter.case.14.paragraph'],
   );
