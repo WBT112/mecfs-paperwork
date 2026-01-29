@@ -78,6 +78,18 @@ describe('resolveDecisionTree', () => {
       expect(result.caseKey).toBe('doctor-letter.case.4.paragraph');
     });
 
+    it('resolves to Case 14 when Q1=true, Q2=true, Q3=false, Q5=Medication: Fluoroquinolones', () => {
+      const answers: DecisionAnswers = {
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'no',
+        q5: 'Medication: Fluoroquinolones',
+      };
+      const result = resolveDecisionTree(answers);
+      expect(result.caseId).toBe(14);
+      expect(result.caseKey).toBe('doctor-letter.case.14.paragraph');
+    });
+
     it('resolves to Case 10 when Q1=true, Q2=true, Q3=false, Q5=Other cause', () => {
       const answers: DecisionAnswers = {
         q1: 'yes',
