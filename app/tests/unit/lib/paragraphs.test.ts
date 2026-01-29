@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   normalizeParagraphText,
+  LINE_BREAK_MARKER,
   PARAGRAPH_MARKER,
   splitParagraphs,
 } from '../../../src/lib/text/paragraphs';
@@ -47,6 +48,37 @@ describe('normalizeParagraphText', () => {
     expect(result).toEqual({
       paragraphs: ['First', 'Second'],
       text: 'First\n\nSecond',
+    });
+  });
+
+  it('normalizes line break markers to single newlines', () => {
+    const result = normalizeParagraphText(
+      `First${LINE_BREAK_MARKER}Second${LINE_BREAK_MARKER}Third`,
+    );
+
+    expect(result).toEqual({
+      paragraphs: ['First\nSecond\nThird'],
+      text: 'First\nSecond\nThird',
+    });
+  });
+
+  it('keeps paragraph markers distinct from line breaks', () => {
+    const result = normalizeParagraphText(
+      `A${PARAGRAPH_MARKER}B${LINE_BREAK_MARKER}C`,
+    );
+
+    expect(result).toEqual({
+      paragraphs: ['A', 'B\nC'],
+      text: 'A\n\nB\nC',
+    });
+  });
+
+  it('handles CRLF around line break markers', () => {
+    const result = normalizeParagraphText(`A\r\n${LINE_BREAK_MARKER}\r\nB`);
+
+    expect(result).toEqual({
+      paragraphs: ['A', 'B'],
+      text: 'A\n\nB',
     });
   });
 });
