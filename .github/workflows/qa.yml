@@ -26,7 +26,35 @@ jobs:
 
       - name: Install dependencies
         working-directory: app
-        run: npm ci
+        run: |
+          set -euo pipefail
+          npm ci --loglevel=warn 2>&1 | tee npm-install.log
+
+      - name: Capture npm audit
+        working-directory: app
+        run: npm audit --json > npm-audit.json || true
+
+      - name: Generate npm health summary
+        env:
+          NPM_WARNINGS_BUDGET: 6
+        run: node tools/npm-health.mjs --install-log app/npm-install.log --audit-json app/npm-audit.json --output-dir app/npm-health
+
+      - name: Publish npm health summary
+        run: cat app/npm-health/npm-health-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload npm health artifacts (always)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: npm-health
+          path: |
+            app/npm-install.log
+            app/npm-audit.json
+            app/npm-health/npm-warnings.json
+            app/npm-health/npm-warnings.md
+            app/npm-health/npm-audit-summary.md
+            app/npm-health/npm-health-summary.md
+          retention-days: 7
 
       - name: Lint
         working-directory: app
