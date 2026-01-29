@@ -7,3 +7,4 @@ This folder defines the minimum testing strategy, QA standards, and manual check
 - [Definition of Done (DoD) & QA Gates](./dod.md)
 - [Test Data & Privacy Policy](./testdaten.md)
 - [Manual Checklists (templates + examples)](./manual-checklists.md)
+- [npm health reporting](../quality/npm-health.md)

@@ -31,7 +31,7 @@ export default [
   // If we also enable `globals.node`, ESLint can flag that as a redeclare.
   // Fix: keep node globals but disable exactly `console` and `process` globals for scripts.
   {
-    files: ['scripts/**/*.{js,mjs,cjs}'],
+    files: ['scripts/**/*.{js,mjs,cjs}', '../tools/**/*.{js,mjs,cjs}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
