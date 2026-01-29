@@ -64,12 +64,14 @@ const run = async () => {
     const formpackHeaders = await fetchHeaders(formpackPath, `formpack ${formpackPath}`);
     const formpackCache = formpackHeaders.get('cache-control');
     assertHeaderIncludes(formpackCache, ['no-cache', 'must-revalidate'], `formpack Cache-Control (${formpackPath})`);
+    assertNoHsts(formpackHeaders, `formpack ${formpackPath}`);
   }
 
   const assetPath = findAssetPath(indexHtml);
   const assetHeaders = await fetchHeaders(assetPath, 'asset');
   const assetCache = assetHeaders.get('cache-control');
   assertHeaderIncludes(assetCache, ['max-age=31536000', 'immutable'], 'asset Cache-Control');
+  assertNoHsts(assetHeaders, 'asset');
 };
 
 run().catch((error) => {
