@@ -2,29 +2,27 @@
 
 ## Paragraph markers for i18n text
 
-Use the `[[P]]` marker inside translated strings to explicitly break text into
-separate paragraphs for DOCX exports. The export pipeline splits on `[[P]]`,
-trims each segment, and removes the marker from the user-facing text. When no
-marker is present, content remains a single paragraph (with a fallback to split
-on double newlines when they exist).
+Use markers inside translated strings to control how text breaks are rendered in
+previews and DOCX exports:
 
-Use `[[BR]]` to insert a single line break without adding an empty line. This is
-useful for list-like content such as ICD codes or short itemized lines.
+- `[[P]]` starts a new paragraph (blank line between blocks).
+- `[[BR]]` inserts a single line break (next line without a blank line).
 
-### Marker reference
+The export pipeline splits on `[[P]]`, trims each segment, and removes the
+markers from the user-facing text. `[[BR]]` is normalized to a single newline
+inside each paragraph. When no marker is present, content remains a single
+paragraph (with a fallback to split on double newlines when they exist).
 
-- `[[P]]` → new paragraph (blank line between blocks, normalized to `\n\n`)
-- `[[BR]]` → new line (single line break, normalized to `\n`)
-
-### Examples
+Examples:
 
 - Heading + list:
-  - `Kodierungen:[[BR]]G93.30 Postvirales Fatigue-Syndrom[[BR]]B94.81 Folgen einer Virusinfektion`
+  `Kodierungen:[[BR]]G93.30 – Postvirales Erschöpfungssyndrom[[BR]]B94.81 – Folgen einer Infektion`
 - Paragraph + list:
-  - `Kodierungen:[[P]]G93.30 Postvirales Fatigue-Syndrom[[BR]]B94.81 Folgen einer Virusinfektion`
+  `Hinweise:[[P]]Kodierungen:[[BR]]G93.30 – Postvirales Erschöpfungssyndrom[[BR]]B94.81 – Folgen einer Infektion`
 
-### Guidance
+Guidance:
 
-- Do not use multiple `[[P]]` markers to force spacing.
-- Prefer `[[BR]]` for list-like content (codes, bullet-ish lines).
-- Both markers are processed consistently in document previews and DOCX exports.
+- Do not stack `[[P]]` markers to force spacing.
+- Use `[[BR]]` for list-like content such as codes or bullet-style lines.
+- These markers are processed consistently for document previews and DOCX
+  export.
