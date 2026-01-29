@@ -1,0 +1,133 @@
+name: SBOM
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check DHI secrets
+        id: check-secrets
+        env:
+          DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+          DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
+        run: |
+          if [ -n "$DHI_USERNAME" ] && [ -n "$DHI_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notice (PRs without secrets)
+        if: steps.check-secrets.outputs.available != 'true' && github.event_name == 'pull_request'
+        run: |
+          echo "::notice::Skipping container image SBOM because DHI registry credentials are not available on pull_request events."
+
+      - name: Fail if DHI secrets are missing
+        if: steps.check-secrets.outputs.available != 'true' && github.event_name != 'pull_request'
+        run: |
+          echo "::error::Missing DHI secrets. Configure DHI_USERNAME and DHI_TOKEN to generate container image SBOMs."
+          exit 1
+
+      - name: Login to DHI registry
+        if: steps.check-secrets.outputs.available == 'true'
+        timeout-minutes: 5
+        env:
+          DHI_USERNAME: ${{ secrets.DHI_USERNAME }}
+          DHI_TOKEN: ${{ secrets.DHI_TOKEN }}
+        run: |
+          for attempt in 1 2 3; do
+            if echo "$DHI_TOKEN" | docker login dhi.io -u "$DHI_USERNAME" --password-stdin; then
+              exit 0
+            fi
+
+            echo "Login attempt ${attempt} failed. Retrying in 5s..."
+            sleep 5
+          done
+
+          echo "Registry login failed after 3 attempts."
+          exit 1
+
+      - name: Build container image
+        if: steps.check-secrets.outputs.available == 'true'
+        run: docker build --pull -t mecfs-paperwork:${{ github.sha }} .
+
+      - name: Generate workspace SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0.15.11
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.workspace.cdx.json
+          upload-artifact: false
+
+      - name: Generate workspace SBOM (SPDX)
+        uses: anchore/sbom-action@v0.15.11
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.workspace.spdx.json
+          upload-artifact: false
+
+      - name: Generate image SBOM (CycloneDX)
+        if: steps.check-secrets.outputs.available == 'true'
+        uses: anchore/sbom-action@v0.15.11
+        with:
+          image: mecfs-paperwork:${{ github.sha }}
+          format: cyclonedx-json
+          output-file: sbom.image.cdx.json
+          upload-artifact: false
+
+      - name: Generate image SBOM (SPDX)
+        if: steps.check-secrets.outputs.available == 'true'
+        uses: anchore/sbom-action@v0.15.11
+        with:
+          image: mecfs-paperwork:${{ github.sha }}
+          format: spdx-json
+          output-file: sbom.image.spdx.json
+          upload-artifact: false
+
+      - name: Build SBOM summary
+        run: |
+          node tools/sbom-summary.mjs \
+            --input sbom.workspace.cdx.json \
+            --input sbom.workspace.spdx.json \
+            --input sbom.image.cdx.json \
+            --input sbom.image.spdx.json \
+            --output sbom-summary.md
+
+      - name: Publish SBOM summary
+        run: cat sbom-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload SBOM artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: sbom
+          path: |
+            sbom.workspace.cdx.json
+            sbom.workspace.spdx.json
+            sbom.image.cdx.json
+            sbom.image.spdx.json
+            sbom-summary.md
+          retention-days: 14
+
+      - name: Cleanup image artifacts
+        if: always() && steps.check-secrets.outputs.available == 'true'
+        run: docker image rm mecfs-paperwork:${{ github.sha }} || true
