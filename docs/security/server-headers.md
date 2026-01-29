@@ -28,6 +28,15 @@ This document explains the purpose of the HTTP security headers implemented in t
 - **Directive:** `no-referrer`
 - **Purpose:** Enhances user privacy by preventing the browser from sending the `Referer` header with requests.
 
+## Cache-Control
+
+- **Policy:** Immutable caching for hashed assets; revalidation for all other routes and JSON formpack resources.
+  - `/assets/*` → `public, max-age=31536000, immutable`
+  - `/formpacks/*` → `no-cache, must-revalidate`
+  - everything else (including deep links resolved to `index.html`) → `no-cache, must-revalidate`
+- **Implementation:** `nginx/default.conf` (`map $uri $cache_control` and `add_header Cache-Control ...`).
+- **Enforced by:** `.github/workflows/docker-smoke.yml` running `tools/header-smoke.mjs`.
+
 ## Permissions-Policy
 
 - **Directive:** `geolocation=(), microphone=(), camera=()`
