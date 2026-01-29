@@ -3,12 +3,37 @@ import { stat } from 'node:fs/promises';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
+import { openCollapsibleSection } from './helpers/sections';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 20_000;
 
+const ensureActiveRecord = async (page: Page) => {
+  const form = page.locator('.formpack-form');
+  if (await form.isVisible()) {
+    return;
+  }
+
+  await openCollapsibleSection(page, /drafts|entwürfe/i);
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new draft|neuer entwurf/i,
+  });
+  if (await newDraftButton.count()) {
+    await clickActionButton(newDraftButton.first(), POLL_TIMEOUT);
+  } else {
+    await clickActionButton(
+      page.locator('.formpack-records__actions .app__button').first(),
+      POLL_TIMEOUT,
+    );
+  }
+
+  await expect(form).toBeVisible({ timeout: POLL_TIMEOUT });
+};
+
 const waitForDocxExportReady = async (page: Page) => {
+  await ensureActiveRecord(page);
   const docxSection = page.locator('.formpack-docx-export');
   await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
 
@@ -47,6 +72,7 @@ test('docx template select and export button align in height', async ({
   await deleteDatabase(page, DB_NAME);
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await ensureActiveRecord(page);
 
   const docxSection = page.locator('.formpack-docx-export');
   await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
@@ -91,6 +117,7 @@ for (const locale of locales) {
 
       await page.goto(`/formpacks/${FORM_PACK_ID}`);
       await switchLocale(page, locale);
+      await ensureActiveRecord(page);
 
       const { docxSection, exportButton } = await waitForDocxExportReady(page);
 
