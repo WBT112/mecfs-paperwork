@@ -1,11 +1,26 @@
 import fs from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
-import {
-  buildSummaryMarkdown,
-  countSeverities,
-  parseArgs,
-  readJsonIfExists,
-} from '../../../tools/grype-summary.mjs';
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
+const grypeSummary = (await import('../../../tools/grype-summary.mjs')) as {
+  buildSummaryMarkdown: (options: {
+    counts: Record<
+      'critical' | 'high' | 'medium' | 'low' | 'negligible',
+      number
+    >;
+    missing: boolean;
+    parseError: boolean;
+    reportPath: string;
+  }) => string;
+  countSeverities: (
+    matches: unknown[],
+  ) => Record<'critical' | 'high' | 'medium' | 'low' | 'negligible', number>;
+  parseArgs: (args: string[]) => { input: string; output: string };
+  readJsonIfExists: (
+    filePath: string,
+  ) => Promise<{ value: unknown; error: unknown }>;
+};
+const { buildSummaryMarkdown, countSeverities, parseArgs, readJsonIfExists } =
+  grypeSummary;
 
 describe('grype summary helpers', () => {
   const REPORT_PATH = 'grype.json';

@@ -1,5 +1,58 @@
 import { describe, expect, it } from 'vitest';
-import {
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
+const sbomSummary = (await import('../../../tools/sbom-summary.mjs')) as {
+  buildSbomMarkdown: (options: {
+    reports: Array<{
+      label: string;
+      summary: {
+        format: string;
+        total: number;
+        ecosystems: Map<string, number>;
+        packages: string[];
+      };
+      missing: boolean;
+      parseError: boolean;
+    }>;
+    generatedAt: string;
+    sha: string | null;
+    topLimit: number;
+  }) => string;
+  buildReportSection: (options: {
+    label: string;
+    summary: {
+      format: string;
+      total: number;
+      ecosystems: Map<string, number>;
+      packages: string[];
+    };
+    missing: boolean;
+    parseError: boolean;
+    topLimit: number;
+  }) => string[];
+  buildTopPackages: (packages: string[], limit: number) => string[];
+  normalizeEcosystems: (
+    ecosystems: Map<string, number>,
+  ) => Array<[string, number]>;
+  parseArgs: (args: string[]) => {
+    inputs: string[];
+    output: string;
+    topLimit: number;
+  };
+  parsePurlType: (purl: string | null) => string | null;
+  summarizeCycloneDx: (bom: unknown) => {
+    format: string;
+    total: number;
+    ecosystems: Map<string, number>;
+    packages: string[];
+  };
+  summarizeSpdx: (bom: unknown) => {
+    format: string;
+    total: number;
+    ecosystems: Map<string, number>;
+    packages: string[];
+  };
+};
+const {
   buildSbomMarkdown,
   buildReportSection,
   buildTopPackages,
@@ -8,7 +61,7 @@ import {
   parsePurlType,
   summarizeCycloneDx,
   summarizeSpdx,
-} from '../../../tools/sbom-summary.mjs';
+} = sbomSummary;
 
 describe('sbom summary helpers', () => {
   const NPM_REACT_PURL = 'pkg:npm/react@18.2.0';
@@ -126,7 +179,7 @@ describe('sbom summary helpers', () => {
         ['unknown', 3],
       ]),
     );
-    const names = (ecosystems as Array<[string, number]>).map(([name]) => name);
+    const names = ecosystems.map(([name]) => name);
     expect(names).toEqual(['npm', 'unknown', 'maven']);
     const packages = buildTopPackages(['b', 'a', 'b', 'c'], 2);
     expect(packages).toEqual(['a', 'b']);
