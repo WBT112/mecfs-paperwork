@@ -228,8 +228,7 @@ describe('validate-formpacks I/O integration', () => {
     const tmp = path.join(process.cwd(), 'tmp-read-json.json');
     await fs.writeFile(tmp, JSON.stringify({ a: 1 }));
     try {
-      const obj = await readJson(tmp);
-      expect(obj).toEqual({ a: 1 });
+      await expect(readJson(tmp)).resolves.toEqual({ a: 1 });
     } finally {
       await fs.rm(tmp, { force: true });
     }
