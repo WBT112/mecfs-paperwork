@@ -42,6 +42,38 @@ const looksLikeTranslationKey = (value: string): boolean => {
   return value.includes('.');
 };
 
+interface EnumOption {
+  value: unknown;
+  label: string;
+}
+
+// RATIONALE: Caching the results of optionsList prevents redundant and expensive
+// schema traversals, especially when resolveDisplayValue is called in a loop
+// (e.g., for large arrays or complex form previews).
+const optionsListCache = new WeakMap<
+  RJSFSchema,
+  Map<UiSchema | undefined, EnumOption[]>
+>();
+
+const getCachedOptionsList = (
+  schema: RJSFSchema,
+  uiSchema?: UiSchema,
+): EnumOption[] => {
+  let schemaCache = optionsListCache.get(schema);
+  if (!schemaCache) {
+    schemaCache = new Map();
+    optionsListCache.set(schema, schemaCache);
+  }
+
+  let options = schemaCache.get(uiSchema);
+  if (!options) {
+    // Cast to EnumOption[] | undefined to ensure type safety and avoid lint errors with 'any'
+    options = (optionsList(schema, uiSchema) as EnumOption[] | undefined) || [];
+    schemaCache.set(uiSchema, options);
+  }
+  return options;
+};
+
 const translateLabel = (
   label: string,
   t: DisplayValueResolverOptions['t'],
@@ -70,12 +102,14 @@ const resolveEnumLabel = (
     return null;
   }
 
-  const enumOptions = optionsList(options.schema, options.uiSchema);
-  if (!enumOptions?.length) {
+  const enumOptions = getCachedOptionsList(options.schema, options.uiSchema);
+  if (!enumOptions.length) {
     return null;
   }
 
-  const match = enumOptions.find((option) => deepEquals(option.value, value));
+  const match = enumOptions.find(
+    (option) => option.value === value || deepEquals(option.value, value),
+  );
   if (!match) {
     return null;
   }
