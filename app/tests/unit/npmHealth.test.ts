@@ -15,6 +15,11 @@ type WarningEntry = {
   type: WarningType;
   message: string;
 };
+type WarningsReport = {
+  total: number;
+  byType: Record<WarningType, number>;
+  warnings: WarningEntry[];
+};
 type AuditSummary = {
   counts: Record<'low' | 'moderate' | 'high' | 'critical', number>;
   packages: Array<{
@@ -24,6 +29,56 @@ type AuditSummary = {
     fixAvailable: boolean;
   }>;
 };
+type BuildWarningsMarkdownInput = {
+  report: WarningsReport;
+  missingLog: boolean;
+  limit: number;
+};
+type BuildAuditMarkdownInput = {
+  summary: AuditSummary;
+  missingAudit: boolean;
+  limit: number;
+};
+type PolicyResult = {
+  warningsOverBudget: boolean;
+  highFindings: boolean;
+  shouldFail: boolean;
+};
+type BuildHealthSummaryInput = {
+  warningsMarkdown: string;
+  auditMarkdown: string;
+  policy: PolicyResult;
+  warningsBudget: number;
+  failOnHigh: boolean;
+};
+
+const classifyWarningLineTyped = classifyWarningLine as unknown as (
+  line: string,
+) => WarningType;
+const parseInstallLogTyped = parseInstallLog as unknown as (
+  content: string,
+) => WarningEntry[];
+const buildWarningsReportTyped = buildWarningsReport as unknown as (
+  warnings: WarningEntry[],
+) => WarningsReport;
+const buildWarningsMarkdownTyped = buildWarningsMarkdown as unknown as (
+  input: BuildWarningsMarkdownInput,
+) => string;
+const summarizeAuditTyped = summarizeAudit as unknown as (
+  audit: unknown,
+) => AuditSummary;
+const buildAuditMarkdownTyped = buildAuditMarkdown as unknown as (
+  input: BuildAuditMarkdownInput,
+) => string;
+const evaluatePoliciesTyped = evaluatePolicies as unknown as (input: {
+  warningsReport: WarningsReport;
+  auditSummary: AuditSummary;
+  warningsBudget: number;
+  failOnHigh: boolean;
+}) => PolicyResult;
+const buildHealthSummaryTyped = buildHealthSummary as unknown as (
+  input: BuildHealthSummaryInput,
+) => string;
 
 describe('npm health helpers', () => {
   const WARN_DEPRECATED = 'npm WARN deprecated foo';
@@ -34,10 +89,10 @@ describe('npm health helpers', () => {
   const LABEL_NPM_HEALTH = 'npm health';
   const LABEL_NPM_WARNINGS = 'npm WARN';
   it('classifies warning lines by type', () => {
-    expect(classifyWarningLine(WARN_DEPRECATED)).toBe('deprecated');
-    expect(classifyWarningLine(WARN_PEER)).toBe('peer');
-    expect(classifyWarningLine(WARN_ENGINE)).toBe('engine');
-    expect(classifyWarningLine(WARN_OTHER)).toBe('other');
+    expect(classifyWarningLineTyped(WARN_DEPRECATED)).toBe('deprecated');
+    expect(classifyWarningLineTyped(WARN_PEER)).toBe('peer');
+    expect(classifyWarningLineTyped(WARN_ENGINE)).toBe('engine');
+    expect(classifyWarningLineTyped(WARN_OTHER)).toBe('other');
   });
 
   it('parses npm install logs into warnings', () => {
@@ -47,9 +102,9 @@ describe('npm health helpers', () => {
       'npm WARN EBADENGINE node@99',
       'npm WARN peer dependency issue',
     ].join('\n');
-    const warnings = parseInstallLog(log) as WarningEntry[];
+    const warnings = parseInstallLogTyped(log);
     expect(warnings).toHaveLength(3);
-    const report = buildWarningsReport(warnings);
+    const report = buildWarningsReportTyped(warnings);
     expect(report.total).toBe(3);
     expect(report.byType.deprecated).toBe(1);
     expect(report.byType.engine).toBe(1);
@@ -57,11 +112,11 @@ describe('npm health helpers', () => {
   });
 
   it('builds warning markdown summaries', () => {
-    const report = buildWarningsReport([
+    const report = buildWarningsReportTyped([
       { type: 'deprecated', message: WARN_DEPRECATED },
       { type: 'other', message: WARN_OTHER },
     ]);
-    const markdown = buildWarningsMarkdown({
+    const markdown = buildWarningsMarkdownTyped({
       report,
       missingLog: false,
       limit: 1,
@@ -69,7 +124,7 @@ describe('npm health helpers', () => {
     expect(markdown).toContain('Total warnings: **2**');
     expect(markdown).toContain('deprecated: 1');
     expect(markdown).toContain('Top warnings:');
-    const missing = buildWarningsMarkdown({
+    const missing = buildWarningsMarkdownTyped({
       report,
       missingLog: true,
       limit: 1,
@@ -96,7 +151,7 @@ describe('npm health helpers', () => {
         },
       },
     };
-    const summary = summarizeAudit(audit) as AuditSummary;
+    const summary = summarizeAuditTyped(audit);
     expect(summary.counts.high).toBe(1);
     expect(summary.packages[0].name).toBe('lodash');
     expect(summary.packages[0].title).toBe('Prototype pollution');
@@ -113,7 +168,7 @@ describe('npm health helpers', () => {
         },
       },
     };
-    const summary = summarizeAudit(audit) as AuditSummary;
+    const summary = summarizeAuditTyped(audit);
     expect(summary.counts.moderate).toBe(1);
     expect(summary.packages[0].name).toBe('legacy');
   });
@@ -130,7 +185,7 @@ describe('npm health helpers', () => {
         },
       ],
     };
-    const markdown = buildAuditMarkdown({
+    const markdown = buildAuditMarkdownTyped({
       summary,
       missingAudit: false,
       limit: 3,
@@ -138,7 +193,7 @@ describe('npm health helpers', () => {
     expect(markdown).toContain('Vulnerabilities: **1**');
     expect(markdown).toContain('moderate: 1');
     expect(markdown).toContain('legacy (moderate)');
-    const missing = buildAuditMarkdown({
+    const missing = buildAuditMarkdownTyped({
       summary,
       missingAudit: true,
       limit: 3,
@@ -147,17 +202,17 @@ describe('npm health helpers', () => {
   });
 
   it('evaluates policy outcomes and health summary', () => {
-    const warningsReport = buildWarningsReport([
+    const warningsReport = buildWarningsReportTyped([
       { type: 'deprecated', message: 'npm WARN deprecated foo' },
       { type: 'other', message: 'npm WARN something' },
     ]);
-    const auditSummary = summarizeAudit({
+    const auditSummary = summarizeAuditTyped({
       metadata: {
         vulnerabilities: { low: 0, moderate: 0, high: 1, critical: 0 },
       },
       vulnerabilities: {},
-    }) as AuditSummary;
-    const policy = evaluatePolicies({
+    });
+    const policy = evaluatePoliciesTyped({
       warningsReport,
       auditSummary,
       warningsBudget: 1,
@@ -166,7 +221,7 @@ describe('npm health helpers', () => {
     expect(policy.warningsOverBudget).toBe(true);
     expect(policy.highFindings).toBe(true);
     expect(policy.shouldFail).toBe(true);
-    const summary = buildHealthSummary({
+    const summary = buildHealthSummaryTyped({
       warningsMarkdown: 'warnings',
       auditMarkdown: 'audit',
       policy,

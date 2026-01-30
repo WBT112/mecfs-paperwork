@@ -11,6 +11,7 @@ WORKDIR /repo/app
 RUN npm ci
 
 COPY app /repo/app
+COPY tools /repo/tools
 RUN npm run build
 
 FROM dhi.io/nginx:1 AS runtime

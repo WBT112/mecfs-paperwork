@@ -10,6 +10,9 @@ const DOCX_A4 = 'docx/a4.docx';
 const DOCX_MAPPING = 'docx/mapping.json';
 const PACK_TITLE = 'pack.title';
 const PACK_DESC = 'pack.desc';
+const VALIDATE_FORMPACKS_MODULE = '../../scripts/validate-formpacks.mjs';
+type ValidateFormpacksModule =
+  typeof import('../../scripts/validate-formpacks.mjs');
 const MANIFEST_JSON = 'manifest.json';
 const SCHEMA_JSON = 'schema.json';
 const UI_SCHEMA_JSON = 'ui.schema.json';
@@ -72,8 +75,9 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
 
-    const mod =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { validateContract } = mod;
     try {
       const errors: Map<
@@ -108,8 +112,9 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
 
-    const mod =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { validateContract } = mod;
     try {
       const errors: Map<
@@ -146,8 +151,9 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
 
-    const mod =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { validateContract } = mod;
     try {
       const errors: Map<
@@ -183,8 +189,9 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
 
-    const mod =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { validateContract } = mod;
     try {
       const errors: Map<
@@ -248,8 +255,9 @@ describe('validate-formpacks: extra branches', () => {
     );
     await fs.writeFile(path.join(base, DOCX_A4), Buffer.from('fake'));
 
-    const mod =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { validateContract } = mod;
     try {
       const errors: Map<
@@ -279,8 +287,9 @@ describe('validate-formpacks: extra branches', () => {
     await fs.mkdir(path.join(base, 'docx'), { recursive: true });
     // mapping is invalid JSON
     await fs.writeFile(path.join(base, 'docx', 'mapping.json'), '{ not: json');
-    const mod1 =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod1 = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { validateTemplate } = mod1;
     try {
       const errors: Map<
@@ -308,8 +317,9 @@ describe('validate-formpacks: extra branches', () => {
   it('run() sets exit code when id not found and passes when templates preflight ok', async () => {
     // case 1: id not found -> exitCode = 1
     vi.resetModules();
-    const modA =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const modA = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { run } = modA;
     const oldArgv = process.argv;
     const oldExit = process.exitCode;
@@ -329,8 +339,9 @@ describe('validate-formpacks: extra branches', () => {
     vi.doMock('docx-templates', () => ({
       createReport: vi.fn().mockResolvedValue(Buffer.from('ok')),
     }));
-    const modB =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const modB = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { run: run2 } = modB;
 
     const id = uniqueId('runok');

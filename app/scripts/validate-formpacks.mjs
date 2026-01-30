@@ -1,4 +1,3 @@
-/* eslint-env node */
 /* global console, process */
 import { createReport } from 'docx-templates';
 import Ajv2020 from 'ajv/dist/2020.js';
