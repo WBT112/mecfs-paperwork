@@ -1,0 +1,9 @@
+# CI / Workflows
+.github/workflows/** @WBT112
+
+# Deploy/Server/Reverse proxy
+deploy/** @WBT112
+nginx/** @WBT112
+Caddyfile @WBT112
+docker-compose*.yml @WBT112
+compose*.yml @WBT112
