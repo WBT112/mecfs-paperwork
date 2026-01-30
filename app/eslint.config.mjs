@@ -44,6 +44,7 @@ const sonarjsLegacyRules = [
   'prefer-while',
 ];
 const sonarjsAvailableRules = new Set(Object.keys(sonarjs.rules ?? {}));
+// NOTE: The SonarJS v3 plugin removed `no-one-iteration-loop`; filtering avoids config errors.
 const sonarjsAllRules = Object.fromEntries(
   sonarjsLegacyRules
     .filter((rule) => sonarjsAvailableRules.has(rule))
