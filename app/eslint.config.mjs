@@ -9,8 +9,45 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import sonarjs from 'eslint-plugin-sonarjs';
 
 const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
+const sonarjsLegacyRules = [
+  'cognitive-complexity',
+  'elseif-without-else',
+  'max-switch-cases',
+  'no-all-duplicated-branches',
+  'no-collapsible-if',
+  'no-collection-size-mischeck',
+  'no-duplicate-string',
+  'no-duplicated-branches',
+  'no-element-overwrite',
+  'no-empty-collection',
+  'no-extra-arguments',
+  'no-gratuitous-expressions',
+  'no-identical-conditions',
+  'no-identical-expressions',
+  'no-identical-functions',
+  'no-ignored-return',
+  'no-inverted-boolean-check',
+  'no-nested-switch',
+  'no-nested-template-literals',
+  'no-one-iteration-loop',
+  'no-redundant-boolean',
+  'no-redundant-jump',
+  'no-same-line-conditional',
+  'no-small-switch',
+  'no-unused-collection',
+  'no-use-of-empty-return-value',
+  'no-useless-catch',
+  'non-existent-operator',
+  'prefer-immediate-return',
+  'prefer-object-literal',
+  'prefer-single-boolean-return',
+  'prefer-while',
+];
+const sonarjsAvailableRules = new Set(Object.keys(sonarjs.rules ?? {}));
 const sonarjsAllRules = Object.fromEntries(
-  Object.keys(sonarjs.rules ?? {}).map((rule) => [`sonarjs/${rule}`, 'error']),
+  sonarjsLegacyRules
+    .filter((rule) => sonarjsAvailableRules.has(rule))
+    .map((rule) => [`sonarjs/${rule}`, 'error']),
 );
 
 export default [
@@ -93,6 +130,9 @@ export default [
       ],
 
       ...reactHooks.configs.recommended.rules,
+
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/static-components': 'off',
 
       'react-refresh/only-export-components': [
         'warn',

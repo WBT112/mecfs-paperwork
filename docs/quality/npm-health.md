@@ -30,5 +30,8 @@ CI enforces a warnings budget to prevent warning creep.
 ## Relationship to GitHub Security/Dependabot
 `npm audit` uses the GitHub Advisory Database via the npm audit protocol, but it is not a 1:1 match with Dependabot alerts. Dependabot applies additional rules (for example, it may ignore unreviewed advisories), so npm audit is used here to provide an extra per-run report and historical artifacts.
 
+## Toolchain updates
+- ESLint and related lint plugins were upgraded to remove deprecated transitive dependencies (including inflight/glob/rimraf and @humanwhocodes/* warnings) while keeping linting behavior aligned with existing rules.
+
 ## Updating the warnings budget
 Adjust the `NPM_WARNINGS_BUDGET` value in `.github/workflows/qa.yml` to a new threshold.
