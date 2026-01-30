@@ -97,18 +97,9 @@ jobs:
           scp -i ~/.ssh/deploy_key compose.deploy.yaml Caddyfile "$SSH_USER@$SSH_HOST:/opt/mecfs-paperwork/"
           
           # Execute deployment commands on server
-          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" << 'ENDSSH'
-            cd /opt/mecfs-paperwork
-            
-            # Login to Docker Hub
-            echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            
-            # Pull latest images
-            docker compose -f compose.deploy.yaml pull
-            
-            # Restart services
-            docker compose -f compose.deploy.yaml up -d
-            
-            # Cleanup old images
-            docker image prune -af --filter "until=168h"
-          ENDSSH
+          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+            "cd /opt/mecfs-paperwork && \
+             echo '$DOCKERHUB_TOKEN' | docker login -u '$DOCKERHUB_USERNAME' --password-stdin && \
+             docker compose -f compose.deploy.yaml pull && \
+             docker compose -f compose.deploy.yaml up -d && \
+             docker image prune -af --filter 'until=168h'"

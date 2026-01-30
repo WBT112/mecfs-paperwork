@@ -1075,7 +1075,7 @@ body {
   font-size: 0.75rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  z-index: 9999;
+  z-index: 100;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   border-bottom-left-radius: 0.25rem;
 }

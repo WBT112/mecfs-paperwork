@@ -87,11 +87,11 @@ services:
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "caddy version >/dev/null 2>&1 && wget -qO- http://web-prod:8080/ >/dev/null 2>&1 && wget -qO- http://web-staging:8080/ >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "caddy version >/dev/null 2>&1"]
       interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 networks:
   web:

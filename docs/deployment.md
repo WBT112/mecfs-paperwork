@@ -77,8 +77,8 @@ If needed, you can deploy manually:
 # On the deployment server
 cd /opt/mecfs-paperwork
 
-# Login to Docker Hub
-echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+# Login to Docker Hub (use your own credentials)
+docker login -u YOUR_DOCKERHUB_USERNAME
 
 # Pull latest images
 docker compose -f compose.deploy.yaml pull
@@ -86,6 +86,8 @@ docker compose -f compose.deploy.yaml pull
 # Restart services
 docker compose -f compose.deploy.yaml up -d
 ```
+
+Note: For automated deployments, the CI/CD pipeline passes Docker Hub credentials via SSH environment variables.
 
 ## Infrastructure Setup
 
