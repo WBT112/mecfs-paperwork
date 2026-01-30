@@ -1,4 +1,5 @@
 import { isSupportedLocale } from '../i18n/locale';
+import { isRecord } from '../lib/utils';
 import { FORMPACK_IDS } from './registry';
 import type {
   FormpackDocxManifest,
@@ -43,63 +44,16 @@ const buildUiSchemaPath = (formpackId: string) =>
 
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const isFormpackExportType = (value: string): value is FormpackExportType =>
   value === 'docx' || value === 'json';
 const isFormpackVisibility = (value: string): value is FormpackVisibility =>
   value === 'public' || value === 'dev';
 
-const parseDocxManifest = (
-  value: unknown,
-  formpackId: string,
-): FormpackDocxManifest | undefined => {
-  if (!value || typeof value !== 'object') {
-    return undefined;
-  }
-
-  const docx = value as { templates?: unknown; mapping?: unknown };
-
-  if (!docx.templates || typeof docx.templates !== 'object') {
-    return undefined;
-  }
-
-  const templates = docx.templates as { a4?: unknown; wallet?: unknown };
-
-  if (typeof templates.a4 !== 'string') {
-    return undefined;
-  }
-
-  if (templates.wallet !== undefined && typeof templates.wallet !== 'string') {
-    return undefined;
-  }
-
-  // Only the notfallpass formpack supports the wallet DOCX template.
-  if (templates.wallet && formpackId !== 'notfallpass') {
-    throw new FormpackLoaderError(
-      'invalid',
-      'Wallet templates are only supported for the notfallpass formpack.',
-    );
-  }
-
-  if (typeof docx.mapping !== 'string') {
-    return undefined;
-  }
-
-  return {
-    templates: {
-      a4: templates.a4,
-      ...(templates.wallet ? { wallet: templates.wallet } : {}),
-    },
-    mapping: docx.mapping,
-  };
-};
-
-export const parseManifest = (
+const assertManifestRequiredFields = (
   payload: FormpackManifestPayload,
   formpackId: string,
-): FormpackManifest => {
+): void => {
   if (
     typeof payload.id !== 'string' ||
     typeof payload.version !== 'string' ||
@@ -118,7 +72,11 @@ export const parseManifest = (
       'The formpack manifest id does not match the requested pack.',
     );
   }
+};
 
+const getValidatedLocales = (
+  payload: FormpackManifestPayload,
+): FormpackManifest['locales'] => {
   if (!isStringArray(payload.locales) || !payload.locales.length) {
     throw new FormpackLoaderError(
       'invalid',
@@ -126,13 +84,20 @@ export const parseManifest = (
     );
   }
 
-  if (!payload.locales.every((locale) => isSupportedLocale(locale))) {
+  const locales = payload.locales.filter((locale) => isSupportedLocale(locale));
+  if (locales.length !== payload.locales.length) {
     throw new FormpackLoaderError(
       'unsupported',
       'The formpack manifest declares an unsupported locale.',
     );
   }
 
+  return locales;
+};
+
+const getValidatedDefaultLocale = (
+  payload: FormpackManifestPayload,
+): FormpackManifest['defaultLocale'] => {
   if (typeof payload.defaultLocale !== 'string') {
     throw new FormpackLoaderError(
       'invalid',
@@ -147,6 +112,12 @@ export const parseManifest = (
     );
   }
 
+  return payload.defaultLocale;
+};
+
+const getValidatedExports = (
+  payload: FormpackManifestPayload,
+): FormpackExportType[] => {
   if (!isStringArray(payload.exports)) {
     throw new FormpackLoaderError(
       'invalid',
@@ -161,9 +132,12 @@ export const parseManifest = (
     );
   }
 
-  const exports = payload.exports.filter(isFormpackExportType);
-  const docx = parseDocxManifest(payload.docx, formpackId);
-  const requiresDocx = exports.includes('docx');
+  return payload.exports.filter(isFormpackExportType);
+};
+
+const getValidatedVisibility = (
+  payload: FormpackManifestPayload,
+): FormpackVisibility => {
   const visibility =
     payload.visibility === undefined ? 'public' : payload.visibility;
 
@@ -173,6 +147,68 @@ export const parseManifest = (
       'The formpack manifest declares an unsupported visibility.',
     );
   }
+
+  return visibility;
+};
+
+const parseDocxManifest = (
+  value: unknown,
+  formpackId: string,
+): FormpackDocxManifest | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const templates = value.templates;
+  if (!isRecord(templates)) {
+    return undefined;
+  }
+
+  const a4 = templates.a4;
+  const wallet = templates.wallet;
+
+  if (typeof a4 !== 'string') {
+    return undefined;
+  }
+
+  if (wallet !== undefined && typeof wallet !== 'string') {
+    return undefined;
+  }
+
+  // Only the notfallpass formpack supports the wallet DOCX template.
+  if (typeof wallet === 'string' && formpackId !== 'notfallpass') {
+    throw new FormpackLoaderError(
+      'invalid',
+      'Wallet templates are only supported for the notfallpass formpack.',
+    );
+  }
+
+  const mapping = value.mapping;
+  if (typeof mapping !== 'string') {
+    return undefined;
+  }
+
+  return {
+    templates: {
+      a4,
+      ...(typeof wallet === 'string' ? { wallet } : {}),
+    },
+    mapping,
+  };
+};
+
+export const parseManifest = (
+  payload: FormpackManifestPayload,
+  formpackId: string,
+): FormpackManifest => {
+  assertManifestRequiredFields(payload, formpackId);
+
+  const locales = getValidatedLocales(payload);
+  const defaultLocale = getValidatedDefaultLocale(payload);
+  const exports = getValidatedExports(payload);
+  const docx = parseDocxManifest(payload.docx, formpackId);
+  const requiresDocx = exports.includes('docx');
+  const visibility = getValidatedVisibility(payload);
 
   if (requiresDocx && !docx) {
     throw new FormpackLoaderError(
@@ -184,14 +220,16 @@ export const parseManifest = (
   return {
     id: payload.id,
     version: payload.version,
-    defaultLocale: payload.defaultLocale,
-    locales: payload.locales,
+    defaultLocale,
+    locales,
     titleKey: payload.titleKey,
     descriptionKey: payload.descriptionKey,
     exports,
     visibility,
     docx,
-    ui: payload.ui as FormpackUiConfig | undefined,
+    ui: isRecord(payload.ui)
+      ? (payload.ui as unknown as FormpackUiConfig)
+      : undefined,
   };
 };
 

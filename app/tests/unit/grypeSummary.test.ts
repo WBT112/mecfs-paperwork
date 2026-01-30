@@ -1,4 +1,6 @@
 import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
 const grypeSummary = (await import('../../../tools/grype-summary.mjs')) as {
@@ -116,11 +118,17 @@ describe('grype summary helpers', () => {
   });
 
   it('reads JSON files with errors', async () => {
-    const missing = await readJsonIfExists('/tmp/grype-missing.json');
-    expect(missing.value).toBeNull();
-    const invalidPath = '/tmp/grype-invalid.json';
-    await fs.writeFile(invalidPath, '{bad json');
-    const invalid = await readJsonIfExists(invalidPath);
-    expect(invalid.value).toBeNull();
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'grype-'));
+    const missingPath = path.join(tmpDir, 'grype-missing.json');
+    const invalidPath = path.join(tmpDir, 'grype-invalid.json');
+    try {
+      const missing = await readJsonIfExists(missingPath);
+      expect(missing.value).toBeNull();
+      await fs.writeFile(invalidPath, '{bad json');
+      const invalid = await readJsonIfExists(invalidPath);
+      expect(invalid.value).toBeNull();
+    } finally {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    }
   });
 });
