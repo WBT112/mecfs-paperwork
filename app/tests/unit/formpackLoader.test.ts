@@ -67,7 +67,10 @@ describe('parseManifest', () => {
   it('throws when locales are missing or unsupported', () => {
     const missingLocales = { ...validPayload, locales: undefined };
     expect(() =>
-      parseManifest(missingLocales as FormpackManifestPayload, TEST_FORMPACK_ID),
+      parseManifest(
+        missingLocales as FormpackManifestPayload,
+        TEST_FORMPACK_ID,
+      ),
     ).toThrow(
       new FormpackLoaderError(
         'invalid',
@@ -77,7 +80,10 @@ describe('parseManifest', () => {
 
     const unsupportedLocales = { ...validPayload, locales: ['fr'] };
     expect(() =>
-      parseManifest(unsupportedLocales as FormpackManifestPayload, TEST_FORMPACK_ID),
+      parseManifest(
+        unsupportedLocales as FormpackManifestPayload,
+        TEST_FORMPACK_ID,
+      ),
     ).toThrow(
       new FormpackLoaderError(
         'unsupported',
@@ -102,7 +108,10 @@ describe('parseManifest', () => {
 
     const unsupportedDefault = { ...validPayload, defaultLocale: 'fr' };
     expect(() =>
-      parseManifest(unsupportedDefault as FormpackManifestPayload, TEST_FORMPACK_ID),
+      parseManifest(
+        unsupportedDefault as FormpackManifestPayload,
+        TEST_FORMPACK_ID,
+      ),
     ).toThrow(
       new FormpackLoaderError(
         'unsupported',
@@ -114,7 +123,10 @@ describe('parseManifest', () => {
   it('throws when exports are missing or unsupported', () => {
     const missingExports = { ...validPayload, exports: undefined };
     expect(() =>
-      parseManifest(missingExports as FormpackManifestPayload, TEST_FORMPACK_ID),
+      parseManifest(
+        missingExports as FormpackManifestPayload,
+        TEST_FORMPACK_ID,
+      ),
     ).toThrow(
       new FormpackLoaderError(
         'invalid',
@@ -124,7 +136,10 @@ describe('parseManifest', () => {
 
     const unsupportedExports = { ...validPayload, exports: ['xml'] };
     expect(() =>
-      parseManifest(unsupportedExports as FormpackManifestPayload, TEST_FORMPACK_ID),
+      parseManifest(
+        unsupportedExports as FormpackManifestPayload,
+        TEST_FORMPACK_ID,
+      ),
     ).toThrow(
       new FormpackLoaderError(
         'unsupported',
@@ -190,7 +205,10 @@ describe('parseManifest', () => {
         mapping: DOCX_MAPPING_PATH,
       },
     };
-    const manifest = parseManifest(payload as FormpackManifestPayload, NOTFALLPASS_ID);
+    const manifest = parseManifest(
+      payload as FormpackManifestPayload,
+      NOTFALLPASS_ID,
+    );
     expect(manifest.docx?.templates.wallet).toBe(DOCX_WALLET_PATH);
   });
 });
