@@ -1062,3 +1062,29 @@ body {
   margin: 0;
   flex-shrink: 0;
 }
+
+/* Staging environment marker */
+.staging-marker {
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #78350f;
+  padding: 0.25rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  z-index: 9999;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-bottom-left-radius: 0.25rem;
+}
+
+.staging-marker__text {
+  display: inline-block;
+}
+
+:root[data-theme='dark'] .staging-marker {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fef3c7;
+}
