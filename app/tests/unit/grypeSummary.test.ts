@@ -1,8 +1,10 @@
+import fs from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 import {
   buildSummaryMarkdown,
   countSeverities,
   parseArgs,
+  readJsonIfExists,
 } from '../../../tools/grype-summary.mjs';
 
 describe('grype summary helpers', () => {
@@ -41,6 +43,22 @@ describe('grype summary helpers', () => {
     expect(markdown).toContain('medium: 2');
   });
 
+  it('reports when no vulnerabilities are present', () => {
+    const markdown = buildSummaryMarkdown({
+      counts: {
+        critical: 0,
+        high: 0,
+        medium: 0,
+        low: 0,
+        negligible: 0,
+      },
+      missing: false,
+      parseError: false,
+      reportPath: REPORT_PATH,
+    });
+    expect(markdown).toContain('No vulnerabilities reported');
+  });
+
   it('handles missing and parse error reports', () => {
     const missing = buildSummaryMarkdown({
       counts: {
@@ -74,5 +92,20 @@ describe('grype summary helpers', () => {
     const parsed = parseArgs(['--input', 'in.json', '--output', 'out.md']);
     expect(parsed.input).toBe('in.json');
     expect(parsed.output).toBe('out.md');
+  });
+
+  it('parses defaults and ignores missing values', () => {
+    const parsed = parseArgs(['--input', '--unknown']);
+    expect(parsed.input).toBe('grype-sbom.json');
+    expect(parsed.output).toBe('grype-summary.md');
+  });
+
+  it('reads JSON files with errors', async () => {
+    const missing = await readJsonIfExists('/tmp/grype-missing.json');
+    expect(missing.value).toBeNull();
+    const invalidPath = '/tmp/grype-invalid.json';
+    await fs.writeFile(invalidPath, '{bad json');
+    const invalid = await readJsonIfExists(invalidPath);
+    expect(invalid.value).toBeNull();
   });
 });

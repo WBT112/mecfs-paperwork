@@ -64,7 +64,7 @@ const parseArgs = (args) => {
     const token = args[index];
     if (token === '--input') {
       const value = args[index + 1];
-      if (value) {
+      if (value && !value.startsWith('--')) {
         options.input = value;
         index += 1;
       }
@@ -72,10 +72,11 @@ const parseArgs = (args) => {
     }
     if (token === '--output') {
       const value = args[index + 1];
-      if (value) {
+      if (value && !value.startsWith('--')) {
         options.output = value;
         index += 1;
       }
+      continue;
     }
   }
   return options;
@@ -113,4 +114,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === scriptPath) {
   await run();
 }
 
-export { buildSummaryMarkdown, countSeverities, parseArgs };
+export {
+  buildSummaryMarkdown,
+  countSeverities,
+  parseArgs,
+  readJsonIfExists,
+};

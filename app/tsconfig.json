@@ -19,5 +19,5 @@
     "types": ["node", "@playwright/test", "vitest/config", "vite/client"]
   },
   "include": ["src", "tests", "tests/lib", "tests/unit"],
-  "files": ["../tools/sbom-summary.d.ts"]
+  "files": ["../tools/sbom-summary.d.ts", "../tools/grype-summary.d.ts"]
 }
