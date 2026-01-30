@@ -5,7 +5,13 @@ import console from 'node:console';
 const isWin = process.platform === 'win32';
 
 // Whitelist to avoid accidental injection when shell=true on Windows
-const ALLOWED_PROJECTS = new Set(['chromium', 'firefox', 'webkit']);
+const ALLOWED_PROJECTS = new Set([
+  'chromium',
+  'chromium-mobile',
+  'firefox',
+  'webkit',
+  'webkit-mobile',
+]);
 
 function getRunner() {
   const ua = process.env.npm_config_user_agent || '';
@@ -66,6 +72,12 @@ async function main() {
   });
   if (chromiumCode !== 0) process.exit(chromiumCode);
 
+  const chromiumMobileCode = await runPlaywright({
+    project: 'chromium-mobile',
+    outputDir: 'test-results/chromium-mobile',
+  });
+  if (chromiumMobileCode !== 0) process.exit(chromiumMobileCode);
+
   // Firefox/WebKit are soft-fail
   const firefoxCode = await runPlaywright({
     project: 'firefox',
@@ -81,6 +93,16 @@ async function main() {
   });
   if (webkitCode !== 0) {
     console.warn(`[e2e-soft] webkit failed (soft-fail): exit ${webkitCode}`);
+  }
+
+  const webkitMobileCode = await runPlaywright({
+    project: 'webkit-mobile',
+    outputDir: 'test-results/webkit-mobile',
+  });
+  if (webkitMobileCode !== 0) {
+    console.warn(
+      `[e2e-soft] webkit-mobile failed (soft-fail): exit ${webkitMobileCode}`,
+    );
   }
 
   process.exit(0);

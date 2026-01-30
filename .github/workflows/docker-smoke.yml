@@ -17,7 +17,7 @@ jobs:
       github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check secrets
         id: check-secrets
@@ -93,7 +93,7 @@ jobs:
       github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check secrets
         id: check-secrets

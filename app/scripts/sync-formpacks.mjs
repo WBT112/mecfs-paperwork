@@ -1,4 +1,3 @@
-/* eslint-env node */
 /* global console */
 
 // RATIONALE: This script synchronizes the canonical formpacks from the

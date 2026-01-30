@@ -11,6 +11,9 @@ const DOCX_A4 = 'docx/a4.docx';
 const DOCX_MAPPING = 'docx/mapping.json';
 const PACK_TITLE = 'pack.title';
 const PACK_DESC = 'pack.desc';
+const VALIDATE_FORMPACKS_MODULE = '../../scripts/validate-formpacks.mjs';
+type ValidateFormpacksModule =
+  typeof import('../../scripts/validate-formpacks.mjs');
 
 async function createFormpackFixture(id: string) {
   const base = path.join(formpacksDir, id);
@@ -76,8 +79,9 @@ async function createFormpackFixture(id: string) {
 
 describe('validate-formpacks I/O integration', () => {
   it('validateContract returns manifest and translations for a valid formpack', async () => {
-    const mod =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { validateContract } = mod;
 
     const id = uniqueId('valid');
@@ -99,8 +103,9 @@ describe('validate-formpacks I/O integration', () => {
   });
 
   it('validateContract collects errors for missing required files', async () => {
-    const mod =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { validateContract } = mod;
 
     const id = uniqueId('missing');
@@ -142,8 +147,9 @@ describe('validate-formpacks I/O integration', () => {
     vi.doMock('docx-templates', () => ({
       createReport: vi.fn().mockRejectedValue(new Error('boom')),
     }));
-    const mod =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as typeof import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { validateTemplate } = mod;
 
     const id = uniqueId('tpl');
@@ -196,7 +202,9 @@ describe('validate-formpacks I/O integration', () => {
   });
 
   it('listFormpacks returns the specific id when provided', async () => {
-    const mod = await import('../../scripts/validate-formpacks.mjs');
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { listFormpacks } = mod;
 
     const id = uniqueId('list');
@@ -212,10 +220,9 @@ describe('validate-formpacks I/O integration', () => {
   });
 
   it('readJson parses a JSON file correctly', async () => {
-    const mod =
-      (await import('../../scripts/validate-formpacks.mjs')) as unknown as {
-        readJson: (p: string) => Promise<unknown>;
-      };
+    const mod = (await import(
+      VALIDATE_FORMPACKS_MODULE
+    )) as unknown as ValidateFormpacksModule;
     const { readJson } = mod;
 
     const tmp = path.join(process.cwd(), 'tmp-read-json.json');
