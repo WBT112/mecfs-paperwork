@@ -118,6 +118,20 @@ jobs:
       - name: Publish SBOM summary
         run: cat sbom-summary.md >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Grype scan (workspace SBOM)
+        uses: anchore/scan-action@v6
+        with:
+          sbom: sbom.workspace.cdx.json
+          output-format: json
+          output-file: grype-workspace.json
+          fail-build: false
+
+      - name: Summarize Grype results
+        run: node tools/grype-summary.mjs --input grype-workspace.json --output grype-summary.md
+
+      - name: Publish Grype summary
+        run: cat grype-summary.md >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload SBOM artifacts
         if: always()
         uses: actions/upload-artifact@v6
@@ -127,6 +141,8 @@ jobs:
             sbom.workspace.cdx.json
             sbom.workspace.spdx.json
             sbom-summary.md
+            grype-workspace.json
+            grype-summary.md
           retention-days: 14
 
       - name: Upload image SBOM artifacts
