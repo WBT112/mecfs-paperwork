@@ -1,11 +1,6 @@
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
-
-/**
- * Minimal "isRecord" helper to avoid relying on external utils and to harden input parsing.
- */
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+import { isRecord } from '../lib/utils';
 
 /**
  * Sets a nested value on an object based on a dotted key path.

@@ -3,6 +3,7 @@ import addFormats from 'ajv-formats';
 import type { RJSFSchema } from '@rjsf/utils';
 import { isSupportedLocale, type SupportedLocale } from '../i18n/locale';
 import { FORMPACK_IDS } from '../formpacks/registry';
+import { isRecord } from '../lib/utils';
 
 type ImportFormpackMetadata = {
   id: string;
@@ -50,9 +51,6 @@ export type ImportError = {
 export type ImportValidationResult =
   | { payload: JsonImportPayload; error: null }
   | { payload: null; error: ImportError };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const parseJson = (
   value: string,

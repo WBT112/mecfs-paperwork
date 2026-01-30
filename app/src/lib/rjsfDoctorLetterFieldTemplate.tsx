@@ -1,5 +1,6 @@
 import type { FieldTemplateProps } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
+import { isRecord } from './utils';
 import { InfoBox } from '../components/InfoBox';
 import { getInfoBoxesForField } from '../formpacks/doctorLetterInfoBox';
 import type { InfoBoxConfig } from '../formpacks/types';
@@ -17,9 +18,6 @@ type DoctorLetterFormContext = {
   infoBoxes?: InfoBoxConfig[];
   formData?: Record<string, unknown>;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
 
 const isTranslator = (value: unknown): value is TFunction =>
   typeof value === 'function';
