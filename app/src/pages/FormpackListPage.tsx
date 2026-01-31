@@ -57,7 +57,17 @@ export default function FormpackListPage() {
       }
     };
 
-    void loadManifests();
+    loadManifests().catch((error) => {
+      if (!isActive) {
+        return;
+      }
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : t('formpackListErrorFallback'),
+      );
+      setIsLoading(false);
+    });
 
     return () => {
       isActive = false;
@@ -81,7 +91,11 @@ export default function FormpackListPage() {
       }
     };
 
-    void loadTranslations();
+    loadTranslations().catch(() => {
+      if (isActive) {
+        setIsI18nReady(true);
+      }
+    });
 
     return () => {
       isActive = false;
