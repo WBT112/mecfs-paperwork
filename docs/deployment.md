@@ -11,6 +11,17 @@ The mecfs-paperwork application has two deployment environments:
 
 Both environments run on the same server using Docker Compose with separate containers for each environment.
 
+## Compose Files
+
+The repository ships multiple compose files for different contexts:
+
+- `compose.deploy.yaml`: **Server runtime** (pulls `:prod` and `:staging` images, no local build, only Caddy binds 80/443).
+- `compose.prod.yaml`: **Local production topology** (builds locally, Caddy + app). Pair with `compose.local-proxy.yaml` for HTTP-only testing.
+- `compose.yaml`: **Local/CI build** on `http://localhost:8080` (no TLS, single app container).
+- `compose.local-proxy.yaml`: Optional HTTP-only proxy for local production topology.
+- `Caddyfile`: Production + staging routing for TLS on the server.
+- `Caddyfile.local`: Local HTTP routing for the proxy setup.
+
 ## Environment Differences
 
 ### Production (`main` branch)
