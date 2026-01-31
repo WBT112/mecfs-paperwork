@@ -38,7 +38,7 @@ Use **Discussions** for general topics/feature requests. Use **Issues** for bugs
 
 ```bash
 cd app
-npm install
+npm ci
 npm run dev
 ```
 
