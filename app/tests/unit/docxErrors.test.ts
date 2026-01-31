@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { getDocxErrorKey } from '../../src/export/docx';
 
 const errorWithName = (name: string): Error => {
@@ -41,17 +41,13 @@ describe('getDocxErrorKey', () => {
   });
 
   it('falls back to the generic error key', () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     expect(getDocxErrorKey(new Error('Unknown'))).toBe(
       'formpackDocxExportError',
     );
-    errorSpy.mockRestore();
   });
 
   it('handles plain objects with a message property', () => {
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const error = { message: 'Plain object error' };
     expect(getDocxErrorKey(error)).toBe('formpackDocxExportError');
-    errorSpy.mockRestore();
   });
 });
