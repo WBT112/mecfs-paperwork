@@ -90,13 +90,15 @@ jobs:
           # Setup SSH
           mkdir -p ~/.ssh
           if printf '%s' "$SSH_PRIVATE_KEY" | grep -q "-----BEGIN"; then
-            printf '%s' "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+            printf '%s' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           else
-            if ! printf '%s' "$SSH_PRIVATE_KEY" | base64 -d 2>/dev/null | tr -d '\r' > ~/.ssh/deploy_key; then
-              echo "::error::Failed to decode SSH_PRIVATE_KEY. Provide a PEM key or base64-encoded PEM."
+            if ! printf '%s' "$SSH_PRIVATE_KEY" | base64 -d 2>/dev/null > ~/.ssh/deploy_key; then
+              echo "::error::Failed to decode SSH_PRIVATE_KEY as base64. Provide a PEM key or base64-encoded PEM."
               exit 1
             fi
           fi
+          tr -d '\r' < ~/.ssh/deploy_key > ~/.ssh/deploy_key.tmp
+          mv ~/.ssh/deploy_key.tmp ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
             echo "::error::SSH_PRIVATE_KEY is invalid or corrupted."
