@@ -90,23 +90,25 @@ jobs:
           # Setup SSH
           mkdir -p ~/.ssh
           key_written=false
-          if printf '%s' "$SSH_PRIVATE_KEY" | base64 -d 2>/dev/null > ~/.ssh/deploy_key.tmp; then
+          if printf '%s' "$SSH_PRIVATE_KEY" | base64 -d 2>/dev/null | tr -d '\r' > ~/.ssh/deploy_key.tmp; then
             if grep -q "-----BEGIN" ~/.ssh/deploy_key.tmp; then
               mv ~/.ssh/deploy_key.tmp ~/.ssh/deploy_key
               key_written=true
             fi
           fi
           rm -f ~/.ssh/deploy_key.tmp
-          if [ "$key_written" = false ] && printf '%s' "$SSH_PRIVATE_KEY" | grep -q "-----BEGIN"; then
-            printf '%s' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-            key_written=true
+          if [ "$key_written" = false ]; then
+            cat <<<"$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+            if grep -q "-----BEGIN" ~/.ssh/deploy_key; then
+              key_written=true
+            else
+              rm -f ~/.ssh/deploy_key
+            fi
           fi
           if [ "$key_written" = false ]; then
             echo "::error::SSH_PRIVATE_KEY must be a PEM key or base64-encoded PEM."
             exit 1
           fi
-          tr -d '\r' < ~/.ssh/deploy_key > ~/.ssh/deploy_key.clean
-          mv ~/.ssh/deploy_key.clean ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
             echo "::error::SSH_PRIVATE_KEY is invalid or corrupted."
