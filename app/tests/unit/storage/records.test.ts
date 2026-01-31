@@ -1,6 +1,7 @@
-import { describe, vi, it, expect, beforeEach } from 'vitest';
+import { describe, vi, it, expect, beforeEach, type Mock } from 'vitest';
 import {
   createRecord,
+  deleteRecord,
   getRecord,
   listRecords,
   updateRecord,
@@ -146,5 +147,111 @@ describe('updateRecord', () => {
     const result = await updateRecord('1', {});
     expect(result).toBeNull();
     expect(mockDb.put).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteRecord', () => {
+  const SNAPSHOT_ID = 'snapshot-1';
+  const SNAPSHOT_ID_2 = 'snapshot-2';
+  type MockRecordStore = {
+    get: Mock;
+    delete: Mock;
+  };
+  type MockSnapshotIndex = {
+    getAllKeys: Mock;
+  };
+  type MockSnapshotStore = {
+    index: Mock;
+    delete: Mock;
+  };
+  type MockTransaction = {
+    objectStore: Mock;
+    done: Promise<void>;
+  };
+  type MockDb = {
+    transaction: Mock;
+  };
+
+  let db: MockDb;
+  let recordStore: MockRecordStore;
+  let snapshotStore: MockSnapshotStore;
+  let snapshotIndex: MockSnapshotIndex;
+  let transaction: MockTransaction;
+  let resolveDone: (() => void) | undefined;
+
+  beforeEach(() => {
+    recordStore = {
+      get: vi.fn(),
+      delete: vi.fn(),
+    };
+    snapshotIndex = {
+      getAllKeys: vi.fn(),
+    };
+    snapshotStore = {
+      index: vi.fn(() => snapshotIndex),
+      delete: vi.fn(),
+    };
+    transaction = {
+      objectStore: vi.fn((storeName: string) => {
+        if (storeName === 'records') {
+          return recordStore;
+        }
+        if (storeName === 'snapshots') {
+          return snapshotStore;
+        }
+        return undefined;
+      }),
+      done: new Promise<void>((resolve) => {
+        resolveDone = resolve;
+      }),
+    };
+    db = {
+      transaction: vi.fn(() => transaction),
+    };
+    vi.mocked(openStorage).mockResolvedValue(db as any);
+  });
+
+  it('deletes the record and snapshots in a single transaction', async () => {
+    const recordId = 'record-1';
+    recordStore.get.mockResolvedValue({ id: recordId });
+    snapshotIndex.getAllKeys.mockResolvedValue([SNAPSHOT_ID, SNAPSHOT_ID_2]);
+
+    let resolved = false;
+    const resultPromise = deleteRecord(recordId).then((result) => {
+      resolved = true;
+      return result;
+    });
+
+    await Promise.resolve();
+    expect(resolved).toBe(false);
+
+    resolveDone?.();
+    const result = await resultPromise;
+
+    expect(result).toBe(true);
+    expect(db.transaction).toHaveBeenCalledWith(
+      ['records', 'snapshots'],
+      'readwrite',
+    );
+    expect(recordStore.get).toHaveBeenCalledWith(recordId);
+    expect(snapshotIndex.getAllKeys).toHaveBeenCalledWith(recordId);
+    expect(snapshotStore.delete).toHaveBeenCalledTimes(2);
+    expect(snapshotStore.delete).toHaveBeenCalledWith(SNAPSHOT_ID);
+    expect(snapshotStore.delete).toHaveBeenCalledWith(SNAPSHOT_ID_2);
+    expect(recordStore.delete).toHaveBeenCalledWith(recordId);
+  });
+
+  it('returns false when the record does not exist', async () => {
+    const recordId = 'missing-record';
+    recordStore.get.mockResolvedValue(undefined);
+    snapshotIndex.getAllKeys.mockResolvedValue([SNAPSHOT_ID]);
+
+    const resultPromise = deleteRecord(recordId);
+    resolveDone?.();
+    const result = await resultPromise;
+
+    expect(result).toBe(false);
+    expect(recordStore.delete).not.toHaveBeenCalled();
+    expect(snapshotStore.delete).toHaveBeenCalledWith(SNAPSHOT_ID);
   });
 });

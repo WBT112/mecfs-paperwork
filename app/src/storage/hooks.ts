@@ -9,12 +9,14 @@ import type { SupportedLocale } from '../i18n/locale';
 import { StorageUnavailableError } from './db';
 import {
   createRecord as createRecordEntry,
+  deleteRecord as deleteRecordEntry,
   getRecord,
   listRecords,
   updateRecord as updateRecordEntry,
 } from './records';
 import {
   createSnapshot as createSnapshotEntry,
+  clearSnapshots as clearSnapshotsEntry,
   getSnapshot,
   listSnapshots,
 } from './snapshots';
@@ -185,6 +187,28 @@ export const useRecords = (formpackId: string | null) => {
     [setActiveRecordState],
   );
 
+  const deleteRecord = useCallback(
+    async (recordId: string) => {
+      if (activeRecordRef.current?.id === recordId) {
+        return false;
+      }
+
+      setErrorCode(null);
+
+      try {
+        const deleted = await deleteRecordEntry(recordId);
+        if (deleted) {
+          setRecords((prev) => prev.filter((record) => record.id !== recordId));
+        }
+        return deleted;
+      } catch (error) {
+        setErrorCode(getStorageErrorCode(error));
+        return false;
+      }
+    },
+    [setErrorCode, setRecords],
+  );
+
   return {
     records,
     activeRecord,
@@ -195,6 +219,7 @@ export const useRecords = (formpackId: string | null) => {
     loadRecord,
     updateActiveRecord,
     applyRecordUpdate,
+    deleteRecord,
     setActiveRecord: setActiveRecordState,
     hasLoaded,
   };
@@ -225,7 +250,7 @@ export const useSnapshots = (recordId: string | null) => {
     } finally {
       setIsLoading(false);
     }
-  }, [recordId]);
+  }, [recordId, setErrorCode, setSnapshots]);
 
   useEffect(() => {
     refresh().catch(() => undefined);
@@ -262,6 +287,23 @@ export const useSnapshots = (recordId: string | null) => {
     }
   }, []);
 
+  const clearSnapshots = useCallback(async () => {
+    if (!recordId) {
+      return 0;
+    }
+
+    setErrorCode(null);
+
+    try {
+      const cleared = await clearSnapshotsEntry(recordId);
+      setSnapshots([]);
+      return cleared;
+    } catch (error) {
+      setErrorCode(getStorageErrorCode(error));
+      return 0;
+    }
+  }, [recordId]);
+
   return {
     snapshots,
     isLoading,
@@ -269,6 +311,7 @@ export const useSnapshots = (recordId: string | null) => {
     refresh,
     createSnapshot,
     loadSnapshot,
+    clearSnapshots,
   };
 };
 
