@@ -33,7 +33,6 @@ describe('MarkdownRenderer', () => {
   // with dangerous protocols like `javascript:` are not rendered as
   // clickable `<a>` tags, preventing XSS vulnerabilities.
   it('does NOT render links with dangerous javascript: hrefs', () => {
-    // eslint-disable-next-line no-script-url
     const maliciousContent = '[Malicious Link](javascript:alert("XSS"))';
     render(<MarkdownRenderer content={maliciousContent} />);
 
