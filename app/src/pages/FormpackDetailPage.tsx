@@ -715,6 +715,7 @@ export default function FormpackDetailPage() {
     loadRecord,
     updateActiveRecord,
     applyRecordUpdate,
+    deleteRecord,
     setActiveRecord,
   } = useRecords(formpackId);
   const {
@@ -723,6 +724,7 @@ export default function FormpackDetailPage() {
     errorCode: snapshotsError,
     createSnapshot,
     loadSnapshot,
+    clearSnapshots,
     refresh: refreshSnapshots,
   } = useSnapshots(activeRecord?.id ?? null);
   const { markAsSaved } = useAutosaveRecord(
@@ -1245,6 +1247,26 @@ export default function FormpackDetailPage() {
     await createSnapshot(formData, buildSnapshotLabel());
   }, [activeRecord, buildSnapshotLabel, createSnapshot, formData]);
 
+  const handleDeleteRecord = useCallback(
+    async (record: RecordEntry) => {
+      if (record.id === activeRecord?.id) {
+        return;
+      }
+
+      const confirmed = window.confirm(
+        t('formpackRecordDeleteConfirm', {
+          title: record.title ?? t('formpackRecordUntitled'),
+        }),
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      await deleteRecord(record.id);
+    },
+    [activeRecord?.id, deleteRecord, t],
+  );
+
   const handleRestoreSnapshot = useCallback(
     async (snapshotId: string) => {
       if (!activeRecord) {
@@ -1266,6 +1288,19 @@ export default function FormpackDetailPage() {
     },
     [activeRecord, loadSnapshot, markAsSaved, updateActiveRecord],
   );
+
+  const handleClearSnapshots = useCallback(async () => {
+    if (!activeRecord) {
+      return;
+    }
+
+    const confirmed = window.confirm(t('formpackSnapshotsClearAllConfirm'));
+    if (!confirmed) {
+      return;
+    }
+
+    await clearSnapshots();
+  }, [activeRecord, clearSnapshots, t]);
 
   const applyImportedRecord = useCallback(
     (record: RecordEntry) => {
@@ -1765,11 +1800,13 @@ export default function FormpackDetailPage() {
           <div className="formpack-records__actions">
             <button
               type="button"
-              className="app__button"
+              className="app__button app__icon-button"
               onClick={handleCreateRecord}
               disabled={storageError === 'unavailable'}
+              aria-label={t('formpackRecordNew')}
+              title={t('formpackRecordNew')}
             >
-              {t('formpackRecordNew')}
+              +
             </button>
           </div>
           <ul className="formpack-records__list">
@@ -1801,6 +1838,18 @@ export default function FormpackDetailPage() {
                     >
                       {t('formpackRecordLoad')}
                     </button>
+                    {!isActive && (
+                      <button
+                        type="button"
+                        className="app__button app__icon-button"
+                        onClick={() => handleDeleteRecord(record)}
+                        disabled={storageError === 'unavailable'}
+                        aria-label={t('formpackRecordDelete')}
+                        title={t('formpackRecordDelete')}
+                      >
+                        🗑
+                      </button>
+                    )}
                     {isActive && (
                       <span className="formpack-records__badge">
                         {t('formpackRecordActive')}
@@ -1825,11 +1874,13 @@ export default function FormpackDetailPage() {
         <div className="formpack-records__actions">
           <button
             type="button"
-            className="app__button"
+            className="app__button app__icon-button"
             onClick={handleCreateRecord}
             disabled={storageError === 'unavailable'}
+            aria-label={t('formpackRecordNew')}
+            title={t('formpackRecordNew')}
           >
-            {t('formpackRecordNew')}
+            +
           </button>
         </div>
       </div>
@@ -2028,11 +2079,25 @@ export default function FormpackDetailPage() {
         <div className="formpack-snapshots__actions">
           <button
             type="button"
-            className="app__button"
+            className="app__button app__icon-button"
             onClick={handleCreateSnapshot}
             disabled={storageError === 'unavailable'}
+            aria-label={t('formpackSnapshotCreate')}
+            title={t('formpackSnapshotCreate')}
           >
-            {t('formpackSnapshotCreate')}
+            +
+          </button>
+          <button
+            type="button"
+            className="app__button app__icon-button"
+            onClick={handleClearSnapshots}
+            disabled={
+              storageError === 'unavailable' || snapshots.length === 0
+            }
+            aria-label={t('formpackSnapshotsClearAll')}
+            title={t('formpackSnapshotsClearAll')}
+          >
+            🗑
           </button>
         </div>
         {renderSnapshotsList()}
