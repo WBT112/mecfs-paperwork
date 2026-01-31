@@ -91,7 +91,7 @@ jobs:
           mkdir -p ~/.ssh
           key_written=false
           if printf '%s' "$SSH_PRIVATE_KEY" | base64 -d 2>/dev/null | tr -d '\r' > ~/.ssh/deploy_key.tmp; then
-            if grep -q "-----BEGIN" ~/.ssh/deploy_key.tmp; then
+            if grep -q -- "-----BEGIN" ~/.ssh/deploy_key.tmp; then
               mv ~/.ssh/deploy_key.tmp ~/.ssh/deploy_key
               key_written=true
             fi
@@ -99,7 +99,7 @@ jobs:
           rm -f ~/.ssh/deploy_key.tmp
           if [ "$key_written" = false ]; then
             cat <<<"$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/deploy_key
-            if grep -q "-----BEGIN" ~/.ssh/deploy_key; then
+            if grep -q -- "-----BEGIN" ~/.ssh/deploy_key; then
               key_written=true
             else
               rm -f ~/.ssh/deploy_key
