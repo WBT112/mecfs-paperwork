@@ -1,6 +1,7 @@
 const TEST_INFOBOX_KEY = 'test.infobox.key';
 const FIELD_ID = 'root_decision_q1';
 const DECISION_Q1_ANCHOR = 'decision.q1';
+const DECISION_DIVIDER_SELECTOR = '.formpack-decision-divider';
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FieldTemplateProps, RJSFSchema } from '@rjsf/utils';
@@ -268,5 +269,47 @@ describe('DoctorLetterFieldTemplate', () => {
     });
     const { queryByTestId } = render(<DoctorLetterFieldTemplate {...props} />);
     expect(queryByTestId('infobox')).not.toBeInTheDocument();
+  });
+
+  it('renders divider for decision questions', () => {
+    const props = createMockProps({ id: FIELD_ID });
+    const { container } = render(<DoctorLetterFieldTemplate {...props} />);
+    expect(
+      container.querySelector(DECISION_DIVIDER_SELECTOR),
+    ).toBeInTheDocument();
+  });
+
+  it('does not render divider for non-decision fields', () => {
+    const props = createMockProps({ id: 'root_patient_firstName' });
+    const { container } = render(<DoctorLetterFieldTemplate {...props} />);
+    expect(
+      container.querySelector(DECISION_DIVIDER_SELECTOR),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders divider after infobox content', () => {
+    const props = createMockProps({
+      id: FIELD_ID,
+      formContext: {
+        t: (key: string) => `translated:${key}`,
+        infoBoxes: [
+          {
+            id: 'q1-info',
+            anchor: DECISION_Q1_ANCHOR,
+            enabled: true,
+            i18nKey: TEST_INFOBOX_KEY,
+          },
+        ],
+      },
+    });
+    const { container, getByTestId } = render(
+      <DoctorLetterFieldTemplate {...props} />,
+    );
+    const divider = container.querySelector(DECISION_DIVIDER_SELECTOR);
+    const infoBox = getByTestId('infobox');
+    expect(divider).toBeInTheDocument();
+    expect(infoBox.compareDocumentPosition(divider as Node)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
   });
 });
