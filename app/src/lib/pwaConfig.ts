@@ -13,17 +13,6 @@ type RuntimeCachingConfig = NonNullable<
 export const RUNTIME_CACHING = [
   {
     urlPattern: ({ request }: { request: Request }) =>
-      request.destination === 'document',
-    handler: 'NetworkFirst' as const,
-    options: {
-      cacheName: 'app-pages',
-      expiration: {
-        maxEntries: 50,
-      },
-    },
-  },
-  {
-    urlPattern: ({ request }: { request: Request }) =>
       ['script', 'style', 'worker'].includes(request.destination),
     handler: 'CacheFirst' as const,
     options: {
