@@ -50,6 +50,7 @@ jobs:
         working-directory: app
         env:
           CI: true
+          VITE_ENABLE_DEV_SW: "true"
         run: |
           set +e
           npx playwright test --project=${{ matrix.browser }} --repeat-each ${{ matrix.repeat_each }}
