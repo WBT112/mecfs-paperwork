@@ -2,7 +2,7 @@ name: SonarCloud (main scheduled)
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "staging"]
   pull_request:
     branches: ["main"]
   workflow_dispatch: {}
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: sonarcloud-main
+  group: sonarcloud-${{ github.ref_name }}
   cancel-in-progress: true
 
 jobs:
