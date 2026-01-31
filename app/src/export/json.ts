@@ -3,6 +3,7 @@ import type { RJSFSchema } from '@rjsf/utils';
 import type { SupportedLocale } from '../i18n/locale';
 import type { FormpackManifest } from '../formpacks/types';
 import type { RecordEntry, SnapshotEntry } from '../storage/types';
+import { isRecord } from '../lib/utils';
 
 const APP_ID = 'mecfs-paperwork';
 const { version: appVersion } = appPackage as { version?: string };
@@ -40,9 +41,6 @@ export type JsonExportOptions = {
   exportedAt?: string;
   schema?: RJSFSchema;
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const buildIsoDate = (
   year: number,
