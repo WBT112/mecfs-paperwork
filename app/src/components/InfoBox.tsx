@@ -1,9 +1,9 @@
 import MarkdownRenderer from './Markdown/MarkdownRenderer';
 
 interface InfoBoxProps {
-  message: string;
-  className?: string;
-  format?: 'text' | 'markdown';
+  readonly message: string;
+  readonly className?: string;
+  readonly format?: 'text' | 'markdown';
 }
 
 /**

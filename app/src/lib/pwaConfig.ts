@@ -5,6 +5,8 @@ export const PRECACHE_GLOB_PATTERNS = [
   'formpacks/**/*',
 ];
 
+export const DEV_PRECACHE_GLOB_PATTERNS: string[] = [];
+
 export const MAXIMUM_FILE_SIZE_TO_CACHE_BYTES = 12_000_000;
 type RuntimeCachingConfig = NonNullable<
   NonNullable<VitePWAOptions['workbox']>['runtimeCaching']
@@ -46,22 +48,32 @@ export const RUNTIME_CACHING = [
   },
 ] satisfies RuntimeCachingConfig;
 
-export const createPwaConfig = (): Partial<VitePWAOptions> => ({
-  registerType: 'autoUpdate',
-  devOptions: {
-    enabled: true,
-    navigateFallbackAllowlist: [
-      /^\/$/,
-      /^\/formpacks(\/.*)?$/,
-      /^\/help$/,
-      /^\/imprint$/,
-      /^\/privacy$/,
-    ],
-  },
-  workbox: {
-    globPatterns: PRECACHE_GLOB_PATTERNS,
-    maximumFileSizeToCacheInBytes: MAXIMUM_FILE_SIZE_TO_CACHE_BYTES,
-    navigateFallback: '/index.html',
-    runtimeCaching: RUNTIME_CACHING,
-  },
-});
+export const createPwaConfig = (
+  options: { isDev?: boolean; enableDevSw?: boolean } = {},
+): Partial<VitePWAOptions> => {
+  const isDev = options.isDev ?? false;
+  const enableDevSw = options.enableDevSw ?? false;
+  const globPatterns = isDev
+    ? DEV_PRECACHE_GLOB_PATTERNS
+    : PRECACHE_GLOB_PATTERNS;
+
+  return {
+    registerType: 'autoUpdate',
+    devOptions: {
+      enabled: isDev && enableDevSw,
+      navigateFallbackAllowlist: [
+        /^\/$/,
+        /^\/formpacks(\/.*)?$/,
+        /^\/help$/,
+        /^\/imprint$/,
+        /^\/privacy$/,
+      ],
+    },
+    workbox: {
+      globPatterns,
+      maximumFileSizeToCacheInBytes: MAXIMUM_FILE_SIZE_TO_CACHE_BYTES,
+      navigateFallback: '/index.html',
+      runtimeCaching: RUNTIME_CACHING,
+    },
+  };
+};

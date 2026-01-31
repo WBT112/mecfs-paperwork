@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEV_PRECACHE_GLOB_PATTERNS,
   MAXIMUM_FILE_SIZE_TO_CACHE_BYTES,
   PRECACHE_GLOB_PATTERNS,
   RUNTIME_CACHING,
@@ -22,7 +23,7 @@ describe('createPwaConfig', () => {
     expect(workbox.maximumFileSizeToCacheInBytes).toBe(
       MAXIMUM_FILE_SIZE_TO_CACHE_BYTES,
     );
-    expect(config.devOptions?.enabled).toBe(true);
+    expect(config.devOptions?.enabled).toBe(false);
     expect(config.devOptions?.navigateFallbackAllowlist).toEqual([
       /^\/$/,
       /^\/formpacks(\/.*)?$/,
@@ -31,5 +32,21 @@ describe('createPwaConfig', () => {
       /^\/privacy$/,
     ]);
     expect(workbox.runtimeCaching).toEqual(RUNTIME_CACHING);
+  });
+
+  it('uses dev precache settings when enabled', () => {
+    const config = createPwaConfig({ isDev: true, enableDevSw: true });
+    const workbox = config.workbox;
+    expect(workbox).toBeDefined();
+    if (!workbox) {
+      throw new Error('Expected Workbox settings to be defined.');
+    }
+
+    expect(workbox.globPatterns).toEqual(DEV_PRECACHE_GLOB_PATTERNS);
+  });
+
+  it('keeps dev service worker disabled by default', () => {
+    const config = createPwaConfig({ isDev: true });
+    expect(config.devOptions?.enabled).toBe(false);
   });
 });

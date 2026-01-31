@@ -85,7 +85,7 @@ export function DoctorLetterFieldTemplate(
   const fieldAnchor =
     pathSegments.length > 0
       ? pathSegments.join('.')
-      : id.replace(/^root_/, '').replace(/_/g, '.');
+      : id.replace(/^root_/, '').replaceAll('_', '.');
 
   // Get applicable infoBoxes for this field (only if enabled, anchored, and showIf matches)
   const applicableInfoBoxes = getInfoBoxesForField(
