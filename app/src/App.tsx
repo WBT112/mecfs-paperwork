@@ -1,5 +1,5 @@
 import type { ChangeEvent } from 'react';
-import { Link, Navigate, Route, Routes } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from './i18n/useLocale';
 import { SupportedLocale } from './i18n/locale';
@@ -7,12 +7,7 @@ import Footer from './components/Footer';
 import ThemeSwitcher from './components/ThemeSwitcher';
 import TopbarActions from './components/TopbarActions';
 import StagingMarker from './components/StagingMarker';
-import FormpackDetailPage from './pages/FormpackDetailPage';
-import FormpackListPage from './pages/FormpackListPage';
-import HelpPage from './pages/HelpPage';
-import LegalPage from './pages/LegalPage';
-import imprintContent from './content/legal/imprint.md?raw';
-import privacyContent from './content/legal/privacy.md?raw';
+import AppRoutes from './AppRoutes';
 
 /**
  * App shell for the offline-first paperwork UI.
@@ -82,20 +77,7 @@ export default function App() {
         </div>
       </header>
       <main className="app__content">
-        <Routes>
-          <Route path="/" element={<Navigate to="/formpacks" replace />} />
-          <Route path="/formpacks" element={<FormpackListPage />} />
-          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
-          <Route
-            path="/imprint"
-            element={<LegalPage content={imprintContent} />}
-          />
-          <Route
-            path="/privacy"
-            element={<LegalPage content={privacyContent} />}
-          />
-          <Route path="/help" element={<HelpPage />} />
-        </Routes>
+        <AppRoutes />
       </main>
       <Footer />
     </div>

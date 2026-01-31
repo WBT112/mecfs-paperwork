@@ -6,6 +6,7 @@ import './i18n';
 import './index.css';
 import { applyTheme } from './theme/applyTheme';
 import { getInitialThemeMode } from './theme/theme';
+import { registerServiceWorker } from './pwa/register';
 
 const rootElement = document.getElementById('root');
 
@@ -14,6 +15,7 @@ if (!rootElement) {
 }
 
 applyTheme(getInitialThemeMode());
+registerServiceWorker();
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
