@@ -2091,9 +2091,7 @@ export default function FormpackDetailPage() {
             type="button"
             className="app__button app__icon-button"
             onClick={handleClearSnapshots}
-            disabled={
-              storageError === 'unavailable' || snapshots.length === 0
-            }
+            disabled={storageError === 'unavailable' || snapshots.length === 0}
             aria-label={t('formpackSnapshotsClearAll')}
             title={t('formpackSnapshotsClearAll')}
           >
