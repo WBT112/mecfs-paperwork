@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import Footer from '../../src/components/Footer';
 import { getSponsorUrl } from '../../src/lib/funding';
 import { DEFAULT_REPO_URL } from '../../src/lib/repo';
+import { TestRouter } from '../setup/testRouter';
 
 const translations: Record<string, string> = {
   footerNavLabel: 'Footer navigation',
@@ -30,11 +30,9 @@ describe('Footer', () => {
   it('renders imprint, privacy, sponsor, and GitHub links', () => {
     mockedGetSponsorUrl.mockReturnValue('https://example.com/sponsor');
     render(
-      <MemoryRouter
-        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-      >
+      <TestRouter>
         <Footer />
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(screen.getByRole('link', { name: 'Imprint' })).toHaveAttribute(
@@ -64,11 +62,9 @@ describe('Footer', () => {
     mockedGetSponsorUrl.mockReturnValue(null);
 
     render(
-      <MemoryRouter
-        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-      >
+      <TestRouter>
         <Footer />
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(screen.queryByRole('link', { name: 'Sponsor' })).toBeNull();

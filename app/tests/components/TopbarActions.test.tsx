@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import TopbarActions from '../../src/components/TopbarActions';
+import { TestRouter } from '../setup/testRouter';
 
 const SHARE_LINK_LABEL = 'Share formpack link';
 const TEST_FORMPACK_PATH = '/formpacks/alpha';
@@ -46,12 +46,9 @@ vi.mock('react-i18next', () => ({
 
 const renderActions = (route: string) =>
   render(
-    <MemoryRouter
-      initialEntries={[route]}
-      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-    >
+    <TestRouter initialEntries={[route]}>
       <TopbarActions />
-    </MemoryRouter>,
+    </TestRouter>,
   );
 
 afterEach(() => {
