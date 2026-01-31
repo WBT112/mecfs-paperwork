@@ -5,6 +5,7 @@ export const POLL_INTERVALS = [200, 400, 800, 1200];
 
 const DB_NAME = 'mecfs-paperwork';
 const STORE_NAME_RECORDS = 'records';
+const STORE_NAME_SNAPSHOTS = 'snapshots';
 
 type PollOptions =
   | number
@@ -198,6 +199,131 @@ const readRecordById = async (
   ) as Promise<StoredRecord | null>;
 };
 
+const readSnapshotCountByRecordId = async (
+  page: Page,
+  recordId: string,
+): Promise<number | null> => {
+  return page.evaluate(
+    async ({ dbName, storeName, recordId }) => {
+      const hasAnyActiveRecordId = (): boolean => {
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key) continue;
+            if (!key.startsWith('mecfs-paperwork.activeRecordId.')) continue;
+            const value = localStorage.getItem(key);
+            if (value) return true;
+          }
+        } catch {
+          // ignore
+        }
+        return false;
+      };
+
+      const openExistingDb = async (): Promise<IDBDatabase | null> => {
+        const safeToOpen = hasAnyActiveRecordId();
+
+        if (!safeToOpen) {
+          if (indexedDB.databases) {
+            const databases = await indexedDB.databases();
+            if (!databases.some((db) => db.name === dbName)) {
+              return null;
+            }
+          } else {
+            return null;
+          }
+        }
+
+        return await new Promise((resolve) => {
+          let aborted = false;
+          const req = indexedDB.open(dbName);
+
+          req.onupgradeneeded = () => {
+            aborted = true;
+            try {
+              req.transaction?.abort();
+            } catch {
+              // ignore
+            }
+          };
+
+          req.onerror = () => resolve(null);
+          req.onblocked = () => resolve(null);
+          req.onsuccess = () => {
+            const db = req.result;
+            if (aborted) {
+              try {
+                db.close();
+              } catch {
+                // ignore
+              }
+              resolve(null);
+              return;
+            }
+            resolve(db);
+          };
+        });
+      };
+
+      const db = await openExistingDb();
+      if (!db) return null;
+      try {
+        const tx = db.transaction(storeName, 'readonly');
+        const store = tx.objectStore(storeName);
+
+        return await new Promise((resolve) => {
+          let result: number | null = null;
+
+          const cleanup = () => {
+            try {
+              db.close();
+            } catch {
+              // ignore
+            }
+          };
+
+          tx.oncomplete = () => {
+            cleanup();
+            resolve(result ?? null);
+          };
+
+          tx.onabort = () => {
+            cleanup();
+            resolve(null);
+          };
+
+          tx.onerror = () => {
+            cleanup();
+            resolve(null);
+          };
+
+          try {
+            const index = store.index('by_recordId');
+            const getReq = index.getAllKeys(recordId);
+            getReq.onsuccess = () => {
+              result = Array.isArray(getReq.result) ? getReq.result.length : 0;
+            };
+            getReq.onerror = () => {
+              result = null;
+            };
+          } catch {
+            cleanup();
+            resolve(null);
+          }
+        });
+      } catch {
+        try {
+          db.close();
+        } catch {
+          // ignore
+        }
+        return null;
+      }
+    },
+    { dbName: DB_NAME, storeName: STORE_NAME_SNAPSHOTS, recordId },
+  ) as Promise<number | null>;
+};
+
 export const waitForRecordById = async (
   page: Page,
   recordId: string,
@@ -243,4 +369,22 @@ export const waitForRecordField = async <T>(
       { timeout, intervals },
     )
     .toEqual(expected);
+};
+
+export const waitForSnapshotCount = async (
+  page: Page,
+  recordId: string,
+  expected: number,
+  options?: PollOptions,
+): Promise<void> => {
+  const { timeout, intervals } = normalizePollOptions(options);
+
+  await expect
+    .poll(
+      async () => {
+        return await readSnapshotCountByRecordId(page, recordId);
+      },
+      { timeout, intervals },
+    )
+    .toBe(expected);
 };
