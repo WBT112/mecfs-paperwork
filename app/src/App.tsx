@@ -6,6 +6,7 @@ import { SupportedLocale } from './i18n/locale';
 import Footer from './components/Footer';
 import ThemeSwitcher from './components/ThemeSwitcher';
 import TopbarActions from './components/TopbarActions';
+import StagingMarker from './components/StagingMarker';
 import FormpackDetailPage from './pages/FormpackDetailPage';
 import FormpackListPage from './pages/FormpackListPage';
 import HelpPage from './pages/HelpPage';
@@ -27,6 +28,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <StagingMarker />
       <header className="app__header">
         <div className="app__header-content">
           <div className="app__header-brand">

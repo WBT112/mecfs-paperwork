@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   filterVisibleFormpacks,
   getDevUiEnabled,
+  getShowDevFormpacks,
 } from '../../src/formpacks/visibility';
 import type { FormpackManifest } from '../../src/formpacks/types';
 
@@ -54,5 +55,27 @@ describe('formpack visibility', () => {
       PUBLIC_PACK_ID,
       DEV_PACK_ID,
     ]);
+  });
+
+  describe('getShowDevFormpacks', () => {
+    it('returns true when isDev is true regardless of override', () => {
+      expect(getShowDevFormpacks(true, undefined)).toBe(true);
+      expect(getShowDevFormpacks(true, 'false')).toBe(true);
+      expect(getShowDevFormpacks(true, 'true')).toBe(true);
+    });
+
+    it('returns false when isDev is false and override is undefined', () => {
+      expect(getShowDevFormpacks(false, undefined)).toBe(false);
+    });
+
+    it('returns false when isDev is false and override is not "true"', () => {
+      expect(getShowDevFormpacks(false, 'false')).toBe(false);
+      expect(getShowDevFormpacks(false, '')).toBe(false);
+      expect(getShowDevFormpacks(false, 'anything')).toBe(false);
+    });
+
+    it('returns true when isDev is false and override is "true"', () => {
+      expect(getShowDevFormpacks(false, 'true')).toBe(true);
+    });
   });
 });

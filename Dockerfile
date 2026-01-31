@@ -1,5 +1,10 @@
 FROM node:24-bookworm-slim AS build
 
+# Build arguments for environment-specific configuration
+ARG VITE_MODE=production
+ARG VITE_SHOW_DEV_FORMPACKS=
+ARG VITE_DEPLOYMENT_ENV=
+
 WORKDIR /repo
 RUN mkdir -p /repo/app /repo/formpacks /repo/.github
 
@@ -12,7 +17,13 @@ RUN npm ci
 
 COPY app /repo/app
 COPY tools /repo/tools
-RUN npm run build
+
+# Pass build args as environment variables for Vite
+ENV VITE_SHOW_DEV_FORMPACKS=$VITE_SHOW_DEV_FORMPACKS
+ENV VITE_DEPLOYMENT_ENV=$VITE_DEPLOYMENT_ENV
+
+# Build with the specified mode
+RUN npm run build -- --mode $VITE_MODE
 
 FROM dhi.io/nginx:1 AS runtime
 
