@@ -13,10 +13,14 @@ const setupMainMocks = (): MainImports => {
   const createRoot = vi.fn(() => ({ render }));
 
   vi.doMock('../../src/theme/applyTheme', () => ({ applyTheme }));
-  vi.doMock('../../src/theme/theme', () => ({ getInitialThemeMode: () => 'dark' }));
+  vi.doMock('../../src/theme/theme', () => ({
+    getInitialThemeMode: () => 'dark',
+  }));
   vi.doMock('../../src/pwa/register', () => ({ registerServiceWorker }));
   vi.doMock('react-dom/client', () => ({ default: { createRoot } }));
-  vi.doMock('react-router-dom', () => ({ BrowserRouter: ({ children }: { children: unknown }) => children }));
+  vi.doMock('react-router-dom', () => ({
+    BrowserRouter: ({ children }: { children: unknown }) => children,
+  }));
   vi.doMock('../../src/App', () => ({ default: () => null }));
   vi.doMock('../../src/i18n', () => ({}));
   vi.doMock('../../src/index.css', () => ({}));
@@ -37,7 +41,9 @@ describe('main', () => {
   it('throws when the root element is missing', async () => {
     setupMainMocks();
 
-    await expect(import('../../src/main')).rejects.toThrow('Root element not found');
+    await expect(import('../../src/main')).rejects.toThrow(
+      'Root element not found',
+    );
   });
 
   it('applies the theme, registers the service worker, and renders the app', async () => {

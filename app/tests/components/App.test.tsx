@@ -61,7 +61,9 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: 'ME/CFS Paperwork' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Offline-first paperwork helper')).toBeInTheDocument();
+    expect(
+      screen.getByText('Offline-first paperwork helper'),
+    ).toBeInTheDocument();
 
     const select = screen.getByLabelText('Language');
     expect(select).toHaveValue('de');
