@@ -46,7 +46,10 @@ vi.mock('react-i18next', () => ({
 
 const renderActions = (route: string) =>
   render(
-    <MemoryRouter initialEntries={[route]}>
+    <MemoryRouter
+      initialEntries={[route]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <TopbarActions />
     </MemoryRouter>,
   );

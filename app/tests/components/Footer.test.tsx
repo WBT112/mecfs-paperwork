@@ -30,7 +30,9 @@ describe('Footer', () => {
   it('renders imprint, privacy, sponsor, and GitHub links', () => {
     mockedGetSponsorUrl.mockReturnValue('https://example.com/sponsor');
     render(
-      <MemoryRouter>
+      <MemoryRouter
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <Footer />
       </MemoryRouter>,
     );
@@ -62,7 +64,9 @@ describe('Footer', () => {
     mockedGetSponsorUrl.mockReturnValue(null);
 
     render(
-      <MemoryRouter>
+      <MemoryRouter
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <Footer />
       </MemoryRouter>,
     );

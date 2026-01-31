@@ -31,7 +31,10 @@ vi.mock('../../src/pages/PrivacyPage', () => ({
 const renderAppRoutes = async (entry: string) => {
   const { default: AppRoutes } = await import('../../src/AppRoutes');
   render(
-    <MemoryRouter initialEntries={[entry]}>
+    <MemoryRouter
+      initialEntries={[entry]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <AppRoutes />
     </MemoryRouter>,
   );
