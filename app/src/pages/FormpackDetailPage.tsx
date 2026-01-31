@@ -412,6 +412,17 @@ type PreviewEntry =
   | { type: 'row'; node: ReactNode }
   | { type: 'nested'; node: ReactNode };
 
+type PreviewEntryOptions = {
+  entry: unknown;
+  key: string;
+  childSchema: RJSFSchema | undefined;
+  childUi: UiSchema | undefined;
+  childLabel: string;
+  resolveValue: PreviewValueResolver;
+  fieldPath: string;
+  sectionKey?: string;
+};
+
 const buildPreviewRow = (
   key: string,
   label: string,
@@ -427,16 +438,16 @@ const buildPreviewRow = (
   </div>
 );
 
-const buildPreviewEntry = (
-  entry: unknown,
-  key: string,
-  childSchema: RJSFSchema | undefined,
-  childUi: UiSchema | undefined,
-  childLabel: string,
-  resolveValue: PreviewValueResolver,
-  fieldPath: string,
-  sectionKey?: string,
-): PreviewEntry | null => {
+const buildPreviewEntry = ({
+  entry,
+  key,
+  childSchema,
+  childUi,
+  childLabel,
+  resolveValue,
+  fieldPath,
+  sectionKey,
+}: PreviewEntryOptions): PreviewEntry | null => {
   if (!hasPreviewValue(entry)) {
     return null;
   }
@@ -566,16 +577,16 @@ function renderPreviewObject(
     const childUi = getUiSchemaNode(uiNode, key);
     const childLabel = getLabel(key, childSchema, childUi);
     const childPath = buildFieldPath(key, fieldPath);
-    const preview = buildPreviewEntry(
+    const preview = buildPreviewEntry({
       entry,
       key,
       childSchema,
       childUi,
       childLabel,
-      resolveWithDecisionParagraphs,
-      childPath,
+      resolveValue: resolveWithDecisionParagraphs,
+      fieldPath: childPath,
       sectionKey,
-    );
+    });
     if (!preview) {
       return;
     }
@@ -715,6 +726,7 @@ export default function FormpackDetailPage() {
     loadRecord,
     updateActiveRecord,
     applyRecordUpdate,
+    deleteRecord,
     setActiveRecord,
   } = useRecords(formpackId);
   const {
@@ -723,6 +735,7 @@ export default function FormpackDetailPage() {
     errorCode: snapshotsError,
     createSnapshot,
     loadSnapshot,
+    clearSnapshots,
     refresh: refreshSnapshots,
   } = useSnapshots(activeRecord?.id ?? null);
   const { markAsSaved } = useAutosaveRecord(
@@ -863,9 +876,7 @@ export default function FormpackDetailPage() {
     const visibility = getFieldVisibility(decision);
 
     // Clone the UI schema to avoid mutations
-    const clonedUiSchema = JSON.parse(
-      JSON.stringify(normalizedUiSchema),
-    ) as UiSchema;
+    const clonedUiSchema = structuredClone(normalizedUiSchema);
 
     if (!isRecord(clonedUiSchema.decision)) {
       return normalizedUiSchema;
@@ -993,7 +1004,7 @@ export default function FormpackDetailPage() {
       }
 
       const record = await loadRecord(lastId);
-      if (record && record.formpackId === currentFormpackId) {
+      if (record?.formpackId === currentFormpackId) {
         return record;
       }
 
@@ -1245,6 +1256,26 @@ export default function FormpackDetailPage() {
     await createSnapshot(formData, buildSnapshotLabel());
   }, [activeRecord, buildSnapshotLabel, createSnapshot, formData]);
 
+  const handleDeleteRecord = useCallback(
+    async (record: RecordEntry) => {
+      if (record.id === activeRecord?.id) {
+        return;
+      }
+
+      const confirmed = window.confirm(
+        t('formpackRecordDeleteConfirm', {
+          title: record.title ?? t('formpackRecordUntitled'),
+        }),
+      );
+      if (!confirmed) {
+        return;
+      }
+
+      await deleteRecord(record.id);
+    },
+    [activeRecord?.id, deleteRecord, t],
+  );
+
   const handleRestoreSnapshot = useCallback(
     async (snapshotId: string) => {
       if (!activeRecord) {
@@ -1266,6 +1297,19 @@ export default function FormpackDetailPage() {
     },
     [activeRecord, loadSnapshot, markAsSaved, updateActiveRecord],
   );
+
+  const handleClearSnapshots = useCallback(async () => {
+    if (!activeRecord) {
+      return;
+    }
+
+    const confirmed = window.confirm(t('formpackSnapshotsClearAllConfirm'));
+    if (!confirmed) {
+      return;
+    }
+
+    await clearSnapshots();
+  }, [activeRecord, clearSnapshots, t]);
 
   const applyImportedRecord = useCallback(
     (record: RecordEntry) => {
@@ -1765,11 +1809,13 @@ export default function FormpackDetailPage() {
           <div className="formpack-records__actions">
             <button
               type="button"
-              className="app__button"
+              className="app__button app__icon-button"
               onClick={handleCreateRecord}
               disabled={storageError === 'unavailable'}
+              aria-label={t('formpackRecordNew')}
+              title={t('formpackRecordNew')}
             >
-              {t('formpackRecordNew')}
+              +
             </button>
           </div>
           <ul className="formpack-records__list">
@@ -1801,6 +1847,18 @@ export default function FormpackDetailPage() {
                     >
                       {t('formpackRecordLoad')}
                     </button>
+                    {!isActive && (
+                      <button
+                        type="button"
+                        className="app__button app__icon-button"
+                        onClick={() => handleDeleteRecord(record)}
+                        disabled={storageError === 'unavailable'}
+                        aria-label={t('formpackRecordDelete')}
+                        title={t('formpackRecordDelete')}
+                      >
+                        🗑
+                      </button>
+                    )}
                     {isActive && (
                       <span className="formpack-records__badge">
                         {t('formpackRecordActive')}
@@ -1825,11 +1883,13 @@ export default function FormpackDetailPage() {
         <div className="formpack-records__actions">
           <button
             type="button"
-            className="app__button"
+            className="app__button app__icon-button"
             onClick={handleCreateRecord}
             disabled={storageError === 'unavailable'}
+            aria-label={t('formpackRecordNew')}
+            title={t('formpackRecordNew')}
           >
-            {t('formpackRecordNew')}
+            +
           </button>
         </div>
       </div>
@@ -2028,11 +2088,23 @@ export default function FormpackDetailPage() {
         <div className="formpack-snapshots__actions">
           <button
             type="button"
-            className="app__button"
+            className="app__button app__icon-button"
             onClick={handleCreateSnapshot}
             disabled={storageError === 'unavailable'}
+            aria-label={t('formpackSnapshotCreate')}
+            title={t('formpackSnapshotCreate')}
           >
-            {t('formpackSnapshotCreate')}
+            +
+          </button>
+          <button
+            type="button"
+            className="app__button app__icon-button"
+            onClick={handleClearSnapshots}
+            disabled={storageError === 'unavailable' || snapshots.length === 0}
+            aria-label={t('formpackSnapshotsClearAll')}
+            title={t('formpackSnapshotsClearAll')}
+          >
+            🗑
           </button>
         </div>
         {renderSnapshotsList()}

@@ -33,12 +33,16 @@ Ein Entwurf ist dein laufender Bearbeitungsstand.
 - Nutze Entwürfe, wenn du über mehrere Tage am selben Dokument arbeiten willst.
 - Speichere regelmäßig, besonders vor größeren Änderungen.
 - Ein Entwurf kann mehrere Snapshots enthalten
+- Der aktive Entwurf wird automatisch gespeichert und kann nicht gelöscht werden.
+- Du kannst nicht aktive Entwürfe löschen. Dabei werden zugehörige Snapshots ebenfalls entfernt.
+- Löschungen erfolgen nur lokal auf diesem Gerät/Browser und sind nicht rückgängig zu machen.
 
 ### Snapshots
 
 Snapshots sind **Zwischenstände** (wie “Sicherungen”), die du später wiederherstellen kannst.
 
 - Erstelle einen Snapshot **vor** riskanten Änderungen (z. B. wenn du viele Felder auf einmal änderst).
+- Alle Snapshots eines Entwurfs können bei Bedarf vollständig gelöscht werden.
 
 ### JSON exportieren (Backup/Teilen)
 

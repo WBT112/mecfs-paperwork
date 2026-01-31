@@ -14,7 +14,7 @@ import { downloadDocxExport, exportDocx } from '../../src/export/docxLazy';
 import { loadFormpackManifest } from '../../src/formpacks/loader';
 import type { FormpackManifest } from '../../src/formpacks/types';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
-import type { RecordEntry } from '../../src/storage/types';
+import type { RecordEntry, SnapshotEntry } from '../../src/storage/types';
 
 const testConstants = vi.hoisted(() => ({
   FORMPACK_ID: 'notfallpass',
@@ -68,12 +68,14 @@ const storageState = vi.hoisted(
     loadRecord: ReturnType<typeof vi.fn>;
     updateActiveRecord: ReturnType<typeof vi.fn>;
     applyRecordUpdate: ReturnType<typeof vi.fn>;
+    deleteRecord: ReturnType<typeof vi.fn>;
     setActiveRecord: ReturnType<typeof vi.fn>;
-    snapshots: Array<unknown>;
+    snapshots: SnapshotEntry[];
     isSnapshotsLoading: boolean;
     snapshotsError: string | null;
     createSnapshot: ReturnType<typeof vi.fn>;
     loadSnapshot: ReturnType<typeof vi.fn>;
+    clearSnapshots: ReturnType<typeof vi.fn>;
     refreshSnapshots: ReturnType<typeof vi.fn>;
     markAsSaved: ReturnType<typeof vi.fn>;
     setLocale: ReturnType<typeof vi.fn>;
@@ -98,12 +100,14 @@ const storageState = vi.hoisted(
       loadRecord: vi.fn(),
       updateActiveRecord: vi.fn(),
       applyRecordUpdate: vi.fn(),
+      deleteRecord: vi.fn(),
       setActiveRecord: vi.fn(),
-      snapshots: [] as Array<unknown>,
+      snapshots: [],
       isSnapshotsLoading: false,
       snapshotsError: null as string | null,
       createSnapshot: vi.fn(),
       loadSnapshot: vi.fn(),
+      clearSnapshots: vi.fn(),
       refreshSnapshots: vi.fn(),
       markAsSaved: vi.fn(),
       setLocale: vi.fn(),
@@ -321,6 +325,7 @@ vi.mock('../../src/storage/hooks', () => ({
     loadRecord: storageState.loadRecord,
     updateActiveRecord: storageState.updateActiveRecord,
     applyRecordUpdate: storageState.applyRecordUpdate,
+    deleteRecord: storageState.deleteRecord,
     setActiveRecord: storageState.setActiveRecord,
   }),
   useSnapshots: () => ({
@@ -329,6 +334,7 @@ vi.mock('../../src/storage/hooks', () => ({
     errorCode: storageState.snapshotsError,
     createSnapshot: storageState.createSnapshot,
     loadSnapshot: storageState.loadSnapshot,
+    clearSnapshots: storageState.clearSnapshots,
     refresh: storageState.refreshSnapshots,
   }),
   useAutosaveRecord: () => ({
@@ -381,9 +387,11 @@ describe('FormpackDetailPage', () => {
     storageState.createRecord.mockReset();
     storageState.loadRecord.mockReset();
     storageState.applyRecordUpdate.mockReset();
+    storageState.deleteRecord.mockReset();
     storageState.setActiveRecord.mockReset();
     storageState.createSnapshot.mockReset();
     storageState.loadSnapshot.mockReset();
+    storageState.clearSnapshots.mockReset();
     storageState.refreshSnapshots.mockReset();
     storageState.markAsSaved.mockReset();
     storageState.setLocale.mockReset();
@@ -1261,8 +1269,9 @@ describe('FormpackDetailPage', () => {
   });
 
   it('restores a snapshot from the list', async () => {
-    const snapshot = {
+    const snapshot: SnapshotEntry = {
       id: 'snapshot-1',
+      recordId: record.id,
       label: 'Snapshot',
       createdAt: new Date().toISOString(),
       data: { field: 'snapshot' },
@@ -1319,6 +1328,149 @@ describe('FormpackDetailPage', () => {
       expect(storageState.loadRecord).toHaveBeenCalledWith(secondRecord.id),
     );
     expect(storageState.markAsSaved).toHaveBeenCalledWith(secondRecord.data);
+  });
+
+  it('shows delete action only for non-active drafts', async () => {
+    const secondRecord = {
+      ...record,
+      id: 'record-2',
+      title: 'Second',
+      updatedAt: new Date().toISOString(),
+    };
+    storageState.records = [record, secondRecord];
+    storageState.activeRecord = record;
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await openRecordsSection();
+
+    const deleteButtons = await screen.findAllByRole('button', {
+      name: 'formpackRecordDelete',
+    });
+    expect(deleteButtons).toHaveLength(1);
+
+    const activeBadge = screen.getByText('formpackRecordActive');
+    const activeItem = activeBadge.closest('li');
+    expect(
+      within(activeItem as HTMLElement).queryByRole('button', {
+        name: 'formpackRecordDelete',
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('does not delete a draft when the confirmation is dismissed', async () => {
+    const secondRecord = {
+      ...record,
+      id: 'record-2',
+      title: 'Second',
+      updatedAt: new Date().toISOString(),
+    };
+    storageState.records = [record, secondRecord];
+    storageState.activeRecord = record;
+    storageState.deleteRecord.mockResolvedValue(true);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await openRecordsSection();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackRecordDelete' }),
+    );
+
+    expect(storageState.deleteRecord).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
+  });
+
+  it('deletes a draft when confirmed', async () => {
+    const secondRecord = {
+      ...record,
+      id: 'record-2',
+      title: 'Second',
+      updatedAt: new Date().toISOString(),
+    };
+    storageState.records = [record, secondRecord];
+    storageState.activeRecord = record;
+    storageState.deleteRecord.mockResolvedValue(true);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await openRecordsSection();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackRecordDelete' }),
+    );
+
+    await waitFor(() =>
+      expect(storageState.deleteRecord).toHaveBeenCalledWith(secondRecord.id),
+    );
+    confirmSpy.mockRestore();
+  });
+
+  it('disables clear snapshots when none exist', async () => {
+    storageState.snapshots = [];
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await openSnapshotsSection();
+    const clearButton = await screen.findByRole('button', {
+      name: 'formpackSnapshotsClearAll',
+    });
+    expect(clearButton).toBeDisabled();
+  });
+
+  it('clears snapshots when confirmed', async () => {
+    const snapshot: SnapshotEntry = {
+      id: 'snapshot-1',
+      recordId: record.id,
+      label: 'Snapshot',
+      data: { field: 'snapshot' },
+      createdAt: new Date().toISOString(),
+    };
+    storageState.snapshots = [snapshot];
+    storageState.clearSnapshots.mockResolvedValue(1);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(
+      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await openSnapshotsSection();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackSnapshotsClearAll' }),
+    );
+
+    await waitFor(() =>
+      expect(storageState.clearSnapshots).toHaveBeenCalledWith(),
+    );
+    confirmSpy.mockRestore();
   });
 
   it('restores the last active record from local storage', async () => {
@@ -1392,7 +1544,10 @@ describe('FormpackDetailPage', () => {
       </MemoryRouter>,
     );
 
-    await userEvent.click(await screen.findByText('formpackRecordNew'));
+    await openRecordsSection();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackRecordNew' }),
+    );
 
     await waitFor(() =>
       expect(storageState.updateActiveRecord).toHaveBeenCalled(),

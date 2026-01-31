@@ -307,6 +307,16 @@ body {
   cursor: pointer;
 }
 
+.app__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  line-height: 1;
+}
+
 .app__button:hover {
   background: var(--color-button-bg-hover);
 }
@@ -873,6 +883,7 @@ body {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  justify-content: flex-end;
   margin-bottom: 0.75rem;
 }
 
