@@ -11,9 +11,8 @@ import {
 
 const initialLocale = getStoredLocale() ?? defaultLocale;
 
-i18n
-  .use(initReactI18next)
-  .init({
+try {
+  await i18n.use(initReactI18next).init({
     resources: {
       de: { app: de },
       en: { app: en },
@@ -25,7 +24,9 @@ i18n
     interpolation: {
       escapeValue: false,
     },
-  })
-  .catch(() => undefined);
+  });
+} catch {
+  // Ignore initialization failures to keep the UI responsive offline.
+}
 
 export default i18n;

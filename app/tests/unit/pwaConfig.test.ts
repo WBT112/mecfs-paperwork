@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEV_PRECACHE_GLOB_PATTERNS,
   MAXIMUM_FILE_SIZE_TO_CACHE_BYTES,
   PRECACHE_GLOB_PATTERNS,
   RUNTIME_CACHING,
@@ -31,5 +32,16 @@ describe('createPwaConfig', () => {
       /^\/privacy$/,
     ]);
     expect(workbox.runtimeCaching).toEqual(RUNTIME_CACHING);
+  });
+
+  it('uses dev precache settings when enabled', () => {
+    const config = createPwaConfig({ isDev: true });
+    const workbox = config.workbox;
+    expect(workbox).toBeDefined();
+    if (!workbox) {
+      throw new Error('Expected Workbox settings to be defined.');
+    }
+
+    expect(workbox.globPatterns).toEqual(DEV_PRECACHE_GLOB_PATTERNS);
   });
 });

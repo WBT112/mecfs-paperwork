@@ -12,8 +12,11 @@ type AppConfig = import('vite').UserConfig & {
   test?: import('vitest/node').InlineConfig;
 };
 
-const config: AppConfig = {
-  plugins: [react(), VitePWA(createPwaConfig())],
+const createConfig = (mode: string): AppConfig => ({
+  plugins: [
+    react(),
+    VitePWA(createPwaConfig({ isDev: mode === 'development' })),
+  ],
   resolve: {
     // RATIONALE: The 'docx-templates' library relies on Node.js built-in
     // modules like 'stream' and 'util'. To make it work in a browser
@@ -99,6 +102,6 @@ const config: AppConfig = {
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     exclude: ['node_modules', 'dist', 'e2e', 'public', 'src'],
   },
-};
+});
 
-export default defineConfig(config);
+export default defineConfig(({ mode }) => createConfig(mode));
