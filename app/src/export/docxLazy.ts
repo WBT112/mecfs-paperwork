@@ -6,13 +6,11 @@ type DocxModule = typeof import('./docx');
 let docxModulePromise: Promise<DocxModule> | null = null;
 
 const loadDocxModule = () => {
-  if (!docxModulePromise) {
-    docxModulePromise = import('./docx');
-  }
+  docxModulePromise ??= import('./docx');
   return docxModulePromise;
 };
 
-export type { DocxTemplateId, ExportDocxOptions };
+export type { DocxTemplateId, ExportDocxOptions } from './docx';
 
 export const buildDocxExportFilename = async (
   formpackId: string,

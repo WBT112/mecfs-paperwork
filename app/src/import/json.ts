@@ -52,6 +52,8 @@ export type ImportValidationResult =
   | { payload: JsonImportPayload; error: null }
   | { payload: null; error: ImportError };
 
+type OptionalRjsfSchema = RJSFSchema | boolean | undefined;
+
 const parseJson = (
   value: string,
 ): { payload: unknown } | { error: 'invalid_json'; message: string } => {
@@ -159,9 +161,7 @@ const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
   return lenient;
 };
 
-const resolveSchemaDefaultValue = (
-  schema: RJSFSchema | boolean | undefined,
-): unknown => {
+const resolveSchemaDefaultValue = (schema: OptionalRjsfSchema): unknown => {
   if (!schema || typeof schema !== 'object') {
     return undefined;
   }
@@ -200,7 +200,7 @@ const removeReadOnlyFields = (
   const properties = schema.properties as Record<string, unknown>;
 
   for (const key of Object.keys(normalized)) {
-    const propertySchema = properties[key] as RJSFSchema | boolean | undefined;
+    const propertySchema = properties[key] as OptionalRjsfSchema;
     if (!propertySchema || typeof propertySchema !== 'object') {
       continue;
     }
@@ -242,7 +242,7 @@ const addRequiredDefaults = (
 
     const propertySchema = (schema.properties as Record<string, unknown>)[
       key
-    ] as RJSFSchema | boolean | undefined;
+    ] as OptionalRjsfSchema;
     const defaultValue = resolveSchemaDefaultValue(propertySchema);
     if (defaultValue !== undefined) {
       normalized[key] = defaultValue;
@@ -262,7 +262,7 @@ const applyNestedDefaults = (
   for (const key of Object.keys(normalized)) {
     const propertySchema = (schema.properties as Record<string, unknown>)[
       key
-    ] as RJSFSchema | boolean | undefined;
+    ] as OptionalRjsfSchema;
 
     if (
       propertySchema &&

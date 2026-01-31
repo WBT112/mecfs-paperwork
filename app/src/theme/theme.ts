@@ -13,7 +13,7 @@ export const isThemeMode = (value: string): value is ThemeMode =>
 
 export const getStoredThemeMode = (): ThemeMode | null => {
   try {
-    const storedValue = window.localStorage.getItem(themeStorageKey);
+    const storedValue = globalThis.localStorage.getItem(themeStorageKey);
 
     if (storedValue && isThemeMode(storedValue)) {
       return storedValue;
@@ -27,7 +27,7 @@ export const getStoredThemeMode = (): ThemeMode | null => {
 
 export const setStoredThemeMode = (mode: ThemeMode): void => {
   try {
-    window.localStorage.setItem(themeStorageKey, mode);
+    globalThis.localStorage.setItem(themeStorageKey, mode);
   } catch {
     // Ignore storage failures to keep the offline UI responsive.
   }

@@ -42,30 +42,29 @@ const createMediaQueryList = (matches: boolean): MockMediaQueryList => {
 
 const createLegacyMediaQueryList = (matches: boolean): MockMediaQueryList => {
   let currentMatches = matches;
-  let listener: ((event: MediaQueryListEvent) => void) | null = null;
+  let onchange: ((event: MediaQueryListEvent) => void) | null = null;
 
   return {
     get matches() {
       return currentMatches;
     },
     media: '(prefers-color-scheme: dark)',
-    onchange: null,
+    get onchange() {
+      return onchange;
+    },
+    set onchange(handler: ((event: MediaQueryListEvent) => void) | null) {
+      onchange = handler;
+    },
     addEventListener:
       undefined as unknown as MediaQueryList['addEventListener'],
     removeEventListener:
       undefined as unknown as MediaQueryList['removeEventListener'],
-    addListener: vi.fn((callback: (event: MediaQueryListEvent) => void) => {
-      listener = callback;
-    }),
-    removeListener: vi.fn((callback: (event: MediaQueryListEvent) => void) => {
-      if (listener === callback) {
-        listener = null;
-      }
-    }),
+    addListener: undefined as unknown as MediaQueryList['addListener'],
+    removeListener: undefined as unknown as MediaQueryList['removeListener'],
     dispatchEvent: vi.fn(),
     triggerChange: (nextMatches: boolean) => {
       currentMatches = nextMatches;
-      listener?.({ matches: nextMatches } as MediaQueryListEvent);
+      onchange?.({ matches: nextMatches } as MediaQueryListEvent);
     },
   } as MockMediaQueryList;
 };
@@ -165,12 +164,12 @@ describe('useTheme', () => {
     await user.click(screen.getByRole('button', { name: 'System' }));
 
     await waitFor(() => {
-      expect(mediaQueryList.addListener).toHaveBeenCalled();
+      expect(typeof mediaQueryList.onchange).toBe('function');
     });
 
     unmount();
 
-    expect(mediaQueryList.removeListener).toHaveBeenCalled();
+    expect(mediaQueryList.onchange).toBeNull();
   });
 
   it('keeps a default theme when system media queries are unavailable', async () => {
