@@ -64,22 +64,22 @@ const normalizeDateString = (value: string): string => {
     return trimmed;
   }
 
-  const ymdSlash = trimmed.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
-  if (ymdSlash) {
+  const ymdSlashMatch = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(trimmed);
+  if (ymdSlashMatch) {
     const iso = buildIsoDate(
-      Number(ymdSlash[1]),
-      Number(ymdSlash[2]),
-      Number(ymdSlash[3]),
+      Number(ymdSlashMatch[1]),
+      Number(ymdSlashMatch[2]),
+      Number(ymdSlashMatch[3]),
     );
     return iso ?? value;
   }
 
-  const dmyDot = trimmed.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (dmyDot) {
+  const dmyDotMatch = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(trimmed);
+  if (dmyDotMatch) {
     const iso = buildIsoDate(
-      Number(dmyDot[3]),
-      Number(dmyDot[2]),
-      Number(dmyDot[1]),
+      Number(dmyDotMatch[3]),
+      Number(dmyDotMatch[2]),
+      Number(dmyDotMatch[1]),
     );
     return iso ?? value;
   }
@@ -112,7 +112,7 @@ const normalizeSchemaObject = (schema: RJSFSchema, value: unknown): unknown => {
 
   const updated: Record<string, unknown> = { ...value };
   for (const [key, propertySchema] of Object.entries(schema.properties)) {
-    if (!Object.prototype.hasOwnProperty.call(updated, key)) {
+    if (!Object.hasOwn(updated, key)) {
       continue;
     }
     updated[key] = normalizeSchemaDates(
@@ -198,8 +198,8 @@ export const buildJsonExportPayload = (
 const sanitizeFilenameSegment = (value: string): string => {
   const sanitized = value
     .trim()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-zA-Z0-9-_]+/g, '');
+    .replaceAll(/\s+/g, '-')
+    .replaceAll(/[^a-zA-Z0-9-_]+/g, '');
   return sanitized || 'record';
 };
 

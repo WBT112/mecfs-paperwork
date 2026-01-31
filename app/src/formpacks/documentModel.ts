@@ -81,24 +81,24 @@ const formatBirthDate = (value: string | null): string | null => {
     return null;
   }
 
-  const ymdDash = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (ymdDash) {
-    return `${ymdDash[3]}-${ymdDash[2]}-${ymdDash[1]}`;
+  const ymdDashMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (ymdDashMatch) {
+    return `${ymdDashMatch[3]}-${ymdDashMatch[2]}-${ymdDashMatch[1]}`;
   }
 
-  const ymdSlash = value.match(/^(\d{4})\/(\d{2})\/(\d{2})$/);
-  if (ymdSlash) {
-    return `${ymdSlash[3]}-${ymdSlash[2]}-${ymdSlash[1]}`;
+  const ymdSlashMatch = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(value);
+  if (ymdSlashMatch) {
+    return `${ymdSlashMatch[3]}-${ymdSlashMatch[2]}-${ymdSlashMatch[1]}`;
   }
 
-  const dmyDot = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (dmyDot) {
-    return `${dmyDot[1]}-${dmyDot[2]}-${dmyDot[3]}`;
+  const dmyDotMatch = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
+  if (dmyDotMatch) {
+    return `${dmyDotMatch[1]}-${dmyDotMatch[2]}-${dmyDotMatch[3]}`;
   }
 
-  const dmyDash = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (dmyDash) {
-    return `${dmyDash[1]}-${dmyDash[2]}-${dmyDash[3]}`;
+  const dmyDashMatch = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
+  if (dmyDashMatch) {
+    return `${dmyDashMatch[1]}-${dmyDashMatch[2]}-${dmyDashMatch[3]}`;
   }
 
   return value;

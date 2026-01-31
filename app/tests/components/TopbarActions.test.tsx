@@ -89,7 +89,7 @@ describe('TopbarActions', () => {
 
     const user = userEvent.setup();
     renderActions(TEST_FORMPACK_PATH);
-    const origin = window.location.origin;
+    const origin = globalThis.location.origin;
 
     await user.click(screen.getByRole('button', { name: SHARE_LINK_LABEL }));
 
@@ -114,7 +114,7 @@ describe('TopbarActions', () => {
 
     const user = userEvent.setup();
     renderActions(TEST_FORMPACK_PATH);
-    const origin = window.location.origin;
+    const origin = globalThis.location.origin;
 
     await user.click(screen.getByRole('button', { name: SHARE_LINK_LABEL }));
 
