@@ -57,7 +57,7 @@ export const createPwaConfig = (
     : PRECACHE_GLOB_PATTERNS;
 
   return {
-    registerType: 'autoUpdate',
+    registerType: isDev ? 'prompt' : 'autoUpdate',
     devOptions: {
       enabled: true,
       navigateFallbackAllowlist: [

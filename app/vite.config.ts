@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { createRequire } from 'node:module';
@@ -8,12 +8,38 @@ import { createPwaConfig } from './src/lib/pwaConfig';
 const require = createRequire(import.meta.url);
 const utilPath = require.resolve('util/util.js');
 
+const createFormpackSpaFallbackPlugin = (): Plugin => ({
+  name: 'formpack-spa-fallback',
+  apply: 'serve',
+  enforce: 'pre',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (req.method !== 'GET' || !req.url) {
+        return next();
+      }
+
+      const path = req.url.split('?')[0];
+      if (path === '/formpacks' || path === '/formpacks/') {
+        req.url = '/index.html';
+        return next();
+      }
+
+      if (/^\/formpacks\/[^/]+\/?$/.test(path)) {
+        req.url = '/index.html';
+      }
+
+      return next();
+    });
+  },
+});
+
 type AppConfig = import('vite').UserConfig & {
   test?: import('vitest/node').InlineConfig;
 };
 
 const createConfig = (mode: string): AppConfig => ({
   plugins: [
+    createFormpackSpaFallbackPlugin(),
     react(),
     VitePWA(createPwaConfig({ isDev: mode === 'development' })),
   ],
