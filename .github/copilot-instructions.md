@@ -58,6 +58,7 @@ Notes from verified runs:
 - **build:** Vite warns about `eval` usage in `docx-templates` (expected).
 - **test:** Vitest logs some console warnings (React Router + intentional error logs) but passes.
 - **test:e2e:** Runs Playwright via `scripts/run-e2e-soft.mjs` (chromium gating; firefox/webkit soft-fail).
+- DO NOT ADD RULES TO IGNORE LINT/TYPECHECK OR OTHER RULES JUST TO MAKE TESTS PASS, this is no acceptable solution
 
 ### Playwright setup (required for E2E)
 ```bash
