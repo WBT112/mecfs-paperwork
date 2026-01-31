@@ -49,17 +49,18 @@ export const RUNTIME_CACHING = [
 ] satisfies RuntimeCachingConfig;
 
 export const createPwaConfig = (
-  options: { isDev?: boolean } = {},
+  options: { isDev?: boolean; enableDevSw?: boolean } = {},
 ): Partial<VitePWAOptions> => {
   const isDev = options.isDev ?? false;
+  const enableDevSw = options.enableDevSw ?? false;
   const globPatterns = isDev
     ? DEV_PRECACHE_GLOB_PATTERNS
     : PRECACHE_GLOB_PATTERNS;
 
   return {
-    registerType: isDev ? 'prompt' : 'autoUpdate',
+    registerType: 'autoUpdate',
     devOptions: {
-      enabled: true,
+      enabled: isDev && enableDevSw,
       navigateFallbackAllowlist: [
         /^\/$/,
         /^\/formpacks(\/.*)?$/,

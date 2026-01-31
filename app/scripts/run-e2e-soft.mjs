@@ -65,6 +65,7 @@ function runPlaywright({ project, outputDir, extraArgs = [] }) {
 }
 
 async function main() {
+  process.env.VITE_ENABLE_DEV_SW = 'true';
   // Chromium is gating
   const chromiumCode = await runPlaywright({
     project: 'chromium',

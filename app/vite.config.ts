@@ -41,7 +41,12 @@ const createConfig = (mode: string): AppConfig => ({
   plugins: [
     createFormpackSpaFallbackPlugin(),
     react(),
-    VitePWA(createPwaConfig({ isDev: mode === 'development' })),
+    VitePWA(
+      createPwaConfig({
+        isDev: mode === 'development',
+        enableDevSw: process.env.VITE_ENABLE_DEV_SW === 'true',
+      }),
+    ),
   ],
   resolve: {
     // RATIONALE: The 'docx-templates' library relies on Node.js built-in
