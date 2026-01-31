@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-call
 const sbomSummary = (await import('../../../tools/sbom-summary.mjs')) as {
   buildSbomMarkdown: (options: {
     reports: Array<{

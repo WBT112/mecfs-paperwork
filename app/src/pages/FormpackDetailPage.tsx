@@ -1452,9 +1452,6 @@ export default function FormpackDetailPage() {
     () => JSON.stringify(formData, null, 2),
     [formData],
   );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const resolvePreviewValue = useCallback<PreviewValueResolver>(
     (value, schemaNode, uiNode, fieldPath) =>
       resolveDisplayValue(value, {
