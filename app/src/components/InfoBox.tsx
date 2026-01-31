@@ -1,4 +1,4 @@
-import MarkdownRenderer from './Markdown/MarkdownRenderer';
+import LazyMarkdownRenderer from './Markdown/LazyMarkdownRenderer';
 
 interface InfoBoxProps {
   readonly message: string;
@@ -16,7 +16,11 @@ export function InfoBox({
   format = 'text',
 }: InfoBoxProps) {
   const content =
-    format === 'markdown' ? <MarkdownRenderer content={message} /> : message;
+    format === 'markdown' ? (
+      <LazyMarkdownRenderer content={message} />
+    ) : (
+      message
+    );
 
   return (
     <div

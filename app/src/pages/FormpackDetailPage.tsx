@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import Ajv2020 from 'ajv/dist/2020';
+
 import { loadFormpackI18n } from '../i18n/formpack';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
@@ -1693,10 +1693,14 @@ export default function FormpackDetailPage() {
     let isActive = true;
 
     const loadValidator = async () => {
-      const module = await import('@rjsf/validator-ajv8');
+      // PERFORMANCE: Load both validator and Ajv2020 dynamically to reduce initial bundle size.
       // Ajv2020 includes the draft 2020-12 meta schema used by formpacks.
+      const [module, ajvModule] = await Promise.all([
+        import('@rjsf/validator-ajv8'),
+        import('ajv/dist/2020'),
+      ]);
       const validator = module.customizeValidator({
-        AjvClass: Ajv2020,
+        AjvClass: ajvModule.default,
       });
       if (isActive) {
         setValidator(validator);

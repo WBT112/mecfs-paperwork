@@ -88,6 +88,11 @@ const createConfig = (mode: string): AppConfig => ({
           if (!id.includes('node_modules')) {
             return undefined;
           }
+          // PERFORMANCE: ajv is used for form validation. Keep it with rjsf since
+          // @rjsf/validator-ajv8 depends on it and they're loaded together.
+          if (id.includes('/ajv/') || id.includes('/ajv-formats/')) {
+            return 'vendor-rjsf';
+          }
           if (id.includes('@rjsf')) {
             return 'vendor-rjsf';
           }
@@ -101,6 +106,12 @@ const createConfig = (mode: string): AppConfig => ({
           ) {
             return 'vendor-docx';
           }
+          // PERFORMANCE: react-markdown and sanitize-html are split into a separate chunk
+          // because they're only needed for description rendering in formpack forms.
+          // This reduces the initial bundle size for the main React vendor chunk.
+          if (id.includes('react-markdown') || id.includes('sanitize-html')) {
+            return 'vendor-markdown';
+          }
           if (
             id.includes('react-router') ||
             id.includes('react-dom') ||
@@ -109,9 +120,6 @@ const createConfig = (mode: string): AppConfig => ({
             return 'vendor-react';
           }
           if (id.includes('i18next') || id.includes('react-i18next')) {
-            return 'vendor-react';
-          }
-          if (id.includes('react-markdown') || id.includes('sanitize-html')) {
             return 'vendor-react';
           }
           return undefined;

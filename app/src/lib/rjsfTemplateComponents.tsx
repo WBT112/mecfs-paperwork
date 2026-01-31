@@ -9,7 +9,7 @@ import type {
 } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
 import { buttonId, getTemplate, getUiOptions, helpId } from '@rjsf/utils';
-import MarkdownRenderer from '../components/Markdown/MarkdownRenderer';
+import LazyMarkdownRenderer from '../components/Markdown/LazyMarkdownRenderer';
 
 export type FormpackFormContext = {
   t: TFunction;
@@ -188,7 +188,7 @@ const renderMarkdownIfString = (content: ReactNode) => {
     return content;
   }
 
-  return <MarkdownRenderer content={content} />;
+  return <LazyMarkdownRenderer content={content} />;
 };
 
 export const DescriptionFieldTemplate = ({

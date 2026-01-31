@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { InfoBox } from '../../src/components/InfoBox';
 
 describe('InfoBox', () => {
@@ -43,9 +43,12 @@ describe('InfoBox', () => {
     expect(noteDiv.textContent).toContain('Line 3');
   });
 
-  it('renders markdown when format is markdown', () => {
+  it('renders markdown when format is markdown', async () => {
     render(<InfoBox message="**Bold** text" format="markdown" />);
     const noteDiv = screen.getByRole('note');
-    expect(noteDiv.querySelector('strong')).toBeInTheDocument();
+    // Wait for lazy-loaded MarkdownRenderer to render
+    await waitFor(() => {
+      expect(noteDiv.querySelector('strong')).toBeInTheDocument();
+    });
   });
 });
