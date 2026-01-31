@@ -104,7 +104,7 @@ export const useRecords = (formpackId: string | null) => {
 
   useEffect(() => {
     setHasLoaded(false);
-    refresh().catch(() => undefined);
+    void refresh();
   }, [refresh]);
 
   const createRecord = useCallback(
@@ -253,7 +253,7 @@ export const useSnapshots = (recordId: string | null) => {
   }, [recordId, setErrorCode, setSnapshots]);
 
   useEffect(() => {
-    refresh().catch(() => undefined);
+    void refresh();
   }, [refresh]);
 
   const createSnapshot = useCallback(

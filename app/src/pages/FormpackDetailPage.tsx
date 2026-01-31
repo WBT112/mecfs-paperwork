@@ -798,7 +798,7 @@ export default function FormpackDetailPage() {
     };
 
     if (id) {
-      loadManifest(id).catch(() => undefined);
+      void loadManifest(id);
     } else {
       resetFormpack();
       setFormData({});
@@ -825,7 +825,7 @@ export default function FormpackDetailPage() {
     }
 
     // Preload DOCX assets so export still works after going offline.
-    preloadDocxAssets(formpackId, manifest.docx).catch(() => undefined);
+    void preloadDocxAssets(formpackId, manifest.docx);
   }, [formpackId, manifest]);
 
   useEffect(() => {
@@ -1105,9 +1105,7 @@ export default function FormpackDetailPage() {
     const currentFormpackId = formpackId;
     hasRestoredRecordRef.current = formpackId;
 
-    restoreActiveRecord(currentFormpackId, () => isActive).catch(
-      () => undefined,
-    );
+    void restoreActiveRecord(currentFormpackId, () => isActive);
 
     return () => {
       isActive = false;
@@ -1703,7 +1701,7 @@ export default function FormpackDetailPage() {
       }
     };
 
-    loadValidator().catch(() => undefined);
+    void loadValidator();
 
     return () => {
       isActive = false;

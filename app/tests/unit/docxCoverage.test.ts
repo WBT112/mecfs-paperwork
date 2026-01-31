@@ -758,10 +758,6 @@ describe('docx export coverage', () => {
   });
 
   it('maps docx error keys for known errors', () => {
-    const consoleSpy = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => undefined);
-
     const unterminated = new Error('oops');
     unterminated.name = 'UnterminatedForLoopError';
     expect(getDocxErrorKey(unterminated)).toBe(
@@ -776,7 +772,5 @@ describe('docx export coverage', () => {
 
     expect(getDocxErrorKey({ message: 'bad' })).toBe('formpackDocxExportError');
     expect(getDocxErrorKey(['not-an-error'])).toBe('formpackDocxExportError');
-
-    consoleSpy.mockRestore();
   });
 });

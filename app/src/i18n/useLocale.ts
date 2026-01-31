@@ -41,8 +41,12 @@ export const useLocale = () => {
       return;
     }
 
-    await i18n.changeLanguage(nextLocale);
-    setStoredLocale(nextLocale);
+    try {
+      await i18n.changeLanguage(nextLocale);
+      setStoredLocale(nextLocale);
+    } catch {
+      setStoredLocale(normalizeLocale(i18n.language));
+    }
   };
 
   return {

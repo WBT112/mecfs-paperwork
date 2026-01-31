@@ -18,7 +18,7 @@ export default function App() {
   const { locale, setLocale, supportedLocales } = useLocale();
 
   const handleLocaleChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setLocale(event.target.value as SupportedLocale).catch(() => undefined);
+    void setLocale(event.target.value as SupportedLocale);
   };
 
   return (

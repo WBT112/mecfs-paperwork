@@ -57,7 +57,7 @@ export default function FormpackListPage() {
       }
     };
 
-    loadManifests().catch(() => undefined);
+    void loadManifests();
 
     return () => {
       isActive = false;
@@ -81,7 +81,7 @@ export default function FormpackListPage() {
       }
     };
 
-    loadTranslations().catch(() => undefined);
+    void loadTranslations();
 
     return () => {
       isActive = false;
