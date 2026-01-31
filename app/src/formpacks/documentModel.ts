@@ -1,5 +1,6 @@
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
+import { isRecord } from '../lib/utils';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
 
@@ -55,9 +56,6 @@ export type DocumentModel = {
     caseParagraphs: string[];
   };
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const getDiagnosisFlags = (
   formData: Record<string, unknown>,
