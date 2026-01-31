@@ -118,7 +118,6 @@ describe('DoctorLetterFieldTemplate', () => {
   });
 
   it('renders infoBox when enabled and anchor matches', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const props = createMockProps({
       id: FIELD_ID,
       // @ts-ignore formContext is a custom extension

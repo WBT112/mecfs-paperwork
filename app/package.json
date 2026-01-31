@@ -81,6 +81,11 @@
     "prettier": "^3.3.3",
     "typescript": "5.9.3",
     "vite": "^7.3.1",
+    "vite-plugin-pwa": "^1.2.0",
     "vitest": "^4.0.16"
+  },
+  "overrides": {
+    "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.5.5",
+    "source-map": "npm:source-map-js@^1.2.1"
   }
 }

@@ -1,7 +1,9 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 import { createRequire } from 'node:module';
+import { createPwaConfig } from './src/lib/pwaConfig';
 
 const require = createRequire(import.meta.url);
 const utilPath = require.resolve('util/util.js');
@@ -11,7 +13,7 @@ type AppConfig = import('vite').UserConfig & {
 };
 
 const config: AppConfig = {
-  plugins: [react()],
+  plugins: [react(), VitePWA(createPwaConfig())],
   resolve: {
     // RATIONALE: The 'docx-templates' library relies on Node.js built-in
     // modules like 'stream' and 'util'. To make it work in a browser
@@ -46,7 +48,42 @@ const config: AppConfig = {
     cors: false,
   },
   build: {
-    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return undefined;
+          }
+          if (id.includes('@rjsf')) {
+            return 'vendor-rjsf';
+          }
+          if (
+            id.includes('docx-templates') ||
+            id.includes('jszip') ||
+            id.includes('stream-browserify') ||
+            id.includes('/buffer/') ||
+            id.includes('/events/') ||
+            id.includes('/util/')
+          ) {
+            return 'vendor-docx';
+          }
+          if (
+            id.includes('react-router') ||
+            id.includes('react-dom') ||
+            id.includes('/react/')
+          ) {
+            return 'vendor-react';
+          }
+          if (id.includes('i18next') || id.includes('react-i18next')) {
+            return 'vendor-react';
+          }
+          if (id.includes('react-markdown') || id.includes('sanitize-html')) {
+            return 'vendor-react';
+          }
+          return undefined;
+        },
+      },
+    },
   },
   test: {
     globals: true,

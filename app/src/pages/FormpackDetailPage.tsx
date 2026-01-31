@@ -27,7 +27,7 @@ import {
   getDocxErrorKey,
   preloadDocxAssets,
   type DocxTemplateId,
-} from '../export/docx';
+} from '../export/docxLazy';
 import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
   formpackTemplates,
@@ -1452,9 +1452,6 @@ export default function FormpackDetailPage() {
     () => JSON.stringify(formData, null, 2),
     [formData],
   );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const resolvePreviewValue = useCallback<PreviewValueResolver>(
     (value, schemaNode, uiNode, fieldPath) =>
       resolveDisplayValue(value, {
@@ -1590,12 +1587,15 @@ export default function FormpackDetailPage() {
         uiSchema: previewUiSchema,
         manifest,
       });
-      const filename = buildDocxExportFilename(formpackId, docxTemplateId);
-      downloadDocxExport(report, filename);
+      const filename = await buildDocxExportFilename(
+        formpackId,
+        docxTemplateId,
+      );
+      await downloadDocxExport(report, filename);
       setDocxSuccess(t('formpackDocxExportSuccess'));
     } catch (error) {
-      console.error('DOCX export failed:', error);
-      setDocxError(t(getDocxErrorKey(error)));
+      const errorKey = await getDocxErrorKey(error);
+      setDocxError(t(errorKey));
     } finally {
       setIsDocxExporting(false);
     }
