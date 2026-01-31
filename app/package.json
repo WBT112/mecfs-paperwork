@@ -9,6 +9,8 @@
     "prebuild": "node scripts/sync-formpacks.mjs && node scripts/sync-funding.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:prod": "tsc -b && vite build --mode production",
+    "build:staging": "tsc -b && vite build --mode staging",
     "preview": "vite preview",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

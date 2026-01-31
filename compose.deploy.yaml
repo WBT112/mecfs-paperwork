@@ -1,0 +1,102 @@
+services:
+  web-prod:
+    image: docker.io/wbt112/mecfs-paperwork:prod
+    container_name: mecfs-paperwork-prod
+    expose:
+      - "8080"
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run:uid=65532,gid=65532,mode=0755
+      - /var/cache/nginx:uid=65532,gid=65532,mode=0755
+      - /var/cache/nginx/client_temp:uid=65532,gid=65532,mode=0755
+      - /var/log/nginx:uid=65532,gid=65532,mode=0755
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - web
+
+  web-staging:
+    image: docker.io/wbt112/mecfs-paperwork:staging
+    container_name: mecfs-paperwork-staging
+    expose:
+      - "8080"
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run:uid=65532,gid=65532,mode=0755
+      - /var/cache/nginx:uid=65532,gid=65532,mode=0755
+      - /var/cache/nginx/client_temp:uid=65532,gid=65532,mode=0755
+      - /var/log/nginx:uid=65532,gid=65532,mode=0755
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - web
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: mecfs-caddy
+    depends_on:
+      - web-prod
+      - web-staging
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "caddy version >/dev/null 2>&1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  web:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
