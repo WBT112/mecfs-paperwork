@@ -390,31 +390,6 @@ const setPathValue = (
 const isEmptyTemplateValue = (value: unknown): boolean =>
   typeof value !== 'string' || value.trim().length === 0;
 
-const cloneTemplateValue = (value: unknown): unknown => {
-  if (Array.isArray(value)) {
-    return value.map((entry) => cloneTemplateValue(entry));
-  }
-
-  if (isRecord(value)) {
-    const cloned: Record<string, unknown> = {};
-    for (const [key, entry] of Object.entries(value)) {
-      cloned[key] = cloneTemplateValue(entry);
-    }
-    return cloned;
-  }
-
-  return value;
-};
-
-const cloneTemplateContext = (
-  context: DocxTemplateContext,
-): DocxTemplateContext => {
-  if (typeof structuredClone === 'function') {
-    return structuredClone(context);
-  }
-  return cloneTemplateValue(context) as DocxTemplateContext;
-};
-
 const hasDecisionAnswers = (formData: Record<string, unknown>): boolean => {
   const decision = isRecord(formData.decision) ? formData.decision : null;
   if (!decision) {
@@ -451,7 +426,7 @@ export const applyDocxExportDefaults = (
   locale: SupportedLocale,
   sourceData?: Record<string, unknown>,
 ): DocxTemplateContext => {
-  const normalized = cloneTemplateContext(context);
+  const normalized = structuredClone(context);
   if (formpackId !== 'doctor-letter') {
     return normalized;
   }
