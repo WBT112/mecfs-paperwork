@@ -51,3 +51,20 @@ export const getSnapshot = async (
   const snapshot = await db.get('snapshots', snapshotId);
   return snapshot ?? null;
 };
+
+/**
+ * Removes all snapshots tied to a record.
+ */
+export const clearSnapshots = async (recordId: string): Promise<number> => {
+  const db = await openStorage();
+  const tx = db.transaction('snapshots', 'readwrite');
+  const snapshotStore = tx.objectStore('snapshots');
+  const snapshotKeys = await snapshotStore
+    .index('by_recordId')
+    .getAllKeys(recordId);
+
+  await Promise.all(snapshotKeys.map((key) => snapshotStore.delete(key)));
+  await tx.done;
+
+  return snapshotKeys.length;
+};

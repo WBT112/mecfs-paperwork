@@ -83,3 +83,26 @@ export const updateRecord = async (
   await db.put('records', updated);
   return updated;
 };
+
+/**
+ * Deletes a record and all snapshots tied to it.
+ */
+export const deleteRecord = async (recordId: string): Promise<boolean> => {
+  const db = await openStorage();
+  const tx = db.transaction(['records', 'snapshots'], 'readwrite');
+  const recordStore = tx.objectStore('records');
+  const snapshotStore = tx.objectStore('snapshots');
+  const existingRecord = await recordStore.get(recordId);
+  const snapshotKeys = await snapshotStore
+    .index('by_recordId')
+    .getAllKeys(recordId);
+
+  await Promise.all(snapshotKeys.map((key) => snapshotStore.delete(key)));
+
+  if (existingRecord) {
+    await recordStore.delete(recordId);
+  }
+
+  await tx.done;
+  return Boolean(existingRecord);
+};
