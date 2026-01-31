@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import MarkdownRenderer from './Markdown/MarkdownRenderer';
 
 interface InfoBoxProps {
@@ -10,7 +11,7 @@ interface InfoBoxProps {
  * InfoBox component renders a callout/hint message.
  * Used for maintainer-controlled informational messages in forms.
  */
-export function InfoBox({
+export const InfoBox = memo(function InfoBox({
   message,
   className = '',
   format = 'text',
@@ -38,4 +39,4 @@ export function InfoBox({
       {content}
     </div>
   );
-}
+});

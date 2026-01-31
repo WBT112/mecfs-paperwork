@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { emptyStringToNull } from '../lib/utils';
@@ -51,7 +51,7 @@ const tryNativeShare = async (
   }
 };
 
-export default function TopbarActions() {
+export default memo(function TopbarActions() {
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const [shareFallback, setShareFallback] = useState<ShareFallbackState | null>(
@@ -89,7 +89,7 @@ export default function TopbarActions() {
     [feedbackEmail, t, pathname, appVersion, appCommit, feedbackUnknown],
   );
 
-  const handleShare = async () => {
+  const handleShare = useCallback(async () => {
     const origin = window.location.origin;
     const shareUrl = getShareUrl({ origin, pathname });
 
@@ -103,7 +103,18 @@ export default function TopbarActions() {
     }
     const copied = await tryCopyShareUrl(shareUrl);
     setShareFallback({ url: shareUrl, copied });
-  };
+  }, [pathname, t]);
+
+  const handleCloseFallback = useCallback(() => {
+    setShareFallback(null);
+  }, []);
+
+  const handleFocusInput = useCallback(
+    (event: React.FocusEvent<HTMLInputElement>) => {
+      event.target.select();
+    },
+    [],
+  );
 
   return (
     <div
@@ -146,14 +157,14 @@ export default function TopbarActions() {
               type="text"
               readOnly
               value={shareFallback.url}
-              onFocus={(event) => event.target.select()}
+              onFocus={handleFocusInput}
             />
           </label>
           <div className="app__share-fallback-actions">
             <button
               type="button"
               className="app__button"
-              onClick={() => setShareFallback(null)}
+              onClick={handleCloseFallback}
             >
               {t('common.close')}
             </button>
@@ -162,4 +173,4 @@ export default function TopbarActions() {
       )}
     </div>
   );
-}
+});
