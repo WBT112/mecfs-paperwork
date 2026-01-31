@@ -1,5 +1,3 @@
-/* eslint-disable react-refresh/only-export-components */
-
 import type { ReactNode } from 'react';
 import type {
   ArrayFieldItemTemplateProps,
@@ -7,7 +5,6 @@ import type {
   DescriptionFieldProps,
   FieldHelpProps,
   IconButtonProps,
-  TemplatesType,
   UiSchema,
 } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
@@ -37,7 +34,7 @@ const getTranslator = (formContext: unknown): TFunction =>
 const buildButtonClassName = (className?: string) =>
   ['app__button', 'formpack-array-button', className].filter(Boolean).join(' ');
 
-const TranslatedButton = (
+export const TranslatedButton = (
   props: IconButtonProps & { translationKey: string },
 ) => {
   const { className, disabled, onClick, children, registry, translationKey } =
@@ -56,15 +53,15 @@ const TranslatedButton = (
   );
 };
 
-const ArrayAddButton = (props: IconButtonProps) => (
+export const ArrayAddButton = (props: IconButtonProps) => (
   <TranslatedButton {...props} translationKey="common.add" />
 );
 
-const ArrayRemoveButton = (props: IconButtonProps) => (
+export const ArrayRemoveButton = (props: IconButtonProps) => (
   <TranslatedButton {...props} translationKey="common.remove" />
 );
 
-const ArrayFieldTemplate = (props: ArrayFieldTemplateProps) => {
+export const ArrayFieldTemplate = (props: ArrayFieldTemplateProps) => {
   const {
     canAdd,
     className,
@@ -159,7 +156,7 @@ const getArrayItemTitle = (
   return t('common.itemWithIndex', { item: itemLabel, index: index + 1 });
 };
 
-const ArrayFieldItemTemplate = (props: ArrayFieldItemTemplateProps) => {
+export const ArrayFieldItemTemplate = (props: ArrayFieldItemTemplateProps) => {
   const { children, buttonsProps, index, parentUiSchema, registry } = props;
   const { ButtonTemplates } = registry.templates;
   const t = getTranslator(registry.formContext);
@@ -194,7 +191,7 @@ const renderMarkdownIfString = (content: ReactNode) => {
   return <MarkdownRenderer content={content} />;
 };
 
-const DescriptionFieldTemplate = ({
+export const DescriptionFieldTemplate = ({
   id,
   description,
 }: DescriptionFieldProps) => {
@@ -209,7 +206,7 @@ const DescriptionFieldTemplate = ({
   );
 };
 
-const FieldHelpTemplate = ({ fieldPathId, help }: FieldHelpProps) => {
+export const FieldHelpTemplate = ({ fieldPathId, help }: FieldHelpProps) => {
   if (!help) {
     return null;
   }
@@ -219,28 +216,4 @@ const FieldHelpTemplate = ({ fieldPathId, help }: FieldHelpProps) => {
       {renderMarkdownIfString(help)}
     </div>
   );
-};
-
-/**
- * Templates for array actions to keep controls labeled and accessible.
- */
-type FormpackTemplates = Partial<Omit<TemplatesType, 'ButtonTemplates'>> & {
-  ButtonTemplates?: Partial<TemplatesType['ButtonTemplates']>;
-};
-
-export const formpackTemplates: FormpackTemplates = {
-  ArrayFieldTemplate,
-  ArrayFieldItemTemplate,
-  DescriptionFieldTemplate,
-  FieldHelpTemplate,
-  // RATIONALE: Array item reordering and copying are disabled by design.
-  // The UI prioritizes simplicity and predictable data entry over complex
-  // array management. Most use cases involve append-only data entry.
-  ButtonTemplates: {
-    AddButton: ArrayAddButton,
-    RemoveButton: ArrayRemoveButton,
-    MoveUpButton: () => null,
-    MoveDownButton: () => null,
-    CopyButton: () => null,
-  },
 };
