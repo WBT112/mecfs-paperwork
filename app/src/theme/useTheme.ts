@@ -52,24 +52,15 @@ export const useTheme = (): ThemeState => {
       setResolvedTheme(nextResolved);
     };
 
-    const legacyMediaQuery = mediaQuery as MediaQueryList & {
-      addListener?: (listener: (event: MediaQueryListEvent) => void) => void;
-      removeListener?: (listener: (event: MediaQueryListEvent) => void) => void;
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+
+    mediaQuery.onchange = handleChange;
+    return () => {
+      mediaQuery.onchange = null;
     };
-
-    if (typeof legacyMediaQuery.addEventListener === 'function') {
-      legacyMediaQuery.addEventListener('change', handleChange);
-      return () => legacyMediaQuery.removeEventListener('change', handleChange);
-    }
-
-    if (typeof legacyMediaQuery.addListener === 'function') {
-      legacyMediaQuery.addListener(handleChange);
-      return () => {
-        if (typeof legacyMediaQuery.removeListener === 'function') {
-          legacyMediaQuery.removeListener(handleChange);
-        }
-      };
-    }
   }, [themeMode]);
 
   return { themeMode, resolvedTheme, setThemeMode: handleSetThemeMode };

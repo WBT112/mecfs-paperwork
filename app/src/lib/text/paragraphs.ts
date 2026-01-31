@@ -1,5 +1,5 @@
 const normalizeLineEndings = (value: string): string =>
-  value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  value.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
 
 const splitOnDoubleNewline = (value: string): string[] =>
   value.split(/\n{2,}/).map((part) => part.trim());

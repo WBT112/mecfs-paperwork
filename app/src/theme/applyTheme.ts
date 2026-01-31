@@ -3,8 +3,10 @@ import type { ResolvedTheme, ThemeMode } from './theme';
 const systemThemeQuery = '(prefers-color-scheme: dark)';
 
 const getMatchMedia = (): ((query: string) => MediaQueryList) | null => {
-  const { matchMedia } = window as Partial<Window>;
-  return matchMedia ? matchMedia.bind(window) : null;
+  if (typeof globalThis.matchMedia === 'function') {
+    return globalThis.matchMedia.bind(globalThis);
+  }
+  return null;
 };
 
 export const getSystemTheme = (): ResolvedTheme => {

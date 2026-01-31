@@ -412,6 +412,17 @@ type PreviewEntry =
   | { type: 'row'; node: ReactNode }
   | { type: 'nested'; node: ReactNode };
 
+type PreviewEntryOptions = {
+  entry: unknown;
+  key: string;
+  childSchema: RJSFSchema | undefined;
+  childUi: UiSchema | undefined;
+  childLabel: string;
+  resolveValue: PreviewValueResolver;
+  fieldPath: string;
+  sectionKey?: string;
+};
+
 const buildPreviewRow = (
   key: string,
   label: string,
@@ -427,16 +438,16 @@ const buildPreviewRow = (
   </div>
 );
 
-const buildPreviewEntry = (
-  entry: unknown,
-  key: string,
-  childSchema: RJSFSchema | undefined,
-  childUi: UiSchema | undefined,
-  childLabel: string,
-  resolveValue: PreviewValueResolver,
-  fieldPath: string,
-  sectionKey?: string,
-): PreviewEntry | null => {
+const buildPreviewEntry = ({
+  entry,
+  key,
+  childSchema,
+  childUi,
+  childLabel,
+  resolveValue,
+  fieldPath,
+  sectionKey,
+}: PreviewEntryOptions): PreviewEntry | null => {
   if (!hasPreviewValue(entry)) {
     return null;
   }
@@ -566,16 +577,16 @@ function renderPreviewObject(
     const childUi = getUiSchemaNode(uiNode, key);
     const childLabel = getLabel(key, childSchema, childUi);
     const childPath = buildFieldPath(key, fieldPath);
-    const preview = buildPreviewEntry(
+    const preview = buildPreviewEntry({
       entry,
       key,
       childSchema,
       childUi,
       childLabel,
-      resolveWithDecisionParagraphs,
-      childPath,
+      resolveValue: resolveWithDecisionParagraphs,
+      fieldPath: childPath,
       sectionKey,
-    );
+    });
     if (!preview) {
       return;
     }
@@ -863,9 +874,7 @@ export default function FormpackDetailPage() {
     const visibility = getFieldVisibility(decision);
 
     // Clone the UI schema to avoid mutations
-    const clonedUiSchema = JSON.parse(
-      JSON.stringify(normalizedUiSchema),
-    ) as UiSchema;
+    const clonedUiSchema = structuredClone(normalizedUiSchema);
 
     if (!isRecord(clonedUiSchema.decision)) {
       return normalizedUiSchema;
@@ -993,7 +1002,7 @@ export default function FormpackDetailPage() {
       }
 
       const record = await loadRecord(lastId);
-      if (record && record.formpackId === currentFormpackId) {
+      if (record?.formpackId === currentFormpackId) {
         return record;
       }
 
