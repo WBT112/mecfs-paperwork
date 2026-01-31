@@ -10,7 +10,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FormpackDetailPage from '../../src/pages/FormpackDetailPage';
-import { downloadDocxExport, exportDocx } from '../../src/export/docx';
+import { downloadDocxExport, exportDocx } from '../../src/export/docxLazy';
 import { loadFormpackManifest } from '../../src/formpacks/loader';
 import type { FormpackManifest } from '../../src/formpacks/types';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
@@ -219,15 +219,15 @@ const mockFileTextError = (error: Error) => {
   };
 };
 
-vi.mock('../../src/export/docx', async (importOriginal) => {
-  const original =
-    await importOriginal<typeof import('../../src/export/docx')>();
-  return {
-    ...original,
-    exportDocx: vi.fn(),
-    downloadDocxExport: vi.fn(),
-  };
-});
+vi.mock('../../src/export/docxLazy', () => ({
+  buildDocxExportFilename: vi
+    .fn()
+    .mockResolvedValue(`${testConstants.FORMPACK_ID}-a4-2024-01-01`),
+  downloadDocxExport: vi.fn().mockResolvedValue(undefined),
+  exportDocx: vi.fn(),
+  getDocxErrorKey: vi.fn().mockResolvedValue('formpackDocxExportError'),
+  preloadDocxAssets: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock('../../src/export/json', () => jsonExportState);
 
@@ -471,10 +471,9 @@ describe('FormpackDetailPage', () => {
     expect(mockMarkAsSaved).toHaveBeenCalledWith({});
   }, 10000);
 
-  it('logs an error if DOCX export fails', async () => {
+  it('shows an error if DOCX export fails', async () => {
     const error = new Error('DOCX export failed');
     vi.mocked(exportDocx).mockRejectedValue(error);
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     render(
       <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -487,14 +486,9 @@ describe('FormpackDetailPage', () => {
     const exportButton = await screen.findByText(DOCX_EXPORT_BUTTON_LABEL);
     await userEvent.click(exportButton);
 
-    await waitFor(() =>
-      expect(consoleSpy).toHaveBeenCalledWith('DOCX export failed:', error),
-    );
     expect(
       await screen.findByText('formpackDocxExportError'),
     ).toBeInTheDocument();
-
-    consoleSpy.mockRestore();
   });
 
   it('renders empty states when no records are available', async () => {

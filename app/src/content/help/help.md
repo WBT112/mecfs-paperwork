@@ -32,10 +32,11 @@ Ein Entwurf ist dein laufender Bearbeitungsstand.
 
 - Nutze Entwürfe, wenn du über mehrere Tage am selben Dokument arbeiten willst.
 - Speichere regelmäßig, besonders vor größeren Änderungen.
+- Ein Entwurf kann mehrere Snapshots enthalten
 
 ### Snapshots
 
-Snapshots sind **Zwischenstände** (wie “Sicherungen”), die du später wiederherstellen kannst. Sie enthalten alle Entwürfe.
+Snapshots sind **Zwischenstände** (wie “Sicherungen”), die du später wiederherstellen kannst.
 
 - Erstelle einen Snapshot **vor** riskanten Änderungen (z. B. wenn du viele Felder auf einmal änderst).
 

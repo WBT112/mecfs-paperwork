@@ -48,6 +48,7 @@
   "formpackListEmpty": "Es sind noch keine Formpacks verfügbar.",
   "formpackDetailTitle": "Formpack-Details",
   "formpackLoading": "Formpack-Daten werden geladen...",
+  "routeLoading": "Seite wird geladen...",
   "formpackListErrorFallback": "Formpacks konnten gerade nicht geladen werden.",
   "formpackLoadError": "Dieses Formpack konnte gerade nicht geladen werden.",
   "formpackNotFound": "Dieses Formpack wurde nicht gefunden.",
