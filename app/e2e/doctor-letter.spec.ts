@@ -264,7 +264,7 @@ const extractDocxTextFromXml = (documentXml: string) => {
     .replace(/&amp;/g, '&');
 };
 
-  const normalizeDocxMatchText = (value: string) => value.replace(/\s+/g, '');
+const normalizeDocxMatchText = (value: string) => value.replace(/\s+/g, '');
 
 test.describe.configure({ mode: 'parallel' });
 
@@ -417,9 +417,7 @@ test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
     translations.formpack['doctor-letter.case.14.paragraph'],
   );
   for (const paragraph of caseParagraphs) {
-    expect(normalizedDocxText).toContain(
-      normalizeDocxMatchText(paragraph),
-    );
+    expect(normalizedDocxText).toContain(normalizeDocxMatchText(paragraph));
   }
 });
 
