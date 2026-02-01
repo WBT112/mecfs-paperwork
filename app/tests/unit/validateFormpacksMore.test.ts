@@ -85,7 +85,7 @@ describe('validate-formpacks: extra branches', () => {
         Array<{ contextPath: string; error: Error }>
       > = new Map();
       await validateContract({ formpackId: id, errors });
-      const pack = errors.get(id) || [];
+      const pack = errors.get(id) ?? [];
       expect(
         pack.some((e) =>
           e.error.message.includes('Manifest id does not match'),
@@ -122,7 +122,7 @@ describe('validate-formpacks: extra branches', () => {
         Array<{ contextPath: string; error: Error }>
       > = new Map();
       await validateContract({ formpackId: id, errors });
-      const pack = errors.get(id) || [];
+      const pack = errors.get(id) ?? [];
       expect(
         pack.some((e) =>
           /locales must include "de" and "en"|defaultLocale must be one of the manifest locales/i.test(
@@ -146,7 +146,10 @@ describe('validate-formpacks: extra branches', () => {
       titleKey: PACK_TITLE,
       descriptionKey: PACK_DESC,
       exports: ['json'],
-      docx: { templates: { a4: '/abs/a4.docx' }, mapping: '..\\mapping.json' },
+      docx: {
+        templates: { a4: '/abs/a4.docx' },
+        mapping: String.raw`..\mapping.json`,
+      },
     };
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
@@ -161,7 +164,7 @@ describe('validate-formpacks: extra branches', () => {
         Array<{ contextPath: string; error: Error }>
       > = new Map();
       await validateContract({ formpackId: id, errors });
-      const pack = errors.get(id) || [];
+      const pack = errors.get(id) ?? [];
       // expects message about missing exports
       expect(
         pack.some((e) =>
@@ -184,7 +187,10 @@ describe('validate-formpacks: extra branches', () => {
       titleKey: PACK_TITLE,
       descriptionKey: PACK_DESC,
       exports: ['json', 'docx'],
-      docx: { templates: { a4: '/abs/a4.docx' }, mapping: '..\\mapping.json' },
+      docx: {
+        templates: { a4: '/abs/a4.docx' },
+        mapping: String.raw`..\mapping.json`,
+      },
     };
     await fs.mkdir(base, { recursive: true });
     await writeStandardFiles(base, manifest);
@@ -199,7 +205,7 @@ describe('validate-formpacks: extra branches', () => {
         Array<{ contextPath: string; error: Error }>
       > = new Map();
       await validateContract({ formpackId: id, errors });
-      const pack = errors.get(id) || [];
+      const pack = errors.get(id) ?? [];
       expect(
         pack.some((e) => e.error.message.includes('docx.templates.a4')),
       ).toBe(true);
@@ -265,7 +271,7 @@ describe('validate-formpacks: extra branches', () => {
         Array<{ contextPath: string; error: Error }>
       > = new Map();
       await validateContract({ formpackId: id, errors });
-      const pack = errors.get(id) || [];
+      const pack = errors.get(id) ?? [];
       expect(
         pack.some((e) =>
           e.error.message.includes('Missing i18n key referenced by schema'),

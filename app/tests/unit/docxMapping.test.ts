@@ -44,7 +44,7 @@ describe('mapDocumentDataToTemplate', () => {
   });
 
   beforeEach(() => {
-    vi.spyOn(global, 'fetch').mockResolvedValue({
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       ok: true,
       json: async () => mapping,
     } as Response);

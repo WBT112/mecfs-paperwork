@@ -74,6 +74,6 @@ export function getVisibleInfoBoxes(
   manifest: { ui?: { infoBoxes?: InfoBoxConfig[] } },
   formData: Record<string, unknown>,
 ): InfoBoxConfig[] {
-  const infoBoxes = manifest.ui?.infoBoxes || [];
+  const infoBoxes = manifest.ui?.infoBoxes ?? [];
   return infoBoxes.filter((box) => shouldShowInfoBox(box, formData));
 }

@@ -26,7 +26,7 @@ describe('validate-formpacks helpers', () => {
   it('isSafeAssetPath validates relative safe paths', () => {
     expect(isSafeAssetPath('templates/a4.docx')).toBe(true);
     expect(isSafeAssetPath('/abs/path')).toBe(false);
-    expect(isSafeAssetPath('..\\secret')).toBe(false);
+    expect(isSafeAssetPath(String.raw`..\secret`)).toBe(false);
     expect(isSafeAssetPath('')).toBe(false);
   });
 
@@ -37,9 +37,7 @@ describe('validate-formpacks helpers', () => {
 
     // attempt prototype pollution should be ignored
     setPathValue(target, '__proto__.polluted', true);
-    expect(
-      Object.prototype.hasOwnProperty.call(Object.prototype, 'polluted'),
-    ).toBe(false);
+    expect(Object.hasOwn(Object.prototype, 'polluted')).toBe(false);
   });
 
   it('setNested/getNested create and read nested values', () => {
