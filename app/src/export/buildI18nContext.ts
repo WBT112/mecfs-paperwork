@@ -18,9 +18,8 @@ export const setNested = (
 
   let cursor: Record<string, unknown> = target;
 
-  for (let i = 0; i < segments.length; i += 1) {
-    const segment = segments[i];
-    const isLeaf = i === segments.length - 1;
+  for (const [index, segment] of segments.entries()) {
+    const isLeaf = index === segments.length - 1;
 
     if (isLeaf) {
       cursor[segment] = value;

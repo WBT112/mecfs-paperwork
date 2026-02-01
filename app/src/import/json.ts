@@ -236,7 +236,7 @@ const addRequiredDefaults = (
       continue;
     }
 
-    if (Object.prototype.hasOwnProperty.call(normalized, key)) {
+    if (Object.hasOwn(normalized, key)) {
       continue;
     }
 

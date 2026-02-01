@@ -95,6 +95,25 @@ describe('buildI18nContext', () => {
       setNested(target, '', 'value');
       expect(target).toEqual({});
     });
+
+    it('handles keys with extra dots by filtering empty segments', () => {
+      const target = {};
+      setNested(target, 'a..b.c', 'value');
+      expect(target).toEqual({ a: { b: { c: 'value' } } });
+    });
+
+    it('overwrites a primitive value with an object if a more specific key is provided', () => {
+      const target = { a: { b: 'old-value' } };
+      setNested(target, 'a.b.c', 'new-value');
+      expect(target).toEqual({ a: { b: { c: 'new-value' } } });
+    });
+
+    it('does not fail if the target is not an object (TS types should prevent this)', () => {
+      const target = 'not-an-object';
+      // @ts-expect-error - Testing invalid input
+      setNested(target, 'a.b.c', 'value');
+      expect(target).toBe('not-an-object');
+    });
   });
 
   describe('hardening', () => {

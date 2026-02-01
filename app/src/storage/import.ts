@@ -33,12 +33,12 @@ export const importRecordWithSnapshots = async (
 
   if (options.mode === 'overwrite') {
     if (!options.recordId) {
-      throw new Error('Missing record id for overwrite import.');
+      throw new TypeError('Missing record id for overwrite import.');
     }
 
     const existing = await recordStore.get(options.recordId);
-    if (!existing || existing.formpackId !== options.formpackId) {
-      throw new Error('Record not found for import.');
+    if (existing?.formpackId !== options.formpackId) {
+      throw new TypeError('Record not found for import.');
     }
 
     record = {

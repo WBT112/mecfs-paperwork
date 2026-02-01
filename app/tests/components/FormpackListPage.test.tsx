@@ -1,8 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import FormpackListPage from '../../src/pages/FormpackListPage';
+import { TestRouter } from '../setup/testRouter';
 
 vi.mock('../../src/formpacks/loader', () => ({
   listFormpacks: vi.fn().mockResolvedValue([
@@ -46,7 +47,7 @@ describe('FormpackListPage', () => {
   it('renders a list of formpacks and navigates to the detail page on click', async () => {
     const user = userEvent.setup();
     render(
-      <MemoryRouter initialEntries={['/']}>
+      <TestRouter initialEntries={['/']}>
         <Routes>
           <Route path="/" element={<FormpackListPage />} />
           <Route
@@ -58,7 +59,7 @@ describe('FormpackListPage', () => {
             }
           />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await waitFor(() => {

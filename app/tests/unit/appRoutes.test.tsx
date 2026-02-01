@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+import { TestRouter } from '../setup/testRouter';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -31,9 +31,9 @@ vi.mock('../../src/pages/PrivacyPage', () => ({
 const renderAppRoutes = async (entry: string) => {
   const { default: AppRoutes } = await import('../../src/AppRoutes');
   render(
-    <MemoryRouter initialEntries={[entry]}>
+    <TestRouter initialEntries={[entry]}>
       <AppRoutes />
-    </MemoryRouter>,
+    </TestRouter>,
   );
 };
 

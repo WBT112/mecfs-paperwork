@@ -1,15 +1,18 @@
-import type { ChangeEvent } from 'react';
+import { memo, useCallback, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ThemeMode } from '../theme/theme';
 import { useTheme } from '../theme/useTheme';
 
-export default function ThemeSwitcher() {
+export default memo(function ThemeSwitcher() {
   const { t } = useTranslation();
   const { themeMode, setThemeMode } = useTheme();
 
-  const handleThemeChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setThemeMode(event.target.value as ThemeMode);
-  };
+  const handleThemeChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      setThemeMode(event.target.value as ThemeMode);
+    },
+    [setThemeMode],
+  );
 
   return (
     <div className="app__theme-switch">
@@ -45,4 +48,4 @@ export default function ThemeSwitcher() {
       </div>
     </div>
   );
-}
+});

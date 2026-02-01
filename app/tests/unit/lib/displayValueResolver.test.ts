@@ -127,6 +127,16 @@ describe('resolveDisplayValue', () => {
     expect(resolveDisplayValue({ foo: 'bar' })).toBe('{"foo":"bar"}');
   });
 
+  it('returns an empty string for non-serializable objects', () => {
+    const value: Record<string, unknown> = {};
+    value.self = value;
+    expect(resolveDisplayValue(value)).toBe('');
+  });
+
+  it('returns serialized output for empty objects', () => {
+    expect(resolveDisplayValue({})).toBe('{}');
+  });
+
   describe('array formatting', () => {
     it('formats string arrays with join mode (default)', () => {
       const values = ['item1', 'item2', 'item3'];

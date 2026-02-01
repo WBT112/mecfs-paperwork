@@ -1,9 +1,10 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getRepoUrl } from '../lib/repo';
 import { getSponsorUrl } from '../lib/funding';
 
-export default function Footer() {
+export default memo(function Footer() {
   const { t } = useTranslation();
   const repoUrl = getRepoUrl();
   const sponsorUrl = getSponsorUrl();
@@ -54,4 +55,4 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+});

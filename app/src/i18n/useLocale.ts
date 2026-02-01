@@ -34,7 +34,7 @@ export const useLocale = () => {
     return () => {
       i18n.off('languageChanged', handleLanguageChange);
     };
-  }, []);
+  }, [setLocaleState]);
 
   const setLocale = async (nextLocale: SupportedLocale) => {
     if (nextLocale === i18n.language) {

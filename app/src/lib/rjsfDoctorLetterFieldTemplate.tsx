@@ -56,6 +56,8 @@ export function DoctorLetterFieldTemplate(
     classNames,
     style,
     label,
+    displayLabel,
+    schema,
     help,
     required,
     description,
@@ -76,6 +78,14 @@ export function DoctorLetterFieldTemplate(
   const formData = formContext.formData ?? {};
   const t = formContext.t ?? defaultTranslator;
   const namespace = `formpack:${formContext.formpackId ?? 'doctor-letter'}`;
+  const schemaType = schema.type;
+  const isContainerType =
+    schemaType === 'object' ||
+    schemaType === 'array' ||
+    (Array.isArray(schemaType) &&
+      schemaType.some((type) => type === 'object' || type === 'array'));
+  const shouldRenderLabel =
+    Boolean(label) && displayLabel !== false && !isContainerType;
 
   // Construct the field anchor from the field ID
   // RJSF IDs are like "root_decision_q1", we need "decision.q1"
@@ -97,7 +107,7 @@ export function DoctorLetterFieldTemplate(
 
   return (
     <div className={classNames} style={style}>
-      {label && (
+      {shouldRenderLabel && (
         <label htmlFor={id} className="control-label">
           {label}
           {required && <span className="required">*</span>}

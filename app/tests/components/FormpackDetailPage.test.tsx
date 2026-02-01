@@ -7,7 +7,8 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
+import { TestRouter } from '../setup/testRouter';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FormpackDetailPage from '../../src/pages/FormpackDetailPage';
 import { downloadDocxExport, exportDocx } from '../../src/export/docxLazy';
@@ -435,11 +436,11 @@ describe('FormpackDetailPage', () => {
 
   it('clears the draft and persists the reset', async () => {
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     const triggerButton = await screen.findByText('trigger-change', undefined, {
@@ -484,11 +485,11 @@ describe('FormpackDetailPage', () => {
     vi.mocked(exportDocx).mockRejectedValue(error);
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     const exportButton = await screen.findByText(DOCX_EXPORT_BUTTON_LABEL);
@@ -504,11 +505,11 @@ describe('FormpackDetailPage', () => {
     storageState.activeRecord = null;
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(await screen.findByText('formpackRecordsEmpty')).toBeInTheDocument();
@@ -528,11 +529,11 @@ describe('FormpackDetailPage', () => {
     storageState.isSnapshotsLoading = true;
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(
@@ -542,11 +543,11 @@ describe('FormpackDetailPage', () => {
   });
   it('toggles a tools section via keyboard', async () => {
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     const toggle = await screen.findByRole('button', {
@@ -566,11 +567,11 @@ describe('FormpackDetailPage', () => {
 
   it('renders DOCX metadata and template options', async () => {
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(await screen.findByText(DOCX_MAPPING_PATH)).toBeInTheDocument();
@@ -594,11 +595,11 @@ describe('FormpackDetailPage', () => {
     };
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(
@@ -610,11 +611,11 @@ describe('FormpackDetailPage', () => {
     visibilityState.isDevUiEnabled = false;
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await screen.findByText('formpackRecordsHeading');
@@ -633,11 +634,11 @@ describe('FormpackDetailPage', () => {
 
   it('renders document preview above the tools group', async () => {
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     const previewToggle = await screen.findByRole('button', {
@@ -671,11 +672,11 @@ describe('FormpackDetailPage', () => {
 
   it('defaults to collapsed drafts, import, and history with preview expanded', async () => {
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     const recordsToggle = await screen.findByRole('button', {
@@ -704,11 +705,11 @@ describe('FormpackDetailPage', () => {
     vi.mocked(exportDocx).mockResolvedValue(report);
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     const exportButton = await screen.findByText(DOCX_EXPORT_BUTTON_LABEL);
@@ -768,11 +769,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -841,11 +842,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -882,11 +883,11 @@ describe('FormpackDetailPage', () => {
     storageState.recordsError = 'unavailable';
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(
@@ -898,11 +899,11 @@ describe('FormpackDetailPage', () => {
     storageState.recordsError = 'unknown';
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(await screen.findByText('storageError')).toBeInTheDocument();
@@ -916,11 +917,11 @@ describe('FormpackDetailPage', () => {
     };
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(
@@ -933,11 +934,11 @@ describe('FormpackDetailPage', () => {
 
   it('clears import state when no file is selected', async () => {
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await openImportSection();
@@ -960,11 +961,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -992,11 +993,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -1028,11 +1029,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -1071,11 +1072,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -1125,11 +1126,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -1184,11 +1185,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -1239,11 +1240,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await userEvent.click(await screen.findByText(DOCX_EXPORT_BUTTON_LABEL));
@@ -1284,11 +1285,11 @@ describe('FormpackDetailPage', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await openSnapshotsSection();
@@ -1313,11 +1314,11 @@ describe('FormpackDetailPage', () => {
     storageState.loadRecord.mockResolvedValue(secondRecord);
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await openRecordsSection();
@@ -1341,11 +1342,11 @@ describe('FormpackDetailPage', () => {
     storageState.activeRecord = record;
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await openRecordsSection();
@@ -1377,11 +1378,11 @@ describe('FormpackDetailPage', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await openRecordsSection();
@@ -1406,11 +1407,11 @@ describe('FormpackDetailPage', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await openRecordsSection();
@@ -1428,11 +1429,11 @@ describe('FormpackDetailPage', () => {
     storageState.snapshots = [];
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await openSnapshotsSection();
@@ -1455,11 +1456,11 @@ describe('FormpackDetailPage', () => {
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await openSnapshotsSection();
@@ -1483,11 +1484,11 @@ describe('FormpackDetailPage', () => {
     storageState.loadRecord.mockResolvedValue(record);
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await waitFor(() =>
@@ -1511,11 +1512,11 @@ describe('FormpackDetailPage', () => {
       .mockImplementation(() => undefined);
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await waitFor(() =>
@@ -1537,11 +1538,11 @@ describe('FormpackDetailPage', () => {
     storageState.updateActiveRecord.mockResolvedValue(null);
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await openRecordsSection();
@@ -1557,11 +1558,11 @@ describe('FormpackDetailPage', () => {
 
   it('updates DOCX template selection when changed', async () => {
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     const select = await screen.findByLabelText('formpackDocxTemplateLabel');
@@ -1592,11 +1593,11 @@ describe('FormpackDetailPage', () => {
     jsonExportState.buildJsonExportFilename.mockReturnValue('export.json');
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     await userEvent.click(await screen.findByText('formpackRecordExportJson'));
@@ -1617,11 +1618,11 @@ describe('FormpackDetailPage', () => {
     );
 
     render(
-      <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
           <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(await screen.findByText('Load failed')).toBeInTheDocument();
@@ -1630,11 +1631,11 @@ describe('FormpackDetailPage', () => {
 
   it('shows an error when the formpack id is missing', async () => {
     render(
-      <MemoryRouter initialEntries={['/formpacks']}>
+      <TestRouter initialEntries={['/formpacks']}>
         <Routes>
           <Route path="/formpacks" element={<FormpackDetailPage />} />
         </Routes>
-      </MemoryRouter>,
+      </TestRouter>,
     );
 
     expect(await screen.findByText('formpackMissingId')).toBeInTheDocument();
@@ -1650,11 +1651,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -1705,11 +1706,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -1791,11 +1792,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();
@@ -1875,11 +1876,11 @@ describe('FormpackDetailPage', () => {
 
     try {
       render(
-        <MemoryRouter initialEntries={[FORMPACK_ROUTE]}>
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
           <Routes>
             <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
           </Routes>
-        </MemoryRouter>,
+        </TestRouter>,
       );
 
       await openImportSection();

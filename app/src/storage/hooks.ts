@@ -75,8 +75,7 @@ export const useRecords = (formpackId: string | null) => {
       const nextRecords = await listRecords(formpackId);
       const active = activeRecordRef.current;
       const mergedRecords =
-        active &&
-        active.formpackId === formpackId &&
+        active?.formpackId === formpackId &&
         !nextRecords.some((record) => record.id === active.id)
           ? upsertRecord(nextRecords, active)
           : nextRecords;
@@ -377,7 +376,7 @@ export const useAutosaveRecord = (
       return;
     }
 
-    const timeout = window.setTimeout(() => {
+    const timeout = globalThis.setTimeout(() => {
       if (lastSavedRef.current === nextSerialized) {
         return;
       }
@@ -400,7 +399,7 @@ export const useAutosaveRecord = (
     }, delay);
 
     return () => {
-      window.clearTimeout(timeout);
+      globalThis.clearTimeout(timeout);
     };
   }, [recordId, formData, locale, delay, onSaved, onError]);
 

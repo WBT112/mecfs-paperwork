@@ -1,8 +1,8 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import TopbarActions from '../../src/components/TopbarActions';
+import { TestRouter } from '../setup/testRouter';
 
 const SHARE_LINK_LABEL = 'Share formpack link';
 const TEST_FORMPACK_PATH = '/formpacks/alpha';
@@ -46,9 +46,9 @@ vi.mock('react-i18next', () => ({
 
 const renderActions = (route: string) =>
   render(
-    <MemoryRouter initialEntries={[route]}>
+    <TestRouter initialEntries={[route]}>
       <TopbarActions />
-    </MemoryRouter>,
+    </TestRouter>,
   );
 
 afterEach(() => {
@@ -89,7 +89,7 @@ describe('TopbarActions', () => {
 
     const user = userEvent.setup();
     renderActions(TEST_FORMPACK_PATH);
-    const origin = window.location.origin;
+    const origin = globalThis.location.origin;
 
     await user.click(screen.getByRole('button', { name: SHARE_LINK_LABEL }));
 
@@ -114,7 +114,7 @@ describe('TopbarActions', () => {
 
     const user = userEvent.setup();
     renderActions(TEST_FORMPACK_PATH);
-    const origin = window.location.origin;
+    const origin = globalThis.location.origin;
 
     await user.click(screen.getByRole('button', { name: SHARE_LINK_LABEL }));
 

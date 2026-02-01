@@ -21,7 +21,7 @@ export const isSupportedLocale = (value: string): value is SupportedLocale =>
  */
 export const getStoredLocale = (): SupportedLocale | null => {
   try {
-    const storedValue = window.localStorage.getItem(storageKey);
+    const storedValue = globalThis.localStorage.getItem(storageKey);
 
     if (storedValue && isSupportedLocale(storedValue)) {
       return storedValue;
@@ -38,7 +38,7 @@ export const getStoredLocale = (): SupportedLocale | null => {
  */
 export const setStoredLocale = (locale: SupportedLocale): void => {
   try {
-    window.localStorage.setItem(storageKey, locale);
+    globalThis.localStorage.setItem(storageKey, locale);
   } catch {
     // Ignore storage failures to keep the offline UI responsive.
   }

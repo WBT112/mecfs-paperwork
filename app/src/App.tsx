@@ -1,4 +1,4 @@
-import type { ChangeEvent } from 'react';
+import { useCallback, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from './i18n/useLocale';
@@ -17,9 +17,12 @@ export default function App() {
   const { t } = useTranslation();
   const { locale, setLocale, supportedLocales } = useLocale();
 
-  const handleLocaleChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    setLocale(event.target.value as SupportedLocale).catch(() => undefined);
-  };
+  const handleLocaleChange = useCallback(
+    (event: ChangeEvent<HTMLSelectElement>) => {
+      setLocale(event.target.value as SupportedLocale).catch(() => undefined);
+    },
+    [setLocale],
+  );
 
   return (
     <div className="app">

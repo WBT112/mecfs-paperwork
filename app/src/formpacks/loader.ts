@@ -7,8 +7,8 @@ import type {
   FormpackManifest,
   FormpackManifestPayload,
   FormpackUiConfig,
+  FormpackVisibility,
 } from './types';
-import type { FormpackVisibility } from './types';
 
 export type FormpackLoaderErrorCode =
   | 'not_found'
@@ -233,12 +233,34 @@ export const parseManifest = (
   };
 };
 
+// In-memory cache for formpack manifests to avoid redundant network requests.
+// This improves performance when navigating between pages or switching locales.
+const manifestCache = new Map<string, FormpackManifest>();
+
+// In-memory cache for JSON resources (schemas) to avoid redundant network requests.
+const jsonResourceCache = new Map<string, Record<string, unknown>>();
+
+/**
+ * Clears all formpack caches (manifests and schemas).
+ * Intended for testing purposes only.
+ */
+export const clearFormpackCaches = (): void => {
+  manifestCache.clear();
+  jsonResourceCache.clear();
+};
+
 /**
  * Fetches a single formpack manifest by id.
+ * Results are cached in memory to avoid redundant network requests.
  */
 export const loadFormpackManifest = async (
   formpackId: string,
 ): Promise<FormpackManifest> => {
+  const cached = manifestCache.get(formpackId);
+  if (cached) {
+    return cached;
+  }
+
   let response: Response;
 
   try {
@@ -274,7 +296,9 @@ export const loadFormpackManifest = async (
     );
   }
 
-  return parseManifest(payload, formpackId);
+  const manifest = parseManifest(payload, formpackId);
+  manifestCache.set(formpackId, manifest);
+  return manifest;
 };
 
 const loadFormpackJsonResource = async (
@@ -289,6 +313,11 @@ const loadFormpackJsonResource = async (
     unavailableCode: FormpackLoaderErrorCode;
   },
 ): Promise<Record<string, unknown>> => {
+  const cached = jsonResourceCache.get(path);
+  if (cached) {
+    return cached;
+  }
+
   let response: Response;
 
   try {
@@ -332,6 +361,7 @@ const loadFormpackJsonResource = async (
     );
   }
 
+  jsonResourceCache.set(path, payload);
   return payload;
 };
 
