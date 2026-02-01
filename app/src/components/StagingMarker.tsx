@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 const env = import.meta.env as {
   VITE_DEPLOYMENT_ENV?: string;
 };
@@ -7,7 +9,7 @@ const env = import.meta.env as {
  * Only shown when VITE_DEPLOYMENT_ENV is set to "staging".
  * Helps prevent accidental testing on production.
  */
-export default function StagingMarker() {
+export default memo(function StagingMarker() {
   const isStaging = env.VITE_DEPLOYMENT_ENV === 'staging';
 
   if (!isStaging) {
@@ -19,4 +21,4 @@ export default function StagingMarker() {
       <span className="staging-marker__text">STAGING</span>
     </div>
   );
-}
+});

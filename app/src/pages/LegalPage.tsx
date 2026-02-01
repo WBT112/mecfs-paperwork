@@ -1,8 +1,8 @@
 import MarkdownRenderer from '../components/Markdown/MarkdownRenderer';
 
-type LegalPageProps = {
+type LegalPageProps = Readonly<{
   content: string;
-};
+}>;
 
 export default function LegalPage({ content }: LegalPageProps) {
   return (

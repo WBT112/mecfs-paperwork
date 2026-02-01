@@ -1,22 +1,60 @@
-import { beforeAll, describe, expect, it } from 'vitest';
-import i18n from '../../src/i18n';
+import { describe, it, expect, vi } from 'vitest';
+import deTranslationsJson from '../../../formpacks/notfallpass/i18n/de.json';
+import enTranslationsJson from '../../../formpacks/notfallpass/i18n/en.json';
 import { buildDocumentModel } from '../../src/formpacks/documentModel';
-import enTranslations from '../../../formpacks/notfallpass/i18n/en.json';
 
+const deTranslations = deTranslationsJson as Record<string, string>;
+const enTranslations = enTranslationsJson as Record<string, string>;
 const namespace = 'formpack:notfallpass';
 const ME_CFS_PARAGRAPH_KEY = 'notfallpass.export.diagnoses.meCfs.paragraph';
 
-describe('buildDocumentModel', () => {
-  beforeAll(() => {
-    if (!i18n.hasResourceBundle('en', namespace)) {
-      i18n.addResourceBundle(
-        'en',
-        namespace,
-        enTranslations as Record<string, string>,
-        true,
-        true,
-      );
-    }
+// Mock i18n to provide predictable translations used by buildDocumentModel
+vi.mock('../../src/i18n', () => ({
+  default: {
+    // Return actual translation strings for the requested locale/namespace when available
+    getFixedT: (locale: string, ns: string) => (key: string) => {
+      if (ns === namespace) {
+        if (locale === 'en' && key in enTranslations) {
+          return enTranslations[key];
+        }
+        if (locale === 'de' && key in deTranslations) {
+          return deTranslations[key];
+        }
+      }
+      return key;
+    },
+    hasResourceBundle: () => false,
+    addResourceBundle: () => undefined,
+    changeLanguage: async () => undefined,
+  },
+}));
+
+describe('formpacks/documentModel', () => {
+  it('builds base model when formpackId is null', () => {
+    const model = buildDocumentModel(null, 'de', {});
+    expect(model.diagnosisParagraphs).toEqual([]);
+    expect(model.person).toBeDefined();
+  });
+
+  it('builds notfallpass model with diagnosis paragraphs', () => {
+    const formData: Record<string, unknown> = {
+      person: { name: 'Alice', birthDate: '1980-01-02' },
+      diagnoses: { meCfs: true, pots: true, longCovid: false },
+      medications: [{ name: 'm1' }],
+      contacts: [{ name: 'c1' }],
+      doctor: { name: 'Dr', phone: '123' },
+      allergies: 'none',
+    };
+
+    const model = buildDocumentModel('notfallpass', 'de', formData);
+    expect(model.diagnosisParagraphs).toContain(
+      deTranslations['notfallpass.export.diagnoses.meCfs.paragraph'],
+    );
+    expect(model.diagnosisParagraphs).toContain(
+      deTranslations['notfallpass.export.diagnoses.pots.paragraph'],
+    );
+    expect(model.person.name).toBe('Alice');
+    expect(model.doctor.name).toBe('Dr');
   });
 
   it('returns ME/CFS paragraph when only ME/CFS is checked', () => {

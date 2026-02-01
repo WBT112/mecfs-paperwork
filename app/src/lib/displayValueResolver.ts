@@ -248,8 +248,10 @@ export const resolveDisplayValue = (
   }
 
   try {
-    return JSON.stringify(value);
+    const serialized = JSON.stringify(value);
+    return typeof serialized === 'string' ? serialized : '';
   } catch {
-    return String(value);
+    // fallback handled below
   }
+  return '';
 };

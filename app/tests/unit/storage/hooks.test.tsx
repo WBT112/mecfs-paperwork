@@ -4,9 +4,13 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { RecordEntry, SnapshotEntry } from '../../../src/storage/types';
 import { useRecords, useSnapshots } from '../../../src/storage/hooks';
 import {
+  createRecord as createRecordEntry,
   deleteRecord as deleteRecordEntry,
+  getRecord as getRecordEntry,
   listRecords,
+  updateRecord as updateRecordEntry,
 } from '../../../src/storage/records';
+import { StorageUnavailableError } from '../../../src/storage/db';
 import {
   clearSnapshots as clearSnapshotsEntry,
   listSnapshots,
@@ -100,6 +104,114 @@ describe('storage hooks', () => {
     vi.mocked(listSnapshots).mockResolvedValue([]);
     vi.mocked(deleteRecordEntry).mockReset();
     vi.mocked(clearSnapshotsEntry).mockReset();
+    vi.mocked(createRecordEntry).mockReset();
+    vi.mocked(getRecordEntry).mockReset();
+    vi.mocked(updateRecordEntry).mockReset();
+  });
+
+  it('creates a record and sets active/records', async () => {
+    const newRecord = createRecord({ id: 'created-1' });
+    vi.mocked(createRecordEntry).mockResolvedValue(newRecord);
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let result: RecordEntry | null | undefined;
+    await act(async () => {
+      result = await getLatest()?.createRecord('de', { field: 'x' }, 't');
+    });
+
+    expect(result).toEqual(newRecord);
+    expect(getLatest()?.activeRecord).toEqual(newRecord);
+    expect(getLatest()?.records).toContainEqual(newRecord);
+  });
+
+  it('maps StorageUnavailableError to unavailable on createRecord', async () => {
+    vi.mocked(createRecordEntry).mockRejectedValue(
+      new StorageUnavailableError('no idb'),
+    );
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let result: RecordEntry | null | undefined;
+    await act(async () => {
+      result = await getLatest()?.createRecord('de', {}, 't');
+    });
+
+    expect(result).toBeNull();
+    expect(getLatest()?.errorCode).toBe('unavailable');
+  });
+
+  it('loads a record and sets it active; returns null when not found', async () => {
+    const record = createRecord({ id: 'load-1' });
+    vi.mocked(getRecordEntry).mockResolvedValue(record);
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let loaded: RecordEntry | null | undefined;
+    await act(async () => {
+      loaded = await getLatest()?.loadRecord(record.id);
+    });
+
+    expect(loaded).toEqual(record);
+    expect(getLatest()?.activeRecord).toEqual(record);
+
+    vi.mocked(getRecordEntry).mockResolvedValue(null);
+    await act(async () => {
+      loaded = await getLatest()?.loadRecord('missing');
+    });
+    expect(loaded).toBeNull();
+  });
+
+  it('updates an active record and handles not-found', async () => {
+    const original = createRecord({ id: 'u1' });
+    const updated = { ...original, title: 'Updated' };
+    vi.mocked(updateRecordEntry).mockResolvedValue(updated);
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    await act(async () => {
+      getLatest()?.applyRecordUpdate(original);
+      getLatest()?.setActiveRecord(original);
+    });
+
+    let result: RecordEntry | null | undefined;
+    await act(async () => {
+      result = await getLatest()?.updateActiveRecord(original.id, {
+        title: 'Updated',
+      });
+    });
+
+    expect(result).toEqual(updated);
+    expect(getLatest()?.activeRecord).toEqual(updated);
+
+    vi.mocked(updateRecordEntry).mockResolvedValue(null);
+    await act(async () => {
+      result = await getLatest()?.updateActiveRecord('missing', { title: 'x' });
+    });
+    expect(result).toBeNull();
+  });
+
+  it('refresh merges active record when list is empty', async () => {
+    vi.mocked(listRecords).mockResolvedValue([]);
+    const active = createRecord({ id: 'active-merge' });
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    await act(async () => {
+      getLatest()?.applyRecordUpdate(active);
+      getLatest()?.setActiveRecord(active);
+    });
+
+    await act(async () => {
+      await getLatest()?.refresh();
+    });
+
+    expect(getLatest()?.records).toContainEqual(active);
   });
 
   it('prevents deleting the active record', async () => {

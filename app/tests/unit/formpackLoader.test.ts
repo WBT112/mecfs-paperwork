@@ -6,6 +6,7 @@ import {
   loadFormpackSchema,
   loadFormpackUiSchema,
   listFormpacks,
+  clearFormpackCaches,
 } from '../../src/formpacks/loader';
 import type { FormpackManifestPayload } from '../../src/formpacks/types';
 
@@ -34,6 +35,7 @@ describe('parseManifest', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    clearFormpackCaches();
   });
 
   it('throws an error if the formpack ID does not match', () => {
@@ -238,6 +240,7 @@ describe('formpack loader fetches', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    clearFormpackCaches();
   });
 
   const manifestFor = (id: string): FormpackManifestPayload => ({
