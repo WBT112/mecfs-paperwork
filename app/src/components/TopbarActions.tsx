@@ -90,7 +90,7 @@ export default memo(function TopbarActions() {
   );
 
   const handleShare = useCallback(async () => {
-    const origin = window.location.origin;
+    const origin = globalThis.location.origin;
     const shareUrl = getShareUrl({ origin, pathname });
 
     const shared = await tryNativeShare(
@@ -117,9 +117,8 @@ export default memo(function TopbarActions() {
   );
 
   return (
-    <div
+    <fieldset
       className="app__topbar-actions"
-      role="group"
       aria-label={t('topbarActionsLabel')}
     >
       <a
@@ -138,7 +137,7 @@ export default memo(function TopbarActions() {
         {t('shareAction')}
       </button>
       {shareFallback && (
-        <div className="app__share-fallback" role="dialog">
+        <dialog className="app__share-fallback" open aria-modal="true">
           <div className="app__share-fallback-header">
             <strong>
               {shareFallback.copied
@@ -169,8 +168,8 @@ export default memo(function TopbarActions() {
               {t('common.close')}
             </button>
           </div>
-        </div>
+        </dialog>
       )}
-    </div>
+    </fieldset>
   );
 });

@@ -7,8 +7,8 @@ import type {
   FormpackManifest,
   FormpackManifestPayload,
   FormpackUiConfig,
+  FormpackVisibility,
 } from './types';
-import type { FormpackVisibility } from './types';
 
 export type FormpackLoaderErrorCode =
   | 'not_found'

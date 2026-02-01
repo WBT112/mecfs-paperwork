@@ -24,7 +24,6 @@ import { buildI18nContext } from './buildI18nContext';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 export type DocxTemplateId = 'a4' | 'wallet';
-export type DocxExportVariant = DocxTemplateId;
 
 type DocxMappingField = {
   var: string;
@@ -161,20 +160,22 @@ const isSafeAssetPath = (value: string) => {
 
 const parseDocxMapping = (payload: unknown): DocxMapping => {
   if (!isRecord(payload)) {
-    throw new Error('Invalid DOCX mapping payload.');
+    throw new TypeError('Invalid DOCX mapping payload.');
   }
 
   if (typeof payload.version !== 'number') {
-    throw new Error('DOCX mapping payload must declare a version.');
+    throw new TypeError('DOCX mapping payload must declare a version.');
   }
 
   // MVP: support only version 1 to keep the contract stable.
   if (payload.version !== 1) {
-    throw new Error(`Unsupported DOCX mapping version: ${payload.version}.`);
+    throw new TypeError(
+      `Unsupported DOCX mapping version: ${payload.version}.`,
+    );
   }
 
   if (!Array.isArray(payload.fields)) {
-    throw new Error('DOCX mapping payload must declare fields.');
+    throw new TypeError('DOCX mapping payload must declare fields.');
   }
 
   const fields = payload.fields.filter(
@@ -187,7 +188,7 @@ const parseDocxMapping = (payload: unknown): DocxMapping => {
   );
 
   if (!fields.length) {
-    throw new Error(
+    throw new TypeError(
       'DOCX mapping payload must contain at least one valid field mapping.',
     );
   }
@@ -265,7 +266,7 @@ const coerceDocxError = (error: unknown): Error | null => {
   }
 
   if (isRecord(error) && typeof error.message === 'string') {
-    return new Error(error.message);
+    return new TypeError(error.message);
   }
 
   return null;
@@ -276,7 +277,7 @@ const stripDocxLiteralDelimiter = (value: string): string =>
 
 const encodeDocxLineBreaks = (value: string): string => {
   const safe = stripDocxLiteralDelimiter(value);
-  return safe.includes('\n') ? safe.replace(/\n/g, DOCX_BR_LITERAL) : safe;
+  return safe.includes('\n') ? safe.replaceAll('\n', DOCX_BR_LITERAL) : safe;
 };
 
 const pickCachedDocxSchema = <T>(
@@ -628,10 +629,7 @@ const pickChildSchema = (
   schemaProps: Record<string, RJSFSchema> | null,
   segment: string,
 ): RJSFSchema | null => {
-  if (
-    !schemaProps ||
-    !Object.prototype.hasOwnProperty.call(schemaProps, segment)
-  ) {
+  if (!schemaProps || !Object.hasOwn(schemaProps, segment)) {
     return null;
   }
   return schemaProps[segment];
@@ -947,7 +945,7 @@ export const loadDocxTemplate = async (
 };
 
 const formatExportDate = (value: Date) =>
-  value.toISOString().slice(0, 10).replace(/-/g, '');
+  value.toISOString().slice(0, 10).replaceAll('-', '');
 
 const RESERVED_FILENAME_CHARS = new Set([
   '\\',
@@ -1059,13 +1057,13 @@ export const downloadDocxExport = (
   anchor.click();
   anchor.remove();
 
-  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  globalThis.setTimeout(() => URL.revokeObjectURL(url), 0);
 };
 
 export type ExportDocxOptions = {
   formpackId: string;
   recordId: string;
-  variant: DocxExportVariant;
+  variant: DocxTemplateId;
   locale: SupportedLocale;
   manifest?: FormpackManifest;
   schema?: RJSFSchema | null;
