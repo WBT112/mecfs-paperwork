@@ -815,12 +815,8 @@ export default function FormpackDetailPage() {
   }, [id, locale, t]);
 
   useEffect(() => {
-    if (
-      !manifest ||
-      !manifest.docx ||
-      !manifest.exports.includes('docx') ||
-      !formpackId
-    ) {
+    const manifestExports = manifest?.exports;
+    if (!manifest?.docx || !manifestExports?.includes('docx') || !formpackId) {
       return;
     }
 
@@ -966,12 +962,10 @@ export default function FormpackDetailPage() {
   );
 
   const readActiveRecordId = useCallback(() => {
-    if (!activeRecordStorageKey) {
-      return null;
-    }
-
     try {
-      return window.localStorage.getItem(activeRecordStorageKey);
+      return activeRecordStorageKey
+        ? globalThis.localStorage.getItem(activeRecordStorageKey)
+        : null;
     } catch {
       return null;
     }
@@ -985,9 +979,9 @@ export default function FormpackDetailPage() {
 
       try {
         if (recordId) {
-          window.localStorage.setItem(activeRecordStorageKey, recordId);
+          globalThis.localStorage.setItem(activeRecordStorageKey, recordId);
         } else {
-          window.localStorage.removeItem(activeRecordStorageKey);
+          globalThis.localStorage.removeItem(activeRecordStorageKey);
         }
       } catch {
         // Ignore storage errors to keep the UI responsive.
@@ -1262,7 +1256,7 @@ export default function FormpackDetailPage() {
         return;
       }
 
-      const confirmed = window.confirm(
+      const confirmed = globalThis.confirm(
         t('formpackRecordDeleteConfirm', {
           title: record.title ?? t('formpackRecordUntitled'),
         }),
@@ -1303,7 +1297,7 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    const confirmed = window.confirm(t('formpackSnapshotsClearAllConfirm'));
+    const confirmed = globalThis.confirm(t('formpackSnapshotsClearAllConfirm'));
     if (!confirmed) {
       return;
     }
@@ -1328,7 +1322,7 @@ export default function FormpackDetailPage() {
         return null;
       }
 
-      const confirmed = window.confirm(t('importOverwriteConfirm'));
+      const confirmed = globalThis.confirm(t('importOverwriteConfirm'));
       if (!confirmed) {
         return null;
       }
@@ -1607,10 +1601,10 @@ export default function FormpackDetailPage() {
   }, [activeRecord, formData, locale, manifest, schema, snapshots]);
 
   const handleExportDocx = useCallback(async () => {
+    const manifestExports = manifest?.exports;
     if (
-      !manifest ||
-      !manifest.docx ||
-      !manifest.exports.includes('docx') ||
+      !manifest?.docx ||
+      !manifestExports?.includes('docx') ||
       !formpackId ||
       !activeRecord
     ) {

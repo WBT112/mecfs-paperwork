@@ -122,7 +122,7 @@ export const ArrayFieldTemplate = (props: ArrayFieldTemplateProps) => {
         uiSchema={uiSchema}
         registry={registry}
       />
-      {!showOptionalDataControlInTitle ? props.optionalDataControl : undefined}
+      {showOptionalDataControlInTitle ? undefined : props.optionalDataControl}
       <div className="formpack-array__items">{items}</div>
       {canAdd && (
         <div className="formpack-array__add">

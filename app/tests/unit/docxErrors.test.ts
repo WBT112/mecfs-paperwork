@@ -50,4 +50,8 @@ describe('getDocxErrorKey', () => {
     const error = { message: 'Plain object error' };
     expect(getDocxErrorKey(error)).toBe('formpackDocxExportError');
   });
+
+  it('uses the generic error key for non-error values', () => {
+    expect(getDocxErrorKey({})).toBe('formpackDocxExportError');
+  });
 });
