@@ -5,13 +5,15 @@ import type { RecordEntry } from '../../src/storage/types';
 
 type UpdateRecord = typeof updateRecordType;
 type UpdateRecordArgs = Parameters<UpdateRecord>;
-type UpdateRecordReturn = ReturnType<UpdateRecord>;
+
+const LOCALE = 'de';
+const FORM_PACK_ID = 'doctor-letter';
+const FIXED_TIMESTAMP = '2024-01-01T00:00:00.000Z';
 
 // Mock updateRecord from storage/records used by the autosave hook
 const mockUpdate = vi.fn<UpdateRecord>();
 vi.mock('../../src/storage/records', () => ({
-  updateRecord: (...args: UpdateRecordArgs) =>
-    mockUpdate(...args) as UpdateRecordReturn,
+  updateRecord: (...args: UpdateRecordArgs) => mockUpdate(...args),
 }));
 
 import { useAutosaveRecord } from '../../src/storage/hooks';
@@ -34,7 +36,7 @@ function TestComponent({
   const { markAsSaved } = useAutosaveRecord(
     recordId,
     formData,
-    'de',
+    LOCALE,
     baselineData,
     { delay, onSaved, onError },
   );
@@ -62,12 +64,12 @@ describe('useAutosaveRecord', () => {
   it('calls updateRecord after delay and triggers onSaved', async () => {
     const saved: RecordEntry = {
       id: 'r1',
-      formpackId: 'doctor-letter',
+      formpackId: FORM_PACK_ID,
       title: undefined,
-      locale: 'de',
+      locale: LOCALE,
       data: { a: 1 },
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
+      createdAt: FIXED_TIMESTAMP,
+      updatedAt: FIXED_TIMESTAMP,
     };
     mockUpdate.mockResolvedValue(saved);
     const onSaved = vi.fn();
@@ -91,7 +93,7 @@ describe('useAutosaveRecord', () => {
 
     expect(mockUpdate).toHaveBeenCalledWith('rec-1', {
       data: { a: 1 },
-      locale: 'de',
+      locale: LOCALE,
     });
     // onSaved should be called with the resolved record
     expect(onSaved).toHaveBeenCalled();
@@ -100,12 +102,12 @@ describe('useAutosaveRecord', () => {
   it('markAsSaved prevents autosave from running', async () => {
     const saved: RecordEntry = {
       id: 'r2',
-      formpackId: 'doctor-letter',
+      formpackId: FORM_PACK_ID,
       title: undefined,
-      locale: 'de',
+      locale: LOCALE,
       data: { b: 2 },
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
+      createdAt: FIXED_TIMESTAMP,
+      updatedAt: FIXED_TIMESTAMP,
     };
     mockUpdate.mockResolvedValue(saved);
     const onSaved = vi.fn();
