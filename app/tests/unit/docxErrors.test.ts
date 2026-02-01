@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getDocxErrorKey } from '../../src/export/docx';
 
 const errorWithName = (name: string): Error => {
@@ -40,10 +40,25 @@ describe('getDocxErrorKey', () => {
     expect(getDocxErrorKey(errors)).toBe('formpackDocxErrorInvalidCommand');
   });
 
-  it('falls back to the generic error key', () => {
-    expect(getDocxErrorKey(new Error('Unknown'))).toBe(
-      'formpackDocxExportError',
+  it('falls back to the generic error key and does not leak the error object', () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sensitiveError = new Error('Sensitive data in error message');
+    sensitiveError.name = 'UnknownError';
+
+    expect(getDocxErrorKey(sensitiveError)).toBe('formpackDocxExportError');
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'A DOCX export error occurred (type: UnknownError).',
     );
+    expect(consoleSpy).not.toHaveBeenCalledWith(
+      expect.anything(),
+      sensitiveError,
+    );
+    expect(consoleSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('Sensitive data'),
+    );
+
+    consoleSpy.mockRestore();
   });
 
   it('handles plain objects with a message property', () => {
@@ -51,7 +66,20 @@ describe('getDocxErrorKey', () => {
     expect(getDocxErrorKey(error)).toBe('formpackDocxExportError');
   });
 
-  it('uses the generic error key for non-error values', () => {
-    expect(getDocxErrorKey({})).toBe('formpackDocxExportError');
+  it('uses the generic error key for non-error values and does not leak them', () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const weirdError = { some: 'sensitive-data' };
+
+    expect(getDocxErrorKey(weirdError)).toBe('formpackDocxExportError');
+
+    expect(consoleSpy).toHaveBeenCalledWith(
+      'An unknown DOCX export error occurred.',
+    );
+    expect(consoleSpy).not.toHaveBeenCalledWith(expect.anything(), weirdError);
+    expect(consoleSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('sensitive-data'),
+    );
+
+    consoleSpy.mockRestore();
   });
 });

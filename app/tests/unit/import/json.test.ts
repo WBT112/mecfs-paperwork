@@ -94,14 +94,31 @@ describe('validateJsonImport', () => {
     expect(result.payload?.formpack.id).toBe(PRIMARY_FORMPACK_ID);
   });
 
-  it('returns an error for invalid JSON', () => {
+  it('returns an error for invalid JSON and does not leak data to console', () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const invalidJson = '{ invalid: "secret-data" }';
+
     const result = validateJsonImport(
-      '{ invalid json }',
+      invalidJson,
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
+
     expect(result.payload).toBe(null);
     expect(result.error?.code).toBe('invalid_json');
+
+    // Verify that the error object containing "secret-data" was not logged.
+    // JSON.parse error usually includes a snippet of the input.
+    expect(consoleSpy).toHaveBeenCalledWith('JSON parsing failed.');
+    expect(consoleSpy).not.toHaveBeenCalledWith(
+      expect.stringContaining('secret-data'),
+    );
+    expect(consoleSpy).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+    );
+
+    consoleSpy.mockRestore();
   });
 
   it('returns an error for invalid app metadata', () => {

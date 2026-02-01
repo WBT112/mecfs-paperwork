@@ -63,8 +63,10 @@ const parseJson = (
   }
   try {
     return { payload: JSON.parse(normalized) as unknown };
-  } catch (e) {
-    console.error('JSON parsing failed:', e);
+  } catch {
+    // PRIVACY: Do not log the error object 'e' as JSON.parse error messages
+    // often contain snippets of the input data, which could be sensitive.
+    console.error('JSON parsing failed.');
     const message = 'The file is not a valid JSON file.';
     return { error: 'invalid_json', message };
   }
