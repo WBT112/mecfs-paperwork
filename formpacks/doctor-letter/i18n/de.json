@@ -50,7 +50,7 @@
   "doctor-letter.decision.q6.label": "Haben Sie Fatigue?",
   "doctor-letter.decision.q6.help": "Leiden Sie unter Fatigue?",
   "doctor-letter.decision.q7.label": "Leiden Sie unter Post-Exertional Malaise (PEM)?",
-  "doctor-letter.decision.q7.help": "Belastungsintoleranz mit Symptomverschlechterung",
+  "doctor-letter.decision.q7.help": "Belastungsintoleranz mit zeitverzögerter Symptomverschlechterung",
   "doctor-letter.decision.q8.label": "Wählen Sie eine Ursache",
   "doctor-letter.decision.q8.help": "Ursache für die Symptome",
   "doctor-letter.decision.q8.option.NoKnownCause": "Keine bekannte Ursache",

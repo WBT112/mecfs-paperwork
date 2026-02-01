@@ -19,7 +19,7 @@ jobs:
         include:
           - browser: chromium
             allow_failure: false
-            repeat_each: 3
+            repeat_each: 1
           - browser: firefox
             allow_failure: true
             repeat_each: 1
