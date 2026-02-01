@@ -177,7 +177,7 @@ describe('buildDocumentModel for doctor-letter', () => {
       expect(result.decision?.caseParagraphs).toEqual(
         splitParagraphs(deTranslations[CASE_0_KEY]),
       );
-      expect(result.decision?.caseText).toContain('nicht die vollständigen');
+      expect(result.decision?.caseText).toContain('WICHTIGER HINWEIS');
       expect(result.decision?.caseText).not.toContain('[[P]]');
     });
 
@@ -208,7 +208,7 @@ describe('buildDocumentModel for doctor-letter', () => {
       expect(result.decision?.caseParagraphs).toEqual(
         splitParagraphs(enTranslations[CASE_3_KEY]),
       );
-      expect(result.decision?.caseText).toContain('COVID-19 infection');
+      expect(result.decision?.caseText).toContain('COVID-19');
     });
 
     it('resolves Case 11 (cause unknown) correctly', () => {
@@ -260,7 +260,7 @@ describe('buildDocumentModel for doctor-letter', () => {
 
       expect(result.decision).toBeDefined();
       expect(result.decision?.caseId).toBe(1);
-      expect(result.decision?.caseText).toContain('EBV infection');
+      expect(result.decision?.caseText).toContain('Epstein–Barr virus');
     });
 
     it('resolves Case 12 (no known cause with PEM) correctly', () => {
