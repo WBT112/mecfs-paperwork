@@ -1,8 +1,8 @@
 {
   "ui:order": [
+    "decision",
     "patient",
-    "doctor",
-    "decision"
+    "doctor"
   ],
   "patient": {
     "ui:title": "doctor-letter.section.patient.title",
