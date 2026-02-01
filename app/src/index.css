@@ -1074,6 +1074,11 @@ body {
   flex-shrink: 0;
 }
 
+.formpack-decision-divider {
+  margin-top: 0.85rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
 /* Staging environment marker */
 .staging-marker {
   position: fixed;
