@@ -20,13 +20,13 @@ const normalizeLocale = (value: string): SupportedLocale => {
  * React hook for reading and updating the active UI locale.
  */
 export const useLocale = () => {
-  const [locale, setLocaleState] = useState<SupportedLocale>(() =>
+  const [locale, setLocale] = useState<SupportedLocale>(() =>
     normalizeLocale(i18n.language),
   );
 
   useEffect(() => {
     const handleLanguageChange = (language: string) => {
-      setLocaleState(normalizeLocale(language));
+      setLocale(normalizeLocale(language));
     };
 
     i18n.on('languageChanged', handleLanguageChange);
@@ -34,9 +34,9 @@ export const useLocale = () => {
     return () => {
       i18n.off('languageChanged', handleLanguageChange);
     };
-  }, [setLocaleState]);
+  }, [setLocale]);
 
-  const setLocale = async (nextLocale: SupportedLocale) => {
+  const changeLocale = async (nextLocale: SupportedLocale) => {
     if (nextLocale === i18n.language) {
       return;
     }
@@ -47,7 +47,7 @@ export const useLocale = () => {
 
   return {
     locale,
-    setLocale,
+    setLocale: changeLocale,
     supportedLocales,
   };
 };

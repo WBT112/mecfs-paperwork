@@ -69,6 +69,17 @@ describe('MarkdownRenderer', () => {
     expect(link).toHaveAttribute('rel', EXTERNAL_LINK_REL);
   });
 
+  it('renders explicit <br> tags as hard line breaks', () => {
+    const { container } = render(
+      <MarkdownRenderer content="Line 1<br>Line 2" />,
+    );
+    expect(container.querySelector('br')).toBeInTheDocument();
+    const paragraph = container.querySelector('p');
+    expect(paragraph).toBeInTheDocument();
+    expect(paragraph).toHaveTextContent('Line 1');
+    expect(paragraph).toHaveTextContent('Line 2');
+  });
+
   it('validates href protocols for safety checks', () => {
     expect(isSafeHref('https://example.com')).toBe(true);
     expect(isSafeHref('mailto:hello@example.com')).toBe(true);

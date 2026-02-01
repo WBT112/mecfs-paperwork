@@ -44,8 +44,7 @@ const getNested = (
 
   let cursor: Record<string, unknown> = target;
 
-  for (let i = 0; i < segments.length; i += 1) {
-    const segment = segments[i];
+  for (const segment of segments) {
     const next = cursor[segment];
     if (!isRecord(next)) {
       return undefined;

@@ -25,6 +25,7 @@ const locales: SupportedTestLocale[] = ['de', 'en'];
 
 const stripMarkdown = (value: string) =>
   value
+    .replace(/<br\s*\/?>/gi, ' ')
     .replace(/\[(.*?)\]\([^)]*\)/g, '$1')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/__([^_]+)__/g, '$1')

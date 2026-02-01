@@ -13,13 +13,6 @@ type ThemeState = {
   setThemeMode: (mode: ThemeMode) => void;
 };
 
-const toResolvedTheme = (matches: boolean): ResolvedTheme =>
-  matches ? 'dark' : 'light';
-
-const updateResolvedTheme = (resolvedTheme: ResolvedTheme) => {
-  document.documentElement.dataset.theme = resolvedTheme;
-};
-
 export const useTheme = (): ThemeState => {
   const [themeMode, setThemeMode] = useState<ThemeMode>(() =>
     getInitialThemeMode(),
@@ -46,9 +39,8 @@ export const useTheme = (): ThemeState => {
       return;
     }
 
-    const handleChange = (event: MediaQueryListEvent) => {
-      const nextResolved = toResolvedTheme(event.matches);
-      updateResolvedTheme(nextResolved);
+    const handleChange = () => {
+      const nextResolved = applyTheme('system');
       setResolvedTheme(nextResolved);
     };
 
