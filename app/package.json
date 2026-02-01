@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit",
     "formpack:new": "node scripts/new-formpack.mjs",
     "formpack:validate": "node scripts/validate-formpacks.mjs",
+    "quality-gates": "node scripts/run-quality-gates.mjs",
     "pretest:e2e": "node scripts/sync-formpacks.mjs && node scripts/sync-funding.mjs",
     "test:e2e": "node scripts/run-e2e-soft.mjs",
     "test:e2e:strict": "npx playwright test",
