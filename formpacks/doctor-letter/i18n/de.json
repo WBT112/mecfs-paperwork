@@ -1,6 +1,6 @@
 {
-  "doctor-letter.title": "Fragebogen ICD-10",
-  "doctor-letter.description": "Fragebogen für die neuen ICD-10 Kodierungen für ME/CFS",
+  "doctor-letter.title": "Briefgenerator ICD-10",
+  "doctor-letter.description": "Erstelle hier einen Brief für deinen Arzt, mit den Neuigkeiten zur ICD-10-GM2026 Kodierung bei ME/CFS",
   "doctor-letter.common.yes": "Ja",
   "doctor-letter.common.no": "Nein",
   "doctor-letter.section.patient.title": "Patient",
