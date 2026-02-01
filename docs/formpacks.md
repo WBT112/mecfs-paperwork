@@ -114,10 +114,11 @@ Minimal example:
 {{FOR item IN items}}
 {{INS $item}}
 {{END-FOR item}}
-
+```
 
 Examples:
 
+```text
 {{t.notfallpass.section.contacts.title}}
 {{FOR c IN contacts}}
 {{INS $c.name}} | {{INS $c.phone}} | {{INS $c.relation}}
@@ -135,8 +136,9 @@ Examples:
 {{FOR p IN diagnosisParagraphs}}
 {{INS $p}}
 {{END-FOR p}}
+```
 
-Authoring Rules (important: prevents parser errors)
+### Authoring Rules (important: prevents parser errors)
 Word processors (Word/LibreOffice) can split text into multiple internal “runs”. To keep commands parseable:
 - Use the standard delimiter policy: `{{ ... }}` for all commands.
 - Never apply formatting changes inside a command ({{...}} must remain a single uninterrupted run).
