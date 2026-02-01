@@ -14,13 +14,17 @@ describe('buildDocxExportFilename', () => {
 
     // Handles various illegal characters and whitespace sequences
     expect(
-      buildDocxExportFilename('  a b/c\\d:e*f?g"h<i>j|k_l ', 'a4', testDate),
+      buildDocxExportFilename(
+        String.raw`  a b/c\d:e*f?g"h<i>j|k_l `,
+        'a4',
+        testDate,
+      ),
     ).toBe('a-b-c-d-e-f-g-h-i-j-k-l-a4-20231027.docx');
 
     // Fallback for formpackId that sanitizes to an empty string
-    expect(buildDocxExportFilename(' :/\\*?"<>|_ ', 'a4', testDate)).toBe(
-      DEFAULT_DOCX_FILENAME,
-    );
+    expect(
+      buildDocxExportFilename(String.raw` :/\*?"<>|_ `, 'a4', testDate),
+    ).toBe(DEFAULT_DOCX_FILENAME);
 
     // Correctly removes leading/trailing hyphens that result from sanitization
     expect(buildDocxExportFilename('/formpack/', 'a4', testDate)).toBe(

@@ -478,7 +478,7 @@ describe('FormpackDetailPage', () => {
     );
 
     expect(mockMarkAsSaved).toHaveBeenCalledWith({});
-  }, 10000);
+  }, 10_000);
 
   it('shows an error if DOCX export fails', async () => {
     const error = new Error('DOCX export failed');
@@ -838,7 +838,7 @@ describe('FormpackDetailPage', () => {
       type: 'application/json',
     });
     const restoreText = mockFileText(IMPORT_FILE_CONTENT);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
 
     try {
       render(
@@ -1064,7 +1064,7 @@ describe('FormpackDetailPage', () => {
       payload,
       error: null,
     });
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
     const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
       type: 'application/json',
     });
@@ -1375,7 +1375,7 @@ describe('FormpackDetailPage', () => {
     storageState.records = [record, secondRecord];
     storageState.activeRecord = record;
     storageState.deleteRecord.mockResolvedValue(true);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1404,7 +1404,7 @@ describe('FormpackDetailPage', () => {
     storageState.records = [record, secondRecord];
     storageState.activeRecord = record;
     storageState.deleteRecord.mockResolvedValue(true);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1453,7 +1453,7 @@ describe('FormpackDetailPage', () => {
     };
     storageState.snapshots = [snapshot];
     storageState.clearSnapshots.mockResolvedValue(1);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1727,7 +1727,7 @@ describe('FormpackDetailPage', () => {
     } finally {
       restoreText();
     }
-  }, 10000);
+  }, 10_000);
 
   it('renders case text paragraphs in the document preview', async () => {
     const caseParagraphs = ['First paragraph', 'Second paragraph'];
@@ -1901,5 +1901,5 @@ describe('FormpackDetailPage', () => {
     } finally {
       restoreText();
     }
-  }, 10000);
+  }, 10_000);
 });

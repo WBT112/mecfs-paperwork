@@ -8,19 +8,18 @@ import type { RJSFSchema } from '@rjsf/utils';
 import doctorLetterSchema from '../../../formpacks/doctor-letter/schema.json';
 
 const FORMPACK_ID = 'doctor-letter';
+const createMockRecord = (data: Record<string, unknown>): RecordEntry => ({
+  id: 'test-record-id',
+  formpackId: FORMPACK_ID,
+  title: 'Test Patient',
+  locale: 'de',
+  data,
+  createdAt: '2024-01-01T00:00:00.000Z',
+  updatedAt: '2024-01-01T00:00:00.000Z',
+});
 
 describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
   const FORMPACK_VERSION = '0.1.0';
-
-  const createMockRecord = (data: Record<string, unknown>): RecordEntry => ({
-    id: 'test-record-id',
-    formpackId: FORMPACK_ID,
-    title: 'Test Patient',
-    locale: 'de',
-    data,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  });
 
   it('should export and re-import doctor-letter with enum string values (Case 3: COVID-19)', () => {
     const testData = {

@@ -49,23 +49,21 @@ export const loadFormpackI18n = async (
   for (const candidateLocale of getLocaleFallbacks(locale)) {
     const translations = await fetchTranslations(formpackId, candidateLocale);
 
-    if (!translations) {
-      continue;
-    }
+    if (translations) {
+      // Register fallback translations under the requested locale so i18next
+      // can resolve them even when the active language is the original request.
+      i18n.addResourceBundle(locale, namespace, translations, true, true);
 
-    // Register fallback translations under the requested locale so i18next
-    // can resolve them even when the active language is the original request.
-    i18n.addResourceBundle(locale, namespace, translations, true, true);
-
-    if (candidateLocale !== locale) {
-      i18n.addResourceBundle(
-        candidateLocale,
-        namespace,
-        translations,
-        true,
-        true,
-      );
+      if (candidateLocale !== locale) {
+        i18n.addResourceBundle(
+          candidateLocale,
+          namespace,
+          translations,
+          true,
+          true,
+        );
+      }
+      return;
     }
-    return;
   }
 };

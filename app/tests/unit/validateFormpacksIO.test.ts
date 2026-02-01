@@ -134,7 +134,7 @@ describe('validate-formpacks I/O integration', () => {
       > = new Map();
       await validateContract({ formpackId: id, errors });
       expect(errors.has(id)).toBe(true);
-      const packErrors = errors.get(id) || [];
+      const packErrors = errors.get(id) ?? [];
       expect(packErrors.length).toBeGreaterThan(0);
     } finally {
       await fs.rm(base, { recursive: true, force: true });
@@ -193,7 +193,7 @@ describe('validate-formpacks I/O integration', () => {
         translations: {},
       });
       expect(warnings2.has(id)).toBe(true);
-      const w = warnings2.get(id) || [];
+      const w = warnings2.get(id) ?? [];
       expect(w.length).toBeGreaterThan(0);
     } finally {
       await fs.rm(base, { recursive: true, force: true });

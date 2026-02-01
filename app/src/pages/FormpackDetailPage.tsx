@@ -313,13 +313,23 @@ const isDecisionCaseTextPath = (fieldPath?: string): boolean =>
 const isDecisionCaseParagraphsPath = (fieldPath?: string): boolean =>
   fieldPath === 'decision.caseParagraphs';
 
+const isRenderableNode = (
+  entry: ReactNode | null | undefined | false,
+): entry is ReactNode =>
+  entry !== null && entry !== undefined && entry !== false;
+
+const confirmAction = (message: string): boolean => {
+  // eslint-disable-next-line no-alert
+  return globalThis.confirm(message);
+};
+
 const renderParagraphs = (
   paragraphs: string[],
   keyPrefix: string,
 ): ReactNode => (
   <>
-    {paragraphs.map((paragraph, index) => (
-      <p key={`${keyPrefix}-${index}`}>{paragraph}</p>
+    {paragraphs.map((paragraph) => (
+      <p key={`${keyPrefix}-${paragraph}`}>{paragraph}</p>
     ))}
   </>
 );
@@ -564,11 +574,11 @@ function renderPreviewObject(
 ): ReactNode {
   const resolveWithFallback =
     resolveValue ??
-    ((value, schemaNode, uiNode, fieldPath) =>
-      resolveDisplayValue(value, {
-        schema: schemaNode,
-        uiSchema: uiNode,
-        fieldPath,
+    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
+      resolveDisplayValue(entryValue, {
+        schema: entrySchema,
+        uiSchema: entryUi,
+        fieldPath: entryFieldPath,
       }));
   const schemaProps =
     schemaNode && isRecord(schemaNode.properties)
@@ -657,11 +667,11 @@ function renderPreviewArray(
   const itemUi = getItemUiSchema(uiNode);
   const resolveWithFallback =
     resolveValue ??
-    ((value, schemaNode, uiNode, fieldPath) =>
-      resolveDisplayValue(value, {
-        schema: schemaNode,
-        uiSchema: uiNode,
-        fieldPath,
+    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
+      resolveDisplayValue(entryValue, {
+        schema: entrySchema,
+        uiSchema: entryUi,
+        fieldPath: entryFieldPath,
       }));
   const items = values
     .map<ReactNode>((entry, index) => {
@@ -675,9 +685,7 @@ function renderPreviewArray(
         sectionKey,
       );
     })
-    .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
-      Boolean(entry),
-    );
+    .filter(isRenderableNode);
 
   if (!items.length) {
     return null;
@@ -770,12 +778,12 @@ export default function FormpackDetailPage() {
       setUiSchema(null);
     };
 
-    const loadManifest = async (formpackId: string) => {
+    const loadManifest = async (nextFormpackId: string) => {
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
-        const result = await loadFormpackAssets(formpackId, locale, t);
+        const result = await loadFormpackAssets(nextFormpackId, locale, t);
         if (!isActive) {
           return;
         }
@@ -785,13 +793,14 @@ export default function FormpackDetailPage() {
           return;
         }
         setFormpackTranslationsVersion((version) => version + 1);
-        const shouldResetFormData = lastFormpackIdRef.current !== formpackId;
+        const shouldResetFormData =
+          lastFormpackIdRef.current !== nextFormpackId;
         setManifest(result.manifest);
         setSchema(result.schema);
         setUiSchema(result.uiSchema);
         if (shouldResetFormData) {
           setFormData({});
-          lastFormpackIdRef.current = formpackId;
+          lastFormpackIdRef.current = nextFormpackId;
         }
       } catch (error) {
         if (!isActive) {
@@ -1265,7 +1274,7 @@ export default function FormpackDetailPage() {
         return;
       }
 
-      const confirmed = globalThis.confirm(
+      const confirmed = confirmAction(
         t('formpackRecordDeleteConfirm', {
           title: record.title ?? t('formpackRecordUntitled'),
         }),
@@ -1306,7 +1315,7 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    const confirmed = globalThis.confirm(t('formpackSnapshotsClearAllConfirm'));
+    const confirmed = confirmAction(t('formpackSnapshotsClearAllConfirm'));
     if (!confirmed) {
       return;
     }
@@ -1331,7 +1340,7 @@ export default function FormpackDetailPage() {
         return null;
       }
 
-      const confirmed = globalThis.confirm(t('importOverwriteConfirm'));
+      const confirmed = confirmAction(t('importOverwriteConfirm'));
       if (!confirmed) {
         return null;
       }
@@ -1476,8 +1485,8 @@ export default function FormpackDetailPage() {
   >(
     () => ({
       t,
-      formpackId: formpackId || undefined,
-      infoBoxes: manifest?.ui?.infoBoxes || [],
+      formpackId: formpackId ?? undefined,
+      infoBoxes: manifest?.ui?.infoBoxes ?? [],
       formData,
     }),
     [t, formpackId, manifest, formData],
@@ -1586,11 +1595,9 @@ export default function FormpackDetailPage() {
           </div>
         );
       })
-      .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
-        Boolean(entry),
-      );
+      .filter(isRenderableNode);
 
-    return sections.length ? <>{sections}</> : null;
+    return sections.length ? sections : null;
   }, [formData, previewUiSchema, resolvePreviewValue, schema]);
   const handleExportJson = useCallback(() => {
     if (!manifest || !activeRecord) {
@@ -1698,11 +1705,11 @@ export default function FormpackDetailPage() {
     const loadValidator = async () => {
       const module = await import('@rjsf/validator-ajv8');
       // Ajv2020 includes the draft 2020-12 meta schema used by formpacks.
-      const validator = module.customizeValidator({
+      const configuredValidator = module.customizeValidator({
         AjvClass: Ajv2020,
       });
       if (isActive) {
-        setValidator(validator);
+        setValidator(configuredValidator);
       }
     };
 
@@ -1791,9 +1798,8 @@ export default function FormpackDetailPage() {
           <div>
             <dt>{t('formpackDocxTemplateWallet')}</dt>
             <dd>
-              {manifest.docx.templates.wallet
-                ? manifest.docx.templates.wallet
-                : t('formpackDocxTemplateWalletUnavailable')}
+              {manifest.docx.templates.wallet ??
+                t('formpackDocxTemplateWalletUnavailable')}
             </dd>
           </div>
           <div>
