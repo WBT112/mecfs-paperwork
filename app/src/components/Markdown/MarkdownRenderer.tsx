@@ -10,6 +10,7 @@ type MarkdownRendererProps = {
 const ALLOWED_ELEMENTS = [
   'a',
   'blockquote',
+  'br',
   'code',
   'em',
   'h1',
@@ -24,6 +25,8 @@ const ALLOWED_ELEMENTS = [
   'strong',
   'ul',
 ];
+
+const BR_TAG_PATTERN = /<br\s*\/?>/gi;
 
 // PERFORMANCE: The `components` object is defined outside the component to
 // ensure it has a stable reference. If it were defined inside, it would be a
@@ -53,6 +56,9 @@ const MarkdownRenderer = memo(function MarkdownRenderer({
   content,
   className,
 }: MarkdownRendererProps) {
+  // NOTE: Support explicit <br> inputs without enabling raw HTML rendering.
+  const normalizedContent = content.replace(BR_TAG_PATTERN, '  \n');
+
   return (
     <ReactMarkdown
       className={className}
@@ -60,7 +66,7 @@ const MarkdownRenderer = memo(function MarkdownRenderer({
       allowedElements={ALLOWED_ELEMENTS}
       components={MARKDOWN_COMPONENTS}
     >
-      {content}
+      {normalizedContent}
     </ReactMarkdown>
   );
 });

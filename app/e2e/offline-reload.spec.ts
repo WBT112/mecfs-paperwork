@@ -82,12 +82,12 @@ test('offline reload keeps core navigation and docx export working', async ({
 
   await page.goto('/formpacks');
   await expect(
-    page.getByRole('heading', { name: /forms|formulare/i }),
+    page.getByRole('heading', { name: /forms|formulare|hilfsangebote/i }),
   ).toBeVisible({ timeout: POLL_TIMEOUT });
   await waitForServiceWorkerReady(page);
   await page.reload();
   await expect(
-    page.getByRole('heading', { name: /forms|formulare/i }),
+    page.getByRole('heading', { name: /forms|formulare|hilfsangebote/i }),
   ).toBeVisible({ timeout: POLL_TIMEOUT });
   await waitForServiceWorkerReady(page);
 
@@ -95,7 +95,7 @@ test('offline reload keeps core navigation and docx export working', async ({
   await page.reload();
 
   await expect(
-    page.getByRole('heading', { name: /forms|formulare/i }),
+    page.getByRole('heading', { name: /forms|formulare|hilfsangebote/i }),
   ).toBeVisible({ timeout: POLL_TIMEOUT });
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
