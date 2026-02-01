@@ -300,8 +300,11 @@ const pickCachedDocxSchema = <T>(
 export const getDocxErrorKey = (error: unknown): DocxErrorKey => {
   const target = coerceDocxError(error);
   if (!target) {
-    // PRIVACY: Log the original unknown error for diagnostics, but return a generic key.
-    console.error('An unknown DOCX export error occurred.', error);
+    // PRIVACY: Log only the error message for diagnostics to avoid leaking user data.
+    console.error(
+      'An unknown DOCX export error occurred.',
+      error instanceof Error ? error.message : String(error),
+    );
     return 'formpackDocxExportError';
   }
 
@@ -318,10 +321,10 @@ export const getDocxErrorKey = (error: unknown): DocxErrorKey => {
     case 'ObjectCommandResultError':
       return 'formpackDocxErrorInvalidCommand';
     default:
-      // PRIVACY: Log the original error for diagnostics, but return a generic key.
+      // PRIVACY: Log only the error message for diagnostics to avoid leaking user data.
       console.error(
         `A DOCX export error occurred (type: ${target.name}).`,
-        target,
+        target.message,
       );
       return 'formpackDocxExportError';
   }
