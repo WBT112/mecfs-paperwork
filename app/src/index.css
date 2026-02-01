@@ -848,6 +848,15 @@ body {
   border: 1px solid var(--color-border);
 }
 
+.formpack-form--doctor-letter fieldset#root {
+  padding: 0;
+  border: 0;
+}
+
+.formpack-form--doctor-letter fieldset#root > legend {
+  display: none;
+}
+
 .formpack-form button,
 .formpack-form .btn {
   font-size: 0.95rem;
