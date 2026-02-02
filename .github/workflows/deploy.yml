@@ -5,6 +5,11 @@ on:
     branches:
       - main
       - staging
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - staging
 
 permissions:
   contents: read
@@ -13,10 +18,15 @@ jobs:
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'staging'))
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -30,13 +40,19 @@ jobs:
       - name: Determine build configuration
         id: config
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base_ref="${{ github.event.pull_request.base.ref }}"
+          else
+            base_ref="${GITHUB_REF#refs/heads/}"
+          fi
+
+          if [ "$base_ref" = "main" ]; then
             echo "environment=prod" >> $GITHUB_OUTPUT
             echo "vite_mode=production" >> $GITHUB_OUTPUT
             echo "show_dev_formpacks=" >> $GITHUB_OUTPUT
             echo "deployment_env=production" >> $GITHUB_OUTPUT
             echo "tag_env=prod" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" = "refs/heads/staging" ]; then
+          elif [ "$base_ref" = "staging" ]; then
             echo "environment=staging" >> $GITHUB_OUTPUT
             echo "vite_mode=staging" >> $GITHUB_OUTPUT
             echo "show_dev_formpacks=true" >> $GITHUB_OUTPUT
@@ -73,11 +89,15 @@ jobs:
     name: Deploy to Server
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
+    if: >-
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'staging'))
     
     steps:
       - name: Checkout code (for compose file)
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Deploy to server via SSH
         env:
