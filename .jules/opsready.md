@@ -1,7 +1,7 @@
 # OpsReady Journal
 
-## 2025-05-22 - Improved Service Readiness with Healthchecks
+## 2025-05-22 - Host-side Smoke Testing for Minimal Images
 
-**Learning:** Services in Docker Compose should have explicit healthchecks to ensure proper startup ordering and reliable readiness reporting. Using a dedicated `/health` endpoint in NGINX is a lightweight and reliable way to implement this.
+**Learning:** When using minimal or distroless base images (like NGINX without shell/wget/curl), internal Docker `healthcheck` instructions are not feasible as they lack a binary to execute the test. In these cases, service readiness should be verified from the host or CI runner.
 
-**Action:** Always include a `/health` endpoint in NGINX configs and use it for `healthcheck` in Compose files, combined with `depends_on: { condition: service_healthy }` for downstream services like Caddy.
+**Action:** Implement host-side smoke tests that start the container and poll a `/health` endpoint using host-side tools like `curl`. Update `tools/test-docker-builds.sh` to automate this verification during local/CI builds.
