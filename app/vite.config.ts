@@ -13,12 +13,19 @@ const createFormpackSpaFallbackPlugin = (): Plugin => ({
   apply: 'serve',
   enforce: 'pre',
   configureServer(server) {
-    server.middlewares.use((req, _res, next) => {
+    server.middlewares.use((req, res, next) => {
       if (req.method !== 'GET' || !req.url) {
         return next();
       }
 
       const path = req.url.split('?')[0];
+      if (path === '/health') {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/plain');
+        res.end('OK');
+        return;
+      }
+
       if (path === '/formpacks' || path === '/formpacks/') {
         req.url = '/index.html';
         return next();
