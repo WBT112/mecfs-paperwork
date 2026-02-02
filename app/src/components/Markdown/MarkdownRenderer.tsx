@@ -57,7 +57,7 @@ const MarkdownRenderer = memo(function MarkdownRenderer({
   className,
 }: MarkdownRendererProps) {
   // NOTE: Support explicit <br> inputs without enabling raw HTML rendering.
-  const normalizedContent = content.replace(BR_TAG_PATTERN, '  \n');
+  const normalizedContent = content.replaceAll(BR_TAG_PATTERN, '  \n');
 
   return (
     <ReactMarkdown

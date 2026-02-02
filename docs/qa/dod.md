@@ -24,6 +24,9 @@ Run from `app/` unless stated otherwise:
 6. `npm run test:e2e`
 7. `npm run formpack:validate`
 
+Optional helper (cross-platform):
+- `npm run quality-gates` (set `BYPASS_NODE_VERSION_CHECK=true` if you must run it on Node < 24)
+
 ## Manual QA Checklist (minimum)
 - Import/Export roundtrip (JSON backup).
 - Language switch (DE/EN).
