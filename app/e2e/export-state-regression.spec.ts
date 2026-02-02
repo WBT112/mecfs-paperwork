@@ -63,7 +63,7 @@ test('json export followed by docx export re-enables actions', async ({
 
   const jsonExportButton = page
     .getByRole('button', {
-      name: /Entwurf exportieren \(JSON\)|Export record \(JSON\)/i,
+      name: /Entwurf exportieren \(JSON\)|Export draft \(JSON\)/i,
     })
     .first();
   const jsonDownloadPromise = page.waitForEvent('download');
@@ -72,9 +72,7 @@ test('json export followed by docx export re-enables actions', async ({
   expect(jsonDownload.suggestedFilename()).toMatch(/\.json$/i);
 
   const docxSection = page.locator('.formpack-docx-export');
-  const docxExportButton = docxSection.getByRole('button', {
-    name: /export docx|docx exportieren/i,
-  });
+  const docxExportButton = docxSection.locator('[data-action="docx-export"]');
   await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
 
   const docxDownloadPromise = page.waitForEvent('download');

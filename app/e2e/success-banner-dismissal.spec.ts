@@ -69,9 +69,7 @@ test('dismisses success messages when other action buttons are clicked', async (
   await page.locator('#root_person_name').fill('Test User');
 
   const docxSection = page.locator('.formpack-docx-export');
-  const docxExportButton = docxSection.getByRole('button', {
-    name: /export docx|docx exportieren/i,
-  });
+  const docxExportButton = docxSection.locator('[data-action="docx-export"]');
   const docxSuccess = docxSection.locator('.formpack-docx-export__success');
   await expect(docxExportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
   await docxExportButton.click();
