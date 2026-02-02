@@ -68,7 +68,7 @@ const getCachedOptionsList = (
   let options = schemaCache.get(uiSchema);
   if (!options) {
     // Cast to EnumOption[] | undefined to ensure type safety and avoid lint errors with 'any'
-    options = (optionsList(schema, uiSchema) as EnumOption[] | undefined) ?? [];
+    options = (optionsList(schema, uiSchema) as EnumOption[] | undefined) || [];
     schemaCache.set(uiSchema, options);
   }
   return options;

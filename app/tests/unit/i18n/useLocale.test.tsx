@@ -44,7 +44,7 @@ describe('useLocale hook', () => {
       await i18n.changeLanguage('en');
     });
     const { getLatest } = renderLocaleHook();
-    await act(async () => {});
+    await act(async () => Promise.resolve());
     expect(getLatest()?.locale).toBe('en');
   });
 
@@ -53,7 +53,7 @@ describe('useLocale hook', () => {
       await i18n.changeLanguage('fr');
     });
     const { getLatest } = renderLocaleHook();
-    await act(async () => {});
+    await act(async () => Promise.resolve());
     expect(getLatest()?.locale).toBe(defaultLocale);
   });
 
@@ -62,7 +62,7 @@ describe('useLocale hook', () => {
       await i18n.changeLanguage('en');
     });
     const { getLatest } = renderLocaleHook();
-    await act(async () => {});
+    await act(async () => Promise.resolve());
 
     await act(async () => {
       await i18n.changeLanguage('fr');
@@ -77,7 +77,7 @@ describe('useLocale hook', () => {
     });
     const spy = vi.spyOn(i18n, 'changeLanguage');
     const { getLatest } = renderLocaleHook();
-    await act(async () => {});
+    await act(async () => Promise.resolve());
 
     await act(async () => {
       await getLatest()?.setLocale('en');
@@ -93,7 +93,7 @@ describe('useLocale hook', () => {
     });
     const spy = vi.spyOn(i18n, 'changeLanguage');
     const { getLatest } = renderLocaleHook();
-    await act(async () => {});
+    await act(async () => Promise.resolve());
 
     await act(async () => {
       await getLatest()?.setLocale('de');

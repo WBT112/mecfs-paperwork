@@ -82,18 +82,14 @@ Optional (coverage report):
 npm run test:coverage
 ```
 
-### One-command check (PowerShell or Node)
+### One-command check (PowerShell)
 
 There is a helper script in `tools/` that automates the quality gates (including optional Docker build + smoke test):
 
 ```powershell
 . .\tools\run-quality-gates.ps1
 ```
-**AND/OR**
 
-```bash
-npm run quality-gates
-```
 For script options and advanced usage, see `tools/README.md`.
 
 ---

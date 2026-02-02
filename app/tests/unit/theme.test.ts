@@ -26,16 +26,16 @@ const buildMatchMedia = (matches: boolean): MediaQueryList => ({
 });
 
 describe('theme utilities', () => {
-  const originalMatchMedia = globalThis.matchMedia;
+  const originalMatchMedia = window.matchMedia;
 
   beforeEach(() => {
-    globalThis.localStorage.clear();
+    window.localStorage.clear();
     document.documentElement.dataset.theme = '';
   });
 
   afterEach(() => {
-    globalThis.matchMedia = originalMatchMedia;
-    globalThis.localStorage.clear();
+    window.matchMedia = originalMatchMedia;
+    window.localStorage.clear();
   });
 
   it('defaults to dark when no stored theme is available', () => {
@@ -52,11 +52,11 @@ describe('theme utilities', () => {
   it('persists the selected theme mode', () => {
     setStoredThemeMode('light');
 
-    expect(globalThis.localStorage.getItem(themeStorageKey)).toBe('light');
+    expect(window.localStorage.getItem(themeStorageKey)).toBe('light');
   });
 
   it('ignores invalid stored theme values', () => {
-    globalThis.localStorage.setItem(themeStorageKey, 'neon');
+    window.localStorage.setItem(themeStorageKey, 'neon');
 
     expect(getStoredThemeMode()).toBeNull();
   });
@@ -92,27 +92,25 @@ describe('theme utilities', () => {
   });
 
   it('resolves system theme using matchMedia', () => {
-    globalThis.matchMedia = vi.fn().mockReturnValue(buildMatchMedia(true));
+    window.matchMedia = vi.fn().mockReturnValue(buildMatchMedia(true));
 
     expect(resolveTheme('system')).toBe<ResolvedTheme>('dark');
   });
 
   it('falls back to light when system preference is light', () => {
-    globalThis.matchMedia = vi.fn().mockReturnValue(buildMatchMedia(false));
+    window.matchMedia = vi.fn().mockReturnValue(buildMatchMedia(false));
 
     expect(resolveTheme('system')).toBe<ResolvedTheme>('light');
   });
 
   it('falls back to dark when matchMedia is unavailable', () => {
-    globalThis.matchMedia =
-      undefined as unknown as typeof globalThis.matchMedia;
+    window.matchMedia = undefined as unknown as typeof window.matchMedia;
 
     expect(getSystemTheme()).toBe<ResolvedTheme>('dark');
   });
 
   it('returns null when media queries are not supported', () => {
-    globalThis.matchMedia =
-      undefined as unknown as typeof globalThis.matchMedia;
+    window.matchMedia = undefined as unknown as typeof window.matchMedia;
 
     expect(getThemeMediaQuery()).toBeNull();
   });

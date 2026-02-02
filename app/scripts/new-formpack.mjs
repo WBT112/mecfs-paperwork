@@ -2,7 +2,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkNodeVersion } from './check-node-version.mjs';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..', '..');
@@ -499,7 +498,6 @@ const createFormpack = async ({ id, title, register }) => {
 };
 
 const run = async () => {
-  checkNodeVersion();
   const args = parseArgs(process.argv.slice(2));
   await createFormpack(args);
 };

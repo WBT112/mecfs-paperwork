@@ -64,6 +64,9 @@ const parseJson = (
   try {
     return { payload: JSON.parse(normalized) as unknown };
   } catch {
+    // PRIVACY: Do not log the error object 'e' as JSON.parse error messages
+    // often contain snippets of the input data, which could be sensitive.
+    console.error('JSON parsing failed.');
     const message = 'The file is not a valid JSON file.';
     return { error: 'invalid_json', message };
   }
@@ -181,12 +184,6 @@ const resolveSchemaDefaultValue = (schema: OptionalRjsfSchema): unknown => {
       return [];
     case 'object':
       return {};
-    case 'number':
-    case 'boolean':
-    case 'integer':
-    case 'null':
-    case undefined:
-      return undefined;
     default:
       return undefined;
   }
@@ -206,19 +203,19 @@ const removeReadOnlyFields = (
 
   for (const key of Object.keys(normalized)) {
     const propertySchema = properties[key] as OptionalRjsfSchema;
-    if (propertySchema && typeof propertySchema === 'object') {
-      // Remove readOnly fields from import data
-      if (propertySchema.readOnly === true) {
-        delete normalized[key];
-      } else if (
-        propertySchema.type === 'object' &&
-        isRecord(normalized[key])
-      ) {
-        // Recursively handle nested objects
-        normalized[key] = removeReadOnlyFields(propertySchema, normalized[key]);
-      } else {
-        // No-op for non-readonly, non-object fields.
-      }
+    if (!propertySchema || typeof propertySchema !== 'object') {
+      continue;
+    }
+
+    // Remove readOnly fields from import data
+    if (propertySchema.readOnly === true) {
+      delete normalized[key];
+      continue;
+    }
+
+    // Recursively handle nested objects
+    if (propertySchema.type === 'object' && isRecord(normalized[key])) {
+      normalized[key] = removeReadOnlyFields(propertySchema, normalized[key]);
     }
   }
 
@@ -237,14 +234,20 @@ const addRequiredDefaults = (
   }
 
   for (const key of schema.required) {
-    if (typeof key === 'string' && !Object.hasOwn(normalized, key)) {
-      const propertySchema = (schema.properties as Record<string, unknown>)[
-        key
-      ] as OptionalRjsfSchema;
-      const defaultValue = resolveSchemaDefaultValue(propertySchema);
-      if (defaultValue !== undefined) {
-        normalized[key] = defaultValue;
-      }
+    if (typeof key !== 'string') {
+      continue;
+    }
+
+    if (Object.hasOwn(normalized, key)) {
+      continue;
+    }
+
+    const propertySchema = (schema.properties as Record<string, unknown>)[
+      key
+    ] as OptionalRjsfSchema;
+    const defaultValue = resolveSchemaDefaultValue(propertySchema);
+    if (defaultValue !== undefined) {
+      normalized[key] = defaultValue;
     }
   }
 };

@@ -42,9 +42,7 @@ export default memo(function CollapsibleSection(
 
   const handleKeyUp = useCallback(
     (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (!(event.code === 'Space' || event.code === 'Enter')) {
-        return;
-      }
+      if (!(event.code === 'Space' || event.code === 'Enter')) return;
       if (keyDownHandledRef.current) {
         keyDownHandledRef.current = false;
         return;

@@ -112,12 +112,13 @@ const normalizeSchemaObject = (schema: RJSFSchema, value: unknown): unknown => {
 
   const updated: Record<string, unknown> = { ...value };
   for (const [key, propertySchema] of Object.entries(schema.properties)) {
-    if (Object.hasOwn(updated, key)) {
-      updated[key] = normalizeSchemaDates(
-        propertySchema as RJSFSchema | boolean,
-        updated[key],
-      );
+    if (!Object.hasOwn(updated, key)) {
+      continue;
     }
+    updated[key] = normalizeSchemaDates(
+      propertySchema as RJSFSchema | boolean,
+      updated[key],
+    );
   }
   return updated;
 };

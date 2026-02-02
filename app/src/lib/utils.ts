@@ -11,8 +11,7 @@
 export const emptyStringToNull = (
   value: string | null | undefined,
 ): string | null => {
-  const trimmed = value?.trim() ?? '';
-  return trimmed.length ? trimmed : null;
+  return value?.trim() || null;
 };
 
 /**

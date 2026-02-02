@@ -1,9 +1,6 @@
 import { spawn } from 'node:child_process';
 import process from 'node:process';
 import console from 'node:console';
-import { checkNodeVersion } from './check-node-version.mjs';
-
-checkNodeVersion();
 
 const isWin = process.platform === 'win32';
 

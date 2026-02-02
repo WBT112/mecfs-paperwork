@@ -2,9 +2,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { checkNodeVersion } from './check-node-version.mjs';
-
-checkNodeVersion();
 
 const C_RESET = '\x1b[0m';
 const C_GREEN = '\x1b[32m';

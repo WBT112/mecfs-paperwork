@@ -233,9 +233,7 @@ const buildDocxAdditionalContext = (
   Object.assign(tFn, tContext);
 
   const formatDate = (value: string | null | undefined): string => {
-    if (!value) {
-      return '';
-    }
+    if (!value) return '';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {
       return String(value);
@@ -245,18 +243,16 @@ const buildDocxAdditionalContext = (
     );
   };
 
+  const formatPhone = (value: string | null | undefined): string => {
+    if (!value) return '';
+    return String(value).trim();
+  };
+
   return {
     t: tFn,
     formatDate,
-    formatPhone: formatPhoneValue,
+    formatPhone,
   };
-};
-
-const formatPhoneValue = (value: string | null | undefined): string => {
-  if (!value) {
-    return '';
-  }
-  return String(value).trim();
 };
 
 const coerceDocxError = (error: unknown): Error | null => {
@@ -304,6 +300,9 @@ const pickCachedDocxSchema = <T>(
 export const getDocxErrorKey = (error: unknown): DocxErrorKey => {
   const target = coerceDocxError(error);
   if (!target) {
+    // PRIVACY: Log only a generic message. The original 'error' object may
+    // contain sensitive user data processed by the template engine.
+    console.error('An unknown DOCX export error occurred.');
     return 'formpackDocxExportError';
   }
 
@@ -320,6 +319,9 @@ export const getDocxErrorKey = (error: unknown): DocxErrorKey => {
     case 'ObjectCommandResultError':
       return 'formpackDocxErrorInvalidCommand';
     default:
+      // PRIVACY: Log only the error name for diagnostics. The original 'target'
+      // object may contain sensitive user data processed by the template engine.
+      console.error(`A DOCX export error occurred (type: ${target.name}).`);
       return 'formpackDocxExportError';
   }
 };
@@ -658,13 +660,14 @@ const getSchemaNodeForPath = (
     const nextSchema = pickChildSchema(schemaProps, segment);
     if (nextSchema) {
       current = nextSchema;
-    } else {
-      const itemSchema = pickArrayItemSchema(current);
-      if (!itemSchema) {
-        return undefined;
-      }
-      current = itemSchema;
+      continue;
     }
+
+    const itemSchema = pickArrayItemSchema(current);
+    if (!itemSchema) {
+      return undefined;
+    }
+    current = itemSchema;
   }
 
   return current;
@@ -684,38 +687,26 @@ const getUiSchemaNodeForPath = (
       return undefined;
     }
 
-    const next = pickUiSchemaSegment(
-      current as Record<string, unknown>,
-      segment,
-    );
-    if (!next) {
-      return undefined;
+    const record = current;
+    if (isRecord(record[segment])) {
+      current = record[segment] as UiSchema;
+      continue;
     }
 
-    current = next;
+    if (record.items && isRecord(record.items)) {
+      const items = record.items as Record<string, unknown>;
+      if (isRecord(items[segment])) {
+        current = items[segment] as UiSchema;
+        continue;
+      }
+      current = record.items as UiSchema;
+      continue;
+    }
+
+    return undefined;
   }
 
   return current;
-};
-
-const pickUiSchemaSegment = (
-  record: Record<string, unknown>,
-  segment: string,
-): UiSchema | null => {
-  const recordSegment = record[segment];
-  if (isRecord(recordSegment)) {
-    return recordSegment as UiSchema;
-  }
-
-  const itemsNode = record.items;
-  if (itemsNode && isRecord(itemsNode)) {
-    const items = itemsNode;
-    return isRecord(items[segment])
-      ? (items[segment] as UiSchema)
-      : (itemsNode as UiSchema);
-  }
-
-  return null;
 };
 
 const getArrayItemSchema = (
@@ -867,13 +858,10 @@ export const mapDocumentDataToTemplate = async (
     fieldPath?: string,
   ) =>
     resolveDisplayValue(value, {
-      t: (key, translateOptions) =>
+      t: (key, options) =>
         key.startsWith('common.')
-          ? i18n.getFixedT(locale, 'app')(key, translateOptions)
-          : i18n.getFixedT(locale, `formpack:${formpackId}`)(
-              key,
-              translateOptions,
-            ),
+          ? i18n.getFixedT(locale, 'app')(key, options)
+          : i18n.getFixedT(locale, `formpack:${formpackId}`)(key, options),
       namespace: 'app',
       formpackId,
       fieldPath,
@@ -972,13 +960,9 @@ const RESERVED_FILENAME_CHARS = new Set([
 ]);
 
 const sanitizeFilenamePart = (value: string | null | undefined) => {
-  if (!value) {
-    return '';
-  }
+  if (!value) return '';
   const trimmed = value.trim();
-  if (!trimmed) {
-    return '';
-  }
+  if (!trimmed) return '';
 
   // SECURITY: Use a linear-time sanitizer to avoid regex backtracking on user input.
   let result = '';
@@ -993,10 +977,11 @@ const sanitizeFilenamePart = (value: string | null | undefined) => {
         result += '-';
         inReplacement = true;
       }
-    } else {
-      result += char;
-      inReplacement = false;
+      continue;
     }
+
+    result += char;
+    inReplacement = false;
   }
 
   let start = 0;

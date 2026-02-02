@@ -113,10 +113,7 @@ describe('storage/db', () => {
 
       // Simulate the upgrade process by calling the captured callback
       expect(upgradeCallback).toBeDefined();
-      if (!upgradeCallback) {
-        throw new Error('upgrade callback not captured');
-      }
-      const runUpgrade = upgradeCallback;
+      const runUpgrade = upgradeCallback!;
       const upgradeEvent = {
         oldVersion: 0,
         newVersion: 1,
@@ -190,10 +187,7 @@ describe('storage/db', () => {
       await openStorage();
 
       expect(upgradeCallback).toBeDefined();
-      if (!upgradeCallback) {
-        throw new Error('upgrade callback not captured');
-      }
-      const runUpgrade = upgradeCallback;
+      const runUpgrade = upgradeCallback!;
       const upgradeEvent = {
         oldVersion: 0,
         newVersion: 1,

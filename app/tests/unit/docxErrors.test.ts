@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getDocxErrorKey } from '../../src/export/docx';
 
 const errorWithName = (name: string): Error => {
@@ -40,10 +40,23 @@ describe('getDocxErrorKey', () => {
     expect(getDocxErrorKey(errors)).toBe('formpackDocxErrorInvalidCommand');
   });
 
-  it('falls back to the generic error key', () => {
-    expect(getDocxErrorKey(new Error('Unknown'))).toBe(
-      'formpackDocxExportError',
+  it('falls back to the generic error key and does not leak the error object', () => {
+    const errorFn = vi.fn();
+    vi.stubGlobal('console', { ...console, error: errorFn });
+    const sensitiveError = new Error('Sensitive data in error message');
+    sensitiveError.name = 'UnknownError';
+
+    expect(getDocxErrorKey(sensitiveError)).toBe('formpackDocxExportError');
+
+    expect(errorFn).toHaveBeenCalledWith(
+      'A DOCX export error occurred (type: UnknownError).',
     );
+    expect(errorFn).not.toHaveBeenCalledWith(expect.anything(), sensitiveError);
+    expect(errorFn).not.toHaveBeenCalledWith(
+      expect.stringContaining('Sensitive data'),
+    );
+
+    vi.unstubAllGlobals();
   });
 
   it('handles plain objects with a message property', () => {
@@ -51,7 +64,21 @@ describe('getDocxErrorKey', () => {
     expect(getDocxErrorKey(error)).toBe('formpackDocxExportError');
   });
 
-  it('uses the generic error key for non-error values', () => {
-    expect(getDocxErrorKey({})).toBe('formpackDocxExportError');
+  it('uses the generic error key for non-error values and does not leak them', () => {
+    const errorFn = vi.fn();
+    vi.stubGlobal('console', { ...console, error: errorFn });
+    const weirdError = { some: 'sensitive-data' };
+
+    expect(getDocxErrorKey(weirdError)).toBe('formpackDocxExportError');
+
+    expect(errorFn).toHaveBeenCalledWith(
+      'An unknown DOCX export error occurred.',
+    );
+    expect(errorFn).not.toHaveBeenCalledWith(expect.anything(), weirdError);
+    expect(errorFn).not.toHaveBeenCalledWith(
+      expect.stringContaining('sensitive-data'),
+    );
+
+    vi.unstubAllGlobals();
   });
 });
