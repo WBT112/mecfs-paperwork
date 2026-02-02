@@ -73,6 +73,7 @@ export const createPwaConfig = (
       globPatterns,
       maximumFileSizeToCacheInBytes: MAXIMUM_FILE_SIZE_TO_CACHE_BYTES,
       navigateFallback: '/index.html',
+      navigateFallbackDenylist: [/^\/health$/],
       runtimeCaching: RUNTIME_CACHING,
     },
   };
