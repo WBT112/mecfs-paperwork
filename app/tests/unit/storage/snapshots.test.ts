@@ -1,4 +1,12 @@
-import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type Mock,
+} from 'vitest';
 import {
   clearSnapshots,
   createSnapshot,
@@ -59,6 +67,12 @@ describe('snapshots storage', () => {
     vi.mocked(openStorage).mockResolvedValue(db as any);
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it('creates a snapshot with generated metadata', async () => {
     const now = new Date('2025-01-02T10:00:00.000Z');
     vi.useFakeTimers();
@@ -79,9 +93,6 @@ describe('snapshots storage', () => {
       createdAt: now.toISOString(),
     });
     expect(db.add).toHaveBeenCalledWith('snapshots', snapshot);
-
-    vi.useRealTimers();
-    vi.unstubAllGlobals();
   });
 
   it('lists snapshots sorted by newest first', async () => {

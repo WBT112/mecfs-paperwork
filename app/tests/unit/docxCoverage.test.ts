@@ -86,6 +86,7 @@ describe('docx export coverage', () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
@@ -753,8 +754,6 @@ describe('docx export coverage', () => {
 
     vi.runAllTimers();
     expect(revokeUrl).toHaveBeenCalled();
-
-    vi.useRealTimers();
   });
 
   it('maps docx error keys for known errors', () => {
