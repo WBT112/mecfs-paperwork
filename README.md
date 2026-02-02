@@ -82,6 +82,14 @@ Optional (coverage report):
 npm run test:coverage
 ```
 
+Optional (one-command helper, cross-platform):
+
+```bash
+npm run quality-gates
+```
+
+If you are temporarily on Node < 24, you can bypass the version check for the helper with `BYPASS_NODE_VERSION_CHECK=true`.
+
 ### One-command check (PowerShell)
 
 There is a helper script in `tools/` that automates the quality gates (including optional Docker build + smoke test):

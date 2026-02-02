@@ -56,6 +56,14 @@ Optional (recommended): run the one-command helper script (Windows PowerShell):
 . .\tools\run-quality-gates.ps1
 ```
 
+Optional (recommended, cross-platform):
+
+```bash
+npm run quality-gates
+```
+
+If you are temporarily on Node < 24, you can bypass the version check for the helper with `BYPASS_NODE_VERSION_CHECK=true`.
+
 Optional (coverage report):
 
 ```bash
