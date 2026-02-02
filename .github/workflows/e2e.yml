@@ -1,8 +1,6 @@
 name: E2E (Playwright)
 
 on:
-  push:
-    branches: [main, staging]
   pull_request:
 
 permissions:

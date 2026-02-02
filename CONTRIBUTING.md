@@ -24,19 +24,19 @@ If you accidentally included sensitive data, remove it immediately and contact t
 ## Development setup
 
 ### Prerequisites
-- Node and npm as defined by the repository (see `.nvmrc` if present).
+- Node 24+ and npm (see `.nvmrc`).
 - Docker (optional, for container build testing).
 
 ### Install & run
 ```bash
 cd app
-npm install
+npm ci
 npm run dev
 ```
 
 ## Quality gates (required before opening a PR)
 
-Run from `app/`. CI only runs `npm run format:check`; if it fails locally, run `npm run format` and re-run the check:
+Run from `app/`. All quality gates are enforced in CI. If the formatting check fails, run `npm run format` and re-run the checks locally:
 
 ```bash
 npm run format:check

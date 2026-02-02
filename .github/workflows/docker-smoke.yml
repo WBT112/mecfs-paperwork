@@ -2,10 +2,6 @@ name: Docker smoke test
 
 on:
   pull_request:
-  push:
-    branches:
-      - main
-      - staging
   workflow_dispatch:
 
 permissions:
