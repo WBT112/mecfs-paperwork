@@ -21,7 +21,7 @@
   "doctor-letter.doctor.title.label": "Titel",
   "doctor-letter.doctor.title.help": "Akademischer Titel des Arztes",
   "doctor-letter.doctor.gender.label": "Anrede",
-  "doctor-letter.doctor.gender.help": "Anrede des Arztes (lasse das Feld offen für 'Sehr geehrte Damen und Herren'",
+  "doctor-letter.doctor.gender.help": "Anrede des Arztes (Feld offen lassen für: 'Sehr geehrte Damen und Herren')",
   "doctor-letter.doctor.name.label": "Name",
   "doctor-letter.doctor.name.help": "Name des Arztes",
   "doctor-letter.doctor.streetAndNumber.label": "Straße und Hausnummer",
