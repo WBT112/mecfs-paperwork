@@ -90,20 +90,20 @@ const ThemeHarness = () => {
 };
 
 describe('useTheme', () => {
-  const originalMatchMedia = globalThis.matchMedia;
+  const originalMatchMedia = window.matchMedia;
 
   beforeEach(() => {
-    globalThis.localStorage.clear();
+    window.localStorage.clear();
     document.documentElement.dataset.theme = '';
   });
 
   afterEach(() => {
-    globalThis.matchMedia = originalMatchMedia;
-    globalThis.localStorage.clear();
+    window.matchMedia = originalMatchMedia;
+    window.localStorage.clear();
   });
 
   it('hydrates from stored theme mode', () => {
-    globalThis.localStorage.setItem(themeStorageKey, 'light');
+    window.localStorage.setItem(themeStorageKey, 'light');
 
     render(<ThemeHarness />);
 
@@ -122,13 +122,13 @@ describe('useTheme', () => {
       expect(screen.getByTestId('mode')).toHaveTextContent('light');
     });
 
-    expect(globalThis.localStorage.getItem(themeStorageKey)).toBe('light');
+    expect(window.localStorage.getItem(themeStorageKey)).toBe('light');
     expect(document.documentElement.dataset.theme).toBe('light');
   });
 
   it('reacts to system changes when system mode is selected', async () => {
     const mediaQueryList = createMediaQueryList(true);
-    globalThis.matchMedia = vi.fn().mockReturnValue(mediaQueryList);
+    window.matchMedia = vi.fn().mockReturnValue(mediaQueryList);
 
     const user = userEvent.setup();
     const { unmount } = render(<ThemeHarness />);
@@ -156,7 +156,7 @@ describe('useTheme', () => {
 
   it('cleans up legacy media listeners', async () => {
     const mediaQueryList = createLegacyMediaQueryList(true);
-    globalThis.matchMedia = vi.fn().mockReturnValue(mediaQueryList);
+    window.matchMedia = vi.fn().mockReturnValue(mediaQueryList);
 
     const user = userEvent.setup();
     const { unmount } = render(<ThemeHarness />);
@@ -173,8 +173,7 @@ describe('useTheme', () => {
   });
 
   it('keeps a default theme when system media queries are unavailable', async () => {
-    globalThis.matchMedia =
-      undefined as unknown as typeof globalThis.matchMedia;
+    window.matchMedia = undefined as unknown as typeof window.matchMedia;
 
     const user = userEvent.setup();
     render(<ThemeHarness />);

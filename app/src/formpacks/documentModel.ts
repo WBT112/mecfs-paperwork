@@ -76,9 +76,6 @@ const getStringValue = (value: unknown): string | null => {
   return trimmed.length ? trimmed : null;
 };
 
-const isNonNullable = <T>(value: T | null | undefined): value is T =>
-  value !== null && value !== undefined;
-
 const formatBirthDate = (value: string | null): string | null => {
   if (!value) {
     return null;
@@ -134,9 +131,7 @@ const buildBaseDocumentModel = (
       }
       return { name, phone, relation };
     })
-    .filter((entry): entry is NonNullable<typeof entry> =>
-      isNonNullable(entry),
-    );
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 
   const medications = getArrayValue(formData.medications)
     .map((entry) => {
@@ -152,9 +147,7 @@ const buildBaseDocumentModel = (
       }
       return { name, dosage, schedule };
     })
-    .filter((entry): entry is NonNullable<typeof entry> =>
-      isNonNullable(entry),
-    );
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
 
   return {
     person: {
@@ -178,12 +171,8 @@ const buildBaseDocumentModel = (
 };
 
 const getYesNoValue = (value: unknown): 'yes' | 'no' | undefined => {
-  if (value === 'yes' || value === true) {
-    return 'yes';
-  }
-  if (value === 'no' || value === false) {
-    return 'no';
-  }
+  if (value === 'yes' || value === true) return 'yes';
+  if (value === 'no' || value === false) return 'no';
   return undefined;
 };
 

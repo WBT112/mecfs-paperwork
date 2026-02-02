@@ -12,13 +12,9 @@ export const setNested = (
   dottedKey: string,
   value: string,
 ): void => {
-  if (!isRecord(target)) {
-    return;
-  }
+  if (!isRecord(target)) return;
   const segments = dottedKey.split('.').filter(Boolean);
-  if (!segments.length) {
-    return;
-  }
+  if (!segments.length) return;
 
   let cursor: Record<string, unknown> = target;
 
@@ -42,13 +38,9 @@ const getNested = (
   target: Record<string, unknown>,
   dottedKey: string,
 ): Record<string, unknown> | undefined => {
-  if (!isRecord(target)) {
-    return undefined;
-  }
+  if (!isRecord(target)) return undefined;
   const segments = dottedKey.split('.').filter(Boolean);
-  if (!segments.length) {
-    return undefined;
-  }
+  if (!segments.length) return undefined;
 
   let cursor: Record<string, unknown> = target;
 
@@ -110,17 +102,14 @@ export const buildI18nContext = (
   for (const [key, value] of Object.entries(resources).sort(([a], [b]) =>
     a.localeCompare(b),
   )) {
-    const shouldInclude =
-      (!prefixFilter || key.startsWith(prefixFilter)) &&
-      typeof value === 'string';
-    if (shouldInclude) {
-      setNested(tObj, key, value);
-    }
+    if (prefixFilter && !key.startsWith(prefixFilter)) continue;
+    if (typeof value !== 'string') continue;
+
+    setNested(tObj, key, value);
   }
 
   const aliasSource =
-    (prefix ? getNested(tObj, prefix) : undefined) ??
-    getNested(tObj, formpackId);
+    (prefix && getNested(tObj, prefix)) || getNested(tObj, formpackId);
   if (aliasSource && !('__PACK_ID__' in tObj)) {
     tObj.__PACK_ID__ = aliasSource;
   }

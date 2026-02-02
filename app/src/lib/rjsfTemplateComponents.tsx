@@ -98,7 +98,6 @@ export const ArrayFieldTemplate = (props: ArrayFieldTemplateProps) => {
     ? t('common.addItemWithTitle', { item: addLabelBase })
     : t('common.add');
   const showOptionalDataControlInTitle = !readonly && !disabled;
-  const isAddDisabled = Boolean(disabled) || Boolean(readonly);
 
   return (
     <fieldset
@@ -118,7 +117,7 @@ export const ArrayFieldTemplate = (props: ArrayFieldTemplateProps) => {
       />
       <ArrayFieldDescriptionTemplate
         fieldPathId={fieldPathId}
-        description={uiOptions.description ?? schema.description}
+        description={uiOptions.description || schema.description}
         schema={schema}
         uiSchema={uiSchema}
         registry={registry}
@@ -131,7 +130,7 @@ export const ArrayFieldTemplate = (props: ArrayFieldTemplateProps) => {
             id={buttonId(fieldPathId, 'add')}
             className="formpack-array__add-button"
             onClick={onAddClick}
-            disabled={isAddDisabled}
+            disabled={disabled || readonly}
             uiSchema={uiSchema}
             registry={registry}
           >
@@ -162,8 +161,6 @@ export const ArrayFieldItemTemplate = (props: ArrayFieldItemTemplateProps) => {
   const { ButtonTemplates } = registry.templates;
   const t = getTranslator(registry.formContext);
   const itemTitle = getArrayItemTitle(parentUiSchema, index, t);
-  const isRemoveDisabled =
-    Boolean(buttonsProps.disabled) || Boolean(buttonsProps.readonly);
 
   return (
     <div className="formpack-array-item">
@@ -173,7 +170,7 @@ export const ArrayFieldItemTemplate = (props: ArrayFieldItemTemplateProps) => {
           <ButtonTemplates.RemoveButton
             className="formpack-array-item__remove"
             onClick={buttonsProps.onRemoveItem}
-            disabled={isRemoveDisabled}
+            disabled={buttonsProps.disabled || buttonsProps.readonly}
             uiSchema={buttonsProps.uiSchema}
             registry={buttonsProps.registry}
           >

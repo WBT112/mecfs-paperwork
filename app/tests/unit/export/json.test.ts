@@ -13,7 +13,7 @@ describe('buildJsonExportFilename', () => {
       formpack: { id: 'test-formpack', version: '1.1.0' },
       record: {
         id: 'record-abc-123',
-        name: String.raw`  My/Test\Record Name  `,
+        name: '  My/Test\\Record Name  ',
         updatedAt: TEST_TIMESTAMP,
         locale: 'en',
         data: {},

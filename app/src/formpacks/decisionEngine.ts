@@ -37,8 +37,6 @@ const resolveQ4 = (q4?: DecisionAnswers['q4']): DecisionResult | null => {
       return createResult(3, 'doctor-letter.case.3.paragraph');
     case 'Other infection':
       return createResult(9, 'doctor-letter.case.9.paragraph');
-    case undefined:
-      return null;
     default:
       return null;
   }
@@ -52,8 +50,6 @@ const resolveQ5 = (q5?: DecisionAnswers['q5']): DecisionResult | null => {
       return createResult(14, 'doctor-letter.case.14.paragraph');
     case 'Other cause':
       return createResult(10, 'doctor-letter.case.10.paragraph');
-    case undefined:
-      return null;
     default:
       return null;
   }
@@ -73,8 +69,6 @@ const resolveQ8 = (q8?: DecisionAnswers['q8']): DecisionResult | null => {
       return createResult(8, 'doctor-letter.case.8.paragraph');
     case 'Other cause':
       return createResult(13, 'doctor-letter.case.13.paragraph');
-    case undefined:
-      return null;
     default:
       return null;
   }
@@ -133,16 +127,12 @@ export const resolveDecisionTree = (
 ): DecisionResult => {
   if (answers.q1 === 'yes') {
     const result = resolveQ1True(answers);
-    if (result) {
-      return result;
-    }
+    if (result) return result;
   }
 
   if (answers.q1 === 'no') {
     const result = resolveQ1False(answers);
-    if (result) {
-      return result;
-    }
+    if (result) return result;
   }
 
   return createResult(0, CASE_0_KEY);
