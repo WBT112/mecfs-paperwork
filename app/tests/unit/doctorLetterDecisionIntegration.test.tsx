@@ -63,7 +63,7 @@ vi.mock('@rjsf/core', () => ({
           type="button"
           data-testid="trigger-q1-yes"
           onClick={() => {
-            const decision = formData.decision || {};
+            const decision = formData.decision ?? {};
             onChange({
               formData: {
                 ...formData,
@@ -81,7 +81,7 @@ vi.mock('@rjsf/core', () => ({
           type="button"
           data-testid="trigger-q2-no"
           onClick={() => {
-            const decision = formData.decision || {};
+            const decision = formData.decision ?? {};
             onChange({
               formData: {
                 ...formData,
@@ -182,7 +182,9 @@ vi.mock('../../src/storage/hooks', () => ({
 }));
 
 const mockT = vi.fn((key: string, options?: { defaultValue?: string }) => {
-  if (key === 'doctor-letter.case.11.paragraph') return 'Case 11 Paragraph';
+  if (key === 'doctor-letter.case.11.paragraph') {
+    return 'Case 11 Paragraph';
+  }
   return options?.defaultValue ?? key;
 });
 
