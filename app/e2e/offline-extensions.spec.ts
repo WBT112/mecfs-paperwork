@@ -141,7 +141,7 @@ test.describe('offline-first extensions', () => {
     const downloadPromise = page.waitForEvent('download');
     const exportButton = page
       .getByRole('button', {
-        name: /Entwurf exportieren \(JSON\)|Export record \(JSON\)/i,
+        name: /Entwurf exportieren \(JSON\)|Export draft \(JSON\)/i,
       })
       .first();
     await clickActionButton(exportButton, POLL_TIMEOUT);
