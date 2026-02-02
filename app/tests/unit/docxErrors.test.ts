@@ -41,24 +41,22 @@ describe('getDocxErrorKey', () => {
   });
 
   it('falls back to the generic error key and does not leak the error object', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const errorFn = vi.fn();
+    vi.stubGlobal('console', { ...console, error: errorFn });
     const sensitiveError = new Error('Sensitive data in error message');
     sensitiveError.name = 'UnknownError';
 
     expect(getDocxErrorKey(sensitiveError)).toBe('formpackDocxExportError');
 
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(errorFn).toHaveBeenCalledWith(
       'A DOCX export error occurred (type: UnknownError).',
     );
-    expect(consoleSpy).not.toHaveBeenCalledWith(
-      expect.anything(),
-      sensitiveError,
-    );
-    expect(consoleSpy).not.toHaveBeenCalledWith(
+    expect(errorFn).not.toHaveBeenCalledWith(expect.anything(), sensitiveError);
+    expect(errorFn).not.toHaveBeenCalledWith(
       expect.stringContaining('Sensitive data'),
     );
 
-    consoleSpy.mockRestore();
+    vi.unstubAllGlobals();
   });
 
   it('handles plain objects with a message property', () => {
@@ -67,19 +65,20 @@ describe('getDocxErrorKey', () => {
   });
 
   it('uses the generic error key for non-error values and does not leak them', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const errorFn = vi.fn();
+    vi.stubGlobal('console', { ...console, error: errorFn });
     const weirdError = { some: 'sensitive-data' };
 
     expect(getDocxErrorKey(weirdError)).toBe('formpackDocxExportError');
 
-    expect(consoleSpy).toHaveBeenCalledWith(
+    expect(errorFn).toHaveBeenCalledWith(
       'An unknown DOCX export error occurred.',
     );
-    expect(consoleSpy).not.toHaveBeenCalledWith(expect.anything(), weirdError);
-    expect(consoleSpy).not.toHaveBeenCalledWith(
+    expect(errorFn).not.toHaveBeenCalledWith(expect.anything(), weirdError);
+    expect(errorFn).not.toHaveBeenCalledWith(
       expect.stringContaining('sensitive-data'),
     );
 
-    consoleSpy.mockRestore();
+    vi.unstubAllGlobals();
   });
 });

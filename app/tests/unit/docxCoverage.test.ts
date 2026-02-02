@@ -56,14 +56,7 @@ import {
 
 const buildFetchMock = (handlers: Record<string, FetchHandler | undefined>) =>
   vi.fn().mockImplementation((input: RequestInfo | URL) => {
-    const url =
-      typeof input === 'string'
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : 'url' in input && typeof input.url === 'string'
-            ? input.url
-            : '';
+    const url = String(input);
     const handler = handlers[url];
     if (!handler) {
       return Promise.resolve({ ok: false, status: 404 });

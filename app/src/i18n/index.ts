@@ -29,6 +29,4 @@ try {
   // Ignore initialization failures to keep the UI responsive offline.
 }
 
-// RATIONALE: Initialization has side effects; export the configured singleton.
-// eslint-disable-next-line unicorn/prefer-export-from
 export default i18n;

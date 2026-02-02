@@ -95,7 +95,8 @@ describe('validateJsonImport', () => {
   });
 
   it('returns an error for invalid JSON and does not leak data to console', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const errorFn = vi.fn();
+    vi.stubGlobal('console', { ...console, error: errorFn });
     const invalidJson = '{ invalid: "secret-data" }';
 
     const result = validateJsonImport(
@@ -109,16 +110,16 @@ describe('validateJsonImport', () => {
 
     // Verify that the error object containing "secret-data" was not logged.
     // JSON.parse error usually includes a snippet of the input.
-    expect(consoleSpy).toHaveBeenCalledWith('JSON parsing failed.');
-    expect(consoleSpy).not.toHaveBeenCalledWith(
+    expect(errorFn).toHaveBeenCalledWith('JSON parsing failed.');
+    expect(errorFn).not.toHaveBeenCalledWith(
       expect.stringContaining('secret-data'),
     );
-    expect(consoleSpy).not.toHaveBeenCalledWith(
+    expect(errorFn).not.toHaveBeenCalledWith(
       expect.anything(),
       expect.anything(),
     );
 
-    consoleSpy.mockRestore();
+    vi.unstubAllGlobals();
   });
 
   it('returns an error for invalid app metadata', () => {

@@ -6,7 +6,7 @@ const DEFAULT_FILENAME = 'document-my-template-20231120.docx';
 describe('buildDocxExportFilename', () => {
   it('sanitizes special characters from formpack and template IDs', () => {
     const formpackId = 'formpack/123?';
-    const templateId = String.raw`template\456!`;
+    const templateId = 'template\\456!';
     const date = new Date('2024-01-01T12:00:00Z');
     const filename = buildDocxExportFilename(
       formpackId,

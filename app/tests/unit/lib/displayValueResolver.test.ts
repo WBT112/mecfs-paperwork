@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { RJSFSchema, UiSchema } from '@rjsf/utils';
+import type { UiSchema } from '@rjsf/utils';
+import type { RJSFSchema } from '@rjsf/utils';
 import { resolveDisplayValue } from '../../../src/lib/displayValueResolver';
 
 describe('resolveDisplayValue', () => {
@@ -234,12 +235,9 @@ describe('resolveDisplayValue', () => {
     it('boolean with translation returns string, not raw boolean', () => {
       const t = vi.fn(
         (key: string, options?: { ns?: string; defaultValue?: string }) => {
-          if (!options) {
-            return key;
-          }
-          if (key === 'notfallpass.export.field.paragraph') {
+          if (!options) return key;
+          if (key === 'notfallpass.export.field.paragraph')
             return 'Translated text';
-          }
           return options.defaultValue ?? key;
         },
       );

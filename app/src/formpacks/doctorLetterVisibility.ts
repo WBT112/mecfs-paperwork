@@ -128,27 +128,13 @@ export function clearHiddenFields(decision: DecisionData): DecisionData {
   const cleaned: DecisionData = { ...decision };
 
   // Clear fields that are not visible
-  if (!visibility.q2) {
-    delete cleaned.q2;
-  }
-  if (!visibility.q3) {
-    delete cleaned.q3;
-  }
-  if (!visibility.q4) {
-    delete cleaned.q4;
-  }
-  if (!visibility.q5) {
-    delete cleaned.q5;
-  }
-  if (!visibility.q6) {
-    delete cleaned.q6;
-  }
-  if (!visibility.q7) {
-    delete cleaned.q7;
-  }
-  if (!visibility.q8) {
-    delete cleaned.q8;
-  }
+  if (!visibility.q2) delete cleaned.q2;
+  if (!visibility.q3) delete cleaned.q3;
+  if (!visibility.q4) delete cleaned.q4;
+  if (!visibility.q5) delete cleaned.q5;
+  if (!visibility.q6) delete cleaned.q6;
+  if (!visibility.q7) delete cleaned.q7;
+  if (!visibility.q8) delete cleaned.q8;
 
   return cleaned;
 }

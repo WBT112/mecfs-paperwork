@@ -221,14 +221,7 @@ type FetchHandler =
 
 const buildFetchMock = (handlers: Record<string, FetchHandler | undefined>) =>
   vi.fn().mockImplementation((input: RequestInfo | URL) => {
-    const url =
-      typeof input === 'string'
-        ? input
-        : input instanceof URL
-          ? input.toString()
-          : 'url' in input && typeof input.url === 'string'
-            ? input.url
-            : '';
+    const url = String(input);
     const handler = handlers[url];
     if (!handler) {
       return Promise.resolve({ ok: false, status: 404 });
@@ -243,21 +236,21 @@ const buildFetchMock = (handlers: Record<string, FetchHandler | undefined>) =>
     });
   });
 
-const manifestFor = (id: string): FormpackManifestPayload => ({
-  id,
-  version: '1.0.0',
-  titleKey: 'title',
-  descriptionKey: 'description',
-  locales: ['en'],
-  defaultLocale: 'en',
-  exports: ['json'],
-});
-
 describe('formpack loader fetches', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
     clearFormpackCaches();
+  });
+
+  const manifestFor = (id: string): FormpackManifestPayload => ({
+    id,
+    version: '1.0.0',
+    titleKey: 'title',
+    descriptionKey: 'description',
+    locales: ['en'],
+    defaultLocale: 'en',
+    exports: ['json'],
   });
 
   it('loads a manifest successfully', async () => {
