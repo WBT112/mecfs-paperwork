@@ -114,7 +114,7 @@ for (const locale of locales) {
       const downloadPromise = page.waitForEvent('download');
       const exportButton = page
         .getByRole('button', {
-          name: /Entwurf exportieren \(JSON\)|Export record \(JSON\)/i,
+          name: /Entwurf exportieren \(JSON\)|Export draft \(JSON\)/i,
         })
         .first();
       await expect(exportButton).toBeEnabled();

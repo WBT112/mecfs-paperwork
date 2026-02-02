@@ -63,7 +63,7 @@ test('json export followed by docx export re-enables actions', async ({
 
   const jsonExportButton = page
     .getByRole('button', {
-      name: /Entwurf exportieren \(JSON\)|Export record \(JSON\)/i,
+      name: /Entwurf exportieren \(JSON\)|Export draft \(JSON\)/i,
     })
     .first();
   const jsonDownloadPromise = page.waitForEvent('download');
