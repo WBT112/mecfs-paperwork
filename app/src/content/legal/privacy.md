@@ -1,8 +1,8 @@
 # Datenschutzerklärung (Deutschland)
 
-_Stand: 19. Januar 2026_
+_Stand: 2. Februar 2026_
 
-Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeitung personenbezogener Daten beim Aufruf und bei der Nutzung der Webanwendung **mecfs-paperwork**.
+Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeitung personenbezogener Daten beim Aufruf und bei der Nutzung der Webanwendung **mecfs-paperwork**. Sie gilt für die öffentlich bereitgestellte Instanz unter **mecfs-paperwork.de**. Wenn du die Software selbst hostest, bist du für die datenschutzrechtliche Einordnung und die Einhaltung der Pflichten verantwortlich.
 
 > **Wichtiger Hinweis:** Inhalte, die du in der Anwendung eingibst, werden standardmäßig **nur lokal in deinem Browser** gespeichert (z. B. im IndexedDB-/LocalStorage-Speicher) und **nicht an den Betreiber übertragen**.
 
@@ -25,6 +25,7 @@ E-Mail: info **(at)** mecfs-paperwork.de
 - **Kein Backend:** Der Betrieb erfolgt als statische Webanwendung (SPA) auf einem NGINX-Webserver.
 - **Keine Telemetrie/Analytics:** Es werden keine Tracking- oder Analyse-Dienste eingebunden.
 - **Keine Cookies durch die Anwendung:** Die Anwendung setzt keine Cookies zu Tracking- oder Marketingzwecken.
+- **Offline-first/PWA:** Die Anwendung kann statische Inhalte für den Offline-Betrieb lokal zwischenspeichern (Cache Storage / Service Worker). Es werden dabei keine Inhalte an den Betreiber übertragen.
 
 ## 3. Hosting und Server-Logfiles
 
@@ -51,7 +52,11 @@ Der Hosting-Anbieter verarbeitet personenbezogene Daten (insbesondere Server-Log
 
 Die Verarbeitung von Server-Logfiles erfolgt auf Grundlage von **Art. 6 Abs. 1 lit. f DSGVO** (berechtigtes Interesse an der sicheren und störungsfreien Bereitstellung der Website).
 
-### 3.4 Speicherdauer / Log-Rotation / IP-Pseudonymisierung
+### 3.4 Erforderlichkeit der Logfiles
+
+Die Bereitstellung der Website ist ohne die Verarbeitung der technisch notwendigen Verbindungsdaten (Logfiles) nicht möglich.
+
+### 3.5 Speicherdauer / Log-Rotation / IP-Pseudonymisierung
 
 Server-Logfiles werden vom Hosting-Anbieter nur so lange gespeichert, wie es für Betrieb und IT-Sicherheit erforderlich ist.
 
@@ -61,12 +66,12 @@ Zur Datenminimierung und Pseudonymisierung werden u. a. folgende Maßnahmen besc
 - Logdateien mit **unverfälschten** IP-Adressen werden automatisiert **rotiert**.
 - Bei länger gespeicherten IP-Adressen (z. B. für Statistikzwecke) erfolgt eine **Unkenntlichmachung** (Maskierung) eines Oktetts (IPv4) bzw. eines Hextetts (IPv6), sodass keine eindeutige Zuordnung zu einer Person mehr möglich ist.
 
-### 3.5 Verarbeitung innerhalb EU/EWR und Drittlandtransfers
+### 3.6 Verarbeitung innerhalb EU/EWR und Drittlandtransfers
 
 Die vertraglich vereinbarten Leistungen werden **ausschließlich in der EU bzw. im EWR** erbracht.  
 Eine Verlagerung der Dienstleistung oder von Teilarbeiten in ein **Drittland** erfolgt nur auf dokumentierte Weisung und nur, wenn die Voraussetzungen der **Art. 44 ff. DSGVO** erfüllt sind.
 
-### 3.6 Unterauftragsverarbeiter (Subunternehmer)
+### 3.7 Unterauftragsverarbeiter (Subunternehmer)
 
 Der Hosting-Anbieter setzt für bestimmte Leistungen (z. B. Server-/Netzwerkverwaltung, Support, IT-Beratung, Domainregistrierung) **Unterauftragsverarbeiter** ein. Im AV-Vertrag werden derzeit u. a. genannt:
 
@@ -76,7 +81,7 @@ Der Hosting-Anbieter setzt für bestimmte Leistungen (z. B. Server-/Netzwerkverw
 
 Änderungen (Hinzuziehung/Ersetzung) von Unterauftragnehmern werden vorab angekündigt; es besteht eine Widerspruchsmöglichkeit aus sachlichem Grund.
 
-### 3.7 Technische und organisatorische Maßnahmen (TOM)
+### 3.8 Technische und organisatorische Maßnahmen (TOM)
 
 Der Hosting-Anbieter setzt technische und organisatorische Maßnahmen nach **Art. 32 DSGVO** ein. Dazu zählen zusammengefasst u. a.:
 
@@ -89,7 +94,7 @@ Der Hosting-Anbieter setzt technische und organisatorische Maßnahmen nach **Art
 
 Weitere Details können im Vertrag über die Auftragsverarbeitung (inkl. Anlagen) eingesehen werden.
 
-### 3.8 Datenschutzbeauftragter des Hosting-Anbieters
+### 3.9 Datenschutzbeauftragter des Hosting-Anbieters
 
 Kontakt laut AV-Vertrag:  
 **1blu GmbH – Datenschutzbeauftragter**, Riedemannweg 60, 13627 Berlin, Deutschland
@@ -102,12 +107,12 @@ Kontakt laut AV-Vertrag:
 
 Die Anwendung unterstützt dich beim Ausfüllen von Anträgen/Formularen. Die von dir eingegebenen Inhalte (Formulardaten) können personenbezogene Daten enthalten und – je nach Nutzung – auch **Gesundheitsdaten**. Diese Inhalte werden:
 
-- **nur lokal in deinem Browser gespeichert** (IndexedDB)
+- **nur lokal in deinem Browser gespeichert** (z. B. IndexedDB)
 - optional als **lokale Snapshots/Versionen** auf deinem Gerät abgelegt,
 - **nicht** an den Betreiber übertragen,
 - **nicht** an Dritte übermittelt.
 
-Zusätzlich speichert die Anwendung technische Präferenzen lokal (z. B. die zuletzte gewählte Spracheinstellung oder Darkmode).
+Zusätzlich speichert die Anwendung technische Präferenzen lokal (z. B. die zuletzt gewählte Spracheinstellung oder Darkmode) und kann statische Dateien für den Offline-Betrieb im **Cache Storage** ablegen.
 
 ### 4.2 Rechtsgrundlage
 
@@ -115,7 +120,7 @@ Die lokale Verarbeitung erfolgt zur Bereitstellung der von dir angeforderten Fun
 
 ### 4.3 Speicherdauer und Löschung
 
-Die lokal gespeicherten Daten verbleiben in deinem Browser, bis du sie löschst (z. B. durch Browser-Funktion „Website-Daten löschen“ oder über künftige Löschfunktionen der App).
+Die lokal gespeicherten Daten verbleiben in deinem Browser, bis du sie löschst (z. B. durch die Browser-Funktion „Website-Daten löschen“ oder über Löschfunktionen in der App, sofern vorhanden).
 
 ---
 
@@ -141,13 +146,24 @@ Wenn die Anwendung eine Feedback-Funktion per `mailto:` anbietet, öffnet sie de
 
 ---
 
-## 7. Externe Links (z. B. GitHub, Sponsoring)
+## 7. Empfänger / Kategorien von Empfängern
+
+Eine Weitergabe personenbezogener Daten erfolgt nur in dem hier beschriebenen Umfang:
+
+- **Hosting-Anbieter** (inkl. Unterauftragsverarbeiter gemäß Abschnitt 3).
+- **E-Mail-Anbieter** (dein Anbieter beim Versand, der Anbieter des Empfängers beim Empfang), sofern du eine E-Mail tatsächlich absendest.
+
+Darüber hinaus erfolgt **keine** Weitergabe zu Marketing‑, Tracking‑ oder Analysezwecken.
+
+---
+
+## 8. Externe Links (z. B. GitHub, Sponsoring)
 
 Die Anwendung kann Links zu externen Seiten enthalten (z. B. Repository auf GitHub oder Sponsoring-Seiten). Beim Anklicken verlässt du diese Anwendung; es gelten dann die Datenschutzbestimmungen des jeweiligen Anbieters.
 
 ---
 
-## 8. Cookies, Tracking und Drittinhalte
+## 9. Cookies, Tracking und Drittinhalte
 
 - Es werden **keine Tracking-Cookies** gesetzt.
 - Es werden **keine Analyse- oder Telemetrie-Dienste** eingebunden.
@@ -155,7 +171,7 @@ Die Anwendung kann Links zu externen Seiten enthalten (z. B. Repository auf GitH
 
 ---
 
-## 9. Deine Rechte
+## 10. Deine Rechte
 
 Du hast – soweit personenbezogene Daten durch den Betreiber verarbeitet werden (z. B. Server-Logfiles, E-Mail) – insbesondere folgende Rechte:
 
@@ -169,12 +185,18 @@ Du hast – soweit personenbezogene Daten durch den Betreiber verarbeitet werden
 
 ---
 
-## 10. Datensicherheit
+## 11. Keine automatisierte Entscheidungsfindung / Profiling
+
+Es findet **keine** automatisierte Entscheidungsfindung oder Profiling im Sinne von Art. 22 DSGVO statt.
+
+---
+
+## 12. Datensicherheit
 
 Ich setze technische und organisatorische Maßnahmen ein, um die Anwendung und den Betrieb zu sichern (z. B. aktuelle Server-Software, Transportverschlüsselung per HTTPS, restriktive Security-Header im NGINX-Setup). Bitte beachte, dass die Datensicherheit auch von deinem Endgerät, Browser und deiner eigenen Handhabung (insbesondere bei Exporten) abhängt.
 
 ---
 
-## 11. Änderungen dieser Datenschutzerklärung
+## 13. Änderungen dieser Datenschutzerklärung
 
 Diese Datenschutzerklärung kann angepasst werden, wenn sich Funktionen oder der Betrieb ändern (z. B. neue Exportformate, zusätzliche UI-Funktionen, Hosting-Wechsel). Das Datum oben wird dann aktualisiert.
