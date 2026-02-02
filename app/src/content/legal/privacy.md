@@ -126,7 +126,7 @@ Die lokal gespeicherten Daten verbleiben in deinem Browser, bis du sie löschst 
 
 ## 5. Import/Export (JSON/DOCX)
 
-Die Anwendung kann Inhalte in Dateien exportieren (z. B. JSON oder DOCX). Die Datei-Erstellung erfolgt **client-seitig** in deinem Browser. Der Betreiber erhält dabei keine Kopie.
+Die Anwendung kann Inhalte in Dateien exportieren (z. B. JSON oder DOCX). Die Datei-Erstellung erfolgt **client-seitig** in deinem Browser. Der Betreiber erhält dabei **keine** Kopie.
 
 **Hinweis:** Wenn du exportierte Dateien weitergibst oder in Cloud-Speichern ablegst, liegt die weitere Verarbeitung in deiner Verantwortung.
 
