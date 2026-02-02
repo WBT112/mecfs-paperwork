@@ -5,6 +5,12 @@ services:
     expose:
       - "8080"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
     init: true
     read_only: true
     tmpfs:
@@ -28,7 +34,8 @@ services:
   caddy:
     image: caddy:2-alpine
     depends_on:
-      - web
+      web:
+        condition: service_healthy
     ports:
       - "80:80"
       - "443:443"
