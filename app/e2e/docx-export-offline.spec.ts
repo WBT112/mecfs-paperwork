@@ -37,9 +37,7 @@ const waitForDocxExportReady = async (page: Page) => {
   const docxSection = page.locator('.formpack-docx-export');
   await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
 
-  const exportButton = docxSection.getByRole('button', {
-    name: /export docx|docx exportieren/i,
-  });
+  const exportButton = docxSection.locator('[data-action="docx-export"]');
   await expect(exportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
   return { docxSection, exportButton };
 };
@@ -78,9 +76,7 @@ test('docx template select and export button align in height', async ({
   await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
 
   const templateSelect = docxSection.locator('.formpack-docx-export__select');
-  const exportButton = docxSection.getByRole('button', {
-    name: /export docx|docx exportieren/i,
-  });
+  const exportButton = docxSection.locator('[data-action="docx-export"]');
 
   await expect(templateSelect).toBeVisible({ timeout: POLL_TIMEOUT });
   await expect(exportButton).toBeVisible({ timeout: POLL_TIMEOUT });
