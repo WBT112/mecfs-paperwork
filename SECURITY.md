@@ -26,7 +26,7 @@ Please report security issues **via GitHub**:
    - Keep the report **high-level** and **do not include exploit-ready details** in public.
    - If sensitive details are needed, write in the issue that you request a **private follow-up channel** with the repository owner.
 
-2. If this repository has the **“Report a vulnerability”** button enabled (GitHub Security Advisories), you may use it for **private reporting**.
+2. This repository has the **“Report a vulnerability”** button enabled (GitHub Security Advisories), you may use it for **private reporting**.
 
 If you are unsure whether something is security-relevant, open an issue with **[SECURITY]** anyway.
 
