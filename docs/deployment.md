@@ -217,6 +217,7 @@ The Dockerfile accepts the following build arguments:
 - `VITE_PUBLIC_ORIGIN` (default: empty)
   - Absolute public origin used for Open Graph/Twitter preview URLs
   - Example: `https://mecfs-paperwork.de`, `https://staging.mecfs-paperwork.de`
+  - Note: `.env.*` files are excluded from the Docker build context, so Docker builds must pass this as a build arg.
 
 ### Local Testing
 
@@ -228,6 +229,7 @@ docker build \
   --build-arg VITE_MODE=staging \
   --build-arg VITE_SHOW_DEV_FORMPACKS=true \
   --build-arg VITE_DEPLOYMENT_ENV=staging \
+  --build-arg VITE_PUBLIC_ORIGIN=https://staging.mecfs-paperwork.de \
   -t mecfs-paperwork:staging-local \
   .
 

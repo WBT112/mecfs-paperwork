@@ -67,12 +67,14 @@ jobs:
             echo "vite_mode=production" >> $GITHUB_OUTPUT
             echo "show_dev_formpacks=" >> $GITHUB_OUTPUT
             echo "deployment_env=production" >> $GITHUB_OUTPUT
+            echo "public_origin=https://mecfs-paperwork.de" >> $GITHUB_OUTPUT
             echo "tag_env=prod" >> $GITHUB_OUTPUT
           elif [ "$base_ref" = "staging" ]; then
             echo "environment=staging" >> $GITHUB_OUTPUT
             echo "vite_mode=staging" >> $GITHUB_OUTPUT
             echo "show_dev_formpacks=true" >> $GITHUB_OUTPUT
             echo "deployment_env=staging" >> $GITHUB_OUTPUT
+            echo "public_origin=https://staging.mecfs-paperwork.de" >> $GITHUB_OUTPUT
             echo "tag_env=staging" >> $GITHUB_OUTPUT
           else
             echo "Unknown branch"
@@ -95,6 +97,7 @@ jobs:
             VITE_MODE=${{ steps.config.outputs.vite_mode }}
             VITE_SHOW_DEV_FORMPACKS=${{ steps.config.outputs.show_dev_formpacks }}
             VITE_DEPLOYMENT_ENV=${{ steps.config.outputs.deployment_env }}
+            VITE_PUBLIC_ORIGIN=${{ steps.config.outputs.public_origin }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
