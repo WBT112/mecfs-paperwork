@@ -106,7 +106,7 @@ Note: For automated deployments, the CI/CD pipeline passes Docker Hub credential
 
 You can trigger a deployment from the GitHub Actions UI:
 
-1. Open **Actions → Deploy to Docker Hub**.
+1. Open **Actions → Build & Deploy (Docker Hub + Server)**.
 2. Click **Run workflow**.
 3. Choose **environment**: `staging` or `prod`.
 4. Optional: set **ref** to a branch name or commit SHA to build.
