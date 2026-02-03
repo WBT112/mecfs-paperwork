@@ -106,7 +106,7 @@ For script options and advanced usage, see `tools/README.md`.
 
 Formpacks live at the repo root under `formpacks/<id>/...`.
 
-### Create a new formpack
+### Create a new formpack/form
 
 ```bash
 cd app
