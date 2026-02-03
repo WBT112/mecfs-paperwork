@@ -18,7 +18,7 @@ import type {
   FormpackManifest,
 } from '../formpacks/types';
 import { getRecord } from '../storage/records';
-import { isRecord } from '../lib/utils';
+import { isRecord, getFirstItem } from '../lib/utils';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { buildI18nContext } from './buildI18nContext';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
@@ -634,16 +634,6 @@ const pickChildSchema = (
   return schemaProps[segment];
 };
 
-const pickArrayItemSchema = (schemaNode: RJSFSchema): RJSFSchema | null => {
-  if (!schemaNode.items) {
-    return null;
-  }
-  const items = Array.isArray(schemaNode.items)
-    ? schemaNode.items[0]
-    : schemaNode.items;
-  return isRecord(items) ? (items as RJSFSchema) : null;
-};
-
 const getSchemaNodeForPath = (
   schema: RJSFSchema | null | undefined,
   path: string,
@@ -663,7 +653,7 @@ const getSchemaNodeForPath = (
       continue;
     }
 
-    const itemSchema = pickArrayItemSchema(current);
+    const itemSchema = getArrayItemSchema(current);
     if (!itemSchema) {
       return undefined;
     }
@@ -712,27 +702,14 @@ const getUiSchemaNodeForPath = (
 const getArrayItemSchema = (
   schemaNode: RJSFSchema | undefined,
 ): RJSFSchema | undefined => {
-  if (!schemaNode?.items) {
-    return undefined;
-  }
-  if (Array.isArray(schemaNode.items)) {
-    return schemaNode.items[0] as RJSFSchema | undefined;
-  }
-  return isRecord(schemaNode.items)
-    ? (schemaNode.items as RJSFSchema)
-    : undefined;
+  const items = getFirstItem(schemaNode?.items) as unknown;
+  return isRecord(items) ? (items as RJSFSchema) : undefined;
 };
 
 const getArrayItemUiSchema = (
   uiNode: UiSchema | undefined,
 ): UiSchema | undefined => {
-  if (!isRecord(uiNode)) {
-    return undefined;
-  }
-  const items = uiNode.items;
-  if (Array.isArray(items)) {
-    return isRecord(items[0]) ? (items[0] as UiSchema) : undefined;
-  }
+  const items = getFirstItem(uiNode?.items) as unknown;
   return isRecord(items) ? (items as UiSchema) : undefined;
 };
 
