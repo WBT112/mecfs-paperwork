@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "predev": "node scripts/sync-formpacks.mjs && node scripts/sync-funding.mjs",
-    "prebuild": "node scripts/sync-formpacks.mjs && node scripts/sync-funding.mjs",
+    "prebuild": "node scripts/sync-formpacks.mjs && node scripts/sync-funding.mjs && npm run brand:generate",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "build:prod": "tsc -b && vite build --mode production",

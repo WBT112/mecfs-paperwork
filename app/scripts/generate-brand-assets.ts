@@ -152,9 +152,12 @@ const generateAssets = async () => {
   await ensureOutputs();
 };
 
-const isCheckOnly = process.argv.includes('--check');
+type RunOptions = {
+  checkOnly?: boolean;
+};
 
-const run = async () => {
+export const run = async (options: RunOptions = {}) => {
+  const isCheckOnly = options.checkOnly ?? process.argv.includes('--check');
   if (isCheckOnly) {
     await ensureOutputs();
     return;
@@ -163,8 +166,13 @@ const run = async () => {
   await generateAssets();
 };
 
-run().catch((error) => {
-  const message = error instanceof Error ? error.message : String(error);
-  console.error(`Brand asset generation failed: ${message}`);
-  process.exit(1);
-});
+if (
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  run().catch((error) => {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`Brand asset generation failed: ${message}`);
+    process.exit(1);
+  });
+}

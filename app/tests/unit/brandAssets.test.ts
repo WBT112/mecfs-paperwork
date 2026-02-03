@@ -1,4 +1,3 @@
-import { spawn } from 'node:child_process';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,13 +11,6 @@ type FileSpec = {
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const appRoot = path.resolve(testDir, '../..');
 const publicDir = path.join(appRoot, 'public');
-const tsxBin = path.join(
-  appRoot,
-  'node_modules',
-  '.bin',
-  process.platform === 'win32' ? 'tsx.cmd' : 'tsx',
-);
-
 const requiredAssets: FileSpec[] = [
   { filename: 'favicon.ico', label: 'favicon ico' },
   { filename: 'favicon-16x16.png', label: 'favicon 16' },
@@ -32,21 +24,8 @@ const requiredAssets: FileSpec[] = [
 
 describe('brand assets', () => {
   beforeAll(async () => {
-    await new Promise<void>((resolve, reject) => {
-      const child = spawn(tsxBin, ['scripts/generate-brand-assets.ts'], {
-        cwd: appRoot,
-        stdio: 'inherit',
-      });
-
-      child.on('error', reject);
-      child.on('close', (code) => {
-        if (code === 0) {
-          resolve();
-          return;
-        }
-        reject(new Error(`brand asset generation failed with code ${code}`));
-      });
-    });
+    const { run } = await import('../../scripts/generate-brand-assets');
+    await run();
   });
 
   it('keeps the index metadata aligned with generated assets', async () => {
