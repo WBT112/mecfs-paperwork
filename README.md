@@ -145,8 +145,6 @@ Stop/cleanup:
 docker compose down
 ```
 
-Note: The healthcheck uses `nginx -t` because the runtime image does not include HTTP clients.
-
 ### Docker build/run (direct)
 
 ```bash
