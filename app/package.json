@@ -28,8 +28,8 @@
     "test:unit": "vitest --run",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage",
-    "brand:generate": "tsx scripts/generate-brand-assets.ts",
-    "brand:check": "tsx scripts/generate-brand-assets.ts --check",
+    "brand:generate": "node --import tsx/esm scripts/generate-brand-assets.ts",
+    "brand:check": "node --import tsx/esm scripts/generate-brand-assets.ts --check",
     "prepare": "husky",
     "precommit": "lint-staged"
   },

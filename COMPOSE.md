@@ -10,8 +10,15 @@ This bundle contains:
 
 Server runtime command (manual):
   docker login docker.io   # only if needed
-  docker compose -f compose.deploy.yaml pull
-  docker compose -f compose.deploy.yaml up -d
+  COMPOSE_PROJECT_NAME=mecfs-paperwork docker compose -f compose.deploy.yaml pull
+  COMPOSE_PROJECT_NAME=mecfs-paperwork docker compose -f compose.deploy.yaml up -d
+
+Notes:
+- The deploy stack pins its network name to `mecfs-paperwork_web`. Keep a single Compose project
+  name so Caddy and the app stay on the same network (avoids 502s).
+- The NGINX base image writes its PID to `/run/nginx/nginx.pid`. The compose files mount
+  `/run/nginx` as tmpfs so it remains writable with `read_only: true`. If you change tmpfs
+  settings, recreate the containers.
 
 Local/CI command:
   docker compose -f compose.yaml up -d --build

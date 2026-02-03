@@ -6,7 +6,7 @@ This document explains how the production and staging environments are deployed 
 
 The mecfs-paperwork application has two deployment environments:
 
-- **Production**: `mecfs-paperwork.de` (and `www.mecfs-paperwork.de`)
+- **Production**: `mecfs-paperwork.de` (canonical), `www.mecfs-paperwork.de` redirects to the apex domain
 - **Staging**: `staging.mecfs-paperwork.de`
 
 Both environments run on the same server using Docker Compose with separate containers for each environment.
@@ -25,11 +25,13 @@ The repository ships multiple compose files for different contexts:
 ## Environment Differences
 
 ### Production (`main` branch)
-- **Domain**: `mecfs-paperwork.de`, `www.mecfs-paperwork.de`
+- **Domain**: `mecfs-paperwork.de` (canonical)
+- **Redirect**: `www.mecfs-paperwork.de` → `https://mecfs-paperwork.de{uri}`
 - **Docker Image**: `wbt112/mecfs-paperwork:prod`
 - **Build Mode**: `production`
 - **Dev Formpacks**: Hidden (`VITE_SHOW_DEV_FORMPACKS` not set)
 - **Environment Marker**: None (production default)
+- **Social Preview Origin**: `VITE_PUBLIC_ORIGIN=https://mecfs-paperwork.de`
 
 ### Staging (`staging` branch)
 - **Domain**: `staging.mecfs-paperwork.de`
@@ -201,6 +203,9 @@ The Dockerfile accepts the following build arguments:
   - Marks which environment the build is for
   - Values: `production`, `staging`
   - Staging shows a visible "STAGING" banner
+- `VITE_PUBLIC_ORIGIN` (default: empty)
+  - Absolute public origin used for Open Graph/Twitter preview URLs
+  - Example: `https://mecfs-paperwork.de`, `https://staging.mecfs-paperwork.de`
 
 ### Local Testing
 
