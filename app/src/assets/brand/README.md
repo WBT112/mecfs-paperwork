@@ -14,7 +14,12 @@ From `app/` run:
 npm run brand:generate
 ```
 
-Outputs are written to `app/public/` and should be committed to the repository.
+Outputs are written to `app/public/`.
+
+Builds run `npm run brand:generate` automatically via `prebuild`, so production
+builds and Docker images always contain the generated icons even though
+`app/public/*.png` and `app/public/*.ico` are ignored in Git.
+If you need the icons locally (e.g. for tests), run the command above.
 
 ## Safe area guidance
 
