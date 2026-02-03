@@ -10,6 +10,19 @@ on:
     branches:
       - main
       - staging
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment target"
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
+      ref:
+        description: "Optional git ref (branch or SHA) to build"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -19,6 +32,7 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     if: >-
+      (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'staging'))
     
@@ -26,7 +40,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+          ref: ${{ inputs.ref || github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -40,13 +54,15 @@ jobs:
       - name: Determine build configuration
         id: config
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            base_ref="${{ inputs.environment }}"
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
             base_ref="${{ github.event.pull_request.base.ref }}"
           else
             base_ref="${GITHUB_REF#refs/heads/}"
           fi
 
-          if [ "$base_ref" = "main" ]; then
+          if [ "$base_ref" = "main" ] || [ "$base_ref" = "prod" ]; then
             echo "environment=prod" >> $GITHUB_OUTPUT
             echo "vite_mode=production" >> $GITHUB_OUTPUT
             echo "show_dev_formpacks=" >> $GITHUB_OUTPUT
@@ -90,6 +106,7 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: >-
+      (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'staging'))
     
@@ -97,7 +114,7 @@ jobs:
       - name: Checkout code (for compose file)
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
+          ref: ${{ inputs.ref || github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Deploy to server via SSH
         env:
