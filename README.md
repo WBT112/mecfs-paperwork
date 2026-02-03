@@ -106,7 +106,7 @@ For script options and advanced usage, see `tools/README.md`.
 
 Formpacks live at the repo root under `formpacks/<id>/...`.
 
-### Create a new formpack
+### Create a new formpack/form
 
 ```bash
 cd app
@@ -144,8 +144,6 @@ Stop/cleanup:
 ```bash
 docker compose down
 ```
-
-Note: The healthcheck uses `nginx -t` because the runtime image does not include HTTP clients.
 
 ### Docker build/run (direct)
 
