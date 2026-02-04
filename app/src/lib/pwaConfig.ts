@@ -65,7 +65,9 @@ export const createPwaConfig = (
 ): Partial<VitePWAOptions> => {
   const isDev = options.isDev ?? false;
   const enableDevSw = options.enableDevSw ?? false;
-  const globPatterns = isDev ? DEV_PRECACHE_GLOB_PATTERNS : PRECACHE_GLOB_PATTERNS;
+  const globPatterns = isDev
+    ? DEV_PRECACHE_GLOB_PATTERNS
+    : PRECACHE_GLOB_PATTERNS;
 
   return {
     registerType: 'autoUpdate',

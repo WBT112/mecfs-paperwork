@@ -7,6 +7,9 @@ import {
   createPwaConfig,
 } from '../../src/lib/pwaConfig';
 
+const FORMPACK_MANIFEST_URL =
+  'https://example.test/formpacks/doctor-letter/manifest.json';
+
 describe('createPwaConfig', () => {
   it('includes formpacks and docx assets in precache settings', () => {
     const config = createPwaConfig();
@@ -48,5 +51,34 @@ describe('createPwaConfig', () => {
   it('keeps dev service worker disabled by default', () => {
     const config = createPwaConfig({ isDev: true });
     expect(config.devOptions?.enabled).toBe(false);
+  });
+
+  it('uses stale-while-revalidate for formpack GET requests', () => {
+    const formpackRule = RUNTIME_CACHING.find(
+      (entry) =>
+        entry.handler === 'StaleWhileRevalidate' &&
+        typeof entry.urlPattern === 'function' &&
+        entry.urlPattern({
+          request: new Request(FORMPACK_MANIFEST_URL),
+          url: new URL(FORMPACK_MANIFEST_URL),
+        }),
+    );
+
+    expect(formpackRule).toBeDefined();
+    if (!formpackRule) {
+      throw new Error('Expected formpack runtime caching rule.');
+    }
+    expect(formpackRule.handler).toBe('StaleWhileRevalidate');
+    expect(formpackRule.options.cacheName).toBe('app-formpacks');
+
+    const matchesPostRequest =
+      typeof formpackRule.urlPattern === 'function' &&
+      formpackRule.urlPattern({
+        request: new Request(FORMPACK_MANIFEST_URL, {
+          method: 'POST',
+        }),
+        url: new URL(FORMPACK_MANIFEST_URL),
+      });
+    expect(matchesPostRequest).toBe(false);
   });
 });
