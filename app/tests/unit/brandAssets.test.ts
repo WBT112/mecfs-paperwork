@@ -18,7 +18,7 @@ const requiredAssets: FileSpec[] = [
   { filename: 'apple-touch-icon.png', label: 'apple touch icon' },
   { filename: 'android-chrome-192x192.png', label: 'android chrome 192' },
   { filename: 'android-chrome-512x512.png', label: 'android chrome 512' },
-  { filename: 'social-share-1200x630.png', label: 'social share' },
+  { filename: 'social-share-1200x630.jpg', label: 'social share' },
   { filename: 'site.webmanifest', label: 'web manifest' },
 ];
 
@@ -51,5 +51,12 @@ describe('brand assets', () => {
         ).toBeGreaterThan(0);
       }),
     );
+  });
+
+  it('keeps social share image below whatsapp size limit', async () => {
+    const socialImage = await stat(
+      path.join(publicDir, 'social-share-1200x630.jpg'),
+    );
+    expect(socialImage.size).toBeLessThanOrEqual(600 * 1024);
   });
 });

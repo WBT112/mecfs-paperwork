@@ -1,4 +1,5 @@
 import { Resvg } from '@resvg/resvg-js';
+import jpeg from 'jpeg-js';
 import pngToIco from 'png-to-ico';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -26,7 +27,7 @@ const outputFiles: OutputFile[] = [
   { filename: 'apple-touch-icon.png', label: 'apple touch icon' },
   { filename: 'android-chrome-192x192.png', label: 'android chrome 192' },
   { filename: 'android-chrome-512x512.png', label: 'android chrome 512' },
-  { filename: 'social-share-1200x630.png', label: 'social share' },
+  { filename: 'social-share-1200x630.jpg', label: 'social share' },
   { filename: 'site.webmanifest', label: 'web manifest' },
 ];
 
@@ -47,6 +48,28 @@ const renderPngBuffer = (svgContent: string, width: number): Buffer => {
   });
   const pngData = resvg.render();
   return Buffer.from(pngData.asPng());
+};
+
+const renderJpegBuffer = (
+  svgContent: string,
+  width: number,
+  quality = 80,
+): Buffer => {
+  const resvg = new Resvg(svgContent, {
+    fitTo: { mode: 'width', value: width },
+    font: { loadSystemFonts: false },
+    background: 'white',
+  });
+  const renderedImage = resvg.render();
+  const encoded = jpeg.encode(
+    {
+      data: renderedImage.pixels,
+      width: renderedImage.width,
+      height: renderedImage.height,
+    },
+    quality,
+  );
+  return Buffer.from(encoded.data);
 };
 
 const readSvg = async (filePath: string): Promise<string> => {
@@ -144,8 +167,8 @@ const generateAssets = async () => {
   const icoBuffer = await pngToIco(icoBuffers);
   await writeOutput('favicon.ico', icoBuffer);
 
-  const socialBuffer = renderPngBuffer(wideSvg, 1200);
-  await writeOutput('social-share-1200x630.png', socialBuffer);
+  const socialBuffer = renderJpegBuffer(wideSvg, 1200);
+  await writeOutput('social-share-1200x630.jpg', socialBuffer);
 
   await writeOutput('site.webmanifest', `${buildManifest()}\n`);
 

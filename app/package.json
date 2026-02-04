@@ -81,6 +81,7 @@
     "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "jszip": "^3.10.1",
+    "jpeg-js": "^0.4.4",
     "lint-staged": "^16.2.7",
     "png-to-ico": "^2.1.8",
     "prettier": "^3.3.3",
