@@ -9,6 +9,7 @@ import {
 
 const FORMPACK_MANIFEST_URL =
   'https://example.test/formpacks/doctor-letter/manifest.json';
+const WORKBOX_REQUIRED_ERROR = 'Expected Workbox settings to be defined.';
 
 describe('createPwaConfig', () => {
   it('includes formpacks and docx assets in precache settings', () => {
@@ -16,7 +17,7 @@ describe('createPwaConfig', () => {
     const workbox = config.workbox;
     expect(workbox).toBeDefined();
     if (!workbox) {
-      throw new Error('Expected Workbox settings to be defined.');
+      throw new Error(WORKBOX_REQUIRED_ERROR);
     }
     const patterns = workbox.globPatterns ?? [];
 
@@ -42,7 +43,7 @@ describe('createPwaConfig', () => {
     const workbox = config.workbox;
     expect(workbox).toBeDefined();
     if (!workbox) {
-      throw new Error('Expected Workbox settings to be defined.');
+      throw new Error(WORKBOX_REQUIRED_ERROR);
     }
 
     expect(workbox.globPatterns).toEqual(DEV_PRECACHE_GLOB_PATTERNS);
@@ -80,5 +81,32 @@ describe('createPwaConfig', () => {
         url: new URL(FORMPACK_MANIFEST_URL),
       });
     expect(matchesPostRequest).toBe(false);
+  });
+
+  it('keeps update-friendly service worker behavior', () => {
+    const config = createPwaConfig();
+    expect(config.registerType).toBe('autoUpdate');
+
+    const workbox = config.workbox;
+    expect(workbox).toBeDefined();
+    if (!workbox) {
+      throw new Error(WORKBOX_REQUIRED_ERROR);
+    }
+
+    const formpackRule = RUNTIME_CACHING.find(
+      (entry) =>
+        entry.handler === 'StaleWhileRevalidate' &&
+        typeof entry.urlPattern === 'function' &&
+        entry.urlPattern({
+          request: new Request(FORMPACK_MANIFEST_URL),
+          url: new URL(FORMPACK_MANIFEST_URL),
+        }),
+    );
+
+    expect(formpackRule).toBeDefined();
+    if (!formpackRule) {
+      throw new Error('Expected formpack runtime caching rule.');
+    }
+    expect(formpackRule.handler).not.toBe('CacheFirst');
   });
 });
