@@ -92,7 +92,7 @@
     "vitest": "^4.0.16"
   },
   "overrides": {
-    "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.5.5",
-    "source-map": "npm:source-map-js@^1.2.1"
+    "@isaacs/brace-expansion": "^5.0.1",
+    "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.5.5"
   }
 }
