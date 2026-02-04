@@ -38,7 +38,7 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || github.event.pull_request.merge_commit_sha || github.sha }}
 
@@ -115,7 +115,7 @@ jobs:
     
     steps:
       - name: Checkout code (for compose file)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || github.event.pull_request.merge_commit_sha || github.sha }}
 
