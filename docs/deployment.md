@@ -6,7 +6,7 @@ This document explains how the production and staging environments are deployed 
 
 The mecfs-paperwork application has two deployment environments:
 
-- **Production**: `mecfs-paperwork.de` (and `www.mecfs-paperwork.de`)
+- **Production**: `mecfs-paperwork.de` (canonical), `www.mecfs-paperwork.de` redirects to the apex domain
 - **Staging**: `staging.mecfs-paperwork.de`
 
 Both environments run on the same server using Docker Compose with separate containers for each environment.
@@ -25,11 +25,13 @@ The repository ships multiple compose files for different contexts:
 ## Environment Differences
 
 ### Production (`main` branch)
-- **Domain**: `mecfs-paperwork.de`, `www.mecfs-paperwork.de`
+- **Domain**: `mecfs-paperwork.de` (canonical)
+- **Redirect**: `www.mecfs-paperwork.de` → `https://mecfs-paperwork.de{uri}`
 - **Docker Image**: `wbt112/mecfs-paperwork:prod`
 - **Build Mode**: `production`
 - **Dev Formpacks**: Hidden (`VITE_SHOW_DEV_FORMPACKS` not set)
 - **Environment Marker**: None (production default)
+- **Social Preview Origin**: `VITE_PUBLIC_ORIGIN=https://mecfs-paperwork.de`
 
 ### Staging (`staging` branch)
 - **Domain**: `staging.mecfs-paperwork.de`
@@ -99,6 +101,17 @@ docker compose -f compose.deploy.yaml up -d
 ```
 
 Note: For automated deployments, the CI/CD pipeline passes Docker Hub credentials via SSH environment variables.
+
+### Manual Deployment via GitHub Actions (Button)
+
+You can trigger a deployment from the GitHub Actions UI:
+
+1. Open **Actions → Build & Deploy (Docker Hub + Server)**.
+2. Click **Run workflow**.
+3. Choose **environment**: `staging` or `prod`.
+4. Optional: set **ref** to a branch name or commit SHA to build.
+
+This runs the same build/push + server deploy as a normal branch push.
 
 ## Infrastructure Setup
 
@@ -201,6 +214,10 @@ The Dockerfile accepts the following build arguments:
   - Marks which environment the build is for
   - Values: `production`, `staging`
   - Staging shows a visible "STAGING" banner
+- `VITE_PUBLIC_ORIGIN` (default: empty)
+  - Absolute public origin used for Open Graph/Twitter preview URLs
+  - Example: `https://mecfs-paperwork.de`, `https://staging.mecfs-paperwork.de`
+  - Note: `.env.*` files are excluded from the Docker build context, so Docker builds must pass this as a build arg.
 
 ### Local Testing
 
@@ -212,6 +229,7 @@ docker build \
   --build-arg VITE_MODE=staging \
   --build-arg VITE_SHOW_DEV_FORMPACKS=true \
   --build-arg VITE_DEPLOYMENT_ENV=staging \
+  --build-arg VITE_PUBLIC_ORIGIN=https://staging.mecfs-paperwork.de \
   -t mecfs-paperwork:staging-local \
   .
 

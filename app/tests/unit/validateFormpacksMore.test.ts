@@ -392,7 +392,7 @@ describe('validate-formpacks: extra branches', () => {
     const writes: string[] = [];
     const oldWrite = process.stdout.write;
     try {
-      process.argv = ['node', 'script'];
+      process.argv = ['node', 'script', '--id', id];
       process.exitCode = 0;
       process.stdout.write = (s) => {
         writes.push(String(s));

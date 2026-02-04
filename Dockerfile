@@ -4,6 +4,7 @@ FROM node:24-bookworm-slim AS build
 ARG VITE_MODE=production
 ARG VITE_SHOW_DEV_FORMPACKS=
 ARG VITE_DEPLOYMENT_ENV=
+ARG VITE_PUBLIC_ORIGIN=
 
 WORKDIR /repo
 RUN mkdir -p /repo/app /repo/formpacks /repo/.github
@@ -21,6 +22,7 @@ COPY tools /repo/tools
 # Pass build args as environment variables for Vite
 ENV VITE_SHOW_DEV_FORMPACKS=$VITE_SHOW_DEV_FORMPACKS
 ENV VITE_DEPLOYMENT_ENV=$VITE_DEPLOYMENT_ENV
+ENV VITE_PUBLIC_ORIGIN=$VITE_PUBLIC_ORIGIN
 
 # Build with the specified mode
 RUN npm run build -- --mode $VITE_MODE
