@@ -67,7 +67,20 @@ jobs:
         if: steps.check-secrets.outputs.available == 'true'
         run: |
           docker run -d --name mecfs-paperwork -p 8080:8080 mecfs-paperwork
-          sleep 2
+
+      - name: Wait for health
+        if: steps.check-secrets.outputs.available == 'true'
+        timeout-minutes: 2
+        run: |
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS http://localhost:8080/health; then
+              exit 0
+            fi
+            echo "::notice::Health check attempt ${attempt} failed. Retrying in 2s..."
+            sleep 2
+          done
+          docker logs mecfs-paperwork
+          exit 1
 
       - name: Smoke checks
         if: steps.check-secrets.outputs.available == 'true'
@@ -138,6 +151,20 @@ jobs:
       - name: Compose up
         if: steps.check-secrets.outputs.available == 'true'
         run: docker compose up -d --build
+
+      - name: Compose wait for health
+        if: steps.check-secrets.outputs.available == 'true'
+        timeout-minutes: 2
+        run: |
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsS http://localhost:8080/health; then
+              exit 0
+            fi
+            echo "::notice::Health check attempt ${attempt} failed. Retrying in 2s..."
+            sleep 2
+          done
+          docker compose logs
+          exit 1
 
       - name: Compose smoke checks
         if: steps.check-secrets.outputs.available == 'true'

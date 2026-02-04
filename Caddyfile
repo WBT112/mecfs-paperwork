@@ -12,12 +12,9 @@ mecfs-paperwork.de {
 www.mecfs-paperwork.de {
   header {
     Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-  }
-  @noIndexLegal path /imprint /privacy
-  header @noIndexLegal {
     X-Robots-Tag "noindex, nofollow"
   }
-  reverse_proxy web-prod:8080
+  redir https://mecfs-paperwork.de{uri} permanent
 }
 
 # Staging domain (not indexed by search engines)

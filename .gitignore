@@ -6,6 +6,14 @@ app/dist/
 app/.vite/
 app/public/formpacks/
 app/dev-dist/
+app/public/favicon.ico
+app/public/favicon-16x16.png
+app/public/favicon-32x32.png
+app/public/apple-touch-icon.png
+app/public/android-chrome-192x192.png
+app/public/android-chrome-512x512.png
+app/public/social-share-1200x630.jpg
+app/public/site.webmanifest
 
 # Logs
 npm-debug.log*
