@@ -46,6 +46,9 @@ type AppConfig = import('vite').UserConfig & {
 };
 
 const createConfig = (mode: string): AppConfig => ({
+  define: {
+    'process.env': {},
+  },
   plugins: [
     createFormpackSpaFallbackPlugin(),
     react(),
@@ -86,11 +89,14 @@ const createConfig = (mode: string): AppConfig => ({
       // Prevent Vite from externalizing util during pre-bundling (docx-templates).
       plugins: [
         {
-          name: 'alias-node-util',
+          name: 'alias-node-polyfills',
           setup(build) {
             build.onResolve({ filter: /^util$/ }, () => ({ path: utilPath }));
             build.onResolve({ filter: /^node:util$/ }, () => ({
               path: utilPath,
+            }));
+            build.onResolve({ filter: /^buffer$/ }, () => ({
+              path: bufferPath,
             }));
           },
         },

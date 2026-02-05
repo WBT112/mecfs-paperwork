@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ComponentType, ReactElement } from 'react';
+import type { ReactElement } from 'react';
 import type { DocumentProps } from '@react-pdf/renderer';
 import { normalizePdfExportError } from './errors';
-import type { PdfExportRuntimeProps } from './PdfExportRuntime';
 
 export type PdfExportPayload = {
   document: ReactElement<DocumentProps>;
@@ -18,23 +17,6 @@ export type PdfExportButtonProps = {
   onError?: (error: Error) => void;
 };
 
-type RequestState = {
-  payload: PdfExportPayload;
-  key: string;
-};
-
-const createRequestKey = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-const loadPdfExportRuntime = async (): Promise<
-  ComponentType<PdfExportRuntimeProps>
-> => {
-  const module = await import('./PdfExportRuntime');
-  return module.default as ComponentType<PdfExportRuntimeProps>;
-};
-
 const PdfExportButton = ({
   buildPayload,
   label,
@@ -43,15 +25,8 @@ const PdfExportButton = ({
   onSuccess,
   onError,
 }: PdfExportButtonProps) => {
-  const [request, setRequest] = useState<RequestState | null>(null);
-  const [isBuilding, setIsBuilding] = useState(false);
-  const [RuntimeComponent, setRuntimeComponent] =
-    useState<ComponentType<PdfExportRuntimeProps> | null>(null);
-  const isExporting = isBuilding || Boolean(request);
+  const [isExporting, setIsExporting] = useState(false);
   const isMountedRef = useRef(true);
-  const runtimePromiseRef = useRef<Promise<
-    ComponentType<PdfExportRuntimeProps>
-  > | null>(null);
 
   useEffect(() => {
     return () => {
@@ -59,80 +34,49 @@ const PdfExportButton = ({
     };
   }, []);
 
-  const handleRequestDone = useCallback(() => {
-    setRequest(null);
-  }, []);
-
-  const ensureRuntimeLoaded = useCallback(async () => {
-    if (RuntimeComponent) {
-      return RuntimeComponent;
-    }
-
-    if (!runtimePromiseRef.current) {
-      runtimePromiseRef.current = loadPdfExportRuntime();
-    }
-
-    const runtime = await runtimePromiseRef.current;
-
-    if (isMountedRef.current) {
-      setRuntimeComponent(() => runtime);
-    }
-
-    return runtime;
-  }, [RuntimeComponent]);
-
   const handleClick = useCallback(async () => {
     if (disabled || isExporting) {
       return;
     }
 
-    setIsBuilding(true);
+    setIsExporting(true);
 
     try {
       const payload = await buildPayload();
 
-      await ensureRuntimeLoaded();
-      if (!isMountedRef.current) {
-        return;
-      }
+      const [rendererModule, { downloadPdfExport }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('./download'),
+      ]);
 
-      setRequest({ payload, key: createRequestKey() });
-    } catch (error) {
-      if (!isMountedRef.current) {
-        return;
+      const blob = await rendererModule.pdf(payload.document).toBlob();
+
+      if (isMountedRef.current) {
+        downloadPdfExport({ blob, filename: payload.filename });
+        onSuccess?.();
       }
-      onError?.(normalizePdfExportError(error));
+    } catch (error) {
+      if (isMountedRef.current) {
+        onError?.(normalizePdfExportError(error));
+      }
     } finally {
       if (isMountedRef.current) {
-        setIsBuilding(false);
+        setIsExporting(false);
       }
     }
-  }, [buildPayload, disabled, ensureRuntimeLoaded, isExporting, onError]);
+  }, [buildPayload, disabled, isExporting, onError, onSuccess]);
 
   const buttonLabel = isExporting ? loadingLabel : label;
-  const payload = request?.payload ?? null;
-  const requestKey = request?.key ?? null;
 
   return (
-    <>
-      <button
-        type="button"
-        className="app__button"
-        onClick={handleClick}
-        disabled={disabled || isExporting}
-      >
-        {buttonLabel}
-      </button>
-      {payload && requestKey && RuntimeComponent ? (
-        <RuntimeComponent
-          payload={payload}
-          requestKey={requestKey}
-          onSuccess={onSuccess}
-          onError={onError}
-          onDone={handleRequestDone}
-        />
-      ) : null}
-    </>
+    <button
+      type="button"
+      className="app__button"
+      onClick={handleClick}
+      disabled={disabled || isExporting}
+    >
+      {buttonLabel}
+    </button>
   );
 };
 

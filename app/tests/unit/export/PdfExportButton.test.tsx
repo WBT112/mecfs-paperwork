@@ -1,37 +1,29 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { useEffect } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import PdfExportButton from '../../../src/export/pdf/PdfExportButton';
 
-const runtimeRenderSpy = vi.fn();
+const pdfToBlobSpy = vi
+  .fn()
+  .mockResolvedValue(new Blob(['test'], { type: 'application/pdf' }));
+const pdfSpy = vi.fn().mockReturnValue({ toBlob: pdfToBlobSpy });
+const downloadPdfExportSpy = vi.fn();
 
-vi.mock('../../../src/export/pdf/PdfExportRuntime', () => {
-  const MockPdfExportRuntime = ({
-    onSuccess,
-    onDone,
-  }: {
-    onSuccess?: () => void;
-    onDone: () => void;
-  }) => {
-    useEffect(() => {
-      runtimeRenderSpy();
-      onSuccess?.();
-      onDone();
-    }, [onDone, onSuccess]);
-    return <div data-testid="pdf-runtime" />;
-  };
+vi.mock('@react-pdf/renderer', () => ({
+  pdf: (doc: unknown) => pdfSpy(doc) as unknown,
+}));
 
-  return {
-    default: MockPdfExportRuntime,
-  };
-});
+vi.mock('../../../src/export/pdf/download', () => ({
+  downloadPdfExport: (opts: unknown) => downloadPdfExportSpy(opts) as unknown,
+}));
+
+const EXPORT_FILENAME = 'export.pdf';
 
 describe('PdfExportButton', () => {
   it('builds a payload and completes the export flow', async () => {
     const buildPayload = vi.fn().mockResolvedValue({
       document: <div />,
-      filename: 'export.pdf',
+      filename: EXPORT_FILENAME,
     });
     const onSuccess = vi.fn();
 
@@ -49,7 +41,12 @@ describe('PdfExportButton', () => {
 
     await waitFor(() => expect(buildPayload).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
-    expect(runtimeRenderSpy).toHaveBeenCalled();
+
+    expect(pdfSpy).toHaveBeenCalled();
+    expect(pdfToBlobSpy).toHaveBeenCalled();
+    expect(downloadPdfExportSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ filename: EXPORT_FILENAME }),
+    );
   });
 
   it('surfaces build errors', async () => {
@@ -77,7 +74,7 @@ describe('PdfExportButton', () => {
   it('ignores clicks when disabled', async () => {
     const buildPayload = vi.fn().mockResolvedValue({
       document: <div />,
-      filename: 'export.pdf',
+      filename: EXPORT_FILENAME,
     });
 
     render(

@@ -26,9 +26,7 @@ const PdfExportControls = ({
   onError,
 }: PdfExportControlsProps) => {
   useEffect(() => {
-    Promise.all([import('./registry'), import('./PdfExportRuntime')]).catch(
-      () => {},
-    );
+    Promise.all([import('./registry')]).catch(() => {});
   }, []);
 
   const buildPayload = useCallback(async (): Promise<PdfExportPayload> => {
