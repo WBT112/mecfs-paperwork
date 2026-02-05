@@ -69,13 +69,7 @@ const createConfig = (mode: string): AppConfig => ({
     ],
   },
   optimizeDeps: {
-    include: [
-      '@react-pdf/renderer',
-      '@react-pdf/renderer/lib/react-pdf.browser.js',
-      'events',
-      'stream-browserify',
-      'util',
-    ],
+    include: ['events', 'stream-browserify', 'util'],
     esbuildOptions: {
       // Prevent Vite from externalizing util during pre-bundling (docx-templates).
       plugins: [
