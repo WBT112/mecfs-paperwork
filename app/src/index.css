@@ -985,6 +985,24 @@ body {
   font-size: 0.9rem;
 }
 
+.formpack-pdf-export {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.formpack-pdf-export__note {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.formpack-pdf-export__success {
+  color: var(--color-success-strong);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
 .formpack-records__actions,
 .formpack-snapshots__actions {
   display: flex;

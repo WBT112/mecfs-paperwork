@@ -28,6 +28,7 @@ import {
   preloadDocxAssets,
   type DocxTemplateId,
 } from '../export/docxLazy';
+import type { PdfExportControlsProps } from '../export/pdf/PdfExportControls';
 import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
   formpackTemplates,
@@ -76,6 +77,11 @@ type RjsfFormProps = FormProps<FormDataState>;
 const LazyForm = lazy(async () => {
   const module = await import('@rjsf/core');
   return { default: module.default as ComponentType<RjsfFormProps> };
+});
+
+const LazyPdfExportControls = lazy(async () => {
+  const module = await import('../export/pdf/PdfExportControls');
+  return { default: module.default as ComponentType<PdfExportControlsProps> };
 });
 
 type ManifestLoadResult = {
@@ -713,6 +719,8 @@ export default function FormpackDetailPage() {
   const [docxError, setDocxError] = useState<string | null>(null);
   const [docxSuccess, setDocxSuccess] = useState<string | null>(null);
   const [isDocxExporting, setIsDocxExporting] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfSuccess, setPdfSuccess] = useState<string | null>(null);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formpackTranslationsVersion, setFormpackTranslationsVersion] =
@@ -1657,6 +1665,16 @@ export default function FormpackDetailPage() {
     t,
   ]);
 
+  const handlePdfExportSuccess = useCallback(() => {
+    setPdfError(null);
+    setPdfSuccess(t('formpackPdfExportSuccess'));
+  }, [t]);
+
+  const handlePdfExportError = useCallback(() => {
+    setPdfError(t('formpackPdfExportError'));
+    setPdfSuccess(null);
+  }, [t]);
+
   const handleActionClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       const target = event.target;
@@ -1674,22 +1692,31 @@ export default function FormpackDetailPage() {
         if (importSuccess) {
           setImportSuccess(null);
         }
+        if (pdfSuccess) {
+          setPdfSuccess(null);
+        }
         return;
       }
       if (action === 'json-import') {
         if (docxSuccess) {
           setDocxSuccess(null);
         }
+        if (pdfSuccess) {
+          setPdfSuccess(null);
+        }
         return;
       }
       if (docxSuccess) {
         setDocxSuccess(null);
       }
+      if (pdfSuccess) {
+        setPdfSuccess(null);
+      }
       if (importSuccess) {
         setImportSuccess(null);
       }
     },
-    [docxSuccess, importSuccess],
+    [docxSuccess, importSuccess, pdfSuccess],
   );
 
   useEffect(() => {
@@ -1930,6 +1957,57 @@ export default function FormpackDetailPage() {
       <p className="app__error">{storageErrorMessage}</p>
     ) : null;
 
+  const renderPdfExportControls = () => {
+    const pdfSupported = manifest.exports.includes('pdf');
+    const disabled = storageError === 'unavailable' || !pdfSupported;
+    const resolvedFormpackId = manifest.id;
+
+    if (!pdfSupported) {
+      return (
+        <div className="formpack-pdf-export">
+          <button
+            type="button"
+            className="app__button"
+            disabled
+            title={t('formpackPdfExportUnavailable')}
+          >
+            {t('formpackRecordExportPdf')}
+          </button>
+          <span className="formpack-pdf-export__note">
+            {t('formpackPdfExportUnavailable')}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="formpack-pdf-export">
+        <Suspense
+          fallback={
+            <button type="button" className="app__button" disabled>
+              {t('formpackRecordExportPdf')}
+            </button>
+          }
+        >
+          <LazyPdfExportControls
+            formpackId={resolvedFormpackId}
+            formData={formData}
+            locale={locale}
+            label={t('formpackRecordExportPdf')}
+            loadingLabel={t('formpackPdfExportInProgress')}
+            disabled={disabled}
+            onSuccess={handlePdfExportSuccess}
+            onError={handlePdfExportError}
+          />
+        </Suspense>
+        {pdfError && <span className="app__error">{pdfError}</span>}
+        {pdfSuccess && (
+          <span className="formpack-pdf-export__success">{pdfSuccess}</span>
+        )}
+      </div>
+    );
+  };
+
   const renderDocxExportControls = () => {
     if (
       !manifest.exports.includes('docx') ||
@@ -1938,6 +2016,8 @@ export default function FormpackDetailPage() {
     ) {
       return null;
     }
+
+    const pdfControls = renderPdfExportControls();
 
     return (
       <div className="formpack-docx-export">
@@ -1972,6 +2052,7 @@ export default function FormpackDetailPage() {
             ? t('formpackDocxExportInProgress')
             : t('formpackRecordExportDocx')}
         </button>
+        {pdfControls}
         {docxError && <span className="app__error">{docxError}</span>}
         {docxSuccess && (
           <span className="formpack-docx-export__success">{docxSuccess}</span>

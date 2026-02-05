@@ -50,7 +50,7 @@ const MANIFEST_SCHEMA = {
     descriptionKey: { type: 'string', minLength: 1 },
     exports: {
       type: 'array',
-      items: { enum: ['docx', 'json'] },
+      items: { enum: ['docx', 'json', 'pdf'] },
       minItems: 1,
       uniqueItems: true,
     },

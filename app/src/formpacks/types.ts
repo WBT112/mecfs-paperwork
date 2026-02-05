@@ -1,6 +1,6 @@
 import type { SupportedLocale } from '../i18n/locale';
 
-export type FormpackExportType = 'docx' | 'json';
+export type FormpackExportType = 'docx' | 'json' | 'pdf';
 export type FormpackVisibility = 'public' | 'dev';
 
 export interface FormpackDocxManifest {
