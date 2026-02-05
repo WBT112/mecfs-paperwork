@@ -1,6 +1,8 @@
 import { render } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PdfExportButtonProps } from '../../../src/export/pdf/PdfExportButton';
+import type { DocumentModel } from '../../../src/export/pdf/types';
 
 let capturedProps: PdfExportButtonProps | null = null;
 
@@ -36,11 +38,11 @@ describe('PdfExportControls', () => {
     expect(capturedProps).not.toBeNull();
 
     const payload = await capturedProps!.buildPayload();
+    const element = payload.document as ReactElement<{ model: DocumentModel }>;
+    const model = element.props.model;
 
-    expect(payload.document.props.model.meta?.locale).toBe('en');
-    expect(payload.document.props.model.meta?.createdAtIso).toBe(
-      '2026-02-02T00:00:00.000Z',
-    );
+    expect(model.meta?.locale).toBe('en');
+    expect(model.meta?.createdAtIso).toBe('2026-02-02T00:00:00.000Z');
     expect(payload.filename).toBe('doctor-letter-pdf-20260202.pdf');
   });
 

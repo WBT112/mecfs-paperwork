@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import type { ReactElement } from 'react';
+import type { DocumentModel } from '../../../src/export/pdf/types';
 import { getPdfExportConfig } from '../../../src/export/pdf/registry';
 
 describe('getPdfExportConfig', () => {
@@ -23,7 +25,9 @@ describe('getPdfExportConfig', () => {
     expect(model.meta?.createdAtIso).toBe(exportedAt.toISOString());
     expect(model.meta?.locale).toBe('en');
 
-    const element = config.renderDocument(model);
+    const element = config.renderDocument(model) as ReactElement<{
+      model: DocumentModel;
+    }>;
     expect(element.props.model).toBe(model);
   });
 });

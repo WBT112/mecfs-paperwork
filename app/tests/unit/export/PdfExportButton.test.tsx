@@ -6,8 +6,8 @@ import PdfExportButton from '../../../src/export/pdf/PdfExportButton';
 
 const runtimeRenderSpy = vi.fn();
 
-vi.mock('../../../src/export/pdf/PdfExportRuntime', () => ({
-  default: ({
+vi.mock('../../../src/export/pdf/PdfExportRuntime', () => {
+  const MockPdfExportRuntime = ({
     onSuccess,
     onDone,
   }: {
@@ -20,8 +20,12 @@ vi.mock('../../../src/export/pdf/PdfExportRuntime', () => ({
       onDone();
     }, [onDone, onSuccess]);
     return <div data-testid="pdf-runtime" />;
-  },
-}));
+  };
+
+  return {
+    default: MockPdfExportRuntime,
+  };
+});
 
 describe('PdfExportButton', () => {
   it('builds a payload and completes the export flow', async () => {

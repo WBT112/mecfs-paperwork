@@ -3,6 +3,22 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PdfExportPayload } from '../../../src/export/pdf/PdfExportButton';
 
+type PdfInstance = {
+  toBlob: () => Promise<Blob>;
+};
+
+type PdfFactory = (...args: unknown[]) => PdfInstance;
+type DownloadOptions = {
+  blob?: Blob | null;
+  url?: string | null;
+  filename: string;
+};
+type PdfToBlobFactory = () => Promise<Blob>;
+type DownloadHandler = (options: DownloadOptions) => void;
+
+const readyUrl = 'blob:ready';
+const exportFilename = 'export.pdf';
+
 const runtimeMocks = vi.hoisted(() => ({
   blobProviderState: {
     blob: null as Blob | null,
@@ -10,9 +26,9 @@ const runtimeMocks = vi.hoisted(() => ({
     loading: false,
     error: null as Error | null,
   },
-  pdfToBlob: vi.fn(),
-  pdfMock: vi.fn(),
-  downloadPdfExport: vi.fn(),
+  pdfToBlob: vi.fn<PdfToBlobFactory>(),
+  pdfMock: vi.fn<PdfFactory>(),
+  downloadPdfExport: vi.fn<DownloadHandler>(),
 }));
 
 vi.mock('@react-pdf/renderer', () => ({
@@ -21,7 +37,7 @@ vi.mock('@react-pdf/renderer', () => ({
   }: {
     children: (state: typeof runtimeMocks.blobProviderState) => ReactNode;
   }) => <>{children(runtimeMocks.blobProviderState)}</>,
-  pdf: (...args: unknown[]) => runtimeMocks.pdfMock(...args),
+  pdf: (...args: Parameters<PdfFactory>) => runtimeMocks.pdfMock(...args),
 }));
 
 vi.mock('../../../src/export/pdf/download', () => ({
@@ -32,7 +48,7 @@ import PdfExportRuntime from '../../../src/export/pdf/PdfExportRuntime';
 
 const payload: PdfExportPayload = {
   document: <div />,
-  filename: 'export.pdf',
+  filename: exportFilename,
 };
 
 describe('PdfExportRuntime', () => {
@@ -59,7 +75,7 @@ describe('PdfExportRuntime', () => {
   it('downloads immediately when a url is available', async () => {
     runtimeMocks.blobProviderState = {
       blob: null,
-      url: 'blob:ready',
+      url: readyUrl,
       loading: false,
       error: null,
     };
@@ -79,8 +95,8 @@ describe('PdfExportRuntime', () => {
     await waitFor(() =>
       expect(runtimeMocks.downloadPdfExport).toHaveBeenCalledWith({
         blob: null,
-        url: 'blob:ready',
-        filename: 'export.pdf',
+        url: readyUrl,
+        filename: exportFilename,
       }),
     );
     expect(onSuccess).toHaveBeenCalledTimes(1);
@@ -90,7 +106,7 @@ describe('PdfExportRuntime', () => {
   it('reports download errors', async () => {
     runtimeMocks.blobProviderState = {
       blob: null,
-      url: 'blob:ready',
+      url: readyUrl,
       loading: false,
       error: null,
     };
@@ -173,10 +189,10 @@ describe('PdfExportRuntime', () => {
     await vi.advanceTimersByTimeAsync(4_000);
     await Promise.resolve();
 
-    expect(runtimeMocks.downloadPdfExport).toHaveBeenCalledWith({
-      blob: expect.any(Blob),
-      filename: 'export.pdf',
-    });
+    expect(runtimeMocks.downloadPdfExport).toHaveBeenCalled();
+    const [options] = runtimeMocks.downloadPdfExport.mock.calls[0];
+    expect(options.filename).toBe(exportFilename);
+    expect(options.blob).toBeInstanceOf(Blob);
     expect(onSuccess).toHaveBeenCalledTimes(1);
     expect(onDone).toHaveBeenCalledTimes(1);
   });
