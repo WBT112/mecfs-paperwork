@@ -107,13 +107,7 @@ const PdfExportButton = ({
         setIsBuilding(false);
       }
     }
-  }, [
-    buildPayload,
-    disabled,
-    ensureRuntimeLoaded,
-    isExporting,
-    onError,
-  ]);
+  }, [buildPayload, disabled, ensureRuntimeLoaded, isExporting, onError]);
 
   const buttonLabel = isExporting ? loadingLabel : label;
   const payload = request?.payload ?? null;
