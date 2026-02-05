@@ -7,6 +7,7 @@ import { createPwaConfig } from './src/lib/pwaConfig';
 
 const require = createRequire(import.meta.url);
 const utilPath = require.resolve('util/util.js');
+const bufferPath = require.resolve('buffer/');
 
 const createFormpackSpaFallbackPlugin = (): Plugin => ({
   name: 'formpack-spa-fallback',
@@ -62,16 +63,21 @@ const createConfig = (mode: string): AppConfig => ({
     // aliases map the Node.js module names to their browser equivalents.
     // Removing them will break the document export functionality.
     alias: [
+      {
+        find: '@react-pdf/renderer',
+        replacement: '@react-pdf/renderer/lib/react-pdf.browser.js',
+      },
       { find: /^events$/, replacement: require.resolve('events') },
       { find: /^stream$/, replacement: require.resolve('stream-browserify') },
       { find: /^util$/, replacement: utilPath },
       { find: /^node:util$/, replacement: utilPath },
+      { find: /^buffer$/, replacement: bufferPath },
     ],
   },
   optimizeDeps: {
     include: [
       '@react-pdf/renderer',
-      '@react-pdf/renderer/lib/react-pdf.browser.js',
+      'buffer',
       'events',
       'stream-browserify',
       'util',
