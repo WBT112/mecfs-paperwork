@@ -4,6 +4,7 @@ import DoctorLetterPdfDocument from '../../../src/export/pdf/templates/DoctorLet
 import type { DocumentModel } from '../../../src/export/pdf/types';
 
 const fixture: DocumentModel = {
+  title: 'Doctor letter',
   meta: { createdAtIso: '2026-02-02T00:00:00.000Z', locale: 'en' },
   sections: [
     {
@@ -31,6 +32,7 @@ const fixture: DocumentModel = {
       heading: 'Case result',
       blocks: [
         { type: 'paragraph', text: 'First paragraph.' },
+        { type: 'bullets', items: ['Item one', 'Item two'] },
         { type: 'lineBreaks', lines: ['Line one', 'Line two'] },
       ],
     },
