@@ -35,6 +35,18 @@ const loadPdfExportRuntime = async (): Promise<
   return module.default as ComponentType<PdfExportRuntimeProps>;
 };
 
+const loadPdfDownloadDependencies = async () => {
+  const [rendererModule, { downloadPdfExport }] = await Promise.all([
+    import.meta.env.DEV && import.meta.env.MODE !== 'test'
+      ? import('@react-pdf/renderer/lib/react-pdf.browser.js')
+      : import('@react-pdf/renderer'),
+    import('./download'),
+  ]);
+
+  const { pdf } = rendererModule as typeof import('@react-pdf/renderer');
+  return { pdf, downloadPdfExport };
+};
+
 const PdfExportButton = ({
   buildPayload,
   label,
@@ -49,12 +61,52 @@ const PdfExportButton = ({
     useState<ComponentType<PdfExportRuntimeProps> | null>(null);
   const isExporting = isBuilding || Boolean(request);
   const isMountedRef = useRef(true);
+  const runtimePromiseRef = useRef<Promise<
+    ComponentType<PdfExportRuntimeProps>
+  > | null>(null);
 
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  const handleRequestDone = useCallback(() => {
+    setRequest(null);
+  }, []);
+
+  const ensureRuntimeLoaded = useCallback(async () => {
+    if (RuntimeComponent) {
+      return RuntimeComponent;
+    }
+
+    if (!runtimePromiseRef.current) {
+      runtimePromiseRef.current = loadPdfExportRuntime();
+    }
+
+    const runtime = await runtimePromiseRef.current;
+
+    if (isMountedRef.current) {
+      setRuntimeComponent(() => runtime);
+    }
+
+    return runtime;
+  }, [RuntimeComponent]);
+
+  const runDirectPdfExport = useCallback(
+    async (payload: PdfExportPayload) => {
+      try {
+        const { pdf, downloadPdfExport } = await loadPdfDownloadDependencies();
+        const pdfInstance = pdf(payload.document);
+        const blob = await pdfInstance.toBlob();
+        downloadPdfExport({ blob, filename: payload.filename });
+        onSuccess?.();
+      } catch (error) {
+        onError?.(normalizePdfExportError(error));
+      }
+    },
+    [onError, onSuccess],
+  );
 
   const handleClick = useCallback(async () => {
     if (disabled || isExporting) {
@@ -64,19 +116,19 @@ const PdfExportButton = ({
     setIsBuilding(true);
 
     try {
-      const [payload, runtime] = await Promise.all([
-        buildPayload(),
-        RuntimeComponent
-          ? Promise.resolve(RuntimeComponent)
-          : loadPdfExportRuntime(),
-      ]);
+      const payload = await buildPayload();
 
-      if (!isMountedRef.current) {
+      if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
+        if (!isMountedRef.current) {
+          return;
+        }
+        await runDirectPdfExport(payload);
         return;
       }
 
-      if (!RuntimeComponent) {
-        setRuntimeComponent(() => runtime);
+      await ensureRuntimeLoaded();
+      if (!isMountedRef.current) {
+        return;
       }
 
       setRequest({ payload, key: createRequestKey() });
@@ -90,7 +142,14 @@ const PdfExportButton = ({
         setIsBuilding(false);
       }
     }
-  }, [buildPayload, disabled, isExporting, onError, RuntimeComponent]);
+  }, [
+    buildPayload,
+    disabled,
+    ensureRuntimeLoaded,
+    isExporting,
+    onError,
+    runDirectPdfExport,
+  ]);
 
   const buttonLabel = isExporting ? loadingLabel : label;
   const payload = request?.payload ?? null;
@@ -112,7 +171,7 @@ const PdfExportButton = ({
           requestKey={requestKey}
           onSuccess={onSuccess}
           onError={onError}
-          onDone={() => setRequest(null)}
+          onDone={handleRequestDone}
         />
       ) : null}
     </>
