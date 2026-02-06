@@ -323,14 +323,20 @@ describe('validate-formpacks: extra branches', () => {
     const { run } = modA;
     const oldArgv = process.argv;
     const oldExit = process.exitCode;
+    const oldStdout = process.stdout.write;
+    const oldStderr = process.stderr.write;
     try {
       process.argv = ['node', 'script', '--id', 'no-such-id'];
       process.exitCode = 0;
+      process.stdout.write = () => true;
+      process.stderr.write = () => true;
       await run();
       expect(process.exitCode !== 0).toBe(true);
     } finally {
       process.argv = oldArgv;
       process.exitCode = oldExit;
+      process.stdout.write = oldStdout;
+      process.stderr.write = oldStderr;
     }
 
     // case 2: valid formpack and createReport succeeds -> pass

@@ -1,7 +1,22 @@
-import { describe, expect, it } from 'vitest';
 import { pdf } from '@react-pdf/renderer';
+import { describe, expect, it, vi } from 'vitest';
 import DoctorLetterPdfDocument from '../../../src/export/pdf/templates/DoctorLetterPdfDocument';
 import type { DocumentModel } from '../../../src/export/pdf/types';
+
+vi.mock(
+  '../../../src/assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg',
+  () => ({
+    default:
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P8/5+hHgAHggJ/lqG02QAAAABJRU5ErkJggg==',
+  }),
+);
+vi.mock(
+  '../../../src/assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png',
+  () => ({
+    default:
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P8/5+hHgAHggJ/lqG02QAAAABJRU5ErkJggg==',
+  }),
+);
 
 const documentTitle = 'Doctor letter';
 const createdAtIso = '2026-02-02T00:00:00.000Z';
