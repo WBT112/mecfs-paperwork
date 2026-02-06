@@ -57,8 +57,9 @@ const exportDocxAndExpectSuccess = async (
 ) => {
   const page = docxSection.page();
   const downloadPromise = page.waitForEvent('download');
-  const successMessage = docxSection.locator('.formpack-docx-export__success');
-  const errorMessage = docxSection.locator('.app__error');
+  const statusMessage = page.locator('.formpack-actions__status');
+  const successMessage = statusMessage.locator('.formpack-actions__success');
+  const errorMessage = statusMessage.locator('.app__error');
 
   await clickActionButton(exportButton);
   const download = await downloadPromise;

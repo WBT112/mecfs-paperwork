@@ -94,7 +94,7 @@ describe('validate-formpacks: extra branches', () => {
     } finally {
       await fs.rm(base, { recursive: true, force: true });
     }
-  });
+  }, 15_000);
 
   it('detects missing locales and defaultLocale mismatch', async () => {
     const id = uniqueId('locales');

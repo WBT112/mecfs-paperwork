@@ -46,7 +46,7 @@ const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 
 const isFormpackExportType = (value: string): value is FormpackExportType =>
-  value === 'docx' || value === 'json';
+  value === 'docx' || value === 'json' || value === 'pdf';
 const isFormpackVisibility = (value: string): value is FormpackVisibility =>
   value === 'public' || value === 'dev';
 

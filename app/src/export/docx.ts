@@ -9,6 +9,10 @@ import type { SupportedLocale } from '../i18n/locale';
 import { buildDocumentModel } from '../formpacks/documentModel';
 import type { DocumentModel } from '../formpacks/documentModel';
 import {
+  getDoctorLetterExportDefaults,
+  hasDoctorLetterDecisionAnswers,
+} from './doctorLetterDefaults';
+import {
   loadFormpackManifest,
   loadFormpackSchema,
   loadFormpackUiSchema,
@@ -51,12 +55,6 @@ export type DocxAdditionalContext = {
   formatPhone: (value: string | null | undefined) => string;
 };
 
-type DocxDefaultsLocale = 'de' | 'en';
-type DocxExportDefaults = {
-  patient: Record<string, string>;
-  doctor: Record<string, string>;
-  decision: { fallbackCaseText: string };
-};
 export type DocxErrorKey =
   | 'formpackDocxErrorUnterminatedFor'
   | 'formpackDocxErrorIncompleteIf'
@@ -97,47 +95,6 @@ const docxMappingCache = new Map<string, DocxMapping>();
 const docxTemplateCache = new Map<string, Uint8Array>();
 const docxSchemaCache = new Map<string, RJSFSchema | null>();
 const docxUiSchemaCache = new Map<string, UiSchema | null>();
-
-const DOCX_EXPORT_DEFAULTS: Record<DocxDefaultsLocale, DocxExportDefaults> = {
-  de: {
-    patient: {
-      firstName: 'Max',
-      lastName: 'Mustermann',
-      streetAndNumber: 'Musterstraße 1',
-      postalCode: '12345',
-      city: 'Musterstadt',
-    },
-    doctor: {
-      name: 'Dr. med. Erika Beispiel',
-      streetAndNumber: 'Praxisstraße 2',
-      postalCode: '12345',
-      city: 'Musterstadt',
-    },
-    decision: {
-      fallbackCaseText:
-        'HINWEIS: BITTE BEANTWORTEN SIE ZUERST DIE FRAGEN UM EIN ERGEBNIS ZU ERHALTEN.',
-    },
-  },
-  en: {
-    patient: {
-      firstName: 'Max',
-      lastName: 'Example',
-      streetAndNumber: 'Example Street 1',
-      postalCode: '12345',
-      city: 'Example City',
-    },
-    doctor: {
-      name: 'Dr. Erica Example',
-      streetAndNumber: 'Practice Street 2',
-      postalCode: '12345',
-      city: 'Example City',
-    },
-    decision: {
-      fallbackCaseText:
-        'NOTICE: PLEASE ANSWER THE QUESTIONS FIRST TO RECEIVE A RESULT.',
-    },
-  },
-};
 
 const buildAssetPath = (formpackId: string, assetPath: string) =>
   `/formpacks/${formpackId}/${assetPath}`;
@@ -415,25 +372,6 @@ const cloneTemplateContext = (
   return cloneTemplateValue(context) as DocxTemplateContext;
 };
 
-const hasDecisionAnswers = (formData: Record<string, unknown>): boolean => {
-  const decision = isRecord(formData.decision) ? formData.decision : null;
-  if (!decision) {
-    return false;
-  }
-  const keys = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'];
-  return keys.some((key) => {
-    const value = decision[key];
-    if (typeof value === 'string') {
-      return value.trim().length > 0;
-    }
-    return typeof value === 'boolean';
-  });
-};
-
-const resolveDocxDefaultsLocale = (
-  locale: SupportedLocale,
-): DocxDefaultsLocale => (locale === 'de' ? 'de' : 'en');
-
 const applyDefaultForPath = (
   context: DocxTemplateContext,
   path: string,
@@ -456,7 +394,7 @@ export const applyDocxExportDefaults = (
     return normalized;
   }
 
-  const defaults = DOCX_EXPORT_DEFAULTS[resolveDocxDefaultsLocale(locale)];
+  const defaults = getDoctorLetterExportDefaults(locale);
 
   applyDefaultForPath(
     normalized,
@@ -494,7 +432,7 @@ export const applyDocxExportDefaults = (
   applyDefaultForPath(normalized, 'doctor.city', defaults.doctor.city);
 
   const shouldApplyDecisionFallback =
-    !sourceData || !hasDecisionAnswers(sourceData);
+    !sourceData || !hasDoctorLetterDecisionAnswers(sourceData);
   if (shouldApplyDecisionFallback) {
     setPathValue(
       normalized,

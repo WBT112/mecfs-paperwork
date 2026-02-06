@@ -1,7 +1,22 @@
 import type { SupportedLocale } from '../i18n/locale';
 
-export type FormpackExportType = 'docx' | 'json';
+export type FormpackExportType = 'docx' | 'json' | 'pdf';
 export type FormpackVisibility = 'public' | 'dev';
+
+export const FORMPACK_EXPORT_TYPES = ['docx', 'json', 'pdf'] as const;
+export const FORMPACK_VISIBILITIES = ['public', 'dev'] as const;
+
+export const isFormpackExportType = (
+  value: unknown,
+): value is FormpackExportType =>
+  typeof value === 'string' &&
+  (FORMPACK_EXPORT_TYPES as readonly string[]).includes(value);
+
+export const isFormpackVisibility = (
+  value: unknown,
+): value is FormpackVisibility =>
+  typeof value === 'string' &&
+  (FORMPACK_VISIBILITIES as readonly string[]).includes(value);
 
 export interface FormpackDocxManifest {
   templates: {

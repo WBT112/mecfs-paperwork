@@ -70,6 +70,19 @@ const createConfig = (mode: string): AppConfig => ({
   },
   optimizeDeps: {
     include: ['events', 'stream-browserify', 'util'],
+    exclude: [
+      '@react-pdf/renderer',
+      '@react-pdf/layout',
+      '@react-pdf/font',
+      '@react-pdf/pdfkit',
+      '@react-pdf/primitives',
+      '@react-pdf/image',
+      '@react-pdf/textkit',
+      '@react-pdf/stylesheet',
+      '@react-pdf/types',
+      'yoga-layout',
+      'yoga-layout-wasm',
+    ],
     esbuildOptions: {
       // Prevent Vite from externalizing util during pre-bundling (docx-templates).
       plugins: [

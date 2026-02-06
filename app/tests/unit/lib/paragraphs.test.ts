@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildParagraphBlocks,
   LINE_BREAK_MARKER,
   normalizeParagraphText,
   PARAGRAPH_MARKER,
@@ -80,5 +81,29 @@ describe('normalizeParagraphText', () => {
       paragraphs: ['A', 'B'],
       text: 'A\n\nB',
     });
+  });
+});
+
+describe('buildParagraphBlocks', () => {
+  it('creates paragraph and line break blocks from markers', () => {
+    const result = buildParagraphBlocks(
+      `First${PARAGRAPH_MARKER}Second${LINE_BREAK_MARKER}Third`,
+    );
+
+    expect(result).toEqual([
+      { type: 'paragraph', text: 'First' },
+      { type: 'lineBreaks', lines: ['Second', 'Third'] },
+    ]);
+  });
+
+  it('skips empty segments and trims lines', () => {
+    const result = buildParagraphBlocks(
+      `${PARAGRAPH_MARKER}  A  ${PARAGRAPH_MARKER}${LINE_BREAK_MARKER}  B`,
+    );
+
+    expect(result).toEqual([
+      { type: 'paragraph', text: 'A' },
+      { type: 'paragraph', text: 'B' },
+    ]);
   });
 });

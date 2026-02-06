@@ -309,6 +309,7 @@ body {
   font-weight: 600;
   border-radius: 8px;
   padding: 0.45rem 0.9rem;
+  min-height: 44px;
   cursor: pointer;
 }
 
@@ -940,18 +941,78 @@ body {
 
 .formpack-form__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
   gap: 0.75rem;
-  align-items: center;
-  justify-content: flex-end;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-subtle);
 }
 
-.formpack-docx-export {
+.formpack-actions__group {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+.formpack-actions__group--export {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.formpack-actions__group--secondary {
+  flex: 1 1 auto;
+  margin-left: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+/* Action bar buttons: consistent height and no label wrapping-induced layout jumps. */
+.formpack-form__actions .app__button {
+  min-height: 44px;
+  min-width: 0;
+  padding: 0.55rem 1rem;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+.formpack-docx-export {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  min-width: 0;
+  width: 100%;
+}
+
+.formpack-docx-export__template {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
   align-items: center;
-  margin-right: auto;
+  min-width: 0;
+}
+
+.formpack-docx-export__buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  align-items: stretch;
+  justify-content: stretch;
+  width: 100%;
 }
 
 .formpack-docx-export__label {
@@ -960,16 +1021,18 @@ body {
   gap: 0.5rem;
   font-weight: 600;
   font-size: 0.9rem;
+  min-width: 0;
 }
 
 .formpack-docx-export__select {
-  min-width: 180px;
-  min-height: 2.5rem;
+  min-width: 0;
+  width: clamp(220px, 28vw, 360px);
+  min-height: 44px;
   padding: 0.5rem 0.85rem;
   font-size: 0.95rem;
   line-height: 1.4;
   border: 1px solid var(--color-border-strong);
-  border-radius: 8px;
+  border-radius: 10px;
   background-color: var(--color-input-bg);
   color: var(--color-text);
 }
@@ -979,10 +1042,98 @@ body {
   outline-offset: 2px;
 }
 
-.formpack-docx-export__success {
+.formpack-pdf-export {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+}
+
+/* Polished export action bar: make buttons fill their grid cells consistently. */
+.formpack-docx-export__buttons .app__button,
+.formpack-docx-export__buttons .formpack-pdf-export .app__button,
+.formpack-actions__group--secondary .app__button {
+  width: 100%;
+}
+
+.formpack-docx-export__buttons > * {
+  width: 100%;
+}
+.formpack-pdf-export__note {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.formpack-actions__status {
+  flex-basis: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.formpack-actions__success {
   color: var(--color-success-strong);
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+  .formpack-form__actions {
+    padding: 0.7rem;
+  }
+
+  .formpack-actions__group--secondary {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .formpack-docx-export {
+    grid-template-columns: 1fr;
+  }
+
+  .formpack-docx-export__template {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .formpack-docx-export__label {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .formpack-docx-export__select {
+    width: 100%;
+  }
+
+  .formpack-docx-export__buttons {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .formpack-form__actions {
+    grid-template-columns: 1fr;
+    padding: 0.65rem;
+  }
+
+  .formpack-actions__group {
+    width: 100%;
+  }
+
+  .formpack-actions__group--secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .formpack-docx-export__buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .app__button {
+    width: 100%;
+  }
 }
 
 .formpack-records__actions,

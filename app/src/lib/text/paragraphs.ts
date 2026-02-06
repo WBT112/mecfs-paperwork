@@ -10,6 +10,10 @@ const compactParagraphs = (parts: string[]): string[] =>
 export const PARAGRAPH_MARKER = '[[P]]';
 export const LINE_BREAK_MARKER = '[[BR]]';
 
+export type ParagraphBlock =
+  | { type: 'paragraph'; text: string }
+  | { type: 'lineBreaks'; lines: string[] };
+
 export const normalizeParagraphText = (
   raw: string,
   marker = PARAGRAPH_MARKER,
@@ -46,3 +50,25 @@ export const splitParagraphs = (
   input: string,
   marker = PARAGRAPH_MARKER,
 ): string[] => normalizeParagraphText(input, marker).paragraphs;
+
+export const buildParagraphBlocks = (
+  input: string,
+  marker = PARAGRAPH_MARKER,
+  lineBreakMarker = LINE_BREAK_MARKER,
+): ParagraphBlock[] => {
+  const { paragraphs } = normalizeParagraphText(input, marker, lineBreakMarker);
+
+  return paragraphs
+    .map((paragraph) =>
+      paragraph
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean),
+    )
+    .filter((lines) => lines.length > 0)
+    .map((lines) =>
+      lines.length === 1
+        ? { type: 'paragraph', text: lines[0] }
+        : { type: 'lineBreaks', lines },
+    );
+};
