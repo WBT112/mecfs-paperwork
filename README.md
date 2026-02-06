@@ -4,11 +4,10 @@
 [![Docker Smoketest](https://github.com/WBT112/mecfs-paperwork/actions/workflows/docker-smoke.yml/badge.svg?branch=main)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/docker-smoke.yml)
 
 [![License: Apache-2.0](https://img.shields.io/github/license/WBT112/mecfs-paperwork)](https://github.com/WBT112/mecfs-paperwork/blob/main/LICENSE)
-[![Release](https://img.shields.io/github/v/release/WBT112/mecfs-paperwork?sort=semver)](https://github.com/WBT112/mecfs-paperwork/releases)
 [![Dependabot Updates](https://github.com/WBT112/mecfs-paperwork/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/dependabot/dependabot-updates)
 [![CodeQL](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/WBT112/mecfs-paperwork/actions/workflows/github-code-scanning/codeql)
-
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
+
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=coverage)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
