@@ -1,43 +1,24 @@
 # Contributing to mecfs-paperwork
 
-Thanks for contributing. This project is **offline-first** and deals with workflows that may involve sensitive health information. Please follow the rules below to keep contributions safe, reviewable, and consistent.
+Thanks for contributing! This is an offline‑first project around sensitive health workflows. We want contributions to feel approachable and still keep privacy and quality high. If you’re new here, start small — docs and tiny fixes are welcome.
 
-## Ground rules (non‑negotiable)
-
-- **No real patient data** in this repository — including issues, PRs, screenshots, logs, fixtures, exports, or attachments.
-- Use **clearly fake / anonymized** data only (names like `Alice Example`, dummy dates, random IDs).
-- **No telemetry / tracking / analytics**.
-- **Offline-first**: the app must not require network access at runtime (except loading the static app assets).
-- Do not log personal or sensitive data to the console.
-
-If you accidentally included sensitive data, remove it immediately and contact the maintainer via GitHub (Issue or direct message).
-
-## Where to start
-
-- Project overview: `README.md`
-- Quality Gates / DoD: `docs/qa/dod.md`
-- QA overview: `docs/qa/README.md`
-- Formpack authoring: `docs/formpacks.md`
-- Security reporting: `SECURITY.md`
-- Automation / agent quality policy: `AGENTS.md`
-
-## Development setup
-
-### Prerequisites
-- Node 24+ and npm (see `.nvmrc`).
-- Docker (optional, for container build testing).
-
-### Install & run
+## Quick start
 ```bash
 cd app
 npm ci
 npm run dev
 ```
 
-## Quality gates (required before opening a PR)
+## How to contribute (short version)
+- Keep PRs **small and focused**.
+- Open an issue before you start working, so we can discuss and don't work parallel on the same thing. 
+- Add/update tests for changed **business logic**.
+- Keep code comments **in English** and explain **why**, not what.
 
-Run from `app/`. All quality gates are enforced in CI. If the formatting check fails, run `npm run format` and re-run the checks locally:
+## Quality gates (CI enforces this)
+We run formatting, lint, typecheck, tests, and build in CI. **Don’t be discouraged** — you can open a PR early and we’ll help fix any failing checks.
 
+Run locally (from `app/`):
 ```bash
 npm run format:check
 npm run lint
@@ -48,73 +29,32 @@ npm run formpack:validate
 npm run build
 ```
 
-If E2E tests (`test:e2e`) fail due to missing dependencies, you may need to install browser binaries: `npx playwright install`.
-
-Optional (recommended): run the one-command helper script (Windows PowerShell):
-
-```powershell
-. .\tools\run-quality-gates.ps1
-```
-
-Optional (recommended, cross-platform):
-
+If E2E tests fail due to missing browsers:
 ```bash
-npm run quality-gates
+npx playwright install
 ```
 
-If you are temporarily on Node < 24, you can bypass the version check for the helper with `BYPASS_NODE_VERSION_CHECK=true`.
+Optional helpers:
+- `npm run quality-gates`
+- PowerShell: `. .\tools\run-quality-gates.ps1`
 
-Optional (coverage report):
+## Where to read more
+- Getting started & QA: `docs/getting-started.md`
+- QA details: `docs/qa/README.md`
+- Formpacks authoring: `docs/formpacks.md`
+- Security policy: `SECURITY.md`
+- Agent/automation standards: `AGENTS.md`
 
-```bash
-npm run test:coverage
-```
-## Issues
-- Please create an issue to discuss your idea first before you use precious time for coding and testing.
+## Non‑negotiables (privacy & offline‑first)
+- **No real patient data** in this repo (issues, PRs, screenshots, logs, fixtures, exports).
+- Use **clearly fake/anonymized** data only.
+- **No telemetry/tracking/analytics.**
+- **Offline-first:** no runtime network calls except static app assets.
+- Do not log personal/sensitive data to the console.
 
-## Pull requests
+If you accidentally included sensitive data, remove it immediately and contact the maintainer via GitHub.
 
-### Scope & structure
-- Prefer **small, focused PRs** (one change set / one intent).
-- Include a clear description: *what*, *why*, *how to test*.
-- Update documentation when behavior or workflows change.
-
-### Tests
-- Add or update **unit tests** for changed **business logic** (export/mapping/storage/helpers).
-- UI tests should be minimal and focused on critical user flows.
-- Tests must be deterministic — no sleeps/timing hacks/flaky assertions.
-
-### Code style
-- Follow the existing project style (ESLint/Prettier/TypeScript).
-- Keep code and test comments **in English**.
-
-## Comment Policy
-
-### Code & test comments
-- **Language:** Write code and test comments in **English**.
-- **Purpose:** Comments must explain **why** something exists (constraints, trade-offs, edge cases), not restate what the code already shows.
-- **Privacy:** Never include **real patient/health data** in comments, examples, fixtures, screenshots, logs, or exports. Use clearly fake data only.
-- **Durability:** Prefer stable, high-signal notes:
-  - `// RATIONALE:` for design decisions
-  - `// NOTE:` for non-obvious behavior
-  - `// SECURITY:` for security/privacy constraints
-- **Avoid noise:** Do not add comments that paraphrase obvious logic (“increment i”, “set state”).
-- **Tests:** Comment only when setup/mocking is non-trivial or a regression needs context. No timing hacks.
-
-## Security & privacy notes (local storage and exports)
-
-This app supports local storage and exports (e.g., DOCX/JSON). Exports may contain sensitive information.
-
-Please ensure:
-- Never attach real exports or real logs to PRs/issues.
-- Avoid copying export content into issues/PR descriptions.
-- Use fake data whenever you test export paths.
-
-## Reporting security issues
-
-Please do **not** publish exploit-ready details in public issues.
-Use the process described in `SECURITY.md` (GitHub issue with prefix **[SECURITY]** or contact the maintainer via GitHub).
+See also: `SECURITY.md`, `AGENTS.md`, and `docs/qa/dod.md`.
 
 ## License
-
-By contributing, you agree that your contributions will be licensed under the project’s license (Apache-2.0). See `LICENSE`.
+By contributing, you agree your changes are licensed under Apache-2.0. See `LICENSE`.

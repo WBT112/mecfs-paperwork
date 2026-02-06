@@ -51,6 +51,23 @@ Optional fields:
 - The document model includes `diagnosisParagraphs: string[]`, which is built from diagnosis flags and i18n keys.
 - Avoid hardcoding medical paragraph text in code; use `t()` with the formpack namespace.
 
+### Paragraph markers for export text
+Use markers inside translated strings to control how text breaks are rendered in previews and DOCX/PDF exports:
+- `[[P]]` starts a new paragraph (blank line between blocks).
+- `[[BR]]` inserts a single line break (next line without a blank line).
+
+The export pipeline splits on `[[P]]`, trims each segment, and removes the markers from the user-facing text. `[[BR]]` is normalized to a single newline inside each paragraph. When no marker is present, content remains a single paragraph (with a fallback to split on double newlines when they exist).
+
+Examples:
+- Heading + list:
+  `Kodierungen:[[BR]]G93.30 – Postvirales Erschöpfungssyndrom[[BR]]B94.81 – Folgen einer Infektion`
+- Paragraph + list:
+  `Hinweise:[[P]]Kodierungen:[[BR]]G93.30 – Postvirales Erschöpfungssyndrom[[BR]]B94.81 – Folgen einer Infektion`
+
+Guidance:
+- Do not stack `[[P]]` markers to force spacing.
+- Use `[[BR]]` for list-like content such as codes or bullet-style lines.
+
 ## JSON Schema (`schema.json`)
 - Uses JSON Schema Draft 2020-12 for MVP.
 - Defines the record structure stored by the app.
