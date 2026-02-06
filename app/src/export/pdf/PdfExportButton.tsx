@@ -23,6 +23,71 @@ type RequestState = {
   key: string;
 };
 
+const BUILD_TIMEOUT_MS = 20_000;
+const REQUEST_TIMEOUT_MS = 25_000;
+
+const createTimeoutError = (message: string) => new Error(message);
+
+const startTimeout = (
+  timeoutMs: number,
+  onTimeout: () => void,
+): (() => void) => {
+  let done = false;
+  let rafId: number | null = null;
+
+  const fire = () => {
+    if (done) {
+      return;
+    }
+    done = true;
+    onTimeout();
+  };
+
+  const timeoutId = window.setTimeout(fire, timeoutMs);
+
+  if (typeof window.requestAnimationFrame === 'function') {
+    const start = performance.now();
+    const tick = (now: number) => {
+      if (done) {
+        return;
+      }
+      if (now - start >= timeoutMs) {
+        fire();
+        return;
+      }
+      rafId = window.requestAnimationFrame(tick);
+    };
+    rafId = window.requestAnimationFrame(tick);
+  }
+
+  return () => {
+    done = true;
+    window.clearTimeout(timeoutId);
+    if (rafId !== null) {
+      window.cancelAnimationFrame(rafId);
+    }
+  };
+};
+
+const withTimeout = async <T,>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string,
+): Promise<T> => {
+  let cancelTimeout: () => void = () => undefined;
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    cancelTimeout = startTimeout(timeoutMs, () =>
+      reject(createTimeoutError(message)),
+    );
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    cancelTimeout();
+  }
+};
+
 const createRequestKey = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
@@ -49,30 +114,70 @@ const PdfExportButton = ({
     useState<ComponentType<PdfExportRuntimeProps> | null>(null);
   const isExporting = isBuilding || Boolean(request);
   const isMountedRef = useRef(true);
+  const onErrorRef = useRef(onError);
+  const exportTimeoutCancelRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
     };
   }, []);
 
-  const handleRequestDone = useCallback(() => {
-    setRequest(null);
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  const clearExportTimeout = useCallback(() => {
+    if (exportTimeoutCancelRef.current) {
+      exportTimeoutCancelRef.current();
+      exportTimeoutCancelRef.current = null;
+    }
   }, []);
+
+  useEffect(() => {
+    return () => clearExportTimeout();
+  }, [clearExportTimeout]);
+
+  const handleRequestDone = useCallback(() => {
+    clearExportTimeout();
+    setRequest(null);
+  }, [clearExportTimeout]);
 
   const handleClick = useCallback(async () => {
     if (disabled || isExporting) {
       return;
     }
 
+    clearExportTimeout();
     setIsBuilding(true);
+    exportTimeoutCancelRef.current = startTimeout(REQUEST_TIMEOUT_MS, () => {
+      if (!isMountedRef.current) {
+        return;
+      }
+      setIsBuilding(false);
+      setRequest(null);
+      onErrorRef.current?.(
+        normalizePdfExportError(
+          createTimeoutError('PDF export timed out. Please try again.'),
+        ),
+      );
+    });
 
     try {
       const [payload, runtime] = await Promise.all([
-        buildPayload(),
-        RuntimeComponent
-          ? Promise.resolve(RuntimeComponent)
-          : loadPdfExportRuntime(),
+        withTimeout(
+          buildPayload(),
+          BUILD_TIMEOUT_MS,
+          'PDF export timed out while preparing the document.',
+        ),
+        withTimeout(
+          RuntimeComponent
+            ? Promise.resolve(RuntimeComponent)
+            : loadPdfExportRuntime(),
+          BUILD_TIMEOUT_MS,
+          'PDF export timed out while loading the export runtime.',
+        ),
       ]);
 
       if (!isMountedRef.current) {
@@ -88,13 +193,21 @@ const PdfExportButton = ({
       if (!isMountedRef.current) {
         return;
       }
+      clearExportTimeout();
       onError?.(normalizePdfExportError(error));
     } finally {
       if (isMountedRef.current) {
         setIsBuilding(false);
       }
     }
-  }, [buildPayload, disabled, isExporting, onError, RuntimeComponent]);
+  }, [
+    buildPayload,
+    clearExportTimeout,
+    disabled,
+    isExporting,
+    onError,
+    RuntimeComponent,
+  ]);
 
   const buttonLabel = isExporting ? loadingLabel : label;
   const payload = request?.payload ?? null;

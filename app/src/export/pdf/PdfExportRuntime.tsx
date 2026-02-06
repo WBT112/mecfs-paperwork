@@ -25,6 +25,29 @@ type DownloadHandlerProps = {
 };
 
 const FALLBACK_TIMEOUT_MS = 4_000;
+const FALLBACK_HARD_TIMEOUT_MS = 20_000;
+
+const createTimeoutError = () =>
+  new Error('PDF export timed out. Please try again.');
+
+const toBlobWithTimeout = (pdfInstance: ReturnType<typeof pdf>) =>
+  new Promise<Blob>((resolve, reject) => {
+    const timeoutId = window.setTimeout(
+      () => reject(createTimeoutError()),
+      FALLBACK_HARD_TIMEOUT_MS,
+    );
+
+    pdfInstance
+      .toBlob()
+      .then((blob) => {
+        window.clearTimeout(timeoutId);
+        resolve(blob);
+      })
+      .catch((error) => {
+        window.clearTimeout(timeoutId);
+        reject(error);
+      });
+  });
 
 const PdfExportDownloadHandler = ({
   blob,
@@ -37,43 +60,64 @@ const PdfExportDownloadHandler = ({
   onError,
   onDone,
 }: DownloadHandlerProps) => {
-  const handledRef = useRef(false);
+  const completedRef = useRef(false);
+  const fallbackStartedRef = useRef(false);
 
   useEffect(() => {
-    handledRef.current = false;
+    completedRef.current = false;
+    fallbackStartedRef.current = false;
   }, [requestKey]);
 
   useEffect(() => {
-    if (handledRef.current) {
-      return;
-    }
+    const finalizeOnce = () => {
+      if (completedRef.current) {
+        return;
+      }
+      completedRef.current = true;
+      onDone();
+    };
+
+    const completeWithError = (errorValue: unknown) => {
+      if (completedRef.current) {
+        return;
+      }
+      onError?.(normalizePdfExportError(errorValue));
+      finalizeOnce();
+    };
 
     const timeoutId = window.setTimeout(() => {
-      if (handledRef.current) {
+      if (completedRef.current || fallbackStartedRef.current) {
         return;
       }
 
-      handledRef.current = true;
+      fallbackStartedRef.current = true;
 
       let pdfInstance;
       try {
         pdfInstance = pdf(payload.document);
       } catch (fallbackError) {
-        onError?.(normalizePdfExportError(fallbackError));
-        onDone();
+        completeWithError(fallbackError);
         return;
       }
 
-      pdfInstance
-        .toBlob()
+      toBlobWithTimeout(pdfInstance)
         .then((fallbackBlob) => {
-          downloadPdfExport({ blob: fallbackBlob, filename: payload.filename });
-          onSuccess?.();
+          if (completedRef.current) {
+            return;
+          }
+          try {
+            downloadPdfExport({
+              blob: fallbackBlob,
+              filename: payload.filename,
+            });
+            onSuccess?.();
+          } catch (downloadError) {
+            onError?.(normalizePdfExportError(downloadError));
+          } finally {
+            finalizeOnce();
+          }
         })
-        .catch((fallbackError) => {
-          onError?.(normalizePdfExportError(fallbackError));
-        })
-        .finally(onDone);
+        .catch(completeWithError);
     }, FALLBACK_TIMEOUT_MS);
 
     return () => window.clearTimeout(timeoutId);
@@ -87,21 +131,19 @@ const PdfExportDownloadHandler = ({
   ]);
 
   useEffect(() => {
-    if (handledRef.current || !error) {
+    if (completedRef.current || !error) {
       return;
     }
 
-    handledRef.current = true;
     onError?.(normalizePdfExportError(error));
+    completedRef.current = true;
     onDone();
   }, [error, onDone, onError]);
 
   useEffect(() => {
-    if (handledRef.current || (!blob && !url)) {
+    if (completedRef.current || (!blob && !url)) {
       return;
     }
-
-    handledRef.current = true;
 
     try {
       downloadPdfExport({ blob, url, filename: payload.filename });
@@ -109,6 +151,7 @@ const PdfExportDownloadHandler = ({
     } catch (downloadError) {
       onError?.(normalizePdfExportError(downloadError));
     } finally {
+      completedRef.current = true;
       onDone();
     }
   }, [blob, loading, onDone, onError, onSuccess, payload.filename, url]);

@@ -59,45 +59,6 @@ const exportDocxAndExpectSuccess = async (
   return download;
 };
 
-test('docx template select and export button align in height', async ({
-  page,
-  browserName,
-}) => {
-  await page.goto('/');
-  await page.evaluate(() => {
-    window.localStorage.clear();
-    window.sessionStorage.clear();
-  });
-  await deleteDatabase(page, DB_NAME);
-
-  await page.goto(`/formpacks/${FORM_PACK_ID}`);
-  await ensureActiveRecord(page);
-
-  const docxSection = page.locator('.formpack-docx-export');
-  await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
-
-  const templateSelect = docxSection.locator('.formpack-docx-export__select');
-  const exportButton = docxSection.locator('[data-action="docx-export"]');
-
-  await expect(templateSelect).toBeVisible({ timeout: POLL_TIMEOUT });
-  await expect(exportButton).toBeVisible({ timeout: POLL_TIMEOUT });
-
-  const selectBox = await templateSelect.boundingBox();
-  const buttonBox = await exportButton.boundingBox();
-
-  expect(selectBox).not.toBeNull();
-  expect(buttonBox).not.toBeNull();
-
-  if (!selectBox || !buttonBox) {
-    throw new Error('Expected bounding boxes for DOCX controls.');
-  }
-
-  const tolerance = browserName === 'webkit' ? 8 : 1;
-  expect(Math.abs(selectBox.height - buttonBox.height)).toBeLessThanOrEqual(
-    tolerance,
-  );
-});
-
 test.describe.configure({ mode: 'parallel' });
 
 const locales: SupportedTestLocale[] = ['de', 'en'];

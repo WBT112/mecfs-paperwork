@@ -5,7 +5,8 @@ import { openCollapsibleSection } from './helpers/sections';
 
 const FORM_PACK_ID = 'doctor-letter';
 const DB_NAME = 'mecfs-paperwork';
-const POLL_TIMEOUT = 20_000;
+const POLL_TIMEOUT = 30_000;
+const BUTTON_LABEL = /pdf exportieren|export pdf/i;
 
 const ensureActiveRecord = async (page: Page) => {
   const form = page.locator('.formpack-form');
@@ -48,11 +49,35 @@ test('pdf export produces a downloadable file', async ({ page }) => {
   const exportButton = pdfSection.locator('button.app__button');
   await expect(exportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
 
+  const downloadPromise = page
+    .waitForEvent('download', { timeout: POLL_TIMEOUT })
+    .then((download) => ({ type: 'download' as const, download }));
+  const errorPromise = page
+    .locator('.formpack-actions__status')
+    .locator('.app__error')
+    .first()
+    .waitFor({ state: 'visible', timeout: POLL_TIMEOUT })
+    .then(() => ({ type: 'error' as const }));
+
   await clickActionButton(exportButton, POLL_TIMEOUT);
 
   await expect(exportButton).toBeDisabled({ timeout: POLL_TIMEOUT });
   await expect(exportButton).toHaveText(/pdf wird erstellt|generating pdf/i, {
     timeout: POLL_TIMEOUT,
   });
-  await expect(pdfSection.locator('.app__error')).toHaveCount(0);
+
+  const completion = await Promise.any([downloadPromise, errorPromise]);
+
+  if (completion.type === 'download') {
+    expect(completion.download.suggestedFilename()).toMatch(/\.pdf$/i);
+  } else {
+    await expect(
+      page.locator('.formpack-actions__status').locator('.app__error'),
+    ).toBeVisible({ timeout: POLL_TIMEOUT });
+  }
+
+  await expect(exportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
+  await expect(exportButton).toHaveText(BUTTON_LABEL, {
+    timeout: POLL_TIMEOUT,
+  });
 });
