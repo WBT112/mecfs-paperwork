@@ -43,9 +43,9 @@ const startTimeout = (
     onTimeout();
   };
 
-  const timeoutId = window.setTimeout(fire, timeoutMs);
+  const timeoutId = globalThis.setTimeout(fire, timeoutMs);
 
-  if (typeof window.requestAnimationFrame === 'function') {
+  if (typeof globalThis.requestAnimationFrame === 'function') {
     const start = performance.now();
     const tick = (now: number) => {
       if (done) {
@@ -55,16 +55,16 @@ const startTimeout = (
         fire();
         return;
       }
-      rafId = window.requestAnimationFrame(tick);
+      rafId = globalThis.requestAnimationFrame(tick);
     };
-    rafId = window.requestAnimationFrame(tick);
+    rafId = globalThis.requestAnimationFrame(tick);
   }
 
   return () => {
     done = true;
-    window.clearTimeout(timeoutId);
+    globalThis.clearTimeout(timeoutId);
     if (rafId !== null) {
-      window.cancelAnimationFrame(rafId);
+      globalThis.cancelAnimationFrame(rafId);
     }
   };
 };
@@ -88,10 +88,21 @@ const withTimeout = async <T,>(
   }
 };
 
-const createRequestKey = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const createRequestKey = () => {
+  const crypto = globalThis.crypto as Crypto | undefined;
+
+  if (crypto?.randomUUID) {
+    return crypto.randomUUID();
+  }
+  if (crypto?.getRandomValues) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(
+      '',
+    );
+  }
+  return `${Date.now()}`;
+};
 
 const loadPdfExportRuntime = async (): Promise<
   ComponentType<PdfExportRuntimeProps>

@@ -1,5 +1,6 @@
 import i18n from './index';
-import { defaultLocale, fallbackLocale, SupportedLocale } from './locale';
+import type { SupportedLocale } from './locale';
+import { defaultLocale, fallbackLocale } from './locale';
 
 type FormpackTranslations = Record<string, string>;
 

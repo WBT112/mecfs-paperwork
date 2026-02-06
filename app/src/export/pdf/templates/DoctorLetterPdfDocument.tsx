@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Document,
   Image,
@@ -135,10 +134,24 @@ const styles = StyleSheet.create({
   },
 });
 
-const renderBlock = (block: DocumentBlock, idx: number) => {
+const getBlockKey = (block: DocumentBlock) => {
+  if (block.type === 'paragraph') {
+    return `p:${block.text}`;
+  }
+  if (block.type === 'lineBreaks') {
+    return `lb:${block.lines.join('|')}`;
+  }
+  if (block.type === 'bullets') {
+    return `bullets:${block.items.join('|')}`;
+  }
+  return `kv:${block.rows.map((row) => row.join(':')).join('|')}`;
+};
+
+const renderBlock = (block: DocumentBlock) => {
+  const key = getBlockKey(block);
   if (block.type === 'paragraph') {
     return (
-      <Text key={idx} style={styles.paragraph}>
+      <Text key={key} style={styles.paragraph}>
         {block.text}
       </Text>
     );
@@ -147,13 +160,8 @@ const renderBlock = (block: DocumentBlock, idx: number) => {
   if (block.type === 'lineBreaks') {
     // Keep explicit line breaks *within* the same paragraph.
     return (
-      <Text key={idx} style={styles.paragraph}>
-        {block.lines.map((line, lineIdx) => (
-          <React.Fragment key={lineIdx}>
-            {lineIdx > 0 ? '\n' : ''}
-            {line}
-          </React.Fragment>
-        ))}
+      <Text key={key} style={styles.paragraph}>
+        {block.lines.join('\n')}
       </Text>
     );
   }
@@ -282,7 +290,7 @@ const isKvTableBlock = (
 
 const getKvTableRows = (model: DocumentModel, id: string) => {
   const section = getSectionById(model, id);
-  const kvBlock = section?.blocks.find(isKvTableBlock);
+  const kvBlock = section?.blocks.find((block) => isKvTableBlock(block));
   return kvBlock ? kvBlock.rows : [];
 };
 
@@ -447,17 +455,17 @@ export const DoctorLetterPdfDocument = ({
 
         <Text style={styles.paragraph}>{salutation}</Text>
 
-        {copy.introParagraphs.map((paragraph, index) => (
-          <Text key={`intro-${index}`} style={styles.paragraph}>
+        {copy.introParagraphs.map((paragraph) => (
+          <Text key={`intro:${paragraph}`} style={styles.paragraph}>
             {paragraph}
           </Text>
         ))}
 
         {/* Decision / case text (dynamic) */}
-        {decisionBlocks.map(renderBlock)}
+        {decisionBlocks.map((block) => renderBlock(block))}
 
-        {copy.closingParagraphs.map((paragraph, index) => (
-          <Text key={`closing-${index}`} style={styles.paragraph}>
+        {copy.closingParagraphs.map((paragraph) => (
+          <Text key={`closing:${paragraph}`} style={styles.paragraph}>
             {paragraph}
           </Text>
         ))}
@@ -468,8 +476,8 @@ export const DoctorLetterPdfDocument = ({
 
         <View style={styles.attachmentsBlock}>
           <Text style={styles.attachmentsTitle}>{copy.attachmentsTitle}</Text>
-          {copy.attachmentsItems.map((item, index) => (
-            <Text key={`attachment-${index}`} style={styles.attachmentsItem}>
+          {copy.attachmentsItems.map((item) => (
+            <Text key={`attachment:${item}`} style={styles.attachmentsItem}>
               {item}
             </Text>
           ))}
@@ -507,9 +515,9 @@ export const DoctorLetterPdfDocument = ({
           )
         </Text>
 
-        {copy.annex2.preImageParagraphs.map((paragraph, index) => (
+        {copy.annex2.preImageParagraphs.map((paragraph) => (
           <Text
-            key={`annex2-pre-${index}`}
+            key={`annex2-pre:${paragraph}`}
             style={[styles.paragraph, styles.small]}
           >
             {paragraph}
@@ -521,9 +529,9 @@ export const DoctorLetterPdfDocument = ({
           style={{ ...styles.annexImage, height: 360 }}
         />
 
-        {copy.annex2.postImageParagraphs.map((paragraph, index) => (
+        {copy.annex2.postImageParagraphs.map((paragraph) => (
           <Text
-            key={`annex2-post-${index}`}
+            key={`annex2-post:${paragraph}`}
             style={[styles.paragraph, styles.small]}
           >
             {paragraph}

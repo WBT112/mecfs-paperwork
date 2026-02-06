@@ -125,14 +125,18 @@ const getValidatedExports = (
     );
   }
 
-  if (!payload.exports.every(isFormpackExportType)) {
+  if (
+    !payload.exports.every((exportType) => isFormpackExportType(exportType))
+  ) {
     throw new FormpackLoaderError(
       'unsupported',
       'The formpack manifest declares an unsupported export type.',
     );
   }
 
-  return payload.exports.filter(isFormpackExportType);
+  return payload.exports.filter((exportType) =>
+    isFormpackExportType(exportType),
+  );
 };
 
 const getValidatedVisibility = (

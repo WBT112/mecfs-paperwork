@@ -32,7 +32,7 @@ const createTimeoutError = () =>
 
 const toBlobWithTimeout = (pdfInstance: ReturnType<typeof pdf>) =>
   new Promise<Blob>((resolve, reject) => {
-    const timeoutId = window.setTimeout(
+    const timeoutId = globalThis.setTimeout(
       () => reject(createTimeoutError()),
       FALLBACK_HARD_TIMEOUT_MS,
     );
@@ -40,11 +40,11 @@ const toBlobWithTimeout = (pdfInstance: ReturnType<typeof pdf>) =>
     pdfInstance
       .toBlob()
       .then((blob) => {
-        window.clearTimeout(timeoutId);
+        globalThis.clearTimeout(timeoutId);
         resolve(blob);
       })
       .catch((error) => {
-        window.clearTimeout(timeoutId);
+        globalThis.clearTimeout(timeoutId);
         reject(error);
       });
   });
@@ -85,7 +85,7 @@ const PdfExportDownloadHandler = ({
       finalizeOnce();
     };
 
-    const timeoutId = window.setTimeout(() => {
+    const timeoutId = globalThis.setTimeout(() => {
       if (completedRef.current || fallbackStartedRef.current) {
         return;
       }
@@ -120,7 +120,7 @@ const PdfExportDownloadHandler = ({
         .catch(completeWithError);
     }, FALLBACK_TIMEOUT_MS);
 
-    return () => window.clearTimeout(timeoutId);
+    return () => globalThis.clearTimeout(timeoutId);
   }, [
     onDone,
     onError,

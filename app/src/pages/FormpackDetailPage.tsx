@@ -322,13 +322,21 @@ const isDecisionCaseParagraphsPath = (fieldPath?: string): boolean =>
 const renderParagraphs = (
   paragraphs: string[],
   keyPrefix: string,
-): ReactNode => (
-  <>
-    {paragraphs.map((paragraph, index) => (
-      <p key={`${keyPrefix}-${index}`}>{paragraph}</p>
-    ))}
-  </>
-);
+): ReactNode => {
+  const counts = new Map<string, number>();
+
+  return (
+    <>
+      {paragraphs.map((paragraph) => {
+        const count = counts.get(paragraph) ?? 0;
+        counts.set(paragraph, count + 1);
+        const key = `${keyPrefix}-${paragraph}-${count}`;
+
+        return <p key={key}>{paragraph}</p>;
+      })}
+    </>
+  );
+};
 
 const hasDecisionCaseText = (value: Record<string, unknown>): boolean =>
   typeof value.caseText === 'string' ||
@@ -570,11 +578,11 @@ function renderPreviewObject(
 ): ReactNode {
   const resolveWithFallback =
     resolveValue ??
-    ((value, schemaNode, uiNode, fieldPath) =>
-      resolveDisplayValue(value, {
-        schema: schemaNode,
-        uiSchema: uiNode,
-        fieldPath,
+    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
+      resolveDisplayValue(entryValue, {
+        schema: entrySchema,
+        uiSchema: entryUi,
+        fieldPath: entryFieldPath,
       }));
   const schemaProps =
     schemaNode && isRecord(schemaNode.properties)
@@ -663,11 +671,11 @@ function renderPreviewArray(
   const itemUi = getItemUiSchema(uiNode);
   const resolveWithFallback =
     resolveValue ??
-    ((value, schemaNode, uiNode, fieldPath) =>
-      resolveDisplayValue(value, {
-        schema: schemaNode,
-        uiSchema: uiNode,
-        fieldPath,
+    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
+      resolveDisplayValue(entryValue, {
+        schema: entrySchema,
+        uiSchema: entryUi,
+        fieldPath: entryFieldPath,
       }));
   const items = values
     .map<ReactNode>((entry, index) => {
@@ -778,12 +786,12 @@ export default function FormpackDetailPage() {
       setUiSchema(null);
     };
 
-    const loadManifest = async (formpackId: string) => {
+    const loadManifest = async (requestedFormpackId: string) => {
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
-        const result = await loadFormpackAssets(formpackId, locale, t);
+        const result = await loadFormpackAssets(requestedFormpackId, locale, t);
         if (!isActive) {
           return;
         }
@@ -793,13 +801,14 @@ export default function FormpackDetailPage() {
           return;
         }
         setFormpackTranslationsVersion((version) => version + 1);
-        const shouldResetFormData = lastFormpackIdRef.current !== formpackId;
+        const shouldResetFormData =
+          lastFormpackIdRef.current !== requestedFormpackId;
         setManifest(result.manifest);
         setSchema(result.schema);
         setUiSchema(result.uiSchema);
         if (shouldResetFormData) {
           setFormData({});
-          lastFormpackIdRef.current = formpackId;
+          lastFormpackIdRef.current = requestedFormpackId;
         }
       } catch (error) {
         if (!isActive) {
@@ -1598,7 +1607,7 @@ export default function FormpackDetailPage() {
         Boolean(entry),
       );
 
-    return sections.length ? <>{sections}</> : null;
+    return sections.length ? sections : null;
   }, [formData, previewUiSchema, resolvePreviewValue, schema]);
   const handleExportJson = useCallback(() => {
     if (!manifest || !activeRecord) {
@@ -1725,11 +1734,11 @@ export default function FormpackDetailPage() {
     const loadValidator = async () => {
       const module = await import('@rjsf/validator-ajv8');
       // Ajv2020 includes the draft 2020-12 meta schema used by formpacks.
-      const validator = module.customizeValidator({
+      const loadedValidator = module.customizeValidator({
         AjvClass: Ajv2020,
       });
       if (isActive) {
-        setValidator(validator);
+        setValidator(loadedValidator);
       }
     };
 

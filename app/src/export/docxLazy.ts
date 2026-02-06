@@ -1,7 +1,21 @@
-import type { DocxTemplateId, ExportDocxOptions } from './docx';
+import type {
+  buildDocxExportFilename as buildDocxExportFilenameType,
+  downloadDocxExport as downloadDocxExportType,
+  DocxTemplateId,
+  exportDocx as exportDocxType,
+  ExportDocxOptions,
+  getDocxErrorKey as getDocxErrorKeyType,
+  preloadDocxAssets as preloadDocxAssetsType,
+} from './docx';
 import type { FormpackDocxManifest } from '../formpacks/types';
 
-type DocxModule = typeof import('./docx');
+type DocxModule = {
+  buildDocxExportFilename: typeof buildDocxExportFilenameType;
+  downloadDocxExport: typeof downloadDocxExportType;
+  exportDocx: typeof exportDocxType;
+  getDocxErrorKey: typeof getDocxErrorKeyType;
+  preloadDocxAssets: typeof preloadDocxAssetsType;
+};
 
 let docxModulePromise: Promise<DocxModule> | null = null;
 

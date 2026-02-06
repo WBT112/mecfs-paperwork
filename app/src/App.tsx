@@ -2,7 +2,7 @@ import { useCallback, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from './i18n/useLocale';
-import { SupportedLocale } from './i18n/locale';
+import type { SupportedLocale } from './i18n/locale';
 import Footer from './components/Footer';
 import ThemeSwitcher from './components/ThemeSwitcher';
 import TopbarActions from './components/TopbarActions';

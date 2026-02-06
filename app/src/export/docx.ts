@@ -21,6 +21,11 @@ import type {
   FormpackDocxManifest,
   FormpackManifest,
 } from '../formpacks/types';
+import {
+  downloadBlobExport,
+  formatExportDate,
+  sanitizeFilenamePart,
+} from './downloadUtils';
 import { getRecord } from '../storage/records';
 import { isRecord, getFirstItem } from '../lib/utils';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
@@ -773,10 +778,10 @@ export const mapDocumentDataToTemplate = async (
     fieldPath?: string,
   ) =>
     resolveDisplayValue(value, {
-      t: (key, options) =>
+      t: (key, i18nOptions) =>
         key.startsWith('common.')
-          ? i18n.getFixedT(locale, 'app')(key, options)
-          : i18n.getFixedT(locale, `formpack:${formpackId}`)(key, options),
+          ? i18n.getFixedT(locale, 'app')(key, i18nOptions)
+          : i18n.getFixedT(locale, `formpack:${formpackId}`)(key, i18nOptions),
       namespace: 'app',
       formpackId,
       fieldPath,
@@ -858,59 +863,6 @@ export const loadDocxTemplate = async (
   return template;
 };
 
-const formatExportDate = (value: Date) =>
-  value.toISOString().slice(0, 10).replaceAll('-', '');
-
-const RESERVED_FILENAME_CHARS = new Set([
-  '\\',
-  '/',
-  ':',
-  '*',
-  '?',
-  '"',
-  '<',
-  '>',
-  '|',
-  '_',
-]);
-
-const sanitizeFilenamePart = (value: string | null | undefined) => {
-  if (!value) return '';
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-
-  // SECURITY: Use a linear-time sanitizer to avoid regex backtracking on user input.
-  let result = '';
-  let inReplacement = false;
-
-  for (const char of trimmed) {
-    const isWhitespace = char.trim().length === 0;
-    const isReserved = RESERVED_FILENAME_CHARS.has(char);
-
-    if (isWhitespace || isReserved) {
-      if (!inReplacement) {
-        result += '-';
-        inReplacement = true;
-      }
-      continue;
-    }
-
-    result += char;
-    inReplacement = false;
-  }
-
-  let start = 0;
-  let end = result.length;
-  while (start < end && result[start] === '-') {
-    start += 1;
-  }
-  while (end > start && result[end - 1] === '-') {
-    end -= 1;
-  }
-
-  return result.slice(start, end).slice(0, 80);
-};
-
 /**
  * Builds the exported DOCX filename.
  */
@@ -953,25 +905,13 @@ export const downloadDocxExport = (
   report: Uint8Array | Blob,
   filename: string,
 ): void => {
-  const safeFilename = filename.toLowerCase().endsWith('.docx')
-    ? filename
-    : `${filename}.docx`;
-
-  const blob =
-    report instanceof Blob
-      ? report
-      : new Blob([new Uint8Array(report)], { type: DOCX_MIME });
-  const url = URL.createObjectURL(blob);
-
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = safeFilename;
-  anchor.rel = 'noopener';
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-
-  globalThis.setTimeout(() => URL.revokeObjectURL(url), 0);
+  downloadBlobExport({
+    blob: report,
+    filename,
+    mimeType: DOCX_MIME,
+    defaultExtension: '.docx',
+    errorMessage: 'DOCX export could not be generated.',
+  });
 };
 
 export type ExportDocxOptions = {

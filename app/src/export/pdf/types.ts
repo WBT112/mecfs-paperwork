@@ -89,7 +89,7 @@ export const isDocumentSection = (value: unknown): value is DocumentSection => {
   if (value.id !== undefined && typeof value.id !== 'string') {
     return false;
   }
-  return value.blocks.every(isDocumentBlock);
+  return value.blocks.every((block) => isDocumentBlock(block));
 };
 
 export const isDocumentModel = (value: unknown): value is DocumentModel => {
@@ -110,5 +110,5 @@ export const isDocumentModel = (value: unknown): value is DocumentModel => {
       return false;
     }
   }
-  return value.sections.every(isDocumentSection);
+  return value.sections.every((section) => isDocumentSection(section));
 };

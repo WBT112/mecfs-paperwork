@@ -4,9 +4,11 @@ import js from '@eslint/js';
 import globals from 'globals';
 import tsParser from '@typescript-eslint/parser';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
+import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import sonarjs from 'eslint-plugin-sonarjs';
+import unicorn from 'eslint-plugin-unicorn';
 
 const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
 const sonarjsLegacyRules = [
@@ -121,8 +123,15 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
+      react,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      unicorn,
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
     },
     rules: {
       'no-unused-vars': 'off',
@@ -140,6 +149,33 @@ export default [
         'warn',
         { allowConstantExport: true },
       ],
+    },
+  },
+
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+      react,
+      unicorn,
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
+    rules: {
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
+      ],
+      '@typescript-eslint/no-shadow': 'error',
+      'react/no-array-index-key': 'error',
+      'react/jsx-no-useless-fragment': 'error',
+      'react-hooks/exhaustive-deps': 'error',
+      'unicorn/prefer-global-this': 'error',
+      'unicorn/no-array-callback-reference': 'error',
+      'unicorn/prefer-optional-catch-binding': 'error',
     },
   },
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import i18n from './index';
+import type { SupportedLocale } from './locale';
 import {
-  SupportedLocale,
   defaultLocale,
   isSupportedLocale,
   setStoredLocale,
