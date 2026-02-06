@@ -11,6 +11,8 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=coverage)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
+
 
 # mecfs-paperwork
 
