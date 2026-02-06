@@ -17,6 +17,12 @@ describe('buildPdfExportFilename', () => {
       'doctor-letter-pdf-20260202.pdf',
     );
   });
+
+  it('falls back to a default name when the formpack id is empty', () => {
+    expect(buildPdfExportFilename('   ', fixedDate)).toBe(
+      'document-pdf-20260202.pdf',
+    );
+  });
 });
 
 describe('downloadPdfExport', () => {

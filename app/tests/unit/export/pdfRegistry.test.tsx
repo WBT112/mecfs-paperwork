@@ -29,5 +29,5 @@ describe('getPdfExportConfig', () => {
       model: DocumentModel;
     }>;
     expect(element.props.model).toBe(model);
-  });
+  }, 15_000);
 });

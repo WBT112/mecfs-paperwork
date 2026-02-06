@@ -42,6 +42,7 @@ describe('pdf document type helpers', () => {
 
   it('validates document blocks', () => {
     expect(isDocumentBlock(validModel.sections[0].blocks[0])).toBe(true);
+    expect(isDocumentBlock({ type: 'paragraph', text: 123 })).toBe(false);
     expect(isDocumentBlock({ type: 'lineBreaks', lines: 'nope' })).toBe(false);
     expect(isDocumentBlock({ type: 'kvTable', rows: [['Key']] })).toBe(false);
     expect(isDocumentBlock({ type: 'bullets', items: [1, 2] })).toBe(false);
@@ -49,16 +50,27 @@ describe('pdf document type helpers', () => {
 
   it('validates document sections', () => {
     expect(isDocumentSection(validModel.sections[0])).toBe(true);
+    expect(isDocumentSection({ id: 123, heading: 'Heading', blocks: [] })).toBe(
+      false,
+    );
     expect(isDocumentSection({ heading: 42, blocks: [] })).toBe(false);
     expect(isDocumentSection({ blocks: 'nope' })).toBe(false);
   });
 
   it('validates document models', () => {
     expect(isDocumentModel(validModel)).toBe(true);
+    expect(isDocumentModel({ title: 42, sections: [] })).toBe(false);
+    expect(isDocumentModel({ sections: [], meta: 'nope' })).toBe(false);
     expect(
       isDocumentModel({
         ...validModel,
         meta: { createdAtIso: 123, locale: 'de' },
+      }),
+    ).toBe(false);
+    expect(
+      isDocumentModel({
+        ...validModel,
+        meta: { createdAtIso: '2026-02-02T00:00:00.000Z', locale: 123 },
       }),
     ).toBe(false);
     expect(isDocumentModel({ sections: [{ blocks: [] }] })).toBe(true);
