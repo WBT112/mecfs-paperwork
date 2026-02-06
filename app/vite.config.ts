@@ -108,6 +108,40 @@ const createConfig = (mode: string): AppConfig => ({
           if (!id.includes('node_modules')) {
             return undefined;
           }
+          if (id.includes('@react-pdf/renderer')) {
+            return 'vendor-react-pdf-renderer';
+          }
+          if (
+            id.includes('@react-pdf/layout') ||
+            id.includes('@react-pdf/textkit')
+          ) {
+            return 'vendor-react-pdf-layout';
+          }
+          if (id.includes('@react-pdf/font')) {
+            return 'vendor-react-pdf-font';
+          }
+          if (
+            id.includes('@react-pdf/image') ||
+            id.includes('@react-pdf/png-js')
+          ) {
+            return 'vendor-react-pdf-image';
+          }
+          if (id.includes('@react-pdf/primitives')) {
+            return 'vendor-react-pdf-primitives';
+          }
+          if (id.includes('@react-pdf/pdfkit')) {
+            return 'vendor-react-pdf-pdfkit';
+          }
+          if (id.includes('yoga-layout')) {
+            return 'vendor-react-pdf-yoga';
+          }
+          if (
+            id.includes('fontkit') ||
+            id.includes('/unicode-') ||
+            id.includes('linebreak')
+          ) {
+            return 'vendor-react-pdf-fontkit';
+          }
           if (id.includes('@rjsf')) {
             return 'vendor-rjsf';
           }
