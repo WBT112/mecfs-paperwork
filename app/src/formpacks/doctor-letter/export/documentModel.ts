@@ -178,8 +178,19 @@ export const buildDoctorLetterDocumentModel = ({
     defaultValue: 'Case result',
   });
 
+  const templateData = {
+    patient,
+    doctor,
+    decision: {
+      caseText,
+    },
+    dateLabel,
+    formattedDate,
+    exportedAtIso: exportedAt.toISOString(),
+  };
+
   return {
-    meta: { createdAtIso: exportedAt.toISOString(), locale },
+    meta: { createdAtIso: exportedAt.toISOString(), locale, templateData },
     sections: [
       {
         heading: t('doctor-letter.section.patient.title', {
