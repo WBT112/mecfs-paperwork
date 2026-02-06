@@ -57,53 +57,45 @@ type DoctorLetterTemplateData = {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 36,
-    paddingBottom: 36,
-    paddingHorizontal: 42,
+    paddingTop: 127.56,
+    paddingBottom: 56.69,
+    paddingLeft: 70.87,
+    paddingRight: 56.69,
+    fontFamily: 'Helvetica',
     fontSize: 11,
     lineHeight: 1.35,
   },
   headerPatientLine: {
     fontSize: 10,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   hr: {
     borderBottomWidth: 1,
     borderBottomColor: '#000000',
-    marginBottom: 14,
+    marginBottom: 10,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
+  headerBlock: {
+    marginBottom: 14,
   },
   addressBlock: {
     flexGrow: 1,
-    paddingRight: 12,
   },
-  dateBlock: {
-    width: 150,
-    alignItems: 'flex-end',
+  dateLine: {
+    marginTop: 6,
+    textAlign: 'right',
   },
   subject: {
     fontSize: 11,
     fontWeight: 700,
-    marginBottom: 14,
+    marginBottom: 12,
   },
-  columns: {
-    flexDirection: 'row',
-    gap: 18,
-  },
-  leftColumn: {
-    flexGrow: 1,
-    flexBasis: 0,
-  },
-  rightColumn: {
-    width: 170,
+  attachmentsBlock: {
+    marginTop: 14,
   },
   attachmentsTitle: {
     fontWeight: 700,
-    marginBottom: 2,
+    fontSize: 10,
+    marginBottom: 4,
   },
   attachmentsItem: {
     fontSize: 9,
@@ -112,11 +104,8 @@ const styles = StyleSheet.create({
   paragraph: {
     marginBottom: 10,
   },
-  signatureSpacer: {
-    marginTop: 16,
-  },
   signatureName: {
-    marginTop: 18,
+    marginTop: 16,
   },
   // Annex pages
   annexTitle: {
@@ -437,7 +426,7 @@ export const DoctorLetterPdfDocument = ({
         {pLine ? <Text style={styles.headerPatientLine}>{pLine}</Text> : null}
         <View style={styles.hr} />
 
-        <View style={styles.headerRow}>
+        <View style={styles.headerBlock}>
           <View style={styles.addressBlock}>
             {doctor.practice ? <Text>{doctor.practice}</Text> : null}
             {formatDoctorNameLine(doctor) ? (
@@ -449,49 +438,41 @@ export const DoctorLetterPdfDocument = ({
             {doctorCityLine ? <Text>{doctorCityLine}</Text> : null}
           </View>
 
-          <View style={styles.dateBlock}>
-            <Text>
-              {resolvedDateLabel}: {resolvedDate}
-            </Text>
-          </View>
+          <Text style={styles.dateLine}>
+            {resolvedDateLabel}: {resolvedDate}
+          </Text>
         </View>
 
-        <View style={styles.columns}>
-          {/* Left: letter content */}
-          <View style={styles.leftColumn}>
-            <Text style={styles.subject}>{copy.subject}</Text>
+        <Text style={styles.subject}>{copy.subject}</Text>
 
-            <Text style={styles.paragraph}>{salutation}</Text>
+        <Text style={styles.paragraph}>{salutation}</Text>
 
-            {copy.introParagraphs.map((paragraph, index) => (
-              <Text key={`intro-${index}`} style={styles.paragraph}>
-                {paragraph}
-              </Text>
-            ))}
+        {copy.introParagraphs.map((paragraph, index) => (
+          <Text key={`intro-${index}`} style={styles.paragraph}>
+            {paragraph}
+          </Text>
+        ))}
 
-            {/* Decision / case text (dynamic) */}
-            {decisionBlocks.map(renderBlock)}
+        {/* Decision / case text (dynamic) */}
+        {decisionBlocks.map(renderBlock)}
 
-            {copy.closingParagraphs.map((paragraph, index) => (
-              <Text key={`closing-${index}`} style={styles.paragraph}>
-                {paragraph}
-              </Text>
-            ))}
+        {copy.closingParagraphs.map((paragraph, index) => (
+          <Text key={`closing-${index}`} style={styles.paragraph}>
+            {paragraph}
+          </Text>
+        ))}
 
-            <Text style={styles.paragraph}>{copy.closingGreeting}</Text>
+        <Text style={styles.paragraph}>{copy.closingGreeting}</Text>
 
-            <Text style={styles.signatureName}>{signatureName}</Text>
-          </View>
+        <Text style={styles.signatureName}>{signatureName}</Text>
 
-          {/* Right: attachments */}
-          <View style={styles.rightColumn}>
-            <Text style={styles.attachmentsTitle}>{copy.attachmentsTitle}</Text>
-            {copy.attachmentsItems.map((item, index) => (
-              <Text key={`attachment-${index}`} style={styles.attachmentsItem}>
-                {item}
-              </Text>
-            ))}
-          </View>
+        <View style={styles.attachmentsBlock}>
+          <Text style={styles.attachmentsTitle}>{copy.attachmentsTitle}</Text>
+          {copy.attachmentsItems.map((item, index) => (
+            <Text key={`attachment-${index}`} style={styles.attachmentsItem}>
+              {item}
+            </Text>
+          ))}
         </View>
       </Page>
 
@@ -501,7 +482,7 @@ export const DoctorLetterPdfDocument = ({
 
         <Image
           src={annex1SchemaImg}
-          style={{ ...styles.annexImage, height: 650 }}
+          style={{ ...styles.annexImage, height: 560 }}
         />
 
         <Text style={styles.annexCaption}>{copy.annex1.caption}</Text>
