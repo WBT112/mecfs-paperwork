@@ -128,7 +128,7 @@ Typischer Ablauf:
 
 **„Ich sehe meinen Entwurf nicht mehr.“**
 
-- Prüfe, ob du im richtigen Formpack bist.
+- Prüfe, ob du im richtigen Hilfsangebot bist.
 - Schau in Entwürfe/Snapshots, ob ein Zwischenstand vorhanden ist.
 - Hast du das Gerät gewechselt ? Daten werden nur auf dem aktuellen Gerät gespeichert.
 
@@ -143,11 +143,17 @@ Typischer Ablauf:
 
 **„Ich will nur drucken/versenden.“**
 
-- Öffne die DOCX und exportiere anschließend als PDF (je nach App: „Exportieren“ / „Drucken“ / „Als PDF sichern“).
+- Exportiere direkt als PDF
+
+**„Etwas funktioniert nicht oder ich sehe Hilfsangebot XYZ nicht“**
+
+- Lade die Seite neu
+- Versuche das ganze nochmal in einem "Privaten Fenster"
+- Wenn das nicht hilft: kontaktier uns über den Feedback-Button
 
 ---
 
-## 8) Datenschutz & sichere Arbeitsweise (Kurz)
+## 8) Datenschutz & sichere Arbeitsweise
 
 - Prüfe vor dem Teilen eines DOCX/PDF/JSON, ob Inhalte enthalten sind, die du nicht weitergeben möchtest.
 - Es werden nach dem Laden der Seite keine weiteren Daten zwischen deinem Gerät und dem Server ausgetauscht.

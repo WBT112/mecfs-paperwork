@@ -22,6 +22,29 @@ The repository ships multiple compose files for different contexts:
 - `Caddyfile`: Production + staging routing for TLS on the server.
 - `Caddyfile.local`: Local HTTP routing for the proxy setup.
 
+## Compose Quick Reference
+
+Server runtime (pulls prod + staging images):
+```bash
+docker login docker.io   # only if needed
+COMPOSE_PROJECT_NAME=mecfs-paperwork docker compose -f compose.deploy.yaml pull
+COMPOSE_PROJECT_NAME=mecfs-paperwork docker compose -f compose.deploy.yaml up -d
+```
+
+Local/CI command (single container, HTTP on localhost:8080):
+```bash
+docker compose -f compose.yaml up -d --build
+```
+
+Local production topology without TLS:
+```bash
+docker compose -f compose.prod.yaml -f compose.local-proxy.yaml up -d --build
+```
+
+Notes:
+- The deploy stack pins its network name to `mecfs-paperwork_web`. Keep a single Compose project name so Caddy and the app stay on the same network (avoids 502s).
+- The NGINX base image writes its PID to `/run/nginx/nginx.pid`. The compose files mount `/run/nginx` as tmpfs so it remains writable with `read_only: true`. If you change tmpfs settings, recreate the containers.
+
 ## Environment Differences
 
 ### Production (`main` branch)
