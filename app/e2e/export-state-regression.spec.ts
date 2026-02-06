@@ -81,7 +81,9 @@ test('json export followed by docx export re-enables actions', async ({
   expect(docxDownload.suggestedFilename()).toMatch(/\.docx$/i);
 
   await expect(
-    docxSection.locator('.formpack-docx-export__success'),
+    page
+      .locator('.formpack-actions__status')
+      .locator('.formpack-actions__success'),
   ).toBeVisible({ timeout: POLL_TIMEOUT });
   await expect(jsonExportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
   await expect(docxExportButton).toBeEnabled({ timeout: POLL_TIMEOUT });

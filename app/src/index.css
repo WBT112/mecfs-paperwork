@@ -309,6 +309,7 @@ body {
   font-weight: 600;
   border-radius: 8px;
   padding: 0.45rem 0.9rem;
+  min-height: 44px;
   cursor: pointer;
 }
 
@@ -943,15 +944,44 @@ body {
   flex-wrap: wrap;
   gap: 0.75rem;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
+}
+
+.formpack-actions__group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.formpack-actions__group--export {
+  flex: 1 1 auto;
+  margin-right: auto;
+}
+
+.formpack-actions__group--secondary {
+  flex: 0 0 auto;
 }
 
 .formpack-docx-export {
   display: flex;
   flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.formpack-docx-export__template {
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
-  margin-right: auto;
+}
+
+.formpack-docx-export__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .formpack-docx-export__label {
@@ -979,12 +1009,6 @@ body {
   outline-offset: 2px;
 }
 
-.formpack-docx-export__success {
-  color: var(--color-success-strong);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
 .formpack-pdf-export {
   display: flex;
   flex-wrap: wrap;
@@ -997,10 +1021,64 @@ body {
   font-size: 0.9rem;
 }
 
-.formpack-pdf-export__success {
+.formpack-actions__status {
+  flex-basis: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.formpack-actions__success {
   color: var(--color-success-strong);
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .formpack-form__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .formpack-actions__group {
+    width: 100%;
+  }
+
+  .formpack-docx-export {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .formpack-docx-export__template {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .formpack-docx-export__label {
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  .formpack-docx-export__select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .formpack-docx-export__buttons,
+  .formpack-actions__group--secondary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .formpack-pdf-export {
+    width: 100%;
+  }
+
+  .app__button {
+    width: 100%;
+  }
 }
 
 .formpack-records__actions,

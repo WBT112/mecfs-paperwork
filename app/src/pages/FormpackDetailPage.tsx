@@ -2000,10 +2000,6 @@ export default function FormpackDetailPage() {
             onError={handlePdfExportError}
           />
         </Suspense>
-        {pdfError && <span className="app__error">{pdfError}</span>}
-        {pdfSuccess && (
-          <span className="formpack-pdf-export__success">{pdfSuccess}</span>
-        )}
       </div>
     );
   };
@@ -2021,42 +2017,42 @@ export default function FormpackDetailPage() {
 
     return (
       <div className="formpack-docx-export">
-        <label
-          className="formpack-docx-export__label"
-          htmlFor="docx-template-select"
-        >
-          {t('formpackDocxTemplateLabel')}
-          <select
-            id="docx-template-select"
-            className="formpack-docx-export__select"
-            value={docxTemplateId}
-            onChange={(event) =>
-              setDocxTemplateId(event.target.value as DocxTemplateId)
-            }
+        <div className="formpack-docx-export__template">
+          <label
+            className="formpack-docx-export__label"
+            htmlFor="docx-template-select"
           >
-            {docxTemplateOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          className="app__button"
-          onClick={handleExportDocx}
-          data-action="docx-export"
-          disabled={storageError === 'unavailable' || isDocxExporting}
-        >
-          {isDocxExporting
-            ? t('formpackDocxExportInProgress')
-            : t('formpackRecordExportDocx')}
-        </button>
-        {pdfControls}
-        {docxError && <span className="app__error">{docxError}</span>}
-        {docxSuccess && (
-          <span className="formpack-docx-export__success">{docxSuccess}</span>
-        )}
+            {t('formpackDocxTemplateLabel')}
+            <select
+              id="docx-template-select"
+              className="formpack-docx-export__select"
+              value={docxTemplateId}
+              onChange={(event) =>
+                setDocxTemplateId(event.target.value as DocxTemplateId)
+              }
+            >
+              {docxTemplateOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="formpack-docx-export__buttons">
+          <button
+            type="button"
+            className="app__button"
+            onClick={handleExportDocx}
+            data-action="docx-export"
+            disabled={storageError === 'unavailable' || isDocxExporting}
+          >
+            {isDocxExporting
+              ? t('formpackDocxExportInProgress')
+              : t('formpackRecordExportDocx')}
+          </button>
+          {pdfControls}
+        </div>
       </div>
     );
   };
@@ -2072,6 +2068,25 @@ export default function FormpackDetailPage() {
         {t('formpackRecordExportJson')}
       </button>
     ) : null;
+
+  const renderActionStatus = () => {
+    if (!docxError && !docxSuccess && !pdfError && !pdfSuccess) {
+      return null;
+    }
+
+    return (
+      <div className="formpack-actions__status" aria-live="polite">
+        {docxError && <span className="app__error">{docxError}</span>}
+        {docxSuccess && (
+          <span className="formpack-actions__success">{docxSuccess}</span>
+        )}
+        {pdfError && <span className="app__error">{pdfError}</span>}
+        {pdfSuccess && (
+          <span className="formpack-actions__success">{pdfSuccess}</span>
+        )}
+      </div>
+    );
+  };
 
   const renderFormContent = () => {
     if (!activeRecord) {
@@ -2109,15 +2124,20 @@ export default function FormpackDetailPage() {
           showErrorList={false}
         >
           <div className="formpack-form__actions">
-            {renderDocxExportControls()}
-            <button
-              type="button"
-              className="app__button"
-              onClick={handleResetForm}
-            >
-              {t('formpackFormReset')}
-            </button>
-            {renderJsonExportButton()}
+            <div className="formpack-actions__group formpack-actions__group--export">
+              {renderDocxExportControls()}
+            </div>
+            <div className="formpack-actions__group formpack-actions__group--secondary">
+              <button
+                type="button"
+                className="app__button"
+                onClick={handleResetForm}
+              >
+                {t('formpackFormReset')}
+              </button>
+              {renderJsonExportButton()}
+            </div>
+            {renderActionStatus()}
           </div>
         </LazyForm>
       </Suspense>
