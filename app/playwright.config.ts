@@ -2,6 +2,15 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const isCI = Boolean(process.env.CI);
+// NOTE: WebKit on Windows can inherit a broken system proxy (WPAD), so we
+// force an explicit proxy config with localhost bypass to keep local E2E stable.
+const localProxyBypass = '127.0.0.1,localhost,::1';
+const webkitProxyOverride = {
+  proxy: {
+    server: 'http://127.0.0.1:9',
+    bypass: localProxyBypass,
+  },
+};
 
 export default defineConfig({
   testDir: './e2e',
@@ -53,12 +62,12 @@ export default defineConfig({
     {
       // WebKit (closest to Safari engine)
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { ...devices['Desktop Safari'], ...webkitProxyOverride },
       grepInvert: /@mobile/,
     },
     {
       name: 'webkit-mobile',
-      use: { ...devices['iPhone 13'] },
+      use: { ...devices['iPhone 13'], ...webkitProxyOverride },
       grep: /@mobile/,
     },
     {
