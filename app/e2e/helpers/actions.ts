@@ -13,5 +13,27 @@ export const clickActionButton = async (
 ) => {
   await expect(button).toBeVisible({ timeout });
   await expect(button).toBeEnabled({ timeout });
-  await button.click({ timeout });
+
+  const perAttemptTimeout = Math.max(2_000, Math.floor(timeout / 3));
+  let lastError: unknown = null;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await button.click({ timeout: perAttemptTimeout });
+      return;
+    } catch (error) {
+      lastError = error;
+      await button.page().waitForTimeout(150 * attempt);
+    }
+  }
+
+  await button.focus();
+  try {
+    await button.press('Enter', { timeout: perAttemptTimeout });
+    return;
+  } catch (error) {
+    lastError = error;
+  }
+
+  throw lastError;
 };

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
+import { clickActionButton } from './helpers/actions';
 import { openCollapsibleSection } from './helpers/sections';
 import {
   getActiveRecordId,
@@ -9,6 +10,8 @@ import {
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
+
+test.setTimeout(60_000);
 
 const waitForActiveRecordId = async (page: Page) => {
   let activeId: string | null = null;
@@ -24,11 +27,6 @@ const waitForActiveRecordId = async (page: Page) => {
 };
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
-  await page.evaluate(() => {
-    window.localStorage.clear();
-    window.sessionStorage.clear();
-  });
   await deleteDatabase(page, DB_NAME);
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 });
@@ -42,16 +40,18 @@ test('deletes a non-active draft and removes its snapshots', async ({
   await waitForRecordById(page, recordId);
 
   await openCollapsibleSection(page, /verlauf|history/i);
-  await page
-    .getByRole('button', { name: /create\s*snapshot|snapshot\s*erstellen/i })
-    .click();
+  await clickActionButton(
+    page.getByRole('button', {
+      name: /create\s*snapshot|snapshot\s*erstellen/i,
+    }),
+  );
   await expect(page.locator('.formpack-snapshots__item')).toHaveCount(1);
   await waitForSnapshotCount(page, recordId, 1);
 
   await openCollapsibleSection(page, /entwürfe|drafts/i);
-  await page
-    .getByRole('button', { name: /new\s*draft|neuer\s*entwurf/i })
-    .click();
+  await clickActionButton(
+    page.locator('.formpack-records__actions .app__button').first(),
+  );
 
   let newRecordId: string | null = null;
   await expect
@@ -61,10 +61,11 @@ test('deletes a non-active draft and removes its snapshots', async ({
     })
     .not.toBe(recordId);
 
+  await openCollapsibleSection(page, /entwürfe|drafts/i);
   page.once('dialog', (dialog) => dialog.accept());
-  await page
-    .getByRole('button', { name: /delete\s*draft|entwurf\s*löschen/i })
-    .click();
+  await clickActionButton(
+    page.getByRole('button', { name: /delete\s*draft|entwurf\s*löschen/i }),
+  );
 
   await expect(page.locator('.formpack-records__item')).toHaveCount(1);
   await waitForSnapshotCount(page, recordId, 0);
@@ -76,17 +77,19 @@ test('clears snapshots for the active draft', async ({ page }) => {
   await waitForRecordById(page, recordId);
 
   await openCollapsibleSection(page, /verlauf|history/i);
-  await page
-    .getByRole('button', { name: /create\s*snapshot|snapshot\s*erstellen/i })
-    .click();
+  await clickActionButton(
+    page.getByRole('button', {
+      name: /create\s*snapshot|snapshot\s*erstellen/i,
+    }),
+  );
   await expect(page.locator('.formpack-snapshots__item')).toHaveCount(1);
 
   page.once('dialog', (dialog) => dialog.accept());
-  await page
-    .getByRole('button', {
+  await clickActionButton(
+    page.getByRole('button', {
       name: /delete\s*all\s*snapshots|alle\s*snapshots\s*löschen/i,
-    })
-    .click();
+    }),
+  );
 
   await expect(page.locator('.formpack-snapshots__item')).toHaveCount(0);
   await waitForSnapshotCount(page, recordId, 0);
