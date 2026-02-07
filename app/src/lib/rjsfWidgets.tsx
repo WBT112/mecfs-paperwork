@@ -42,7 +42,7 @@ export const AutoGrowTextareaWidget = ({
   onChange,
   onBlur,
   onFocus,
-}: WidgetProps<string>) => {
+}: WidgetProps) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const rowsOption = options.rows;
   const rows =
@@ -93,7 +93,7 @@ export const AccessibleSelectWidget = ({
   onFocus,
   placeholder,
   htmlName,
-}: WidgetProps<unknown>) => {
+}: WidgetProps) => {
   const selectOptions = options as SelectWidgetOptions;
   const enumOptions = selectOptions.enumOptions;
   const enumDisabled = selectOptions.enumDisabled;
