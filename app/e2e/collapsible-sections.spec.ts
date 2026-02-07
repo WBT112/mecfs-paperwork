@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
+import { getCollapsibleSectionToggleById } from './helpers/sections';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
@@ -14,19 +15,21 @@ test('collapsible sections default and toggle offline', async ({
   await deleteDatabase(page, DB_NAME);
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await expect(page.locator('.formpack-detail')).toBeVisible();
 
-  const draftsToggle = page.locator('.collapsible-section__toggle', {
-    hasText: /entwürfe|drafts/i,
-  });
-  const importToggle = page.locator('.collapsible-section__toggle', {
-    hasText: /import/i,
-  });
-  const historyToggle = page.locator('.collapsible-section__toggle', {
-    hasText: /verlauf|history/i,
-  });
-  const previewToggle = page.locator('.collapsible-section__toggle', {
-    hasText: /dokumentvorschau|document preview/i,
-  });
+  const draftsToggle = getCollapsibleSectionToggleById(
+    page,
+    'formpack-records',
+  );
+  const importToggle = getCollapsibleSectionToggleById(page, 'formpack-import');
+  const historyToggle = getCollapsibleSectionToggleById(
+    page,
+    'formpack-snapshots',
+  );
+  const previewToggle = getCollapsibleSectionToggleById(
+    page,
+    'formpack-document-preview',
+  );
   const toolsHeading = page.getByRole('heading', {
     name: /tools|werkzeuge/i,
   });
@@ -51,20 +54,10 @@ test('collapsible sections default and toggle offline', async ({
   }
 
   const toolsSection = toolsHeading.locator('..');
+  await expect(toolsSection.locator('#formpack-records-toggle')).toBeVisible();
+  await expect(toolsSection.locator('#formpack-import-toggle')).toBeVisible();
   await expect(
-    toolsSection.locator('.collapsible-section__toggle', {
-      hasText: /entwürfe|drafts/i,
-    }),
-  ).toBeVisible();
-  await expect(
-    toolsSection.locator('.collapsible-section__toggle', {
-      hasText: /import/i,
-    }),
-  ).toBeVisible();
-  await expect(
-    toolsSection.locator('.collapsible-section__toggle', {
-      hasText: /verlauf|history/i,
-    }),
+    toolsSection.locator('#formpack-snapshots-toggle'),
   ).toBeVisible();
 
   await context.setOffline(true);

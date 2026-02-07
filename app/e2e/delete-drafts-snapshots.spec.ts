@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
-import { openCollapsibleSection } from './helpers/sections';
+import { openCollapsibleSectionById } from './helpers/sections';
 import {
   getActiveRecordId,
   waitForRecordById,
@@ -29,17 +29,18 @@ const waitForActiveRecordId = async (page: Page) => {
 test.beforeEach(async ({ page }) => {
   await deleteDatabase(page, DB_NAME);
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await expect(page.locator('.formpack-detail')).toBeVisible();
 });
 
 test('deletes a non-active draft and removes its snapshots', async ({
   page,
 }) => {
-  await openCollapsibleSection(page, /entwürfe|drafts/i);
+  await openCollapsibleSectionById(page, 'formpack-records');
 
   const recordId = await waitForActiveRecordId(page);
   await waitForRecordById(page, recordId);
 
-  await openCollapsibleSection(page, /verlauf|history/i);
+  await openCollapsibleSectionById(page, 'formpack-snapshots');
   await clickActionButton(
     page.getByRole('button', {
       name: /create\s*snapshot|snapshot\s*erstellen/i,
@@ -48,7 +49,7 @@ test('deletes a non-active draft and removes its snapshots', async ({
   await expect(page.locator('.formpack-snapshots__item')).toHaveCount(1);
   await waitForSnapshotCount(page, recordId, 1);
 
-  await openCollapsibleSection(page, /entwürfe|drafts/i);
+  await openCollapsibleSectionById(page, 'formpack-records');
   await clickActionButton(
     page.locator('.formpack-records__actions .app__button').first(),
   );
@@ -61,7 +62,7 @@ test('deletes a non-active draft and removes its snapshots', async ({
     })
     .not.toBe(recordId);
 
-  await openCollapsibleSection(page, /entwürfe|drafts/i);
+  await openCollapsibleSectionById(page, 'formpack-records');
   page.once('dialog', (dialog) => dialog.accept());
   await clickActionButton(
     page.getByRole('button', { name: /delete\s*draft|entwurf\s*löschen/i }),
@@ -76,7 +77,7 @@ test('clears snapshots for the active draft', async ({ page }) => {
   const recordId = await waitForActiveRecordId(page);
   await waitForRecordById(page, recordId);
 
-  await openCollapsibleSection(page, /verlauf|history/i);
+  await openCollapsibleSectionById(page, 'formpack-snapshots');
   await clickActionButton(
     page.getByRole('button', {
       name: /create\s*snapshot|snapshot\s*erstellen/i,
