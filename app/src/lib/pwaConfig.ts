@@ -19,6 +19,8 @@ type RuntimeCachingConfig = NonNullable<
  * - /formpacks/* MUST NOT be CacheFirst, otherwise deployments can look “stuck”
  *   on mobile due to long-lived caches. Use SWR so updates propagate while still
  *   supporting offline reads.
+ * - explicit refresh probes (x-formpack-refresh=1) bypass runtime cache to detect
+ *   updates immediately without forcing a page reload.
  */
 export const RUNTIME_CACHING = [
   {
@@ -42,6 +44,13 @@ export const RUNTIME_CACHING = [
         maxEntries: 30,
       },
     },
+  },
+  {
+    urlPattern: ({ url, request }: { url: URL; request: Request }) =>
+      request.method === 'GET' &&
+      url.pathname.startsWith('/formpacks/') &&
+      request.headers.get('x-formpack-refresh') === '1',
+    handler: 'NetworkOnly' as const,
   },
   {
     urlPattern: ({ url, request }: { url: URL; request: Request }) =>
@@ -70,7 +79,7 @@ export const createPwaConfig = (
     : PRECACHE_GLOB_PATTERNS;
 
   return {
-    registerType: 'autoUpdate',
+    registerType: 'prompt',
     devOptions: {
       enabled: isDev && enableDevSw,
       navigateFallbackAllowlist: [
@@ -89,7 +98,7 @@ export const createPwaConfig = (
 
       cleanupOutdatedCaches: true,
       clientsClaim: true,
-      skipWaiting: true,
+      skipWaiting: false,
 
       runtimeCaching: RUNTIME_CACHING,
     },

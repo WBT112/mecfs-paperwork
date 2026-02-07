@@ -1,13 +1,21 @@
-import { useCallback, type ChangeEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from './i18n/useLocale';
 import type { SupportedLocale } from './i18n/locale';
+import { startFormpackBackgroundRefresh } from './formpacks/backgroundRefresh';
 import Footer from './components/Footer';
 import ThemeSwitcher from './components/ThemeSwitcher';
 import TopbarActions from './components/TopbarActions';
 import StagingMarker from './components/StagingMarker';
 import AppRoutes from './AppRoutes';
+import { subscribeServiceWorkerWaiting } from './pwa/register';
 
 /**
  * App shell for the offline-first paperwork UI.
@@ -16,12 +24,47 @@ import AppRoutes from './AppRoutes';
 export default function App() {
   const { t } = useTranslation();
   const { locale, setLocale, supportedLocales } = useLocale();
+  const [updateNotice, setUpdateNotice] = useState<string | null>(null);
+  const hasShownFormpackUpdateRef = useRef(false);
+  const hasShownAppUpdateRef = useRef(false);
 
   const handleLocaleChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
       setLocale(event.target.value as SupportedLocale).catch(() => undefined);
     },
     [setLocale],
+  );
+
+  const handleCloseNotice = useCallback(() => {
+    setUpdateNotice(null);
+  }, []);
+
+  useEffect(() => {
+    const stopRefresh = startFormpackBackgroundRefresh({
+      onUpdated(formpackIds) {
+        if (formpackIds.length === 0 || hasShownFormpackUpdateRef.current) {
+          return;
+        }
+        hasShownFormpackUpdateRef.current = true;
+        setUpdateNotice(t('updateFormpacksAvailable'));
+      },
+    });
+
+    return () => {
+      stopRefresh();
+    };
+  }, [t]);
+
+  useEffect(
+    () =>
+      subscribeServiceWorkerWaiting(() => {
+        if (hasShownAppUpdateRef.current) {
+          return;
+        }
+        hasShownAppUpdateRef.current = true;
+        setUpdateNotice(t('updateAppAvailablePassive'));
+      }),
+    [t],
   );
 
   return (
@@ -82,6 +125,18 @@ export default function App() {
       <main className="app__content">
         <AppRoutes />
       </main>
+      {updateNotice ? (
+        <div className="app__update-notice" role="status" aria-live="polite">
+          <p>{updateNotice}</p>
+          <button
+            type="button"
+            className="app__button"
+            onClick={handleCloseNotice}
+          >
+            {t('common.close')}
+          </button>
+        </div>
+      ) : null}
       <Footer />
     </div>
   );

@@ -46,6 +46,8 @@ import {
   loadFormpackSchema,
   loadFormpackUiSchema,
 } from '../formpacks/loader';
+import { FORMPACKS_UPDATED_EVENT } from '../formpacks/backgroundRefresh';
+import { deriveFormpackRevisionSignature } from '../formpacks/metadata';
 import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
 import type { FormpackManifest, InfoBoxConfig } from '../formpacks/types';
 import {
@@ -63,8 +65,9 @@ import {
   useRecords,
   useSnapshots,
 } from '../storage/hooks';
+import { getFormpackMeta, upsertFormpackMeta } from '../storage/formpackMeta';
 import { importRecordWithSnapshots } from '../storage/import';
-import type { RecordEntry } from '../storage/types';
+import type { FormpackMetaEntry, RecordEntry } from '../storage/types';
 import CollapsibleSection from '../components/CollapsibleSection';
 import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
@@ -736,6 +739,10 @@ export default function FormpackDetailPage() {
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
   );
+  const [formpackMeta, setFormpackMeta] = useState<FormpackMetaEntry | null>(
+    null,
+  );
+  const [assetRefreshVersion, setAssetRefreshVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
@@ -784,6 +791,7 @@ export default function FormpackDetailPage() {
       setManifest(null);
       setSchema(null);
       setUiSchema(null);
+      setFormpackMeta(null);
     };
 
     const loadManifest = async (requestedFormpackId: string) => {
@@ -838,7 +846,99 @@ export default function FormpackDetailPage() {
     return () => {
       isActive = false;
     };
-  }, [id, locale, t]);
+  }, [assetRefreshVersion, id, locale, t]);
+
+  useEffect(() => {
+    if (!manifest) {
+      setFormpackMeta(null);
+      return;
+    }
+
+    let isActive = true;
+
+    const ensureFormpackMeta = async () => {
+      try {
+        const existing = await getFormpackMeta(manifest.id);
+        if (existing) {
+          if (isActive) {
+            setFormpackMeta(existing);
+          }
+          return;
+        }
+
+        const signature = await deriveFormpackRevisionSignature(manifest);
+        const stored = await upsertFormpackMeta({
+          id: manifest.id,
+          versionOrHash: signature.versionOrHash,
+          version: signature.version,
+          hash: signature.hash,
+        });
+        if (isActive) {
+          setFormpackMeta(stored);
+        }
+      } catch {
+        if (isActive) {
+          setFormpackMeta(null);
+        }
+      }
+    };
+
+    ensureFormpackMeta().catch(() => undefined);
+
+    return () => {
+      isActive = false;
+    };
+  }, [manifest]);
+
+  useEffect(() => {
+    if (!manifest?.id) {
+      return;
+    }
+
+    let isActive = true;
+    const currentFormpackId = manifest.id;
+
+    const refreshMeta = async () => {
+      try {
+        const next = await getFormpackMeta(currentFormpackId);
+        if (isActive) {
+          setFormpackMeta(next);
+        }
+      } catch {
+        if (isActive) {
+          setFormpackMeta(null);
+        }
+      }
+    };
+
+    const handleUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ formpackIds?: string[] } | null>)
+        .detail;
+      const payload = Array.isArray(detail?.formpackIds)
+        ? detail.formpackIds
+        : [];
+
+      if (!payload.includes(currentFormpackId)) {
+        return;
+      }
+
+      refreshMeta().catch(() => undefined);
+      setAssetRefreshVersion((value) => value + 1);
+    };
+
+    globalThis.addEventListener(
+      FORMPACKS_UPDATED_EVENT,
+      handleUpdated as EventListener,
+    );
+
+    return () => {
+      isActive = false;
+      globalThis.removeEventListener(
+        FORMPACKS_UPDATED_EVENT,
+        handleUpdated as EventListener,
+      );
+    };
+  }, [manifest?.id]);
 
   useEffect(() => {
     const manifestExports = manifest?.exports;
@@ -1059,6 +1159,13 @@ export default function FormpackDetailPage() {
         defaultValue: manifest.descriptionKey,
       })
     : '';
+  const formpackVersionDisplay =
+    formpackMeta?.versionOrHash ??
+    manifest?.version ??
+    t('formpackVersionUpdatedUnknown');
+  const formpackUpdatedAtDisplay = formpackMeta
+    ? formatTimestamp(formpackMeta.updatedAt)
+    : t('formpackVersionUpdatedUnknown');
 
   const restoreActiveRecord = useCallback(
     async (currentFormpackId: string, isActive: () => boolean) => {
@@ -2415,6 +2522,12 @@ export default function FormpackDetailPage() {
           )}
         </div>
       </div>
+      <p className="formpack-detail__version-meta" aria-live="polite">
+        {t('formpackLoadedVersionMeta', {
+          version: formpackVersionDisplay,
+          updatedAt: formpackUpdatedAtDisplay,
+        })}
+      </p>
     </section>
   );
 }

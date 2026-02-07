@@ -85,6 +85,10 @@ jobs:
         id: sha
         run: echo "short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
+      - name: Capture build metadata
+        id: build_meta
+        run: echo "date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
@@ -98,6 +102,8 @@ jobs:
             VITE_SHOW_DEV_FORMPACKS=${{ steps.config.outputs.show_dev_formpacks }}
             VITE_DEPLOYMENT_ENV=${{ steps.config.outputs.deployment_env }}
             VITE_PUBLIC_ORIGIN=${{ steps.config.outputs.public_origin }}
+            VITE_APP_VERSION=${{ steps.sha.outputs.short }}
+            VITE_BUILD_DATE=${{ steps.build_meta.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

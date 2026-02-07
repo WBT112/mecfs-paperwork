@@ -74,7 +74,7 @@ describe('storage/db', () => {
       expect(db).toBe(mockDb);
       expect(openDB).toHaveBeenCalledWith(
         'mecfs-paperwork',
-        1,
+        2,
         expect.any(Object),
       );
     });
@@ -159,6 +159,16 @@ describe('storage/db', () => {
         ['recordId', 'createdAt'],
         { unique: false },
       );
+
+      // Check for 'formpackMeta' store and its indexes
+      expect(mockDb.createObjectStore).toHaveBeenCalledWith('formpackMeta', {
+        keyPath: 'id',
+      });
+      const formpackMetaStoreMock = createdStores[2];
+      expect(formpackMetaStoreMock.createIndex).toHaveBeenCalledWith(
+        'by_updatedAt',
+        'updatedAt',
+      );
     });
 
     it('should not create object stores if they already exist', async () => {
@@ -208,6 +218,9 @@ describe('storage/db', () => {
       expect(mockDb.objectStoreNames.contains).toHaveBeenCalledWith('records');
       expect(mockDb.objectStoreNames.contains).toHaveBeenCalledWith(
         'snapshots',
+      );
+      expect(mockDb.objectStoreNames.contains).toHaveBeenCalledWith(
+        'formpackMeta',
       );
       expect(mockDb.createObjectStore).not.toHaveBeenCalled();
     });

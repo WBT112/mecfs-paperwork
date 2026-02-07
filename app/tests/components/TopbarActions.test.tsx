@@ -17,6 +17,7 @@ const translations: Record<string, string> = {
   feedbackPrompt: 'Describe the issue below:',
   feedbackUnknown: 'unknown',
   'feedbackField.appVersion': 'App version',
+  'feedbackField.buildDate': 'Build date',
   'feedbackField.appCommit': 'Commit',
   'feedbackField.mode': 'Mode',
   'feedbackField.path': 'Path',
@@ -41,7 +42,13 @@ vi.mock('react-i18next', () => ({
       }
       return translations[key] ?? key;
     },
+    i18n: { language: 'en' },
   }),
+}));
+
+vi.mock('../../src/lib/version', () => ({
+  APP_VERSION: 'abc1234',
+  formatBuildDate: () => 'Feb 7, 2026, 12:00 PM',
 }));
 
 const renderActions = (route: string) =>
@@ -77,6 +84,8 @@ describe('TopbarActions', () => {
     expect(params.get('subject')).toBe(
       `mecfs-paperwork feedback: ${TEST_FORMPACK_PATH}`,
     );
+    expect(params.get('body')).toContain('App version: abc1234');
+    expect(params.get('body')).toContain('Build date: Feb 7, 2026, 12:00 PM');
     expect(params.get('body')).toContain(`Path: ${TEST_FORMPACK_PATH}`);
   });
 

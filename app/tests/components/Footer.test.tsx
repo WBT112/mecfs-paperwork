@@ -12,16 +12,29 @@ const translations: Record<string, string> = {
   footerHelp: 'Help',
   footerGithub: 'GitHub',
   footerSponsor: 'Sponsor',
+  footerVersionLabel: 'v{{version}} • {{date}}',
 };
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => translations[key] ?? key,
+    t: (key: string, options?: Record<string, string>) => {
+      if (key === 'footerVersionLabel' && options) {
+        return `v${options.version} • ${options.date}`;
+      }
+      return translations[key] ?? key;
+    },
+    i18n: { language: 'en' },
   }),
 }));
 
 vi.mock('../../src/lib/funding', () => ({
   getSponsorUrl: vi.fn(),
+}));
+
+vi.mock('../../src/lib/version', () => ({
+  APP_VERSION: 'abc1234',
+  BUILD_DATE_ISO: '2026-02-07T12:00:00.000Z',
+  formatBuildDate: () => 'Feb 7, 2026, 12:00 PM',
 }));
 
 describe('Footer', () => {
@@ -56,6 +69,7 @@ describe('Footer', () => {
     expect(githubLink).toHaveAttribute('href', DEFAULT_REPO_URL);
     expect(githubLink).toHaveAttribute('target', '_blank');
     expect(githubLink).toHaveAttribute('rel', 'noreferrer noopener');
+    expect(screen.getByText('vabc1234 • Feb 7, 2026, 12:00 PM')).toBeVisible();
   });
 
   it('hides the sponsor link when no funding URL is available', () => {

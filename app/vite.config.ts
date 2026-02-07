@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { createRequire } from 'node:module';
+import { execSync } from 'node:child_process';
 import { createPwaConfig } from './src/lib/pwaConfig';
 
 const require = createRequire(import.meta.url);
@@ -44,7 +45,45 @@ type AppConfig = import('vite').UserConfig & {
   test?: import('vitest/node').InlineConfig;
 };
 
+const APP_VERSION_FALLBACK = 'unknown';
+
+const resolveAppVersion = (): string => {
+  const versionFromEnv = process.env.VITE_APP_VERSION?.trim();
+  if (versionFromEnv) {
+    return versionFromEnv;
+  }
+
+  try {
+    return execSync('git rev-parse --short HEAD', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim();
+  } catch {
+    return APP_VERSION_FALLBACK;
+  }
+};
+
+const resolveBuildDate = (): string => {
+  const buildDateFromEnv = process.env.VITE_BUILD_DATE?.trim();
+  if (buildDateFromEnv) {
+    const parsed = new Date(buildDateFromEnv);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
+
+  return new Date().toISOString();
+};
+
+const APP_VERSION = resolveAppVersion();
+const BUILD_DATE = resolveBuildDate();
+
 const createConfig = (mode: string): AppConfig => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+    __BUILD_DATE__: JSON.stringify(BUILD_DATE),
+  },
   plugins: [
     createFormpackSpaFallbackPlugin(),
     react(),

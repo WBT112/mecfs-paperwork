@@ -165,6 +165,11 @@ const storageImportState = vi.hoisted(() => ({
   importRecordWithSnapshots: vi.fn(),
 }));
 
+const formpackMetaState = vi.hoisted(() => ({
+  getFormpackMeta: vi.fn(),
+  upsertFormpackMeta: vi.fn(),
+}));
+
 const jsonExportState = vi.hoisted(() => ({
   buildJsonExportPayload: vi.fn(),
   buildJsonExportFilename: vi.fn(),
@@ -242,6 +247,11 @@ vi.mock('../../src/import/json', () => ({
 
 vi.mock('../../src/storage/import', () => ({
   importRecordWithSnapshots: storageImportState.importRecordWithSnapshots,
+}));
+
+vi.mock('../../src/storage/formpackMeta', () => ({
+  getFormpackMeta: formpackMetaState.getFormpackMeta,
+  upsertFormpackMeta: formpackMetaState.upsertFormpackMeta,
 }));
 
 vi.mock('@rjsf/core', () => ({
@@ -398,6 +408,8 @@ describe('FormpackDetailPage', () => {
     storageState.setLocale.mockReset();
     importState.validateJsonImport.mockReset();
     storageImportState.importRecordWithSnapshots.mockReset();
+    formpackMetaState.getFormpackMeta.mockReset();
+    formpackMetaState.upsertFormpackMeta.mockReset();
     jsonExportState.buildJsonExportPayload.mockReset();
     jsonExportState.buildJsonExportFilename.mockReset();
     jsonExportState.downloadJsonExport.mockReset();
@@ -424,6 +436,14 @@ describe('FormpackDetailPage', () => {
       properties: {},
     };
     formpackState.uiSchema = {};
+    formpackMetaState.getFormpackMeta.mockResolvedValue(null);
+    formpackMetaState.upsertFormpackMeta.mockResolvedValue({
+      id: record.formpackId,
+      versionOrHash: '1.0.0',
+      version: '1.0.0',
+      hash: 'abc',
+      updatedAt: '2026-02-07T00:00:00.000Z',
+    });
     mockUpdateActiveRecord.mockResolvedValue({
       ...record,
       data: {},

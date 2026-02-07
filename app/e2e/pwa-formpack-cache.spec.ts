@@ -71,6 +71,9 @@ test('pwa keeps formpack assets available after going offline', async ({
   await expect(page.locator('.formpack-form')).toBeVisible({
     timeout: POLL_TIMEOUT,
   });
+  await expect(page.locator('.formpack-detail__version-meta')).toContainText(
+    /formpack:/i,
+  );
 
   const onlineManifest = await fetchManifest(page);
   expect(onlineManifest).toEqual({ ok: true, status: 200, id: FORMPACK_ID });
@@ -81,6 +84,9 @@ test('pwa keeps formpack assets available after going offline', async ({
   await expect(page.locator('.formpack-form')).toBeVisible({
     timeout: POLL_TIMEOUT,
   });
+  await expect(page.locator('.formpack-detail__version-meta')).toContainText(
+    /formpack:/i,
+  );
   const offlineManifest = await fetchManifest(page);
   expect(offlineManifest).toEqual({ ok: true, status: 200, id: FORMPACK_ID });
 

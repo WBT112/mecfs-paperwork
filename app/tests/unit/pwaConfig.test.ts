@@ -9,6 +9,7 @@ import {
 
 const FORMPACK_MANIFEST_URL =
   'https://example.test/formpacks/doctor-letter/manifest.json';
+const FORMPACK_REFRESH_HEADERS = new Headers({ 'x-formpack-refresh': '1' });
 const WORKBOX_REQUIRED_ERROR = 'Expected Workbox settings to be defined.';
 
 describe('createPwaConfig', () => {
@@ -70,7 +71,7 @@ describe('createPwaConfig', () => {
       throw new Error('Expected formpack runtime caching rule.');
     }
     expect(formpackRule.handler).toBe('StaleWhileRevalidate');
-    expect(formpackRule.options.cacheName).toBe('app-formpacks');
+    expect(formpackRule.options?.cacheName).toBe('app-formpacks');
 
     const matchesPostRequest =
       typeof formpackRule.urlPattern === 'function' &&
@@ -83,30 +84,32 @@ describe('createPwaConfig', () => {
     expect(matchesPostRequest).toBe(false);
   });
 
-  it('keeps update-friendly service worker behavior', () => {
+  it('uses network-only refresh probes for immediate update detection', () => {
+    const refreshRule = RUNTIME_CACHING.find(
+      (entry) =>
+        entry.handler === 'NetworkOnly' &&
+        typeof entry.urlPattern === 'function' &&
+        entry.urlPattern({
+          request: new Request(FORMPACK_MANIFEST_URL, {
+            headers: FORMPACK_REFRESH_HEADERS,
+          }),
+          url: new URL(FORMPACK_MANIFEST_URL),
+        }),
+    );
+
+    expect(refreshRule).toBeDefined();
+  });
+
+  it('keeps passive service worker update behavior', () => {
     const config = createPwaConfig();
-    expect(config.registerType).toBe('autoUpdate');
+    expect(config.registerType).toBe('prompt');
 
     const workbox = config.workbox;
     expect(workbox).toBeDefined();
     if (!workbox) {
       throw new Error(WORKBOX_REQUIRED_ERROR);
     }
-
-    const formpackRule = RUNTIME_CACHING.find(
-      (entry) =>
-        entry.handler === 'StaleWhileRevalidate' &&
-        typeof entry.urlPattern === 'function' &&
-        entry.urlPattern({
-          request: new Request(FORMPACK_MANIFEST_URL),
-          url: new URL(FORMPACK_MANIFEST_URL),
-        }),
-    );
-
-    expect(formpackRule).toBeDefined();
-    if (!formpackRule) {
-      throw new Error('Expected formpack runtime caching rule.');
-    }
-    expect(formpackRule.handler).not.toBe('CacheFirst');
+    expect(workbox.skipWaiting).toBe(false);
+    expect(workbox.clientsClaim).toBe(true);
   });
 });

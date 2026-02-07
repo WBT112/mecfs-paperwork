@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { emptyStringToNull } from '../lib/utils';
 import { buildMailtoHref, getShareUrl } from '../lib/topbarActions';
+import { APP_VERSION, formatBuildDate } from '../lib/version';
 
 const DEFAULT_FEEDBACK_EMAIL = 'info@mecfs-paperwork.de';
 
@@ -52,7 +53,7 @@ const tryNativeShare = async (
 };
 
 export default memo(function TopbarActions() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { pathname } = useLocation();
   const [shareFallback, setShareFallback] = useState<ShareFallbackState | null>(
     null,
@@ -66,8 +67,9 @@ export default memo(function TopbarActions() {
     emptyStringToNull(import.meta.env.VITE_FEEDBACK_EMAIL) ??
     DEFAULT_FEEDBACK_EMAIL;
   const feedbackUnknown = t('feedbackUnknown');
-  const appVersion =
-    emptyStringToNull(import.meta.env.VITE_APP_VERSION) ?? feedbackUnknown;
+  const appVersion = APP_VERSION === 'unknown' ? feedbackUnknown : APP_VERSION;
+  const buildDateRaw = formatBuildDate(i18n.language);
+  const buildDate = buildDateRaw === 'unknown' ? feedbackUnknown : buildDateRaw;
   const appCommit =
     emptyStringToNull(import.meta.env.VITE_APP_COMMIT) ?? feedbackUnknown;
 
@@ -80,13 +82,22 @@ export default memo(function TopbarActions() {
         debugLabel: t('feedbackDebugLabel'),
         fields: [
           { label: t('feedbackField.appVersion'), value: appVersion },
+          { label: t('feedbackField.buildDate'), value: buildDate },
           { label: t('feedbackField.appCommit'), value: appCommit },
           { label: t('feedbackField.mode'), value: import.meta.env.MODE },
           { label: t('feedbackField.path'), value: pathname },
         ].filter((field) => field.value !== feedbackUnknown),
         prompt: t('feedbackPrompt'),
       }),
-    [feedbackEmail, t, pathname, appVersion, appCommit, feedbackUnknown],
+    [
+      appCommit,
+      appVersion,
+      buildDate,
+      feedbackEmail,
+      feedbackUnknown,
+      pathname,
+      t,
+    ],
   );
 
   const handleShare = useCallback(async () => {
