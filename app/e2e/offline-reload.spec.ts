@@ -2,38 +2,12 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
 import { openCollapsibleSection } from './helpers/sections';
+import { waitForServiceWorkerReady } from './helpers/serviceWorker';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 20_000;
 const SW_READY_TIMEOUT = 45_000;
-const SW_POLL_INTERVAL = 500;
-
-const waitForServiceWorkerReady = async (page: Page): Promise<boolean> => {
-  const startedAt = Date.now();
-
-  while (Date.now() - startedAt < SW_READY_TIMEOUT) {
-    const state = await page.evaluate(async () => {
-      if (!('serviceWorker' in navigator)) {
-        return { active: false, controlled: false };
-      }
-
-      const registration = await navigator.serviceWorker.getRegistration();
-      return {
-        active: Boolean(registration?.active),
-        controlled: navigator.serviceWorker.controller != null,
-      };
-    });
-
-    if (state.active && state.controlled) {
-      return true;
-    }
-
-    await page.waitForTimeout(SW_POLL_INTERVAL);
-  }
-
-  return false;
-};
 
 const ensureActiveRecord = async (page: Page) => {
   const form = page.locator('.formpack-form');
@@ -102,7 +76,9 @@ test('offline reload keeps core navigation and docx export working', async ({
   await expect(
     page.getByRole('heading', { name: /forms|formulare|hilfsangebote/i }),
   ).toBeVisible({ timeout: POLL_TIMEOUT });
-  const initialSwReady = await waitForServiceWorkerReady(page);
+  const initialSwReady = await waitForServiceWorkerReady(page, {
+    timeoutMs: SW_READY_TIMEOUT,
+  });
   if (!initialSwReady && browserName === 'webkit') {
     test.skip(
       true,
@@ -114,7 +90,12 @@ test('offline reload keeps core navigation and docx export working', async ({
   await expect(
     page.getByRole('heading', { name: /forms|formulare|hilfsangebote/i }),
   ).toBeVisible({ timeout: POLL_TIMEOUT });
-  expect(await waitForServiceWorkerReady(page)).toBe(true);
+  expect(
+    await waitForServiceWorkerReady(page, {
+      timeoutMs: SW_READY_TIMEOUT,
+      allowSingleReload: false,
+    }),
+  ).toBe(true);
 
   await context.setOffline(true);
   await page.reload();

@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import { waitForServiceWorkerReady } from './helpers/serviceWorker';
 
 const FORMPACK_ID = 'notfallpass';
 const FORMPACK_ROUTE = `/formpacks/${FORMPACK_ID}`;
@@ -15,38 +16,7 @@ const FORMPACK_MANIFEST_FS_PATH = path.join(
 const POLL_TIMEOUT = 20_000;
 const UPDATE_PICKUP_TIMEOUT = 15_000;
 const SW_READY_TIMEOUT = 45_000;
-const SW_POLL_INTERVAL = 500;
-
 test.describe.configure({ mode: 'serial' });
-
-const waitForServiceWorkerReady = async (
-  page: Page,
-  timeoutMs: number = SW_READY_TIMEOUT,
-): Promise<boolean> => {
-  const startedAt = Date.now();
-
-  while (Date.now() - startedAt < timeoutMs) {
-    const state = await page.evaluate(async () => {
-      if (!('serviceWorker' in navigator)) {
-        return { active: false, controlled: false };
-      }
-
-      const registration = await navigator.serviceWorker.getRegistration();
-      return {
-        active: Boolean(registration?.active),
-        controlled: navigator.serviceWorker.controller != null,
-      };
-    });
-
-    if (state.active && state.controlled) {
-      return true;
-    }
-
-    await page.waitForTimeout(SW_POLL_INTERVAL);
-  }
-
-  return false;
-};
 
 const fetchManifest = async (page: Page) =>
   page.evaluate(async (manifestPath) => {
@@ -93,10 +63,9 @@ test('pwa keeps formpack assets available after going offline', async ({
     );
   }
   await page.goto('/formpacks');
-  const swReady = await waitForServiceWorkerReady(
-    page,
-    browserName === 'webkit' ? 12_000 : SW_READY_TIMEOUT,
-  );
+  const swReady = await waitForServiceWorkerReady(page, {
+    timeoutMs: browserName === 'webkit' ? 12_000 : SW_READY_TIMEOUT,
+  });
   if (!swReady && browserName === 'webkit') {
     test.skip(
       true,
@@ -148,10 +117,9 @@ test('pwa revalidates changed formpack assets and serves the updated version', a
 
   try {
     await page.goto('/formpacks');
-    const swReady = await waitForServiceWorkerReady(
-      page,
-      browserName === 'webkit' ? 12_000 : SW_READY_TIMEOUT,
-    );
+    const swReady = await waitForServiceWorkerReady(page, {
+      timeoutMs: browserName === 'webkit' ? 12_000 : SW_READY_TIMEOUT,
+    });
     if (!swReady && browserName === 'webkit') {
       test.skip(
         true,
