@@ -11,8 +11,8 @@ import i18n from '../../src/i18n';
 import { mapDocumentDataToTemplate } from '../../src/export/docx';
 import type { DocumentModel } from '../../src/formpacks/documentModel';
 import type { RJSFSchema } from '@rjsf/utils';
-import enTranslations from '../../../formpacks/notfallpass/i18n/en.json';
-import mapping from '../../../formpacks/notfallpass/docx/mapping.json';
+import enTranslations from '../../public/formpacks/notfallpass/i18n/en.json';
+import mapping from '../../public/formpacks/notfallpass/docx/mapping.json';
 
 const namespace = 'formpack:notfallpass';
 const EXAMPLE_NAME = 'Ada Example';

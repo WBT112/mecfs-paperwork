@@ -28,6 +28,7 @@ import {
   preloadDocxAssets,
   type DocxTemplateId,
 } from '../export/docxLazy';
+import type { PdfExportControlsProps } from '../export/pdf/PdfExportControls';
 import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
   formpackTemplates,
@@ -45,6 +46,8 @@ import {
   loadFormpackSchema,
   loadFormpackUiSchema,
 } from '../formpacks/loader';
+import { FORMPACKS_UPDATED_EVENT } from '../formpacks/backgroundRefresh';
+import { deriveFormpackRevisionSignature } from '../formpacks/metadata';
 import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
 import type { FormpackManifest, InfoBoxConfig } from '../formpacks/types';
 import {
@@ -62,8 +65,9 @@ import {
   useRecords,
   useSnapshots,
 } from '../storage/hooks';
+import { getFormpackMeta, upsertFormpackMeta } from '../storage/formpackMeta';
 import { importRecordWithSnapshots } from '../storage/import';
-import type { RecordEntry } from '../storage/types';
+import type { FormpackMetaEntry, RecordEntry } from '../storage/types';
 import CollapsibleSection from '../components/CollapsibleSection';
 import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
@@ -76,6 +80,11 @@ type RjsfFormProps = FormProps<FormDataState>;
 const LazyForm = lazy(async () => {
   const module = await import('@rjsf/core');
   return { default: module.default as ComponentType<RjsfFormProps> };
+});
+
+const LazyPdfExportControls = lazy(async () => {
+  const module = await import('../export/pdf/PdfExportControls');
+  return { default: module.default as ComponentType<PdfExportControlsProps> };
 });
 
 type ManifestLoadResult = {
@@ -316,13 +325,21 @@ const isDecisionCaseParagraphsPath = (fieldPath?: string): boolean =>
 const renderParagraphs = (
   paragraphs: string[],
   keyPrefix: string,
-): ReactNode => (
-  <>
-    {paragraphs.map((paragraph, index) => (
-      <p key={`${keyPrefix}-${index}`}>{paragraph}</p>
-    ))}
-  </>
-);
+): ReactNode => {
+  const counts = new Map<string, number>();
+
+  return (
+    <>
+      {paragraphs.map((paragraph) => {
+        const count = counts.get(paragraph) ?? 0;
+        counts.set(paragraph, count + 1);
+        const key = `${keyPrefix}-${paragraph}-${count}`;
+
+        return <p key={key}>{paragraph}</p>;
+      })}
+    </>
+  );
+};
 
 const hasDecisionCaseText = (value: Record<string, unknown>): boolean =>
   typeof value.caseText === 'string' ||
@@ -564,11 +581,11 @@ function renderPreviewObject(
 ): ReactNode {
   const resolveWithFallback =
     resolveValue ??
-    ((value, schemaNode, uiNode, fieldPath) =>
-      resolveDisplayValue(value, {
-        schema: schemaNode,
-        uiSchema: uiNode,
-        fieldPath,
+    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
+      resolveDisplayValue(entryValue, {
+        schema: entrySchema,
+        uiSchema: entryUi,
+        fieldPath: entryFieldPath,
       }));
   const schemaProps =
     schemaNode && isRecord(schemaNode.properties)
@@ -657,11 +674,11 @@ function renderPreviewArray(
   const itemUi = getItemUiSchema(uiNode);
   const resolveWithFallback =
     resolveValue ??
-    ((value, schemaNode, uiNode, fieldPath) =>
-      resolveDisplayValue(value, {
-        schema: schemaNode,
-        uiSchema: uiNode,
-        fieldPath,
+    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
+      resolveDisplayValue(entryValue, {
+        schema: entrySchema,
+        uiSchema: entryUi,
+        fieldPath: entryFieldPath,
       }));
   const items = values
     .map<ReactNode>((entry, index) => {
@@ -713,6 +730,8 @@ export default function FormpackDetailPage() {
   const [docxError, setDocxError] = useState<string | null>(null);
   const [docxSuccess, setDocxSuccess] = useState<string | null>(null);
   const [isDocxExporting, setIsDocxExporting] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfSuccess, setPdfSuccess] = useState<string | null>(null);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [formpackTranslationsVersion, setFormpackTranslationsVersion] =
@@ -720,6 +739,10 @@ export default function FormpackDetailPage() {
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
   );
+  const [formpackMeta, setFormpackMeta] = useState<FormpackMetaEntry | null>(
+    null,
+  );
+  const [assetRefreshVersion, setAssetRefreshVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
@@ -768,14 +791,15 @@ export default function FormpackDetailPage() {
       setManifest(null);
       setSchema(null);
       setUiSchema(null);
+      setFormpackMeta(null);
     };
 
-    const loadManifest = async (formpackId: string) => {
+    const loadManifest = async (requestedFormpackId: string) => {
       setIsLoading(true);
       setErrorMessage(null);
 
       try {
-        const result = await loadFormpackAssets(formpackId, locale, t);
+        const result = await loadFormpackAssets(requestedFormpackId, locale, t);
         if (!isActive) {
           return;
         }
@@ -785,13 +809,14 @@ export default function FormpackDetailPage() {
           return;
         }
         setFormpackTranslationsVersion((version) => version + 1);
-        const shouldResetFormData = lastFormpackIdRef.current !== formpackId;
+        const shouldResetFormData =
+          lastFormpackIdRef.current !== requestedFormpackId;
         setManifest(result.manifest);
         setSchema(result.schema);
         setUiSchema(result.uiSchema);
         if (shouldResetFormData) {
           setFormData({});
-          lastFormpackIdRef.current = formpackId;
+          lastFormpackIdRef.current = requestedFormpackId;
         }
       } catch (error) {
         if (!isActive) {
@@ -821,7 +846,99 @@ export default function FormpackDetailPage() {
     return () => {
       isActive = false;
     };
-  }, [id, locale, t]);
+  }, [assetRefreshVersion, id, locale, t]);
+
+  useEffect(() => {
+    if (!manifest) {
+      setFormpackMeta(null);
+      return;
+    }
+
+    let isActive = true;
+
+    const ensureFormpackMeta = async () => {
+      try {
+        const existing = await getFormpackMeta(manifest.id);
+        if (existing) {
+          if (isActive) {
+            setFormpackMeta(existing);
+          }
+          return;
+        }
+
+        const signature = await deriveFormpackRevisionSignature(manifest);
+        const stored = await upsertFormpackMeta({
+          id: manifest.id,
+          versionOrHash: signature.versionOrHash,
+          version: signature.version,
+          hash: signature.hash,
+        });
+        if (isActive) {
+          setFormpackMeta(stored);
+        }
+      } catch {
+        if (isActive) {
+          setFormpackMeta(null);
+        }
+      }
+    };
+
+    ensureFormpackMeta().catch(() => undefined);
+
+    return () => {
+      isActive = false;
+    };
+  }, [manifest]);
+
+  useEffect(() => {
+    if (!manifest?.id) {
+      return;
+    }
+
+    let isActive = true;
+    const currentFormpackId = manifest.id;
+
+    const refreshMeta = async () => {
+      try {
+        const next = await getFormpackMeta(currentFormpackId);
+        if (isActive) {
+          setFormpackMeta(next);
+        }
+      } catch {
+        if (isActive) {
+          setFormpackMeta(null);
+        }
+      }
+    };
+
+    const handleUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ formpackIds?: string[] } | null>)
+        .detail;
+      const payload = Array.isArray(detail?.formpackIds)
+        ? detail.formpackIds
+        : [];
+
+      if (!payload.includes(currentFormpackId)) {
+        return;
+      }
+
+      refreshMeta().catch(() => undefined);
+      setAssetRefreshVersion((value) => value + 1);
+    };
+
+    globalThis.addEventListener(
+      FORMPACKS_UPDATED_EVENT,
+      handleUpdated as EventListener,
+    );
+
+    return () => {
+      isActive = false;
+      globalThis.removeEventListener(
+        FORMPACKS_UPDATED_EVENT,
+        handleUpdated as EventListener,
+      );
+    };
+  }, [manifest?.id]);
 
   useEffect(() => {
     const manifestExports = manifest?.exports;
@@ -1042,6 +1159,13 @@ export default function FormpackDetailPage() {
         defaultValue: manifest.descriptionKey,
       })
     : '';
+  const formpackVersionDisplay =
+    formpackMeta?.versionOrHash ??
+    manifest?.version ??
+    t('formpackVersionUpdatedUnknown');
+  const formpackUpdatedAtDisplay = formpackMeta
+    ? formatTimestamp(formpackMeta.updatedAt)
+    : t('formpackVersionUpdatedUnknown');
 
   const restoreActiveRecord = useCallback(
     async (currentFormpackId: string, isActive: () => boolean) => {
@@ -1590,7 +1714,7 @@ export default function FormpackDetailPage() {
         Boolean(entry),
       );
 
-    return sections.length ? <>{sections}</> : null;
+    return sections.length ? sections : null;
   }, [formData, previewUiSchema, resolvePreviewValue, schema]);
   const handleExportJson = useCallback(() => {
     if (!manifest || !activeRecord) {
@@ -1657,6 +1781,16 @@ export default function FormpackDetailPage() {
     t,
   ]);
 
+  const handlePdfExportSuccess = useCallback(() => {
+    setPdfError(null);
+    setPdfSuccess(t('formpackPdfExportSuccess'));
+  }, [t]);
+
+  const handlePdfExportError = useCallback(() => {
+    setPdfError(t('formpackPdfExportError'));
+    setPdfSuccess(null);
+  }, [t]);
+
   const handleActionClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       const target = event.target;
@@ -1674,22 +1808,31 @@ export default function FormpackDetailPage() {
         if (importSuccess) {
           setImportSuccess(null);
         }
+        if (pdfSuccess) {
+          setPdfSuccess(null);
+        }
         return;
       }
       if (action === 'json-import') {
         if (docxSuccess) {
           setDocxSuccess(null);
         }
+        if (pdfSuccess) {
+          setPdfSuccess(null);
+        }
         return;
       }
       if (docxSuccess) {
         setDocxSuccess(null);
       }
+      if (pdfSuccess) {
+        setPdfSuccess(null);
+      }
       if (importSuccess) {
         setImportSuccess(null);
       }
     },
-    [docxSuccess, importSuccess],
+    [docxSuccess, importSuccess, pdfSuccess],
   );
 
   useEffect(() => {
@@ -1698,11 +1841,11 @@ export default function FormpackDetailPage() {
     const loadValidator = async () => {
       const module = await import('@rjsf/validator-ajv8');
       // Ajv2020 includes the draft 2020-12 meta schema used by formpacks.
-      const validator = module.customizeValidator({
+      const loadedValidator = module.customizeValidator({
         AjvClass: Ajv2020,
       });
       if (isActive) {
-        setValidator(validator);
+        setValidator(loadedValidator);
       }
     };
 
@@ -1930,6 +2073,53 @@ export default function FormpackDetailPage() {
       <p className="app__error">{storageErrorMessage}</p>
     ) : null;
 
+  const renderPdfExportControls = () => {
+    const pdfSupported = manifest.exports.includes('pdf');
+    const disabled = storageError === 'unavailable' || !pdfSupported;
+    const resolvedFormpackId = manifest.id;
+
+    if (!pdfSupported) {
+      return (
+        <div className="formpack-pdf-export">
+          <button
+            type="button"
+            className="app__button"
+            disabled
+            title={t('formpackPdfExportUnavailable')}
+          >
+            {t('formpackRecordExportPdf')}
+          </button>
+          <span className="formpack-pdf-export__note">
+            {t('formpackPdfExportUnavailable')}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="formpack-pdf-export">
+        <Suspense
+          fallback={
+            <button type="button" className="app__button" disabled>
+              {t('formpackRecordExportPdf')}
+            </button>
+          }
+        >
+          <LazyPdfExportControls
+            formpackId={resolvedFormpackId}
+            formData={formData}
+            locale={locale}
+            label={t('formpackRecordExportPdf')}
+            loadingLabel={t('formpackPdfExportInProgress')}
+            disabled={disabled}
+            onSuccess={handlePdfExportSuccess}
+            onError={handlePdfExportError}
+          />
+        </Suspense>
+      </div>
+    );
+  };
+
   const renderDocxExportControls = () => {
     if (
       !manifest.exports.includes('docx') ||
@@ -1939,43 +2129,46 @@ export default function FormpackDetailPage() {
       return null;
     }
 
+    const pdfControls = renderPdfExportControls();
+
     return (
       <div className="formpack-docx-export">
-        <label
-          className="formpack-docx-export__label"
-          htmlFor="docx-template-select"
-        >
-          {t('formpackDocxTemplateLabel')}
-          <select
-            id="docx-template-select"
-            className="formpack-docx-export__select"
-            value={docxTemplateId}
-            onChange={(event) =>
-              setDocxTemplateId(event.target.value as DocxTemplateId)
-            }
+        <div className="formpack-docx-export__template">
+          <label
+            className="formpack-docx-export__label"
+            htmlFor="docx-template-select"
           >
-            {docxTemplateOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          className="app__button"
-          onClick={handleExportDocx}
-          data-action="docx-export"
-          disabled={storageError === 'unavailable' || isDocxExporting}
-        >
-          {isDocxExporting
-            ? t('formpackDocxExportInProgress')
-            : t('formpackRecordExportDocx')}
-        </button>
-        {docxError && <span className="app__error">{docxError}</span>}
-        {docxSuccess && (
-          <span className="formpack-docx-export__success">{docxSuccess}</span>
-        )}
+            {t('formpackDocxTemplateLabel')}
+            <select
+              id="docx-template-select"
+              className="formpack-docx-export__select"
+              value={docxTemplateId}
+              onChange={(event) =>
+                setDocxTemplateId(event.target.value as DocxTemplateId)
+              }
+            >
+              {docxTemplateOptions.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <div className="formpack-docx-export__buttons">
+          <button
+            type="button"
+            className="app__button"
+            onClick={handleExportDocx}
+            data-action="docx-export"
+            disabled={storageError === 'unavailable' || isDocxExporting}
+          >
+            {isDocxExporting
+              ? t('formpackDocxExportInProgress')
+              : t('formpackRecordExportDocx')}
+          </button>
+          {pdfControls}
+        </div>
       </div>
     );
   };
@@ -1991,6 +2184,25 @@ export default function FormpackDetailPage() {
         {t('formpackRecordExportJson')}
       </button>
     ) : null;
+
+  const renderActionStatus = () => {
+    if (!docxError && !docxSuccess && !pdfError && !pdfSuccess) {
+      return null;
+    }
+
+    return (
+      <div className="formpack-actions__status" aria-live="polite">
+        {docxError && <span className="app__error">{docxError}</span>}
+        {docxSuccess && (
+          <span className="formpack-actions__success">{docxSuccess}</span>
+        )}
+        {pdfError && <span className="app__error">{pdfError}</span>}
+        {pdfSuccess && (
+          <span className="formpack-actions__success">{pdfSuccess}</span>
+        )}
+      </div>
+    );
+  };
 
   const renderFormContent = () => {
     if (!activeRecord) {
@@ -2028,15 +2240,20 @@ export default function FormpackDetailPage() {
           showErrorList={false}
         >
           <div className="formpack-form__actions">
-            {renderDocxExportControls()}
-            <button
-              type="button"
-              className="app__button"
-              onClick={handleResetForm}
-            >
-              {t('formpackFormReset')}
-            </button>
-            {renderJsonExportButton()}
+            <div className="formpack-actions__group formpack-actions__group--export">
+              {renderDocxExportControls()}
+            </div>
+            <div className="formpack-actions__group formpack-actions__group--secondary">
+              <button
+                type="button"
+                className="app__button"
+                onClick={handleResetForm}
+              >
+                {t('formpackFormReset')}
+              </button>
+              {renderJsonExportButton()}
+            </div>
+            {renderActionStatus()}
           </div>
         </LazyForm>
       </Suspense>
@@ -2192,7 +2409,6 @@ export default function FormpackDetailPage() {
             id="formpack-document-preview"
             title={t('formpackDocumentPreviewHeading')}
             className="formpack-detail__section"
-            defaultOpen
           >
             {renderDocumentPreviewContent()}
           </CollapsibleSection>
@@ -2306,6 +2522,12 @@ export default function FormpackDetailPage() {
           )}
         </div>
       </div>
+      <p className="formpack-detail__version-meta" aria-live="polite">
+        {t('formpackLoadedVersionMeta', {
+          version: formpackVersionDisplay,
+          updatedAt: formpackUpdatedAtDisplay,
+        })}
+      </p>
     </section>
   );
 }

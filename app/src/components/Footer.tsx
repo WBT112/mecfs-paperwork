@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { getRepoUrl } from '../lib/repo';
 import { getSponsorUrl } from '../lib/funding';
+import { APP_VERSION, BUILD_DATE_ISO, formatBuildDate } from '../lib/version';
 
 export default memo(function Footer() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const repoUrl = getRepoUrl();
   const sponsorUrl = getSponsorUrl();
+  const buildDateLabel = formatBuildDate(i18n.language);
 
   return (
     <footer className="app__footer">
@@ -52,6 +54,12 @@ export default memo(function Footer() {
             </a>
           ) : null}
         </nav>
+        <p className="app__footer-version" title={BUILD_DATE_ISO}>
+          {t('footerVersionLabel', {
+            version: APP_VERSION,
+            date: buildDateLabel,
+          })}
+        </p>
       </div>
     </footer>
   );

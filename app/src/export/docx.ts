@@ -9,6 +9,10 @@ import type { SupportedLocale } from '../i18n/locale';
 import { buildDocumentModel } from '../formpacks/documentModel';
 import type { DocumentModel } from '../formpacks/documentModel';
 import {
+  getDoctorLetterExportDefaults,
+  hasDoctorLetterDecisionAnswers,
+} from './doctorLetterDefaults';
+import {
   loadFormpackManifest,
   loadFormpackSchema,
   loadFormpackUiSchema,
@@ -17,6 +21,11 @@ import type {
   FormpackDocxManifest,
   FormpackManifest,
 } from '../formpacks/types';
+import {
+  downloadBlobExport,
+  formatExportDate,
+  sanitizeFilenamePart,
+} from './downloadUtils';
 import { getRecord } from '../storage/records';
 import { isRecord, getFirstItem } from '../lib/utils';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
@@ -51,12 +60,6 @@ export type DocxAdditionalContext = {
   formatPhone: (value: string | null | undefined) => string;
 };
 
-type DocxDefaultsLocale = 'de' | 'en';
-type DocxExportDefaults = {
-  patient: Record<string, string>;
-  doctor: Record<string, string>;
-  decision: { fallbackCaseText: string };
-};
 export type DocxErrorKey =
   | 'formpackDocxErrorUnterminatedFor'
   | 'formpackDocxErrorIncompleteIf'
@@ -97,47 +100,6 @@ const docxMappingCache = new Map<string, DocxMapping>();
 const docxTemplateCache = new Map<string, Uint8Array>();
 const docxSchemaCache = new Map<string, RJSFSchema | null>();
 const docxUiSchemaCache = new Map<string, UiSchema | null>();
-
-const DOCX_EXPORT_DEFAULTS: Record<DocxDefaultsLocale, DocxExportDefaults> = {
-  de: {
-    patient: {
-      firstName: 'Max',
-      lastName: 'Mustermann',
-      streetAndNumber: 'Musterstraße 1',
-      postalCode: '12345',
-      city: 'Musterstadt',
-    },
-    doctor: {
-      name: 'Dr. med. Erika Beispiel',
-      streetAndNumber: 'Praxisstraße 2',
-      postalCode: '12345',
-      city: 'Musterstadt',
-    },
-    decision: {
-      fallbackCaseText:
-        'HINWEIS: BITTE BEANTWORTEN SIE ZUERST DIE FRAGEN UM EIN ERGEBNIS ZU ERHALTEN.',
-    },
-  },
-  en: {
-    patient: {
-      firstName: 'Max',
-      lastName: 'Example',
-      streetAndNumber: 'Example Street 1',
-      postalCode: '12345',
-      city: 'Example City',
-    },
-    doctor: {
-      name: 'Dr. Erica Example',
-      streetAndNumber: 'Practice Street 2',
-      postalCode: '12345',
-      city: 'Example City',
-    },
-    decision: {
-      fallbackCaseText:
-        'NOTICE: PLEASE ANSWER THE QUESTIONS FIRST TO RECEIVE A RESULT.',
-    },
-  },
-};
 
 const buildAssetPath = (formpackId: string, assetPath: string) =>
   `/formpacks/${formpackId}/${assetPath}`;
@@ -415,25 +377,6 @@ const cloneTemplateContext = (
   return cloneTemplateValue(context) as DocxTemplateContext;
 };
 
-const hasDecisionAnswers = (formData: Record<string, unknown>): boolean => {
-  const decision = isRecord(formData.decision) ? formData.decision : null;
-  if (!decision) {
-    return false;
-  }
-  const keys = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'];
-  return keys.some((key) => {
-    const value = decision[key];
-    if (typeof value === 'string') {
-      return value.trim().length > 0;
-    }
-    return typeof value === 'boolean';
-  });
-};
-
-const resolveDocxDefaultsLocale = (
-  locale: SupportedLocale,
-): DocxDefaultsLocale => (locale === 'de' ? 'de' : 'en');
-
 const applyDefaultForPath = (
   context: DocxTemplateContext,
   path: string,
@@ -456,7 +399,7 @@ export const applyDocxExportDefaults = (
     return normalized;
   }
 
-  const defaults = DOCX_EXPORT_DEFAULTS[resolveDocxDefaultsLocale(locale)];
+  const defaults = getDoctorLetterExportDefaults(locale);
 
   applyDefaultForPath(
     normalized,
@@ -494,7 +437,7 @@ export const applyDocxExportDefaults = (
   applyDefaultForPath(normalized, 'doctor.city', defaults.doctor.city);
 
   const shouldApplyDecisionFallback =
-    !sourceData || !hasDecisionAnswers(sourceData);
+    !sourceData || !hasDoctorLetterDecisionAnswers(sourceData);
   if (shouldApplyDecisionFallback) {
     setPathValue(
       normalized,
@@ -835,10 +778,10 @@ export const mapDocumentDataToTemplate = async (
     fieldPath?: string,
   ) =>
     resolveDisplayValue(value, {
-      t: (key, options) =>
+      t: (key, i18nOptions) =>
         key.startsWith('common.')
-          ? i18n.getFixedT(locale, 'app')(key, options)
-          : i18n.getFixedT(locale, `formpack:${formpackId}`)(key, options),
+          ? i18n.getFixedT(locale, 'app')(key, i18nOptions)
+          : i18n.getFixedT(locale, `formpack:${formpackId}`)(key, i18nOptions),
       namespace: 'app',
       formpackId,
       fieldPath,
@@ -920,59 +863,6 @@ export const loadDocxTemplate = async (
   return template;
 };
 
-const formatExportDate = (value: Date) =>
-  value.toISOString().slice(0, 10).replaceAll('-', '');
-
-const RESERVED_FILENAME_CHARS = new Set([
-  '\\',
-  '/',
-  ':',
-  '*',
-  '?',
-  '"',
-  '<',
-  '>',
-  '|',
-  '_',
-]);
-
-const sanitizeFilenamePart = (value: string | null | undefined) => {
-  if (!value) return '';
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-
-  // SECURITY: Use a linear-time sanitizer to avoid regex backtracking on user input.
-  let result = '';
-  let inReplacement = false;
-
-  for (const char of trimmed) {
-    const isWhitespace = char.trim().length === 0;
-    const isReserved = RESERVED_FILENAME_CHARS.has(char);
-
-    if (isWhitespace || isReserved) {
-      if (!inReplacement) {
-        result += '-';
-        inReplacement = true;
-      }
-      continue;
-    }
-
-    result += char;
-    inReplacement = false;
-  }
-
-  let start = 0;
-  let end = result.length;
-  while (start < end && result[start] === '-') {
-    start += 1;
-  }
-  while (end > start && result[end - 1] === '-') {
-    end -= 1;
-  }
-
-  return result.slice(start, end).slice(0, 80);
-};
-
 /**
  * Builds the exported DOCX filename.
  */
@@ -1015,25 +905,13 @@ export const downloadDocxExport = (
   report: Uint8Array | Blob,
   filename: string,
 ): void => {
-  const safeFilename = filename.toLowerCase().endsWith('.docx')
-    ? filename
-    : `${filename}.docx`;
-
-  const blob =
-    report instanceof Blob
-      ? report
-      : new Blob([new Uint8Array(report)], { type: DOCX_MIME });
-  const url = URL.createObjectURL(blob);
-
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = safeFilename;
-  anchor.rel = 'noopener';
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-
-  globalThis.setTimeout(() => URL.revokeObjectURL(url), 0);
+  downloadBlobExport({
+    blob: report,
+    filename,
+    mimeType: DOCX_MIME,
+    defaultExtension: '.docx',
+    errorMessage: 'DOCX export could not be generated.',
+  });
 };
 
 export type ExportDocxOptions = {

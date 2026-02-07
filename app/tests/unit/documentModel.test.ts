@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import deTranslationsJson from '../../../formpacks/notfallpass/i18n/de.json';
-import enTranslationsJson from '../../../formpacks/notfallpass/i18n/en.json';
+import deTranslationsJson from '../../public/formpacks/notfallpass/i18n/de.json';
+import enTranslationsJson from '../../public/formpacks/notfallpass/i18n/en.json';
 import { buildDocumentModel } from '../../src/formpacks/documentModel';
 
 const deTranslations = deTranslationsJson as Record<string, string>;

@@ -242,6 +242,14 @@ The Dockerfile accepts the following build arguments:
   - Example: `https://mecfs-paperwork.de`, `https://staging.mecfs-paperwork.de`
   - Note: `.env.*` files are excluded from the Docker build context, so Docker builds must pass this as a build arg.
 
+- `VITE_APP_VERSION` (default: `unknown`)
+  - Short git SHA shown in footer/help/feedback metadata.
+  - CI sets this automatically from `git rev-parse --short HEAD`.
+
+- `VITE_BUILD_DATE` (default: current UTC timestamp at build time)
+  - ISO timestamp shown in footer/help/feedback metadata.
+  - CI sets this automatically (UTC).
+
 ### Local Testing
 
 To test the staging build locally:
@@ -253,6 +261,8 @@ docker build \
   --build-arg VITE_SHOW_DEV_FORMPACKS=true \
   --build-arg VITE_DEPLOYMENT_ENV=staging \
   --build-arg VITE_PUBLIC_ORIGIN=https://staging.mecfs-paperwork.de \
+  --build-arg VITE_APP_VERSION=$(git rev-parse --short HEAD) \
+  --build-arg VITE_BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
   -t mecfs-paperwork:staging-local \
   .
 

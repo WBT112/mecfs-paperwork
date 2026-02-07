@@ -1,5 +1,6 @@
 import i18n from './index';
-import { defaultLocale, fallbackLocale, SupportedLocale } from './locale';
+import type { SupportedLocale } from './locale';
+import { defaultLocale, fallbackLocale, supportedLocales } from './locale';
 
 type FormpackTranslations = Record<string, string>;
 
@@ -68,4 +69,13 @@ export const loadFormpackI18n = async (
     }
     return;
   }
+};
+
+export const clearFormpackI18nCache = (formpackId: string): void => {
+  const namespace = buildFormpackNamespace(formpackId);
+  supportedLocales.forEach((locale) => {
+    if (i18n.hasResourceBundle(locale, namespace)) {
+      i18n.removeResourceBundle(locale, namespace);
+    }
+  });
 };

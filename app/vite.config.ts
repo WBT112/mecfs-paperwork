@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { createRequire } from 'node:module';
+import { execSync } from 'node:child_process';
 import { createPwaConfig } from './src/lib/pwaConfig';
 
 const require = createRequire(import.meta.url);
@@ -44,7 +45,45 @@ type AppConfig = import('vite').UserConfig & {
   test?: import('vitest/node').InlineConfig;
 };
 
+const APP_VERSION_FALLBACK = 'unknown';
+
+const resolveAppVersion = (): string => {
+  const versionFromEnv = process.env.VITE_APP_VERSION?.trim();
+  if (versionFromEnv) {
+    return versionFromEnv;
+  }
+
+  try {
+    return execSync('git rev-parse --short HEAD', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim();
+  } catch {
+    return APP_VERSION_FALLBACK;
+  }
+};
+
+const resolveBuildDate = (): string => {
+  const buildDateFromEnv = process.env.VITE_BUILD_DATE?.trim();
+  if (buildDateFromEnv) {
+    const parsed = new Date(buildDateFromEnv);
+    if (!Number.isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
+
+  return new Date().toISOString();
+};
+
+const APP_VERSION = resolveAppVersion();
+const BUILD_DATE = resolveBuildDate();
+
 const createConfig = (mode: string): AppConfig => ({
+  define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
+    __BUILD_DATE__: JSON.stringify(BUILD_DATE),
+  },
   plugins: [
     createFormpackSpaFallbackPlugin(),
     react(),
@@ -70,6 +109,19 @@ const createConfig = (mode: string): AppConfig => ({
   },
   optimizeDeps: {
     include: ['events', 'stream-browserify', 'util'],
+    exclude: [
+      '@react-pdf/renderer',
+      '@react-pdf/layout',
+      '@react-pdf/font',
+      '@react-pdf/pdfkit',
+      '@react-pdf/primitives',
+      '@react-pdf/image',
+      '@react-pdf/textkit',
+      '@react-pdf/stylesheet',
+      '@react-pdf/types',
+      'yoga-layout',
+      'yoga-layout-wasm',
+    ],
     esbuildOptions: {
       // Prevent Vite from externalizing util during pre-bundling (docx-templates).
       plugins: [
@@ -94,6 +146,40 @@ const createConfig = (mode: string): AppConfig => ({
         manualChunks(id) {
           if (!id.includes('node_modules')) {
             return undefined;
+          }
+          if (id.includes('@react-pdf/renderer')) {
+            return 'vendor-react-pdf-renderer';
+          }
+          if (
+            id.includes('@react-pdf/layout') ||
+            id.includes('@react-pdf/textkit')
+          ) {
+            return 'vendor-react-pdf-layout';
+          }
+          if (id.includes('@react-pdf/font')) {
+            return 'vendor-react-pdf-font';
+          }
+          if (
+            id.includes('@react-pdf/image') ||
+            id.includes('@react-pdf/png-js')
+          ) {
+            return 'vendor-react-pdf-image';
+          }
+          if (id.includes('@react-pdf/primitives')) {
+            return 'vendor-react-pdf-primitives';
+          }
+          if (id.includes('@react-pdf/pdfkit')) {
+            return 'vendor-react-pdf-pdfkit';
+          }
+          if (id.includes('yoga-layout')) {
+            return 'vendor-react-pdf-yoga';
+          }
+          if (
+            id.includes('fontkit') ||
+            id.includes('/unicode-') ||
+            id.includes('linebreak')
+          ) {
+            return 'vendor-react-pdf-fontkit';
           }
           if (id.includes('@rjsf')) {
             return 'vendor-rjsf';

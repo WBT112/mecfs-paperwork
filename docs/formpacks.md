@@ -5,7 +5,7 @@ Formpacks are self-contained content bundles that define a form, its localizatio
 
 ## Directory structure
 ```
-formpacks/
+app/public/formpacks/
   <id>/
     manifest.json
     schema.json
@@ -32,7 +32,7 @@ Required fields:
 - `locales`: Array of supported locales, e.g. `["de", "en"]`.
 - `titleKey`: i18n key for the display title.
 - `descriptionKey`: i18n key for the description.
-- `exports`: Array of supported export types (MVP: `docx`, `json`).
+- `exports`: Array of supported export types (MVP: `docx`, `pdf`, `json`).
 - `docx.templates.a4`: Path to the A4 template.
 - `docx.templates.wallet`: Path to the wallet template (only supported for `notfallpass`).
 - `docx.mapping`: Path to the DOCX mapping file.
@@ -166,8 +166,8 @@ Word processors (Word/LibreOffice) can split text into multiple internal “runs
 - Do not span loops across table cell boundaries or complex layout containers.
 
 ### Template locations
-- `formpacks/<packId>/templates/a4.docx` is required for all formpacks.
-- `formpacks/notfallpass/templates/wallet.docx` is optional and only supported for `notfallpass`.
+- `app/public/formpacks/<packId>/templates/a4.docx` is required for all formpacks.
+- `app/public/formpacks/notfallpass/templates/wallet.docx` is optional and only supported for `notfallpass`.
 
 ### Field placeholders
 - Text fields: `{{INS person.name}}` or `{{person.name}}`.
@@ -258,7 +258,7 @@ Preview dev-only packs locally:
 Contract checks include:
 - Required files and JSON parsing for manifest/schema/ui schema/i18n/examples.
  - `manifest.json` fields (`id`, `version`, `defaultLocale`, `locales`, `titleKey`, `descriptionKey`, `exports`, `docx`, `visibility`).
-- `exports` includes `docx` and `json`, with safe asset paths for `docx.templates.a4` and `docx.mapping`.
+- `exports` includes `docx` and `json` (and optionally `pdf`), with safe asset paths for `docx.templates.a4` and `docx.mapping`.
 - Strict i18n parity between `i18n/de.json` and `i18n/en.json`.
 - Coverage of `t:` keys referenced in `schema.json` and `ui.schema.json`.
 - Example data validated against `schema.json` (no payload dumps in output).
@@ -460,11 +460,11 @@ Determines if a formpack should be visible in the UI based on its `visibility` f
 
 When adding a new formpack with custom logic:
 
-1. Create formpack assets in `formpacks/<id>/`
+1. Create formpack assets in `app/public/formpacks/<id>/`
 2. Register in `app/src/formpacks/registry.ts`
 3. If needed, add business logic module (e.g., `app/src/formpacks/myEngine.ts`)
 4. Extend `documentModel.ts` with formpack-specific builder
 5. Write unit tests for business logic (≥80% coverage)
 6. Write integration tests for document model mapping
 7. Run `npm run formpack:validate` to check contract compliance
-8. Test exports (JSON, DOCX) manually
+8. Test exports (JSON, DOCX, PDF if enabled) manually

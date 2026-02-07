@@ -60,8 +60,10 @@ describe('getDocxErrorKey', () => {
   });
 
   it('handles plain objects with a message property', () => {
+    const errorFn = vi.spyOn(console, 'error').mockImplementation(() => {});
     const error = { message: 'Plain object error' };
     expect(getDocxErrorKey(error)).toBe('formpackDocxExportError');
+    errorFn.mockRestore();
   });
 
   it('uses the generic error key for non-error values and does not leak them', () => {

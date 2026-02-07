@@ -46,7 +46,7 @@ const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
 
 const isFormpackExportType = (value: string): value is FormpackExportType =>
-  value === 'docx' || value === 'json';
+  value === 'docx' || value === 'json' || value === 'pdf';
 const isFormpackVisibility = (value: string): value is FormpackVisibility =>
   value === 'public' || value === 'dev';
 
@@ -125,14 +125,18 @@ const getValidatedExports = (
     );
   }
 
-  if (!payload.exports.every(isFormpackExportType)) {
+  if (
+    !payload.exports.every((exportType) => isFormpackExportType(exportType))
+  ) {
     throw new FormpackLoaderError(
       'unsupported',
       'The formpack manifest declares an unsupported export type.',
     );
   }
 
-  return payload.exports.filter(isFormpackExportType);
+  return payload.exports.filter((exportType) =>
+    isFormpackExportType(exportType),
+  );
 };
 
 const getValidatedVisibility = (

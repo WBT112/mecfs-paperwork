@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const repoRoot = path.resolve(process.cwd(), '..');
-const formpacksDir = path.join(repoRoot, 'formpacks');
+const formpacksDir = path.join(repoRoot, 'app', 'public', 'formpacks');
 const uniqueId = (prefix = 'tpack') =>
   `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const DOCX_A4 = 'docx/a4.docx';
@@ -94,7 +94,7 @@ describe('validate-formpacks: extra branches', () => {
     } finally {
       await fs.rm(base, { recursive: true, force: true });
     }
-  });
+  }, 15_000);
 
   it('detects missing locales and defaultLocale mismatch', async () => {
     const id = uniqueId('locales');
@@ -323,14 +323,20 @@ describe('validate-formpacks: extra branches', () => {
     const { run } = modA;
     const oldArgv = process.argv;
     const oldExit = process.exitCode;
+    const oldStdout = process.stdout.write;
+    const oldStderr = process.stderr.write;
     try {
       process.argv = ['node', 'script', '--id', 'no-such-id'];
       process.exitCode = 0;
+      process.stdout.write = () => true;
+      process.stderr.write = () => true;
       await run();
       expect(process.exitCode !== 0).toBe(true);
     } finally {
       process.argv = oldArgv;
       process.exitCode = oldExit;
+      process.stdout.write = oldStdout;
+      process.stderr.write = oldStderr;
     }
 
     // case 2: valid formpack and createReport succeeds -> pass

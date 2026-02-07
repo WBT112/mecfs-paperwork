@@ -5,11 +5,11 @@ ARG VITE_MODE=production
 ARG VITE_SHOW_DEV_FORMPACKS=
 ARG VITE_DEPLOYMENT_ENV=
 ARG VITE_PUBLIC_ORIGIN=
+ARG VITE_APP_VERSION=unknown
+ARG VITE_BUILD_DATE=
 
 WORKDIR /repo
-RUN mkdir -p /repo/app /repo/formpacks /repo/.github
-
-COPY formpacks /repo/formpacks
+RUN mkdir -p /repo/app /repo/.github
 COPY .github/FUNDING.yml /repo/.github/FUNDING.yml
 COPY app/package.json app/package-lock.json /repo/app/
 
@@ -23,6 +23,8 @@ COPY tools /repo/tools
 ENV VITE_SHOW_DEV_FORMPACKS=$VITE_SHOW_DEV_FORMPACKS
 ENV VITE_DEPLOYMENT_ENV=$VITE_DEPLOYMENT_ENV
 ENV VITE_PUBLIC_ORIGIN=$VITE_PUBLIC_ORIGIN
+ENV VITE_APP_VERSION=$VITE_APP_VERSION
+ENV VITE_BUILD_DATE=$VITE_BUILD_DATE
 
 # Build with the specified mode
 RUN npm run build -- --mode $VITE_MODE

@@ -23,11 +23,11 @@ const createNewDraft = async (page: Page) => {
 const loadExamplePayload = async () => {
   const examplePath = path.resolve(
     process.cwd(),
-    '../formpacks/notfallpass/examples/example.json',
+    'public/formpacks/notfallpass/examples/example.json',
   );
   const manifestPath = path.resolve(
     process.cwd(),
-    '../formpacks/notfallpass/manifest.json',
+    'public/formpacks/notfallpass/manifest.json',
   );
   const [exampleRaw, manifestRaw] = await Promise.all([
     readFile(examplePath, 'utf-8'),
@@ -70,7 +70,8 @@ test('dismisses success messages when other action buttons are clicked', async (
 
   const docxSection = page.locator('.formpack-docx-export');
   const docxExportButton = docxSection.locator('[data-action="docx-export"]');
-  const docxSuccess = docxSection.locator('.formpack-docx-export__success');
+  const statusMessage = page.locator('.formpack-actions__status');
+  const docxSuccess = statusMessage.locator('.formpack-actions__success');
   await expect(docxExportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
   await docxExportButton.click();
   await expect(docxSuccess).toBeVisible({ timeout: POLL_TIMEOUT });

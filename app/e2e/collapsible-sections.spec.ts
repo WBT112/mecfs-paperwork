@@ -38,7 +38,7 @@ test('collapsible sections default and toggle offline', async ({
   await expect(draftsToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(importToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(historyToggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(previewToggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(previewToggle).toHaveAttribute('aria-expanded', 'false');
 
   await draftsToggle.focus();
   await page.keyboard.press('Enter');
@@ -95,20 +95,20 @@ test('collapsible sections default and toggle offline', async ({
   }
 
   await previewToggle.click();
-  await expect(previewToggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(
-    page.locator(
-      '.formpack-document-preview, .formpack-document-preview__empty',
-    ),
-  ).toBeHidden();
-
-  await previewToggle.click();
   await expect(previewToggle).toHaveAttribute('aria-expanded', 'true');
   await expect(
     page.locator(
       '.formpack-document-preview, .formpack-document-preview__empty',
     ),
   ).toBeVisible();
+
+  await previewToggle.click();
+  await expect(previewToggle).toHaveAttribute('aria-expanded', 'false');
+  await expect(
+    page.locator(
+      '.formpack-document-preview, .formpack-document-preview__empty',
+    ),
+  ).toBeHidden();
 
   await context.setOffline(false);
 });

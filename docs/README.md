@@ -12,6 +12,7 @@
 
 ## Delivery & Operations
 - Deployment and Docker/Compose: `docs/deployment.md`
+- PWA caching strategy and budgets: `docs/pwa-caching.md`
 - Release template: `docs/release-template.md`
 
 ## Quality & Testing

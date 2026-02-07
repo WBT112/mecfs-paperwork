@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
 
 const setLocale = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
+const startFormpackBackgroundRefresh = vi.hoisted(() => vi.fn(() => vi.fn()));
 
 const translations: Record<string, string> = {
   appTitle: 'ME/CFS Paperwork',
@@ -26,6 +27,10 @@ vi.mock('../../src/i18n/useLocale', () => ({
     supportedLocales: ['de', 'en'],
     setLocale,
   }),
+}));
+
+vi.mock('../../src/formpacks/backgroundRefresh', () => ({
+  startFormpackBackgroundRefresh,
 }));
 
 vi.mock('../../src/components/TopbarActions', () => ({
@@ -73,5 +78,16 @@ describe('App', () => {
     await waitFor(() => {
       expect(setLocale).toHaveBeenCalledWith('en');
     });
+    expect(startFormpackBackgroundRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render an update toast', () => {
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });
