@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from '../helpers';
 import { clickActionButton } from '../helpers/actions';
-import { openCollapsibleSection } from '../helpers/sections';
+import { openCollapsibleSectionById } from '../helpers/sections';
 
 const FORM_PACK_ID = 'doctor-letter';
 const DB_NAME = 'mecfs-paperwork';
@@ -14,7 +14,7 @@ const ensureActiveRecord = async (page: Page) => {
     return;
   }
 
-  await openCollapsibleSection(page, /drafts|entwuerfe|entwürfe/i);
+  await openCollapsibleSectionById(page, 'formpack-records');
 
   const newDraftButton = page.getByRole('button', {
     name: /new draft|neuer entwurf/i,
@@ -36,6 +36,9 @@ test('pdf export works on mobile @mobile', async ({ page }) => {
   await deleteDatabase(page, DB_NAME);
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await expect(page.locator('.formpack-detail')).toBeVisible({
+    timeout: POLL_TIMEOUT,
+  });
   await ensureActiveRecord(page);
 
   const pdfSection = page.locator('.formpack-pdf-export');
