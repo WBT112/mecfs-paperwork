@@ -13,17 +13,39 @@ const DB_NAME = 'mecfs-paperwork';
 
 test.setTimeout(60_000);
 
-const waitForActiveRecordId = async (page: Page) => {
+const waitForActiveRecordId = async (
+  page: Page,
+  timeout: number = 10_000,
+) => {
   let activeId: string | null = null;
 
   await expect
     .poll(async () => {
       activeId = await getActiveRecordId(page, FORM_PACK_ID);
       return activeId;
-    })
+    }, { timeout })
     .not.toBeNull();
 
   return activeId as string;
+};
+
+const ensureActiveRecordId = async (page: Page) => {
+  try {
+    return await waitForActiveRecordId(page, 12_000);
+  } catch {
+    await openCollapsibleSectionById(page, 'formpack-records');
+    const newDraftButton = page.getByRole('button', {
+      name: /new draft|neuer entwurf/i,
+    });
+    if (await newDraftButton.count()) {
+      await clickActionButton(newDraftButton.first());
+    } else {
+      await clickActionButton(
+        page.locator('.formpack-records__actions .app__button').first(),
+      );
+    }
+    return waitForActiveRecordId(page, 20_000);
+  }
 };
 
 test.beforeEach(async ({ page }) => {
@@ -37,7 +59,7 @@ test('deletes a non-active draft and removes its snapshots', async ({
 }) => {
   await openCollapsibleSectionById(page, 'formpack-records');
 
-  const recordId = await waitForActiveRecordId(page);
+  const recordId = await ensureActiveRecordId(page);
   await waitForRecordById(page, recordId);
 
   await openCollapsibleSectionById(page, 'formpack-snapshots');
@@ -74,7 +96,7 @@ test('deletes a non-active draft and removes its snapshots', async ({
 });
 
 test('clears snapshots for the active draft', async ({ page }) => {
-  const recordId = await waitForActiveRecordId(page);
+  const recordId = await ensureActiveRecordId(page);
   await waitForRecordById(page, recordId);
 
   await openCollapsibleSectionById(page, 'formpack-snapshots');
