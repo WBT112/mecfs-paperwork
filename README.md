@@ -47,6 +47,7 @@ Start here: `docs/README.md`
 
 Highlights:
 - Getting started and quality gates: `docs/getting-started.md`
+- Accessibility baseline: `docs/a11y.md`
 - Formpacks authoring: `docs/formpacks.md`
 - Export formats: `docs/formats/pdf-export.md` and `docs/formats/json-export.md`
 - Deployment and Docker/Compose: `docs/deployment.md`

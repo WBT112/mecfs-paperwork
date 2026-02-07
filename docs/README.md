@@ -18,6 +18,7 @@
 ## Quality & Testing
 - QA overview and checklists: `docs/qa/README.md`
 - npm health reporting: `docs/quality/npm-health.md`
+- Accessibility baseline: `docs/a11y.md`
 
 ## Security & Architecture
 - Security docs: `docs/security/`
