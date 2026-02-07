@@ -10,7 +10,7 @@ npm ci
 npm run dev
 ```
 
-Note: `predev`/`prebuild` sync `formpacks/` to `app/public/formpacks` automatically.
+Note: Formpacks are stored directly in `app/public/formpacks` (single source of truth).
 
 ## Quality Gates (Local)
 Run from `app/` (Node 24 + Playwright required):

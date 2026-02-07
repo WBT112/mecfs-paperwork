@@ -4,7 +4,6 @@ node_modules/
 # Vite build output
 app/dist/
 app/.vite/
-app/public/formpacks/
 app/dev-dist/
 app/public/favicon.ico
 app/public/favicon-16x16.png

@@ -7,9 +7,7 @@ ARG VITE_DEPLOYMENT_ENV=
 ARG VITE_PUBLIC_ORIGIN=
 
 WORKDIR /repo
-RUN mkdir -p /repo/app /repo/formpacks /repo/.github
-
-COPY formpacks /repo/formpacks
+RUN mkdir -p /repo/app /repo/.github
 COPY .github/FUNDING.yml /repo/.github/FUNDING.yml
 COPY app/package.json app/package-lock.json /repo/app/
 

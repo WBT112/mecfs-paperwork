@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const repoRoot = path.resolve(process.cwd(), '..');
-const formpacksDir = path.join(repoRoot, 'formpacks');
+const formpacksDir = path.join(repoRoot, 'app', 'public', 'formpacks');
 
 const uniqueId = (prefix = 'tpack') =>
   `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;

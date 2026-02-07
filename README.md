@@ -27,7 +27,7 @@ Use **Discussions** for general topics/feature requests. Use **Issues** for bugs
 ## Repository structure
 
 - `app/` - React/Vite frontend (build output: `app/dist`)
-- `formpacks/` - Formpacks (schemas, UI schemas, i18n, templates)
+- `app/public/formpacks/` - Formpacks (schemas, UI schemas, i18n, templates)
 - `docs/` - Project documentation (QA, i18n, formpacks, export formats)
 - `tools/` - Local helper scripts (quality gates, support zip, skeletons)
 - `.github/workflows/` - CI workflows

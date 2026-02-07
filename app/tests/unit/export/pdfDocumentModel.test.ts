@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import i18n from '../../../src/i18n';
-import deTranslations from '../../../../formpacks/doctor-letter/i18n/de.json';
-import enTranslations from '../../../../formpacks/doctor-letter/i18n/en.json';
+import deTranslations from '../../../public/formpacks/doctor-letter/i18n/de.json';
+import enTranslations from '../../../public/formpacks/doctor-letter/i18n/en.json';
 import { buildDoctorLetterDocumentModel } from '../../../src/formpacks/doctor-letter/export/documentModel';
 import type { DocumentBlock } from '../../../src/export/pdf/types';
 
