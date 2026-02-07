@@ -1,5 +1,5 @@
 ---
-applyTo: "formpacks/**/*.json,formpacks/**/*.docx"
+applyTo: "app/public/formpacks/**/*.json,app/public/formpacks/**/*.docx"
 ---
 
 # Formpack Content Instructions

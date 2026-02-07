@@ -23,11 +23,11 @@ const createNewDraft = async (page: Page) => {
 const loadExamplePayload = async () => {
   const examplePath = path.resolve(
     process.cwd(),
-    '../formpacks/notfallpass/examples/example.json',
+    'public/formpacks/notfallpass/examples/example.json',
   );
   const manifestPath = path.resolve(
     process.cwd(),
-    '../formpacks/notfallpass/manifest.json',
+    'public/formpacks/notfallpass/manifest.json',
   );
   const [exampleRaw, manifestRaw] = await Promise.all([
     readFile(examplePath, 'utf-8'),
