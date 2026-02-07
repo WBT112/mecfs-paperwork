@@ -5,6 +5,7 @@ import TopbarActions from '../../src/components/TopbarActions';
 import { TestRouter } from '../setup/testRouter';
 
 const SHARE_LINK_LABEL = 'Share formpack link';
+const SHARE_FALLBACK_TITLE = 'Share this link';
 const TEST_FORMPACK_PATH = '/formpacks/alpha';
 
 const translations: Record<string, string> = {
@@ -25,7 +26,7 @@ const translations: Record<string, string> = {
   shareAriaLabel: SHARE_LINK_LABEL,
   shareTitle: 'Share formpack',
   shareText: 'Link to the formpack',
-  shareFallbackTitle: 'Share this link',
+  shareFallbackTitle: SHARE_FALLBACK_TITLE,
   shareCopyInstructions: 'Copy the link below to share it.',
   shareCopiedLabel: 'Link copied',
   shareCopiedDescription:
@@ -59,11 +60,8 @@ const renderActions = (route: string) =>
   );
 
 afterEach(() => {
+  vi.restoreAllMocks();
   Object.defineProperty(navigator, 'share', {
-    value: undefined,
-    configurable: true,
-  });
-  Object.defineProperty(navigator, 'clipboard', {
     value: undefined,
     configurable: true,
   });
@@ -116,10 +114,7 @@ describe('TopbarActions', () => {
       value: undefined,
       configurable: true,
     });
-    Object.defineProperty(navigator, 'clipboard', {
-      value: { writeText: vi.fn().mockResolvedValue(undefined) },
-      configurable: true,
-    });
+    vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
 
     const user = userEvent.setup();
     renderActions(TEST_FORMPACK_PATH);
@@ -131,5 +126,52 @@ describe('TopbarActions', () => {
     expect(
       screen.getByDisplayValue(`${origin}${TEST_FORMPACK_PATH}`),
     ).toBeInTheDocument();
+  });
+
+  it('shows manual copy fallback when native share and clipboard copy both fail', async () => {
+    Object.defineProperty(navigator, 'share', {
+      value: vi.fn().mockRejectedValue(new Error('share unavailable')),
+      configurable: true,
+    });
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(
+      new Error('blocked'),
+    );
+
+    const user = userEvent.setup();
+    renderActions(TEST_FORMPACK_PATH);
+    const shareButton = screen.getByRole('button', { name: SHARE_LINK_LABEL });
+
+    await user.click(shareButton);
+
+    expect(screen.getByText(SHARE_FALLBACK_TITLE)).toBeInTheDocument();
+    expect(screen.getByText('Copy the link below to share it.')).toBeVisible();
+  });
+
+  it('closes the share fallback dialog and selects the URL on focus', async () => {
+    Object.defineProperty(navigator, 'share', {
+      value: undefined,
+      configurable: true,
+    });
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(
+      new Error('no clipboard'),
+    );
+
+    const selectSpy = vi
+      .spyOn(HTMLInputElement.prototype, 'select')
+      .mockImplementation(() => undefined);
+
+    const user = userEvent.setup();
+    renderActions(TEST_FORMPACK_PATH);
+    await user.click(screen.getByRole('button', { name: SHARE_LINK_LABEL }));
+
+    const urlInput = screen.getByRole('textbox', { name: 'Share URL' });
+    await user.click(urlInput);
+
+    expect(selectSpy).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+    expect(screen.queryByText(SHARE_FALLBACK_TITLE)).not.toBeInTheDocument();
+
+    selectSpy.mockRestore();
   });
 });

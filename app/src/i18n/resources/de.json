@@ -83,7 +83,7 @@
   "formpackDocxTemplateLabel": "Word-Datei (.docx)",
   "formpackDocxTemplateA4Option": "A4 (Standard)",
   "formpackDocxTemplateWalletOption": "Wallet-Karte",
-  "formpackRecordExportDocx": "Dokument exportieren",
+  "formpackRecordExportDocx": "DOCX (Word) exportieren",
   "formpackDocxExportInProgress": "Dokument wird exportiert...",
   "formpackDocxExportSuccess": "Dokument exportiert.",
   "formpackDocxExportError": "Dokument-Export fehlgeschlagen.",

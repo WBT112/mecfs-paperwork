@@ -12,7 +12,10 @@ import { TestRouter } from '../setup/testRouter';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FormpackDetailPage from '../../src/pages/FormpackDetailPage';
 import { downloadDocxExport, exportDocx } from '../../src/export/docxLazy';
-import { loadFormpackManifest } from '../../src/formpacks/loader';
+import {
+  FormpackLoaderError,
+  loadFormpackManifest,
+} from '../../src/formpacks/loader';
 import type { FormpackManifest } from '../../src/formpacks/types';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import type { RecordEntry, SnapshotEntry } from '../../src/storage/types';
@@ -302,7 +305,15 @@ vi.mock('../../src/formpacks/documentModel', () => ({
 }));
 
 vi.mock('../../src/formpacks/loader', () => ({
-  FormpackLoaderError: class extends Error {},
+  FormpackLoaderError: class extends Error {
+    code: string;
+
+    constructor(code: string, message: string) {
+      super(message);
+      this.code = code;
+      this.name = 'FormpackLoaderError';
+    }
+  },
   loadFormpackManifest: vi
     .fn()
     .mockImplementation(async () => formpackState.manifest),
@@ -312,6 +323,10 @@ vi.mock('../../src/formpacks/loader', () => ({
   loadFormpackUiSchema: vi
     .fn()
     .mockImplementation(async () => formpackState.uiSchema),
+}));
+
+vi.mock('../../src/export/pdf/PdfExportControls', () => ({
+  default: () => <div>pdf-export-controls</div>,
 }));
 
 vi.mock('../../src/formpacks/visibility', async (importOriginal) => {
@@ -625,6 +640,23 @@ describe('FormpackDetailPage', () => {
     expect(
       await screen.findByText('formpackDocxTemplateWalletUnavailable'),
     ).toBeInTheDocument();
+  });
+
+  it('renders PDF export controls when the formpack supports pdf export', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: ['docx', 'pdf'],
+    };
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(await screen.findByText('pdf-export-controls')).toBeInTheDocument();
   });
 
   it('hides dev-only sections in production', async () => {
@@ -1649,6 +1681,43 @@ describe('FormpackDetailPage', () => {
     expect(screen.getByText('formpackBackToList')).toBeInTheDocument();
   });
 
+  it('maps known loader errors to translated formpack messages', async () => {
+    const loaderError = new FormpackLoaderError(
+      'schema_not_found',
+      'schema missing',
+    );
+    vi.mocked(loadFormpackManifest).mockRejectedValueOnce(loaderError);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(
+      await screen.findByText('formpackSchemaNotFound'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('formpackBackToList')).toBeInTheDocument();
+  });
+
+  it('falls back to the generic load error for non-error rejections', async () => {
+    vi.mocked(loadFormpackManifest).mockRejectedValueOnce({
+      reason: 'unexpected',
+    });
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(await screen.findByText('formpackLoadError')).toBeInTheDocument();
+  });
+
   it('shows an error when the formpack id is missing', async () => {
     render(
       <TestRouter initialEntries={['/formpacks']}>
@@ -1744,6 +1813,188 @@ describe('FormpackDetailPage', () => {
       expect(await screen.findByText('Hello')).toBeInTheDocument();
       expect(screen.getByText('Alpha')).toBeInTheDocument();
       expect(screen.getByText('details')).toBeInTheDocument();
+    } finally {
+      restoreText();
+    }
+  }, 10000);
+
+  it('renders preview entries using ui:order wildcards and mixed nested arrays', async () => {
+    const payload = {
+      version: 1,
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        title: 'Ordered',
+        locale: 'de',
+        data: {
+          summary: {
+            alpha: 'A',
+            beta: 'B',
+            nestedObjects: [{ note: 'one' }],
+            nestedLists: [['two'], 'three'],
+          },
+        },
+      },
+      revisions: [],
+    };
+    importState.validateJsonImport.mockReturnValue({
+      payload,
+      error: null,
+    });
+    const importedRecord = {
+      ...record,
+      id: 'record-4',
+      title: payload.record.title,
+      data: payload.record.data,
+    };
+    storageImportState.importRecordWithSnapshots.mockResolvedValue(
+      importedRecord,
+    );
+    const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+    const restoreText = mockFileText(IMPORT_FILE_CONTENT);
+    formpackState.schema = {
+      type: 'object',
+      properties: {
+        summary: {
+          type: 'object',
+          properties: {
+            alpha: { type: 'string', title: 'Alpha' },
+            beta: { type: 'string', title: 'Beta' },
+            nestedObjects: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  note: { type: 'string' },
+                },
+              },
+            },
+            nestedLists: {
+              type: 'array',
+              items: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      },
+    };
+    formpackState.uiSchema = {
+      summary: {
+        'ui:title': 'Summary',
+        'ui:order': ['beta', '*', 'missing'],
+        beta: { 'ui:title': 'Beta Label' },
+      },
+    };
+
+    try {
+      render(
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </TestRouter>,
+      );
+
+      await openImportSection();
+      await userEvent.upload(
+        await screen.findByLabelText('formpackImportLabel'),
+        file,
+      );
+      await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+      expect(await screen.findByText(IMPORT_SUCCESS_LABEL)).toBeInTheDocument();
+
+      const preview = document.getElementById(
+        'formpack-document-preview-content',
+      );
+      expect(preview).toBeTruthy();
+      if (preview) {
+        expect(within(preview).getByText('Beta Label')).toBeInTheDocument();
+        expect(within(preview).getByText('A')).toBeInTheDocument();
+        expect(within(preview).getByText('one')).toBeInTheDocument();
+        expect(within(preview).getByText('two')).toBeInTheDocument();
+        expect(within(preview).getByText('three')).toBeInTheDocument();
+      }
+    } finally {
+      restoreText();
+    }
+  }, 10000);
+
+  it('renders preview entries using ui:order without wildcard', async () => {
+    const payload = {
+      version: 1,
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        title: 'OrderedNoWildcard',
+        locale: 'de',
+        data: {
+          orderExample: {
+            first: 'First',
+            second: 'Second',
+            tail: 'Tail',
+          },
+        },
+      },
+      revisions: [],
+    };
+    importState.validateJsonImport.mockReturnValue({
+      payload,
+      error: null,
+    });
+    const importedRecord = {
+      ...record,
+      id: 'record-5',
+      title: payload.record.title,
+      data: payload.record.data,
+    };
+    storageImportState.importRecordWithSnapshots.mockResolvedValue(
+      importedRecord,
+    );
+    const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+    const restoreText = mockFileText(IMPORT_FILE_CONTENT);
+    formpackState.schema = {
+      type: 'object',
+      properties: {
+        orderExample: {
+          type: 'object',
+          properties: {
+            first: { type: 'string', title: 'First title' },
+            second: { type: 'string', title: 'Second title' },
+            tail: { type: 'string' },
+          },
+        },
+      },
+    };
+    formpackState.uiSchema = {
+      orderExample: {
+        'ui:title': 'Order Example',
+        'ui:order': ['second', 'first'],
+      },
+    };
+
+    try {
+      render(
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </TestRouter>,
+      );
+
+      await openImportSection();
+      await userEvent.upload(
+        await screen.findByLabelText('formpackImportLabel'),
+        file,
+      );
+      await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+      expect(await screen.findByText(IMPORT_SUCCESS_LABEL)).toBeInTheDocument();
+
+      expect(screen.getByText('First')).toBeInTheDocument();
+      expect(screen.getByText('Second')).toBeInTheDocument();
+      expect(screen.getByText('Tail')).toBeInTheDocument();
     } finally {
       restoreText();
     }

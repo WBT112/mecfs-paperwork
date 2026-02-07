@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { loadFormpackI18n } from '../../../src/i18n/formpack';
+import {
+  clearFormpackI18nCache,
+  loadFormpackI18n,
+} from '../../../src/i18n/formpack';
 import { defaultLocale } from '../../../src/i18n/locale';
 
 const i18nMocks = vi.hoisted(() => ({
   hasResourceBundle: vi.fn(),
   addResourceBundle: vi.fn(),
+  removeResourceBundle: vi.fn(),
 }));
 
 vi.mock('../../../src/i18n/index', () => ({
@@ -105,5 +109,23 @@ describe('loadFormpackI18n', () => {
     await loadFormpackI18n(formpackId, localeDe);
 
     expect(i18nMocks.addResourceBundle).not.toHaveBeenCalled();
+  });
+
+  it('clears loaded formpack resource bundles for supported locales', () => {
+    i18nMocks.hasResourceBundle.mockImplementation(
+      (locale: string, ns: string) => locale === localeDe && ns === namespace,
+    );
+
+    clearFormpackI18nCache(formpackId);
+
+    expect(i18nMocks.hasResourceBundle).toHaveBeenCalledWith(
+      localeDe,
+      namespace,
+    );
+    expect(i18nMocks.removeResourceBundle).toHaveBeenCalledTimes(1);
+    expect(i18nMocks.removeResourceBundle).toHaveBeenCalledWith(
+      localeDe,
+      namespace,
+    );
   });
 });
