@@ -2302,7 +2302,6 @@ export default function FormpackDetailPage() {
             id="formpack-document-preview"
             title={t('formpackDocumentPreviewHeading')}
             className="formpack-detail__section"
-            defaultOpen
           >
             {renderDocumentPreviewContent()}
           </CollapsibleSection>

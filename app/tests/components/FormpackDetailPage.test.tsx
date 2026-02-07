@@ -670,7 +670,7 @@ describe('FormpackDetailPage', () => {
     }
   });
 
-  it('defaults to collapsed drafts, import, and history with preview expanded', async () => {
+  it('defaults to collapsed drafts, import, history, and preview', async () => {
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
@@ -695,7 +695,7 @@ describe('FormpackDetailPage', () => {
     expect(recordsToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
     expect(importToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
     expect(snapshotsToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
-    expect(previewToggle).toHaveAttribute(ARIA_EXPANDED, 'true');
+    expect(previewToggle).toHaveAttribute(ARIA_EXPANDED, 'false');
 
     expect(screen.getByLabelText('formpackImportLabel')).not.toBeVisible();
   });
