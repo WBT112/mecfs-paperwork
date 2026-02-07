@@ -6,7 +6,6 @@ import App from '../../src/App';
 
 const setLocale = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const startFormpackBackgroundRefresh = vi.hoisted(() => vi.fn(() => vi.fn()));
-const subscribeServiceWorkerWaiting = vi.hoisted(() => vi.fn(() => vi.fn()));
 
 const translations: Record<string, string> = {
   appTitle: 'ME/CFS Paperwork',
@@ -14,10 +13,6 @@ const translations: Record<string, string> = {
   languageLabel: 'Language',
   'languageOptions.de': 'Deutsch',
   'languageOptions.en': 'English',
-  updateFormpacksAvailable: 'Formpacks were updated in the background.',
-  updateAppAvailablePassive:
-    'A new app version is available. It will apply after restarting the app.',
-  'common.close': 'Close',
 };
 
 vi.mock('react-i18next', () => ({
@@ -36,10 +31,6 @@ vi.mock('../../src/i18n/useLocale', () => ({
 
 vi.mock('../../src/formpacks/backgroundRefresh', () => ({
   startFormpackBackgroundRefresh,
-}));
-
-vi.mock('../../src/pwa/register', () => ({
-  subscribeServiceWorkerWaiting,
 }));
 
 vi.mock('../../src/components/TopbarActions', () => ({
@@ -88,6 +79,15 @@ describe('App', () => {
       expect(setLocale).toHaveBeenCalledWith('en');
     });
     expect(startFormpackBackgroundRefresh).toHaveBeenCalledTimes(1);
-    expect(subscribeServiceWorkerWaiting).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render an update toast', () => {
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });

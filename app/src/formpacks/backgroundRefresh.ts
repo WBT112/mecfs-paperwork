@@ -23,8 +23,6 @@ const REFRESH_REQUEST_HEADER = 'x-formpack-refresh';
 const INITIAL_IDLE_TIMEOUT_MS = 3_000;
 const INITIAL_TIMEOUT_MS = 1_500;
 
-type IdleCallbackHandle = number;
-
 type IdleCallback = (deadline: {
   didTimeout: boolean;
   timeRemaining: () => number;
@@ -34,8 +32,8 @@ type IdleScheduler = {
   requestIdleCallback?: (
     callback: IdleCallback,
     options?: { timeout?: number },
-  ) => IdleCallbackHandle;
-  cancelIdleCallback?: (id: IdleCallbackHandle) => void;
+  ) => number;
+  cancelIdleCallback?: (id: number) => void;
 };
 
 const getRefreshHeaders = (): HeadersInit => ({
@@ -105,13 +103,12 @@ const refreshSingleFormpack = async (formpackId: string): Promise<boolean> => {
   ];
 
   if (manifest.docx) {
-    resourcePaths.push(buildDocxPath(formpackId, manifest.docx.mapping));
-    resourcePaths.push(buildDocxPath(formpackId, manifest.docx.templates.a4));
-    if (manifest.docx.templates.wallet) {
-      resourcePaths.push(
-        buildDocxPath(formpackId, manifest.docx.templates.wallet),
-      );
-    }
+    const walletTemplate = manifest.docx.templates.wallet;
+    resourcePaths.push(
+      buildDocxPath(formpackId, manifest.docx.mapping),
+      buildDocxPath(formpackId, manifest.docx.templates.a4),
+      ...(walletTemplate ? [buildDocxPath(formpackId, walletTemplate)] : []),
+    );
   }
 
   await Promise.all(resourcePaths.map((path) => fetchResource(path)));
@@ -200,7 +197,7 @@ export const startFormpackBackgroundRefresh = (
 ): (() => void) => {
   const intervalMs = options.intervalMs ?? REFRESH_INTERVAL_MS;
   let stopped = false;
-  let idleHandle: IdleCallbackHandle | null = null;
+  let idleHandle: number | null = null;
   let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   const scheduleInitialRun = () => {

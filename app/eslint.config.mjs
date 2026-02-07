@@ -44,6 +44,7 @@ const sonarjsLegacyRules = [
   'prefer-object-literal',
   'prefer-single-boolean-return',
   'prefer-while',
+  'redundant-type-aliases',
 ];
 const sonarjsAvailableRules = new Set(Object.keys(sonarjs.rules ?? {}));
 // NOTE: The SonarJS v3 plugin removed `no-one-iteration-loop`; filtering avoids config errors.
@@ -175,7 +176,17 @@ export default [
       'react-hooks/exhaustive-deps': 'error',
       'unicorn/prefer-global-this': 'error',
       'unicorn/no-array-callback-reference': 'error',
+      'unicorn/prefer-single-call': 'error',
       'unicorn/prefer-optional-catch-binding': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "JSXAttribute[name.name='role'][value.type='Literal'][value.value='status']",
+          message:
+            'Use <output> instead of the "status" role to ensure accessibility across all devices.',
+        },
+      ],
     },
   },
 
