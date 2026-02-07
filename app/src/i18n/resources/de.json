@@ -20,7 +20,7 @@
   "feedbackSubject": "mecfs-paperwork Feedback: {{context}}",
   "feedbackIntro": "Bitte keine Patienten- oder Gesundheitsdaten angeben.",
   "feedbackDebugLabel": "Debug-Informationen",
-  "feedbackPrompt": "Beschreibe das Problem unten:",
+  "feedbackPrompt": "Beschreibe das Problem unten und hänge wenn möglich einen Screenshot der Fehlermeldung an (ohne deine Gesundheitsdaten):",
   "feedbackUnknown": "unbekannt",
   "feedbackField": {
     "appVersion": "App-Version",
@@ -153,7 +153,7 @@
   "storageError": "Auf den lokalen Speicher konnte nicht zugegriffen werden. Bitte versuche es erneut.",
   "updateFormpacksAvailable": "Formpacks wurden im Hintergrund aktualisiert.",
   "updateAppAvailablePassive": "Eine neue App-Version ist verfügbar. Sie wird nach dem Neustart der App aktiv.",
-  "versionInfoTitle": "Versionsinformationen",
+  "versionInfoTitle": "Versionsinformationen (für Support)",
   "versionInfoAppVersion": "App-Version",
   "versionInfoBuildDate": "Build-Datum (ISO)",
   "versionInfoCopy": "Versionsinfos kopieren",

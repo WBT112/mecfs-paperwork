@@ -4,14 +4,14 @@ import DoctorLetterPdfDocument from '../../../src/export/pdf/templates/DoctorLet
 import type { DocumentModel } from '../../../src/export/pdf/types';
 
 vi.mock(
-  '../../../src/assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg',
+  '../../../src/assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg?inline',
   () => ({
     default:
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P8/5+hHgAHggJ/lqG02QAAAABJRU5ErkJggg==',
   }),
 );
 vi.mock(
-  '../../../src/assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png',
+  '../../../src/assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png?inline',
   () => ({
     default:
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P8/5+hHgAHggJ/lqG02QAAAABJRU5ErkJggg==',
