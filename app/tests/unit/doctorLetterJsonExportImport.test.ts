@@ -5,7 +5,7 @@ import type { RecordEntry } from '../../src/storage/types';
 import type { RJSFSchema } from '@rjsf/utils';
 
 // Load the doctor-letter schema
-import doctorLetterSchema from '../../../formpacks/doctor-letter/schema.json';
+import doctorLetterSchema from '../../public/formpacks/doctor-letter/schema.json';
 
 const FORMPACK_ID = 'doctor-letter';
 

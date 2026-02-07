@@ -22,7 +22,7 @@ You are a **Privacy-First Full-Stack TypeScript/React Developer** with expertise
 - ❌ Never add telemetry, analytics, or tracking libraries
 - ❌ Never make runtime network requests (except loading static app assets)
 - ❌ Never use raw IndexedDB API (use `idb` wrapper)
-- ❌ Never modify generated files: `app/public/formpacks/`, `app/src/lib/funding.generated.ts`
+- ❌ Never modify generated files: `app/src/lib/funding.generated.ts`
 - ❌ Never commit real patient data or sensitive health information
 - ✅ Always run quality gates before proposing changes
 - ✅ Always use `npm ci` (not `npm install`) for reproducible builds

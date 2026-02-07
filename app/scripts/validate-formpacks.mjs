@@ -9,7 +9,7 @@ import { checkNodeVersion } from './check-node-version.mjs';
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDir, '..', '..');
-const formpacksDir = path.join(repoRoot, 'formpacks');
+const formpacksDir = path.join(repoRoot, 'app', 'public', 'formpacks');
 const CMD_DELIMITER = ['{{', '}}'];
 const REQUIRED_MANIFEST_FIELDS = [
   'id',

@@ -5,7 +5,7 @@ Formpacks are self-contained content bundles that define a form, its localizatio
 
 ## Directory structure
 ```
-formpacks/
+app/public/formpacks/
   <id>/
     manifest.json
     schema.json
@@ -166,8 +166,8 @@ Word processors (Word/LibreOffice) can split text into multiple internal “runs
 - Do not span loops across table cell boundaries or complex layout containers.
 
 ### Template locations
-- `formpacks/<packId>/templates/a4.docx` is required for all formpacks.
-- `formpacks/notfallpass/templates/wallet.docx` is optional and only supported for `notfallpass`.
+- `app/public/formpacks/<packId>/templates/a4.docx` is required for all formpacks.
+- `app/public/formpacks/notfallpass/templates/wallet.docx` is optional and only supported for `notfallpass`.
 
 ### Field placeholders
 - Text fields: `{{INS person.name}}` or `{{person.name}}`.
@@ -460,7 +460,7 @@ Determines if a formpack should be visible in the UI based on its `visibility` f
 
 When adding a new formpack with custom logic:
 
-1. Create formpack assets in `formpacks/<id>/`
+1. Create formpack assets in `app/public/formpacks/<id>/`
 2. Register in `app/src/formpacks/registry.ts`
 3. If needed, add business logic module (e.g., `app/src/formpacks/myEngine.ts`)
 4. Extend `documentModel.ts` with formpack-specific builder

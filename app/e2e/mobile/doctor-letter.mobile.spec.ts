@@ -16,7 +16,7 @@ const loadTranslations = async () => {
     readFile(
       path.resolve(
         process.cwd(),
-        '..',
+        'public',
         'formpacks',
         FORM_PACK_ID,
         'i18n',

@@ -2,8 +2,8 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import i18n from '../../src/i18n';
 import { buildDocumentModel } from '../../src/formpacks/documentModel';
 import { splitParagraphs } from '../../src/lib/text/paragraphs';
-import deTranslations from '../../../formpacks/doctor-letter/i18n/de.json';
-import enTranslations from '../../../formpacks/doctor-letter/i18n/en.json';
+import deTranslations from '../../public/formpacks/doctor-letter/i18n/de.json';
+import enTranslations from '../../public/formpacks/doctor-letter/i18n/en.json';
 
 const namespace = 'formpack:doctor-letter';
 const FORMPACK_ID = 'doctor-letter';
