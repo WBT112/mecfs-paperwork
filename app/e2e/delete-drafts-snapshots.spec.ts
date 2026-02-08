@@ -13,17 +13,17 @@ const DB_NAME = 'mecfs-paperwork';
 
 test.setTimeout(60_000);
 
-const waitForActiveRecordId = async (
-  page: Page,
-  timeout: number = 10_000,
-) => {
+const waitForActiveRecordId = async (page: Page, timeout: number = 10_000) => {
   let activeId: string | null = null;
 
   await expect
-    .poll(async () => {
-      activeId = await getActiveRecordId(page, FORM_PACK_ID);
-      return activeId;
-    }, { timeout })
+    .poll(
+      async () => {
+        activeId = await getActiveRecordId(page, FORM_PACK_ID);
+        return activeId;
+      },
+      { timeout },
+    )
     .not.toBeNull();
 
   return activeId as string;
