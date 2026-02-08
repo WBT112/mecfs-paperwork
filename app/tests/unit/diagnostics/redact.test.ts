@@ -6,6 +6,9 @@ import {
   redactObject,
 } from '../../../src/lib/diagnostics/redact';
 
+const REDACTED = '[REDACTED]';
+const TEST_EMAIL = 'user@example.com';
+
 describe('redact', () => {
   describe('isForbiddenKey', () => {
     it('returns true for known sensitive keys', () => {
@@ -61,7 +64,7 @@ describe('redact', () => {
 
   describe('containsForbiddenPattern', () => {
     it('detects email addresses', () => {
-      expect(containsForbiddenPattern('user@example.com')).toBe(true);
+      expect(containsForbiddenPattern(TEST_EMAIL)).toBe(true);
       expect(containsForbiddenPattern('contact test@mail.org now')).toBe(true);
     });
 
@@ -79,12 +82,12 @@ describe('redact', () => {
 
   describe('redactValue', () => {
     it('redacts values with forbidden keys', () => {
-      expect(redactValue('password', 'secret123')).toBe('[REDACTED]');
-      expect(redactValue('diagnosis', 'ME/CFS')).toBe('[REDACTED]');
+      expect(redactValue('password', 'secret123')).toBe(REDACTED);
+      expect(redactValue('diagnosis', 'ME/CFS')).toBe(REDACTED);
     });
 
     it('redacts strings containing forbidden patterns', () => {
-      expect(redactValue('info', 'user@example.com')).toBe('[REDACTED]');
+      expect(redactValue('info', TEST_EMAIL)).toBe(REDACTED);
     });
 
     it('passes through safe values', () => {
@@ -102,8 +105,8 @@ describe('redact', () => {
       };
       const result = redactObject(input);
       expect(result.version).toBe('1.0');
-      expect(result.password).toBe('[REDACTED]');
-      expect(result.diagnosis).toBe('[REDACTED]');
+      expect(result.password).toBe(REDACTED);
+      expect(result.diagnosis).toBe(REDACTED);
     });
 
     it('redacts nested objects recursively', () => {
@@ -113,14 +116,14 @@ describe('redact', () => {
       };
       const result = redactObject(input);
       expect((result.app as Record<string, unknown>).version).toBe('1.0');
-      expect((result.app as Record<string, unknown>).data).toBe('[REDACTED]');
+      expect((result.app as Record<string, unknown>).data).toBe(REDACTED);
       expect(result.count).toBe(5);
     });
 
     it('redacts values with forbidden patterns', () => {
-      const input = { contact: 'user@example.com' };
+      const input = { contact: TEST_EMAIL };
       const result = redactObject(input);
-      expect(result.contact).toBe('[REDACTED]');
+      expect(result.contact).toBe(REDACTED);
     });
 
     it('preserves arrays and non-sensitive primitives', () => {
@@ -142,9 +145,9 @@ describe('redact', () => {
       };
       const result = redactObject(input);
       const outer = result.outer as Record<string, unknown>;
-      expect(outer.patient).toBe('[REDACTED]');
+      expect(outer.patient).toBe(REDACTED);
       const inner = outer.inner as Record<string, unknown>;
-      expect(inner.medication).toBe('[REDACTED]');
+      expect(inner.medication).toBe(REDACTED);
       expect(inner.safe).toBe(42);
     });
   });

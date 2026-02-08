@@ -93,7 +93,7 @@ describe('errorRingBuffer', () => {
       const errors = getErrors();
       expect(errors).toHaveLength(1);
       expect(errors[0]).toContain('Test error event');
-      expect(errors[0]).toContain('window.onerror');
+      expect(errors[0]).toContain('globalThis.onerror');
     });
 
     it('captures unhandled promise rejections', () => {

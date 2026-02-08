@@ -12,7 +12,7 @@ import { checkStorageHealth } from './storageHealth';
 const collectAppInfo = (): DiagnosticsBundle['app'] => ({
   version: APP_VERSION,
   buildDate: BUILD_DATE_ISO,
-  environment: import.meta.env.MODE ?? 'unknown',
+  environment: (import.meta.env.MODE as string | undefined) ?? 'unknown',
 });
 
 const collectBrowserInfo = (): DiagnosticsBundle['browser'] => ({
@@ -50,7 +50,7 @@ const collectServiceWorkerInfo = async (): Promise<ServiceWorkerInfo> => {
 };
 
 const collectCacheInfo = async (): Promise<CacheInfo[]> => {
-  if (!('caches' in window)) {
+  if (!('caches' in globalThis)) {
     return [];
   }
 
@@ -84,7 +84,7 @@ const collectIdbInfo = async (): Promise<DiagnosticsBundle['indexedDb']> => {
 
   let databases: string[] = [];
   try {
-    if (indexedDB.databases) {
+    if (typeof indexedDB.databases === 'function') {
       const dbs = await indexedDB.databases();
       databases = dbs.map((db) => db.name).filter(Boolean) as string[];
     }

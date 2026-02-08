@@ -86,7 +86,9 @@ describe('AutoGrowTextareaWidget', () => {
   it('uses DEFAULT_ROWS when rows option is not a number', () => {
     render(
       <AutoGrowTextareaWidget
-        {...buildTextareaProps({ options: { rows: 'invalid' } })}
+        {...buildTextareaProps({
+          options: { rows: 'invalid' as unknown as number },
+        })}
       />,
     );
     const textarea = screen.getByRole('textbox');
@@ -105,8 +107,8 @@ describe('AutoGrowTextareaWidget', () => {
 
   it('renders empty string for non-string values', () => {
     render(<AutoGrowTextareaWidget {...buildTextareaProps({ value: 42 })} />);
-    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
-    expect(textarea.value).toBe('');
+    const textarea = screen.getByRole('textbox');
+    expect(textarea).toHaveDisplayValue('');
   });
 
   it('calls onChange with value when typing', () => {

@@ -5,6 +5,8 @@ import {
   copyDiagnosticsToClipboard,
 } from '../../../src/lib/diagnostics/bundle';
 
+const MOCK_GENERATED_AT = '2024-01-01T00:00:00Z';
+
 vi.mock('../../../src/lib/diagnostics/collectors', () => ({
   collectDiagnosticsBundle: vi.fn().mockResolvedValue({
     generatedAt: '2024-01-01T00:00:00Z',
@@ -40,7 +42,7 @@ describe('bundle', () => {
   describe('generateDiagnosticsBundle', () => {
     it('returns the collected bundle', async () => {
       const bundle = await generateDiagnosticsBundle();
-      expect(bundle.generatedAt).toBe('2024-01-01T00:00:00Z');
+      expect(bundle.generatedAt).toBe(MOCK_GENERATED_AT);
       expect(bundle.app.version).toBe('abc123');
     });
   });
@@ -82,7 +84,7 @@ describe('bundle', () => {
       const createElement = vi.spyOn(document, 'createElement');
       await downloadDiagnosticsBundle();
       const anchor = createElement.mock.results[0].value as HTMLAnchorElement;
-      expect(anchor.download).toBe('mecfs-diagnostics.json');
+      expect(anchor.download).toBe('mecfs-support-bundle.json');
     });
 
     it('cleans up blob URL and removes link after timeout', async () => {
@@ -116,8 +118,8 @@ describe('bundle', () => {
       expect(success).toBe(true);
       expect(writeText).toHaveBeenCalledOnce();
       const written = writeText.mock.calls[0][0] as string;
-      const parsed = JSON.parse(written);
-      expect(parsed.generatedAt).toBe('2024-01-01T00:00:00Z');
+      const parsed = JSON.parse(written) as { generatedAt: string };
+      expect(parsed.generatedAt).toBe(MOCK_GENERATED_AT);
     });
 
     it('returns false when clipboard is not available', async () => {

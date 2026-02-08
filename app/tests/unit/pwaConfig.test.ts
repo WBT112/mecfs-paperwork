@@ -14,6 +14,10 @@ const FORMPACK_MANIFEST_URL =
   'https://example.test/formpacks/doctor-letter/manifest.json';
 const FORMPACK_REFRESH_HEADERS = new Headers({ 'x-formpack-refresh': '1' });
 const WORKBOX_REQUIRED_ERROR = 'Expected Workbox settings to be defined.';
+const CACHE_STATIC = 'app-static';
+const CACHE_FONTS = 'app-fonts';
+const CACHE_IMAGES = 'app-images';
+const SCRIPT_URL = 'https://example.test/assets/app.js';
 type UrlPatternMatcher = (options: { request: Request; url: URL }) => boolean;
 const callUrlPatternMatcher = (
   matcher: UrlPatternMatcher,
@@ -125,13 +129,13 @@ describe('createPwaConfig', () => {
 
   it('keeps runtime caches bounded with explicit budgets', () => {
     const staticRule = RUNTIME_CACHING.find(
-      (entry) => entry.options?.cacheName === 'app-static',
+      (entry) => entry.options?.cacheName === CACHE_STATIC,
     );
     const fontRule = RUNTIME_CACHING.find(
-      (entry) => entry.options?.cacheName === 'app-fonts',
+      (entry) => entry.options?.cacheName === CACHE_FONTS,
     );
     const imageRule = RUNTIME_CACHING.find(
-      (entry) => entry.options?.cacheName === 'app-images',
+      (entry) => entry.options?.cacheName === CACHE_IMAGES,
     );
 
     expect(staticRule?.options?.expiration).toEqual({
@@ -160,7 +164,7 @@ describe('createPwaConfig', () => {
     }
 
     const staticRule = (workbox.runtimeCaching ?? []).find(
-      (entry) => entry.options?.cacheName === 'app-static',
+      (entry) => entry.options?.cacheName === CACHE_STATIC,
     );
     expect(staticRule?.options?.expiration).toEqual({
       maxEntries: DEV_RUNTIME_CACHE_BUDGETS.static.maxEntries,
@@ -184,7 +188,7 @@ describe('createPwaConfig', () => {
 
   it('matches script, style, and worker requests for static cache', () => {
     const staticRule = RUNTIME_CACHING.find(
-      (entry) => entry.options?.cacheName === 'app-static',
+      (entry) => entry.options?.cacheName === CACHE_STATIC,
     );
     expect(staticRule).toBeDefined();
     if (!staticRule || typeof staticRule.urlPattern !== 'function') {
@@ -194,7 +198,7 @@ describe('createPwaConfig', () => {
 
     // Simulate requests with specific destinations using Object.defineProperty
     for (const dest of ['script', 'style', 'worker']) {
-      const req = new Request('https://example.test/assets/app.js');
+      const req = new Request(SCRIPT_URL);
       Object.defineProperty(req, 'destination', { value: dest });
       expect(callUrlPatternMatcher(urlPattern, req)).toBe(true);
     }
@@ -207,7 +211,7 @@ describe('createPwaConfig', () => {
 
   it('matches font requests for font cache', () => {
     const fontRule = RUNTIME_CACHING.find(
-      (entry) => entry.options?.cacheName === 'app-fonts',
+      (entry) => entry.options?.cacheName === CACHE_FONTS,
     );
     expect(fontRule).toBeDefined();
     if (!fontRule || typeof fontRule.urlPattern !== 'function') {
@@ -219,14 +223,14 @@ describe('createPwaConfig', () => {
     Object.defineProperty(fontReq, 'destination', { value: 'font' });
     expect(callUrlPatternMatcher(urlPattern, fontReq)).toBe(true);
 
-    const scriptReq = new Request('https://example.test/assets/app.js');
+    const scriptReq = new Request(SCRIPT_URL);
     Object.defineProperty(scriptReq, 'destination', { value: 'script' });
     expect(callUrlPatternMatcher(urlPattern, scriptReq)).toBe(false);
   });
 
   it('matches image requests for image cache', () => {
     const imageRule = RUNTIME_CACHING.find(
-      (entry) => entry.options?.cacheName === 'app-images',
+      (entry) => entry.options?.cacheName === CACHE_IMAGES,
     );
     expect(imageRule).toBeDefined();
     if (!imageRule || typeof imageRule.urlPattern !== 'function') {
@@ -238,7 +242,7 @@ describe('createPwaConfig', () => {
     Object.defineProperty(imgReq, 'destination', { value: 'image' });
     expect(callUrlPatternMatcher(urlPattern, imgReq)).toBe(true);
 
-    const scriptReq = new Request('https://example.test/assets/app.js');
+    const scriptReq = new Request(SCRIPT_URL);
     Object.defineProperty(scriptReq, 'destination', { value: 'script' });
     expect(callUrlPatternMatcher(urlPattern, scriptReq)).toBe(false);
   });

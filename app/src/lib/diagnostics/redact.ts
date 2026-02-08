@@ -45,13 +45,15 @@ export const isForbiddenKey = (key: string): boolean =>
 export const containsForbiddenPattern = (value: string): boolean =>
   FORBIDDEN_PATTERNS.some((pattern) => pattern.test(value));
 
+const REDACTED_PLACEHOLDER = '[REDACTED]';
+
 export const redactValue = (key: string, value: unknown): unknown => {
   if (isForbiddenKey(key)) {
-    return '[REDACTED]';
+    return REDACTED_PLACEHOLDER;
   }
 
   if (typeof value === 'string' && containsForbiddenPattern(value)) {
-    return '[REDACTED]';
+    return REDACTED_PLACEHOLDER;
   }
 
   return value;
@@ -64,7 +66,7 @@ export const redactObject = (
 
   for (const [key, value] of Object.entries(obj)) {
     if (isForbiddenKey(key)) {
-      result[key] = '[REDACTED]';
+      result[key] = REDACTED_PLACEHOLDER;
       continue;
     }
 
@@ -74,7 +76,7 @@ export const redactObject = (
     }
 
     if (typeof value === 'string' && containsForbiddenPattern(value)) {
-      result[key] = '[REDACTED]';
+      result[key] = REDACTED_PLACEHOLDER;
       continue;
     }
 

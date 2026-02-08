@@ -3,13 +3,14 @@ import { describe, expect, it, afterEach } from 'vitest';
 import LegalPage from '../../src/pages/LegalPage';
 
 const LEGAL_CONTENT = '# Sample Legal\n\nSome content.';
+const ROBOTS_META_SELECTOR = 'meta[name="robots"]';
 
 describe('LegalPage', () => {
   afterEach(() => {
     cleanup();
     // Remove any leftover meta tags
     document
-      .querySelectorAll('meta[name="robots"]')
+      .querySelectorAll(ROBOTS_META_SELECTOR)
       .forEach((el) => el.remove());
   });
 
@@ -25,7 +26,7 @@ describe('LegalPage', () => {
   it('adds a noindex robots meta tag on mount', () => {
     render(<LegalPage content={LEGAL_CONTENT} />);
 
-    const meta = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
+    const meta = document.querySelector<HTMLMetaElement>(ROBOTS_META_SELECTOR);
     expect(meta).not.toBeNull();
     expect(meta?.getAttribute('content')).toBe('noindex, nofollow');
   });
@@ -33,11 +34,11 @@ describe('LegalPage', () => {
   it('removes the robots meta tag on unmount when it was created', () => {
     const { unmount } = render(<LegalPage content={LEGAL_CONTENT} />);
 
-    expect(document.querySelector('meta[name="robots"]')).not.toBeNull();
+    expect(document.querySelector(ROBOTS_META_SELECTOR)).not.toBeNull();
 
     unmount();
 
-    expect(document.querySelector('meta[name="robots"]')).toBeNull();
+    expect(document.querySelector(ROBOTS_META_SELECTOR)).toBeNull();
   });
 
   it('restores previous robots content on unmount when meta already existed', () => {

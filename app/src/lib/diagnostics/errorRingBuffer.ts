@@ -44,7 +44,7 @@ export const getErrorCount = (): number => buffer.length;
  */
 export const installGlobalErrorListeners = (): (() => void) => {
   const handleError = (event: ErrorEvent) => {
-    pushError(event.message || 'Unknown error', 'window.onerror');
+    pushError(event.message || 'Unknown error', 'globalThis.onerror');
   };
 
   const handleRejection = (event: PromiseRejectionEvent) => {
@@ -55,11 +55,11 @@ export const installGlobalErrorListeners = (): (() => void) => {
     pushError(message, 'unhandledrejection');
   };
 
-  window.addEventListener('error', handleError);
-  window.addEventListener('unhandledrejection', handleRejection);
+  globalThis.addEventListener('error', handleError);
+  globalThis.addEventListener('unhandledrejection', handleRejection);
 
   return () => {
-    window.removeEventListener('error', handleError);
-    window.removeEventListener('unhandledrejection', handleRejection);
+    globalThis.removeEventListener('error', handleError);
+    globalThis.removeEventListener('unhandledrejection', handleRejection);
   };
 };

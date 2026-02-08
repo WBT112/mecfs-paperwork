@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../components/Markdown/MarkdownRenderer';
 import helpContent from '../content/help/help.md?raw';
@@ -9,6 +9,7 @@ import {
 } from '../lib/diagnostics';
 import { useStorageHealth } from '../lib/diagnostics/useStorageHealth';
 import type { StorageHealthStatus } from '../lib/diagnostics';
+import type { ServiceWorkerInfo } from '../lib/diagnostics/types';
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -28,6 +29,44 @@ const statusLabel = (
   return labels[status];
 };
 
+const getQuotaDisplay = (
+  estimate: { supported: boolean; usage?: number; quota?: number },
+  fallback: string,
+): string => {
+  if (
+    estimate.supported &&
+    estimate.usage !== undefined &&
+    estimate.quota !== undefined
+  ) {
+    return `${formatBytes(estimate.usage)} / ${formatBytes(estimate.quota)}`;
+  }
+  return fallback;
+};
+
+const defaultSwInfo: ServiceWorkerInfo = {
+  supported: false,
+  registered: false,
+};
+
+const fetchSwInfo = async (): Promise<ServiceWorkerInfo> => {
+  if (!('serviceWorker' in navigator)) {
+    return { supported: false, registered: false };
+  }
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    if (!reg) return { supported: true, registered: false };
+    const worker = reg.active ?? reg.waiting ?? reg.installing;
+    return {
+      supported: true,
+      registered: true,
+      scope: reg.scope,
+      state: worker?.state,
+    };
+  } catch {
+    return { supported: true, registered: false };
+  }
+};
+
 export default function HelpPage() {
   const { t, i18n } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -39,6 +78,23 @@ export default function HelpPage() {
     loading: healthLoading,
     refresh: refreshHealth,
   } = useStorageHealth();
+
+  const [swInfo, setSwInfo] = useState<ServiceWorkerInfo>(defaultSwInfo);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchSwInfo().then(
+      (info) => {
+        if (!cancelled) setSwInfo(info);
+      },
+      () => {
+        /* ignore */
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const buildDateLabel = formatBuildDate(i18n.language);
   const versionInfoText = useMemo(
@@ -79,12 +135,38 @@ export default function HelpPage() {
     setDiagState(success ? 'copied' : 'failed');
   }, []);
 
-  const quotaDisplay =
-    health.storageEstimate.supported &&
-    health.storageEstimate.usage !== undefined &&
-    health.storageEstimate.quota !== undefined
-      ? `${formatBytes(health.storageEstimate.usage)} / ${formatBytes(health.storageEstimate.quota)}`
-      : t('storageHealthQuotaUnsupported');
+  const quotaDisplay = getQuotaDisplay(
+    health.storageEstimate,
+    t('storageHealthQuotaUnsupported'),
+  );
+
+  const downloadLabel =
+    diagState === 'downloading'
+      ? t('diagnosticsDownloading')
+      : diagState === 'downloaded'
+        ? t('diagnosticsDownloaded')
+        : t('diagnosticsDownload');
+
+  const copyLabel =
+    diagState === 'copied'
+      ? t('diagnosticsCopied')
+      : diagState === 'failed'
+        ? t('diagnosticsCopyFailed')
+        : t('diagnosticsCopy');
+
+  const idbStatusLabel = health.indexedDbAvailable
+    ? t('storageHealthIdbAvailable')
+    : t('storageHealthIdbUnavailable');
+
+  const idbDataStatus = health.indexedDbAvailable ? 'available' : 'unavailable';
+
+  const swStateLabel = swInfo.registered
+    ? (swInfo.state ?? t('swStatusRegistered'))
+    : t('swStatusNotRegistered');
+
+  const versionCopyLabel = copied
+    ? t('versionInfoCopied')
+    : t('versionInfoCopy');
 
   return (
     <section className="app__card legal-page help-page">
@@ -116,7 +198,7 @@ export default function HelpPage() {
             className="app__button"
             onClick={handleCopyVersionInfo}
           >
-            {copied ? t('versionInfoCopied') : t('versionInfoCopy')}
+            {versionCopyLabel}
           </button>
         </section>
 
@@ -125,6 +207,40 @@ export default function HelpPage() {
           aria-label={t('diagnosticsTitle')}
         >
           <h3>{t('diagnosticsTitle')}</h3>
+
+          <section
+            className="help-page__storage-health"
+            aria-label={t('swStatusTitle')}
+            data-testid="sw-status"
+          >
+            <h4>{t('swStatusTitle')}</h4>
+            <dl className="help-page__storage-details">
+              <div>
+                <dt>API</dt>
+                <dd
+                  data-testid="sw-status-supported"
+                  data-status={swInfo.supported ? 'available' : 'unavailable'}
+                >
+                  {swInfo.supported
+                    ? t('swStatusSupported')
+                    : t('swStatusNotSupported')}
+                </dd>
+              </div>
+              {swInfo.supported && (
+                <div>
+                  <dt>{t('swStatusState')}</dt>
+                  <dd
+                    data-testid="sw-status-state"
+                    data-status={
+                      swInfo.registered ? 'available' : 'unavailable'
+                    }
+                  >
+                    {swStateLabel}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </section>
 
           <section
             className="help-page__storage-health"
@@ -143,13 +259,9 @@ export default function HelpPage() {
                     <dt>{t('storageHealthIdb')}</dt>
                     <dd
                       data-testid="storage-health-idb"
-                      data-status={
-                        health.indexedDbAvailable ? 'available' : 'unavailable'
-                      }
+                      data-status={idbDataStatus}
                     >
-                      {health.indexedDbAvailable
-                        ? t('storageHealthIdbAvailable')
-                        : t('storageHealthIdbUnavailable')}
+                      {idbStatusLabel}
                     </dd>
                   </div>
                   <div>
@@ -167,7 +279,7 @@ export default function HelpPage() {
                   </div>
                 </dl>
                 {health.status !== 'ok' && (
-                  <output className="help-page__storage-guidance" role="status">
+                  <output className="help-page__storage-guidance">
                     {health.message}
                   </output>
                 )}
@@ -193,11 +305,7 @@ export default function HelpPage() {
               disabled={diagState === 'downloading'}
               data-testid="diagnostics-download"
             >
-              {diagState === 'downloading'
-                ? t('diagnosticsDownloading')
-                : diagState === 'downloaded'
-                  ? t('diagnosticsDownloaded')
-                  : t('diagnosticsDownload')}
+              {downloadLabel}
             </button>
             <button
               type="button"
@@ -206,11 +314,7 @@ export default function HelpPage() {
               disabled={diagState === 'copying'}
               data-testid="diagnostics-copy"
             >
-              {diagState === 'copied'
-                ? t('diagnosticsCopied')
-                : diagState === 'failed'
-                  ? t('diagnosticsCopyFailed')
-                  : t('diagnosticsCopy')}
+              {copyLabel}
             </button>
           </div>
         </section>

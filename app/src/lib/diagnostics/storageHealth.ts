@@ -7,6 +7,7 @@ const checkIndexedDbAvailable = (): boolean => typeof indexedDB !== 'undefined';
 const getStorageEstimate = async (): Promise<
   StorageHealthInfo['storageEstimate']
 > => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- runtime guard for browsers lacking Storage API
   if (!navigator.storage?.estimate) {
     return { supported: false };
   }

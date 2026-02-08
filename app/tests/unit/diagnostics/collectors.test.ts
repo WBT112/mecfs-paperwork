@@ -55,9 +55,9 @@ function fakeDb(storeContents: Record<string, number | Error>) {
     objectStoreNames: {
       contains: (name: string) => storeNames.includes(name),
     },
-    transaction: (storeName: string) => ({
+    transaction: (_storeName: string) => ({
       objectStore: (name: string) => {
-        const value = storeContents[name ?? storeName];
+        const value = storeContents[name];
         return {
           count: () => {
             const req = {
@@ -76,7 +76,7 @@ function fakeDb(storeContents: Record<string, number | Error>) {
             return req;
           },
           getAll: () => {
-            const entries = storeContents[name ?? storeName];
+            const entries = storeContents[name];
             // getAll is only used for formpackMeta — return an array
             const req = {
               result: entries,
@@ -145,25 +145,33 @@ function fakeDbWithFormpackMeta(
   };
 }
 
+const DB_NAME = 'mecfs-paperwork';
+const TEST_USER_AGENT = 'TestAgent/1.0';
+const TEST_PLATFORM = 'TestPlatform';
+const TEST_SW_SCOPE = 'http://localhost:5173/';
+
+const stubDefaultNavigator = () =>
+  vi.stubGlobal('navigator', {
+    userAgent: TEST_USER_AGENT,
+    platform: TEST_PLATFORM,
+    language: 'de',
+    languages: ['de', 'en'],
+    cookieEnabled: true,
+    onLine: true,
+    serviceWorker: {
+      getRegistration: vi.fn().mockResolvedValue(undefined),
+    },
+    storage: {
+      estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 50000 }),
+    },
+  });
+
 describe('collectDiagnosticsBundle', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
 
     // Stub browser APIs
-    vi.stubGlobal('navigator', {
-      userAgent: 'TestAgent/1.0',
-      platform: 'TestPlatform',
-      language: 'de',
-      languages: ['de', 'en'],
-      cookieEnabled: true,
-      onLine: true,
-      serviceWorker: {
-        getRegistration: vi.fn().mockResolvedValue(undefined),
-      },
-      storage: {
-        estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 50000 }),
-      },
-    });
+    stubDefaultNavigator();
 
     vi.stubGlobal('caches', {
       keys: vi.fn().mockResolvedValue(['test-cache']),
@@ -173,7 +181,7 @@ describe('collectDiagnosticsBundle', () => {
     });
 
     vi.stubGlobal('indexedDB', {
-      databases: vi.fn().mockResolvedValue([{ name: 'mecfs-paperwork' }]),
+      databases: vi.fn().mockResolvedValue([{ name: DB_NAME }]),
       open: vi.fn().mockImplementation(() => {
         const request = {
           result: {
@@ -199,8 +207,8 @@ describe('collectDiagnosticsBundle', () => {
     expect(bundle.app.version).toBeDefined();
     expect(bundle.app.buildDate).toBeDefined();
     expect(bundle.browser).toBeDefined();
-    expect(bundle.browser.userAgent).toBe('TestAgent/1.0');
-    expect(bundle.browser.platform).toBe('TestPlatform');
+    expect(bundle.browser.userAgent).toBe(TEST_USER_AGENT);
+    expect(bundle.browser.platform).toBe(TEST_PLATFORM);
     expect(bundle.browser.language).toBe('de');
     expect(bundle.browser.languages).toEqual(['de', 'en']);
     expect(bundle.serviceWorker).toBeDefined();
@@ -278,15 +286,15 @@ describe('collectDiagnosticsBundle', () => {
 
   it('reports service worker scope and state when registration is active', async () => {
     vi.stubGlobal('navigator', {
-      userAgent: 'TestAgent/1.0',
-      platform: 'TestPlatform',
+      userAgent: TEST_USER_AGENT,
+      platform: TEST_PLATFORM,
       language: 'de',
       languages: ['de', 'en'],
       cookieEnabled: true,
       onLine: true,
       serviceWorker: {
         getRegistration: vi.fn().mockResolvedValue({
-          scope: 'http://localhost:5173/',
+          scope: TEST_SW_SCOPE,
           active: { state: 'activated' },
           waiting: null,
           installing: null,
@@ -300,21 +308,21 @@ describe('collectDiagnosticsBundle', () => {
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.serviceWorker.supported).toBe(true);
     expect(bundle.serviceWorker.registered).toBe(true);
-    expect(bundle.serviceWorker.scope).toBe('http://localhost:5173/');
+    expect(bundle.serviceWorker.scope).toBe(TEST_SW_SCOPE);
     expect(bundle.serviceWorker.state).toBe('activated');
   });
 
   it('falls back to waiting worker state when active is null', async () => {
     vi.stubGlobal('navigator', {
-      userAgent: 'TestAgent/1.0',
-      platform: 'TestPlatform',
+      userAgent: TEST_USER_AGENT,
+      platform: TEST_PLATFORM,
       language: 'de',
       languages: ['de', 'en'],
       cookieEnabled: true,
       onLine: true,
       serviceWorker: {
         getRegistration: vi.fn().mockResolvedValue({
-          scope: 'http://localhost:5173/',
+          scope: TEST_SW_SCOPE,
           active: null,
           waiting: { state: 'installed' },
           installing: null,
@@ -334,8 +342,8 @@ describe('collectDiagnosticsBundle', () => {
 
   it('handles serviceWorker.getRegistration throwing', async () => {
     vi.stubGlobal('navigator', {
-      userAgent: 'TestAgent/1.0',
-      platform: 'TestPlatform',
+      userAgent: TEST_USER_AGENT,
+      platform: TEST_PLATFORM,
       language: 'de',
       languages: ['de', 'en'],
       cookieEnabled: true,
@@ -358,13 +366,13 @@ describe('collectDiagnosticsBundle', () => {
   it('collects IDB store record counts when stores exist', async () => {
     const db = fakeDb({ records: 5, snapshots: 3 });
     vi.stubGlobal('indexedDB', {
-      databases: vi.fn().mockResolvedValue([{ name: 'mecfs-paperwork' }]),
+      databases: vi.fn().mockResolvedValue([{ name: DB_NAME }]),
       open: vi.fn().mockImplementation(() => fakeOpenRequest(db)),
     });
 
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.indexedDb.available).toBe(true);
-    expect(bundle.indexedDb.databases).toEqual(['mecfs-paperwork']);
+    expect(bundle.indexedDb.databases).toEqual([DB_NAME]);
     expect(bundle.indexedDb.stores).toContainEqual({
       name: 'records',
       recordCount: 5,
@@ -414,7 +422,7 @@ describe('collectDiagnosticsBundle', () => {
 
   it('handles indexedDB.open failure gracefully', async () => {
     vi.stubGlobal('indexedDB', {
-      databases: vi.fn().mockResolvedValue([{ name: 'mecfs-paperwork' }]),
+      databases: vi.fn().mockResolvedValue([{ name: DB_NAME }]),
       open: vi
         .fn()
         .mockImplementation(() =>
@@ -424,7 +432,7 @@ describe('collectDiagnosticsBundle', () => {
 
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.indexedDb.available).toBe(true);
-    expect(bundle.indexedDb.databases).toEqual(['mecfs-paperwork']);
+    expect(bundle.indexedDb.databases).toEqual([DB_NAME]);
     expect(bundle.indexedDb.stores).toEqual([]);
   });
 
@@ -440,7 +448,7 @@ describe('collectDiagnosticsBundle', () => {
       entries,
     );
     vi.stubGlobal('indexedDB', {
-      databases: vi.fn().mockResolvedValue([{ name: 'mecfs-paperwork' }]),
+      databases: vi.fn().mockResolvedValue([{ name: DB_NAME }]),
       open: vi.fn().mockImplementation(() => fakeOpenRequest(db)),
     });
 
@@ -585,10 +593,7 @@ describe('collectDiagnosticsBundle', () => {
     vi.stubGlobal('indexedDB', {
       databases: vi
         .fn()
-        .mockResolvedValue([
-          { name: 'mecfs-paperwork' },
-          { name: 'another-db' },
-        ]),
+        .mockResolvedValue([{ name: DB_NAME }, { name: 'another-db' }]),
       open: vi.fn().mockImplementation(() => fakeOpenRequest(db)),
     });
 
@@ -621,10 +626,7 @@ describe('collectDiagnosticsBundle', () => {
 
     // IndexedDB
     expect(bundle.indexedDb.available).toBe(true);
-    expect(bundle.indexedDb.databases).toEqual([
-      'mecfs-paperwork',
-      'another-db',
-    ]);
+    expect(bundle.indexedDb.databases).toEqual([DB_NAME, 'another-db']);
     expect(bundle.indexedDb.stores).toContainEqual({
       name: 'records',
       recordCount: 42,

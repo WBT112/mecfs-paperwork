@@ -1,7 +1,7 @@
 import { collectDiagnosticsBundle } from './collectors';
 import type { DiagnosticsBundle } from './types';
 
-const BUNDLE_FILENAME = 'mecfs-diagnostics.json';
+const BUNDLE_FILENAME = 'mecfs-support-bundle.json';
 
 export const generateDiagnosticsBundle = async (): Promise<DiagnosticsBundle> =>
   collectDiagnosticsBundle();

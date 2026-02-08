@@ -23,7 +23,7 @@ test.describe('diagnostics bundle', () => {
 
     const download = await waitForDownload(page, () => downloadButton.click());
 
-    expect(download.suggestedFilename()).toBe('mecfs-diagnostics.json');
+    expect(download.suggestedFilename()).toBe('mecfs-support-bundle.json');
 
     const path = await download.path();
     expect(path).toBeTruthy();

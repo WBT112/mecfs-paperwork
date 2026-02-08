@@ -20,13 +20,22 @@ const mockCopyDiagnosticsToClipboard = vi.fn();
 
 vi.mock('../../src/lib/diagnostics', () => ({
   downloadDiagnosticsBundle: (...args: unknown[]) =>
-    mockDownloadDiagnosticsBundle(...args),
+    mockDownloadDiagnosticsBundle(...args) as Promise<void>,
   copyDiagnosticsToClipboard: (...args: unknown[]) =>
-    mockCopyDiagnosticsToClipboard(...args),
+    mockCopyDiagnosticsToClipboard(...args) as Promise<boolean>,
 }));
 
 const mockRefreshHealth = vi.fn();
-let mockHealthState = {
+let mockHealthState: {
+  health: {
+    indexedDbAvailable: boolean;
+    storageEstimate: { supported: boolean; usage?: number; quota?: number };
+    status: 'ok' | 'warning' | 'error';
+    message: string;
+  };
+  loading: boolean;
+  refresh: () => void;
+} = {
   health: {
     indexedDbAvailable: true,
     storageEstimate: {
@@ -34,7 +43,7 @@ let mockHealthState = {
       usage: 5000,
       quota: 100000,
     },
-    status: 'ok' as const,
+    status: 'ok',
     message: 'Storage is available and working normally.',
   },
   loading: false,
@@ -44,6 +53,12 @@ let mockHealthState = {
 vi.mock('../../src/lib/diagnostics/useStorageHealth', () => ({
   useStorageHealth: () => mockHealthState,
 }));
+
+const TID_DIAGNOSTICS_DOWNLOAD = 'diagnostics-download';
+const TID_DIAGNOSTICS_COPY = 'diagnostics-copy';
+const TID_STORAGE_HEALTH_STATUS = 'storage-health-status';
+const TID_STORAGE_HEALTH_QUOTA = 'storage-health-quota';
+const ATTR_DATA_STATUS = 'data-status';
 
 describe('HelpPage', () => {
   beforeEach(() => {
@@ -129,7 +144,7 @@ describe('HelpPage', () => {
     it('downloads diagnostics bundle on click', async () => {
       render(<HelpPage />);
 
-      const button = screen.getByTestId('diagnostics-download');
+      const button = screen.getByTestId(TID_DIAGNOSTICS_DOWNLOAD);
       expect(button).toHaveTextContent('diagnosticsDownload');
 
       fireEvent.click(button);
@@ -148,7 +163,7 @@ describe('HelpPage', () => {
       );
 
       render(<HelpPage />);
-      const button = screen.getByTestId('diagnostics-download');
+      const button = screen.getByTestId(TID_DIAGNOSTICS_DOWNLOAD);
 
       fireEvent.click(button);
 
@@ -169,7 +184,7 @@ describe('HelpPage', () => {
       mockDownloadDiagnosticsBundle.mockRejectedValue(new Error('fail'));
 
       render(<HelpPage />);
-      const button = screen.getByTestId('diagnostics-download');
+      const button = screen.getByTestId(TID_DIAGNOSTICS_DOWNLOAD);
 
       fireEvent.click(button);
 
@@ -184,7 +199,7 @@ describe('HelpPage', () => {
     it('copies diagnostics to clipboard on click', async () => {
       render(<HelpPage />);
 
-      const button = screen.getByTestId('diagnostics-copy');
+      const button = screen.getByTestId(TID_DIAGNOSTICS_COPY);
       expect(button).toHaveTextContent('diagnosticsCopy');
 
       fireEvent.click(button);
@@ -198,7 +213,7 @@ describe('HelpPage', () => {
       mockCopyDiagnosticsToClipboard.mockResolvedValue(true);
 
       render(<HelpPage />);
-      const button = screen.getByTestId('diagnostics-copy');
+      const button = screen.getByTestId(TID_DIAGNOSTICS_COPY);
 
       fireEvent.click(button);
 
@@ -211,7 +226,7 @@ describe('HelpPage', () => {
       mockCopyDiagnosticsToClipboard.mockResolvedValue(false);
 
       render(<HelpPage />);
-      const button = screen.getByTestId('diagnostics-copy');
+      const button = screen.getByTestId(TID_DIAGNOSTICS_COPY);
 
       fireEvent.click(button);
 
@@ -229,7 +244,7 @@ describe('HelpPage', () => {
       );
 
       render(<HelpPage />);
-      const button = screen.getByTestId('diagnostics-copy');
+      const button = screen.getByTestId(TID_DIAGNOSTICS_COPY);
 
       fireEvent.click(button);
 
@@ -256,15 +271,15 @@ describe('HelpPage', () => {
 
       expect(screen.getByText('storageHealthLoading')).toBeInTheDocument();
       expect(
-        screen.queryByTestId('storage-health-status'),
+        screen.queryByTestId(TID_STORAGE_HEALTH_STATUS),
       ).not.toBeInTheDocument();
     });
 
     it('displays ok status when storage is healthy', () => {
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId('storage-health-status');
-      expect(statusEl).toHaveAttribute('data-status', 'ok');
+      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
+      expect(statusEl).toHaveAttribute(ATTR_DATA_STATUS, 'ok');
       expect(statusEl).toHaveTextContent('storageHealthStatusOk');
     });
 
@@ -281,8 +296,8 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId('storage-health-status');
-      expect(statusEl).toHaveAttribute('data-status', 'warning');
+      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
+      expect(statusEl).toHaveAttribute(ATTR_DATA_STATUS, 'warning');
       expect(statusEl).toHaveTextContent('storageHealthStatusWarning');
 
       expect(screen.getByRole('status')).toHaveTextContent(
@@ -303,8 +318,8 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId('storage-health-status');
-      expect(statusEl).toHaveAttribute('data-status', 'error');
+      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
+      expect(statusEl).toHaveAttribute(ATTR_DATA_STATUS, 'error');
       expect(statusEl).toHaveTextContent('storageHealthStatusError');
 
       expect(screen.getByRole('status')).toHaveTextContent(
@@ -321,7 +336,7 @@ describe('HelpPage', () => {
     it('displays storage quota as formatted bytes when supported', () => {
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId('storage-health-quota');
+      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('4.9 KB / 97.7 KB');
     });
 
@@ -336,7 +351,7 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId('storage-health-quota');
+      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('storageHealthQuotaUnsupported');
     });
 
@@ -344,7 +359,7 @@ describe('HelpPage', () => {
       render(<HelpPage />);
 
       const idbEl = screen.getByTestId('storage-health-idb');
-      expect(idbEl).toHaveAttribute('data-status', 'available');
+      expect(idbEl).toHaveAttribute(ATTR_DATA_STATUS, 'available');
       expect(idbEl).toHaveTextContent('storageHealthIdbAvailable');
     });
 
@@ -360,7 +375,7 @@ describe('HelpPage', () => {
       render(<HelpPage />);
 
       const idbEl = screen.getByTestId('storage-health-idb');
-      expect(idbEl).toHaveAttribute('data-status', 'unavailable');
+      expect(idbEl).toHaveAttribute(ATTR_DATA_STATUS, 'unavailable');
       expect(idbEl).toHaveTextContent('storageHealthIdbUnavailable');
     });
 
@@ -388,7 +403,7 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId('storage-health-quota');
+      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('500 B / 1.0 KB');
     });
 
@@ -403,7 +418,7 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId('storage-health-quota');
+      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('2.0 KB / 500.0 KB');
     });
 
@@ -422,7 +437,7 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId('storage-health-quota');
+      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('5.0 MB / 100.0 MB');
     });
   });
@@ -431,7 +446,7 @@ describe('HelpPage', () => {
     it('returns ok label', () => {
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId('storage-health-status');
+      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveTextContent('storageHealthStatusOk');
     });
 
@@ -447,7 +462,7 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId('storage-health-status');
+      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveTextContent('storageHealthStatusWarning');
     });
 
@@ -463,7 +478,7 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId('storage-health-status');
+      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveTextContent('storageHealthStatusError');
     });
   });
