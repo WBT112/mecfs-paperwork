@@ -34,6 +34,11 @@
   --color-badge-text: #1d4ed8;
   --color-note-bg: #e6ecfb;
   --color-note-border: #b9c7e6;
+  --color-info-bg: #e3f2fd;
+  --color-info-border: #2196f3;
+  --color-info-text: #0d47a1;
+  --color-info-link: #0a3575;
+  --color-info-link-hover: #082b5e;
   --color-input-bg: #f8f9fb;
   --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.08);
   --shadow-medium: 0 10px 24px rgba(15, 23, 42, 0.08);
@@ -68,6 +73,11 @@
   --color-badge-text: #bfdbfe;
   --color-note-bg: #1e3a8a;
   --color-note-border: #3b82f6;
+  --color-info-bg: #1d3c62;
+  --color-info-border: #5ea4ff;
+  --color-info-text: #e8f3ff;
+  --color-info-link: #ffffff;
+  --color-info-link-hover: #dbeafe;
   --color-input-bg: #1f1f1f;
   --shadow-soft: 0 12px 30px rgba(0, 0, 0, 0.45);
   --shadow-medium: 0 10px 24px rgba(0, 0, 0, 0.45);
@@ -746,6 +756,39 @@ body {
   margin: 0;
   color: var(--color-text-strong);
   word-break: break-word;
+}
+
+.info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.info-box__icon {
+  flex: 0 0 auto;
+  line-height: 1.2;
+}
+
+.info-box__content {
+  min-width: 0;
+}
+
+.info-box__content a {
+  color: var(--color-info-link);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.info-box__content a:hover {
+  color: var(--color-info-link-hover);
+}
+
+.info-box__content a:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .formpack-import__hint {

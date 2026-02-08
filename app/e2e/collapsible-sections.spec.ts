@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { deleteDatabase } from './helpers';
+import { clickActionButton } from './helpers/actions';
+import { getCollapsibleSectionToggleById } from './helpers/sections';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
@@ -10,27 +12,24 @@ test('collapsible sections default and toggle offline', async ({
   page,
   context,
 }) => {
-  await page.goto('/');
-  await page.evaluate(() => {
-    window.localStorage.clear();
-    window.sessionStorage.clear();
-  });
   await deleteDatabase(page, DB_NAME);
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await expect(page.locator('.formpack-detail')).toBeVisible();
 
-  const draftsToggle = page.locator('.collapsible-section__toggle', {
-    hasText: /entwürfe|drafts/i,
-  });
-  const importToggle = page.locator('.collapsible-section__toggle', {
-    hasText: /import/i,
-  });
-  const historyToggle = page.locator('.collapsible-section__toggle', {
-    hasText: /verlauf|history/i,
-  });
-  const previewToggle = page.locator('.collapsible-section__toggle', {
-    hasText: /dokumentvorschau|document preview/i,
-  });
+  const draftsToggle = getCollapsibleSectionToggleById(
+    page,
+    'formpack-records',
+  );
+  const importToggle = getCollapsibleSectionToggleById(page, 'formpack-import');
+  const historyToggle = getCollapsibleSectionToggleById(
+    page,
+    'formpack-snapshots',
+  );
+  const previewToggle = getCollapsibleSectionToggleById(
+    page,
+    'formpack-document-preview',
+  );
   const toolsHeading = page.getByRole('heading', {
     name: /tools|werkzeuge/i,
   });
@@ -55,35 +54,25 @@ test('collapsible sections default and toggle offline', async ({
   }
 
   const toolsSection = toolsHeading.locator('..');
+  await expect(toolsSection.locator('#formpack-records-toggle')).toBeVisible();
+  await expect(toolsSection.locator('#formpack-import-toggle')).toBeVisible();
   await expect(
-    toolsSection.locator('.collapsible-section__toggle', {
-      hasText: /entwürfe|drafts/i,
-    }),
-  ).toBeVisible();
-  await expect(
-    toolsSection.locator('.collapsible-section__toggle', {
-      hasText: /import/i,
-    }),
-  ).toBeVisible();
-  await expect(
-    toolsSection.locator('.collapsible-section__toggle', {
-      hasText: /verlauf|history/i,
-    }),
+    toolsSection.locator('#formpack-snapshots-toggle'),
   ).toBeVisible();
 
   await context.setOffline(true);
 
-  await draftsToggle.click();
+  await clickActionButton(draftsToggle);
   await expect(draftsToggle).toHaveAttribute('aria-expanded', 'true');
   await expect(
     page.getByRole('button', { name: /new\s*draft|neuer\s*entwurf/i }),
   ).toBeVisible();
 
-  await importToggle.click();
+  await clickActionButton(importToggle);
   await expect(importToggle).toHaveAttribute('aria-expanded', 'true');
   await expect(page.locator('#formpack-import-file')).toBeVisible();
 
-  await historyToggle.click();
+  await clickActionButton(historyToggle);
   await expect(historyToggle).toHaveAttribute('aria-expanded', 'true');
   const snapshotAction = page.locator(
     '.formpack-snapshots__actions .app__button',
@@ -94,7 +83,7 @@ test('collapsible sections default and toggle offline', async ({
     await expect(page.locator('.formpack-snapshots__empty')).toBeVisible();
   }
 
-  await previewToggle.click();
+  await clickActionButton(previewToggle);
   await expect(previewToggle).toHaveAttribute('aria-expanded', 'true');
   await expect(
     page.locator(
@@ -102,7 +91,7 @@ test('collapsible sections default and toggle offline', async ({
     ),
   ).toBeVisible();
 
-  await previewToggle.click();
+  await clickActionButton(previewToggle);
   await expect(previewToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(
     page.locator(

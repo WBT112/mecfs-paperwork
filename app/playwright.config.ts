@@ -2,6 +2,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const isCI = Boolean(process.env.CI);
+const requiresDevServiceWorker = process.env.VITE_ENABLE_DEV_SW === 'true';
 // NOTE: WebKit on Windows can inherit a broken system proxy (WPAD), so we
 // force an explicit proxy config with localhost bypass to keep local E2E stable.
 const localProxyBypass = '127.0.0.1,localhost,::1';
@@ -34,7 +35,8 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 5173 --strictPort',
     url: 'http://127.0.0.1:5173',
-    reuseExistingServer: !process.env.CI,
+    // SW tests require a fresh server process so VITE_ENABLE_DEV_SW is applied.
+    reuseExistingServer: !isCI && !requiresDevServiceWorker,
     timeout: 120_000,
   },
 

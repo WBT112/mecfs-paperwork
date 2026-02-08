@@ -17,7 +17,7 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
     name: /imprint|impressum/i,
   });
   await expect(imprintLink).toBeVisible();
-  await imprintLink.click();
+  await Promise.all([page.waitForURL(/\/imprint$/i), imprintLink.click()]);
   await expect(
     page.getByRole('heading', { level: 1, name: /imprint|impressum/i }),
   ).toBeVisible();
@@ -25,7 +25,7 @@ test('footer navigation reaches legal pages and exposes the GitHub link', async 
   const privacyLink = footerNav.getByRole('link', {
     name: /privacy policy|datenschutzerklärung/i,
   });
-  await privacyLink.click();
+  await Promise.all([page.waitForURL(/\/privacy$/i), privacyLink.click()]);
   await expect(
     page.getByRole('heading', {
       level: 1,

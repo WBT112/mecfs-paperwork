@@ -35,8 +35,10 @@ export const InfoBox = memo(function InfoBox({
       role="note"
       aria-live="polite"
     >
-      <span style={{ marginRight: '0.5rem' }}>ℹ️</span>
-      {content}
+      <span className="info-box__icon" aria-hidden="true">
+        ℹ️
+      </span>
+      <div className="info-box__content">{content}</div>
     </div>
   );
 });

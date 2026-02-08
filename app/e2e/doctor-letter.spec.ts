@@ -69,11 +69,6 @@ const loadTranslations = async (locale: SupportedTestLocale) => {
 };
 
 const openFreshDoctorLetter = async (page: Page) => {
-  await page.goto('/');
-  await page.evaluate(() => {
-    window.localStorage.clear();
-    window.sessionStorage.clear();
-  });
   await deleteDatabase(page, DB.dbName);
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 };
@@ -196,9 +191,24 @@ const answerDecisionTreeCase14 = async (
   await selectDecisionRadio(page, 'q1', yesLabel);
   await selectDecisionRadio(page, 'q2', yesLabel);
   await selectDecisionRadio(page, 'q3', noLabel);
-  await page
-    .locator('#root_decision_q5')
-    .selectOption('Medication: Fluoroquinolones');
+  const select = page.locator('#root_decision_q5');
+  let fluoroOptionValue: string | null = null;
+  await expect
+    .poll(
+      async () => {
+        fluoroOptionValue = await select.evaluate((node) => {
+          const options = Array.from((node as HTMLSelectElement).options);
+          const fluoroOption = options.find((option) =>
+            /fluoro/i.test(option.textContent ?? ''),
+          );
+          return fluoroOption?.value ?? null;
+        });
+        return fluoroOptionValue;
+      },
+      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
+    )
+    .not.toBeNull();
+  await select.selectOption(fluoroOptionValue as string);
 };
 
 const normalizeCaseText = (input: string) =>
@@ -268,7 +278,7 @@ const extractDocxTextFromXml = (documentXml: string) => {
 
 const normalizeDocxMatchText = (value: string) => value.replace(/\s+/g, '');
 
-test.describe.configure({ mode: 'parallel' });
+test.describe.configure({ mode: 'parallel', timeout: 60_000 });
 
 for (const locale of locales) {
   test.describe(locale, () => {

@@ -41,6 +41,16 @@ npm run quality-gates
 
 If you are temporarily on Node < 24, you can bypass the helper’s version check with `BYPASS_NODE_VERSION_CHECK=true`.
 
+## Accessibility Baseline (Local)
+Run the baseline checks from `app/`:
+
+```bash
+npm run lint
+npm run test:e2e:a11y
+```
+
+Details and policy: `docs/a11y.md`.
+
 ## PowerShell Helper (Windows)
 The helper script automates the full suite of quality gates (including optional Docker checks):
 ```powershell
