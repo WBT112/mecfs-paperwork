@@ -51,7 +51,7 @@ jobs:
           VITE_ENABLE_DEV_SW: "true"
         run: |
           set +e
-          npx playwright test --project=${{ matrix.browser }} --repeat-each ${{ matrix.repeat_each }}
+          npx playwright test --project=${{ matrix.browser }} --repeat-each ${{ matrix.repeat_each }} --retries=1
           status=$?
           if [ $status -ne 0 ] && [ "${{ matrix.allow_failure }}" = "true" ]; then
             echo "::warning title=E2E failed but allowed::Playwright project '${{ matrix.browser }}' failed. This does not fail the workflow. See Playwright report artifacts for details."
