@@ -531,6 +531,12 @@ body {
   gap: 0.75rem;
 }
 
+.app__version-details--support {
+  margin-top: 0;
+  border-top: 0;
+  padding-top: 0;
+}
+
 .app__version-details h3 {
   margin: 0;
 }
@@ -1429,8 +1435,20 @@ body {
 }
 
 /* Help page: diagnostics & storage health */
-.help-page__diagnostics {
+.help-page__support {
   margin-top: 1rem;
+  border-top: 2px solid var(--color-border-strong);
+  padding-top: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.help-page__support-heading {
+  margin: 0;
+}
+
+.help-page__diagnostics {
+  margin-top: 0;
   border-top: 1px solid var(--color-border-subtle);
   padding-top: 1rem;
   display: grid;
