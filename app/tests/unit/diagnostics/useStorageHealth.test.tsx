@@ -6,7 +6,8 @@ import type { StorageHealthInfo } from '../../../src/lib/diagnostics/types';
 const mockCheckStorageHealth = vi.fn();
 
 vi.mock('../../../src/lib/diagnostics/storageHealth', () => ({
-  checkStorageHealth: (...args: unknown[]) => mockCheckStorageHealth(...args),
+  checkStorageHealth: (...args: unknown[]) =>
+    mockCheckStorageHealth(...args) as Promise<StorageHealthInfo>,
 }));
 
 const healthyResult: StorageHealthInfo = {
