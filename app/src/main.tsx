@@ -7,6 +7,7 @@ import './index.css';
 import { applyTheme } from './theme/applyTheme';
 import { getInitialThemeMode } from './theme/theme';
 import { registerServiceWorker } from './pwa/register';
+import { installGlobalErrorListeners } from './lib/diagnostics';
 
 const rootElement = document.getElementById('root');
 
@@ -16,6 +17,7 @@ if (!rootElement) {
 
 applyTheme(getInitialThemeMode());
 registerServiceWorker();
+installGlobalErrorListeners();
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
