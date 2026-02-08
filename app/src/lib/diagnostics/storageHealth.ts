@@ -2,8 +2,7 @@ import type { StorageHealthInfo, StorageHealthStatus } from './types';
 
 const QUOTA_WARNING_THRESHOLD = 0.85;
 
-const checkIndexedDbAvailable = (): boolean =>
-  typeof indexedDB !== 'undefined';
+const checkIndexedDbAvailable = (): boolean => typeof indexedDB !== 'undefined';
 
 const getStorageEstimate = async (): Promise<
   StorageHealthInfo['storageEstimate']

@@ -104,9 +104,7 @@ describe('AutoGrowTextareaWidget', () => {
   });
 
   it('renders empty string for non-string values', () => {
-    render(
-      <AutoGrowTextareaWidget {...buildTextareaProps({ value: 42 })} />,
-    );
+    render(<AutoGrowTextareaWidget {...buildTextareaProps({ value: 42 })} />);
     const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
     expect(textarea.value).toBe('');
   });
@@ -125,22 +123,15 @@ describe('AutoGrowTextareaWidget', () => {
 
   it('calls onBlur with id and value', () => {
     const onBlur = vi.fn();
-    render(
-      <AutoGrowTextareaWidget {...buildTextareaProps({ onBlur })} />,
-    );
+    render(<AutoGrowTextareaWidget {...buildTextareaProps({ onBlur })} />);
     const textarea = screen.getByRole('textbox');
     fireEvent.blur(textarea);
-    expect(onBlur).toHaveBeenCalledWith(
-      'resolvedCaseText',
-      expect.any(String),
-    );
+    expect(onBlur).toHaveBeenCalledWith('resolvedCaseText', expect.any(String));
   });
 
   it('calls onFocus with id and value', () => {
     const onFocus = vi.fn();
-    render(
-      <AutoGrowTextareaWidget {...buildTextareaProps({ onFocus })} />,
-    );
+    render(<AutoGrowTextareaWidget {...buildTextareaProps({ onFocus })} />);
     const textarea = screen.getByRole('textbox');
     fireEvent.focus(textarea);
     expect(onFocus).toHaveBeenCalledWith(
@@ -161,9 +152,7 @@ describe('AutoGrowTextareaWidget', () => {
 
   it('renders as disabled when disabled prop is true', () => {
     render(
-      <AutoGrowTextareaWidget
-        {...buildTextareaProps({ disabled: true })}
-      />,
+      <AutoGrowTextareaWidget {...buildTextareaProps({ disabled: true })} />,
     );
     const textarea = screen.getByRole('textbox');
     expect(textarea).toBeDisabled();
@@ -171,9 +160,7 @@ describe('AutoGrowTextareaWidget', () => {
 
   it('renders as required when required prop is true', () => {
     render(
-      <AutoGrowTextareaWidget
-        {...buildTextareaProps({ required: true })}
-      />,
+      <AutoGrowTextareaWidget {...buildTextareaProps({ required: true })} />,
     );
     const textarea = screen.getByRole('textbox');
     expect(textarea).toBeRequired();
@@ -214,9 +201,7 @@ describe('AccessibleSelectWidget', () => {
 
   it('calls onChange when selection changes', () => {
     const onChange = vi.fn();
-    render(
-      <AccessibleSelectWidget {...buildSelectProps({ onChange })} />,
-    );
+    render(<AccessibleSelectWidget {...buildSelectProps({ onChange })} />);
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: '1' } });
     expect(onChange).toHaveBeenCalled();
@@ -224,9 +209,7 @@ describe('AccessibleSelectWidget', () => {
 
   it('calls onBlur when select loses focus', () => {
     const onBlur = vi.fn();
-    render(
-      <AccessibleSelectWidget {...buildSelectProps({ onBlur })} />,
-    );
+    render(<AccessibleSelectWidget {...buildSelectProps({ onBlur })} />);
     const select = screen.getByRole('combobox');
     fireEvent.blur(select);
     expect(onBlur).toHaveBeenCalledWith('testSelect', expect.anything());
@@ -234,9 +217,7 @@ describe('AccessibleSelectWidget', () => {
 
   it('calls onFocus when select gains focus', () => {
     const onFocus = vi.fn();
-    render(
-      <AccessibleSelectWidget {...buildSelectProps({ onFocus })} />,
-    );
+    render(<AccessibleSelectWidget {...buildSelectProps({ onFocus })} />);
     const select = screen.getByRole('combobox');
     fireEvent.focus(select);
     expect(onFocus).toHaveBeenCalledWith('testSelect', expect.anything());

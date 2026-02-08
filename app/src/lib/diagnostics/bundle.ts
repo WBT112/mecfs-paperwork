@@ -3,8 +3,8 @@ import type { DiagnosticsBundle } from './types';
 
 const BUNDLE_FILENAME = 'mecfs-diagnostics.json';
 
-export const generateDiagnosticsBundle =
-  async (): Promise<DiagnosticsBundle> => collectDiagnosticsBundle();
+export const generateDiagnosticsBundle = async (): Promise<DiagnosticsBundle> =>
+  collectDiagnosticsBundle();
 
 export const downloadDiagnosticsBundle = async (): Promise<void> => {
   const bundle = await generateDiagnosticsBundle();

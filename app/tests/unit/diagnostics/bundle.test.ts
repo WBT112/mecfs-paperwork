@@ -61,9 +61,7 @@ describe('bundle', () => {
         download: '',
       } as unknown as HTMLAnchorElement);
 
-      vi.spyOn(document.body, 'appendChild').mockImplementation(
-        (node) => node,
-      );
+      vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
 
       vi.stubGlobal('URL', {
         createObjectURL: vi.fn().mockReturnValue('blob:test'),
@@ -83,8 +81,7 @@ describe('bundle', () => {
     it('sets the download filename', async () => {
       const createElement = vi.spyOn(document, 'createElement');
       await downloadDiagnosticsBundle();
-      const anchor = createElement.mock.results[0]
-        .value as HTMLAnchorElement;
+      const anchor = createElement.mock.results[0].value as HTMLAnchorElement;
       expect(anchor.download).toBe('mecfs-diagnostics.json');
     });
 

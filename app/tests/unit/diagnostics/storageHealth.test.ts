@@ -55,9 +55,7 @@ describe('checkStorageHealth', () => {
     vi.stubGlobal('navigator', {
       ...navigator,
       storage: {
-        estimate: vi
-          .fn()
-          .mockResolvedValue({ usage: 100000, quota: 100000 }),
+        estimate: vi.fn().mockResolvedValue({ usage: 100000, quota: 100000 }),
       },
     });
 

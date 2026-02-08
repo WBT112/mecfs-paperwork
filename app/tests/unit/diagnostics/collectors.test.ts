@@ -365,8 +365,14 @@ describe('collectDiagnosticsBundle', () => {
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.indexedDb.available).toBe(true);
     expect(bundle.indexedDb.databases).toEqual(['mecfs-paperwork']);
-    expect(bundle.indexedDb.stores).toContainEqual({ name: 'records', recordCount: 5 });
-    expect(bundle.indexedDb.stores).toContainEqual({ name: 'snapshots', recordCount: 3 });
+    expect(bundle.indexedDb.stores).toContainEqual({
+      name: 'records',
+      recordCount: 5,
+    });
+    expect(bundle.indexedDb.stores).toContainEqual({
+      name: 'snapshots',
+      recordCount: 3,
+    });
   });
 
   // ── IndexedDB: databases() not supported ──
@@ -394,8 +400,14 @@ describe('collectDiagnosticsBundle', () => {
     });
 
     const bundle = await collectDiagnosticsBundle();
-    expect(bundle.indexedDb.stores).toContainEqual({ name: 'records', recordCount: -1 });
-    expect(bundle.indexedDb.stores).toContainEqual({ name: 'snapshots', recordCount: 10 });
+    expect(bundle.indexedDb.stores).toContainEqual({
+      name: 'records',
+      recordCount: -1,
+    });
+    expect(bundle.indexedDb.stores).toContainEqual({
+      name: 'snapshots',
+      recordCount: 10,
+    });
   });
 
   // ── IndexedDB: open DB fails ──
@@ -403,7 +415,11 @@ describe('collectDiagnosticsBundle', () => {
   it('handles indexedDB.open failure gracefully', async () => {
     vi.stubGlobal('indexedDB', {
       databases: vi.fn().mockResolvedValue([{ name: 'mecfs-paperwork' }]),
-      open: vi.fn().mockImplementation(() => fakeOpenRequestError(new Error('open failed'))),
+      open: vi
+        .fn()
+        .mockImplementation(() =>
+          fakeOpenRequestError(new Error('open failed')),
+        ),
     });
 
     const bundle = await collectDiagnosticsBundle();
@@ -436,11 +452,8 @@ describe('collectDiagnosticsBundle', () => {
   });
 
   it('uses "unknown" defaults for formpackMeta entries with missing fields', async () => {
-    const entries = [{ }, { id: 'pack-only-id' }];
-    const db = fakeDbWithFormpackMeta(
-      { formpackMeta: 2 },
-      entries,
-    );
+    const entries = [{}, { id: 'pack-only-id' }];
+    const db = fakeDbWithFormpackMeta({ formpackMeta: 2 }, entries);
     vi.stubGlobal('indexedDB', {
       databases: vi.fn().mockResolvedValue([]),
       open: vi.fn().mockImplementation(() => fakeOpenRequest(db)),
@@ -472,7 +485,11 @@ describe('collectDiagnosticsBundle', () => {
   it('returns empty formpacks when DB open fails for formpackMeta', async () => {
     vi.stubGlobal('indexedDB', {
       databases: vi.fn().mockResolvedValue([]),
-      open: vi.fn().mockImplementation(() => fakeOpenRequestError(new Error('db open fail'))),
+      open: vi
+        .fn()
+        .mockImplementation(() =>
+          fakeOpenRequestError(new Error('db open fail')),
+        ),
     });
 
     const bundle = await collectDiagnosticsBundle();
@@ -566,10 +583,12 @@ describe('collectDiagnosticsBundle', () => {
       formpackEntries,
     );
     vi.stubGlobal('indexedDB', {
-      databases: vi.fn().mockResolvedValue([
-        { name: 'mecfs-paperwork' },
-        { name: 'another-db' },
-      ]),
+      databases: vi
+        .fn()
+        .mockResolvedValue([
+          { name: 'mecfs-paperwork' },
+          { name: 'another-db' },
+        ]),
       open: vi.fn().mockImplementation(() => fakeOpenRequest(db)),
     });
 
@@ -602,10 +621,22 @@ describe('collectDiagnosticsBundle', () => {
 
     // IndexedDB
     expect(bundle.indexedDb.available).toBe(true);
-    expect(bundle.indexedDb.databases).toEqual(['mecfs-paperwork', 'another-db']);
-    expect(bundle.indexedDb.stores).toContainEqual({ name: 'records', recordCount: 42 });
-    expect(bundle.indexedDb.stores).toContainEqual({ name: 'snapshots', recordCount: 7 });
-    expect(bundle.indexedDb.stores).toContainEqual({ name: 'formpackMeta', recordCount: 2 });
+    expect(bundle.indexedDb.databases).toEqual([
+      'mecfs-paperwork',
+      'another-db',
+    ]);
+    expect(bundle.indexedDb.stores).toContainEqual({
+      name: 'records',
+      recordCount: 42,
+    });
+    expect(bundle.indexedDb.stores).toContainEqual({
+      name: 'snapshots',
+      recordCount: 7,
+    });
+    expect(bundle.indexedDb.stores).toContainEqual({
+      name: 'formpackMeta',
+      recordCount: 2,
+    });
 
     // Formpacks
     expect(bundle.formpacks).toEqual([

@@ -26,9 +26,8 @@ describe('StagingMarker (staging env)', () => {
     // Set the env variable before re-importing the module
     import.meta.env.VITE_DEPLOYMENT_ENV = 'staging';
 
-    const { default: StagingMarkerStaging } = await import(
-      '../../src/components/StagingMarker'
-    );
+    const { default: StagingMarkerStaging } =
+      await import('../../src/components/StagingMarker');
 
     const { container } = render(<StagingMarkerStaging />);
 

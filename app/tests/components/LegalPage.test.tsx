@@ -25,9 +25,7 @@ describe('LegalPage', () => {
   it('adds a noindex robots meta tag on mount', () => {
     render(<LegalPage content={LEGAL_CONTENT} />);
 
-    const meta = document.querySelector<HTMLMetaElement>(
-      'meta[name="robots"]',
-    );
+    const meta = document.querySelector<HTMLMetaElement>('meta[name="robots"]');
     expect(meta).not.toBeNull();
     expect(meta?.getAttribute('content')).toBe('noindex, nofollow');
   });
@@ -35,9 +33,7 @@ describe('LegalPage', () => {
   it('removes the robots meta tag on unmount when it was created', () => {
     const { unmount } = render(<LegalPage content={LEGAL_CONTENT} />);
 
-    expect(
-      document.querySelector('meta[name="robots"]'),
-    ).not.toBeNull();
+    expect(document.querySelector('meta[name="robots"]')).not.toBeNull();
 
     unmount();
 

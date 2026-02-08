@@ -21,9 +21,7 @@ test.describe('diagnostics bundle', () => {
     const downloadButton = page.getByTestId('diagnostics-download');
     await expect(downloadButton).toBeVisible();
 
-    const download = await waitForDownload(page, () =>
-      downloadButton.click(),
-    );
+    const download = await waitForDownload(page, () => downloadButton.click());
 
     expect(download.suggestedFilename()).toBe('mecfs-diagnostics.json');
 

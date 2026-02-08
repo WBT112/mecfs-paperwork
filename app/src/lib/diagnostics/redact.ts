@@ -68,11 +68,7 @@ export const redactObject = (
       continue;
     }
 
-    if (
-      typeof value === 'object' &&
-      value !== null &&
-      !Array.isArray(value)
-    ) {
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
       result[key] = redactObject(value as Record<string, unknown>);
       continue;
     }

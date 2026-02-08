@@ -25,33 +25,29 @@ const collectBrowserInfo = (): DiagnosticsBundle['browser'] => ({
   onLine: navigator.onLine,
 });
 
-const collectServiceWorkerInfo =
-  async (): Promise<ServiceWorkerInfo> => {
-    if (!('serviceWorker' in navigator)) {
-      return { supported: false, registered: false };
-    }
+const collectServiceWorkerInfo = async (): Promise<ServiceWorkerInfo> => {
+  if (!('serviceWorker' in navigator)) {
+    return { supported: false, registered: false };
+  }
 
-    try {
-      const registration =
-        await navigator.serviceWorker.getRegistration();
-      if (!registration) {
-        return { supported: true, registered: false };
-      }
-
-      const activeWorker =
-        registration.active ??
-        registration.waiting ??
-        registration.installing;
-      return {
-        supported: true,
-        registered: true,
-        scope: registration.scope,
-        state: activeWorker?.state,
-      };
-    } catch {
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    if (!registration) {
       return { supported: true, registered: false };
     }
-  };
+
+    const activeWorker =
+      registration.active ?? registration.waiting ?? registration.installing;
+    return {
+      supported: true,
+      registered: true,
+      scope: registration.scope,
+      state: activeWorker?.state,
+    };
+  } catch {
+    return { supported: true, registered: false };
+  }
+};
 
 const collectCacheInfo = async (): Promise<CacheInfo[]> => {
   if (!('caches' in window)) {
@@ -153,24 +149,22 @@ const collectFormpackMeta = async (): Promise<FormpackMetaInfo[]> => {
 
     const tx = db.transaction('formpackMeta', 'readonly');
     const store = tx.objectStore('formpackMeta');
-    const entries = await new Promise<FormpackMetaInfo[]>(
-      (resolve, reject) => {
-        const req = store.getAll();
-        req.onsuccess = () => {
-          const raw = req.result as Array<{
-            id?: string;
-            versionOrHash?: string;
-          }>;
-          resolve(
-            raw.map((entry) => ({
-              id: entry.id ?? 'unknown',
-              versionOrHash: entry.versionOrHash ?? 'unknown',
-            })),
-          );
-        };
-        req.onerror = () => reject(req.error);
-      },
-    );
+    const entries = await new Promise<FormpackMetaInfo[]>((resolve, reject) => {
+      const req = store.getAll();
+      req.onsuccess = () => {
+        const raw = req.result as Array<{
+          id?: string;
+          versionOrHash?: string;
+        }>;
+        resolve(
+          raw.map((entry) => ({
+            id: entry.id ?? 'unknown',
+            versionOrHash: entry.versionOrHash ?? 'unknown',
+          })),
+        );
+      };
+      req.onerror = () => reject(req.error);
+    });
 
     db.close();
     return entries;
