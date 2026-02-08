@@ -106,4 +106,44 @@ describe('formpacks/documentModel', () => {
     });
     expect(result.diagnoses.formatted).toBe('Example diagnosis');
   });
+
+  it('filters out non-record entries from contacts array', () => {
+    const result = buildDocumentModel(null, 'en', {
+      contacts: ['not-a-record', 42, null, { name: 'Valid' }],
+    });
+    expect(result.contacts).toEqual([
+      { name: 'Valid', phone: null, relation: null },
+    ]);
+  });
+
+  it('filters out contacts where all fields are empty', () => {
+    const result = buildDocumentModel(null, 'en', {
+      contacts: [{ name: '', phone: '', relation: '' }],
+    });
+    expect(result.contacts).toEqual([]);
+  });
+
+  it('filters out non-record entries from medications array', () => {
+    const result = buildDocumentModel(null, 'en', {
+      medications: ['not-a-record', 42, null, { name: 'Aspirin' }],
+    });
+    expect(result.medications).toEqual([
+      { name: 'Aspirin', dosage: null, schedule: null },
+    ]);
+  });
+
+  it('filters out medications where all fields are empty', () => {
+    const result = buildDocumentModel(null, 'en', {
+      medications: [{ name: '', dosage: '', schedule: '' }],
+    });
+    expect(result.medications).toEqual([]);
+  });
+
+  it('returns base model for an unknown formpackId', () => {
+    const result = buildDocumentModel('unknown-pack', 'en', {
+      person: { name: 'Bob' },
+    });
+    expect(result.diagnosisParagraphs).toEqual([]);
+    expect(result.person.name).toBe('Bob');
+  });
 });

@@ -87,6 +87,24 @@ describe('bundle', () => {
         .value as HTMLAnchorElement;
       expect(anchor.download).toBe('mecfs-diagnostics.json');
     });
+
+    it('cleans up blob URL and removes link after timeout', async () => {
+      vi.useFakeTimers();
+
+      await downloadDiagnosticsBundle();
+
+      // Before timeout fires, revokeObjectURL should not have been called
+      expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+      expect(removeSpy).not.toHaveBeenCalled();
+
+      // Advance timers to trigger the cleanup setTimeout
+      vi.advanceTimersByTime(100);
+
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test');
+      expect(removeSpy).toHaveBeenCalledOnce();
+
+      vi.useRealTimers();
+    });
   });
 
   describe('copyDiagnosticsToClipboard', () => {

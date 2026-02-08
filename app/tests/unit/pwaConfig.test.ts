@@ -181,4 +181,65 @@ describe('createPwaConfig', () => {
     expect(workbox.skipWaiting).toBe(false);
     expect(workbox.clientsClaim).toBe(true);
   });
+
+  it('matches script, style, and worker requests for static cache', () => {
+    const staticRule = RUNTIME_CACHING.find(
+      (entry) => entry.options?.cacheName === 'app-static',
+    );
+    expect(staticRule).toBeDefined();
+    if (!staticRule || typeof staticRule.urlPattern !== 'function') {
+      throw new Error('Expected static runtime urlPattern function.');
+    }
+    const urlPattern = staticRule.urlPattern as UrlPatternMatcher;
+
+    // Simulate requests with specific destinations using Object.defineProperty
+    for (const dest of ['script', 'style', 'worker']) {
+      const req = new Request('https://example.test/assets/app.js');
+      Object.defineProperty(req, 'destination', { value: dest });
+      expect(callUrlPatternMatcher(urlPattern, req)).toBe(true);
+    }
+
+    // Non-matching destination
+    const imgReq = new Request('https://example.test/assets/photo.png');
+    Object.defineProperty(imgReq, 'destination', { value: 'image' });
+    expect(callUrlPatternMatcher(urlPattern, imgReq)).toBe(false);
+  });
+
+  it('matches font requests for font cache', () => {
+    const fontRule = RUNTIME_CACHING.find(
+      (entry) => entry.options?.cacheName === 'app-fonts',
+    );
+    expect(fontRule).toBeDefined();
+    if (!fontRule || typeof fontRule.urlPattern !== 'function') {
+      throw new Error('Expected font runtime urlPattern function.');
+    }
+    const urlPattern = fontRule.urlPattern as UrlPatternMatcher;
+
+    const fontReq = new Request('https://example.test/assets/font.woff2');
+    Object.defineProperty(fontReq, 'destination', { value: 'font' });
+    expect(callUrlPatternMatcher(urlPattern, fontReq)).toBe(true);
+
+    const scriptReq = new Request('https://example.test/assets/app.js');
+    Object.defineProperty(scriptReq, 'destination', { value: 'script' });
+    expect(callUrlPatternMatcher(urlPattern, scriptReq)).toBe(false);
+  });
+
+  it('matches image requests for image cache', () => {
+    const imageRule = RUNTIME_CACHING.find(
+      (entry) => entry.options?.cacheName === 'app-images',
+    );
+    expect(imageRule).toBeDefined();
+    if (!imageRule || typeof imageRule.urlPattern !== 'function') {
+      throw new Error('Expected image runtime urlPattern function.');
+    }
+    const urlPattern = imageRule.urlPattern as UrlPatternMatcher;
+
+    const imgReq = new Request('https://example.test/assets/photo.png');
+    Object.defineProperty(imgReq, 'destination', { value: 'image' });
+    expect(callUrlPatternMatcher(urlPattern, imgReq)).toBe(true);
+
+    const scriptReq = new Request('https://example.test/assets/app.js');
+    Object.defineProperty(scriptReq, 'destination', { value: 'script' });
+    expect(callUrlPatternMatcher(urlPattern, scriptReq)).toBe(false);
+  });
 });

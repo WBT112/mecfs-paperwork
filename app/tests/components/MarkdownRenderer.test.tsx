@@ -86,4 +86,20 @@ describe('MarkdownRenderer', () => {
     expect(isSafeHref('/relative/path')).toBe(true);
     expect(isSafeHref('javascript:alert(1)')).toBe(false);
   });
+
+  it('returns false for malformed URLs that throw during parsing', () => {
+    // A URL constructor throws TypeError for strings it cannot parse.
+    // An empty string with no base, or certain edge cases with the base, can cause this.
+    // Override URL to force the throw to guarantee coverage of the catch branch.
+    const OriginalURL = globalThis.URL;
+    globalThis.URL = class ThrowingURL {
+      constructor() {
+        throw new TypeError('Invalid URL');
+      }
+    } as unknown as typeof URL;
+
+    expect(isSafeHref('https://example.com')).toBe(false);
+
+    globalThis.URL = OriginalURL;
+  });
 });
