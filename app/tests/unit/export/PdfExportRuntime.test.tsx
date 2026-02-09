@@ -18,6 +18,7 @@ type DownloadHandler = (options: DownloadOptions) => void;
 
 const readyUrl = 'blob:ready';
 const exportFilename = 'export.pdf';
+const pdfMimeType = 'application/pdf';
 
 const runtimeMocks = vi.hoisted(() => ({
   blobProviderState: {
@@ -171,7 +172,7 @@ describe('PdfExportRuntime', () => {
       error: null,
     };
     runtimeMocks.pdfToBlob.mockResolvedValue(
-      new Blob(['pdf'], { type: 'application/pdf' }),
+      new Blob(['pdf'], { type: pdfMimeType }),
     );
 
     const onSuccess = vi.fn();
@@ -226,6 +227,145 @@ describe('PdfExportRuntime', () => {
 
     expect(onError).toHaveBeenCalledWith(
       expect.objectContaining({ message: 'pdf failed' }),
+    );
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('downloads immediately when only a blob is available', async () => {
+    const readyBlob = new Blob(['pdf'], { type: pdfMimeType });
+    runtimeMocks.blobProviderState = {
+      blob: readyBlob,
+      url: null,
+      loading: false,
+      error: null,
+    };
+
+    const onSuccess = vi.fn();
+    const onDone = vi.fn();
+
+    render(
+      <PdfExportRuntime
+        payload={payload}
+        requestKey="f"
+        onSuccess={onSuccess}
+        onDone={onDone}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(runtimeMocks.downloadPdfExport).toHaveBeenCalledWith({
+        blob: readyBlob,
+        url: null,
+        filename: exportFilename,
+      }),
+    );
+    expect(onSuccess).toHaveBeenCalledTimes(1);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('normalizes fallback blob errors when pdf().toBlob rejects with non-error', async () => {
+    vi.useFakeTimers();
+    runtimeMocks.blobProviderState = {
+      blob: null,
+      url: null,
+      loading: true,
+      error: null,
+    };
+    runtimeMocks.pdfToBlob.mockRejectedValue('blob failed');
+
+    const onError = vi.fn();
+    const onDone = vi.fn();
+
+    render(
+      <PdfExportRuntime
+        payload={payload}
+        requestKey="g"
+        onError={onError}
+        onDone={onDone}
+      />,
+    );
+
+    await vi.advanceTimersByTimeAsync(4_000);
+    await Promise.resolve();
+
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'PDF export blob generation failed.',
+      }),
+    );
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports timeout when fallback blob generation never resolves', async () => {
+    vi.useFakeTimers();
+    runtimeMocks.blobProviderState = {
+      blob: null,
+      url: null,
+      loading: true,
+      error: null,
+    };
+    runtimeMocks.pdfToBlob.mockImplementation(
+      () => new Promise<Blob>(() => undefined),
+    );
+
+    const onError = vi.fn();
+    const onDone = vi.fn();
+
+    render(
+      <PdfExportRuntime
+        payload={payload}
+        requestKey="h"
+        onError={onError}
+        onDone={onDone}
+      />,
+    );
+
+    await vi.advanceTimersByTimeAsync(24_000);
+    await Promise.resolve();
+
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'PDF export timed out. Please try again.',
+      }),
+    );
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports fallback download errors and still finalizes', async () => {
+    vi.useFakeTimers();
+    runtimeMocks.blobProviderState = {
+      blob: null,
+      url: null,
+      loading: true,
+      error: null,
+    };
+    runtimeMocks.pdfToBlob.mockResolvedValue(
+      new Blob(['pdf'], { type: pdfMimeType }),
+    );
+    runtimeMocks.downloadPdfExport.mockImplementation(() => {
+      throw new Error('fallback download failed');
+    });
+
+    const onSuccess = vi.fn();
+    const onError = vi.fn();
+    const onDone = vi.fn();
+
+    render(
+      <PdfExportRuntime
+        payload={payload}
+        requestKey="i"
+        onSuccess={onSuccess}
+        onError={onError}
+        onDone={onDone}
+      />,
+    );
+
+    await vi.advanceTimersByTimeAsync(4_000);
+    await Promise.resolve();
+
+    expect(onSuccess).not.toHaveBeenCalled();
+    expect(onError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'fallback download failed' }),
     );
     expect(onDone).toHaveBeenCalledTimes(1);
   });
