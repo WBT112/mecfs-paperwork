@@ -176,11 +176,35 @@ const selectDecisionRadio = async (
   await fieldset.getByRole('radio', { name: label }).check();
 };
 
+/** Wait until a `<select>` contains an option whose text matches, then select it. */
+const waitForSelectOption = async (
+  page: Page,
+  selector: string,
+  pattern: RegExp,
+) => {
+  const select = page.locator(selector);
+  let value: string | null = null;
+  await expect
+    .poll(
+      async () => {
+        value = await select.evaluate((node, re) => {
+          const options = Array.from((node as HTMLSelectElement).options);
+          const match = options.find((o) => new RegExp(re).test(o.text));
+          return match?.value ?? null;
+        }, pattern.source);
+        return value;
+      },
+      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
+    )
+    .not.toBeNull();
+  await select.selectOption(value as string);
+};
+
 const answerDecisionTreeCase3 = async (page: Page, yesLabel: string) => {
   await selectDecisionRadio(page, 'q1', yesLabel);
   await selectDecisionRadio(page, 'q2', yesLabel);
   await selectDecisionRadio(page, 'q3', yesLabel);
-  await page.locator('#root_decision_q4').selectOption('COVID-19');
+  await waitForSelectOption(page, '#root_decision_q4', /COVID-19/);
 };
 
 const answerDecisionTreeCase14 = async (
@@ -191,24 +215,7 @@ const answerDecisionTreeCase14 = async (
   await selectDecisionRadio(page, 'q1', yesLabel);
   await selectDecisionRadio(page, 'q2', yesLabel);
   await selectDecisionRadio(page, 'q3', noLabel);
-  const select = page.locator('#root_decision_q5');
-  let fluoroOptionValue: string | null = null;
-  await expect
-    .poll(
-      async () => {
-        fluoroOptionValue = await select.evaluate((node) => {
-          const options = Array.from((node as HTMLSelectElement).options);
-          const fluoroOption = options.find((option) =>
-            /fluoro/i.test(option.textContent ?? ''),
-          );
-          return fluoroOption?.value ?? null;
-        });
-        return fluoroOptionValue;
-      },
-      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
-    )
-    .not.toBeNull();
-  await select.selectOption(fluoroOptionValue as string);
+  await waitForSelectOption(page, '#root_decision_q5', /fluoro/i);
 };
 
 const normalizeCaseText = (input: string) =>
@@ -456,7 +463,7 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
   );
   await expect(page.locator('#root_decision_q4')).toHaveCount(0);
   await expect(page.locator('#root_decision_q5')).toBeVisible();
-  await page.locator('#root_decision_q5').selectOption('Other cause');
+  await waitForSelectOption(page, '#root_decision_q5', /Other cause/);
   await waitForResolvedText(
     page,
     translations.formpack['doctor-letter.case.10.paragraph'],
