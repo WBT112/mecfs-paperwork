@@ -38,10 +38,12 @@ describe('resetAllLocalData', () => {
     const mockUnregister = vi.fn().mockResolvedValue(true);
     vi.stubGlobal('navigator', {
       serviceWorker: {
-        getRegistrations: vi.fn().mockResolvedValue([
-          { unregister: mockUnregister },
-          { unregister: mockUnregister },
-        ]),
+        getRegistrations: vi
+          .fn()
+          .mockResolvedValue([
+            { unregister: mockUnregister },
+            { unregister: mockUnregister },
+          ]),
       },
     });
 

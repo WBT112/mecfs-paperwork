@@ -498,9 +498,7 @@ describe('HelpPage', () => {
     });
 
     it('shows confirm dialog on button click and does nothing on cancel', () => {
-      const confirmSpy = vi
-        .spyOn(globalThis, 'confirm')
-        .mockReturnValue(false);
+      const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
 
       render(<HelpPage />);
       fireEvent.click(screen.getByTestId(TID_RESET_ALL_DATA));
