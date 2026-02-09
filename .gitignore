@@ -36,3 +36,6 @@ secrets
 # Incremental TS Info
 *.tsbuildinfo
 app/tsconfig.tsbuildinfo
+
+# Claude
+.claude/

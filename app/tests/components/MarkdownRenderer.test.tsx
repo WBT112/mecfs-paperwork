@@ -5,6 +5,7 @@ import MarkdownRenderer from '../../src/components/Markdown/MarkdownRenderer';
 import { isSafeHref } from '../../src/components/Markdown/markdownLinks';
 
 const EXTERNAL_LINK_REL = 'noreferrer noopener';
+const EXAMPLE_URL = 'https://example.com';
 
 describe('MarkdownRenderer', () => {
   it('renders simple markdown correctly', () => {
@@ -14,9 +15,9 @@ describe('MarkdownRenderer', () => {
   });
 
   it('renders safe links with correct attributes', () => {
-    render(<MarkdownRenderer content="[External](https://example.com)" />);
+    render(<MarkdownRenderer content={`[External](${EXAMPLE_URL})`} />);
     const link = screen.getByRole('link', { name: 'External' });
-    expect(link).toHaveAttribute('href', 'https://example.com');
+    expect(link).toHaveAttribute('href', EXAMPLE_URL);
     expect(link).toHaveAttribute('target', '_blank');
     expect(link).toHaveAttribute('rel', EXTERNAL_LINK_REL);
   });
@@ -81,9 +82,25 @@ describe('MarkdownRenderer', () => {
   });
 
   it('validates href protocols for safety checks', () => {
-    expect(isSafeHref('https://example.com')).toBe(true);
+    expect(isSafeHref(EXAMPLE_URL)).toBe(true);
     expect(isSafeHref('mailto:hello@example.com')).toBe(true);
     expect(isSafeHref('/relative/path')).toBe(true);
     expect(isSafeHref('javascript:alert(1)')).toBe(false);
+  });
+
+  it('returns false for malformed URLs that throw during parsing', () => {
+    // A URL constructor throws TypeError for strings it cannot parse.
+    // An empty string with no base, or certain edge cases with the base, can cause this.
+    // Override URL to force the throw to guarantee coverage of the catch branch.
+    const OriginalURL = globalThis.URL;
+    globalThis.URL = class ThrowingURL {
+      constructor() {
+        throw new TypeError('Invalid URL');
+      }
+    } as unknown as typeof URL;
+
+    expect(isSafeHref(EXAMPLE_URL)).toBe(false);
+
+    globalThis.URL = OriginalURL;
   });
 });

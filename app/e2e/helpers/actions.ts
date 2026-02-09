@@ -23,6 +23,7 @@ export const clickActionButton = async (
       return;
     } catch (error) {
       lastError = error;
+      // Retry backoff: brief pause before re-attempting click on flaky re-rendered buttons
       await button.page().waitForTimeout(150 * attempt);
     }
   }

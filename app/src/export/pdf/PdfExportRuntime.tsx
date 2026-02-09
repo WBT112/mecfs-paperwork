@@ -29,6 +29,7 @@ const FALLBACK_HARD_TIMEOUT_MS = 20_000;
 
 const createTimeoutError = () =>
   new Error('PDF export timed out. Please try again.');
+const createBlobError = () => new Error('PDF export blob generation failed.');
 
 const toBlobWithTimeout = (pdfInstance: ReturnType<typeof pdf>) =>
   new Promise<Blob>((resolve, reject) => {
@@ -45,7 +46,7 @@ const toBlobWithTimeout = (pdfInstance: ReturnType<typeof pdf>) =>
       })
       .catch((error) => {
         globalThis.clearTimeout(timeoutId);
-        reject(error);
+        reject(error instanceof Error ? error : createBlobError());
       });
   });
 

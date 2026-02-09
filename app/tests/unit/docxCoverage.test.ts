@@ -14,7 +14,6 @@ const CONTACTS_NAME_PATH = 'contacts.0.name';
 const MEDICATIONS_PATH = 'medications';
 const RECORD_ID = 'record-1';
 const DOCX_LITERAL_DELIMITER = '§§DOCX_XML§§';
-const DOCX_BR_LITERAL = `${DOCX_LITERAL_DELIMITER}</w:t><w:br w:type="textWrapping"/><w:t xml:space="preserve">${DOCX_LITERAL_DELIMITER}`;
 
 type FetchHandler = {
   ok: boolean;
@@ -108,7 +107,7 @@ describe('docx export coverage', () => {
         template,
         data,
         literalXmlDelimiter: DOCX_LITERAL_DELIMITER,
-        processLineBreaks: false,
+        processLineBreaks: true,
         failFast: true,
       }),
     );
@@ -257,7 +256,57 @@ describe('docx export coverage', () => {
 
     expect(context).toMatchObject({
       person: {
-        name: `Line 1${DOCX_BR_LITERAL}Line 2`,
+        name: 'Line 1\nLine 2',
+      },
+    });
+  });
+
+  it('adds explicit blank paragraphs between doctor-letter case paragraphs', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+      loops: [
+        { var: 'decision.caseParagraphs', path: 'decision.caseParagraphs' },
+      ],
+    };
+
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/doctor-letter/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: { name: PERSON_NAME, birthDate: null },
+      contacts: [],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+      decision: {
+        caseId: 3,
+        caseText: 'One\n\nTwo',
+        caseParagraphs: ['One', 'Two'],
+      },
+    };
+
+    const context = await mapDocumentDataToTemplate(
+      'doctor-letter',
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      },
+    );
+
+    expect(context).toMatchObject({
+      decision: {
+        caseParagraphs: ['One', '', 'Two'],
       },
     });
   });
@@ -440,6 +489,10 @@ describe('docx export coverage', () => {
       doctor: { name: null, phone: null },
     };
 
+    const schemaCallsBefore = mocks.loadFormpackSchemaMock.mock.calls.length;
+    const uiSchemaCallsBefore =
+      mocks.loadFormpackUiSchemaMock.mock.calls.length;
+
     await mapDocumentDataToTemplate('pack-i', 'a4', documentData, {
       mappingPath: DOCX_MAPPING_PATH,
       locale: LOCALE_EN,
@@ -450,8 +503,12 @@ describe('docx export coverage', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(mocks.loadFormpackSchemaMock).toHaveBeenCalledTimes(2);
-    expect(mocks.loadFormpackUiSchemaMock).toHaveBeenCalledTimes(2);
+    expect(mocks.loadFormpackSchemaMock.mock.calls.length).toBe(
+      schemaCallsBefore + 1,
+    );
+    expect(mocks.loadFormpackUiSchemaMock.mock.calls.length).toBe(
+      uiSchemaCallsBefore + 1,
+    );
   });
 
   it('handles array item schemas and skips unsafe mapping vars', async () => {

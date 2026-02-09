@@ -8,9 +8,14 @@ import {
   View,
 } from '@react-pdf/renderer';
 import type { DocumentBlock, DocumentModel } from '../types';
+import {
+  ensurePdfFontsRegistered,
+  PDF_FONT_FAMILY_SANS,
+  PDF_FONT_FAMILY_SERIF,
+} from '../fonts';
 
-import annex1SchemaImg from '../../../assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg?inline';
-import annex2GuideExcerptImg from '../../../assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png?inline';
+import annex1SchemaImg from '../../../assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg';
+import annex2GuideExcerptImg from '../../../assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png';
 
 type DoctorLetterTemplateData = {
   patient?: {
@@ -60,7 +65,7 @@ const styles = StyleSheet.create({
     paddingBottom: 56.69,
     paddingLeft: 70.87,
     paddingRight: 56.69,
-    fontFamily: 'Helvetica',
+    fontFamily: PDF_FONT_FAMILY_SANS,
     fontSize: 11,
     lineHeight: 1.35,
   },
@@ -84,6 +89,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   subject: {
+    fontFamily: PDF_FONT_FAMILY_SERIF,
     fontSize: 11,
     fontWeight: 700,
     marginBottom: 12,
@@ -92,6 +98,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   attachmentsTitle: {
+    fontFamily: PDF_FONT_FAMILY_SERIF,
     fontWeight: 700,
     fontSize: 10,
     marginBottom: 4,
@@ -108,6 +115,7 @@ const styles = StyleSheet.create({
   },
   // Annex pages
   annexTitle: {
+    fontFamily: PDF_FONT_FAMILY_SERIF,
     fontWeight: 700,
     textDecoration: 'underline',
     marginBottom: 12,
@@ -146,6 +154,8 @@ const getBlockKey = (block: DocumentBlock) => {
   }
   return `kv:${block.rows.map((row) => row.join(':')).join('|')}`;
 };
+
+ensurePdfFontsRegistered();
 
 const renderBlock = (block: DocumentBlock) => {
   const key = getBlockKey(block);

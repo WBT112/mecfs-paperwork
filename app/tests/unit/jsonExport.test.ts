@@ -250,11 +250,13 @@ describe('json export', () => {
       const link = document.createElement('a');
       const clickSpy = vi.spyOn(link, 'click');
       const removeSpy = vi.spyOn(link, 'remove');
-      const originalCreateElement = document.createElement.bind(document);
+      const fallbackElement = document.createElement('div');
       const createElementSpy = vi
         .spyOn(document, 'createElement')
         .mockImplementation((tagName) =>
-          tagName === 'a' ? link : originalCreateElement(tagName),
+          tagName === 'a'
+            ? link
+            : (fallbackElement.cloneNode(false) as HTMLElement),
         );
 
       downloadJsonExport(payload, 'export.json');

@@ -9,6 +9,7 @@ import {
   POLL_INTERVALS,
   POLL_TIMEOUT,
   getActiveRecordId,
+  type StoredRecord,
   waitForRecordById,
   waitForRecordField,
 } from './helpers/records';
@@ -73,11 +74,35 @@ const openFreshDoctorLetter = async (page: Page) => {
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
 };
 
-const waitForActiveRecordId = async (
+const assertPresent = <T>(value: T | null | undefined, message: string): T => {
+  if (value == null) {
+    throw new Error(message);
+  }
+  return value;
+};
+
+const getDecisionField = (
+  record: StoredRecord | null,
+  field: string,
+): string | null => {
+  const decision = record?.data?.['decision'];
+  if (
+    typeof decision !== 'object' ||
+    decision === null ||
+    Array.isArray(decision)
+  ) {
+    return null;
+  }
+
+  const value = (decision as Record<string, unknown>)[field];
+  return typeof value === 'string' ? value : null;
+};
+
+async function waitForActiveRecordId(
   page: Page,
   timeoutMs = 10_000,
   allowNull = false,
-) => {
+): Promise<string | null> {
   let activeId: string | null = null;
   try {
     await expect
@@ -102,7 +127,7 @@ const waitForActiveRecordId = async (
     throw new Error('Active record id not available after polling.');
   }
   return activeId;
-};
+}
 
 const waitForRecordListReady = async (page: Page, loadingLabel: string) => {
   await page.waitForFunction((label) => {
@@ -176,11 +201,43 @@ const selectDecisionRadio = async (
   await fieldset.getByRole('radio', { name: label }).check();
 };
 
+/** Wait until a `<select>` contains an option whose text matches, then select it. */
+const waitForSelectOption = async (
+  page: Page,
+  selector: string,
+  pattern: RegExp,
+) => {
+  const select = page.locator(selector);
+  let value: string | null = null;
+  const re = { source: pattern.source, flags: pattern.flags };
+  await expect
+    .poll(
+      async () => {
+        value = await select.evaluate((node, r) => {
+          const options = Array.from((node as HTMLSelectElement).options);
+          const match = options.find((o) =>
+            new RegExp(r.source, r.flags).test(o.text),
+          );
+          return match?.value ?? null;
+        }, re);
+        return value;
+      },
+      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
+    )
+    .not.toBeNull();
+  await select.selectOption(
+    assertPresent(
+      value,
+      `No matching option found for selector "${selector}".`,
+    ),
+  );
+};
+
 const answerDecisionTreeCase3 = async (page: Page, yesLabel: string) => {
   await selectDecisionRadio(page, 'q1', yesLabel);
   await selectDecisionRadio(page, 'q2', yesLabel);
   await selectDecisionRadio(page, 'q3', yesLabel);
-  await page.locator('#root_decision_q4').selectOption('COVID-19');
+  await waitForSelectOption(page, '#root_decision_q4', /COVID-19/);
 };
 
 const answerDecisionTreeCase14 = async (
@@ -191,24 +248,7 @@ const answerDecisionTreeCase14 = async (
   await selectDecisionRadio(page, 'q1', yesLabel);
   await selectDecisionRadio(page, 'q2', yesLabel);
   await selectDecisionRadio(page, 'q3', noLabel);
-  const select = page.locator('#root_decision_q5');
-  let fluoroOptionValue: string | null = null;
-  await expect
-    .poll(
-      async () => {
-        fluoroOptionValue = await select.evaluate((node) => {
-          const options = Array.from((node as HTMLSelectElement).options);
-          const fluoroOption = options.find((option) =>
-            /fluoro/i.test(option.textContent ?? ''),
-          );
-          return fluoroOption?.value ?? null;
-        });
-        return fluoroOptionValue;
-      },
-      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
-    )
-    .not.toBeNull();
-  await select.selectOption(fluoroOptionValue as string);
+  await waitForSelectOption(page, '#root_decision_q5', /fluoro/i);
 };
 
 const normalizeCaseText = (input: string) =>
@@ -276,7 +316,41 @@ const extractDocxTextFromXml = (documentXml: string) => {
     .replace(/&amp;/g, '&');
 };
 
-const normalizeDocxMatchText = (value: string) => value.replace(/\s+/g, '');
+const extractDocxParagraphTexts = (documentXml: string): string[] =>
+  Array.from(documentXml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/g))
+    .map((paragraphMatch) => paragraphMatch[0])
+    .map((paragraphXml) =>
+      Array.from(paragraphXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g))
+        .map((textMatch) => textMatch[1])
+        .join('')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'")
+        .replace(/&amp;/g, '&'),
+    );
+
+const stripAngleBracketSections = (value: string) => {
+  let result = '';
+  let insideTag = false;
+  for (const character of value) {
+    if (character === '<') {
+      insideTag = true;
+      continue;
+    }
+    if (character === '>') {
+      insideTag = false;
+      continue;
+    }
+    if (!insideTag) {
+      result += character;
+    }
+  }
+  return result;
+};
+
+const normalizeDocxMatchText = (value: string) =>
+  stripAngleBracketSections(value).replace(/\s+/g, '');
 
 test.describe.configure({ mode: 'parallel', timeout: 60_000 });
 
@@ -366,8 +440,11 @@ for (const locale of locales) {
       );
       expect(onlineDownload.suggestedFilename()).toMatch(/\.docx$/i);
       const onlinePath = await onlineDownload.path();
-      expect(onlinePath).not.toBeNull();
-      const onlineStats = await stat(onlinePath as string);
+      const onlineDocxPath = assertPresent(
+        onlinePath,
+        'Online DOCX download path was null.',
+      );
+      const onlineStats = await stat(onlineDocxPath);
       expect(onlineStats.size).toBeGreaterThan(5_000);
 
       await context.setOffline(true);
@@ -377,8 +454,11 @@ for (const locale of locales) {
       );
       expect(offlineDownload.suggestedFilename()).toMatch(/\.docx$/i);
       const offlinePath = await offlineDownload.path();
-      expect(offlinePath).not.toBeNull();
-      const offlineStats = await stat(offlinePath as string);
+      const offlineDocxPath = assertPresent(
+        offlinePath,
+        'Offline DOCX download path was null.',
+      );
+      const offlineStats = await stat(offlineDocxPath);
       expect(offlineStats.size).toBeGreaterThan(5_000);
       await context.setOffline(false);
     });
@@ -402,12 +482,15 @@ test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
     translations.formpack['doctor-letter.case.14.paragraph'],
   );
 
-  const recordId = await waitForActiveRecordId(page, POLL_TIMEOUT);
+  const recordId = assertPresent(
+    await waitForActiveRecordId(page, POLL_TIMEOUT),
+    'Active record id not available for case-14 DOCX test.',
+  );
   await waitForRecordById(page, recordId);
   await waitForRecordField(
     page,
     recordId,
-    (record) => record?.data?.decision?.q5 ?? null,
+    (record) => getDecisionField(record, 'q5'),
     'Medication: Fluoroquinolones',
   );
 
@@ -417,10 +500,12 @@ test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
   );
   const download = await exportDocxAndExpectSuccess(docxSection, exportButton);
   const filePath = await download.path();
-  expect(filePath).not.toBeNull();
-  const docxPath = filePath as string;
+  const docxPath = assertPresent(filePath, 'DOCX download path was null.');
   const documentXml = await extractDocxDocumentXml(docxPath);
   const docxText = extractDocxTextFromXml(documentXml);
+  const docxParagraphs = extractDocxParagraphTexts(documentXml).map(
+    normalizeDocxMatchText,
+  );
   const normalizedDocxText = normalizeDocxMatchText(docxText);
   expect(documentXml).not.toContain('[[P]]');
   expect(documentXml).not.toContain('[[BR]]');
@@ -429,7 +514,13 @@ test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
     translations.formpack['doctor-letter.case.14.paragraph'],
   );
   for (const paragraph of caseParagraphs) {
-    expect(normalizedDocxText).toContain(normalizeDocxMatchText(paragraph));
+    const normalizedParagraph = normalizeDocxMatchText(paragraph);
+    expect(normalizedDocxText).toContain(normalizedParagraph);
+    expect(
+      docxParagraphs.some((docxParagraph) =>
+        docxParagraph.includes(normalizedParagraph),
+      ),
+    ).toBeTruthy();
   }
 });
 
@@ -456,24 +547,27 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
   );
   await expect(page.locator('#root_decision_q4')).toHaveCount(0);
   await expect(page.locator('#root_decision_q5')).toBeVisible();
-  await page.locator('#root_decision_q5').selectOption('Other cause');
+  await waitForSelectOption(page, '#root_decision_q5', /Other cause/);
   await waitForResolvedText(
     page,
     translations.formpack['doctor-letter.case.10.paragraph'],
   );
 
-  const recordId = await waitForActiveRecordId(page, POLL_TIMEOUT);
+  const recordId = assertPresent(
+    await waitForActiveRecordId(page, POLL_TIMEOUT),
+    'Active record id not available for branch-change JSON test.',
+  );
   await waitForRecordById(page, recordId);
   await waitForRecordField(
     page,
     recordId,
-    (record) => record?.data?.decision?.q4 ?? null,
+    (record) => getDecisionField(record, 'q4'),
     null,
   );
   await waitForRecordField(
     page,
     recordId,
-    (record) => record?.data?.decision?.q5 ?? null,
+    (record) => getDecisionField(record, 'q5'),
     'Other cause',
   );
 
@@ -486,8 +580,8 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
 
   const download = await downloadPromise;
   const filePath = await download.path();
-  expect(filePath).not.toBeNull();
-  const contents = await readFile(filePath as string, 'utf-8');
+  const jsonPath = assertPresent(filePath, 'JSON download path was null.');
+  const contents = await readFile(jsonPath, 'utf-8');
   const payload = JSON.parse(contents) as {
     formpack: { id: string };
     record: { locale: string };
