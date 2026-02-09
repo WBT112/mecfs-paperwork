@@ -60,6 +60,29 @@ The Help page shows the current **Service Worker** status:
 - **API** — whether the browser supports the Service Worker API
 - **State** — the current worker state (activated, installed, etc.) or whether it is registered
 
+## Reset All Local Data
+
+The Help page includes a **Danger Zone** section that allows users to completely reset the app:
+
+1. Navigate to the **Help** page (`/help`).
+2. Scroll to the **Danger Zone** at the bottom of the Tools & Support section.
+3. Click **"Alle lokalen Daten löschen"** (or "Reset all local data" in English).
+4. Confirm the action in the browser dialog.
+
+This will:
+
+- Delete the IndexedDB database (all drafts, snapshots, and formpack metadata)
+- Unregister all service workers
+- Clear all caches
+- Clear localStorage (theme, locale, active record preferences)
+- Reload the page for a clean start
+
+Use this when:
+
+- Local data is corrupted and causes issues
+- You want to remove all medical data from the device for privacy
+- A support case requires a fresh start
+
 ## Technical details
 
 - Bundle format: JSON (single file)

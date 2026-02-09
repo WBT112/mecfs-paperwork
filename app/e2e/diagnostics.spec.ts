@@ -70,6 +70,16 @@ test.describe('diagnostics bundle', () => {
     await expect(statusElement).toBeVisible();
   });
 
+  test('service worker status section is visible on help page', async ({
+    page,
+  }) => {
+    const swSection = page.getByTestId('sw-status');
+    await expect(swSection).toBeVisible();
+
+    const swSupported = page.getByTestId('sw-status-supported');
+    await expect(swSupported).toBeVisible();
+  });
+
   test('copy button copies bundle JSON to clipboard', async ({
     page,
     context,
