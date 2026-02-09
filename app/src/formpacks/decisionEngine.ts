@@ -1,18 +1,37 @@
+const OPT_COVID_19_VACCINATION = 'COVID-19 vaccination' as const;
+const OPT_OTHER_CAUSE = 'Other cause' as const;
+
+export const Q4_OPTIONS = [
+  'EBV',
+  'Influenza',
+  'COVID-19',
+  'Other infection',
+] as const;
+
+export const Q5_OPTIONS = [
+  OPT_COVID_19_VACCINATION,
+  'Medication: Fluoroquinolones',
+  OPT_OTHER_CAUSE,
+] as const;
+
+export const Q8_OPTIONS = [
+  'No known cause',
+  'EBV',
+  'Influenza',
+  'COVID-19 infection',
+  OPT_COVID_19_VACCINATION,
+  OPT_OTHER_CAUSE,
+] as const;
+
 export type DecisionAnswers = {
   q1?: 'yes' | 'no';
   q2?: 'yes' | 'no';
   q3?: 'yes' | 'no';
-  q4?: 'EBV' | 'Influenza' | 'COVID-19' | 'Other infection';
-  q5?: 'COVID-19 vaccination' | 'Medication: Fluoroquinolones' | 'Other cause';
+  q4?: (typeof Q4_OPTIONS)[number];
+  q5?: (typeof Q5_OPTIONS)[number];
   q6?: 'yes' | 'no';
   q7?: 'yes' | 'no';
-  q8?:
-    | 'No known cause'
-    | 'EBV'
-    | 'Influenza'
-    | 'COVID-19 infection'
-    | 'COVID-19 vaccination'
-    | 'Other cause';
+  q8?: (typeof Q8_OPTIONS)[number];
 };
 
 export type DecisionResult = {
@@ -44,11 +63,11 @@ const resolveQ4 = (q4?: DecisionAnswers['q4']): DecisionResult | null => {
 
 const resolveQ5 = (q5?: DecisionAnswers['q5']): DecisionResult | null => {
   switch (q5) {
-    case 'COVID-19 vaccination':
+    case OPT_COVID_19_VACCINATION:
       return createResult(4, 'doctor-letter.case.4.paragraph');
     case 'Medication: Fluoroquinolones':
       return createResult(14, 'doctor-letter.case.14.paragraph');
-    case 'Other cause':
+    case OPT_OTHER_CAUSE:
       return createResult(10, 'doctor-letter.case.10.paragraph');
     default:
       return null;
@@ -65,9 +84,9 @@ const resolveQ8 = (q8?: DecisionAnswers['q8']): DecisionResult | null => {
       return createResult(6, 'doctor-letter.case.6.paragraph');
     case 'COVID-19 infection':
       return createResult(7, 'doctor-letter.case.7.paragraph');
-    case 'COVID-19 vaccination':
+    case OPT_COVID_19_VACCINATION:
       return createResult(8, 'doctor-letter.case.8.paragraph');
-    case 'Other cause':
+    case OPT_OTHER_CAUSE:
       return createResult(13, 'doctor-letter.case.13.paragraph');
     default:
       return null;

@@ -52,6 +52,9 @@ import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
 import type { FormpackManifest, InfoBoxConfig } from '../formpacks/types';
 import {
   resolveDecisionTree,
+  Q4_OPTIONS,
+  Q5_OPTIONS,
+  Q8_OPTIONS,
   type DecisionAnswers,
 } from '../formpacks/decisionEngine';
 import {
@@ -156,34 +159,14 @@ const buildErrorMessage = (
 };
 
 const DOCTOR_LETTER_ID = 'doctor-letter';
-const DECISION_OPTION_EBV = 'EBV';
-const DECISION_OPTION_INFLUENZA = 'Influenza';
-const DECISION_OPTION_COVID_19 = 'COVID-19';
-const DECISION_OPTION_OTHER_INFECTION = 'Other infection';
-const DECISION_OPTION_COVID_19_VACCINATION = 'COVID-19 vaccination';
-const DECISION_OPTION_FLUOROQUINOLONES = 'Medication: Fluoroquinolones';
-const DECISION_OPTION_OTHER_CAUSE = 'Other cause';
-const DECISION_OPTION_NO_KNOWN_CAUSE = 'No known cause';
-const DECISION_OPTION_COVID_19_INFECTION = 'COVID-19 infection';
-
 const isValidQ4 = (val: unknown): val is DecisionAnswers['q4'] =>
-  val === DECISION_OPTION_EBV ||
-  val === DECISION_OPTION_INFLUENZA ||
-  val === DECISION_OPTION_COVID_19 ||
-  val === DECISION_OPTION_OTHER_INFECTION;
+  Q4_OPTIONS.includes(val as DecisionAnswers['q4'] & string);
 
 const isValidQ5 = (val: unknown): val is DecisionAnswers['q5'] =>
-  val === DECISION_OPTION_COVID_19_VACCINATION ||
-  val === DECISION_OPTION_FLUOROQUINOLONES ||
-  val === DECISION_OPTION_OTHER_CAUSE;
+  Q5_OPTIONS.includes(val as DecisionAnswers['q5'] & string);
 
 const isValidQ8 = (val: unknown): val is DecisionAnswers['q8'] =>
-  val === DECISION_OPTION_NO_KNOWN_CAUSE ||
-  val === DECISION_OPTION_EBV ||
-  val === DECISION_OPTION_INFLUENZA ||
-  val === DECISION_OPTION_COVID_19_INFECTION ||
-  val === DECISION_OPTION_COVID_19_VACCINATION ||
-  val === DECISION_OPTION_OTHER_CAUSE;
+  Q8_OPTIONS.includes(val as DecisionAnswers['q8'] & string);
 
 const isYesNo = (val: unknown): val is 'yes' | 'no' =>
   val === 'yes' || val === 'no';
