@@ -300,8 +300,27 @@ const extractDocxParagraphTexts = (documentXml: string): string[] =>
         .replace(/&amp;/g, '&'),
     );
 
+const stripAngleBracketSections = (value: string) => {
+  let result = '';
+  let insideTag = false;
+  for (const character of value) {
+    if (character === '<') {
+      insideTag = true;
+      continue;
+    }
+    if (character === '>') {
+      insideTag = false;
+      continue;
+    }
+    if (!insideTag) {
+      result += character;
+    }
+  }
+  return result;
+};
+
 const normalizeDocxMatchText = (value: string) =>
-  value.replace(/[<>]/g, '').replace(/\s+/g, '');
+  stripAngleBracketSections(value).replace(/\s+/g, '');
 
 test.describe.configure({ mode: 'parallel', timeout: 60_000 });
 

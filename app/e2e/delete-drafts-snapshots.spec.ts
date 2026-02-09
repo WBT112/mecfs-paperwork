@@ -85,10 +85,15 @@ test('deletes a non-active draft and removes its snapshots', async ({
     .not.toBe(recordId);
 
   await openCollapsibleSectionById(page, 'formpack-records');
+  const nonActiveRecordItem = page
+    .locator('.formpack-records__item:not(.formpack-records__item--active)')
+    .first();
+  await expect(nonActiveRecordItem).toBeVisible();
+  const deleteDraftButton = nonActiveRecordItem.getByRole('button', {
+    name: /delete\s*draft|entwurf\s*löschen/i,
+  });
   page.once('dialog', (dialog) => dialog.accept());
-  await clickActionButton(
-    page.getByRole('button', { name: /delete\s*draft|entwurf\s*löschen/i }),
-  );
+  await clickActionButton(deleteDraftButton);
 
   await expect(page.locator('.formpack-records__item')).toHaveCount(1);
   await waitForSnapshotCount(page, recordId, 0);

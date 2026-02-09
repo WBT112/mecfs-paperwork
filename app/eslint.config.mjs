@@ -217,6 +217,8 @@ export default [
       '@typescript-eslint/no-unnecessary-type-constraint': 'error',
       '@typescript-eslint/no-unnecessary-type-parameters': 'error',
       '@typescript-eslint/await-thenable': 'error',
+      '@typescript-eslint/prefer-promise-reject-errors': 'error',
+      '@typescript-eslint/no-deprecated': 'error',
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': [
         'error',
@@ -239,6 +241,7 @@ export default [
     rules: {
       ...sonarjsAllRules,
       'sonarjs/cognitive-complexity': ['error', 15],
+      'sonarjs/duplicates-in-character-class': 'error',
     },
   },
 ];

@@ -153,7 +153,7 @@ const TEST_SW_SCOPE = 'http://localhost:5173/';
 const stubDefaultNavigator = () =>
   vi.stubGlobal('navigator', {
     userAgent: TEST_USER_AGENT,
-    platform: TEST_PLATFORM,
+    userAgentData: { platform: TEST_PLATFORM },
     language: 'de',
     languages: ['de', 'en'],
     cookieEnabled: true,
@@ -237,7 +237,7 @@ describe('collectDiagnosticsBundle', () => {
   it('handles missing serviceWorker API', async () => {
     vi.stubGlobal('navigator', {
       userAgent: 'TestAgent',
-      platform: 'Test',
+      userAgentData: { platform: 'Test' },
       language: 'en',
       languages: ['en'],
       cookieEnabled: true,
@@ -287,7 +287,7 @@ describe('collectDiagnosticsBundle', () => {
   it('reports service worker scope and state when registration is active', async () => {
     vi.stubGlobal('navigator', {
       userAgent: TEST_USER_AGENT,
-      platform: TEST_PLATFORM,
+      userAgentData: { platform: TEST_PLATFORM },
       language: 'de',
       languages: ['de', 'en'],
       cookieEnabled: true,
@@ -315,7 +315,7 @@ describe('collectDiagnosticsBundle', () => {
   it('falls back to waiting worker state when active is null', async () => {
     vi.stubGlobal('navigator', {
       userAgent: TEST_USER_AGENT,
-      platform: TEST_PLATFORM,
+      userAgentData: { platform: TEST_PLATFORM },
       language: 'de',
       languages: ['de', 'en'],
       cookieEnabled: true,
@@ -343,7 +343,7 @@ describe('collectDiagnosticsBundle', () => {
   it('handles serviceWorker.getRegistration throwing', async () => {
     vi.stubGlobal('navigator', {
       userAgent: TEST_USER_AGENT,
-      platform: TEST_PLATFORM,
+      userAgentData: { platform: TEST_PLATFORM },
       language: 'de',
       languages: ['de', 'en'],
       cookieEnabled: true,
@@ -552,7 +552,7 @@ describe('collectDiagnosticsBundle', () => {
     // Service worker: active
     vi.stubGlobal('navigator', {
       userAgent: 'IntegrationAgent/2.0',
-      platform: 'IntegrationPlatform',
+      userAgentData: { platform: 'IntegrationPlatform' },
       language: 'en',
       languages: ['en', 'fr'],
       cookieEnabled: true,

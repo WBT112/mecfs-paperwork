@@ -9,6 +9,25 @@ import type {
 import { getErrors } from './errorRingBuffer';
 import { checkStorageHealth } from './storageHealth';
 
+type NavigatorWithUserAgentData = Navigator & {
+  userAgentData?: {
+    platform?: string;
+  };
+};
+
+const toError = (reason: unknown, fallbackMessage: string): Error =>
+  reason instanceof Error ? reason : new Error(fallbackMessage);
+
+const collectPlatform = (): string => {
+  const platform = (navigator as NavigatorWithUserAgentData).userAgentData
+    ?.platform;
+  if (typeof platform === 'string' && platform.trim().length > 0) {
+    return platform;
+  }
+
+  return 'unknown';
+};
+
 const collectAppInfo = (): DiagnosticsBundle['app'] => ({
   version: APP_VERSION,
   buildDate: BUILD_DATE_ISO,
@@ -17,7 +36,7 @@ const collectAppInfo = (): DiagnosticsBundle['app'] => ({
 
 const collectBrowserInfo = (): DiagnosticsBundle['browser'] => ({
   userAgent: navigator.userAgent,
-  platform: navigator.platform,
+  platform: collectPlatform(),
   language: navigator.language,
   languages: [...navigator.languages],
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -97,7 +116,10 @@ const collectIdbInfo = async (): Promise<DiagnosticsBundle['indexedDb']> => {
   try {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME);
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          toError(request.error, `Failed to open IndexedDB "${DB_NAME}".`),
+        );
       request.onsuccess = () => resolve(request.result);
     });
 
@@ -109,7 +131,13 @@ const collectIdbInfo = async (): Promise<DiagnosticsBundle['indexedDb']> => {
           const count = await new Promise<number>((resolve, reject) => {
             const req = store.count();
             req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject(req.error);
+            req.onerror = () =>
+              reject(
+                toError(
+                  req.error,
+                  `Failed to count records in "${storeName}" store.`,
+                ),
+              );
           });
           stores.push({ name: storeName, recordCount: count });
         }
@@ -138,7 +166,10 @@ const collectFormpackMeta = async (): Promise<FormpackMetaInfo[]> => {
   try {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME);
-      request.onerror = () => reject(request.error);
+      request.onerror = () =>
+        reject(
+          toError(request.error, `Failed to open IndexedDB "${DB_NAME}".`),
+        );
       request.onsuccess = () => resolve(request.result);
     });
 
@@ -163,7 +194,13 @@ const collectFormpackMeta = async (): Promise<FormpackMetaInfo[]> => {
           })),
         );
       };
-      req.onerror = () => reject(req.error);
+      req.onerror = () =>
+        reject(
+          toError(
+            req.error,
+            'Failed to read formpack metadata from IndexedDB.',
+          ),
+        );
     });
 
     db.close();

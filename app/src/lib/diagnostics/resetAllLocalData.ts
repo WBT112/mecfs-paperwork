@@ -1,4 +1,6 @@
 const DB_NAME = 'mecfs-paperwork';
+const toError = (reason: unknown, fallbackMessage: string): Error =>
+  reason instanceof Error ? reason : new Error(fallbackMessage);
 
 export const resetAllLocalData = async (): Promise<void> => {
   // 1. Delete IndexedDB database
@@ -9,7 +11,12 @@ export const resetAllLocalData = async (): Promise<void> => {
         resolve();
       };
       request.onerror = () => {
-        reject(request.error);
+        reject(
+          toError(
+            request.error,
+            `Failed to delete IndexedDB database "${DB_NAME}".`,
+          ),
+        );
       };
       request.onblocked = () => {
         resolve();

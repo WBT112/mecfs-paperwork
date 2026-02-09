@@ -35,7 +35,7 @@ const FORBIDDEN_KEYS = new Set([
 ]);
 
 const FORBIDDEN_PATTERNS = [
-  /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z]{2,}\b/i,
+  /\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/i,
   /\b\d{2,4}[./-]\d{2}[./-]\d{2,4}\b/,
 ];
 
