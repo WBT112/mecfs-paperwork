@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import MarkdownRenderer from '../components/Markdown/MarkdownRenderer';
-import helpContent from '../content/help/help.md?raw';
+import helpDe from '../content/help/help.md?raw';
+import helpEn from '../content/help/help.en.md?raw';
 import { APP_VERSION, BUILD_DATE_ISO, formatBuildDate } from '../lib/version';
 import {
   downloadDiagnosticsBundle,
@@ -154,18 +155,20 @@ export default function HelpPage() {
   );
 
   const downloadLabel =
-    diagState === 'downloading'
-      ? t('diagnosticsDownloading')
-      : diagState === 'downloaded'
-        ? t('diagnosticsDownloaded')
-        : t('diagnosticsDownload');
+    (
+      {
+        downloading: t('diagnosticsDownloading'),
+        downloaded: t('diagnosticsDownloaded'),
+      } as Record<string, string>
+    )[diagState] ?? t('diagnosticsDownload');
 
   const copyLabel =
-    diagState === 'copied'
-      ? t('diagnosticsCopied')
-      : diagState === 'failed'
-        ? t('diagnosticsCopyFailed')
-        : t('diagnosticsCopy');
+    (
+      {
+        copied: t('diagnosticsCopied'),
+        failed: t('diagnosticsCopyFailed'),
+      } as Record<string, string>
+    )[diagState] ?? t('diagnosticsCopy');
 
   const idbStatusLabel = health.indexedDbAvailable
     ? t('storageHealthIdbAvailable')
@@ -180,6 +183,8 @@ export default function HelpPage() {
   const versionCopyLabel = copied
     ? t('versionInfoCopied')
     : t('versionInfoCopy');
+
+  const helpContent = i18n.language === 'en' ? helpEn : helpDe;
 
   return (
     <section className="app__card legal-page help-page">

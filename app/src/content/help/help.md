@@ -1,7 +1,7 @@
 # Hilfe
 
 Diese Anwendung hilft dir, **Formulare und Schreiben strukturiert zu erstellen** – Schritt für Schritt.
-Am Ende kannst du ein **DOCX-Dokument exportieren**, das du am PC oder Smartphone weiterbearbeiten und versenden kannst.
+Am Ende kannst du ein **DOCX-Dokument** (zur Weiterbearbeitung) oder eine **PDF-Datei** (zum direkten Versenden/Drucken) exportieren.
 
 > Datenschutz-Hinweis: Bitte gib **keine sensiblen Gesundheitsdaten** in öffentliche Bereiche (z. B. GitHub-Issues, Support-Mails, Screenshots) ein. Behandle Exporte sorgfältig.
 
@@ -11,7 +11,7 @@ Am Ende kannst du ein **DOCX-Dokument exportieren**, das du am PC oder Smartphon
 
 - **Formpack**: Ein Themenbereich / eine Vorlage (z. B. „Arztbrief“).
 - **Entwurf**: Deine aktuelle Arbeit an einem Fall – du kannst jederzeit weiterbearbeiten.
-- **Ergebnis**: Der generierte Text, der aus deinen Antworten entsteht (und im DOCX landet).
+- **Ergebnis**: Der generierte Text, der aus deinen Antworten entsteht (und im DOCX/PDF landet).
 
 Typischer Ablauf:
 
@@ -19,7 +19,7 @@ Typischer Ablauf:
 2. Fragen beantworten
 3. ggf. **Tools** nutzen (Entwürfe/Snapshots/JSON Export/Import)
 4. Ergebnis prüfen
-5. **DOCX exportieren**
+5. **DOCX oder PDF exportieren**
 6. Datei öffnen, ggf. ergänzen, speichern/teilen
 
 ---
@@ -32,14 +32,14 @@ Ein Entwurf ist dein laufender Bearbeitungsstand.
 
 - Nutze Entwürfe, wenn du über mehrere Tage am selben Dokument arbeiten willst.
 - Speichere regelmäßig, besonders vor größeren Änderungen.
-- Ein Entwurf kann mehrere Snapshots enthalten
+- Ein Entwurf kann mehrere Snapshots enthalten.
 - Der aktive Entwurf wird automatisch gespeichert und kann nicht gelöscht werden.
 - Du kannst nicht aktive Entwürfe löschen. Dabei werden zugehörige Snapshots ebenfalls entfernt.
 - Löschungen erfolgen nur lokal auf diesem Gerät/Browser und sind nicht rückgängig zu machen.
 
 ### Snapshots
 
-Snapshots sind **Zwischenstände** (wie “Sicherungen”), die du später wiederherstellen kannst.
+Snapshots sind **Zwischenstände** (wie „Sicherungen“), die du später wiederherstellen kannst.
 
 - Erstelle einen Snapshot **vor** riskanten Änderungen (z. B. wenn du viele Felder auf einmal änderst).
 - Alle Snapshots eines Entwurfs können bei Bedarf vollständig gelöscht werden.
@@ -60,14 +60,22 @@ Mit dem Import lädst du eine zuvor exportierte JSON-Datei wieder in die App.
 
 ---
 
-## 3) Export: DOCX – was kommt da raus?
+## 3) Export: DOCX & PDF – was kommt da raus?
 
-Beim Export erhältst du eine **DOCX-Datei** (Word-Format).
-Damit kannst du:
+### DOCX (Word-Format)
 
-- den Text am PC oder Smartphone öffnen,
-- letzte Ergänzungen/Anpassungen machen,
-- und die Datei anschließend als DOCX oder PDF weitergeben.
+Ideal, wenn du den Text noch **weiterbearbeiten** möchtest.
+
+- Öffne den Text am PC oder Smartphone,
+- mache letzte Ergänzungen/Anpassungen,
+- und gib die Datei anschließend als DOCX oder PDF weiter.
+
+### PDF
+
+Ideal, wenn du das Dokument direkt **drucken oder versenden** möchtest.
+
+- Das Layout ist fest und sieht überall gleich aus.
+- Keine weitere Bearbeitung möglich (ohne Spezialwerkzeuge).
 
 Empfehlung:
 
@@ -128,9 +136,9 @@ Typischer Ablauf:
 
 **„Ich sehe meinen Entwurf nicht mehr.“**
 
-- Prüfe, ob du im richtigen Hilfsangebot bist.
+- Prüfe, ob du im richtigen Hilfsangebot (Formpack) bist.
 - Schau in Entwürfe/Snapshots, ob ein Zwischenstand vorhanden ist.
-- Hast du das Gerät gewechselt ? Daten werden nur auf dem aktuellen Gerät gespeichert.
+- Hast du das Gerät gewechselt? Daten werden nur auf dem aktuellen Gerät gespeichert.
 
 **„Ich finde die exportierte Datei nicht.“**
 
@@ -143,18 +151,18 @@ Typischer Ablauf:
 
 **„Ich will nur drucken/versenden.“**
 
-- Exportiere direkt als PDF
+- Exportiere direkt als PDF.
 
 **„Etwas funktioniert nicht oder ich sehe Hilfsangebot XYZ nicht“**
 
-- Lade die Seite neu
-- Versuche das ganze nochmal in einem "Privaten Fenster"
-- Wenn das nicht hilft: kontaktier uns über den Feedback-Button
+- Lade die Seite neu.
+- Versuche das ganze nochmal in einem „Privaten Fenster“ (Hinweis: Daten werden dort ggf. nicht gespeichert).
+- Wenn das nicht hilft: kontaktier uns über den Feedback-Button.
 
 ---
 
 ## 8) Datenschutz & sichere Arbeitsweise
 
 - Prüfe vor dem Teilen eines DOCX/PDF/JSON, ob Inhalte enthalten sind, die du nicht weitergeben möchtest.
-- Es werden nach dem Laden der Seite keine weiteren Daten zwischen deinem Gerät und dem Server ausgetauscht.
+- Es werden nach dem Laden der Seite keine weiteren Daten zwischen deinem Gerät und dem Server ausgetauscht (außer zur Prüfung auf Formpack-Updates).
 - Wenn du die gespeicherten Daten in deinem Browser ebenfalls löschen möchtest, geht das je nach Browser meist über Verlauf/Browserdaten löschen oder ähnliches.
