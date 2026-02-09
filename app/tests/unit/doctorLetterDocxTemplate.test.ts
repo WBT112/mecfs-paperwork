@@ -46,4 +46,12 @@ describe('doctor-letter A4 DOCX template', () => {
     expect(loopParagraphs[1]).toContain('{{INS $p}}');
     expect(loopParagraphs[2]).toContain('{{END-FOR p}}');
   });
+
+  it('uses Arial consistently in the document body', async () => {
+    const xml = await loadDoctorLetterTemplateXml();
+
+    expect(xml).not.toContain('Helvetica');
+    expect(xml).toContain('Arial');
+    expect(xml).not.toContain('Times New Roman');
+  });
 });

@@ -3,6 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 import DoctorLetterPdfDocument from '../../../src/export/pdf/templates/DoctorLetterPdfDocument';
 import type { DocumentModel } from '../../../src/export/pdf/types';
 
+vi.mock('../../../src/export/pdf/fonts', () => ({
+  ensurePdfFontsRegistered: vi.fn(),
+  PDF_FONT_FAMILY_SANS: 'Helvetica',
+  PDF_FONT_FAMILY_SERIF: 'Times-Roman',
+}));
+
 vi.mock(
   '../../../src/assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg?inline',
   () => ({
