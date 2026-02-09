@@ -184,14 +184,17 @@ const waitForSelectOption = async (
 ) => {
   const select = page.locator(selector);
   let value: string | null = null;
+  const re = { source: pattern.source, flags: pattern.flags };
   await expect
     .poll(
       async () => {
-        value = await select.evaluate((node, re) => {
+        value = await select.evaluate((node, r) => {
           const options = Array.from((node as HTMLSelectElement).options);
-          const match = options.find((o) => new RegExp(re).test(o.text));
+          const match = options.find((o) =>
+            new RegExp(r.source, r.flags).test(o.text),
+          );
           return match?.value ?? null;
-        }, pattern.source);
+        }, re);
         return value;
       },
       { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
