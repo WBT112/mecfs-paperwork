@@ -94,12 +94,14 @@ describe('HelpPage', () => {
     });
   });
 
-  it('renders the main help heading from markdown', () => {
+  it('renders the main help heading from markdown', async () => {
     render(<HelpPage />);
 
-    expect(
-      screen.getByRole('heading', { level: 1, name: /hilfe/i }),
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { level: 1, name: /help/i }),
+      ).toBeInTheDocument();
+    });
     expect(
       screen.getByRole('heading', { name: 'versionInfoTitle' }),
     ).toBeVisible();
@@ -267,7 +269,7 @@ describe('HelpPage', () => {
   });
 
   describe('storage health display', () => {
-    it('shows loading state when health check is pending', () => {
+    it('shows loading state when health check is pending', async () => {
       mockHealthState = {
         ...mockHealthState,
         loading: true,
@@ -275,21 +277,23 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      expect(screen.getByText('storageHealthLoading')).toBeInTheDocument();
+      expect(
+        await screen.findByText('storageHealthLoading'),
+      ).toBeInTheDocument();
       expect(
         screen.queryByTestId(TID_STORAGE_HEALTH_STATUS),
       ).not.toBeInTheDocument();
     });
 
-    it('displays ok status when storage is healthy', () => {
+    it('displays ok status when storage is healthy', async () => {
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
+      const statusEl = await screen.findByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveAttribute(ATTR_DATA_STATUS, 'ok');
       expect(statusEl).toHaveTextContent('storageHealthStatusOk');
     });
 
-    it('displays warning status and guidance message', () => {
+    it('displays warning status and guidance message', async () => {
       mockHealthState = {
         ...mockHealthState,
         health: {
@@ -302,7 +306,7 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
+      const statusEl = await screen.findByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveAttribute(ATTR_DATA_STATUS, 'warning');
       expect(statusEl).toHaveTextContent('storageHealthStatusWarning');
 
@@ -311,7 +315,7 @@ describe('HelpPage', () => {
       );
     });
 
-    it('displays error status and guidance message', () => {
+    it('displays error status and guidance message', async () => {
       mockHealthState = {
         ...mockHealthState,
         health: {
@@ -324,7 +328,7 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
+      const statusEl = await screen.findByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveAttribute(ATTR_DATA_STATUS, 'error');
       expect(statusEl).toHaveTextContent('storageHealthStatusError');
 
@@ -333,20 +337,21 @@ describe('HelpPage', () => {
       );
     });
 
-    it('does not show guidance message when status is ok', () => {
+    it('does not show guidance message when status is ok', async () => {
       render(<HelpPage />);
+      await screen.findByTestId(TID_STORAGE_HEALTH_STATUS);
 
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
 
-    it('displays storage quota as formatted bytes when supported', () => {
+    it('displays storage quota as formatted bytes when supported', async () => {
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
+      const quotaEl = await screen.findByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('4.9 KB / 97.7 KB');
     });
 
-    it('displays unsupported message when storage estimate is not available', () => {
+    it('displays unsupported message when storage estimate is not available', async () => {
       mockHealthState = {
         ...mockHealthState,
         health: {
@@ -357,19 +362,19 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
+      const quotaEl = await screen.findByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('storageHealthQuotaUnsupported');
     });
 
-    it('shows IDB available status', () => {
+    it('shows IDB available status', async () => {
       render(<HelpPage />);
 
-      const idbEl = screen.getByTestId('storage-health-idb');
+      const idbEl = await screen.findByTestId('storage-health-idb');
       expect(idbEl).toHaveAttribute(ATTR_DATA_STATUS, 'available');
       expect(idbEl).toHaveTextContent('storageHealthIdbAvailable');
     });
 
-    it('shows IDB unavailable status', () => {
+    it('shows IDB unavailable status', async () => {
       mockHealthState = {
         ...mockHealthState,
         health: {
@@ -380,15 +385,15 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const idbEl = screen.getByTestId('storage-health-idb');
+      const idbEl = await screen.findByTestId('storage-health-idb');
       expect(idbEl).toHaveAttribute(ATTR_DATA_STATUS, 'unavailable');
       expect(idbEl).toHaveTextContent('storageHealthIdbUnavailable');
     });
 
-    it('calls refresh when the refresh button is clicked', () => {
+    it('calls refresh when the refresh button is clicked', async () => {
       render(<HelpPage />);
 
-      const refreshButton = screen.getByRole('button', {
+      const refreshButton = await screen.findByRole('button', {
         name: 'storageHealthRefresh',
       });
       fireEvent.click(refreshButton);
@@ -398,7 +403,7 @@ describe('HelpPage', () => {
   });
 
   describe('formatBytes', () => {
-    it('formats bytes correctly', () => {
+    it('formats bytes correctly', async () => {
       mockHealthState = {
         ...mockHealthState,
         health: {
@@ -409,11 +414,11 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
+      const quotaEl = await screen.findByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('500 B / 1.0 KB');
     });
 
-    it('formats kilobytes correctly', () => {
+    it('formats kilobytes correctly', async () => {
       mockHealthState = {
         ...mockHealthState,
         health: {
@@ -424,11 +429,11 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
+      const quotaEl = await screen.findByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('2.0 KB / 500.0 KB');
     });
 
-    it('formats megabytes correctly', () => {
+    it('formats megabytes correctly', async () => {
       mockHealthState = {
         ...mockHealthState,
         health: {
@@ -443,20 +448,20 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const quotaEl = screen.getByTestId(TID_STORAGE_HEALTH_QUOTA);
+      const quotaEl = await screen.findByTestId(TID_STORAGE_HEALTH_QUOTA);
       expect(quotaEl).toHaveTextContent('5.0 MB / 100.0 MB');
     });
   });
 
   describe('statusLabel', () => {
-    it('returns ok label', () => {
+    it('returns ok label', async () => {
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
+      const statusEl = await screen.findByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveTextContent('storageHealthStatusOk');
     });
 
-    it('returns warning label', () => {
+    it('returns warning label', async () => {
       mockHealthState = {
         ...mockHealthState,
         health: {
@@ -468,11 +473,11 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
+      const statusEl = await screen.findByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveTextContent('storageHealthStatusWarning');
     });
 
-    it('returns error label', () => {
+    it('returns error label', async () => {
       mockHealthState = {
         ...mockHealthState,
         health: {
@@ -484,24 +489,24 @@ describe('HelpPage', () => {
 
       render(<HelpPage />);
 
-      const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
+      const statusEl = await screen.findByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveTextContent('storageHealthStatusError');
     });
   });
 
   describe('reset all local data', () => {
-    it('renders the danger zone section', () => {
+    it('renders the danger zone section', async () => {
       render(<HelpPage />);
 
-      expect(screen.getByTestId('danger-zone')).toBeInTheDocument();
+      expect(await screen.findByTestId('danger-zone')).toBeInTheDocument();
       expect(screen.getByTestId(TID_RESET_ALL_DATA)).toBeInTheDocument();
     });
 
-    it('shows confirm dialog on button click and does nothing on cancel', () => {
+    it('shows confirm dialog on button click and does nothing on cancel', async () => {
       const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
 
       render(<HelpPage />);
-      fireEvent.click(screen.getByTestId(TID_RESET_ALL_DATA));
+      fireEvent.click(await screen.findByTestId(TID_RESET_ALL_DATA));
 
       expect(confirmSpy).toHaveBeenCalledWith('resetAllConfirm');
       expect(mockResetAllLocalData).not.toHaveBeenCalled();
@@ -511,7 +516,7 @@ describe('HelpPage', () => {
       vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
 
       render(<HelpPage />);
-      fireEvent.click(screen.getByTestId(TID_RESET_ALL_DATA));
+      fireEvent.click(await screen.findByTestId(TID_RESET_ALL_DATA));
 
       await waitFor(() => {
         expect(mockResetAllLocalData).toHaveBeenCalledOnce();
@@ -528,7 +533,7 @@ describe('HelpPage', () => {
       );
 
       render(<HelpPage />);
-      const button = screen.getByTestId(TID_RESET_ALL_DATA);
+      const button = await screen.findByTestId(TID_RESET_ALL_DATA);
       fireEvent.click(button);
 
       await waitFor(() => {
@@ -544,7 +549,7 @@ describe('HelpPage', () => {
       mockResetAllLocalData.mockRejectedValue(new Error('fail'));
 
       render(<HelpPage />);
-      const button = screen.getByTestId(TID_RESET_ALL_DATA);
+      const button = await screen.findByTestId(TID_RESET_ALL_DATA);
       fireEvent.click(button);
 
       await waitFor(() => {
