@@ -105,7 +105,8 @@ test.describe('diagnostics bundle', () => {
 test.describe('reset all local data', () => {
   const seedDraft = async (page: Page) => {
     // Navigate to a formpack to create a draft via the app
-    await page.goto(`/${FORM_PACK_ID}`);
+    await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await expect(page.locator('.formpack-detail')).toBeVisible();
 
     // Wait for the app to create an active record in localStorage
     await expect
@@ -143,20 +144,40 @@ test.describe('reset all local data', () => {
     const resetButton = page.getByTestId('reset-all-data');
     await expect(resetButton).toBeVisible();
 
-    // Accept the confirmation dialog
+    // Accept the confirmation dialog and wait for reload
     page.on('dialog', (dialog) => dialog.accept());
-    await resetButton.click();
+    await Promise.all([page.waitForEvent('load'), resetButton.click()]);
 
-    // 3. Wait for the page to reload (the app reloads after reset)
-    await page.waitForLoadState('domcontentloaded');
+    // 3. Wait for the help page to fully re-render after reload
+    await expect(page.getByTestId('reset-all-data')).toBeVisible();
 
-    // 4. Verify IndexedDB database no longer exists
-    const dbExists = await page.evaluate(async (dbName) => {
-      if (!indexedDB.databases) return false;
-      const dbs = await indexedDB.databases();
-      return dbs.some((db) => db.name === dbName);
+    // 4. Verify IndexedDB records store is empty (the app may re-create the
+    //    database on startup, but it should contain no user data)
+    const recordCount = await page.evaluate(async (dbName) => {
+      return await new Promise<number>((resolve) => {
+        const req = indexedDB.open(dbName);
+        req.onsuccess = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('records')) {
+            db.close();
+            resolve(0);
+            return;
+          }
+          const tx = db.transaction('records', 'readonly');
+          const countReq = tx.objectStore('records').count();
+          countReq.onsuccess = () => {
+            db.close();
+            resolve(countReq.result);
+          };
+          countReq.onerror = () => {
+            db.close();
+            resolve(-1);
+          };
+        };
+        req.onerror = () => resolve(-1);
+      });
     }, DB_NAME);
-    expect(dbExists).toBe(false);
+    expect(recordCount).toBe(0);
 
     // 5. Verify localStorage is cleared
     const activeRecordId = await page.evaluate(
