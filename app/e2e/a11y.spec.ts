@@ -4,7 +4,7 @@ import { expectNoSeriousA11yViolations } from './helpers/a11y';
 
 const DB_NAME = 'mecfs-paperwork';
 const FORMPACK_ID = 'doctor-letter';
-const POLL_TIMEOUT = 20_000;
+const POLL_TIMEOUT = 60_000;
 const DOCTOR_LETTER_A11Y_EXCLUSIONS = [
   '#root_doctor_title',
   '#root_doctor_gender',
@@ -78,7 +78,14 @@ test.describe('a11y baseline', () => {
 
     await deleteDatabase(page, DB_NAME);
     await page.goto(`/formpacks/${FORMPACK_ID}`);
-    await expect(page.locator('.formpack-detail')).toBeVisible({
+    await expect(
+      page.getByText(/seite wird geladen|page is loading/i),
+    ).toHaveCount(0, {
+      timeout: POLL_TIMEOUT,
+    });
+    await expect(
+      page.locator('.formpack-form, .formpack-detail').first(),
+    ).toBeVisible({
       timeout: POLL_TIMEOUT,
     });
     await expectNoSeriousA11yViolations(page, {

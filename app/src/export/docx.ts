@@ -94,7 +94,6 @@ const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
 const DOCX_LITERAL_DELIMITER = '§§DOCX_XML§§';
-const DOCX_BR_LITERAL = `${DOCX_LITERAL_DELIMITER}</w:t><w:br w:type="textWrapping"/><w:t xml:space="preserve">${DOCX_LITERAL_DELIMITER}`;
 // Session cache keeps DOCX assets available when the app is offline.
 const docxMappingCache = new Map<string, DocxMapping>();
 const docxTemplateCache = new Map<string, Uint8Array>();
@@ -237,10 +236,8 @@ const coerceDocxError = (error: unknown): Error | null => {
 const stripDocxLiteralDelimiter = (value: string): string =>
   value.split(DOCX_LITERAL_DELIMITER).join('');
 
-const encodeDocxLineBreaks = (value: string): string => {
-  const safe = stripDocxLiteralDelimiter(value);
-  return safe.includes('\n') ? safe.replaceAll('\n', DOCX_BR_LITERAL) : safe;
-};
+const encodeDocxLineBreaks = (value: string): string =>
+  stripDocxLiteralDelimiter(value);
 
 const pickCachedDocxSchema = <T>(
   formpackId: string,
@@ -656,6 +653,32 @@ const getArrayItemUiSchema = (
   return isRecord(items) ? (items as UiSchema) : undefined;
 };
 
+const addBlankLinesBetweenDoctorLetterParagraphs = (
+  formpackId: string,
+  path: string,
+  entries: unknown[],
+): unknown[] => {
+  if (formpackId !== 'doctor-letter' || path !== 'decision.caseParagraphs') {
+    return entries;
+  }
+
+  if (entries.length < 2) {
+    return entries;
+  }
+
+  const withSpacing: unknown[] = [];
+  entries.forEach((entry, index) => {
+    withSpacing.push(entry);
+    if (index < entries.length - 1) {
+      // RATIONALE: Keep one explicit blank DOCX paragraph between decision paragraphs
+      // so marker-separated content keeps the expected visual spacing.
+      withSpacing.push('');
+    }
+  });
+
+  return withSpacing;
+};
+
 const loadDocxMapping = async (
   formpackId: string,
   mappingPath: string,
@@ -825,7 +848,12 @@ export const mapDocumentDataToTemplate = async (
           )
           .filter((entry) => entry !== null && entry !== undefined)
       : [];
-    setPathValue(context, loop.var, entries);
+    const normalizedEntries = addBlankLinesBetweenDoctorLetterParagraphs(
+      formpackId,
+      loop.path,
+      entries,
+    );
+    setPathValue(context, loop.var, normalizedEntries);
   });
 
   return context;
@@ -892,7 +920,7 @@ export const createDocxReport = async (
     data,
     cmdDelimiter: DOCX_CMD_DELIMITER,
     literalXmlDelimiter: DOCX_LITERAL_DELIMITER,
-    processLineBreaks: false,
+    processLineBreaks: true,
     additionalJsContext,
     failFast,
   });

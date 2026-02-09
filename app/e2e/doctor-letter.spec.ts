@@ -286,7 +286,22 @@ const extractDocxTextFromXml = (documentXml: string) => {
     .replace(/&amp;/g, '&');
 };
 
-const normalizeDocxMatchText = (value: string) => value.replace(/\s+/g, '');
+const extractDocxParagraphTexts = (documentXml: string): string[] =>
+  Array.from(documentXml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/g))
+    .map((paragraphMatch) => paragraphMatch[0])
+    .map((paragraphXml) =>
+      Array.from(paragraphXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g))
+        .map((textMatch) => textMatch[1])
+        .join('')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'")
+        .replace(/&amp;/g, '&'),
+    );
+
+const normalizeDocxMatchText = (value: string) =>
+  value.replace(/<[^>]+>/g, '').replace(/\s+/g, '');
 
 test.describe.configure({ mode: 'parallel', timeout: 60_000 });
 
@@ -431,6 +446,9 @@ test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
   const docxPath = filePath as string;
   const documentXml = await extractDocxDocumentXml(docxPath);
   const docxText = extractDocxTextFromXml(documentXml);
+  const docxParagraphs = extractDocxParagraphTexts(documentXml).map(
+    normalizeDocxMatchText,
+  );
   const normalizedDocxText = normalizeDocxMatchText(docxText);
   expect(documentXml).not.toContain('[[P]]');
   expect(documentXml).not.toContain('[[BR]]');
@@ -439,7 +457,13 @@ test('doctor-letter resolves Case 14 and exports DOCX with case text', async ({
     translations.formpack['doctor-letter.case.14.paragraph'],
   );
   for (const paragraph of caseParagraphs) {
-    expect(normalizedDocxText).toContain(normalizeDocxMatchText(paragraph));
+    const normalizedParagraph = normalizeDocxMatchText(paragraph);
+    expect(normalizedDocxText).toContain(normalizedParagraph);
+    expect(
+      docxParagraphs.some((docxParagraph) =>
+        docxParagraph.includes(normalizedParagraph),
+      ),
+    ).toBeTruthy();
   }
 });
 
