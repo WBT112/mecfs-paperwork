@@ -44,9 +44,17 @@ jobs:
         working-directory: app
         run: npm run formpack:validate
 
-      - name: Unit tests
+      - name: Unit tests with coverage
         working-directory: app
-        run: npm test
+        run: npm run test:coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage-report
+          path: app/coverage/
+          retention-days: 7
 
       - name: Build
         working-directory: app

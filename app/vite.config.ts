@@ -218,10 +218,24 @@ const createConfig = (mode: string): AppConfig => ({
     setupFiles: './tests/setup/setup.ts',
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       all: true,
       include: ['src/**/*.{ts,tsx,mjs}'],
-      exclude: ['src/**/*.d.ts', 'src/lib/funding.generated.ts'],
+      exclude: [
+        'src/**/*.d.ts',
+        'src/lib/funding.generated.ts',
+        // Type-only files with no runtime code
+        'src/lib/diagnostics/types.ts',
+        // Re-export barrels with no logic
+        'src/lib/diagnostics/index.ts',
+      ],
+      thresholds: {
+        // Global coverage thresholds (CI enforced)
+        lines: 85,
+        branches: 75,
+        functions: 80,
+        statements: 85,
+      },
     },
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
     exclude: ['node_modules', 'dist', 'e2e', 'public', 'src'],

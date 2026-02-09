@@ -531,6 +531,12 @@ body {
   gap: 0.75rem;
 }
 
+.app__version-details--support {
+  margin-top: 0;
+  border-top: 0;
+  padding-top: 0;
+}
+
 .app__version-details h3 {
   margin: 0;
 }
@@ -1426,6 +1432,146 @@ body {
 .formpack-decision-divider {
   margin-top: 0.85rem;
   border-bottom: 1px solid var(--color-border-subtle);
+}
+
+/* Help page: diagnostics & storage health */
+.help-page__support {
+  margin-top: 1rem;
+  border-top: 2px solid var(--color-border-strong);
+  padding-top: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.help-page__support-heading {
+  margin: 0;
+}
+
+.help-page__diagnostics {
+  margin-top: 0;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 1rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.help-page__diagnostics h3 {
+  margin: 0;
+}
+
+.help-page__storage-health {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.help-page__storage-health h4 {
+  margin: 0;
+}
+
+.help-page__storage-details {
+  margin: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.help-page__storage-details div {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) 1fr;
+  gap: 0.5rem 0.75rem;
+}
+
+.help-page__storage-details dt {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.help-page__storage-details dd {
+  margin: 0;
+  color: var(--color-text-strong);
+}
+
+.help-page__storage-details dd[data-status='available'] {
+  color: var(--color-success);
+}
+
+.help-page__storage-details dd[data-status='unavailable'],
+.help-page__storage-details dd[data-status='error'] {
+  color: var(--color-danger);
+}
+
+.help-page__storage-details dd[data-status='warning'] {
+  color: #b45309;
+}
+
+:root[data-theme='dark'] .help-page__storage-details dd[data-status='warning'] {
+  color: #fbbf24;
+}
+
+.help-page__storage-guidance {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--color-danger);
+  background: var(--color-surface-subtle);
+  border-radius: 0 8px 8px 0;
+  color: var(--color-text);
+  font-size: 0.9rem;
+}
+
+.help-page__storage-loading {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.help-page__diagnostics-description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.help-page__diagnostics-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.help-page__danger-zone {
+  margin-top: 0.5rem;
+  border: 1px solid var(--color-danger);
+  border-radius: 12px;
+  padding: 1rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.help-page__danger-zone h4 {
+  margin: 0;
+  color: var(--color-danger);
+}
+
+.help-page__danger-zone-description {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.app__button--danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: transparent;
+}
+
+.app__button--danger:hover {
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.app__button--danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Staging environment marker */

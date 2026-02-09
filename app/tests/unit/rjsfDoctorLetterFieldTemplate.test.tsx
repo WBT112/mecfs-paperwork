@@ -312,4 +312,50 @@ describe('DoctorLetterFieldTemplate', () => {
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
   });
+
+  it('returns null when hidden prop is true', () => {
+    const props = createMockProps({ hidden: true });
+    const { container } = render(<DoctorLetterFieldTemplate {...props} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('returns null when ui:widget is hidden', () => {
+    const props = createMockProps({
+      uiSchema: { 'ui:widget': 'hidden' },
+    });
+    const { container } = render(<DoctorLetterFieldTemplate {...props} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('handles non-record formContext gracefully', () => {
+    const props = createMockProps({
+      registry: {
+        formContext: null,
+      } as unknown as DoctorLetterTemplateProps['registry'],
+    });
+    const { container } = render(<DoctorLetterFieldTemplate {...props} />);
+    expect(container.firstChild).toBeInTheDocument();
+  });
+
+  it('uses fieldPathId path segments when available', () => {
+    const props = createMockProps({
+      id: 'root_decision_q2',
+      fieldPathId: {
+        path: ['root', 'decision', 'q2'],
+      } as unknown as DoctorLetterTemplateProps['fieldPathId'],
+      formContext: {
+        t: (key: string) => `translated:${key}`,
+        infoBoxes: [
+          {
+            id: 'q2-info',
+            anchor: 'decision.q2',
+            enabled: true,
+            i18nKey: TEST_INFOBOX_KEY,
+          },
+        ],
+      },
+    });
+    const { getByTestId } = render(<DoctorLetterFieldTemplate {...props} />);
+    expect(getByTestId('infobox')).toBeInTheDocument();
+  });
 });
