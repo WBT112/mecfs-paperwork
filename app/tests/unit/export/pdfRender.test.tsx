@@ -10,14 +10,14 @@ vi.mock('../../../src/export/pdf/fonts', () => ({
 }));
 
 vi.mock(
-  '../../../src/assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg?inline',
+  '../../../src/assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg',
   () => ({
     default:
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P8/5+hHgAHggJ/lqG02QAAAABJRU5ErkJggg==',
   }),
 );
 vi.mock(
-  '../../../src/assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png?inline',
+  '../../../src/assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png',
   () => ({
     default:
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P8/5+hHgAHggJ/lqG02QAAAABJRU5ErkJggg==',

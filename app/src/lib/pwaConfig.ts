@@ -6,6 +6,8 @@ export const PRECACHE_GLOB_PATTERNS = [
   'favicon.ico',
   'apple-touch-icon.png',
   'assets/*.{js,css,woff2}',
+  'assets/annex-*.{jpg,jpeg,png}',
+  'assets/Liberation*.ttf',
 ];
 
 export const DEV_PRECACHE_GLOB_PATTERNS: string[] = [];

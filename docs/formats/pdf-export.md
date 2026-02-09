@@ -21,4 +21,7 @@ PDF exports are generated client-side in the browser using `@react-pdf/renderer`
 - PDF fonts are bundled locally (`app/src/assets/fonts/liberation`) and embedded
   at render time via `app/src/export/pdf/fonts.ts` to keep output consistent
   across devices without network requests.
+- Annex images are loaded as static asset URLs (not JS inlined) to keep PDF
+  chunks small, and are explicitly precached by the service worker for offline
+  PDF rendering.
 - Prefer reusing the shared paragraph/block parsing in `app/src/lib/text/paragraphs.ts`.

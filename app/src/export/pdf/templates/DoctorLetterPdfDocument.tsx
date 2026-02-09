@@ -14,8 +14,8 @@ import {
   PDF_FONT_FAMILY_SERIF,
 } from '../fonts';
 
-import annex1SchemaImg from '../../../assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg?inline';
-import annex2GuideExcerptImg from '../../../assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png?inline';
+import annex1SchemaImg from '../../../assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg';
+import annex2GuideExcerptImg from '../../../assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png';
 
 type DoctorLetterTemplateData = {
   patient?: {

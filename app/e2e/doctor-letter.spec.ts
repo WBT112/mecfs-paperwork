@@ -301,7 +301,7 @@ const extractDocxParagraphTexts = (documentXml: string): string[] =>
     );
 
 const normalizeDocxMatchText = (value: string) =>
-  value.replace(/<[^>]+>/g, '').replace(/\s+/g, '');
+  value.replace(/[<>]/g, '').replace(/\s+/g, '');
 
 test.describe.configure({ mode: 'parallel', timeout: 60_000 });
 
