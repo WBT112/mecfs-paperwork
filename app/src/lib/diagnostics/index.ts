@@ -5,6 +5,7 @@ export {
 } from './bundle';
 export { checkStorageHealth } from './storageHealth';
 export { installGlobalErrorListeners } from './errorRingBuffer';
+export { resetAllLocalData } from './resetAllLocalData';
 export type {
   DiagnosticsBundle,
   StorageHealthInfo,

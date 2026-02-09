@@ -23,7 +23,11 @@ vi.mock('../../src/lib/diagnostics', () => ({
     mockDownloadDiagnosticsBundle(...args) as Promise<void>,
   copyDiagnosticsToClipboard: (...args: unknown[]) =>
     mockCopyDiagnosticsToClipboard(...args) as Promise<boolean>,
+  resetAllLocalData: (...args: unknown[]) =>
+    mockResetAllLocalData(...args) as Promise<void>,
 }));
+
+const mockResetAllLocalData = vi.fn();
 
 const mockRefreshHealth = vi.fn();
 let mockHealthState: {
@@ -58,12 +62,14 @@ const TID_DIAGNOSTICS_DOWNLOAD = 'diagnostics-download';
 const TID_DIAGNOSTICS_COPY = 'diagnostics-copy';
 const TID_STORAGE_HEALTH_STATUS = 'storage-health-status';
 const TID_STORAGE_HEALTH_QUOTA = 'storage-health-quota';
+const TID_RESET_ALL_DATA = 'reset-all-data';
 const ATTR_DATA_STATUS = 'data-status';
 
 describe('HelpPage', () => {
   beforeEach(() => {
     mockDownloadDiagnosticsBundle.mockResolvedValue(undefined);
     mockCopyDiagnosticsToClipboard.mockResolvedValue(true);
+    mockResetAllLocalData.mockResolvedValue(undefined);
     mockHealthState = {
       health: {
         indexedDbAvailable: true,
@@ -480,6 +486,73 @@ describe('HelpPage', () => {
 
       const statusEl = screen.getByTestId(TID_STORAGE_HEALTH_STATUS);
       expect(statusEl).toHaveTextContent('storageHealthStatusError');
+    });
+  });
+
+  describe('reset all local data', () => {
+    it('renders the danger zone section', () => {
+      render(<HelpPage />);
+
+      expect(screen.getByTestId('danger-zone')).toBeInTheDocument();
+      expect(screen.getByTestId(TID_RESET_ALL_DATA)).toBeInTheDocument();
+    });
+
+    it('shows confirm dialog on button click and does nothing on cancel', () => {
+      const confirmSpy = vi
+        .spyOn(globalThis, 'confirm')
+        .mockReturnValue(false);
+
+      render(<HelpPage />);
+      fireEvent.click(screen.getByTestId(TID_RESET_ALL_DATA));
+
+      expect(confirmSpy).toHaveBeenCalledWith('resetAllConfirm');
+      expect(mockResetAllLocalData).not.toHaveBeenCalled();
+    });
+
+    it('calls resetAllLocalData when confirmed', async () => {
+      vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+
+      render(<HelpPage />);
+      fireEvent.click(screen.getByTestId(TID_RESET_ALL_DATA));
+
+      await waitFor(() => {
+        expect(mockResetAllLocalData).toHaveBeenCalledOnce();
+      });
+    });
+
+    it('shows loading state while resetting', async () => {
+      vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+      let resolveReset: () => void;
+      mockResetAllLocalData.mockReturnValue(
+        new Promise<void>((resolve) => {
+          resolveReset = resolve;
+        }),
+      );
+
+      render(<HelpPage />);
+      const button = screen.getByTestId(TID_RESET_ALL_DATA);
+      fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(button).toHaveTextContent('resetAllInProgress');
+      });
+      expect(button).toBeDisabled();
+
+      resolveReset!();
+    });
+
+    it('re-enables button if reset fails', async () => {
+      vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+      mockResetAllLocalData.mockRejectedValue(new Error('fail'));
+
+      render(<HelpPage />);
+      const button = screen.getByTestId(TID_RESET_ALL_DATA);
+      fireEvent.click(button);
+
+      await waitFor(() => {
+        expect(button).not.toBeDisabled();
+      });
+      expect(button).toHaveTextContent('resetAllButton');
     });
   });
 });

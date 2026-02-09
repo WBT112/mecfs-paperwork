@@ -6,6 +6,7 @@ import { APP_VERSION, BUILD_DATE_ISO, formatBuildDate } from '../lib/version';
 import {
   downloadDiagnosticsBundle,
   copyDiagnosticsToClipboard,
+  resetAllLocalData,
 } from '../lib/diagnostics';
 import { useStorageHealth } from '../lib/diagnostics/useStorageHealth';
 import type { StorageHealthStatus } from '../lib/diagnostics';
@@ -79,6 +80,7 @@ export default function HelpPage() {
     refresh: refreshHealth,
   } = useStorageHealth();
 
+  const [resetting, setResetting] = useState(false);
   const [swInfo, setSwInfo] = useState<ServiceWorkerInfo>(defaultSwInfo);
 
   useEffect(() => {
@@ -134,6 +136,17 @@ export default function HelpPage() {
     const success = await copyDiagnosticsToClipboard();
     setDiagState(success ? 'copied' : 'failed');
   }, []);
+
+  const handleResetAllData = useCallback(async () => {
+    const confirmed = globalThis.confirm(t('resetAllConfirm'));
+    if (!confirmed) return;
+    setResetting(true);
+    try {
+      await resetAllLocalData();
+    } catch {
+      setResetting(false);
+    }
+  }, [t]);
 
   const quotaDisplay = getQuotaDisplay(
     health.storageEstimate,
@@ -317,6 +330,26 @@ export default function HelpPage() {
               {copyLabel}
             </button>
           </div>
+
+          <section
+            className="help-page__danger-zone"
+            aria-label={t('resetAllTitle')}
+            data-testid="danger-zone"
+          >
+            <h4>{t('resetAllTitle')}</h4>
+            <p className="help-page__danger-zone-description">
+              {t('resetAllDescription')}
+            </p>
+            <button
+              type="button"
+              className="app__button app__button--danger"
+              onClick={handleResetAllData}
+              disabled={resetting}
+              data-testid="reset-all-data"
+            >
+              {resetting ? t('resetAllInProgress') : t('resetAllButton')}
+            </button>
+          </section>
         </section>
       </section>
     </section>
