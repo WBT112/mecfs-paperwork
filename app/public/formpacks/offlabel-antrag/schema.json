@@ -114,6 +114,16 @@
       },
       "additionalProperties": false
     },
+    "export": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "includeDoctorCoverLetter": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
     "attachmentsFreeText": {
       "type": "string"
     }

@@ -3,6 +3,10 @@ import type { SupportedLocale } from '../i18n/locale';
 import { isRecord } from '../lib/utils';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
+import {
+  buildOfflabelAntragExportBundle,
+  type OfflabelAntragExportBundle,
+} from './offlabel-antrag/letterBuilder';
 
 type DiagnosisFlags = {
   meCfs?: boolean;
@@ -74,6 +78,10 @@ export type DocumentModel = {
   attachments?: {
     items: string[];
   };
+  export?: {
+    includeDoctorCoverLetter?: boolean;
+  };
+  exportBundle?: OfflabelAntragExportBundle;
   decision?: {
     caseId: number;
     caseText: string;
@@ -325,17 +333,22 @@ const buildNotfallpassModel = (
 
 const buildOfflabelAntragModel = (
   formData: Record<string, unknown>,
-  _locale: SupportedLocale,
+  locale: SupportedLocale,
   baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
 ): DocumentModel => {
   const patient = getRecordValue(formData.patient);
   const doctor = getRecordValue(formData.doctor);
   const insurer = getRecordValue(formData.insurer);
   const request = getRecordValue(formData.request);
+  const exportConfig = getRecordValue(formData.export);
   const doctorSupport = getRecordValue(request?.doctorSupport);
   const attachmentsFreeText = getStringValue(formData.attachmentsFreeText);
+  const includeDoctorCoverLetter =
+    typeof exportConfig?.includeDoctorCoverLetter === 'boolean'
+      ? exportConfig.includeDoctorCoverLetter
+      : doctorSupport?.enabled === true;
 
-  return {
+  const model: DocumentModel = {
     diagnosisParagraphs: [],
     ...baseModel,
     patient: {
@@ -381,6 +394,20 @@ const buildOfflabelAntragModel = (
     attachments: {
       items: parseAttachments(attachmentsFreeText),
     },
+    export: {
+      includeDoctorCoverLetter,
+    },
+  };
+
+  const exportBundle = buildOfflabelAntragExportBundle({
+    locale,
+    documentModel: model,
+    includeDoctorCoverLetter,
+  });
+
+  return {
+    ...model,
+    exportBundle,
   };
 };
 

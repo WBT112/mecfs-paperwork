@@ -4,6 +4,7 @@
     "doctor",
     "insurer",
     "request",
+    "export",
     "attachmentsFreeText"
   ],
   "patient": {
@@ -172,6 +173,13 @@
         "ui:title": "offlabel-antrag.request.doctorSupport.doctorSignsPart1.label",
         "ui:help": "offlabel-antrag.request.doctorSupport.doctorSignsPart1.help"
       }
+    }
+  },
+  "export": {
+    "ui:title": "offlabel-antrag.section.export.title",
+    "includeDoctorCoverLetter": {
+      "ui:title": "offlabel-antrag.fields.export.includeDoctorCoverLetter.label",
+      "ui:help": "offlabel-antrag.fields.export.includeDoctorCoverLetter.help"
     }
   },
   "attachmentsFreeText": {

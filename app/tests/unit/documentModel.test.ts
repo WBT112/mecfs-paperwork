@@ -1,11 +1,22 @@
 import { describe, it, expect, vi } from 'vitest';
 import deTranslationsJson from '../../public/formpacks/notfallpass/i18n/de.json';
 import enTranslationsJson from '../../public/formpacks/notfallpass/i18n/en.json';
+import deOfflabelTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/de.json';
+import enOfflabelTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/en.json';
 import { buildDocumentModel } from '../../src/formpacks/documentModel';
 
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
-const namespace = 'formpack:notfallpass';
+const deOfflabelTranslations = deOfflabelTranslationsJson as Record<
+  string,
+  string
+>;
+const enOfflabelTranslations = enOfflabelTranslationsJson as Record<
+  string,
+  string
+>;
+const notfallpassNamespace = 'formpack:notfallpass';
+const offlabelNamespace = 'formpack:offlabel-antrag';
 const ME_CFS_PARAGRAPH_KEY = 'notfallpass.export.diagnoses.meCfs.paragraph';
 
 // Mock i18n to provide predictable translations used by buildDocumentModel
@@ -13,12 +24,20 @@ vi.mock('../../src/i18n', () => ({
   default: {
     // Return actual translation strings for the requested locale/namespace when available
     getFixedT: (locale: string, ns: string) => (key: string) => {
-      if (ns === namespace) {
+      if (ns === notfallpassNamespace) {
         if (locale === 'en' && key in enTranslations) {
           return enTranslations[key];
         }
         if (locale === 'de' && key in deTranslations) {
           return deTranslations[key];
+        }
+      }
+      if (ns === offlabelNamespace) {
+        if (locale === 'en' && key in enOfflabelTranslations) {
+          return enOfflabelTranslations[key];
+        }
+        if (locale === 'de' && key in deOfflabelTranslations) {
+          return deOfflabelTranslations[key];
         }
       }
       return key;
@@ -229,5 +248,12 @@ describe('formpacks/documentModel', () => {
     expect(result.attachments).toEqual({
       items: ['Arztbrief vom 2026-01-10', 'Befundbericht', 'Laborwerte'],
     });
+    expect(result.export).toEqual({
+      includeDoctorCoverLetter: true,
+    });
+    expect(result.exportBundle?.part2).toBeDefined();
+    expect(result.exportBundle?.part2?.attachmentsItems[0]).toBe(
+      'Teil 1: Antrag an die Krankenkasse (Entwurf)',
+    );
   });
 });
