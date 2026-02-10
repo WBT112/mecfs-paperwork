@@ -1,0 +1,8 @@
+{
+  "request": {
+    "drug": "ivabradine",
+    "indicationFreeText": "PoTS / orthostatische Tachykardie",
+    "symptomsFreeText": "Belastungsintoleranz und Tachykardie bei Lagewechsel"
+  },
+  "attachmentsFreeText": "Arztbrief vom 2026-01-15\nBefundbericht vom 2026-01-22"
+}

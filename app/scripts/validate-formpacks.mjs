@@ -563,12 +563,12 @@ const validateContract = async ({ formpackId, errors }) => {
     }
 
     const exportsList = Array.isArray(manifest.exports) ? manifest.exports : [];
-    if (!exportsList.includes('docx') || !exportsList.includes('json')) {
+    if (!exportsList.includes('json')) {
       collectErrors(
         errors,
         formpackId,
         manifestPath,
-        new Error('Manifest exports must include "docx" and "json".'),
+        new Error('Manifest exports must include "json".'),
       );
     }
 

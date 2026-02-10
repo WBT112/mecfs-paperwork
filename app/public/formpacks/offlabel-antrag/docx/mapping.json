@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "fields": [
+    {
+      "var": "patient.firstName",
+      "path": "patient.firstName"
+    },
+    {
+      "var": "patient.lastName",
+      "path": "patient.lastName"
+    },
+    {
+      "var": "doctor.name",
+      "path": "doctor.name"
+    },
+    {
+      "var": "insurer.name",
+      "path": "insurer.name"
+    },
+    {
+      "var": "request.drug",
+      "path": "request.drug"
+    },
+    {
+      "var": "attachmentsFreeText",
+      "path": "attachmentsFreeText"
+    }
+  ],
+  "loops": [],
+  "i18n": {
+    "prefix": "offlabel-antrag"
+  }
+}

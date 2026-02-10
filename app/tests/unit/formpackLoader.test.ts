@@ -13,11 +13,13 @@ import type { FormpackManifestPayload } from '../../src/formpacks/types';
 const TEST_FORMPACK_ID = 'test-formpack';
 const DOCTOR_LETTER_ID = 'doctor-letter';
 const NOTFALLPASS_ID = 'notfallpass';
+const OFFLABEL_ANTRAG_ID = 'offlabel-antrag';
 const DOCX_A4_PATH = 'docx/a4.docx';
 const DOCX_WALLET_PATH = 'docx/wallet.docx';
 const DOCX_MAPPING_PATH = 'docx/mapping.json';
 const MANIFEST_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/manifest.json`;
 const MANIFEST_PATH_NOTFALLPASS = `/formpacks/${NOTFALLPASS_ID}/manifest.json`;
+const MANIFEST_PATH_OFFLABEL = `/formpacks/${OFFLABEL_ANTRAG_ID}/manifest.json`;
 const SCHEMA_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/schema.json`;
 const UI_SCHEMA_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/ui.schema.json`;
 
@@ -394,6 +396,10 @@ describe('formpack loader fetches', () => {
         ok: true,
         json: async () => manifestFor(NOTFALLPASS_ID),
       },
+      [MANIFEST_PATH_OFFLABEL]: {
+        ok: true,
+        json: async () => manifestFor(OFFLABEL_ANTRAG_ID),
+      },
     });
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
@@ -401,6 +407,7 @@ describe('formpack loader fetches', () => {
     expect(manifests.map((manifest) => manifest.id)).toEqual([
       DOCTOR_LETTER_ID,
       NOTFALLPASS_ID,
+      OFFLABEL_ANTRAG_ID,
     ]);
   });
 });

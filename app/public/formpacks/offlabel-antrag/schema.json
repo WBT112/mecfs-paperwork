@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mecfs-paperwork.local/formpacks/offlabel-antrag/schema.json",
+  "title": "offlabel-antrag",
+  "type": "object",
+  "properties": {
+    "patient": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "birthDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "streetAndNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "insuranceNumber": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "doctor": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "practice": {
+          "type": "string"
+        },
+        "streetAndNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "insurer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "department": {
+          "type": "string"
+        },
+        "streetAndNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "drug": {
+          "type": "string",
+          "enum": [
+            "agomelatin",
+            "ivabradine",
+            "vortioxetine"
+          ]
+        },
+        "indicationFreeText": {
+          "type": "string"
+        },
+        "symptomsFreeText": {
+          "type": "string"
+        },
+        "standardOfCareTriedFreeText": {
+          "type": "string"
+        },
+        "doctorRationaleFreeText": {
+          "type": "string"
+        },
+        "doctorSupport": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "doctorSignsPart1": {
+              "type": "boolean",
+              "default": false
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "attachmentsFreeText": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
