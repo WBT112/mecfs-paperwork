@@ -122,6 +122,18 @@ Die lokale Verarbeitung erfolgt zur Bereitstellung der von dir angeforderten Fun
 
 Die lokal gespeicherten Daten verbleiben in deinem Browser, bis du sie löschst (z. B. durch die Browser-Funktion „Website-Daten löschen“ oder über Löschfunktionen in der App, sofern vorhanden).
 
+### 4.4 Sicherheit des lokalen Browser‑Speichers
+
+- Keine automatische Verschlüsselung: Der lokale Browser-Speicher, den die Anwendung verwendet (z. B. IndexedDB, LocalStorage, Cache Storage), wird vom Browser bzw. von der Anwendung nicht automatisch verschlüsselt. Daten liegen daher standardmäßig unverschlüsselt auf deinem Gerät.
+
+- Risiken: Personen mit Zugang zum gleichen Betriebssystem-Benutzerkonto oder Browserprofil, gestohlene oder kompromittierte Geräte, lokale Backups oder synchronisierte Browserprofile können auf diese Daten zugreifen.
+
+- Empfohlene Minderungsschritte:
+  - Verwende ein separates Betriebssystem-Benutzerkonto oder ein eigenes Browserprofil für sensible Daten.
+  - Schütze dein Gerät durch Betriebssystem-Verschlüsselung (z. B. BitLocker, FileVault), ein sicheres Passwort/PIN und automatische Sperre.
+  - Lösche nicht mehr benötigte lokale Daten über die App‑Funktion „Alle lokalen Daten löschen“ (sofern vorhanden) oder über die Browser‑Einstellungen (Website‑Daten löschen).
+  - Vermeide die Nutzung gemeinsam genutzter Geräte/Browserprofile für sensible Gesundheitsdaten; exportiere bei Bedarf Daten und verwahre sie an einem sicheren Ort.
+
 ---
 
 ## 5. Import/Export (JSON/DOCX)

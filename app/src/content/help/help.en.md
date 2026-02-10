@@ -165,4 +165,6 @@ Typical Workflow:
 
 - Before sharing a DOCX/PDF/JSON, check if it contains content you do not want to pass on.
 - No further data is exchanged between your device and the server after the page has loaded (except for checking for formpack updates).
-- If you also want to delete the stored data in your browser, this is usually done via history/clear browser data or similar, depending on the browser.
+- Local data deletion: If you want to remove all locally stored data (drafts, snapshots, local exports) on this device, use the "Delete all local data" option (available in the settings or at the bottom of the help page). This action removes all local data only on this device and is permanent; it cannot be undone.
+- If you only want to delete individual drafts or snapshots, use the respective delete function in the draft/snapshot view.
+- Alternatively, you can clear stored browser data via your browser settings (history / clear browsing data), which will also remove local storage and other saved site data.
