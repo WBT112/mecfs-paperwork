@@ -108,6 +108,22 @@ type KnownDrug = 'agomelatin' | 'ivabradine' | 'vortioxetine';
 
 type I18nT = (key: string, options?: Record<string, unknown>) => string;
 
+type SeverityFragmentSpec = {
+  key: string;
+  value: string | null;
+  defaultValue: string;
+  options?: Record<string, unknown>;
+};
+
+type MedicationParagraphSpec = {
+  key: string;
+  defaultValue: string;
+  options?: (args: {
+    diagnosisPots: string;
+    targetSymptoms: string;
+  }) => Record<string, unknown>;
+};
+
 const DRUG_LABELS: Record<
   SupportedLocale,
   Record<KnownDrug, { name: string; substance: string }>
@@ -123,6 +139,67 @@ const DRUG_LABELS: Record<
     vortioxetine: { name: 'Vortioxetine', substance: 'Vortioxetine' },
   },
 };
+
+const MEDICATION_PARAGRAPH_SPECS: Record<KnownDrug, MedicationParagraphSpec[]> =
+  {
+    agomelatin: [
+      {
+        key: 'offlabel-antrag.export.medication.agomelatin.p1',
+        defaultValue:
+          'BfArM evaluates agomelatine in the long/post-COVID context and explicitly references fatigue in post-infectious ME/CFS.',
+      },
+      {
+        key: 'offlabel-antrag.export.medication.agomelatin.p2',
+        defaultValue:
+          'The treatment goal is a meaningful improvement in {{targetSymptoms}}, especially fatigue and sleep-wake regulation. Planned use: 25 mg in the evening with an optional increase to 50 mg after medical review.',
+        options: ({ targetSymptoms }) => ({ targetSymptoms }),
+      },
+      {
+        key: 'offlabel-antrag.export.medication.agomelatin.p3',
+        defaultValue:
+          'Safety and monitoring include liver function checks according to product information, contraindications, and interaction checks.',
+      },
+    ],
+    ivabradine: [
+      {
+        key: 'offlabel-antrag.export.medication.ivabradine.p1',
+        defaultValue:
+          'BfArM evaluates ivabradine for long/post-COVID associated PoTS in adults, especially when beta blockers are not tolerated or not appropriate.',
+      },
+      {
+        key: 'offlabel-antrag.export.medication.ivabradine.p2',
+        defaultValue:
+          'The treatment goal is reduced orthostatic tachycardia and a meaningful improvement in {{targetSymptoms}} in {{diagnosisPots}}. Planned use: gradual titration (e.g. 2.5 mg twice daily) with clinical adjustments.',
+        options: ({ targetSymptoms, diagnosisPots }) => ({
+          targetSymptoms,
+          diagnosisPots,
+        }),
+      },
+      {
+        key: 'offlabel-antrag.export.medication.ivabradine.p3',
+        defaultValue:
+          'Safety and monitoring include pulse/blood pressure, ECG where indicated, and review of contraindications and interactions.',
+      },
+    ],
+    vortioxetine: [
+      {
+        key: 'offlabel-antrag.export.medication.vortioxetine.p1',
+        defaultValue:
+          'BfArM evaluates vortioxetine in the long/post-COVID context for cognitive impairment and/or depressive symptoms.',
+      },
+      {
+        key: 'offlabel-antrag.export.medication.vortioxetine.p2',
+        defaultValue:
+          'The treatment goal is a meaningful improvement in {{targetSymptoms}}, especially cognitive impairment (brain fog) and/or depressive symptoms. Planned use: gradual dosing (e.g. 5 mg daily start) with benefit evaluation after around 12 weeks.',
+        options: ({ targetSymptoms }) => ({ targetSymptoms }),
+      },
+      {
+        key: 'offlabel-antrag.export.medication.vortioxetine.p3',
+        defaultValue:
+          'Safety and monitoring include adverse effects, contraindications, interactions, and close medical follow-up; local market availability should be considered.',
+      },
+    ],
+  };
 
 const getT = (locale: SupportedLocale): I18nT =>
   i18n.getFixedT(locale, 'formpack:offlabel-antrag');
@@ -262,6 +339,22 @@ const buildOptionalSeverityFragment = (
   return tr(t, key, defaultValue, options);
 };
 
+const buildSeverityFragments = (
+  t: I18nT,
+  specs: SeverityFragmentSpec[],
+): string[] =>
+  specs
+    .map((spec) =>
+      buildOptionalSeverityFragment(
+        t,
+        spec.key,
+        spec.value,
+        spec.defaultValue,
+        spec.options,
+      ),
+    )
+    .filter((entry): entry is string => Boolean(entry));
+
 const getSeverityRecord = (
   formData: Record<string, unknown>,
 ): Record<string, unknown> | null => {
@@ -269,84 +362,6 @@ const getSeverityRecord = (
   const requestSeverity = getRecordValue(request?.severity);
   const topLevelSeverity = getRecordValue(formData.severity);
   return requestSeverity ?? topLevelSeverity;
-};
-
-const buildBellScoreFragment = (
-  t: I18nT,
-  bellScore: string | null,
-): string | null => {
-  return buildOptionalSeverityFragment(
-    t,
-    'offlabel-antrag.export.severity.bell',
-    bellScore,
-    'My functional level is Bell score {{bellScore}}.',
-    { bellScore },
-  );
-};
-
-const buildGdbFragment = (
-  t: I18nT,
-  gdb: string | null,
-  merkzeichen: string | null,
-): string | null => {
-  const marker =
-    merkzeichen && merkzeichen.length > 0 ? `, ${merkzeichen}` : '';
-  return buildOptionalSeverityFragment(
-    t,
-    'offlabel-antrag.export.severity.gdb',
-    gdb,
-    'A disability degree (GdB) of {{gdb}} is documented{{marker}}.',
-    { gdb, marker },
-  );
-};
-
-const buildPflegegradFragment = (
-  t: I18nT,
-  pflegegrad: string | null,
-): string | null => {
-  return buildOptionalSeverityFragment(
-    t,
-    'offlabel-antrag.export.severity.pflegegrad',
-    pflegegrad,
-    'A nursing care level of {{pflegegrad}} is in place.',
-    { pflegegrad },
-  );
-};
-
-const buildWorkStatusFragment = (
-  t: I18nT,
-  workStatus: string | null,
-): string | null => {
-  return buildOptionalSeverityFragment(
-    t,
-    'offlabel-antrag.export.severity.workStatus',
-    workStatus,
-    'My current work status is {{workStatus}}.',
-    { workStatus },
-  );
-};
-
-const buildMobilityFragment = (
-  t: I18nT,
-  mobilityLevel: string | null,
-): string | null => {
-  if (!mobilityLevel) {
-    return null;
-  }
-  const localizedMobilityLevel =
-    mobilityLevel === 'housebound' || mobilityLevel === 'bedbound'
-      ? tr(
-          t,
-          `offlabel-antrag.severity.mobilityLevel.option.${mobilityLevel}`,
-          mobilityLevel,
-        )
-      : mobilityLevel;
-  return tr(
-    t,
-    'offlabel-antrag.export.severity.mobility',
-    'I am predominantly {{mobilityLevel}}.',
-    { mobilityLevel: localizedMobilityLevel },
-  );
 };
 
 const buildSeveritySummary = (
@@ -363,15 +378,51 @@ const buildSeveritySummary = (
   const merkzeichen = gdb ? getStringValue(severity.merkzeichen) : null;
   const pflegegrad = getStringValue(severity.pflegegrad);
   const workStatus = getStringValue(severity.workStatus);
-  const mobilityLevel = getStringValue(severity.mobilityLevel);
+  const rawMobilityLevel = getStringValue(severity.mobilityLevel);
+  const mobilityLevel =
+    rawMobilityLevel === 'housebound' || rawMobilityLevel === 'bedbound'
+      ? tr(
+          t,
+          `offlabel-antrag.severity.mobilityLevel.option.${rawMobilityLevel}`,
+          rawMobilityLevel,
+        )
+      : rawMobilityLevel;
 
-  const fragments = [
-    buildBellScoreFragment(t, bellScore),
-    buildGdbFragment(t, gdb, merkzeichen),
-    buildPflegegradFragment(t, pflegegrad),
-    buildWorkStatusFragment(t, workStatus),
-    buildMobilityFragment(t, mobilityLevel),
-  ].filter((entry): entry is string => Boolean(entry));
+  const marker =
+    merkzeichen && merkzeichen.length > 0 ? `, ${merkzeichen}` : '';
+  const fragments = buildSeverityFragments(t, [
+    {
+      key: 'offlabel-antrag.export.severity.bell',
+      value: bellScore,
+      defaultValue: 'My functional level is Bell score {{bellScore}}.',
+      options: { bellScore },
+    },
+    {
+      key: 'offlabel-antrag.export.severity.gdb',
+      value: gdb,
+      defaultValue:
+        'A disability degree (GdB) of {{gdb}} is documented{{marker}}.',
+      options: { gdb, marker },
+    },
+    {
+      key: 'offlabel-antrag.export.severity.pflegegrad',
+      value: pflegegrad,
+      defaultValue: 'A nursing care level of {{pflegegrad}} is in place.',
+      options: { pflegegrad },
+    },
+    {
+      key: 'offlabel-antrag.export.severity.workStatus',
+      value: workStatus,
+      defaultValue: 'My current work status is {{workStatus}}.',
+      options: { workStatus },
+    },
+    {
+      key: 'offlabel-antrag.export.severity.mobility',
+      value: mobilityLevel,
+      defaultValue: 'I am predominantly {{mobilityLevel}}.',
+      options: { mobilityLevel },
+    },
+  ]);
 
   if (!fragments.length) {
     return getNoSeveritySummary(t);
@@ -386,67 +437,16 @@ const buildMedicationSpecificParagraphs = (
   diagnosisPots: string,
   targetSymptoms: string,
 ): string[] => {
-  if (drug === 'agomelatin') {
-    return [
+  if (drug) {
+    const optionsInput = { diagnosisPots, targetSymptoms };
+    return MEDICATION_PARAGRAPH_SPECS[drug].map((spec) =>
       tr(
         t,
-        'offlabel-antrag.export.medication.agomelatin.p1',
-        'BfArM evaluates agomelatine in the long/post-COVID context and explicitly references fatigue in post-infectious ME/CFS.',
+        spec.key,
+        spec.defaultValue,
+        spec.options ? spec.options(optionsInput) : {},
       ),
-      tr(
-        t,
-        'offlabel-antrag.export.medication.agomelatin.p2',
-        'The treatment goal is a meaningful improvement in {{targetSymptoms}}, especially fatigue and sleep-wake regulation. Planned use: 25 mg in the evening with an optional increase to 50 mg after medical review.',
-        { targetSymptoms },
-      ),
-      tr(
-        t,
-        'offlabel-antrag.export.medication.agomelatin.p3',
-        'Safety and monitoring include liver function checks according to product information, contraindications, and interaction checks.',
-      ),
-    ];
-  }
-
-  if (drug === 'ivabradine') {
-    return [
-      tr(
-        t,
-        'offlabel-antrag.export.medication.ivabradine.p1',
-        'BfArM evaluates ivabradine for long/post-COVID associated PoTS in adults, especially when beta blockers are not tolerated or not appropriate.',
-      ),
-      tr(
-        t,
-        'offlabel-antrag.export.medication.ivabradine.p2',
-        'The treatment goal is reduced orthostatic tachycardia and a meaningful improvement in {{targetSymptoms}} in {{diagnosisPots}}. Planned use: gradual titration (e.g. 2.5 mg twice daily) with clinical adjustments.',
-        { targetSymptoms, diagnosisPots },
-      ),
-      tr(
-        t,
-        'offlabel-antrag.export.medication.ivabradine.p3',
-        'Safety and monitoring include pulse/blood pressure, ECG where indicated, and review of contraindications and interactions.',
-      ),
-    ];
-  }
-
-  if (drug === 'vortioxetine') {
-    return [
-      tr(
-        t,
-        'offlabel-antrag.export.medication.vortioxetine.p1',
-        'BfArM evaluates vortioxetine in the long/post-COVID context for cognitive impairment and/or depressive symptoms.',
-      ),
-      tr(
-        t,
-        'offlabel-antrag.export.medication.vortioxetine.p2',
-        'The treatment goal is a meaningful improvement in {{targetSymptoms}}, especially cognitive impairment (brain fog) and/or depressive symptoms. Planned use: gradual dosing (e.g. 5 mg daily start) with benefit evaluation after around 12 weeks.',
-        { targetSymptoms },
-      ),
-      tr(
-        t,
-        'offlabel-antrag.export.medication.vortioxetine.p3',
-        'Safety and monitoring include adverse effects, contraindications, interactions, and close medical follow-up; local market availability should be considered.',
-      ),
-    ];
+    );
   }
 
   return [
