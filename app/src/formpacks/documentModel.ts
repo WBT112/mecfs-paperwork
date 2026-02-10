@@ -4,9 +4,10 @@ import { isRecord } from '../lib/utils';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
 import {
-  buildOfflabelAntragExportBundle,
-  type OfflabelAntragExportBundle,
-} from './offlabel-antrag/letterBuilder';
+  buildOffLabelAntragDocumentModel,
+  type OffLabelExportBundle,
+  type OffLabelLetterSection,
+} from './offlabel-antrag/export/documentModel';
 
 type DiagnosisFlags = {
   meCfs?: boolean;
@@ -80,8 +81,16 @@ export type DocumentModel = {
   };
   export?: {
     includeDoctorCoverLetter?: boolean;
+    includeSources?: boolean;
   };
-  exportBundle?: OfflabelAntragExportBundle;
+  kk?: OffLabelLetterSection;
+  arzt?: OffLabelLetterSection;
+  hasPart2?: string;
+  hasSources?: string;
+  sourcesHeading?: string;
+  sources?: string[];
+  exportedAtIso?: string;
+  exportBundle?: OffLabelExportBundle;
   decision?: {
     caseId: number;
     caseText: string;
@@ -141,22 +150,6 @@ const getRecordValue = (value: unknown): Record<string, unknown> | null =>
 
 const getArrayValue = (value: unknown): unknown[] =>
   Array.isArray(value) ? value : [];
-
-const parseAttachments = (value: string | null): string[] => {
-  if (!value) {
-    return [];
-  }
-
-  return value
-    .split(/\r?\n/)
-    .map((entry) =>
-      entry
-        .trim()
-        .replace(/^[-*•]\s+/, '')
-        .trim(),
-    )
-    .filter((entry) => entry.length > 0);
-};
 
 const buildBaseDocumentModel = (
   formData: Record<string, unknown>,
@@ -336,78 +329,35 @@ const buildOfflabelAntragModel = (
   locale: SupportedLocale,
   baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
 ): DocumentModel => {
-  const patient = getRecordValue(formData.patient);
-  const doctor = getRecordValue(formData.doctor);
-  const insurer = getRecordValue(formData.insurer);
-  const request = getRecordValue(formData.request);
-  const exportConfig = getRecordValue(formData.export);
-  const doctorSupport = getRecordValue(request?.doctorSupport);
-  const attachmentsFreeText = getStringValue(formData.attachmentsFreeText);
-  const includeDoctorCoverLetter =
-    typeof exportConfig?.includeDoctorCoverLetter === 'boolean'
-      ? exportConfig.includeDoctorCoverLetter
-      : doctorSupport?.enabled === true;
-
-  const model: DocumentModel = {
-    diagnosisParagraphs: [],
-    ...baseModel,
-    patient: {
-      firstName: getStringValue(patient?.firstName),
-      lastName: getStringValue(patient?.lastName),
-      birthDate: formatBirthDate(getStringValue(patient?.birthDate)),
-      insuranceNumber: getStringValue(patient?.insuranceNumber),
-      streetAndNumber: getStringValue(patient?.streetAndNumber),
-      postalCode: getStringValue(patient?.postalCode),
-      city: getStringValue(patient?.city),
-    },
-    doctor: {
-      ...baseModel.doctor,
-      practice: getStringValue(doctor?.practice),
-      title: getStringValue(doctor?.title),
-      gender: getStringValue(doctor?.gender),
-      name: getStringValue(doctor?.name),
-      streetAndNumber: getStringValue(doctor?.streetAndNumber),
-      postalCode: getStringValue(doctor?.postalCode),
-      city: getStringValue(doctor?.city),
-    },
-    insurer: {
-      name: getStringValue(insurer?.name),
-      department: getStringValue(insurer?.department),
-      streetAndNumber: getStringValue(insurer?.streetAndNumber),
-      postalCode: getStringValue(insurer?.postalCode),
-      city: getStringValue(insurer?.city),
-    },
-    request: {
-      drug: getStringValue(request?.drug),
-      indicationFreeText: getStringValue(request?.indicationFreeText),
-      symptomsFreeText: getStringValue(request?.symptomsFreeText),
-      standardOfCareTriedFreeText: getStringValue(
-        request?.standardOfCareTriedFreeText,
-      ),
-      doctorRationaleFreeText: getStringValue(request?.doctorRationaleFreeText),
-      doctorSupport: {
-        enabled: doctorSupport?.enabled === true,
-        doctorSignsPart1: doctorSupport?.doctorSignsPart1 === true,
-      },
-    },
-    attachmentsFreeText,
-    attachments: {
-      items: parseAttachments(attachmentsFreeText),
-    },
-    export: {
-      includeDoctorCoverLetter,
-    },
-  };
-
-  const exportBundle = buildOfflabelAntragExportBundle({
-    locale,
-    documentModel: model,
-    includeDoctorCoverLetter,
-  });
+  const projected = buildOffLabelAntragDocumentModel(formData, locale);
 
   return {
-    ...model,
-    exportBundle,
+    diagnosisParagraphs: [],
+    ...baseModel,
+    patient: projected.patient,
+    doctor: {
+      ...baseModel.doctor,
+      practice: projected.doctor.practice,
+      title: getStringValue(getRecordValue(formData.doctor)?.title),
+      gender: getStringValue(getRecordValue(formData.doctor)?.gender),
+      name: projected.doctor.name,
+      streetAndNumber: projected.doctor.streetAndNumber,
+      postalCode: projected.doctor.postalCode,
+      city: projected.doctor.city,
+    },
+    insurer: projected.insurer,
+    request: projected.request,
+    attachmentsFreeText: projected.attachmentsFreeText,
+    attachments: projected.attachments,
+    export: projected.export,
+    kk: projected.kk,
+    arzt: projected.arzt,
+    hasPart2: projected.hasPart2,
+    hasSources: projected.hasSources,
+    sourcesHeading: projected.sourcesHeading,
+    sources: projected.sources,
+    exportedAtIso: projected.exportedAtIso,
+    exportBundle: projected.exportBundle,
   };
 };
 

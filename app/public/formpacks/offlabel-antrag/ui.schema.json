@@ -4,6 +4,7 @@
     "doctor",
     "insurer",
     "request",
+    "severity",
     "export",
     "attachmentsFreeText"
   ],
@@ -166,8 +167,7 @@
         "doctorSignsPart1"
       ],
       "enabled": {
-        "ui:title": "offlabel-antrag.request.doctorSupport.enabled.label",
-        "ui:help": "offlabel-antrag.request.doctorSupport.enabled.help"
+        "ui:widget": "hidden"
       },
       "doctorSignsPart1": {
         "ui:title": "offlabel-antrag.request.doctorSupport.doctorSignsPart1.label",
@@ -175,11 +175,76 @@
       }
     }
   },
+  "severity": {
+    "ui:title": "offlabel-antrag.section.severity.title",
+    "ui:description": "offlabel-antrag.section.severity.help",
+    "ui:order": [
+      "bellScore",
+      "gdb",
+      "merkzeichen",
+      "pflegegrad",
+      "workStatus",
+      "mobilityLevel"
+    ],
+    "bellScore": {
+      "ui:title": "offlabel-antrag.severity.bellScore.label",
+      "ui:help": "offlabel-antrag.severity.bellScore.help",
+      "ui:enumNames": [
+        "offlabel-antrag.severity.bellScore.option.10",
+        "offlabel-antrag.severity.bellScore.option.20",
+        "offlabel-antrag.severity.bellScore.option.30",
+        "offlabel-antrag.severity.bellScore.option.40",
+        "offlabel-antrag.severity.bellScore.option.50",
+        "offlabel-antrag.severity.bellScore.option.60",
+        "offlabel-antrag.severity.bellScore.option.70",
+        "offlabel-antrag.severity.bellScore.option.80",
+        "offlabel-antrag.severity.bellScore.option.90",
+        "offlabel-antrag.severity.bellScore.option.100"
+      ]
+    },
+    "gdb": {
+      "ui:title": "offlabel-antrag.severity.gdb.label",
+      "ui:help": "offlabel-antrag.severity.gdb.help"
+    },
+    "merkzeichen": {
+      "ui:title": "offlabel-antrag.severity.merkzeichen.label",
+      "ui:help": "offlabel-antrag.severity.merkzeichen.help"
+    },
+    "pflegegrad": {
+      "ui:title": "offlabel-antrag.severity.pflegegrad.label",
+      "ui:help": "offlabel-antrag.severity.pflegegrad.help"
+    },
+    "workStatus": {
+      "ui:title": "offlabel-antrag.severity.workStatus.label",
+      "ui:help": "offlabel-antrag.severity.workStatus.help",
+      "ui:enumNames": [
+        "offlabel-antrag.severity.workStatus.option.au",
+        "offlabel-antrag.severity.workStatus.option.emRente",
+        "offlabel-antrag.severity.workStatus.option.berentet",
+        "offlabel-antrag.severity.workStatus.option.teilzeit"
+      ]
+    },
+    "mobilityLevel": {
+      "ui:title": "offlabel-antrag.severity.mobilityLevel.label",
+      "ui:help": "offlabel-antrag.severity.mobilityLevel.help",
+      "ui:enumNames": [
+        "offlabel-antrag.severity.mobilityLevel.option.housebound",
+        "offlabel-antrag.severity.mobilityLevel.option.bedbound"
+      ]
+    }
+  },
   "export": {
     "ui:title": "offlabel-antrag.section.export.title",
+    "ui:order": [
+      "includeDoctorCoverLetter",
+      "includeSources"
+    ],
     "includeDoctorCoverLetter": {
-      "ui:title": "offlabel-antrag.fields.export.includeDoctorCoverLetter.label",
-      "ui:help": "offlabel-antrag.fields.export.includeDoctorCoverLetter.help"
+      "ui:widget": "hidden"
+    },
+    "includeSources": {
+      "ui:title": "offlabel-antrag.fields.export.includeSources.label",
+      "ui:help": "offlabel-antrag.fields.export.includeSources.help"
     }
   },
   "attachmentsFreeText": {

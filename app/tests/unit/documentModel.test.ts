@@ -19,29 +19,43 @@ const notfallpassNamespace = 'formpack:notfallpass';
 const offlabelNamespace = 'formpack:offlabel-antrag';
 const ME_CFS_PARAGRAPH_KEY = 'notfallpass.export.diagnoses.meCfs.paragraph';
 
+const interpolate = (
+  template: string,
+  options: Record<string, unknown> = {},
+): string =>
+  template.replace(/\{\{(\w+)\}\}/g, (_, key: string) =>
+    String(options[key] ?? ''),
+  );
+
 // Mock i18n to provide predictable translations used by buildDocumentModel
 vi.mock('../../src/i18n', () => ({
   default: {
     // Return actual translation strings for the requested locale/namespace when available
-    getFixedT: (locale: string, ns: string) => (key: string) => {
-      if (ns === notfallpassNamespace) {
-        if (locale === 'en' && key in enTranslations) {
-          return enTranslations[key];
+    getFixedT:
+      (locale: string, ns: string) =>
+      (key: string, options?: Record<string, unknown>) => {
+        const fallback =
+          typeof options?.defaultValue === 'string'
+            ? options.defaultValue
+            : key;
+        if (ns === notfallpassNamespace) {
+          if (locale === 'en' && key in enTranslations) {
+            return interpolate(enTranslations[key], options);
+          }
+          if (locale === 'de' && key in deTranslations) {
+            return interpolate(deTranslations[key], options);
+          }
         }
-        if (locale === 'de' && key in deTranslations) {
-          return deTranslations[key];
+        if (ns === offlabelNamespace) {
+          if (locale === 'en' && key in enOfflabelTranslations) {
+            return interpolate(enOfflabelTranslations[key], options);
+          }
+          if (locale === 'de' && key in deOfflabelTranslations) {
+            return interpolate(deOfflabelTranslations[key], options);
+          }
         }
-      }
-      if (ns === offlabelNamespace) {
-        if (locale === 'en' && key in enOfflabelTranslations) {
-          return enOfflabelTranslations[key];
-        }
-        if (locale === 'de' && key in deOfflabelTranslations) {
-          return deOfflabelTranslations[key];
-        }
-      }
-      return key;
-    },
+        return interpolate(fallback, options);
+      },
     hasResourceBundle: () => false,
     addResourceBundle: () => undefined,
     changeLanguage: async () => undefined,
@@ -250,7 +264,12 @@ describe('formpacks/documentModel', () => {
     });
     expect(result.export).toEqual({
       includeDoctorCoverLetter: true,
+      includeSources: true,
     });
+    expect(result.kk?.subject).toContain('Ivabradin');
+    expect(result.hasPart2).toBe('1');
+    expect(result.hasSources).toBe('1');
+    expect(result.sources?.length).toBeGreaterThan(0);
     expect(result.exportBundle?.part2).toBeDefined();
     expect(result.exportBundle?.part2?.attachmentsItems[0]).toBe(
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',

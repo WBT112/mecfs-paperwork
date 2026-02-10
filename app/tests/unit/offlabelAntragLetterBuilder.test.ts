@@ -31,7 +31,7 @@ vi.mock('../../src/i18n', () => ({
 }));
 
 describe('offlabel-antrag letter builder', () => {
-  it('creates only part 1 when doctor support is disabled', () => {
+  it('always creates part 2 even when legacy support toggle is false', () => {
     const bundle = buildOfflabelAntragExportBundle({
       locale: 'de',
       documentModel: {
@@ -45,7 +45,7 @@ describe('offlabel-antrag letter builder', () => {
       exportedAt: FIXED_EXPORTED_AT,
     });
 
-    expect(bundle.part2).toBeUndefined();
+    expect(bundle.part2).toBeDefined();
     expect(bundle.part1.signatureBlocks).toEqual([
       {
         label: 'Patient/in',
@@ -107,7 +107,7 @@ describe('offlabel-antrag letter builder', () => {
         name: 'Mara Beispiel',
       },
       {
-        label: 'Behandelnde/r Aerztin/Arzt',
+        label: 'Behandelnde/r Ärztin/Arzt',
         name: 'Dr. Med. Hausarzt',
         extraLines: ['Praxis Nord'],
       },
@@ -131,15 +131,17 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.attachmentsItems).toEqual([
       'Arztbrief vom 01.01.2026',
       'Befundbericht',
+      'Quellenblock (siehe Quellen)',
     ]);
     expect(bundle.part2?.attachmentsItems).toEqual([
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
       'Arztbrief vom 01.01.2026',
       'Befundbericht',
+      'Quellenblock (siehe Quellen)',
     ]);
   });
 
-  it('uses default fallback values and respects explicit includeDoctorCoverLetter=false', () => {
+  it('uses default fallback values and ignores legacy includeDoctorCoverLetter=false', () => {
     const bundle = buildOfflabelAntragExportBundle({
       locale: 'en',
       documentModel: {
@@ -166,9 +168,9 @@ describe('offlabel-antrag letter builder', () => {
       exportedAt: FIXED_EXPORTED_AT,
     });
 
-    expect(bundle.part2).toBeUndefined();
+    expect(bundle.part2).toBeDefined();
     expect(bundle.part1.senderLines[0]).toBe('Max Example');
     expect(bundle.part1.addresseeLines[0]).toBe('Example Health Insurance');
-    expect(bundle.part1.bodyParagraphs[1]).toContain('—');
+    expect(bundle.part1.subject).toContain('PLEASE SELECT');
   });
 });
