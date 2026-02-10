@@ -528,23 +528,8 @@ export const applyDocxExportDefaults = (
     applyDefaultForPath(normalized, 'request.drug', defaults.request.drug);
     applyDefaultForPath(
       normalized,
-      'request.indicationFreeText',
-      defaults.request.indicationFreeText,
-    );
-    applyDefaultForPath(
-      normalized,
-      'request.symptomsFreeText',
-      defaults.request.symptomsFreeText,
-    );
-    applyDefaultForPath(
-      normalized,
       'request.standardOfCareTriedFreeText',
       defaults.request.standardOfCareTriedFreeText,
-    );
-    applyDefaultForPath(
-      normalized,
-      'request.doctorRationaleFreeText',
-      defaults.request.doctorRationaleFreeText,
     );
     applyDefaultForPath(
       normalized,

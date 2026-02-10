@@ -207,10 +207,9 @@ describe('formpacks/documentModel', () => {
       },
       request: {
         drug: 'ivabradine',
-        indicationFreeText: 'Indication text',
-        symptomsFreeText: 'Symptoms text',
         standardOfCareTriedFreeText: 'Prior care text',
-        doctorRationaleFreeText: 'Doctor rationale',
+        symptomCluster: ['tachycardia', 'orthostaticIntolerance'],
+        hasDoctorSupport: false,
       },
       attachmentsFreeText:
         ' - Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte\n\n',
@@ -243,10 +242,9 @@ describe('formpacks/documentModel', () => {
     });
     expect(result.request).toEqual({
       drug: 'ivabradine',
-      indicationFreeText: 'Indication text',
-      symptomsFreeText: 'Symptoms text',
       standardOfCareTriedFreeText: 'Prior care text',
-      doctorRationaleFreeText: 'Doctor rationale',
+      symptomCluster: ['tachycardia', 'orthostaticIntolerance'],
+      hasDoctorSupport: false,
     });
     expect(result.attachmentsFreeText).toBe(
       '- Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte',

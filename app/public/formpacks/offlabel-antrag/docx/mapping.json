@@ -74,20 +74,16 @@
       "path": "request.drug"
     },
     {
-      "var": "request.indicationFreeText",
-      "path": "request.indicationFreeText"
+      "var": "request.symptomCluster",
+      "path": "request.symptomCluster"
     },
     {
-      "var": "request.symptomsFreeText",
-      "path": "request.symptomsFreeText"
+      "var": "request.hasDoctorSupport",
+      "path": "request.hasDoctorSupport"
     },
     {
       "var": "request.standardOfCareTriedFreeText",
       "path": "request.standardOfCareTriedFreeText"
-    },
-    {
-      "var": "request.doctorRationaleFreeText",
-      "path": "request.doctorRationaleFreeText"
     },
     {
       "var": "attachmentsFreeText",

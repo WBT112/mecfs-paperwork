@@ -94,9 +94,7 @@ describe('offlabel-antrag letter builder', () => {
     ]);
     expect(
       bundle.part2?.bodyParagraphs.some((paragraph) =>
-        paragraph.includes(
-          'Ich bitte Sie, den Antrag aus Teil 1 zu unterstützen',
-        ),
+        paragraph.includes('wohlwollenden Befundbericht'),
       ),
     ).toBe(true);
     expect(
@@ -138,7 +136,7 @@ describe('offlabel-antrag letter builder', () => {
     });
 
     expect(bundle.part1.attachmentsItems).toContain(
-      'Expertengruppe Long COVID Off-Label-Use beim BfArM: Bewertung Vortioxetin (Stand 10.11.2025).',
+      'Expertengruppe Long COVID Off-Label-Use beim BfArM: Bewertung Vortioxetin (Stand 15.10.2025).',
     );
     expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
       'Bewertung Ivabradin',
@@ -161,9 +159,6 @@ describe('offlabel-antrag letter builder', () => {
         },
         insurer: {
           name: '',
-        },
-        request: {
-          indicationFreeText: '',
         },
       },
       exportedAt: FIXED_EXPORTED_AT,

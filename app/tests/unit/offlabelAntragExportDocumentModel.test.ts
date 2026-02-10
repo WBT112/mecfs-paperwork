@@ -45,7 +45,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
         },
         request: {
           drug: 'ivabradine',
-          symptomsFreeText: 'orthostatische Tachykardie',
+          symptomCluster: ['tachycardia', 'orthostaticIntolerance'],
         },
         attachmentsFreeText: '- Arztbrief\n• Befundbericht',
       },
@@ -79,7 +79,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.hasSources).toBe('1');
     expect(model.hasPart2).toBe('1');
     expect(model.kk.attachments).toContain(
-      'Expertengruppe Long COVID Off-Label-Use beim BfArM: Bewertung Ivabradin (Stand 10.11.2025).',
+      'Expertengruppe Long COVID Off-Label-Use beim BfArM: Bewertung Ivabradin (Stand 15.10.2025).',
     );
   });
 

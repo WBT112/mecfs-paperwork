@@ -52,10 +52,9 @@ type OfflabelAntragBundleInput = {
   };
   request?: {
     drug?: string | null;
-    indicationFreeText?: string | null;
-    symptomsFreeText?: string | null;
+    symptomCluster?: string[] | null;
     standardOfCareTriedFreeText?: string | null;
-    doctorRationaleFreeText?: string | null;
+    hasDoctorSupport?: boolean | null;
   };
   export?: {
     includeSources?: boolean;

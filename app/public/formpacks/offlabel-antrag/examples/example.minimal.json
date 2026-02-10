@@ -1,8 +1,13 @@
 {
   "request": {
     "drug": "ivabradine",
-    "indicationFreeText": "PoTS / orthostatische Tachykardie",
-    "symptomsFreeText": "Belastungsintoleranz und Tachykardie bei Lagewechsel"
+    "symptomCluster": [
+      "orthostaticIntolerance",
+      "tachycardia",
+      "fatiguePem"
+    ],
+    "standardOfCareTriedFreeText": "Flüssigkeit, Salz, Kompressionsversorgung und Aktivitätsanpassung ohne ausreichende Stabilisierung.",
+    "hasDoctorSupport": true
   },
   "attachmentsFreeText": "Arztbrief vom 2026-01-15\nBefundbericht vom 2026-01-22"
 }

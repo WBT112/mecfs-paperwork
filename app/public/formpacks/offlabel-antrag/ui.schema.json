@@ -112,10 +112,9 @@
     "ui:title": "offlabel-antrag.section.request.title",
     "ui:order": [
       "drug",
-      "indicationFreeText",
-      "symptomsFreeText",
       "standardOfCareTriedFreeText",
-      "doctorRationaleFreeText"
+      "symptomCluster",
+      "hasDoctorSupport"
     ],
     "drug": {
       "ui:title": "offlabel-antrag.request.drug.label",
@@ -127,20 +126,10 @@
       ]
     },
     "indicationFreeText": {
-      "ui:title": "offlabel-antrag.request.indicationFreeText.label",
-      "ui:help": "offlabel-antrag.request.indicationFreeText.help",
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 6
-      }
+      "ui:widget": "hidden"
     },
     "symptomsFreeText": {
-      "ui:title": "offlabel-antrag.request.symptomsFreeText.label",
-      "ui:help": "offlabel-antrag.request.symptomsFreeText.help",
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 6
-      }
+      "ui:widget": "hidden"
     },
     "standardOfCareTriedFreeText": {
       "ui:title": "offlabel-antrag.request.standardOfCareTriedFreeText.label",
@@ -150,13 +139,25 @@
         "rows": 6
       }
     },
+    "symptomCluster": {
+      "ui:title": "offlabel-antrag.request.symptomCluster.label",
+      "ui:help": "offlabel-antrag.request.symptomCluster.help",
+      "ui:widget": "checkboxes",
+      "ui:enumNames": [
+        "offlabel-antrag.request.symptomCluster.option.fatiguePem",
+        "offlabel-antrag.request.symptomCluster.option.orthostaticIntolerance",
+        "offlabel-antrag.request.symptomCluster.option.tachycardia",
+        "offlabel-antrag.request.symptomCluster.option.cognitiveImpairment",
+        "offlabel-antrag.request.symptomCluster.option.depressiveSymptoms",
+        "offlabel-antrag.request.symptomCluster.option.sleepDisorder"
+      ]
+    },
+    "hasDoctorSupport": {
+      "ui:title": "offlabel-antrag.request.hasDoctorSupport.label",
+      "ui:help": "offlabel-antrag.request.hasDoctorSupport.help"
+    },
     "doctorRationaleFreeText": {
-      "ui:title": "offlabel-antrag.request.doctorRationaleFreeText.label",
-      "ui:help": "offlabel-antrag.request.doctorRationaleFreeText.help",
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 5
-      }
+      "ui:widget": "hidden"
     }
   },
   "severity": {

@@ -112,10 +112,7 @@ describe('applyDocxExportDefaults', () => {
       },
       request: {
         drug: '',
-        indicationFreeText: '',
-        symptomsFreeText: '',
         standardOfCareTriedFreeText: '',
-        doctorRationaleFreeText: '',
       },
       attachmentsFreeText: '',
       attachments: { items: [] },
@@ -154,10 +151,7 @@ describe('applyDocxExportDefaults', () => {
       },
       request: {
         drug: 'BITTE AUSWÄHLEN',
-        indicationFreeText: '—',
-        symptomsFreeText: '—',
         standardOfCareTriedFreeText: '—',
-        doctorRationaleFreeText: '—',
       },
       attachmentsFreeText: '—',
       attachments: { items: [] },
@@ -192,10 +186,7 @@ describe('applyDocxExportDefaults', () => {
       },
       request: {
         drug: 'ivabradine',
-        indicationFreeText: 'Existing indication',
-        symptomsFreeText: 'Existing symptoms',
         standardOfCareTriedFreeText: 'Existing prior care',
-        doctorRationaleFreeText: 'Existing rationale',
       },
       attachmentsFreeText: 'Existing attachment',
       attachments: { items: ['A'] },
