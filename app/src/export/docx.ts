@@ -12,6 +12,7 @@ import {
   getDoctorLetterExportDefaults,
   hasDoctorLetterDecisionAnswers,
 } from './doctorLetterDefaults';
+import { getOfflabelAntragExportDefaults } from './offlabelAntragDefaults';
 import {
   loadFormpackManifest,
   loadFormpackSchema,
@@ -92,6 +93,8 @@ const assertTemplateAllowed = (
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const DOCTOR_LETTER_FORMPACK_ID = 'doctor-letter';
+const OFFLABEL_ANTRAG_FORMPACK_ID = 'offlabel-antrag';
 const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
 const DOCX_LITERAL_DELIMITER = '§§DOCX_XML§§';
 // Session cache keeps DOCX assets available when the app is offline.
@@ -392,60 +395,175 @@ export const applyDocxExportDefaults = (
   sourceData?: Record<string, unknown>,
 ): DocxTemplateContext => {
   const normalized = cloneTemplateContext(context);
-  if (formpackId !== 'doctor-letter') {
+  if (
+    formpackId !== DOCTOR_LETTER_FORMPACK_ID &&
+    formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID
+  ) {
     return normalized;
   }
 
-  const defaults = getDoctorLetterExportDefaults(locale);
+  if (formpackId === DOCTOR_LETTER_FORMPACK_ID) {
+    const defaults = getDoctorLetterExportDefaults(locale);
 
-  applyDefaultForPath(
-    normalized,
-    'patient.firstName',
-    defaults.patient.firstName,
-  );
-  applyDefaultForPath(
-    normalized,
-    'patient.lastName',
-    defaults.patient.lastName,
-  );
-  applyDefaultForPath(
-    normalized,
-    'patient.streetAndNumber',
-    defaults.patient.streetAndNumber,
-  );
-  applyDefaultForPath(
-    normalized,
-    'patient.postalCode',
-    defaults.patient.postalCode,
-  );
-  applyDefaultForPath(normalized, 'patient.city', defaults.patient.city);
-
-  applyDefaultForPath(normalized, 'doctor.name', defaults.doctor.name);
-  applyDefaultForPath(
-    normalized,
-    'doctor.streetAndNumber',
-    defaults.doctor.streetAndNumber,
-  );
-  applyDefaultForPath(
-    normalized,
-    'doctor.postalCode',
-    defaults.doctor.postalCode,
-  );
-  applyDefaultForPath(normalized, 'doctor.city', defaults.doctor.city);
-
-  const shouldApplyDecisionFallback =
-    !sourceData || !hasDoctorLetterDecisionAnswers(sourceData);
-  if (shouldApplyDecisionFallback) {
-    setPathValue(
+    applyDefaultForPath(
       normalized,
-      'decision.caseText',
-      defaults.decision.fallbackCaseText,
+      'patient.firstName',
+      defaults.patient.firstName,
     );
-    setPathValue(normalized, 'decision.caseParagraphs', [
-      defaults.decision.fallbackCaseText,
-    ]);
+    applyDefaultForPath(
+      normalized,
+      'patient.lastName',
+      defaults.patient.lastName,
+    );
+    applyDefaultForPath(
+      normalized,
+      'patient.streetAndNumber',
+      defaults.patient.streetAndNumber,
+    );
+    applyDefaultForPath(
+      normalized,
+      'patient.postalCode',
+      defaults.patient.postalCode,
+    );
+    applyDefaultForPath(normalized, 'patient.city', defaults.patient.city);
+
+    applyDefaultForPath(normalized, 'doctor.name', defaults.doctor.name);
+    applyDefaultForPath(
+      normalized,
+      'doctor.streetAndNumber',
+      defaults.doctor.streetAndNumber,
+    );
+    applyDefaultForPath(
+      normalized,
+      'doctor.postalCode',
+      defaults.doctor.postalCode,
+    );
+    applyDefaultForPath(normalized, 'doctor.city', defaults.doctor.city);
+
+    const shouldApplyDecisionFallback =
+      !sourceData || !hasDoctorLetterDecisionAnswers(sourceData);
+    if (shouldApplyDecisionFallback) {
+      setPathValue(
+        normalized,
+        'decision.caseText',
+        defaults.decision.fallbackCaseText,
+      );
+      setPathValue(normalized, 'decision.caseParagraphs', [
+        defaults.decision.fallbackCaseText,
+      ]);
+    }
   }
 
+  if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
+    const defaults = getOfflabelAntragExportDefaults(locale);
+
+    applyDefaultForPath(
+      normalized,
+      'patient.firstName',
+      defaults.patient.firstName,
+    );
+    applyDefaultForPath(
+      normalized,
+      'patient.lastName',
+      defaults.patient.lastName,
+    );
+    applyDefaultForPath(
+      normalized,
+      'patient.birthDate',
+      defaults.patient.birthDate,
+    );
+    applyDefaultForPath(
+      normalized,
+      'patient.insuranceNumber',
+      defaults.patient.insuranceNumber,
+    );
+    applyDefaultForPath(
+      normalized,
+      'patient.streetAndNumber',
+      defaults.patient.streetAndNumber,
+    );
+    applyDefaultForPath(
+      normalized,
+      'patient.postalCode',
+      defaults.patient.postalCode,
+    );
+    applyDefaultForPath(normalized, 'patient.city', defaults.patient.city);
+
+    applyDefaultForPath(
+      normalized,
+      'doctor.practice',
+      defaults.doctor.practice,
+    );
+    applyDefaultForPath(normalized, 'doctor.name', defaults.doctor.name);
+    applyDefaultForPath(
+      normalized,
+      'doctor.streetAndNumber',
+      defaults.doctor.streetAndNumber,
+    );
+    applyDefaultForPath(
+      normalized,
+      'doctor.postalCode',
+      defaults.doctor.postalCode,
+    );
+    applyDefaultForPath(normalized, 'doctor.city', defaults.doctor.city);
+
+    applyDefaultForPath(normalized, 'insurer.name', defaults.insurer.name);
+    applyDefaultForPath(
+      normalized,
+      'insurer.department',
+      defaults.insurer.department,
+    );
+    applyDefaultForPath(
+      normalized,
+      'insurer.streetAndNumber',
+      defaults.insurer.streetAndNumber,
+    );
+    applyDefaultForPath(
+      normalized,
+      'insurer.postalCode',
+      defaults.insurer.postalCode,
+    );
+    applyDefaultForPath(normalized, 'insurer.city', defaults.insurer.city);
+
+    applyDefaultForPath(normalized, 'request.drug', defaults.request.drug);
+    applyDefaultForPath(
+      normalized,
+      'request.indicationFreeText',
+      defaults.request.indicationFreeText,
+    );
+    applyDefaultForPath(
+      normalized,
+      'request.symptomsFreeText',
+      defaults.request.symptomsFreeText,
+    );
+    applyDefaultForPath(
+      normalized,
+      'request.standardOfCareTriedFreeText',
+      defaults.request.standardOfCareTriedFreeText,
+    );
+    applyDefaultForPath(
+      normalized,
+      'request.doctorRationaleFreeText',
+      defaults.request.doctorRationaleFreeText,
+    );
+    applyDefaultForPath(
+      normalized,
+      'attachmentsFreeText',
+      defaults.attachmentsFreeText,
+    );
+  }
+
+  return normalized;
+};
+
+export const ensureExportedAtIso = (
+  context: DocxTemplateContext,
+  exportedAt: Date = new Date(),
+): DocxTemplateContext => {
+  const normalized = cloneTemplateContext(context);
+  if (getPathValue(normalized, 'exportedAtIso') === undefined) {
+    setPathValue(normalized, 'exportedAtIso', exportedAt.toISOString());
+  }
   return normalized;
 };
 
@@ -999,12 +1117,13 @@ export const exportDocx = async ({
     locale,
     record.data,
   );
+  const contextWithExportDate = ensureExportedAtIso(normalizedContext);
 
   const report = await createDocxReport(
     template,
-    normalizedContext,
+    contextWithExportDate,
     buildDocxAdditionalContext(formpackId, locale, {
-      t: isRecord(normalizedContext.t) ? normalizedContext.t : {},
+      t: isRecord(contextWithExportDate.t) ? contextWithExportDate.t : {},
     }),
   );
 

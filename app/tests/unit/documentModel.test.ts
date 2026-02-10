@@ -146,4 +146,88 @@ describe('formpacks/documentModel', () => {
     expect(result.diagnosisParagraphs).toEqual([]);
     expect(result.person.name).toBe('Bob');
   });
+
+  it('builds offlabel-antrag model with derived attachments', () => {
+    const formData: Record<string, unknown> = {
+      patient: {
+        firstName: 'Mara',
+        lastName: 'Example',
+        birthDate: '1990-04-12',
+        insuranceNumber: 'A123',
+        streetAndNumber: 'Road 1',
+        postalCode: '11111',
+        city: 'Town',
+      },
+      doctor: {
+        name: 'Dr. Example',
+        practice: 'Practice',
+        streetAndNumber: 'Doc Street 2',
+        postalCode: '22222',
+        city: 'Doc City',
+      },
+      insurer: {
+        name: 'Insurer',
+        department: 'Benefits',
+        streetAndNumber: 'Insurer Street 3',
+        postalCode: '33333',
+        city: 'Insurer City',
+      },
+      request: {
+        drug: 'ivabradine',
+        indicationFreeText: 'Indication text',
+        symptomsFreeText: 'Symptoms text',
+        standardOfCareTriedFreeText: 'Prior care text',
+        doctorRationaleFreeText: 'Doctor rationale',
+        doctorSupport: {
+          enabled: true,
+          doctorSignsPart1: false,
+        },
+      },
+      attachmentsFreeText:
+        ' - Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte\n\n',
+    };
+
+    const result = buildDocumentModel('offlabel-antrag', 'de', formData);
+
+    expect(result.patient).toMatchObject({
+      firstName: 'Mara',
+      lastName: 'Example',
+      birthDate: '12-04-1990',
+      insuranceNumber: 'A123',
+      streetAndNumber: 'Road 1',
+      postalCode: '11111',
+      city: 'Town',
+    });
+    expect(result.doctor).toMatchObject({
+      name: 'Dr. Example',
+      practice: 'Practice',
+      streetAndNumber: 'Doc Street 2',
+      postalCode: '22222',
+      city: 'Doc City',
+    });
+    expect(result.insurer).toEqual({
+      name: 'Insurer',
+      department: 'Benefits',
+      streetAndNumber: 'Insurer Street 3',
+      postalCode: '33333',
+      city: 'Insurer City',
+    });
+    expect(result.request).toEqual({
+      drug: 'ivabradine',
+      indicationFreeText: 'Indication text',
+      symptomsFreeText: 'Symptoms text',
+      standardOfCareTriedFreeText: 'Prior care text',
+      doctorRationaleFreeText: 'Doctor rationale',
+      doctorSupport: {
+        enabled: true,
+        doctorSignsPart1: false,
+      },
+    });
+    expect(result.attachmentsFreeText).toBe(
+      '- Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte',
+    );
+    expect(result.attachments).toEqual({
+      items: ['Arztbrief vom 2026-01-10', 'Befundbericht', 'Laborwerte'],
+    });
+  });
 });

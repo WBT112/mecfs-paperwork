@@ -46,9 +46,33 @@ export type DocumentModel = {
   patient?: {
     firstName: string | null;
     lastName: string | null;
+    birthDate?: string | null;
+    insuranceNumber?: string | null;
     streetAndNumber?: string | null;
     postalCode?: string | null;
     city?: string | null;
+  };
+  insurer?: {
+    name: string | null;
+    department?: string | null;
+    streetAndNumber?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+  };
+  request?: {
+    drug?: string | null;
+    indicationFreeText?: string | null;
+    symptomsFreeText?: string | null;
+    standardOfCareTriedFreeText?: string | null;
+    doctorRationaleFreeText?: string | null;
+    doctorSupport?: {
+      enabled?: boolean;
+      doctorSignsPart1?: boolean;
+    };
+  };
+  attachmentsFreeText?: string | null;
+  attachments?: {
+    items: string[];
   };
   decision?: {
     caseId: number;
@@ -109,6 +133,22 @@ const getRecordValue = (value: unknown): Record<string, unknown> | null =>
 
 const getArrayValue = (value: unknown): unknown[] =>
   Array.isArray(value) ? value : [];
+
+const parseAttachments = (value: string | null): string[] => {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(/\r?\n/)
+    .map((entry) =>
+      entry
+        .trim()
+        .replace(/^[-*•]\s+/, '')
+        .trim(),
+    )
+    .filter((entry) => entry.length > 0);
+};
 
 const buildBaseDocumentModel = (
   formData: Record<string, unknown>,
@@ -283,6 +323,67 @@ const buildNotfallpassModel = (
   return { diagnosisParagraphs, ...baseModel };
 };
 
+const buildOfflabelAntragModel = (
+  formData: Record<string, unknown>,
+  _locale: SupportedLocale,
+  baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
+): DocumentModel => {
+  const patient = getRecordValue(formData.patient);
+  const doctor = getRecordValue(formData.doctor);
+  const insurer = getRecordValue(formData.insurer);
+  const request = getRecordValue(formData.request);
+  const doctorSupport = getRecordValue(request?.doctorSupport);
+  const attachmentsFreeText = getStringValue(formData.attachmentsFreeText);
+
+  return {
+    diagnosisParagraphs: [],
+    ...baseModel,
+    patient: {
+      firstName: getStringValue(patient?.firstName),
+      lastName: getStringValue(patient?.lastName),
+      birthDate: formatBirthDate(getStringValue(patient?.birthDate)),
+      insuranceNumber: getStringValue(patient?.insuranceNumber),
+      streetAndNumber: getStringValue(patient?.streetAndNumber),
+      postalCode: getStringValue(patient?.postalCode),
+      city: getStringValue(patient?.city),
+    },
+    doctor: {
+      ...baseModel.doctor,
+      practice: getStringValue(doctor?.practice),
+      title: getStringValue(doctor?.title),
+      gender: getStringValue(doctor?.gender),
+      name: getStringValue(doctor?.name),
+      streetAndNumber: getStringValue(doctor?.streetAndNumber),
+      postalCode: getStringValue(doctor?.postalCode),
+      city: getStringValue(doctor?.city),
+    },
+    insurer: {
+      name: getStringValue(insurer?.name),
+      department: getStringValue(insurer?.department),
+      streetAndNumber: getStringValue(insurer?.streetAndNumber),
+      postalCode: getStringValue(insurer?.postalCode),
+      city: getStringValue(insurer?.city),
+    },
+    request: {
+      drug: getStringValue(request?.drug),
+      indicationFreeText: getStringValue(request?.indicationFreeText),
+      symptomsFreeText: getStringValue(request?.symptomsFreeText),
+      standardOfCareTriedFreeText: getStringValue(
+        request?.standardOfCareTriedFreeText,
+      ),
+      doctorRationaleFreeText: getStringValue(request?.doctorRationaleFreeText),
+      doctorSupport: {
+        enabled: doctorSupport?.enabled === true,
+        doctorSignsPart1: doctorSupport?.doctorSignsPart1 === true,
+      },
+    },
+    attachmentsFreeText,
+    attachments: {
+      items: parseAttachments(attachmentsFreeText),
+    },
+  };
+};
+
 /**
  * Builds a document projection for exports using formpack i18n content.
  */
@@ -303,6 +404,10 @@ export const buildDocumentModel = (
 
   if (formpackId === 'notfallpass') {
     return buildNotfallpassModel(formData, locale, baseModel);
+  }
+
+  if (formpackId === 'offlabel-antrag') {
+    return buildOfflabelAntragModel(formData, locale, baseModel);
   }
 
   return { diagnosisParagraphs: [], ...baseModel };
