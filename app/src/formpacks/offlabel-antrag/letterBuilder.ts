@@ -56,13 +56,10 @@ type OfflabelAntragBundleInput = {
     symptomsFreeText?: string | null;
     standardOfCareTriedFreeText?: string | null;
     doctorRationaleFreeText?: string | null;
-    doctorSupport?: {
-      enabled?: boolean;
-    };
   };
   export?: {
-    includeDoctorCoverLetter?: boolean;
     includeSources?: boolean;
+    includeSection2Abs1a?: boolean;
   };
   attachmentsFreeText?: string | null;
   attachments?: {
@@ -75,7 +72,6 @@ type BuildOfflabelAntragExportBundleArgs = {
   documentModel: OfflabelAntragBundleInput;
   defaults?: OfflabelAntragExportDefaults;
   exportedAt?: Date;
-  includeDoctorCoverLetter?: boolean;
 };
 
 type BuildLetterContext = {
@@ -112,7 +108,6 @@ export const buildPart1KkLetter = ({
 }: BuildLetterContext): OfflabelAntragLetter => {
   const projected = buildOffLabelAntragDocumentModel(model, locale, {
     exportedAt,
-    includeDoctorCoverLetter: false,
   });
   return toLegacyLetter(projected.kk);
 };
@@ -124,9 +119,8 @@ export const buildPart2DoctorLetter = ({
 }: BuildLetterContext): OfflabelAntragLetter => {
   const projected = buildOffLabelAntragDocumentModel(model, locale, {
     exportedAt,
-    includeDoctorCoverLetter: true,
   });
-  return toLegacyLetter(projected.arzt ?? projected.kk);
+  return toLegacyLetter(projected.arzt);
 };
 
 export const buildOfflabelAntragExportBundle = ({
@@ -134,10 +128,8 @@ export const buildOfflabelAntragExportBundle = ({
   documentModel,
   defaults,
   exportedAt = new Date(),
-  includeDoctorCoverLetter,
 }: BuildOfflabelAntragExportBundleArgs): OfflabelAntragExportBundle =>
   buildOffLabelAntragDocumentModel(documentModel, locale, {
     defaults,
     exportedAt,
-    includeDoctorCoverLetter,
   }).exportBundle;

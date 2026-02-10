@@ -96,16 +96,6 @@
         },
         "doctorRationaleFreeText": {
           "type": "string"
-        },
-        "doctorSupport": {
-          "type": "object",
-          "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": true
-            }
-          },
-          "additionalProperties": false
         }
       },
       "additionalProperties": false
@@ -188,13 +178,13 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "includeDoctorCoverLetter": {
-          "type": "boolean",
-          "default": true
-        },
         "includeSources": {
           "type": "boolean",
           "default": true
+        },
+        "includeSection2Abs1a": {
+          "type": "boolean",
+          "default": false
         }
       }
     },

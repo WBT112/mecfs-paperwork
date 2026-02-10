@@ -70,17 +70,14 @@ export type DocumentModel = {
     symptomsFreeText?: string | null;
     standardOfCareTriedFreeText?: string | null;
     doctorRationaleFreeText?: string | null;
-    doctorSupport?: {
-      enabled?: boolean;
-    };
   };
   attachmentsFreeText?: string | null;
   attachments?: {
     items: string[];
   };
   export?: {
-    includeDoctorCoverLetter?: boolean;
     includeSources?: boolean;
+    includeSection2Abs1a?: boolean;
   };
   kk?: OffLabelLetterSection;
   arzt?: OffLabelLetterSection;

@@ -46,9 +46,6 @@ describe('buildOffLabelAntragDocumentModel', () => {
         request: {
           drug: 'ivabradine',
           symptomsFreeText: 'orthostatische Tachykardie',
-          doctorSupport: {
-            enabled: true,
-          },
         },
         attachmentsFreeText: '- Arztbrief\n• Befundbericht',
       },
@@ -65,34 +62,32 @@ describe('buildOffLabelAntragDocumentModel', () => {
     ]);
     expect(model.arzt).toBeDefined();
     expect(
-      model.arzt?.paragraphs.some((paragraph) =>
+      model.arzt.paragraphs.some((paragraph) =>
         paragraph.includes('ENTWURF - Ärztliche Stellungnahme'),
       ),
     ).toBe(true);
     expect(
-      model.arzt?.paragraphs.some((paragraph) =>
+      model.arzt.paragraphs.some((paragraph) =>
         paragraph.includes('Initial 2,5 mg zweimal täglich'),
       ),
     ).toBe(true);
-    expect(model.arzt?.attachments[0]).toBe(
+    expect(model.arzt.attachments[0]).toBe(
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
     );
-    expect(model.sources).toHaveLength(5);
+    expect(model.sources).toHaveLength(2);
+    expect(model.sources[1]).toContain('Bewertung Ivabradin');
     expect(model.hasSources).toBe('1');
     expect(model.hasPart2).toBe('1');
+    expect(model.kk.attachments).toContain(
+      'Expertengruppe Long COVID Off-Label-Use beim BfArM: Bewertung Ivabradin (Stand 10.11.2025).',
+    );
   });
 
   it('always keeps part 2 but allows disabling sources', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         export: {
-          includeDoctorCoverLetter: false,
           includeSources: false,
-        },
-        request: {
-          doctorSupport: {
-            enabled: true,
-          },
         },
         attachmentsFreeText: 'Labor',
       },
@@ -105,6 +100,30 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.hasSources).toBe('');
     expect(model.sources).toEqual([]);
     expect(model.kk.attachments).toEqual(['Labor']);
+  });
+
+  it('adds section 2(1a) paragraph and LSG source only when enabled', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'agomelatin',
+        },
+        export: {
+          includeSources: true,
+          includeSection2Abs1a: true,
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(
+      model.kk.paragraphs.some((paragraph) =>
+        paragraph.includes('§ 2 Abs. 1a'),
+      ),
+    ).toBe(true);
+    expect(model.sources).toHaveLength(3);
+    expect(model.sources[2]).toContain('LSG Niedersachsen-Bremen');
   });
 
   it('parses attachments from free text lines', () => {

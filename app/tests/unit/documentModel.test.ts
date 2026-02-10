@@ -211,9 +211,6 @@ describe('formpacks/documentModel', () => {
         symptomsFreeText: 'Symptoms text',
         standardOfCareTriedFreeText: 'Prior care text',
         doctorRationaleFreeText: 'Doctor rationale',
-        doctorSupport: {
-          enabled: true,
-        },
       },
       attachmentsFreeText:
         ' - Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte\n\n',
@@ -250,9 +247,6 @@ describe('formpacks/documentModel', () => {
       symptomsFreeText: 'Symptoms text',
       standardOfCareTriedFreeText: 'Prior care text',
       doctorRationaleFreeText: 'Doctor rationale',
-      doctorSupport: {
-        enabled: true,
-      },
     });
     expect(result.attachmentsFreeText).toBe(
       '- Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte',
@@ -261,8 +255,8 @@ describe('formpacks/documentModel', () => {
       items: ['Arztbrief vom 2026-01-10', 'Befundbericht', 'Laborwerte'],
     });
     expect(result.export).toEqual({
-      includeDoctorCoverLetter: true,
       includeSources: true,
+      includeSection2Abs1a: false,
     });
     expect(result.kk?.subject).toContain('Ivabradin');
     expect(result.hasPart2).toBe('1');

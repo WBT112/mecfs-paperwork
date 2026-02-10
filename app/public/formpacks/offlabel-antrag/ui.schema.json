@@ -115,8 +115,7 @@
       "indicationFreeText",
       "symptomsFreeText",
       "standardOfCareTriedFreeText",
-      "doctorRationaleFreeText",
-      "doctorSupport"
+      "doctorRationaleFreeText"
     ],
     "drug": {
       "ui:title": "offlabel-antrag.request.drug.label",
@@ -157,14 +156,6 @@
       "ui:widget": "textarea",
       "ui:options": {
         "rows": 5
-      }
-    },
-    "doctorSupport": {
-      "ui:title": "offlabel-antrag.section.doctorSupport.title",
-      "ui:description": "offlabel-antrag.section.doctorSupport.help",
-      "ui:order": ["enabled"],
-      "enabled": {
-        "ui:widget": "hidden"
       }
     }
   },
@@ -228,16 +219,14 @@
   },
   "export": {
     "ui:title": "offlabel-antrag.section.export.title",
-    "ui:order": [
-      "includeDoctorCoverLetter",
-      "includeSources"
-    ],
-    "includeDoctorCoverLetter": {
-      "ui:widget": "hidden"
-    },
+    "ui:order": ["includeSources", "includeSection2Abs1a"],
     "includeSources": {
       "ui:title": "offlabel-antrag.fields.export.includeSources.label",
       "ui:help": "offlabel-antrag.fields.export.includeSources.help"
+    },
+    "includeSection2Abs1a": {
+      "ui:title": "offlabel-antrag.fields.export.includeSection2Abs1a.label",
+      "ui:help": "offlabel-antrag.fields.export.includeSection2Abs1a.help"
     }
   },
   "attachmentsFreeText": {

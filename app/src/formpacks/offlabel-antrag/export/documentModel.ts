@@ -74,20 +74,17 @@ export type OffLabelAntragDocumentModel = {
     symptomsFreeText: string;
     standardOfCareTriedFreeText: string;
     doctorRationaleFreeText: string;
-    doctorSupport: {
-      enabled: boolean;
-    };
   };
   export: {
-    includeDoctorCoverLetter: boolean;
     includeSources: boolean;
+    includeSection2Abs1a: boolean;
   };
   attachmentsFreeText: string;
   attachments: {
     items: string[];
   };
   kk: OffLabelLetterSection;
-  arzt?: OffLabelLetterSection;
+  arzt: OffLabelLetterSection;
   hasPart2: string;
   hasSources: string;
   sourcesHeading: string;
@@ -99,8 +96,8 @@ export type OffLabelAntragDocumentModel = {
 type BuildOptions = {
   exportedAt?: Date;
   defaults?: OfflabelAntragExportDefaults;
-  includeDoctorCoverLetter?: boolean;
   includeSources?: boolean;
+  includeSection2Abs1a?: boolean;
 };
 
 type KnownDrug = 'agomelatin' | 'ivabradine' | 'vortioxetine';
@@ -151,30 +148,30 @@ const MEDICATION_PARAGRAPH_SPECS: Record<KnownDrug, MedicationParagraphSpec[]> =
       {
         key: 'offlabel-antrag.export.medication.agomelatin.p1',
         defaultValue:
-          'BfArM evaluates agomelatine in the long/post-COVID context and explicitly references fatigue in post-infectious ME/CFS.',
+          'The Expert Group Long COVID Off-Label Use at BfArM describes agomelatine as an option for depressive symptoms and/or sleep disorders in the long/post-COVID context.',
       },
       {
         key: 'offlabel-antrag.export.medication.agomelatin.p2',
         defaultValue:
-          'The treatment goal is a meaningful improvement in {{targetSymptoms}}, especially fatigue and sleep-wake regulation. Planned use: 25 mg in the evening with an optional increase to 50 mg after medical review.',
+          'Planned dosing follows the expert-group assessment (e.g. 25 mg in the evening; escalation to 50 mg where clinically indicated).',
         options: ({ targetSymptoms }) => ({ targetSymptoms }),
       },
       {
         key: 'offlabel-antrag.export.medication.agomelatin.p3',
         defaultValue:
-          'Safety and monitoring include liver function checks according to product information, contraindications, and interaction checks.',
+          'Monitoring: liver values according to product information/recommendations; review adverse effects and interactions.',
       },
     ],
     ivabradine: [
       {
         key: 'offlabel-antrag.export.medication.ivabradine.p1',
         defaultValue:
-          'BfArM evaluates ivabradine for long/post-COVID associated PoTS in adults, especially when beta blockers are not tolerated or not appropriate.',
+          'In the assessment of the Expert Group Long COVID Off-Label Use at BfArM, ivabradine is described as an option in post-infectious PoTS (long/post-COVID), especially when beta blockers are not tolerated or not suitable.',
       },
       {
         key: 'offlabel-antrag.export.medication.ivabradine.p2',
         defaultValue:
-          'The treatment goal is reduced orthostatic tachycardia and a meaningful improvement in {{targetSymptoms}} in {{diagnosisPots}}. Planned use: gradual titration (e.g. 2.5 mg twice daily) with clinical adjustments.',
+          'Planned dosing follows the expert-group assessment: initial 2.5 mg in the morning; escalation in 2.5 mg steps up to 5 mg twice daily (with pulse control in supine and standing position).',
         options: ({ targetSymptoms, diagnosisPots }) => ({
           targetSymptoms,
           diagnosisPots,
@@ -183,25 +180,25 @@ const MEDICATION_PARAGRAPH_SPECS: Record<KnownDrug, MedicationParagraphSpec[]> =
       {
         key: 'offlabel-antrag.export.medication.ivabradine.p3',
         defaultValue:
-          'Safety and monitoring include pulse/blood pressure, ECG where indicated, and review of contraindications and interactions.',
+          'Monitoring: pulse/blood pressure, ECG where indicated; review interactions/contraindications. Pregnancy is contraindicated.',
       },
     ],
     vortioxetine: [
       {
         key: 'offlabel-antrag.export.medication.vortioxetine.p1',
         defaultValue:
-          'BfArM evaluates vortioxetine in the long/post-COVID context for cognitive impairment and/or depressive symptoms.',
+          'In the assessment of the Expert Group Long COVID Off-Label Use at BfArM, vortioxetine is described as an option for depressive symptoms and/or cognitive impairment related to long/post-COVID.',
       },
       {
         key: 'offlabel-antrag.export.medication.vortioxetine.p2',
         defaultValue:
-          'The treatment goal is a meaningful improvement in {{targetSymptoms}}, especially cognitive impairment (brain fog) and/or depressive symptoms. Planned use: gradual dosing (e.g. 5 mg daily start) with benefit evaluation after around 12 weeks.',
+          'Planned dosing follows the expert-group assessment: start at 5 mg daily; increase to 10 mg after one week; maximum 20 mg daily. Evaluate effectiveness after about 12 weeks.',
         options: ({ targetSymptoms }) => ({ targetSymptoms }),
       },
       {
         key: 'offlabel-antrag.export.medication.vortioxetine.p3',
         defaultValue:
-          'Safety and monitoring include adverse effects, contraindications, interactions, and close medical follow-up; local market availability should be considered.',
+          'Note: clarify local availability/import where required. Monitoring: adverse effects/interactions and follow-up with symptom scoring.',
       },
     ],
   };
@@ -270,6 +267,15 @@ const MEDICATION_STATEMENT_DEFAULTS: Record<
     monitoringText:
       'Clinical monitoring of adverse effects, tolerability and efficacy; consider interaction and serotonergic risk.',
   },
+};
+
+const EXPERT_SOURCE_DEFAULTS: Record<KnownDrug, string> = {
+  agomelatin:
+    'Expert Group Long COVID Off-Label Use at BfArM: agomelatine assessment (status 2025-12-08).',
+  ivabradine:
+    'Expert Group Long COVID Off-Label Use at BfArM: ivabradine assessment (status 2025-11-10).',
+  vortioxetine:
+    'Expert Group Long COVID Off-Label Use at BfArM: vortioxetine assessment (status 2025-11-10).',
 };
 
 const getT = (locale: SupportedLocale): I18nT =>
@@ -540,6 +546,7 @@ const buildKkParagraphs = ({
   doctorRationale,
   medicationParagraphs,
   patientName,
+  includeSection2Abs1a,
 }: {
   t: I18nT;
   drugName: string;
@@ -551,58 +558,62 @@ const buildKkParagraphs = ({
   doctorRationale: string;
   medicationParagraphs: string[];
   patientName: string;
+  includeSection2Abs1a: boolean;
 }): string[] => [
   tr(
     t,
     'offlabel-antrag.export.part1.p1',
-    'I hereby request cost coverage / authorization of a prescribed off-label use of {{drugName}} ({{drugSubstance}}) for symptoms related to {{diagnosisMain}}.',
+    'I hereby request case-by-case cost coverage for a prescribed off-label use of {{drugName}} (active substance: {{drugSubstance}}) for symptoms related to {{diagnosisMain}}.',
     { drugName, drugSubstance, diagnosisMain },
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p2',
-    'The disease causes a sustained and substantial impairment in quality of life and daily functioning. {{severitySummary}} (Supporting documents are listed in the attachments.)',
+    'The disease causes a persistent and substantial impairment of quality of life and daily functioning: {{severitySummary}}. Supporting documents are listed in the attachments.',
     { severitySummary },
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p3',
-    'There is currently no generally accepted causal standard therapy for {{diagnosisMain}}; routine care is mainly symptom-oriented.',
-    { diagnosisMain },
+    'No causal therapy is currently available. Care is predominantly symptom-oriented; established measures have been exhausted where possible, were insufficient, or were not tolerated (see prior treatment approaches).',
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p4',
-    'Based on off-label appraisal criteria (serious disease, no standard treatment alternative, indication-based evidence of benefit with acceptable risk), I kindly request a positive individual decision.',
+    'Based on a summary assessment, the requested off-label use meets the criteria described in case law and in Medical Service appraisal standards (including serious disease, missing standard therapy/no sufficient alternative, and a justified prospect of treatment benefit).',
   ),
-  tr(
-    t,
-    'offlabel-antrag.export.part1.p5',
-    'Section 2(1a) SGB V should also be considered where a comparably severe disease exists and no standard benefit is available. Relevant case law has treated severe ME/CFS as a meaningful basis in this context.',
-  ),
+  ...(includeSection2Abs1a
+    ? [
+        tr(
+          t,
+          'offlabel-antrag.export.part1.p5',
+          'Additionally, case-by-case benefits under Section 2(1a) SGB V may be relevant in severe disease courses with missing sufficient standard options.',
+        ),
+      ]
+    : []),
   tr(
     t,
     'offlabel-antrag.export.part1.p6',
-    'Previously attempted/exhausted treatment approaches (excerpt): {{triedTreatments}} Sustainable symptom control could not be achieved, or measures were not tolerated.',
+    'Previous treatment approaches (excerpt): {{triedTreatments}}',
     { triedTreatments },
   ),
   ...medicationParagraphs,
   tr(
     t,
     'offlabel-antrag.export.part1.p7',
-    'Further target symptoms/burden: {{targetSymptoms}}',
+    'Target symptoms addressed by this request: {{targetSymptoms}}.',
     { targetSymptoms },
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p8',
-    'Medical rationale/monitoring (additional): {{doctorRationale}}',
+    'Medical rationale (short version): {{doctorRationale}}.',
     { doctorRationale },
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p9',
-    'I kindly request a timely written decision (appealable formal notice). I am available for follow-up questions or additional documents.',
+    'I kindly request a timely written decision. My treating practice is available for follow-up questions.',
   ),
   tr(t, 'offlabel-antrag.export.part1.p10', 'Sincerely,'),
   patientName,
@@ -838,7 +849,7 @@ const buildArztParagraphs = ({
     tr(
       t,
       'offlabel-antrag.export.part2.statement.p4',
-      'For symptomatic treatment, off-label therapy with {{drugName}} ({{drugSubstance}}) is requested, treatment goal: {{targetSymptoms}}. The indication rationale references BfArM expert group long-COVID off-label documentation.',
+      'For symptomatic treatment, off-label therapy with {{drugName}} ({{drugSubstance}}) is requested, treatment goal: {{targetSymptoms}}. The indication rationale references the documentation of the Expert Group Long COVID Off-Label Use at BfArM.',
       {
         drugName,
         drugSubstance,
@@ -868,48 +879,67 @@ const buildArztParagraphs = ({
   ];
 };
 
-const getSourceItems = (t: I18nT): string[] => [
-  tr(
+const getExpertSourceForDrug = (
+  t: I18nT,
+  drug: KnownDrug | null,
+): string | null => {
+  if (!drug) {
+    return null;
+  }
+
+  return tr(
     t,
-    'offlabel-antrag.export.sources.item1',
-    'MD Bund, appraisal guideline “Hinweise zum Off-Label-Use”, status 2024-06-24.',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.sources.item2',
-    'BfArM, expert group long-COVID off-label use: agomelatine assessment (status 2025-10-15).',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.sources.item3',
-    'BfArM, expert group long-COVID off-label use: ivabradine assessment (status 2025-10-15).',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.sources.item4',
-    'BfArM, expert group long-COVID off-label use: vortioxetine assessment (status 2025-10-15).',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.sources.item5',
-    'LSG Niedersachsen-Bremen, interim decision on ME/CFS and Section 2(1a) SGB V.',
-  ),
-];
+    `offlabel-antrag.export.sources.expert.${drug}`,
+    EXPERT_SOURCE_DEFAULTS[drug],
+  );
+};
+
+const getSourceItems = (
+  t: I18nT,
+  drug: KnownDrug | null,
+  includeSection2Abs1a: boolean,
+): string[] => {
+  const sources: string[] = [
+    tr(
+      t,
+      'offlabel-antrag.export.sources.md',
+      'MD Bund, appraisal guideline "Hinweise zum Off-Label-Use", status 2024-06-24.',
+    ),
+  ];
+
+  const expertSource = getExpertSourceForDrug(t, drug);
+  if (expertSource) {
+    sources.push(expertSource);
+  }
+
+  if (includeSection2Abs1a) {
+    sources.push(
+      tr(
+        t,
+        'offlabel-antrag.export.sources.lsg',
+        'LSG Niedersachsen-Bremen, interim decision on ME/CFS and Section 2(1a) SGB V.',
+      ),
+    );
+  }
+
+  return sources;
+};
 
 const resolveExportFlags = (
   formData: Record<string, unknown>,
   options: BuildOptions,
 ) => {
-  // RATIONALE: Cover letter part 2 is always generated. Legacy toggle values
-  // are intentionally ignored to keep exports deterministic.
-  const includeDoctorCoverLetter = true;
   const exportRecord = getRecordValue(formData.export);
   const includeSources =
     options.includeSources ??
     getBooleanValue(exportRecord?.includeSources) ??
     true;
+  const includeSection2Abs1a =
+    options.includeSection2Abs1a ??
+    getBooleanValue(exportRecord?.includeSection2Abs1a) ??
+    false;
 
-  return { includeDoctorCoverLetter, includeSources };
+  return { includeSources, includeSection2Abs1a };
 };
 
 const resolveLocalizedDrug = (
@@ -1003,8 +1033,8 @@ const buildPatientSignature = (
 const buildSectionAttachments = (
   t: I18nT,
   attachmentsItems: string[],
-  includeSources: boolean,
   includePart1AutoItem: boolean,
+  expertSourceAttachment: string | null,
 ): string[] => [
   ...(includePart1AutoItem
     ? [
@@ -1016,15 +1046,7 @@ const buildSectionAttachments = (
       ]
     : []),
   ...attachmentsItems,
-  ...(includeSources
-    ? [
-        tr(
-          t,
-          'offlabel-antrag.export.defaults.sourcesAttachment',
-          'Source block (see sources)',
-        ),
-      ]
-    : []),
+  ...(expertSourceAttachment ? [expertSourceAttachment] : []),
 ];
 
 const toLegacyLetter = (
@@ -1058,7 +1080,7 @@ export const buildOffLabelAntragDocumentModel = (
   const insurerRecord = getRecordValue(formData.insurer);
   const requestRecord = getRecordValue(formData.request);
 
-  const { includeDoctorCoverLetter, includeSources } = resolveExportFlags(
+  const { includeSources, includeSection2Abs1a } = resolveExportFlags(
     formData,
     options,
   );
@@ -1109,9 +1131,6 @@ export const buildOffLabelAntragDocumentModel = (
       'standardOfCareTriedFreeText',
       'doctorRationaleFreeText',
     ] as const),
-    doctorSupport: {
-      enabled: true,
-    },
   };
 
   const rawAttachmentsFreeText = getStringValue(formData.attachmentsFreeText);
@@ -1120,7 +1139,12 @@ export const buildOffLabelAntragDocumentModel = (
     defaults.attachmentsFreeText,
   );
   const attachmentsItems = parseOfflabelAttachments(rawAttachmentsFreeText);
-  const sources = includeSources ? getSourceItems(t) : [];
+  const expertSourceAttachment = includeSources
+    ? getExpertSourceForDrug(t, knownDrug)
+    : null;
+  const sources = includeSources
+    ? getSourceItems(t, knownDrug, includeSection2Abs1a)
+    : [];
 
   const patientName = buildPatientName(patient);
   const dateLine = getDateLine(locale, patient.city, exportedAt);
@@ -1151,8 +1175,8 @@ export const buildOffLabelAntragDocumentModel = (
   const kkAttachments = buildSectionAttachments(
     t,
     attachmentsItems,
-    includeSources,
     false,
+    expertSourceAttachment,
   );
 
   const attachmentsHeading = tr(
@@ -1185,6 +1209,7 @@ export const buildOffLabelAntragDocumentModel = (
       doctorRationale: request.doctorRationaleFreeText,
       medicationParagraphs,
       patientName,
+      includeSection2Abs1a,
     }),
     attachmentsHeading,
     attachments: kkAttachments,
@@ -1194,49 +1219,44 @@ export const buildOffLabelAntragDocumentModel = (
   const arztAttachments = buildSectionAttachments(
     t,
     attachmentsItems,
-    includeSources,
     true,
+    expertSourceAttachment,
   );
 
-  const arzt: OffLabelLetterSection | undefined = includeDoctorCoverLetter
-    ? {
-        senderLines: buildPatientSenderLines(patientName, patient),
-        addresseeLines: buildAddressLines(
-          [doctor.practice, doctor.name],
-          doctor,
-        ),
-        dateLine,
-        subject: tr(
-          t,
-          'offlabel-antrag.export.part2.subject',
-          'Cover letter for off-label application (part 1) - request for support',
-        ),
-        paragraphs: buildArztParagraphs({
-          t,
-          patientName,
-          patientBirthDate: patient.birthDate,
-          doctorName: doctor.name,
-          diagnosisMain,
-          diagnosisIcdList,
-          targetSymptoms: request.symptomsFreeText,
-          severitySummary,
-          severityHighlights,
-          priorTreatments: request.standardOfCareTriedFreeText,
-          drugName,
-          drugSubstance,
-          knownDrug,
-          dateLine,
-        }),
-        attachmentsHeading,
-        attachments: arztAttachments,
-        signatureBlocks: [buildPatientSignature(t, patientName)],
-      }
-    : undefined;
+  const arzt: OffLabelLetterSection = {
+    senderLines: buildPatientSenderLines(patientName, patient),
+    addresseeLines: buildAddressLines([doctor.practice, doctor.name], doctor),
+    dateLine,
+    subject: tr(
+      t,
+      'offlabel-antrag.export.part2.subject',
+      'Cover letter for off-label application (part 1) - request for support',
+    ),
+    paragraphs: buildArztParagraphs({
+      t,
+      patientName,
+      patientBirthDate: patient.birthDate,
+      doctorName: doctor.name,
+      diagnosisMain,
+      diagnosisIcdList,
+      targetSymptoms: request.symptomsFreeText,
+      severitySummary,
+      severityHighlights,
+      priorTreatments: request.standardOfCareTriedFreeText,
+      drugName,
+      drugSubstance,
+      knownDrug,
+      dateLine,
+    }),
+    attachmentsHeading,
+    attachments: arztAttachments,
+    signatureBlocks: [buildPatientSignature(t, patientName)],
+  };
 
   const exportBundle: OffLabelExportBundle = {
     exportedAtIso: exportedAt.toISOString(),
     part1: toLegacyLetter(kk),
-    ...(arzt ? { part2: toLegacyLetter(arzt) } : {}),
+    part2: toLegacyLetter(arzt),
   };
 
   return {
@@ -1245,16 +1265,16 @@ export const buildOffLabelAntragDocumentModel = (
     insurer,
     request,
     export: {
-      includeDoctorCoverLetter,
       includeSources,
+      includeSection2Abs1a,
     },
     attachmentsFreeText,
     attachments: {
       items: attachmentsItems,
     },
     kk,
-    ...(arzt ? { arzt } : {}),
-    hasPart2: includeDoctorCoverLetter ? '1' : '',
+    arzt,
+    hasPart2: '1',
     hasSources: includeSources ? '1' : '',
     sourcesHeading: tr(t, 'offlabel-antrag.export.sourcesHeading', 'Sources'),
     sources,

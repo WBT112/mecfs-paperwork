@@ -31,15 +31,12 @@ vi.mock('../../src/i18n', () => ({
 }));
 
 describe('offlabel-antrag letter builder', () => {
-  it('always creates part 2 even when legacy support toggle is false', () => {
+  it('always creates part 2', () => {
     const bundle = buildOfflabelAntragExportBundle({
       locale: 'de',
       documentModel: {
         request: {
           drug: '',
-          doctorSupport: {
-            enabled: false,
-          },
         },
       },
       exportedAt: FIXED_EXPORTED_AT,
@@ -55,16 +52,10 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.subject).toContain('BITTE AUSWÄHLEN');
   });
 
-  it('creates part 2 when doctor support is enabled and no explicit export flag is set', () => {
+  it('creates part 2 and references part 1', () => {
     const bundle = buildOfflabelAntragExportBundle({
       locale: 'de',
-      documentModel: {
-        request: {
-          doctorSupport: {
-            enabled: true,
-          },
-        },
-      },
+      documentModel: {},
       exportedAt: FIXED_EXPORTED_AT,
     });
 
@@ -90,11 +81,6 @@ describe('offlabel-antrag letter builder', () => {
         doctor: {
           name: 'Dr. Med. Hausarzt',
           practice: 'Praxis Nord',
-        },
-        request: {
-          doctorSupport: {
-            enabled: true,
-          },
         },
       },
       exportedAt: FIXED_EXPORTED_AT,
@@ -124,11 +110,6 @@ describe('offlabel-antrag letter builder', () => {
     const bundle = buildOfflabelAntragExportBundle({
       locale: 'de',
       documentModel: {
-        request: {
-          doctorSupport: {
-            enabled: true,
-          },
-        },
         attachmentsFreeText: ' - Arztbrief vom 01.01.2026\n• Befundbericht\n\n',
       },
       exportedAt: FIXED_EXPORTED_AT,
@@ -137,17 +118,37 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.attachmentsItems).toEqual([
       'Arztbrief vom 01.01.2026',
       'Befundbericht',
-      'Quellenblock (siehe Quellen)',
     ]);
     expect(bundle.part2?.attachmentsItems).toEqual([
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
       'Arztbrief vom 01.01.2026',
       'Befundbericht',
-      'Quellenblock (siehe Quellen)',
     ]);
   });
 
-  it('uses default fallback values and ignores legacy includeDoctorCoverLetter=false', () => {
+  it('adds only the selected drug expert source as attachment', () => {
+    const bundle = buildOfflabelAntragExportBundle({
+      locale: 'de',
+      documentModel: {
+        request: {
+          drug: 'vortioxetine',
+        },
+      },
+      exportedAt: FIXED_EXPORTED_AT,
+    });
+
+    expect(bundle.part1.attachmentsItems).toContain(
+      'Expertengruppe Long COVID Off-Label-Use beim BfArM: Bewertung Vortioxetin (Stand 10.11.2025).',
+    );
+    expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
+      'Bewertung Ivabradin',
+    );
+    expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
+      'Bewertung Agomelatin',
+    );
+  });
+
+  it('uses default fallback values', () => {
     const bundle = buildOfflabelAntragExportBundle({
       locale: 'en',
       documentModel: {
@@ -163,12 +164,6 @@ describe('offlabel-antrag letter builder', () => {
         },
         request: {
           indicationFreeText: '',
-          doctorSupport: {
-            enabled: true,
-          },
-        },
-        export: {
-          includeDoctorCoverLetter: false,
         },
       },
       exportedAt: FIXED_EXPORTED_AT,
