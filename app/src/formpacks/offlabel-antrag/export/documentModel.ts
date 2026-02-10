@@ -187,6 +187,25 @@ const withFallback = (
   return trimmed.length > 0 ? trimmed : fallback;
 };
 
+const withDefaultStringField = (
+  record: Record<string, unknown> | null,
+  field: string,
+  fallback: string,
+): string => withFallback(getStringValue(record?.[field]), fallback);
+
+const resolveStringFields = <FieldName extends string>(
+  record: Record<string, unknown> | null,
+  defaults: Record<FieldName, string>,
+  fields: readonly FieldName[],
+): Record<FieldName, string> =>
+  fields.reduce(
+    (resolved, field) => ({
+      ...resolved,
+      [field]: withDefaultStringField(record, field, defaults[field]),
+    }),
+    {} as Record<FieldName, string>,
+  );
+
 export const parseOfflabelAttachments = (
   attachmentsFreeText: string | null | undefined,
 ): string[] => {
@@ -230,6 +249,19 @@ const getNoSeveritySummary = (t: I18nT): string =>
     'No dedicated severity values are currently documented.',
   );
 
+const buildOptionalSeverityFragment = (
+  t: I18nT,
+  key: string,
+  value: string | null,
+  defaultValue: string,
+  options: Record<string, unknown> = {},
+): string | null => {
+  if (!value) {
+    return null;
+  }
+  return tr(t, key, defaultValue, options);
+};
+
 const getSeverityRecord = (
   formData: Record<string, unknown>,
 ): Record<string, unknown> | null => {
@@ -243,12 +275,10 @@ const buildBellScoreFragment = (
   t: I18nT,
   bellScore: string | null,
 ): string | null => {
-  if (!bellScore) {
-    return null;
-  }
-  return tr(
+  return buildOptionalSeverityFragment(
     t,
     'offlabel-antrag.export.severity.bell',
+    bellScore,
     'My functional level is Bell score {{bellScore}}.',
     { bellScore },
   );
@@ -259,14 +289,12 @@ const buildGdbFragment = (
   gdb: string | null,
   merkzeichen: string | null,
 ): string | null => {
-  if (!gdb) {
-    return null;
-  }
   const marker =
     merkzeichen && merkzeichen.length > 0 ? `, ${merkzeichen}` : '';
-  return tr(
+  return buildOptionalSeverityFragment(
     t,
     'offlabel-antrag.export.severity.gdb',
+    gdb,
     'A disability degree (GdB) of {{gdb}} is documented{{marker}}.',
     { gdb, marker },
   );
@@ -276,12 +304,10 @@ const buildPflegegradFragment = (
   t: I18nT,
   pflegegrad: string | null,
 ): string | null => {
-  if (!pflegegrad) {
-    return null;
-  }
-  return tr(
+  return buildOptionalSeverityFragment(
     t,
     'offlabel-antrag.export.severity.pflegegrad',
+    pflegegrad,
     'A nursing care level of {{pflegegrad}} is in place.',
     { pflegegrad },
   );
@@ -291,12 +317,10 @@ const buildWorkStatusFragment = (
   t: I18nT,
   workStatus: string | null,
 ): string | null => {
-  if (!workStatus) {
-    return null;
-  }
-  return tr(
+  return buildOptionalSeverityFragment(
     t,
     'offlabel-antrag.export.severity.workStatus',
+    workStatus,
     'My current work status is {{workStatus}}.',
     { workStatus },
   );
@@ -679,14 +703,45 @@ const buildKkSignatures = ({
       ]
     : [];
 
-  return [
-    {
-      label: tr(t, 'offlabel-antrag.export.signatures.patientLabel', 'Patient'),
-      name: patientName,
-    },
-    ...doctorSignature,
-  ];
+  return [buildPatientSignature(t, patientName), ...doctorSignature];
 };
+
+const buildPostalCityLine = (postalCode: string, city: string): string =>
+  `${postalCode} ${city}`;
+
+const buildPatientSenderLines = (
+  patientName: string,
+  patientAddress: {
+    streetAndNumber: string;
+    postalCode: string;
+    city: string;
+  },
+): string[] => [
+  patientName,
+  patientAddress.streetAndNumber,
+  buildPostalCityLine(patientAddress.postalCode, patientAddress.city),
+];
+
+const buildAddressLines = (
+  primaryLines: string[],
+  address: {
+    streetAndNumber: string;
+    postalCode: string;
+    city: string;
+  },
+): string[] => [
+  ...primaryLines,
+  address.streetAndNumber,
+  buildPostalCityLine(address.postalCode, address.city),
+];
+
+const buildPatientSignature = (
+  t: I18nT,
+  patientName: string,
+): OffLabelSignatureBlock => ({
+  label: tr(t, 'offlabel-antrag.export.signatures.patientLabel', 'Patient'),
+  name: patientName,
+});
 
 const buildSectionAttachments = (
   t: I18nT,
@@ -760,100 +815,44 @@ export const buildOffLabelAntragDocumentModel = (
   );
 
   const patient = {
-    firstName: withFallback(
-      getStringValue(patientRecord?.firstName),
-      defaults.patient.firstName,
-    ),
-    lastName: withFallback(
-      getStringValue(patientRecord?.lastName),
-      defaults.patient.lastName,
-    ),
+    ...resolveStringFields(patientRecord, defaults.patient, [
+      'firstName',
+      'lastName',
+      'insuranceNumber',
+      'streetAndNumber',
+      'postalCode',
+      'city',
+    ] as const),
     birthDate: withFallback(
       formatBirthDate(getStringValue(patientRecord?.birthDate)),
       defaults.patient.birthDate,
     ),
-    insuranceNumber: withFallback(
-      getStringValue(patientRecord?.insuranceNumber),
-      defaults.patient.insuranceNumber,
-    ),
-    streetAndNumber: withFallback(
-      getStringValue(patientRecord?.streetAndNumber),
-      defaults.patient.streetAndNumber,
-    ),
-    postalCode: withFallback(
-      getStringValue(patientRecord?.postalCode),
-      defaults.patient.postalCode,
-    ),
-    city: withFallback(
-      getStringValue(patientRecord?.city),
-      defaults.patient.city,
-    ),
   };
 
-  const doctor = {
-    name: withFallback(
-      getStringValue(doctorRecord?.name),
-      defaults.doctor.name,
-    ),
-    practice: withFallback(
-      getStringValue(doctorRecord?.practice),
-      defaults.doctor.practice,
-    ),
-    streetAndNumber: withFallback(
-      getStringValue(doctorRecord?.streetAndNumber),
-      defaults.doctor.streetAndNumber,
-    ),
-    postalCode: withFallback(
-      getStringValue(doctorRecord?.postalCode),
-      defaults.doctor.postalCode,
-    ),
-    city: withFallback(
-      getStringValue(doctorRecord?.city),
-      defaults.doctor.city,
-    ),
-  };
+  const doctor = resolveStringFields(doctorRecord, defaults.doctor, [
+    'name',
+    'practice',
+    'streetAndNumber',
+    'postalCode',
+    'city',
+  ] as const);
 
-  const insurer = {
-    name: withFallback(
-      getStringValue(insurerRecord?.name),
-      defaults.insurer.name,
-    ),
-    department: withFallback(
-      getStringValue(insurerRecord?.department),
-      defaults.insurer.department,
-    ),
-    streetAndNumber: withFallback(
-      getStringValue(insurerRecord?.streetAndNumber),
-      defaults.insurer.streetAndNumber,
-    ),
-    postalCode: withFallback(
-      getStringValue(insurerRecord?.postalCode),
-      defaults.insurer.postalCode,
-    ),
-    city: withFallback(
-      getStringValue(insurerRecord?.city),
-      defaults.insurer.city,
-    ),
-  };
+  const insurer = resolveStringFields(insurerRecord, defaults.insurer, [
+    'name',
+    'department',
+    'streetAndNumber',
+    'postalCode',
+    'city',
+  ] as const);
 
   const request = {
     drug: rawDrug ?? '',
-    indicationFreeText: withFallback(
-      getStringValue(requestRecord?.indicationFreeText),
-      defaults.request.indicationFreeText,
-    ),
-    symptomsFreeText: withFallback(
-      getStringValue(requestRecord?.symptomsFreeText),
-      defaults.request.symptomsFreeText,
-    ),
-    standardOfCareTriedFreeText: withFallback(
-      getStringValue(requestRecord?.standardOfCareTriedFreeText),
-      defaults.request.standardOfCareTriedFreeText,
-    ),
-    doctorRationaleFreeText: withFallback(
-      getStringValue(requestRecord?.doctorRationaleFreeText),
-      defaults.request.doctorRationaleFreeText,
-    ),
+    ...resolveStringFields(requestRecord, defaults.request, [
+      'indicationFreeText',
+      'symptomsFreeText',
+      'standardOfCareTriedFreeText',
+      'doctorRationaleFreeText',
+    ] as const),
     doctorSupport: {
       enabled: true,
       doctorSignsPart1:
@@ -906,17 +905,11 @@ export const buildOffLabelAntragDocumentModel = (
   );
 
   const kk: OffLabelLetterSection = {
-    senderLines: [
-      patientName,
-      patient.streetAndNumber,
-      `${patient.postalCode} ${patient.city}`,
-    ],
-    addresseeLines: [
-      insurer.name,
-      insurer.department,
-      insurer.streetAndNumber,
-      `${insurer.postalCode} ${insurer.city}`,
-    ],
+    senderLines: buildPatientSenderLines(patientName, patient),
+    addresseeLines: buildAddressLines(
+      [insurer.name, insurer.department],
+      insurer,
+    ),
     dateLine,
     subject: tr(
       t,
@@ -950,17 +943,11 @@ export const buildOffLabelAntragDocumentModel = (
 
   const arzt: OffLabelLetterSection | undefined = includeDoctorCoverLetter
     ? {
-        senderLines: [
-          patientName,
-          patient.streetAndNumber,
-          `${patient.postalCode} ${patient.city}`,
-        ],
-        addresseeLines: [
-          doctor.practice,
-          doctor.name,
-          doctor.streetAndNumber,
-          `${doctor.postalCode} ${doctor.city}`,
-        ],
+        senderLines: buildPatientSenderLines(patientName, patient),
+        addresseeLines: buildAddressLines(
+          [doctor.practice, doctor.name],
+          doctor,
+        ),
         dateLine,
         subject: tr(
           t,
@@ -973,16 +960,7 @@ export const buildOffLabelAntragDocumentModel = (
         }),
         attachmentsHeading,
         attachments: arztAttachments,
-        signatureBlocks: [
-          {
-            label: tr(
-              t,
-              'offlabel-antrag.export.signatures.patientLabel',
-              'Patient',
-            ),
-            name: patientName,
-          },
-        ],
+        signatureBlocks: [buildPatientSignature(t, patientName)],
       }
     : undefined;
 
