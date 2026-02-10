@@ -61,7 +61,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     ]);
     expect(model.arzt).toBeDefined();
     expect(model.part3).toBeDefined();
-    expect(model.part3?.title).toContain('Teil 3');
+    expect(model.part3.title).toContain('Teil 3');
     expect(
       model.arzt.paragraphs.some((paragraph) =>
         paragraph.includes('Kurzüberblick zum Vorhaben'),

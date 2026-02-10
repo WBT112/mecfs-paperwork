@@ -98,7 +98,7 @@ describe('offlabel-antrag letter builder', () => {
         paragraph.includes('Kurzüberblick zum Vorhaben'),
       ),
     ).toBe(true);
-    expect(bundle.part3?.title).toContain('Teil 3');
+    expect(bundle.part3.title).toContain('Teil 3');
   });
 
   it('parses attachments and references part 1 in part 2 attachments', () => {
