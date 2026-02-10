@@ -58,7 +58,6 @@ type OfflabelAntragBundleInput = {
     doctorRationaleFreeText?: string | null;
     doctorSupport?: {
       enabled?: boolean;
-      doctorSignsPart1?: boolean;
     };
   };
   export?: {

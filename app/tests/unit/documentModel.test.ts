@@ -213,7 +213,6 @@ describe('formpacks/documentModel', () => {
         doctorRationaleFreeText: 'Doctor rationale',
         doctorSupport: {
           enabled: true,
-          doctorSignsPart1: false,
         },
       },
       attachmentsFreeText:
@@ -253,7 +252,6 @@ describe('formpacks/documentModel', () => {
       doctorRationaleFreeText: 'Doctor rationale',
       doctorSupport: {
         enabled: true,
-        doctorSignsPart1: false,
       },
     });
     expect(result.attachmentsFreeText).toBe(

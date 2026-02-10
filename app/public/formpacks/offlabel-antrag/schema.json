@@ -103,10 +103,6 @@
             "enabled": {
               "type": "boolean",
               "default": true
-            },
-            "doctorSignsPart1": {
-              "type": "boolean",
-              "default": false
             }
           },
           "additionalProperties": false

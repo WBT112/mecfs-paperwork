@@ -79,7 +79,7 @@ describe('offlabel-antrag letter builder', () => {
     );
   });
 
-  it('adds doctor signature to part 1 only when doctorSignsPart1 is enabled', () => {
+  it('keeps part 1 patient-only', () => {
     const bundle = buildOfflabelAntragExportBundle({
       locale: 'de',
       documentModel: {
@@ -94,7 +94,6 @@ describe('offlabel-antrag letter builder', () => {
         request: {
           doctorSupport: {
             enabled: true,
-            doctorSignsPart1: true,
           },
         },
       },
@@ -106,12 +105,19 @@ describe('offlabel-antrag letter builder', () => {
         label: 'Patient/in',
         name: 'Mara Beispiel',
       },
-      {
-        label: 'Behandelnde/r Ärztin/Arzt',
-        name: 'Dr. Med. Hausarzt',
-        extraLines: ['Praxis Nord'],
-      },
     ]);
+    expect(
+      bundle.part2?.bodyParagraphs.some((paragraph) =>
+        paragraph.includes(
+          'Ich bitte Sie, den Antrag aus Teil 1 zu unterstützen',
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      bundle.part2?.bodyParagraphs.some((paragraph) =>
+        paragraph.includes('ENTWURF - Ärztliche Stellungnahme'),
+      ),
+    ).toBe(true);
   });
 
   it('parses attachments and references part 1 in part 2 attachments', () => {

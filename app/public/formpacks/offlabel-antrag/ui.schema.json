@@ -162,16 +162,9 @@
     "doctorSupport": {
       "ui:title": "offlabel-antrag.section.doctorSupport.title",
       "ui:description": "offlabel-antrag.section.doctorSupport.help",
-      "ui:order": [
-        "enabled",
-        "doctorSignsPart1"
-      ],
+      "ui:order": ["enabled"],
       "enabled": {
         "ui:widget": "hidden"
-      },
-      "doctorSignsPart1": {
-        "ui:title": "offlabel-antrag.request.doctorSupport.doctorSignsPart1.label",
-        "ui:help": "offlabel-antrag.request.doctorSupport.doctorSignsPart1.help"
       }
     }
   },

@@ -72,7 +72,6 @@ export type DocumentModel = {
     doctorRationaleFreeText?: string | null;
     doctorSupport?: {
       enabled?: boolean;
-      doctorSignsPart1?: boolean;
     };
   };
   attachmentsFreeText?: string | null;

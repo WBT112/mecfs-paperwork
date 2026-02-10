@@ -31,7 +31,7 @@ vi.mock('../../src/i18n', () => ({
 }));
 
 describe('buildOffLabelAntragDocumentModel', () => {
-  it('builds both letters with doctor signature and sources by default', () => {
+  it('builds both letters with patient-only signature and statement draft by default', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         patient: {
@@ -48,7 +48,6 @@ describe('buildOffLabelAntragDocumentModel', () => {
           symptomsFreeText: 'orthostatische Tachykardie',
           doctorSupport: {
             enabled: true,
-            doctorSignsPart1: true,
           },
         },
         attachmentsFreeText: '- Arztbrief\n• Befundbericht',
@@ -58,8 +57,23 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     expect(model.kk.subject).toContain('Ivabradin');
-    expect(model.kk.signatureBlocks).toHaveLength(2);
+    expect(model.kk.signatureBlocks).toEqual([
+      {
+        label: 'Patient/in',
+        name: 'Mara Example',
+      },
+    ]);
     expect(model.arzt).toBeDefined();
+    expect(
+      model.arzt?.paragraphs.some((paragraph) =>
+        paragraph.includes('ENTWURF - Ärztliche Stellungnahme'),
+      ),
+    ).toBe(true);
+    expect(
+      model.arzt?.paragraphs.some((paragraph) =>
+        paragraph.includes('Initial 2,5 mg zweimal täglich'),
+      ),
+    ).toBe(true);
     expect(model.arzt?.attachments[0]).toBe(
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
     );

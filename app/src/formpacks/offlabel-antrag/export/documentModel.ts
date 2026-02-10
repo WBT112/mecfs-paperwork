@@ -76,7 +76,6 @@ export type OffLabelAntragDocumentModel = {
     doctorRationaleFreeText: string;
     doctorSupport: {
       enabled: boolean;
-      doctorSignsPart1: boolean;
     };
   };
   export: {
@@ -123,6 +122,12 @@ type MedicationParagraphSpec = {
     targetSymptoms: string;
   }) => Record<string, unknown>;
 };
+
+type MedicationStatementField =
+  | 'doseText'
+  | 'durationText'
+  | 'stopText'
+  | 'monitoringText';
 
 const DRUG_LABELS: Record<
   SupportedLocale,
@@ -200,6 +205,72 @@ const MEDICATION_PARAGRAPH_SPECS: Record<KnownDrug, MedicationParagraphSpec[]> =
       },
     ],
   };
+
+const MEDICATION_STATEMENT_KEYS: Record<
+  KnownDrug,
+  Record<MedicationStatementField, string>
+> = {
+  agomelatin: {
+    doseText: 'offlabel-antrag.export.statement.medication.agomelatin.doseText',
+    durationText:
+      'offlabel-antrag.export.statement.medication.agomelatin.durationText',
+    stopText: 'offlabel-antrag.export.statement.medication.agomelatin.stopText',
+    monitoringText:
+      'offlabel-antrag.export.statement.medication.agomelatin.monitoringText',
+  },
+  ivabradine: {
+    doseText: 'offlabel-antrag.export.statement.medication.ivabradine.doseText',
+    durationText:
+      'offlabel-antrag.export.statement.medication.ivabradine.durationText',
+    stopText: 'offlabel-antrag.export.statement.medication.ivabradine.stopText',
+    monitoringText:
+      'offlabel-antrag.export.statement.medication.ivabradine.monitoringText',
+  },
+  vortioxetine: {
+    doseText:
+      'offlabel-antrag.export.statement.medication.vortioxetine.doseText',
+    durationText:
+      'offlabel-antrag.export.statement.medication.vortioxetine.durationText',
+    stopText:
+      'offlabel-antrag.export.statement.medication.vortioxetine.stopText',
+    monitoringText:
+      'offlabel-antrag.export.statement.medication.vortioxetine.monitoringText',
+  },
+};
+
+const MEDICATION_STATEMENT_DEFAULTS: Record<
+  KnownDrug,
+  Record<MedicationStatementField, string>
+> = {
+  agomelatin: {
+    doseText:
+      'Standard dosage 25 mg in the evening; if no symptom improvement after 4 weeks, increase to 50 mg in the evening.',
+    durationText:
+      'Treatment duration between 2 weeks and 3 months (stop if no improvement); continue longer only when there is clear benefit.',
+    stopText:
+      'Stop treatment if transaminases exceed 3x upper normal limit and/or there are clinical signs of liver injury; stop during pregnancy.',
+    monitoringText:
+      'Liver function tests before start and during treatment according to product information; continuous benefit-risk review.',
+  },
+  ivabradine: {
+    doseText:
+      'Initial 2.5 mg twice daily; after 2 weeks increase to 5 mg twice daily if symptoms persist and resting pulse is >= 60/min.',
+    durationText: 'Treatment duration 4-12 weeks (symptom-oriented trial).',
+    stopText:
+      'Reduce dose or stop when resting pulse is < 50/min or bradycardia symptoms occur; stop when no pulse reduction and no clinical improvement are achieved.',
+    monitoringText:
+      'Monitor resting pulse and blood pressure; ECG monitoring as clinically required.',
+  },
+  vortioxetine: {
+    doseText:
+      'Initial 5 mg once daily; after 2 weeks increase to 10 mg once daily when response is insufficient; reduce back to 5 mg if not tolerated.',
+    durationText: 'Treatment duration 4-12 weeks (trial).',
+    stopText:
+      'Stop treatment when there is no clinical improvement or severe adverse effects occur (e.g. serotonin syndrome signs).',
+    monitoringText:
+      'Clinical monitoring of adverse effects, tolerability and efficacy; consider interaction and serotonergic risk.',
+  },
+};
 
 const getT = (locale: SupportedLocale): I18nT =>
   i18n.getFixedT(locale, 'formpack:offlabel-antrag');
@@ -537,57 +608,265 @@ const buildKkParagraphs = ({
   patientName,
 ];
 
+const buildSeverityStatementHighlights = (
+  t: I18nT,
+  formData: Record<string, unknown>,
+): string => {
+  const severity = getSeverityRecord(formData);
+  if (!severity) {
+    return tr(
+      t,
+      'offlabel-antrag.export.statement.defaults.severityHighlights',
+      'No additional severity markers documented.',
+    );
+  }
+
+  const bellScore = getStringValue(severity.bellScore);
+  const gdb = getStringValue(severity.gdb);
+  const merkzeichen = getStringValue(severity.merkzeichen);
+  const pflegegrad = getStringValue(severity.pflegegrad);
+  const workStatus = getStringValue(severity.workStatus);
+  const rawMobilityLevel = getStringValue(severity.mobilityLevel);
+  const mobilityLevel =
+    rawMobilityLevel === 'housebound' || rawMobilityLevel === 'bedbound'
+      ? tr(
+          t,
+          `offlabel-antrag.severity.mobilityLevel.option.${rawMobilityLevel}`,
+          rawMobilityLevel,
+        )
+      : rawMobilityLevel;
+  const gdbSuffix =
+    merkzeichen && merkzeichen.length > 0 ? `, ${merkzeichen}` : '';
+
+  const highlights = buildSeverityFragments(t, [
+    {
+      key: 'offlabel-antrag.export.statement.severity.bell',
+      value: bellScore,
+      defaultValue: 'Bell score {{bellScore}}',
+      options: { bellScore },
+    },
+    {
+      key: 'offlabel-antrag.export.statement.severity.gdb',
+      value: gdb,
+      defaultValue: 'GdB {{gdb}}{{gdbSuffix}}',
+      options: { gdb, gdbSuffix },
+    },
+    {
+      key: 'offlabel-antrag.export.statement.severity.pflegegrad',
+      value: pflegegrad,
+      defaultValue: 'Care level {{pflegegrad}}',
+      options: { pflegegrad },
+    },
+    {
+      key: 'offlabel-antrag.export.statement.severity.workStatus',
+      value: workStatus,
+      defaultValue: 'Work status {{workStatus}}',
+      options: { workStatus },
+    },
+    {
+      key: 'offlabel-antrag.export.statement.severity.mobility',
+      value: mobilityLevel,
+      defaultValue: 'Predominantly {{mobilityLevel}}',
+      options: { mobilityLevel },
+    },
+  ]);
+
+  if (!highlights.length) {
+    return tr(
+      t,
+      'offlabel-antrag.export.statement.defaults.severityHighlights',
+      'No additional severity markers documented.',
+    );
+  }
+
+  return highlights.join(', ');
+};
+
+const buildMedicationStatementTexts = (
+  t: I18nT,
+  drug: KnownDrug | null,
+): Record<MedicationStatementField, string> => {
+  if (!drug) {
+    return {
+      doseText: tr(
+        t,
+        'offlabel-antrag.export.statement.medication.generic.doseText',
+        'Please define dosage in the final medical statement.',
+      ),
+      durationText: tr(
+        t,
+        'offlabel-antrag.export.statement.medication.generic.durationText',
+        'Please define trial duration in the final medical statement.',
+      ),
+      stopText: tr(
+        t,
+        'offlabel-antrag.export.statement.medication.generic.stopText',
+        'Please define stop criteria in the final medical statement.',
+      ),
+      monitoringText: tr(
+        t,
+        'offlabel-antrag.export.statement.medication.generic.monitoringText',
+        'Please define monitoring and safety checks in the final medical statement.',
+      ),
+    };
+  }
+
+  return (
+    Object.keys(MEDICATION_STATEMENT_KEYS[drug]) as MedicationStatementField[]
+  ).reduce(
+    (resolved, field) => ({
+      ...resolved,
+      [field]: tr(
+        t,
+        MEDICATION_STATEMENT_KEYS[drug][field],
+        MEDICATION_STATEMENT_DEFAULTS[drug][field],
+      ),
+    }),
+    {} as Record<MedicationStatementField, string>,
+  );
+};
+
 const buildArztParagraphs = ({
   t,
   patientName,
+  patientBirthDate,
+  doctorName,
+  diagnosisMain,
+  diagnosisIcdList,
+  targetSymptoms,
+  severitySummary,
+  severityHighlights,
+  priorTreatments,
+  drugName,
+  drugSubstance,
+  knownDrug,
+  dateLine,
 }: {
   t: I18nT;
   patientName: string;
-}): string[] => [
-  tr(
-    t,
-    'offlabel-antrag.export.part2.p1',
-    'Please find attached my insurer letter (part 1: off-label cost coverage request). I kindly ask for your support so the request is medically clear and decision-ready.',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.part2.p2',
-    'A short medical note (1-2 paragraphs) referring to part 1 would be particularly helpful:',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.part2.supportBullets.b1',
-    '- confirmed diagnoses and relevant findings',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.part2.supportBullets.b2',
-    '- leading symptoms and treatment goal',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.part2.supportBullets.b3',
-    '- prior treatment attempts and why no adequate standard option exists',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.part2.supportBullets.b4',
-    '- planned dosing, monitoring, and benefit-risk assessment',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.part2.supportBullets.b5',
-    '- where relevant, why waiting may lead to significant deterioration',
-  ),
-  tr(
-    t,
-    'offlabel-antrag.export.part2.p3',
-    'If you support the request, an optional signature/confirmation in the insurer letter (part 1) can be helpful.',
-  ),
-  tr(t, 'offlabel-antrag.export.part2.p4', 'Thank you for your support.'),
-  tr(t, 'offlabel-antrag.export.part2.p5', 'Sincerely,'),
-  patientName,
-];
+  patientBirthDate: string;
+  doctorName: string;
+  diagnosisMain: string;
+  diagnosisIcdList: string;
+  targetSymptoms: string;
+  severitySummary: string;
+  severityHighlights: string;
+  priorTreatments: string;
+  drugName: string;
+  drugSubstance: string;
+  knownDrug: KnownDrug | null;
+  dateLine: string;
+}): string[] => {
+  const medicationTexts = buildMedicationStatementTexts(t, knownDrug);
+
+  return [
+    tr(
+      t,
+      'offlabel-antrag.export.part2.p1',
+      'Please find attached my insurer letter (part 1: off-label cost coverage request). I kindly ask for your support so the request is medically clear and decision-ready.',
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.p2',
+      'A short medical note (1-2 paragraphs) referring to part 1 would be particularly helpful:',
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.supportBullets.b1',
+      '- confirmed diagnoses and relevant findings',
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.supportBullets.b2',
+      '- leading symptoms and treatment goal',
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.supportBullets.b3',
+      '- prior treatment attempts and why no adequate standard option exists',
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.supportBullets.b4',
+      '- planned dosing, monitoring, and benefit-risk assessment',
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.supportBullets.b5',
+      '- where relevant, why waiting may lead to significant deterioration',
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.p3',
+      'I ask you to support the request from part 1 by preparing a short medical statement / findings report. Ideal content includes diagnosis, severity/functional level, prior measures, missing standard therapy, and your medical assessment of the requested off-label therapy (benefit-risk, monitoring, treatment goal). A pre-formulated draft is included below and can be adapted.',
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.statement.heading',
+      'DRAFT - Medical statement supporting an off-label application (please transfer to practice letterhead)',
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.statement.p1',
+      'I, {{doctorName}}, confirm treatment of {{patientName}}, date of birth {{patientBirthDate}}. Diagnoses: {{diagnosisMain}} (ICD where available: {{diagnosisIcdList}}). Leading symptoms/exertion intolerance: {{targetSymptoms}}.',
+      {
+        doctorName,
+        patientName,
+        patientBirthDate,
+        diagnosisMain,
+        diagnosisIcdList,
+        targetSymptoms,
+      },
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.statement.p2',
+      'The disease burden is clinically relevant: {{severitySummary}} Functional capacity is clearly reduced (e.g. {{severityHighlights}}).',
+      {
+        severitySummary,
+        severityHighlights,
+      },
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.statement.p3',
+      'A causal, generally accepted standard therapy is currently not available; care is mainly symptom-oriented. Prior measures/treatments (excerpt): {{priorTreatments}}. Relevant disease burden remains despite prior measures.',
+      {
+        priorTreatments,
+      },
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.statement.p4',
+      'For symptomatic treatment, off-label therapy with {{drugName}} ({{drugSubstance}}) is requested, treatment goal: {{targetSymptoms}}. The indication rationale references BfArM expert group long-COVID off-label documentation.',
+      {
+        drugName,
+        drugSubstance,
+        targetSymptoms,
+      },
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.statement.p5',
+      'Dosage proposal: {{doseText}} Treatment duration/trial: {{durationText}} Stop criteria: {{stopText}} Monitoring/safety: {{monitoringText}}',
+      medicationTexts,
+    ),
+    tr(
+      t,
+      'offlabel-antrag.export.part2.statement.p6',
+      'From a medical perspective there is a plausible prospect of meaningful positive impact on symptom burden. Alternative standard options are exhausted or unavailable in this individual case. Off-label prescribing is planned as a time-limited trial with defined stop criteria and monitoring.',
+    ),
+    tr(t, 'offlabel-antrag.export.part2.statement.p7', '{{dateLine}}', {
+      dateLine,
+    }),
+    tr(t, 'offlabel-antrag.export.part2.statement.p8', '{{doctorName}}', {
+      doctorName,
+    }),
+    tr(t, 'offlabel-antrag.export.part2.p4', 'Thank you for your support.'),
+    tr(t, 'offlabel-antrag.export.part2.p5', 'Sincerely,'),
+    patientName,
+  ];
+};
 
 const getSourceItems = (t: I18nT): string[] => [
   tr(
@@ -679,32 +958,10 @@ const resolveDiagnosisPots = (
 const buildKkSignatures = ({
   t,
   patientName,
-  doctorName,
-  doctorPractice,
-  doctorSignsPart1,
 }: {
   t: I18nT;
   patientName: string;
-  doctorName: string;
-  doctorPractice: string;
-  doctorSignsPart1: boolean;
-}): OffLabelSignatureBlock[] => {
-  const doctorSignature = doctorSignsPart1
-    ? [
-        {
-          label: tr(
-            t,
-            'offlabel-antrag.export.signatures.doctorLabel',
-            'Treating physician',
-          ),
-          name: doctorName,
-          extraLine: doctorPractice,
-        },
-      ]
-    : [];
-
-  return [buildPatientSignature(t, patientName), ...doctorSignature];
-};
+}): OffLabelSignatureBlock[] => [buildPatientSignature(t, patientName)];
 
 const buildPostalCityLine = (postalCode: string, city: string): string =>
   `${postalCode} ${city}`;
@@ -800,7 +1057,6 @@ export const buildOffLabelAntragDocumentModel = (
   const doctorRecord = getRecordValue(formData.doctor);
   const insurerRecord = getRecordValue(formData.insurer);
   const requestRecord = getRecordValue(formData.request);
-  const doctorSupportRecord = getRecordValue(requestRecord?.doctorSupport);
 
   const { includeDoctorCoverLetter, includeSources } = resolveExportFlags(
     formData,
@@ -855,8 +1111,6 @@ export const buildOffLabelAntragDocumentModel = (
     ] as const),
     doctorSupport: {
       enabled: true,
-      doctorSignsPart1:
-        getBooleanValue(doctorSupportRecord?.doctorSignsPart1) ?? false,
     },
   };
 
@@ -877,6 +1131,12 @@ export const buildOffLabelAntragDocumentModel = (
   );
   const diagnosisPots = resolveDiagnosisPots(t, knownDrug, diagnosisMain);
   const severitySummary = buildSeveritySummary(t, formData);
+  const severityHighlights = buildSeverityStatementHighlights(t, formData);
+  const diagnosisIcdList = tr(
+    t,
+    'offlabel-antrag.export.statement.defaults.icdList',
+    '—',
+  );
   const medicationParagraphs = buildMedicationSpecificParagraphs(
     t,
     knownDrug,
@@ -887,9 +1147,6 @@ export const buildOffLabelAntragDocumentModel = (
   const kkSignatures = buildKkSignatures({
     t,
     patientName,
-    doctorName: doctor.name,
-    doctorPractice: doctor.practice,
-    doctorSignsPart1: request.doctorSupport.doctorSignsPart1,
   });
   const kkAttachments = buildSectionAttachments(
     t,
@@ -957,6 +1214,18 @@ export const buildOffLabelAntragDocumentModel = (
         paragraphs: buildArztParagraphs({
           t,
           patientName,
+          patientBirthDate: patient.birthDate,
+          doctorName: doctor.name,
+          diagnosisMain,
+          diagnosisIcdList,
+          targetSymptoms: request.symptomsFreeText,
+          severitySummary,
+          severityHighlights,
+          priorTreatments: request.standardOfCareTriedFreeText,
+          drugName,
+          drugSubstance,
+          knownDrug,
+          dateLine,
         }),
         attachmentsHeading,
         attachments: arztAttachments,
