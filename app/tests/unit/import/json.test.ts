@@ -265,4 +265,48 @@ describe('validateJsonImport', () => {
     expect(result.payload).toBe(null);
     expect(result.error?.code).toBe('unsupported_locale');
   });
+
+  it('ignores legacy unknown fields when schema disallows additional properties', () => {
+    const legacyCompatibleSchema = {
+      type: 'object',
+      properties: {
+        severity: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            bellScore: { type: 'string' },
+          },
+        },
+      },
+      additionalProperties: false,
+    } as const satisfies RJSFSchema;
+
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: {
+          severity: {
+            bellScore: '40',
+            hasBellScore: false,
+            hasGdb: false,
+          },
+        },
+      },
+    });
+
+    const result = validateJsonImport(
+      importJson,
+      legacyCompatibleSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload).toBeDefined();
+    expect(result.payload?.record.data).toEqual({
+      severity: {
+        bellScore: '40',
+      },
+    });
+  });
 });
