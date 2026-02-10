@@ -24,19 +24,21 @@ const loadOfflabelTemplateXml = async (): Promise<string> => {
 };
 
 describe('offlabel-antrag A4 DOCX template', () => {
-  it('contains loops for both letter parts and attachment lists', async () => {
+  it('contains loops for all sections and attachment lists', async () => {
     const xml = await loadOfflabelTemplateXml();
 
     expect(xml).toContain('{{FOR p IN kk.paragraphs}}');
     expect(xml).toContain('{{FOR item IN kk.attachments}}');
     expect(xml).toContain('{{FOR p2 IN arzt.paragraphs}}');
     expect(xml).toContain('{{FOR aItem IN arzt.attachments}}');
+    expect(xml).toContain('{{FOR p3 IN part3.paragraphs}}');
   });
 
-  it('contains conditional blocks for optional part 2 and sources', async () => {
+  it('contains conditional blocks for optional parts and sources', async () => {
     const xml = await loadOfflabelTemplateXml();
 
     expect(xml).toContain('{{IF hasPart2}}');
+    expect(xml).toContain('{{IF hasPart3}}');
     expect(xml).toContain('{{END-IF}}');
     expect(xml).toContain('{{IF hasSources}}');
     expect(xml).toContain('{{sourcesHeading}}');

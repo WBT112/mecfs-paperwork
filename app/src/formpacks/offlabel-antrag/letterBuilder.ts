@@ -52,13 +52,11 @@ type OfflabelAntragBundleInput = {
   };
   request?: {
     drug?: string | null;
-    symptomCluster?: string[] | null;
     standardOfCareTriedFreeText?: string | null;
-    hasDoctorSupport?: boolean | null;
   };
   export?: {
     includeSources?: boolean;
-    includeSection2Abs1a?: boolean;
+    includeCaseLaw?: boolean;
   };
   attachmentsFreeText?: string | null;
   attachments?: {

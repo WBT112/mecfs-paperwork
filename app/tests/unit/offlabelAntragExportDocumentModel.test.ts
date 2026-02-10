@@ -45,7 +45,6 @@ describe('buildOffLabelAntragDocumentModel', () => {
         },
         request: {
           drug: 'ivabradine',
-          symptomCluster: ['tachycardia', 'orthostaticIntolerance'],
         },
         attachmentsFreeText: '- Arztbrief\n• Befundbericht',
       },
@@ -61,31 +60,33 @@ describe('buildOffLabelAntragDocumentModel', () => {
       },
     ]);
     expect(model.arzt).toBeDefined();
+    expect(model.part3).toBeDefined();
+    expect(model.part3?.title).toContain('Teil 3');
     expect(
       model.arzt.paragraphs.some((paragraph) =>
-        paragraph.includes('ENTWURF - Ärztliche Stellungnahme'),
-      ),
-    ).toBe(true);
-    expect(
-      model.arzt.paragraphs.some((paragraph) =>
-        paragraph.includes('Initial 2,5 mg zweimal täglich'),
+        paragraph.includes('Kurzüberblick zum Vorhaben'),
       ),
     ).toBe(true);
     expect(model.arzt.attachments[0]).toBe(
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
     );
-    expect(model.sources).toHaveLength(2);
+    expect(model.sources).toHaveLength(3);
     expect(model.sources[1]).toContain('Bewertung Ivabradin');
+    expect(model.sources[2]).toContain('LSG Niedersachsen-Bremen');
     expect(model.hasSources).toBe('1');
     expect(model.hasPart2).toBe('1');
+    expect(model.hasPart3).toBe('1');
     expect(model.kk.attachments).toContain(
-      'Expertengruppe Long COVID Off-Label-Use beim BfArM: Bewertung Ivabradin (Stand 15.10.2025).',
+      'Bewertung: Ivabradin - Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
     );
   });
 
-  it('always keeps part 2 but allows disabling sources', () => {
+  it('always keeps part 2 and allows disabling sources', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
+        request: {
+          drug: 'ivabradine',
+        },
         export: {
           includeSources: false,
         },
@@ -99,10 +100,13 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.hasPart2).toBe('1');
     expect(model.hasSources).toBe('');
     expect(model.sources).toEqual([]);
-    expect(model.kk.attachments).toEqual(['Labor']);
+    expect(model.kk.attachments[0]).toContain(
+      'Expert Group Long COVID Off-Label Use at BfArM',
+    );
+    expect(model.kk.attachments).toContain('Labor');
   });
 
-  it('adds section 2(1a) paragraph and LSG source only when enabled', () => {
+  it('adds optional case-law paragraph and source only when enabled', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         request: {
@@ -110,7 +114,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
         },
         export: {
           includeSources: true,
-          includeSection2Abs1a: true,
+          includeCaseLaw: true,
         },
       },
       'de',
@@ -124,6 +128,26 @@ describe('buildOffLabelAntragDocumentModel', () => {
     ).toBe(true);
     expect(model.sources).toHaveLength(3);
     expect(model.sources[2]).toContain('LSG Niedersachsen-Bremen');
+  });
+
+  it('always includes part 3 and the part-3 attachment hint', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'vortioxetine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.part3).toBeDefined();
+    expect(model.hasPart3).toBe('1');
+    expect(
+      model.kk.attachments.some((attachment) =>
+        attachment.includes('siehe Teil 3'),
+      ),
+    ).toBe(true);
   });
 
   it('parses attachments from free text lines', () => {
@@ -154,9 +178,9 @@ describe('buildOffLabelAntragDocumentModel', () => {
       { exportedAt: FIXED_EXPORTED_AT },
     );
 
-    expect(model.kk.paragraphs[1]).toContain('Bell-Score 40');
-    expect(model.kk.paragraphs[1]).toContain('Pflegegrad 3');
-    expect(model.kk.paragraphs[1]).toContain('hausgebunden');
-    expect(model.kk.paragraphs[1]).not.toContain('GdB');
+    expect(model.kk.paragraphs[3]).toContain('Bell-Score 40');
+    expect(model.kk.paragraphs[3]).toContain('Pflegegrad 3');
+    expect(model.kk.paragraphs[3]).toContain('hausgebunden');
+    expect(model.kk.paragraphs[3]).not.toContain('GdB');
   });
 });

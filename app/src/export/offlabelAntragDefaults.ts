@@ -27,7 +27,6 @@ export type OfflabelAntragExportDefaults = {
   request: {
     drug: string;
     standardOfCareTriedFreeText: string;
-    hasDoctorSupport: boolean;
   };
   attachmentsFreeText: string;
 };
@@ -68,7 +67,6 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
     request: {
       drug: 'BITTE AUSWÄHLEN',
       standardOfCareTriedFreeText: DEFAULT_PLACEHOLDER_TEXT,
-      hasDoctorSupport: true,
     },
     attachmentsFreeText: DEFAULT_PLACEHOLDER_TEXT,
   },
@@ -99,7 +97,6 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
     request: {
       drug: 'PLEASE SELECT',
       standardOfCareTriedFreeText: DEFAULT_PLACEHOLDER_TEXT,
-      hasDoctorSupport: true,
     },
     attachmentsFreeText: DEFAULT_PLACEHOLDER_TEXT,
   },

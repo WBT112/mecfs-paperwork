@@ -1,13 +1,11 @@
 {
   "request": {
     "drug": "ivabradine",
-    "symptomCluster": [
-      "orthostaticIntolerance",
-      "tachycardia",
-      "fatiguePem"
-    ],
-    "standardOfCareTriedFreeText": "Flüssigkeit, Salz, Kompressionsversorgung und Aktivitätsanpassung ohne ausreichende Stabilisierung.",
-    "hasDoctorSupport": true
+    "standardOfCareTriedFreeText": "Flüssigkeit, Salz, Kompressionsversorgung und Aktivitätsanpassung ohne ausreichende Stabilisierung."
+  },
+  "export": {
+    "includeSources": true,
+    "includeCaseLaw": true
   },
   "attachmentsFreeText": "Arztbrief vom 2026-01-15\nBefundbericht vom 2026-01-22"
 }

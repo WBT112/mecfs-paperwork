@@ -208,8 +208,6 @@ describe('formpacks/documentModel', () => {
       request: {
         drug: 'ivabradine',
         standardOfCareTriedFreeText: 'Prior care text',
-        symptomCluster: ['tachycardia', 'orthostaticIntolerance'],
-        hasDoctorSupport: false,
       },
       attachmentsFreeText:
         ' - Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte\n\n',
@@ -243,8 +241,6 @@ describe('formpacks/documentModel', () => {
     expect(result.request).toEqual({
       drug: 'ivabradine',
       standardOfCareTriedFreeText: 'Prior care text',
-      symptomCluster: ['tachycardia', 'orthostaticIntolerance'],
-      hasDoctorSupport: false,
     });
     expect(result.attachmentsFreeText).toBe(
       '- Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte',
@@ -254,14 +250,15 @@ describe('formpacks/documentModel', () => {
     });
     expect(result.export).toEqual({
       includeSources: true,
-      includeSection2Abs1a: false,
+      includeCaseLaw: true,
     });
     expect(result.kk?.subject).toContain('Ivabradin');
     expect(result.hasPart2).toBe('1');
+    expect(result.hasPart3).toBe('1');
     expect(result.hasSources).toBe('1');
     expect(result.sources?.length).toBeGreaterThan(0);
     expect(result.exportBundle?.part2).toBeDefined();
-    expect(result.exportBundle?.part2?.attachmentsItems[0]).toBe(
+    expect(result.exportBundle?.part2.attachmentsItems[0]).toBe(
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
     );
   });

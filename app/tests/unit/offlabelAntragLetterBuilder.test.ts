@@ -43,6 +43,7 @@ describe('offlabel-antrag letter builder', () => {
     });
 
     expect(bundle.part2).toBeDefined();
+    expect(bundle.part3).toBeDefined();
     expect(bundle.part1.signatureBlocks).toEqual([
       {
         label: 'Patient/in',
@@ -61,16 +62,16 @@ describe('offlabel-antrag letter builder', () => {
 
     expect(bundle.part2).toBeDefined();
     expect(
-      bundle.part2?.bodyParagraphs.some((paragraph) =>
+      bundle.part2.bodyParagraphs.some((paragraph) =>
         paragraph.includes('Teil 1'),
       ),
     ).toBe(true);
-    expect(bundle.part2?.attachmentsItems[0]).toBe(
+    expect(bundle.part2.attachmentsItems[0]).toBe(
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
     );
   });
 
-  it('keeps part 1 patient-only', () => {
+  it('keeps part 1 patient-only and builds part 3 content', () => {
     const bundle = buildOfflabelAntragExportBundle({
       locale: 'de',
       documentModel: {
@@ -93,15 +94,11 @@ describe('offlabel-antrag letter builder', () => {
       },
     ]);
     expect(
-      bundle.part2?.bodyParagraphs.some((paragraph) =>
-        paragraph.includes('wohlwollenden Befundbericht'),
+      bundle.part2.bodyParagraphs.some((paragraph) =>
+        paragraph.includes('Kurzüberblick zum Vorhaben'),
       ),
     ).toBe(true);
-    expect(
-      bundle.part2?.bodyParagraphs.some((paragraph) =>
-        paragraph.includes('ENTWURF - Ärztliche Stellungnahme'),
-      ),
-    ).toBe(true);
+    expect(bundle.part3?.title).toContain('Teil 3');
   });
 
   it('parses attachments and references part 1 in part 2 attachments', () => {
@@ -116,8 +113,9 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.attachmentsItems).toEqual([
       'Arztbrief vom 01.01.2026',
       'Befundbericht',
+      'Ärztliche Stellungnahme/Befundbericht (siehe Teil 3)',
     ]);
-    expect(bundle.part2?.attachmentsItems).toEqual([
+    expect(bundle.part2.attachmentsItems).toEqual([
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
       'Arztbrief vom 01.01.2026',
       'Befundbericht',
@@ -136,7 +134,7 @@ describe('offlabel-antrag letter builder', () => {
     });
 
     expect(bundle.part1.attachmentsItems).toContain(
-      'Expertengruppe Long COVID Off-Label-Use beim BfArM: Bewertung Vortioxetin (Stand 15.10.2025).',
+      'Bewertung: Vortioxetin - Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
     );
     expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
       'Bewertung Ivabradin',
@@ -165,6 +163,7 @@ describe('offlabel-antrag letter builder', () => {
     });
 
     expect(bundle.part2).toBeDefined();
+    expect(bundle.part3).toBeDefined();
     expect(bundle.part1.senderLines[0]).toBe('Max Example');
     expect(bundle.part1.addresseeLines[0]).toBe('Example Health Insurance');
     expect(bundle.part1.subject).toContain('PLEASE SELECT');

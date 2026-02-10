@@ -66,9 +66,7 @@ export type DocumentModel = {
   };
   request?: {
     drug?: string | null;
-    symptomCluster?: string[] | null;
     standardOfCareTriedFreeText?: string | null;
-    hasDoctorSupport?: boolean | null;
   };
   attachmentsFreeText?: string | null;
   attachments?: {
@@ -76,11 +74,16 @@ export type DocumentModel = {
   };
   export?: {
     includeSources?: boolean;
-    includeSection2Abs1a?: boolean;
+    includeCaseLaw?: boolean;
   };
   kk?: OffLabelLetterSection;
   arzt?: OffLabelLetterSection;
+  part3?: {
+    title: string;
+    paragraphs: string[];
+  };
   hasPart2?: string;
+  hasPart3?: string;
   hasSources?: string;
   sourcesHeading?: string;
   sources?: string[];
@@ -347,7 +350,9 @@ const buildOfflabelAntragModel = (
     export: projected.export,
     kk: projected.kk,
     arzt: projected.arzt,
+    part3: projected.part3,
     hasPart2: projected.hasPart2,
+    hasPart3: projected.hasPart3,
     hasSources: projected.hasSources,
     sourcesHeading: projected.sourcesHeading,
     sources: projected.sources,

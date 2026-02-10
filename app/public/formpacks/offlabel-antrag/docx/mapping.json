@@ -74,14 +74,6 @@
       "path": "request.drug"
     },
     {
-      "var": "request.symptomCluster",
-      "path": "request.symptomCluster"
-    },
-    {
-      "var": "request.hasDoctorSupport",
-      "path": "request.hasDoctorSupport"
-    },
-    {
       "var": "request.standardOfCareTriedFreeText",
       "path": "request.standardOfCareTriedFreeText"
     },
@@ -114,8 +106,16 @@
       "path": "arzt.attachmentsHeading"
     },
     {
+      "var": "part3.title",
+      "path": "part3.title"
+    },
+    {
       "var": "hasPart2",
       "path": "hasPart2"
+    },
+    {
+      "var": "hasPart3",
+      "path": "hasPart3"
     },
     {
       "var": "hasSources",
@@ -170,6 +170,10 @@
     {
       "var": "arzt.signatureBlocks",
       "path": "arzt.signatureBlocks"
+    },
+    {
+      "var": "part3.paragraphs",
+      "path": "part3.paragraphs"
     },
     {
       "var": "sources",

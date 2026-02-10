@@ -85,36 +85,8 @@
             "vortioxetine"
           ]
         },
-        "symptomCluster": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "fatiguePem",
-              "orthostaticIntolerance",
-              "tachycardia",
-              "cognitiveImpairment",
-              "depressiveSymptoms",
-              "sleepDisorder"
-            ]
-          },
-          "uniqueItems": true
-        },
-        "indicationFreeText": {
-          "type": "string"
-        },
-        "symptomsFreeText": {
-          "type": "string"
-        },
         "standardOfCareTriedFreeText": {
           "type": "string"
-        },
-        "doctorRationaleFreeText": {
-          "type": "string"
-        },
-        "hasDoctorSupport": {
-          "type": "boolean",
-          "default": true
         }
       },
       "additionalProperties": false
@@ -201,9 +173,9 @@
           "type": "boolean",
           "default": true
         },
-        "includeSection2Abs1a": {
+        "includeCaseLaw": {
           "type": "boolean",
-          "default": false
+          "default": true
         }
       }
     },
