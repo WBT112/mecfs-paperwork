@@ -1,0 +1,21 @@
+{
+  "id": "other",
+  "version": "1.0",
+  "defaultLocale": "de",
+  "locales": [
+    "de",
+    "en"
+  ],
+  "titleKey": "pack.title",
+  "descriptionKey": "pack.desc",
+  "exports": [
+    "docx",
+    "json"
+  ],
+  "docx": {
+    "templates": {
+      "a4": "docx/a4.docx"
+    },
+    "mapping": "docx/mapping.json"
+  }
+}

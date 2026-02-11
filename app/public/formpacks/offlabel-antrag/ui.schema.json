@@ -164,7 +164,8 @@
     },
     "merkzeichen": {
       "ui:title": "offlabel-antrag.severity.merkzeichen.label",
-      "ui:help": "offlabel-antrag.severity.merkzeichen.help"
+      "ui:help": "offlabel-antrag.severity.merkzeichen.help",
+      "ui:widget": "checkboxes"
     },
     "pflegegrad": {
       "ui:title": "offlabel-antrag.severity.pflegegrad.label",

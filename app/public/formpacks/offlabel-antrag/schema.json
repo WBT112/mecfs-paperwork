@@ -124,17 +124,17 @@
           ]
         },
         "merkzeichen": {
-          "type": "string",
-          "enum": [
-            "G",
-            "aG",
-            "H",
-            "B",
-            "Bl",
-            "Gl",
-            "TBl",
-            "RF"
-          ]
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "G",
+              "aG",
+              "H",
+              "B"
+            ]
+          },
+          "uniqueItems": true
         },
         "pflegegrad": {
           "type": "string",

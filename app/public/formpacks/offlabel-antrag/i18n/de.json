@@ -64,7 +64,7 @@
   "offlabel-antrag.severity.gdb.label": "Grad der Behinderung (GdB)",
   "offlabel-antrag.severity.gdb.help": "Wähle den dokumentierten GdB.",
   "offlabel-antrag.severity.merkzeichen.label": "Merkzeichen",
-  "offlabel-antrag.severity.merkzeichen.help": "Optionales Merkzeichen zum GdB.",
+  "offlabel-antrag.severity.merkzeichen.help": "Optionales Merkzeichen zum GdB (Mehrfachauswahl: G, aG, H, B).",
   "offlabel-antrag.severity.pflegegrad.label": "Pflegegrad",
   "offlabel-antrag.severity.pflegegrad.help": "Wähle den dokumentierten Pflegegrad.",
   "offlabel-antrag.severity.workStatus.label": "Arbeitsstatus",

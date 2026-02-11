@@ -259,6 +259,26 @@ const getStringValue = (value: unknown): string | null => {
   return trimmed.length > 0 ? trimmed : null;
 };
 
+const ALLOWED_MERKZEICHEN_VALUES = new Set(['G', 'aG', 'H', 'B']);
+
+const getMerkzeichenValues = (value: unknown): string[] => {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return ALLOWED_MERKZEICHEN_VALUES.has(trimmed) ? [trimmed] : [];
+  }
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const values = value
+    .filter((entry): entry is string => typeof entry === 'string')
+    .map((entry) => entry.trim())
+    .filter((entry) => ALLOWED_MERKZEICHEN_VALUES.has(entry));
+
+  return [...new Set(values)];
+};
+
 const formatBirthDate = (value: string | null): string | null => {
   if (!value) {
     return null;
@@ -445,7 +465,7 @@ const buildSeveritySummary = (
 
   const bellScore = getStringValue(severity.bellScore);
   const gdb = getStringValue(severity.gdb);
-  const merkzeichen = gdb ? getStringValue(severity.merkzeichen) : null;
+  const merkzeichen = gdb ? getMerkzeichenValues(severity.merkzeichen) : [];
   const pflegegrad = getStringValue(severity.pflegegrad);
   const workStatus = getStringValue(severity.workStatus);
   const rawMobilityLevel = getStringValue(severity.mobilityLevel);
@@ -459,7 +479,7 @@ const buildSeveritySummary = (
       : rawMobilityLevel;
 
   const marker =
-    merkzeichen && merkzeichen.length > 0 ? `, ${merkzeichen}` : '';
+    merkzeichen.length > 0 ? `, Merkzeichen ${merkzeichen.join(', ')}` : '';
   const fragments = buildSeverityFragments(t, [
     {
       key: 'offlabel-antrag.export.severity.bell',

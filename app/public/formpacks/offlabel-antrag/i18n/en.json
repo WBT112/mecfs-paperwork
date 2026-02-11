@@ -64,7 +64,7 @@
   "offlabel-antrag.severity.gdb.label": "Disability degree (GdB)",
   "offlabel-antrag.severity.gdb.help": "Select the documented disability degree.",
   "offlabel-antrag.severity.merkzeichen.label": "Special marker",
-  "offlabel-antrag.severity.merkzeichen.help": "Optional marker associated with GdB.",
+  "offlabel-antrag.severity.merkzeichen.help": "Optional marker linked to GdB (multi-select: G, aG, H, B).",
   "offlabel-antrag.severity.pflegegrad.label": "Care level",
   "offlabel-antrag.severity.pflegegrad.help": "Select the documented care level.",
   "offlabel-antrag.severity.workStatus.label": "Work status",

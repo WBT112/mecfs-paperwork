@@ -171,6 +171,8 @@ describe('buildOffLabelAntragDocumentModel', () => {
       {
         severity: {
           bellScore: '40',
+          gdb: '50',
+          merkzeichen: ['G', 'H'],
           pflegegrad: '3',
           mobilityLevel: 'housebound',
         },
@@ -180,8 +182,9 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     expect(model.kk.paragraphs[3]).toContain('Bell-Score 40');
+    expect(model.kk.paragraphs[3]).toContain('GdB) von 50');
+    expect(model.kk.paragraphs[3]).toContain('Merkzeichen G, H');
     expect(model.kk.paragraphs[3]).toContain('Pflegegrad 3');
     expect(model.kk.paragraphs[3]).toContain('hausgebunden');
-    expect(model.kk.paragraphs[3]).not.toContain('GdB');
   });
 });

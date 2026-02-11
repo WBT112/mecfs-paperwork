@@ -6,6 +6,7 @@ import { buildOfflabelAntragExportBundle } from '../../src/formpacks/offlabel-an
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
 const FIXED_EXPORTED_AT = new Date('2026-02-10T12:00:00.000Z');
+const EXAMPLE_ATTACHMENT = 'Arztbrief vom 01.01.2026';
 
 const interpolate = (
   template: string,
@@ -111,15 +112,15 @@ describe('offlabel-antrag letter builder', () => {
     });
 
     expect(bundle.part1.attachmentsItems[0]).toContain('Bewertung: Ivabradin');
-    expect(bundle.part1.attachmentsItems[1]).toBe('Arztbrief vom 01.01.2026');
-    expect(bundle.part1.attachmentsItems).toContain('Arztbrief vom 01.01.2026');
+    expect(bundle.part1.attachmentsItems[1]).toBe(EXAMPLE_ATTACHMENT);
+    expect(bundle.part1.attachmentsItems).toContain(EXAMPLE_ATTACHMENT);
     expect(bundle.part1.attachmentsItems).toContain('Befundbericht');
     expect(bundle.part2.attachmentsItems[0]).toBe(
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
     );
     expect(bundle.part2.attachmentsItems[1]).toContain('Bewertung: Ivabradin');
-    expect(bundle.part2.attachmentsItems[2]).toBe('Arztbrief vom 01.01.2026');
-    expect(bundle.part2.attachmentsItems).toContain('Arztbrief vom 01.01.2026');
+    expect(bundle.part2.attachmentsItems[2]).toBe(EXAMPLE_ATTACHMENT);
+    expect(bundle.part2.attachmentsItems).toContain(EXAMPLE_ATTACHMENT);
     expect(bundle.part2.attachmentsItems).toContain('Befundbericht');
     expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
       'Rechtsprechung: LSG',
