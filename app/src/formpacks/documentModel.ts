@@ -72,19 +72,12 @@ export type DocumentModel = {
   attachments?: {
     items: string[];
   };
-  export?: {
-    includeSources?: boolean;
-    includeCaseLaw?: boolean;
-  };
   kk?: OffLabelLetterSection;
   arzt?: OffLabelLetterSection;
   part3?: {
     title: string;
     paragraphs: string[];
   };
-  hasPart2?: string;
-  hasPart3?: string;
-  hasSources?: string;
   sourcesHeading?: string;
   sources?: string[];
   exportedAtIso?: string;
@@ -347,13 +340,9 @@ const buildOfflabelAntragModel = (
     request: projected.request,
     attachmentsFreeText: projected.attachmentsFreeText,
     attachments: projected.attachments,
-    export: projected.export,
     kk: projected.kk,
     arzt: projected.arzt,
     part3: projected.part3,
-    hasPart2: projected.hasPart2,
-    hasPart3: projected.hasPart3,
-    hasSources: projected.hasSources,
     sourcesHeading: projected.sourcesHeading,
     sources: projected.sources,
     exportedAtIso: projected.exportedAtIso,

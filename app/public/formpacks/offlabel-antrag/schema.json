@@ -165,20 +165,6 @@
       },
       "additionalProperties": false
     },
-    "export": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "includeSources": {
-          "type": "boolean",
-          "default": true
-        },
-        "includeCaseLaw": {
-          "type": "boolean",
-          "default": true
-        }
-      }
-    },
     "attachmentsFreeText": {
       "type": "string"
     }

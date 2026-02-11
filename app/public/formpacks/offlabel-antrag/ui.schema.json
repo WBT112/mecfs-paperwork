@@ -5,7 +5,6 @@
     "insurer",
     "request",
     "severity",
-    "export",
     "attachmentsFreeText"
   ],
   "patient": {
@@ -188,18 +187,6 @@
         "offlabel-antrag.severity.mobilityLevel.option.housebound",
         "offlabel-antrag.severity.mobilityLevel.option.bedbound"
       ]
-    }
-  },
-  "export": {
-    "ui:title": "offlabel-antrag.section.export.title",
-    "ui:order": ["includeSources", "includeCaseLaw"],
-    "includeSources": {
-      "ui:title": "offlabel-antrag.fields.export.includeSources.label",
-      "ui:help": "offlabel-antrag.fields.export.includeSources.help"
-    },
-    "includeCaseLaw": {
-      "ui:title": "offlabel-antrag.fields.export.includeCaseLaw.label",
-      "ui:help": "offlabel-antrag.fields.export.includeCaseLaw.help"
     }
   },
   "attachmentsFreeText": {

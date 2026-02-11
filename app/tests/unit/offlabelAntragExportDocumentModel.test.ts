@@ -6,6 +6,7 @@ import { buildOffLabelAntragDocumentModel } from '../../src/formpacks/offlabel-a
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
 const FIXED_EXPORTED_AT = new Date('2026-02-10T12:00:00.000Z');
+const LSG_LABEL = 'LSG Niedersachsen-Bremen';
 
 const interpolate = (
   template: string,
@@ -72,23 +73,22 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
     expect(model.sources).toHaveLength(3);
     expect(model.sources[1]).toContain('Bewertung Ivabradin');
-    expect(model.sources[2]).toContain('LSG Niedersachsen-Bremen');
-    expect(model.hasSources).toBe('1');
-    expect(model.hasPart2).toBe('1');
-    expect(model.hasPart3).toBe('1');
+    expect(model.sources[2]).toContain(LSG_LABEL);
     expect(model.kk.attachments).toContain(
-      'Bewertung: Ivabradin - Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
+      'Bewertung: Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
     );
+    expect(
+      model.kk.attachments.some((attachment) =>
+        attachment.includes('Rechtsprechung: LSG Niedersachsen-Bremen'),
+      ),
+    ).toBe(false);
   });
 
-  it('always keeps part 2 and allows disabling sources', () => {
+  it('always includes the mandatory source and attachment entries', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         request: {
           drug: 'ivabradine',
-        },
-        export: {
-          includeSources: false,
         },
         attachmentsFreeText: 'Labor',
       },
@@ -97,24 +97,26 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     expect(model.arzt).toBeDefined();
-    expect(model.hasPart2).toBe('1');
-    expect(model.hasSources).toBe('');
-    expect(model.sources).toEqual([]);
+    expect(model.part3).toBeDefined();
+    expect(model.sources).toHaveLength(3);
+    expect(model.sources[0]).toContain('Medical Service');
+    expect(model.sources[2]).toContain(LSG_LABEL);
     expect(model.kk.attachments[0]).toContain(
-      'Expert Group Long COVID Off-Label Use at BfArM',
+      'Expert Group Long COVID Off-Label-Use at BfArM',
     );
+    expect(
+      model.kk.attachments.some((attachment) =>
+        attachment.includes('Case law'),
+      ),
+    ).toBe(false);
     expect(model.kk.attachments).toContain('Labor');
   });
 
-  it('adds optional case-law paragraph and source only when enabled', () => {
+  it('always includes section 2(1a) paragraph and case-law source', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         request: {
           drug: 'agomelatin',
-        },
-        export: {
-          includeSources: true,
-          includeCaseLaw: true,
         },
       },
       'de',
@@ -127,7 +129,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       ),
     ).toBe(true);
     expect(model.sources).toHaveLength(3);
-    expect(model.sources[2]).toContain('LSG Niedersachsen-Bremen');
+    expect(model.sources[2]).toContain(LSG_LABEL);
   });
 
   it('always includes part 3 and the part-3 attachment hint', () => {
@@ -142,12 +144,11 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     expect(model.part3).toBeDefined();
-    expect(model.hasPart3).toBe('1');
     expect(
       model.kk.attachments.some((attachment) =>
         attachment.includes('siehe Teil 3'),
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('parses attachments from free text lines', () => {

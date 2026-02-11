@@ -83,10 +83,6 @@ export type OffLabelAntragDocumentModel = {
     drug: string;
     standardOfCareTriedFreeText: string;
   };
-  export: {
-    includeSources: boolean;
-    includeCaseLaw: boolean;
-  };
   attachmentsFreeText: string;
   attachments: {
     items: string[];
@@ -94,9 +90,6 @@ export type OffLabelAntragDocumentModel = {
   kk: OffLabelLetterSection;
   arzt: OffLabelLetterSection;
   part3: OffLabelPart3Section;
-  hasPart2: string;
-  hasPart3: string;
-  hasSources: string;
   sourcesHeading: string;
   sources: string[];
   exportedAtIso: string;
@@ -106,11 +99,29 @@ export type OffLabelAntragDocumentModel = {
 type BuildOptions = {
   exportedAt?: Date;
   defaults?: OfflabelAntragExportDefaults;
-  includeSources?: boolean;
-  includeCaseLaw?: boolean;
 };
 
 type KnownDrug = 'agomelatin' | 'ivabradine' | 'vortioxetine';
+const EXPERT_SOURCE_KEYS = {
+  agomelatin: 'offlabel-antrag.export.sources.expert.agomelatin',
+  ivabradine: 'offlabel-antrag.export.sources.expert.ivabradin',
+  vortioxetine: 'offlabel-antrag.export.sources.expert.vortioxetin',
+} as const;
+
+const EXPERT_ATTACHMENT_KEYS = {
+  agomelatin: 'offlabel-antrag.export.attachments.autoExpert.agomelatin',
+  ivabradine: 'offlabel-antrag.export.attachments.autoExpert.ivabradin',
+  vortioxetine: 'offlabel-antrag.export.attachments.autoExpert.vortioxetin',
+} as const;
+
+type ExpertSourceKey =
+  | 'offlabel-antrag.export.sources.expert.agomelatin'
+  | 'offlabel-antrag.export.sources.expert.ivabradin'
+  | 'offlabel-antrag.export.sources.expert.vortioxetin';
+type ExpertAttachmentKey =
+  | 'offlabel-antrag.export.attachments.autoExpert.agomelatin'
+  | 'offlabel-antrag.export.attachments.autoExpert.ivabradin'
+  | 'offlabel-antrag.export.attachments.autoExpert.vortioxetin';
 
 type DrugFacts = {
   medicationName: string;
@@ -119,8 +130,8 @@ type DrugFacts = {
   targetSymptoms: string;
   doseAndDuration: string;
   monitoringAndStop: string;
-  expertSourceKey: `offlabel-antrag.export.sources.expert.${KnownDrug}`;
-  expertAttachmentKey: `offlabel-antrag.export.attachments.autoExpert.${KnownDrug}`;
+  expertSourceKey: ExpertSourceKey;
+  expertAttachmentKey: ExpertAttachmentKey;
 };
 
 type I18nT = (key: string, options?: Record<string, unknown>) => string;
@@ -147,9 +158,8 @@ const DRUG_FACTS_DE: Record<KnownDrug, DrugFacts> = {
       '25 mg zur Nacht; nach 2 Wochen ggf. 50 mg. Behandlungsdauer mindestens 12 Wochen, danach Nutzen-Risiko-Prüfung',
     monitoringAndStop:
       'Leberwerte überwachen; bei Leberschädigungssymptomen sofort absetzen; Abbruch bei Transaminasen > 3x oberer Normwert',
-    expertSourceKey: 'offlabel-antrag.export.sources.expert.agomelatin',
-    expertAttachmentKey:
-      'offlabel-antrag.export.attachments.autoExpert.agomelatin',
+    expertSourceKey: EXPERT_SOURCE_KEYS.agomelatin,
+    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.agomelatin,
   },
   ivabradine: {
     medicationName: 'Ivabradin',
@@ -162,9 +172,8 @@ const DRUG_FACTS_DE: Record<KnownDrug, DrugFacts> = {
       'Start 2,5 mg morgens; Titration bis max. 2x5 mg (Standard 2x5 mg, Abenddosis ggf. weglassen)',
     monitoringAndStop:
       'Absetzen erwägen, wenn innerhalb von 3 Monaten keine klinisch relevante Reduktion der Ruhe-HF und nur eingeschränkte Symptomverbesserung erreicht wird; Abbruch bei persistierender Bradykardie (HF <50), Bradykardie-Symptomen oder schweren Nebenwirkungen',
-    expertSourceKey: 'offlabel-antrag.export.sources.expert.ivabradine',
-    expertAttachmentKey:
-      'offlabel-antrag.export.attachments.autoExpert.ivabradine',
+    expertSourceKey: EXPERT_SOURCE_KEYS.ivabradine,
+    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.ivabradine,
   },
   vortioxetine: {
     medicationName: 'Vortioxetin',
@@ -177,9 +186,8 @@ const DRUG_FACTS_DE: Record<KnownDrug, DrugFacts> = {
       '5-20 mg 1x täglich; Start 5 mg, nach 2 Wochen Dosisanpassung; Fortführung bis mindestens 6 Monate nach Symptomfreiheit',
     monitoringAndStop:
       'Abbruch bei Serotonin-Syndrom, hyponatriämischer Enzephalopathie, neuroleptischem malignen Syndrom oder nicht tolerierbaren Nebenwirkungen; Hinweis: in Deutschland nicht verfügbar, Import/Verfügbarkeit prüfen',
-    expertSourceKey: 'offlabel-antrag.export.sources.expert.vortioxetine',
-    expertAttachmentKey:
-      'offlabel-antrag.export.attachments.autoExpert.vortioxetine',
+    expertSourceKey: EXPERT_SOURCE_KEYS.vortioxetine,
+    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.vortioxetine,
   },
 };
 
@@ -194,9 +202,8 @@ const DRUG_FACTS_EN: Record<KnownDrug, DrugFacts> = {
       '25 mg at night; after 2 weeks increase to 50 mg if needed. Continue for at least 12 weeks and re-evaluate benefit-risk',
     monitoringAndStop:
       'monitor liver function; stop immediately with liver injury symptoms; discontinue if transaminases exceed 3x upper normal limit',
-    expertSourceKey: 'offlabel-antrag.export.sources.expert.agomelatin',
-    expertAttachmentKey:
-      'offlabel-antrag.export.attachments.autoExpert.agomelatin',
+    expertSourceKey: EXPERT_SOURCE_KEYS.agomelatin,
+    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.agomelatin,
   },
   ivabradine: {
     medicationName: 'Ivabradine',
@@ -209,9 +216,8 @@ const DRUG_FACTS_EN: Record<KnownDrug, DrugFacts> = {
       'start at 2.5 mg in the morning; titrate up to max. 5 mg twice daily (standard 5 mg twice daily; evening dose may be omitted)',
     monitoringAndStop:
       'consider discontinuation if no clinically relevant resting heart-rate reduction is achieved within 3 months and symptom improvement remains limited; stop with persistent bradycardia (HR <50), bradycardia symptoms, or severe adverse events',
-    expertSourceKey: 'offlabel-antrag.export.sources.expert.ivabradine',
-    expertAttachmentKey:
-      'offlabel-antrag.export.attachments.autoExpert.ivabradine',
+    expertSourceKey: EXPERT_SOURCE_KEYS.ivabradine,
+    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.ivabradine,
   },
   vortioxetine: {
     medicationName: 'Vortioxetine',
@@ -224,9 +230,8 @@ const DRUG_FACTS_EN: Record<KnownDrug, DrugFacts> = {
       '5-20 mg once daily; start with 5 mg and adjust dose after 2 weeks; continue for at least 6 months after symptom remission',
     monitoringAndStop:
       'discontinue in serotonin syndrome, hyponatremic encephalopathy, neuroleptic malignant syndrome, or intolerable adverse events; note: not available in Germany, verify import/availability',
-    expertSourceKey: 'offlabel-antrag.export.sources.expert.vortioxetine',
-    expertAttachmentKey:
-      'offlabel-antrag.export.attachments.autoExpert.vortioxetine',
+    expertSourceKey: EXPERT_SOURCE_KEYS.vortioxetine,
+    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.vortioxetine,
   },
 };
 
@@ -253,9 +258,6 @@ const getStringValue = (value: unknown): string | null => {
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
 };
-
-const getBooleanValue = (value: unknown): boolean | undefined =>
-  typeof value === 'boolean' ? value : undefined;
 
 const formatBirthDate = (value: string | null): string | null => {
   if (!value) {
@@ -567,7 +569,6 @@ const buildKkParagraphs = ({
   doseAndDuration,
   monitoringAndStop,
   severitySummary,
-  includeCaseLaw,
 }: {
   t: I18nT;
   medicationName: string;
@@ -577,7 +578,6 @@ const buildKkParagraphs = ({
   doseAndDuration: string;
   monitoringAndStop: string;
   severitySummary: string;
-  includeCaseLaw: boolean;
 }): string[] => [
   tr(
     t,
@@ -602,15 +602,11 @@ const buildKkParagraphs = ({
   tr(t, 'offlabel-antrag.export.part1.p4', '{{severitySummary}}', {
     severitySummary,
   }),
-  ...(includeCaseLaw
-    ? [
-        tr(
-          t,
-          'offlabel-antrag.export.part1.p5',
-          'Ergänzend verweise ich - sofern die Schwere des Verlaufs dies trägt - auf die sozialgerichtliche Rechtsprechung zur Anwendung von § 2 Abs. 1a SGB V bei ME/CFS (wertungsmäßig vergleichbare Schwere, fehlende Standardtherapie).',
-        ),
-      ]
-    : []),
+  tr(
+    t,
+    'offlabel-antrag.export.part1.p5',
+    'Ergänzend beantrage ich die Kostenübernahme auch unter dem Gesichtspunkt des § 2 Abs. 1a SGB V. Bei schwerwiegenden Verläufen und fehlenden ausreichend wirksamen Standardoptionen kann eine Einzelfallleistung in Betracht kommen, wenn eine nicht ganz entfernt liegende Aussicht auf eine spürbare positive Einwirkung auf den Krankheitsverlauf besteht. Zur Einordnung der Versorgungssituation bei ME/CFS und der Anwendung des § 2 Abs. 1a SGB V verweise ich auf den Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER; Anlage/Quelle).',
+  ),
   tr(
     t,
     'offlabel-antrag.export.part1.p6',
@@ -803,60 +799,28 @@ const buildPart3Paragraphs = ({
 
 const getSourceItems = ({
   t,
-  includeSources,
-  includeCaseLaw,
   expertSource,
 }: {
   t: I18nT;
-  includeSources: boolean;
-  includeCaseLaw: boolean;
   expertSource: string | null;
-}): string[] => {
-  if (!includeSources) {
-    return [];
-  }
-
-  const sources: string[] = [
+}): string[] => [
+  tr(
+    t,
+    'offlabel-antrag.export.sources.mdBund',
+    'Medizinischer Dienst Bund: Begutachtungsanleitung / Begutachtungsmaßstäbe Off-Label-Use (Stand 05/2022).',
+  ),
+  expertSource ??
     tr(
       t,
-      'offlabel-antrag.export.sources.mdBund',
-      'Medizinischer Dienst Bund: Begutachtungsanleitung - Off-Label-Use (Stand 05/2022).',
+      EXPERT_SOURCE_KEYS.ivabradine,
+      'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).',
     ),
-  ];
-
-  if (expertSource) {
-    sources.push(expertSource);
-  }
-
-  if (includeCaseLaw) {
-    sources.push(
-      tr(
-        t,
-        'offlabel-antrag.export.sources.caseLaw',
-        'LSG Niedersachsen-Bremen: Beschluss vom 14.10.2022, L 4 KR 373/22 B ER (Anwendung § 2 Abs. 1a SGB V bei ME/CFS; fehlende Standardtherapie).',
-      ),
-    );
-  }
-
-  return sources;
-};
-
-const resolveExportFlags = (
-  formData: Record<string, unknown>,
-  options: BuildOptions,
-) => {
-  const exportRecord = getRecordValue(formData.export);
-  const includeSources =
-    options.includeSources ??
-    getBooleanValue(exportRecord?.includeSources) ??
-    true;
-  const includeCaseLaw =
-    options.includeCaseLaw ??
-    getBooleanValue(exportRecord?.includeCaseLaw) ??
-    true;
-
-  return { includeSources, includeCaseLaw };
-};
+  tr(
+    t,
+    'offlabel-antrag.export.sources.caseLaw',
+    'LSG Niedersachsen-Bremen: Beschluss vom 14.10.2022, L 4 KR 373/22 B ER (ME/CFS; § 2 Abs. 1a SGB V; fehlende Standardtherapie).',
+  ),
+];
 
 const toLegacyLetter = (
   section: OffLabelLetterSection,
@@ -888,11 +852,6 @@ export const buildOffLabelAntragDocumentModel = (
   const doctorRecord = getRecordValue(formData.doctor);
   const insurerRecord = getRecordValue(formData.insurer);
   const requestRecord = getRecordValue(formData.request);
-
-  const { includeSources, includeCaseLaw } = resolveExportFlags(
-    formData,
-    options,
-  );
 
   const rawDrug = getStringValue(requestRecord?.drug);
   const knownDrug = isKnownDrug(rawDrug) ? rawDrug : null;
@@ -950,13 +909,13 @@ export const buildOffLabelAntragDocumentModel = (
   const severitySummary = buildSeveritySummary(t, formData);
 
   const kkAttachments: string[] = [
-    ...(facts.expertAttachment ? [facts.expertAttachment] : []),
+    facts.expertAttachment ??
+      tr(
+        t,
+        EXPERT_ATTACHMENT_KEYS.ivabradine,
+        'Bewertung: Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
+      ),
     ...attachmentsItems,
-    tr(
-      t,
-      'offlabel-antrag.export.attachments.autoDoctorStatement',
-      'Ärztliche Stellungnahme/Befundbericht (siehe Teil 3)',
-    ),
   ];
 
   const arztAttachments: string[] = [
@@ -965,7 +924,12 @@ export const buildOffLabelAntragDocumentModel = (
       'offlabel-antrag.export.part2.attachmentsAutoItem',
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
     ),
-    ...(facts.expertAttachment ? [facts.expertAttachment] : []),
+    facts.expertAttachment ??
+      tr(
+        t,
+        EXPERT_ATTACHMENT_KEYS.ivabradine,
+        'Bewertung: Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
+      ),
     ...attachmentsItems,
   ];
 
@@ -998,7 +962,6 @@ export const buildOffLabelAntragDocumentModel = (
         doseAndDuration: facts.doseAndDuration,
         monitoringAndStop: facts.monitoringAndStop,
         severitySummary,
-        includeCaseLaw,
       }),
       patientName,
     ],
@@ -1055,8 +1018,6 @@ export const buildOffLabelAntragDocumentModel = (
 
   const sources = getSourceItems({
     t,
-    includeSources,
-    includeCaseLaw,
     expertSource: facts.expertSource,
   });
 
@@ -1075,10 +1036,6 @@ export const buildOffLabelAntragDocumentModel = (
     doctor,
     insurer,
     request,
-    export: {
-      includeSources,
-      includeCaseLaw,
-    },
     attachmentsFreeText,
     attachments: {
       items: attachmentsItems,
@@ -1086,9 +1043,6 @@ export const buildOffLabelAntragDocumentModel = (
     kk,
     arzt,
     part3,
-    hasPart2: '1',
-    hasPart3: '1',
-    hasSources: includeSources ? '1' : '',
     sourcesHeading: tr(t, 'offlabel-antrag.export.sourcesHeading', 'Quellen'),
     sources,
     exportedAtIso: exportedAt.toISOString(),

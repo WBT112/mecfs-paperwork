@@ -54,10 +54,6 @@ type OfflabelAntragBundleInput = {
     drug?: string | null;
     standardOfCareTriedFreeText?: string | null;
   };
-  export?: {
-    includeSources?: boolean;
-    includeCaseLaw?: boolean;
-  };
   attachmentsFreeText?: string | null;
   attachments?: {
     items?: string[];

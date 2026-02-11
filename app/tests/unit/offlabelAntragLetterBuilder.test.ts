@@ -110,16 +110,23 @@ describe('offlabel-antrag letter builder', () => {
       exportedAt: FIXED_EXPORTED_AT,
     });
 
-    expect(bundle.part1.attachmentsItems).toEqual([
-      'Arztbrief vom 01.01.2026',
-      'Befundbericht',
-      'Ärztliche Stellungnahme/Befundbericht (siehe Teil 3)',
-    ]);
-    expect(bundle.part2.attachmentsItems).toEqual([
+    expect(bundle.part1.attachmentsItems[0]).toContain('Bewertung: Ivabradin');
+    expect(bundle.part1.attachmentsItems[1]).toBe('Arztbrief vom 01.01.2026');
+    expect(bundle.part1.attachmentsItems).toContain('Arztbrief vom 01.01.2026');
+    expect(bundle.part1.attachmentsItems).toContain('Befundbericht');
+    expect(bundle.part2.attachmentsItems[0]).toBe(
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
-      'Arztbrief vom 01.01.2026',
-      'Befundbericht',
-    ]);
+    );
+    expect(bundle.part2.attachmentsItems[1]).toContain('Bewertung: Ivabradin');
+    expect(bundle.part2.attachmentsItems[2]).toBe('Arztbrief vom 01.01.2026');
+    expect(bundle.part2.attachmentsItems).toContain('Arztbrief vom 01.01.2026');
+    expect(bundle.part2.attachmentsItems).toContain('Befundbericht');
+    expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
+      'Rechtsprechung: LSG',
+    );
+    expect(bundle.part2.attachmentsItems.join(' | ')).not.toContain(
+      'Rechtsprechung: LSG',
+    );
   });
 
   it('adds only the selected drug expert source as attachment', () => {
@@ -134,7 +141,10 @@ describe('offlabel-antrag letter builder', () => {
     });
 
     expect(bundle.part1.attachmentsItems).toContain(
-      'Bewertung: Vortioxetin - Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
+      'Bewertung: Vortioxetin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
+    );
+    expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
+      'Rechtsprechung: LSG Niedersachsen-Bremen',
     );
     expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
       'Bewertung Ivabradin',

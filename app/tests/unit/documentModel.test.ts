@@ -248,14 +248,7 @@ describe('formpacks/documentModel', () => {
     expect(result.attachments).toEqual({
       items: ['Arztbrief vom 2026-01-10', 'Befundbericht', 'Laborwerte'],
     });
-    expect(result.export).toEqual({
-      includeSources: true,
-      includeCaseLaw: true,
-    });
     expect(result.kk?.subject).toContain('Ivabradin');
-    expect(result.hasPart2).toBe('1');
-    expect(result.hasPart3).toBe('1');
-    expect(result.hasSources).toBe('1');
     expect(result.sources?.length).toBeGreaterThan(0);
     expect(result.exportBundle?.part2).toBeDefined();
     expect(result.exportBundle?.part2.attachmentsItems[0]).toBe(

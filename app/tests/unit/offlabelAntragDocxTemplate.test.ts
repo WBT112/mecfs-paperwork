@@ -34,13 +34,12 @@ describe('offlabel-antrag A4 DOCX template', () => {
     expect(xml).toContain('{{FOR p3 IN part3.paragraphs}}');
   });
 
-  it('contains conditional blocks for optional parts and sources', async () => {
+  it('renders part 2, part 3 and sources without optional wrappers', async () => {
     const xml = await loadOfflabelTemplateXml();
 
-    expect(xml).toContain('{{IF hasPart2}}');
-    expect(xml).toContain('{{IF hasPart3}}');
-    expect(xml).toContain('{{END-IF}}');
-    expect(xml).toContain('{{IF hasSources}}');
+    expect(xml).not.toContain('{{IF hasPart2}}');
+    expect(xml).not.toContain('{{IF hasPart3}}');
+    expect(xml).not.toContain('{{IF hasSources}}');
     expect(xml).toContain('{{sourcesHeading}}');
   });
 

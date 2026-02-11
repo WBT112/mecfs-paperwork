@@ -110,18 +110,6 @@
       "path": "part3.title"
     },
     {
-      "var": "hasPart2",
-      "path": "hasPart2"
-    },
-    {
-      "var": "hasPart3",
-      "path": "hasPart3"
-    },
-    {
-      "var": "hasSources",
-      "path": "hasSources"
-    },
-    {
       "var": "sourcesHeading",
       "path": "sourcesHeading"
     },
