@@ -101,7 +101,7 @@ test('shows an error when schema validation fails', async ({
       ...baseExportPayload.data,
       person: {
         ...baseExportPayload.data.person,
-        invalidField: 'This field is not allowed by the schema',
+        name: 42,
       },
     },
   };

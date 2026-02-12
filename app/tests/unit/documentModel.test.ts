@@ -1,28 +1,61 @@
 import { describe, it, expect, vi } from 'vitest';
 import deTranslationsJson from '../../public/formpacks/notfallpass/i18n/de.json';
 import enTranslationsJson from '../../public/formpacks/notfallpass/i18n/en.json';
+import deOfflabelTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/de.json';
+import enOfflabelTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/en.json';
 import { buildDocumentModel } from '../../src/formpacks/documentModel';
 
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
-const namespace = 'formpack:notfallpass';
+const deOfflabelTranslations = deOfflabelTranslationsJson as Record<
+  string,
+  string
+>;
+const enOfflabelTranslations = enOfflabelTranslationsJson as Record<
+  string,
+  string
+>;
+const notfallpassNamespace = 'formpack:notfallpass';
+const offlabelNamespace = 'formpack:offlabel-antrag';
 const ME_CFS_PARAGRAPH_KEY = 'notfallpass.export.diagnoses.meCfs.paragraph';
+
+const interpolate = (
+  template: string,
+  options: Record<string, unknown> = {},
+): string =>
+  template.replace(/\{\{(\w+)\}\}/g, (_, key: string) =>
+    String(options[key] ?? ''),
+  );
 
 // Mock i18n to provide predictable translations used by buildDocumentModel
 vi.mock('../../src/i18n', () => ({
   default: {
     // Return actual translation strings for the requested locale/namespace when available
-    getFixedT: (locale: string, ns: string) => (key: string) => {
-      if (ns === namespace) {
-        if (locale === 'en' && key in enTranslations) {
-          return enTranslations[key];
+    getFixedT:
+      (locale: string, ns: string) =>
+      (key: string, options?: Record<string, unknown>) => {
+        const fallback =
+          typeof options?.defaultValue === 'string'
+            ? options.defaultValue
+            : key;
+        if (ns === notfallpassNamespace) {
+          if (locale === 'en' && key in enTranslations) {
+            return interpolate(enTranslations[key], options);
+          }
+          if (locale === 'de' && key in deTranslations) {
+            return interpolate(deTranslations[key], options);
+          }
         }
-        if (locale === 'de' && key in deTranslations) {
-          return deTranslations[key];
+        if (ns === offlabelNamespace) {
+          if (locale === 'en' && key in enOfflabelTranslations) {
+            return interpolate(enOfflabelTranslations[key], options);
+          }
+          if (locale === 'de' && key in deOfflabelTranslations) {
+            return interpolate(deOfflabelTranslations[key], options);
+          }
         }
-      }
-      return key;
-    },
+        return interpolate(fallback, options);
+      },
     hasResourceBundle: () => false,
     addResourceBundle: () => undefined,
     changeLanguage: async () => undefined,
@@ -145,5 +178,81 @@ describe('formpacks/documentModel', () => {
     });
     expect(result.diagnosisParagraphs).toEqual([]);
     expect(result.person.name).toBe('Bob');
+  });
+
+  it('builds offlabel-antrag model with derived attachments', () => {
+    const formData: Record<string, unknown> = {
+      patient: {
+        firstName: 'Mara',
+        lastName: 'Example',
+        birthDate: '1990-04-12',
+        insuranceNumber: 'A123',
+        streetAndNumber: 'Road 1',
+        postalCode: '11111',
+        city: 'Town',
+      },
+      doctor: {
+        name: 'Dr. Example',
+        practice: 'Practice',
+        streetAndNumber: 'Doc Street 2',
+        postalCode: '22222',
+        city: 'Doc City',
+      },
+      insurer: {
+        name: 'Insurer',
+        department: 'Benefits',
+        streetAndNumber: 'Insurer Street 3',
+        postalCode: '33333',
+        city: 'Insurer City',
+      },
+      request: {
+        drug: 'ivabradine',
+        standardOfCareTriedFreeText: 'Prior care text',
+      },
+      attachmentsFreeText:
+        ' - Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte\n\n',
+    };
+
+    const result = buildDocumentModel('offlabel-antrag', 'de', formData);
+
+    expect(result.patient).toMatchObject({
+      firstName: 'Mara',
+      lastName: 'Example',
+      birthDate: '12-04-1990',
+      insuranceNumber: 'A123',
+      streetAndNumber: 'Road 1',
+      postalCode: '11111',
+      city: 'Town',
+    });
+    expect(result.doctor).toMatchObject({
+      name: 'Dr. Example',
+      practice: 'Practice',
+      streetAndNumber: 'Doc Street 2',
+      postalCode: '22222',
+      city: 'Doc City',
+    });
+    expect(result.insurer).toEqual({
+      name: 'Insurer',
+      department: 'Benefits',
+      streetAndNumber: 'Insurer Street 3',
+      postalCode: '33333',
+      city: 'Insurer City',
+    });
+    expect(result.request).toEqual({
+      drug: 'ivabradine',
+      standardOfCareTriedFreeText: 'Prior care text',
+    });
+    expect(result.attachmentsFreeText).toBe(
+      '- Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte',
+    );
+    expect(result.attachments).toEqual({
+      items: ['Arztbrief vom 2026-01-10', 'Befundbericht', 'Laborwerte'],
+    });
+    expect(result.kk?.subject).toContain('Ivabradin');
+    expect(result.sources?.length).toBeGreaterThan(0);
+    expect(result.exportBundle?.part2).toBeDefined();
+    expect(result.exportBundle?.part2.attachmentsItems[0]).toBe(
+      'Teil 1: Antrag an die Krankenkasse (Entwurf)',
+    );
   });
 });

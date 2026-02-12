@@ -1,0 +1,22 @@
+{
+  "id": "offlabel-antrag",
+  "version": "0.1.0",
+  "defaultLocale": "de",
+  "locales": [
+    "de",
+    "en"
+  ],
+  "titleKey": "offlabel-antrag.title",
+  "descriptionKey": "offlabel-antrag.description",
+  "exports": [
+    "docx",
+    "json"
+  ],
+  "visibility": "dev",
+  "docx": {
+    "templates": {
+      "a4": "templates/a4.docx"
+    },
+    "mapping": "docx/mapping.json"
+  }
+}

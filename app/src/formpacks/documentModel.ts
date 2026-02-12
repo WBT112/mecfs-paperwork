@@ -3,6 +3,11 @@ import type { SupportedLocale } from '../i18n/locale';
 import { isRecord } from '../lib/utils';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
+import {
+  buildOffLabelAntragDocumentModel,
+  type OffLabelExportBundle,
+  type OffLabelLetterSection,
+} from './offlabel-antrag/export/documentModel';
 
 type DiagnosisFlags = {
   meCfs?: boolean;
@@ -46,10 +51,37 @@ export type DocumentModel = {
   patient?: {
     firstName: string | null;
     lastName: string | null;
+    birthDate?: string | null;
+    insuranceNumber?: string | null;
     streetAndNumber?: string | null;
     postalCode?: string | null;
     city?: string | null;
   };
+  insurer?: {
+    name: string | null;
+    department?: string | null;
+    streetAndNumber?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+  };
+  request?: {
+    drug?: string | null;
+    standardOfCareTriedFreeText?: string | null;
+  };
+  attachmentsFreeText?: string | null;
+  attachments?: {
+    items: string[];
+  };
+  kk?: OffLabelLetterSection;
+  arzt?: OffLabelLetterSection;
+  part3?: {
+    title: string;
+    paragraphs: string[];
+  };
+  sourcesHeading?: string;
+  sources?: string[];
+  exportedAtIso?: string;
+  exportBundle?: OffLabelExportBundle;
   decision?: {
     caseId: number;
     caseText: string;
@@ -283,6 +315,41 @@ const buildNotfallpassModel = (
   return { diagnosisParagraphs, ...baseModel };
 };
 
+const buildOfflabelAntragModel = (
+  formData: Record<string, unknown>,
+  locale: SupportedLocale,
+  baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
+): DocumentModel => {
+  const projected = buildOffLabelAntragDocumentModel(formData, locale);
+
+  return {
+    diagnosisParagraphs: [],
+    ...baseModel,
+    patient: projected.patient,
+    doctor: {
+      ...baseModel.doctor,
+      practice: projected.doctor.practice,
+      title: getStringValue(getRecordValue(formData.doctor)?.title),
+      gender: getStringValue(getRecordValue(formData.doctor)?.gender),
+      name: projected.doctor.name,
+      streetAndNumber: projected.doctor.streetAndNumber,
+      postalCode: projected.doctor.postalCode,
+      city: projected.doctor.city,
+    },
+    insurer: projected.insurer,
+    request: projected.request,
+    attachmentsFreeText: projected.attachmentsFreeText,
+    attachments: projected.attachments,
+    kk: projected.kk,
+    arzt: projected.arzt,
+    part3: projected.part3,
+    sourcesHeading: projected.sourcesHeading,
+    sources: projected.sources,
+    exportedAtIso: projected.exportedAtIso,
+    exportBundle: projected.exportBundle,
+  };
+};
+
 /**
  * Builds a document projection for exports using formpack i18n content.
  */
@@ -303,6 +370,10 @@ export const buildDocumentModel = (
 
   if (formpackId === 'notfallpass') {
     return buildNotfallpassModel(formData, locale, baseModel);
+  }
+
+  if (formpackId === 'offlabel-antrag') {
+    return buildOfflabelAntragModel(formData, locale, baseModel);
   }
 
   return { diagnosisParagraphs: [], ...baseModel };
