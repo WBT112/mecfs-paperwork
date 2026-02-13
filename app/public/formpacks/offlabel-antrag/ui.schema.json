@@ -1,5 +1,6 @@
 {
   "ui:order": [
+    "meta",
     "patient",
     "doctor",
     "insurer",
@@ -221,6 +222,12 @@
     "ui:widget": "textarea",
     "ui:options": {
       "rows": 6
+    }
+  },
+  "meta": {
+    "ui:widget": "hidden",
+    "introAccepted": {
+      "ui:widget": "hidden"
     }
   }
 }
