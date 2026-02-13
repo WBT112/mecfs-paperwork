@@ -41,6 +41,15 @@ export interface InfoBoxConfig {
 
 export interface FormpackUiConfig {
   infoBoxes?: InfoBoxConfig[];
+  introGate?: {
+    enabled: boolean;
+    acceptedFieldPath: string;
+    titleKey: string;
+    bodyKey: string;
+    checkboxLabelKey: string;
+    startButtonLabelKey: string;
+    reopenButtonLabelKey: string;
+  };
 }
 
 export interface FormpackManifest {

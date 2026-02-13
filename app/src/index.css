@@ -1097,6 +1097,85 @@ body {
   text-align: center;
 }
 
+.formpack-intro__reopen {
+  margin-bottom: 1rem;
+}
+
+.formpack-intro-gate {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+  background: var(--color-surface);
+}
+
+.formpack-intro-gate h4 {
+  margin: 0;
+}
+
+.formpack-intro-gate__content {
+  max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  padding: 1rem;
+  background: var(--color-surface-subtle);
+}
+
+.formpack-intro-gate__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.formpack-intro-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 20;
+}
+
+.formpack-intro-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  border: 0;
+}
+
+.formpack-intro-modal__content {
+  position: relative;
+  width: min(800px, 100%);
+  max-height: 85vh;
+  overflow: hidden;
+  background: var(--color-surface);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.formpack-intro-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.formpack-intro-modal__header h4 {
+  margin: 0;
+}
+
+.formpack-intro-modal__body {
+  overflow-y: auto;
+  padding: 1rem;
+}
+
 .formpack-docx-export {
   display: grid;
   grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
