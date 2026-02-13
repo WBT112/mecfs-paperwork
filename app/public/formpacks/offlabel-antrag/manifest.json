@@ -41,7 +41,8 @@
             "op": "eq",
             "value": "ivabradine"
           }
-        ]
+        ],
+        "format": "markdown"
       },
       {
         "id": "drug-agomelatine",
@@ -54,7 +55,8 @@
             "op": "eq",
             "value": "agomelatin"
           }
-        ]
+        ],
+        "format": "markdown"
       },
       {
         "id": "drug-vortioxetine",
@@ -67,7 +69,8 @@
             "op": "eq",
             "value": "vortioxetine"
           }
-        ]
+        ],
+        "format": "markdown"
       },
       {
         "id": "drug-other",
