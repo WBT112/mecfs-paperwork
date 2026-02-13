@@ -4,6 +4,15 @@
   "title": "offlabel-antrag",
   "type": "object",
   "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "introAccepted": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
     "patient": {
       "type": "object",
       "properties": {
@@ -82,8 +91,25 @@
           "enum": [
             "agomelatin",
             "ivabradine",
-            "vortioxetine"
+            "vortioxetine",
+            "other"
           ]
+        },
+        "indicationFullyMetOrDoctorConfirms": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no"
+          ]
+        },
+        "applySection2Abs1a": {
+          "type": "boolean"
+        },
+        "otherDrugName": {
+          "type": "string"
+        },
+        "otherIndication": {
+          "type": "string"
         },
         "standardOfCareTriedFreeText": {
           "type": "string"
@@ -159,7 +185,8 @@
           "type": "string",
           "enum": [
             "housebound",
-            "bedbound"
+            "bedbound",
+            "fullyBedbound"
           ]
         }
       },

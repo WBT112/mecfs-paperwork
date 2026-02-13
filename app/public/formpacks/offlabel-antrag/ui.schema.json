@@ -111,6 +111,10 @@
     "ui:title": "offlabel-antrag.section.request.title",
     "ui:order": [
       "drug",
+      "otherDrugName",
+      "otherIndication",
+      "indicationFullyMetOrDoctorConfirms",
+      "applySection2Abs1a",
       "standardOfCareTriedFreeText"
     ],
     "drug": {
@@ -119,8 +123,28 @@
       "ui:enumNames": [
         "offlabel-antrag.request.drug.option.agomelatin",
         "offlabel-antrag.request.drug.option.ivabradine",
-        "offlabel-antrag.request.drug.option.vortioxetine"
+        "offlabel-antrag.request.drug.option.vortioxetine",
+        "offlabel-antrag.request.drug.option.other"
       ]
+    },
+    "otherDrugName": {
+      "ui:title": "offlabel-antrag.request.otherDrugName.label",
+      "ui:help": "offlabel-antrag.request.otherDrugName.help"
+    },
+    "otherIndication": {
+      "ui:title": "offlabel-antrag.request.otherIndication.label",
+      "ui:help": "offlabel-antrag.request.otherIndication.help"
+    },
+    "indicationFullyMetOrDoctorConfirms": {
+      "ui:title": "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.label",
+      "ui:widget": "radio",
+      "ui:enumNames": [
+        "common.yes",
+        "common.no"
+      ]
+    },
+    "applySection2Abs1a": {
+      "ui:title": "offlabel-antrag.request.applySection2Abs1a.label"
     },
     "standardOfCareTriedFreeText": {
       "ui:title": "offlabel-antrag.request.standardOfCareTriedFreeText.label",
@@ -186,7 +210,8 @@
       "ui:help": "offlabel-antrag.severity.mobilityLevel.help",
       "ui:enumNames": [
         "offlabel-antrag.severity.mobilityLevel.option.housebound",
-        "offlabel-antrag.severity.mobilityLevel.option.bedbound"
+        "offlabel-antrag.severity.mobilityLevel.option.bedbound",
+        "offlabel-antrag.severity.mobilityLevel.option.fullyBedbound"
       ]
     }
   },

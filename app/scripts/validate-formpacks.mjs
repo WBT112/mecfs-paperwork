@@ -76,6 +76,28 @@ const MANIFEST_SCHEMA = {
       type: 'object',
       additionalProperties: false,
       properties: {
+        introGate: {
+          type: 'object',
+          additionalProperties: false,
+          required: [
+            'enabled',
+            'acceptedFieldPath',
+            'titleKey',
+            'bodyKey',
+            'checkboxLabelKey',
+            'startButtonLabelKey',
+            'reopenButtonLabelKey',
+          ],
+          properties: {
+            enabled: { type: 'boolean' },
+            acceptedFieldPath: { type: 'string', minLength: 1 },
+            titleKey: { type: 'string', minLength: 1 },
+            bodyKey: { type: 'string', minLength: 1 },
+            checkboxLabelKey: { type: 'string', minLength: 1 },
+            startButtonLabelKey: { type: 'string', minLength: 1 },
+            reopenButtonLabelKey: { type: 'string', minLength: 1 },
+          },
+        },
         infoBoxes: {
           type: 'array',
           items: {
