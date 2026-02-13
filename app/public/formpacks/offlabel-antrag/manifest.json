@@ -18,5 +18,102 @@
       "a4": "templates/a4.docx"
     },
     "mapping": "docx/mapping.json"
+  },
+  "ui": {
+    "introGate": {
+      "enabled": true,
+      "acceptedFieldPath": "meta.introAccepted",
+      "titleKey": "offlabel-antrag.ui.intro.title",
+      "bodyKey": "offlabel-antrag.ui.intro.body",
+      "checkboxLabelKey": "offlabel-antrag.ui.intro.checkboxLabel",
+      "startButtonLabelKey": "offlabel-antrag.ui.intro.startButtonLabel",
+      "reopenButtonLabelKey": "offlabel-antrag.ui.intro.reopenButtonLabel"
+    },
+    "infoBoxes": [
+      {
+        "id": "drug-ivabradine",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.ivabradine",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "ivabradine"
+          }
+        ],
+        "format": "markdown"
+      },
+      {
+        "id": "drug-agomelatine",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.agomelatine",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "agomelatin"
+          }
+        ],
+        "format": "markdown"
+      },
+      {
+        "id": "drug-vortioxetine",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.vortioxetine",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "vortioxetine"
+          }
+        ],
+        "format": "markdown"
+      },
+      {
+        "id": "drug-other",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.other",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "other"
+          }
+        ]
+      },
+      {
+        "id": "indication-confirmation",
+        "anchor": "request.indicationFullyMetOrDoctorConfirms",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.p2a",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          }
+        ]
+      },
+      {
+        "id": "section-2-abs-1a",
+        "anchor": "request.applySection2Abs1a",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.section2a",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          }
+        ]
+      }
+    ]
   }
 }
