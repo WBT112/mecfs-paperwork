@@ -160,7 +160,140 @@
               "B"
             ]
           },
-          "uniqueItems": true
+          "uniqueItems": true,
+          "oneOf": [
+            {
+              "maxItems": 0
+            },
+            {
+              "minItems": 1,
+              "maxItems": 1,
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "G"
+                  }
+                }
+              ]
+            },
+            {
+              "minItems": 1,
+              "maxItems": 1,
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "aG"
+                  }
+                }
+              ]
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "G"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "H"
+                  }
+                }
+              ]
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "G"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "B"
+                  }
+                }
+              ]
+            },
+            {
+              "minItems": 3,
+              "maxItems": 3,
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "G"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "B"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "H"
+                  }
+                }
+              ]
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "aG"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "B"
+                  }
+                }
+              ]
+            },
+            {
+              "minItems": 2,
+              "maxItems": 2,
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "aG"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "H"
+                  }
+                }
+              ]
+            },
+            {
+              "minItems": 3,
+              "maxItems": 3,
+              "allOf": [
+                {
+                  "contains": {
+                    "const": "aG"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "B"
+                  }
+                },
+                {
+                  "contains": {
+                    "const": "H"
+                  }
+                }
+              ]
+            }
+          ]
         },
         "pflegegrad": {
           "type": "string",

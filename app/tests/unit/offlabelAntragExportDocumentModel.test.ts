@@ -187,4 +187,20 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.kk.paragraphs[3]).toContain('Pflegegrad 3');
     expect(model.kk.paragraphs[3]).toContain('hausgebunden');
   });
+
+  it('ignores unsupported merkzeichen combinations in severity summary', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        severity: {
+          gdb: '50',
+          merkzeichen: ['H'],
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.kk.paragraphs[3]).toContain('GdB) von 50');
+    expect(model.kk.paragraphs[3]).not.toContain('Merkzeichen');
+  });
 });

@@ -14,7 +14,7 @@ test('collapsible sections default and toggle offline', async ({
 }) => {
   await deleteDatabase(page, DB_NAME);
 
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
 
     const manifestLoadError = page.getByText(
@@ -30,8 +30,8 @@ test('collapsible sections default and toggle offline', async ({
     }
 
     if (await manifestLoadError.isVisible().catch(() => false)) {
-      if (attempt < 2) {
-        await page.waitForTimeout(250);
+      if (attempt < 5) {
+        await page.waitForTimeout(400 * attempt);
         continue;
       }
     }

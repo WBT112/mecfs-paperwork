@@ -62,6 +62,7 @@ import {
   clearHiddenFields,
   type DecisionData,
 } from '../formpacks/doctorLetterVisibility';
+import { buildOfflabelDocuments } from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
 import {
   type StorageErrorCode,
   useAutosaveRecord,
@@ -161,6 +162,7 @@ const buildErrorMessage = (
 };
 
 const DOCTOR_LETTER_ID = 'doctor-letter';
+const OFFLABEL_ANTRAG_ID = 'offlabel-antrag';
 const isValidQ4 = (val: unknown): val is DecisionAnswers['q4'] =>
   Q4_OPTIONS.includes(val as DecisionAnswers['q4'] & string);
 
@@ -826,6 +828,9 @@ export default function FormpackDetailPage() {
   const [assetRefreshVersion, setAssetRefreshVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
+  const [selectedOfflabelPreviewId, setSelectedOfflabelPreviewId] = useState<
+    'part1' | 'part2' | 'part3'
+  >('part1');
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
   const hasRestoredRecordRef = useRef<string | null>(null);
@@ -930,6 +935,10 @@ export default function FormpackDetailPage() {
       isActive = false;
     };
   }, [assetRefreshVersion, id, locale, t]);
+
+  useEffect(() => {
+    setSelectedOfflabelPreviewId('part1');
+  }, [formpackId]);
 
   useEffect(() => {
     if (!manifest) {
@@ -1074,7 +1083,7 @@ export default function FormpackDetailPage() {
       return normalizedUiSchema;
     }
 
-    if (formpackId === 'offlabel-antrag') {
+    if (formpackId === OFFLABEL_ANTRAG_ID) {
       return applyOfflabelVisibility(normalizedUiSchema, formData);
     }
 
@@ -1991,6 +2000,11 @@ export default function FormpackDetailPage() {
     () => hasPreviewValue(formData),
     [formData],
   );
+  const offlabelPreviewDocuments = useMemo(
+    () =>
+      formpackId === OFFLABEL_ANTRAG_ID ? buildOfflabelDocuments(formData) : [],
+    [formData, formpackId],
+  );
   const docxTemplateOptions = useMemo(() => {
     if (!manifest?.docx) {
       return [];
@@ -2505,7 +2519,64 @@ export default function FormpackDetailPage() {
     Object.keys(formData).length ? jsonPreview : t('formpackFormPreviewEmpty');
 
   const renderDocumentPreviewContent = () =>
-    hasDocumentContent ? (
+    formpackId === OFFLABEL_ANTRAG_ID ? (
+      <div className="formpack-document-preview formpack-document-preview--offlabel">
+        <div className="formpack-document-preview__tabs" role="tablist">
+          {offlabelPreviewDocuments.map((doc) => (
+            <button
+              key={doc.id}
+              role="tab"
+              type="button"
+              className="app__button"
+              aria-selected={selectedOfflabelPreviewId === doc.id}
+              onClick={() => setSelectedOfflabelPreviewId(doc.id)}
+            >
+              {doc.title}
+            </button>
+          ))}
+        </div>
+        {offlabelPreviewDocuments
+          .filter((doc) => doc.id === selectedOfflabelPreviewId)
+          .map((doc) => (
+            <div key={doc.id}>
+              {doc.blocks.map((block) => {
+                const blockKey =
+                  block.kind === 'list'
+                    ? `${doc.id}-${block.kind}-${block.items.join('|')}`
+                    : block.kind === 'pageBreak'
+                      ? `${doc.id}-${block.kind}`
+                      : `${doc.id}-${block.kind}-${block.text}`;
+                if (block.kind === 'heading') {
+                  return <h3 key={blockKey}>{block.text}</h3>;
+                }
+                if (block.kind === 'paragraph') {
+                  return <p key={blockKey}>{block.text}</p>;
+                }
+                if (block.kind === 'list') {
+                  if (!block.items.length) {
+                    return null;
+                  }
+                  return (
+                    <ul key={blockKey}>
+                      {block.items.map((item) => (
+                        <li key={`${doc.id}-${block.kind}-${item}`}>{item}</li>
+                      ))}
+                    </ul>
+                  );
+                }
+                return (
+                  <p
+                    key={blockKey}
+                    className="formpack-document-preview__page-break"
+                  >
+                    — Page break —
+                  </p>
+                );
+              })}
+            </div>
+          ))}
+      </div>
+    ) : hasDocumentContent ? (
       <div className="formpack-document-preview">{documentPreview}</div>
     ) : (
       <p className="formpack-document-preview__empty">

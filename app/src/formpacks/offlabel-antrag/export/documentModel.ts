@@ -260,23 +260,44 @@ const getStringValue = (value: unknown): string | null => {
 };
 
 const ALLOWED_MERKZEICHEN_VALUES = new Set(['G', 'aG', 'H', 'B']);
+const MERKZEICHEN_ORDER = ['G', 'aG', 'H', 'B'] as const;
+const ALLOWED_MERKZEICHEN_COMBINATIONS = new Set([
+  'G',
+  'aG',
+  'G|H',
+  'B|G',
+  'B|G|H',
+  'B|aG',
+  'H|aG',
+  'B|H|aG',
+]);
+
+const normalizeMerkzeichenValues = (values: string[]): string[] =>
+  [...new Set(values)]
+    .filter((entry) => ALLOWED_MERKZEICHEN_VALUES.has(entry))
+    .sort(
+      (left, right) =>
+        MERKZEICHEN_ORDER.indexOf(left as (typeof MERKZEICHEN_ORDER)[number]) -
+        MERKZEICHEN_ORDER.indexOf(right as (typeof MERKZEICHEN_ORDER)[number]),
+    );
 
 const getMerkzeichenValues = (value: unknown): string[] => {
   if (typeof value === 'string') {
     const trimmed = value.trim();
-    return ALLOWED_MERKZEICHEN_VALUES.has(trimmed) ? [trimmed] : [];
+    return ALLOWED_MERKZEICHEN_COMBINATIONS.has(trimmed) ? [trimmed] : [];
   }
 
   if (!Array.isArray(value)) {
     return [];
   }
 
-  const values = value
-    .filter((entry): entry is string => typeof entry === 'string')
-    .map((entry) => entry.trim())
-    .filter((entry) => ALLOWED_MERKZEICHEN_VALUES.has(entry));
+  const values = normalizeMerkzeichenValues(
+    value
+      .filter((entry): entry is string => typeof entry === 'string')
+      .map((entry) => entry.trim()),
+  );
 
-  return [...new Set(values)];
+  return ALLOWED_MERKZEICHEN_COMBINATIONS.has(values.join('|')) ? values : [];
 };
 
 const formatBirthDate = (value: string | null): string | null => {

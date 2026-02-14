@@ -1488,6 +1488,23 @@ body {
   border-radius: 8px;
 }
 
+.formpack-document-preview__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.formpack-document-preview__tabs .app__button[aria-selected='true'] {
+  outline: 2px solid var(--color-border-accent);
+}
+
+.formpack-document-preview__page-break {
+  border-top: 1px dashed var(--color-border-subtle);
+  padding-top: 0.6rem;
+  color: var(--color-text-subtle);
+}
+
 /* Inline radio buttons for doctor-letter decision tree */
 .formpack-form .field-radio-group,
 .form-group .field-radio-group {
