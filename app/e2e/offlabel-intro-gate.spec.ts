@@ -35,7 +35,6 @@ test('blocks form until intro is accepted and keeps form stable after notes moda
   page,
 }) => {
   const introHeading = page.getByRole('heading', { name: /hinweise/i });
-  const introBody = page.locator('.formpack-intro-gate__content');
   const acceptanceCheckbox = page.getByLabel(
     /Habe verstanden, Nutzung auf eigenes Risiko/i,
   );
@@ -48,9 +47,6 @@ test('blocks form until intro is accepted and keeps form stable after notes moda
   );
   await expect(continueButton).toBeDisabled();
 
-  await introBody.evaluate((element) => {
-    element.scrollTop = element.scrollHeight;
-  });
   await acceptanceCheckbox.check();
   await expect(continueButton).toBeEnabled();
 

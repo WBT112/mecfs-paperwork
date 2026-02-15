@@ -2,6 +2,13 @@ name: E2E (Playwright)
 
 on:
   pull_request:
+    paths:
+      - "app/**"
+      - ".github/workflows/e2e.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -42,7 +49,7 @@ jobs:
 
       - name: Install Playwright browsers
         working-directory: app
-        run: npx playwright install --with-deps chromium firefox webkit
+        run: npx playwright install --with-deps ${{ matrix.browser }}
 
       - name: Run Playwright tests (${{ matrix.browser }})
         working-directory: app
@@ -59,8 +66,8 @@ jobs:
           fi
           exit $status
 
-      - name: Upload Playwright report (always)
-        if: always()
+      - name: Upload Playwright report
+        if: failure() || matrix.browser == 'chromium'
         uses: actions/upload-artifact@v6
         with:
           name: playwright-report-${{ matrix.browser }}

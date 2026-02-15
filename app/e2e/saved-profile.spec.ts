@@ -91,8 +91,12 @@ test.describe('saved profile across formpacks', () => {
     // Wait for profile save to complete (give autosave + profile save time)
     await page.waitForTimeout(2000);
 
-    // --- Step 2: Open notfallpass, click Apply, verify fields ---
-    await openFreshFormpack(page, NOTFALLPASS);
+    // --- Step 2: Open notfallpass (keep DB so profile data persists) ---
+    await openFormpackWithRetry(
+      page,
+      NOTFALLPASS,
+      page.locator('#formpack-records-toggle'),
+    );
 
     await expect(page.locator('.formpack-form')).toBeVisible({
       timeout: POLL_TIMEOUT,
@@ -151,8 +155,12 @@ test.describe('saved profile across formpacks', () => {
 
     await page.waitForTimeout(2000);
 
-    // --- Step 2: Open notfallpass, pre-fill doctor name, then apply ---
-    await openFreshFormpack(page, NOTFALLPASS);
+    // --- Step 2: Open notfallpass (keep DB so profile data persists) ---
+    await openFormpackWithRetry(
+      page,
+      NOTFALLPASS,
+      page.locator('#formpack-records-toggle'),
+    );
     await expect(page.locator('.formpack-form')).toBeVisible({
       timeout: POLL_TIMEOUT,
     });

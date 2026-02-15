@@ -10,11 +10,6 @@ const acceptIntroGate = async (page: Page) => {
   const introHeading = page.getByRole('heading', { name: /hinweise/i });
   await expect(introHeading).toBeVisible({ timeout: 20_000 });
 
-  const introBody = page.locator('.formpack-intro-gate__content');
-  await introBody.evaluate((element) => {
-    element.scrollTop = element.scrollHeight;
-  });
-
   await page
     .getByLabel(/Habe verstanden, Nutzung auf eigenes Risiko/i)
     .check({ force: true });

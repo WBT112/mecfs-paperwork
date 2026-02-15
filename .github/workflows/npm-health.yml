@@ -2,6 +2,15 @@ name: npm Health
 
 on:
   pull_request:
+    paths:
+      - "app/package.json"
+      - "app/package-lock.json"
+      - "tools/npm-health.mjs"
+      - ".github/workflows/npm-health.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

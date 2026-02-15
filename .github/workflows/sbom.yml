@@ -3,8 +3,28 @@ name: SBOM
 on:
   push:
     branches: [main]
+    paths:
+      - "Dockerfile"
+      - "app/**"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "tools/sbom-summary.mjs"
+      - "tools/grype-summary.mjs"
+      - ".github/workflows/sbom.yml"
   pull_request:
+    paths:
+      - "Dockerfile"
+      - "app/**"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "tools/sbom-summary.mjs"
+      - "tools/grype-summary.mjs"
+      - ".github/workflows/sbom.yml"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
