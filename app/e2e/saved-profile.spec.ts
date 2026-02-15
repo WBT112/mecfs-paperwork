@@ -59,12 +59,12 @@ test.describe('saved profile across formpacks', () => {
       timeout: POLL_TIMEOUT,
     });
 
-    // Enable "Save these details for future forms"
+    // Ensure "Save master data" checkbox is checked (on by default)
     const saveCheckbox = page.locator(
       '.profile-quickfill input[type="checkbox"]',
     );
     await expect(saveCheckbox).toBeVisible({ timeout: POLL_TIMEOUT });
-    await saveCheckbox.check();
+    await expect(saveCheckbox).toBeChecked({ timeout: POLL_TIMEOUT });
 
     // Fill patient fields
     const patientFirst = page.locator('#root_patient_firstName');
@@ -135,7 +135,7 @@ test.describe('saved profile across formpacks', () => {
     const saveCheckbox = page.locator(
       '.profile-quickfill input[type="checkbox"]',
     );
-    await saveCheckbox.check();
+    await expect(saveCheckbox).toBeChecked({ timeout: POLL_TIMEOUT });
 
     await page.locator('#root_patient_firstName').fill(PATIENT_FIRST);
     await page.locator('#root_patient_lastName').fill(PATIENT_LAST);

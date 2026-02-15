@@ -789,9 +789,10 @@ export default function FormpackDetailPage() {
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
   const [profileSaveEnabled, setProfileSaveEnabled] = useState(() => {
     try {
-      return globalThis.localStorage.getItem(PROFILE_SAVE_KEY) === 'true';
+      const stored = globalThis.localStorage.getItem(PROFILE_SAVE_KEY);
+      return stored === null ? true : stored === 'true';
     } catch {
-      return false;
+      return true;
     }
   });
   const [profileHasSavedData, setProfileHasSavedData] = useState(false);
