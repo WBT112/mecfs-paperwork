@@ -74,7 +74,7 @@ describe('storage/db', () => {
       expect(db).toBe(mockDb);
       expect(openDB).toHaveBeenCalledWith(
         'mecfs-paperwork',
-        2,
+        3,
         expect.any(Object),
       );
     });

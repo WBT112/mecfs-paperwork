@@ -222,6 +222,65 @@ const removeReadOnlyFields = (
   return normalized;
 };
 
+const getFirstItemSchema = (
+  schema: OptionalRjsfSchema,
+): OptionalRjsfSchema | undefined => {
+  if (!schema || typeof schema !== 'object') {
+    return undefined;
+  }
+  if (Array.isArray(schema.items)) {
+    return schema.items[0] as OptionalRjsfSchema;
+  }
+  return schema.items as OptionalRjsfSchema;
+};
+
+// Remove unknown fields when schema disallows additional properties.
+// This keeps imports compatible with older exports after schema evolution.
+const removeUnknownSchemaFields = (
+  schema: OptionalRjsfSchema,
+  data: unknown,
+): unknown => {
+  if (!schema || typeof schema !== 'object') {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    const itemSchema = getFirstItemSchema(schema);
+    if (!itemSchema) {
+      return data;
+    }
+    return data.map((item) => removeUnknownSchemaFields(itemSchema, item));
+  }
+
+  if (!isRecord(data)) {
+    return data;
+  }
+
+  if (!schema.properties) {
+    return data;
+  }
+
+  const properties = schema.properties as Record<string, unknown>;
+  const allowsAdditionalProperties = schema.additionalProperties === true;
+  const normalized: Record<string, unknown> = allowsAdditionalProperties
+    ? { ...data }
+    : {};
+
+  for (const [key, value] of Object.entries(data)) {
+    const propertySchema = properties[key] as OptionalRjsfSchema;
+    if (!propertySchema || typeof propertySchema !== 'object') {
+      if (allowsAdditionalProperties) {
+        normalized[key] = value;
+      }
+      continue;
+    }
+
+    normalized[key] = removeUnknownSchemaFields(propertySchema, value);
+  }
+
+  return normalized;
+};
+
 // Ensure required fields exist when older exports omit empty values.
 // Recursively applies defaults to nested objects.
 // Helper: Add defaults for missing required fields
@@ -450,7 +509,14 @@ const normalizeExportPayload = (
 
   // Remove readOnly fields before validation (they're auto-generated, not user input)
   const withoutReadOnly = removeReadOnlyFields(schema, recordDataResult.value);
-  const normalizedData = applySchemaDefaults(schema, withoutReadOnly);
+  const withoutUnknownFields = removeUnknownSchemaFields(
+    schema,
+    withoutReadOnly,
+  );
+  const normalizedData = applySchemaDefaults(
+    schema,
+    isRecord(withoutUnknownFields) ? withoutUnknownFields : withoutReadOnly,
+  );
 
   // Use lenient schema for import validation (allows partial/incomplete data)
   const lenientSchema = makeLenientSchema(schema);

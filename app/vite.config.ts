@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { createRequire } from 'node:module';
+import { availableParallelism } from 'node:os';
 import { execSync } from 'node:child_process';
 import { createPwaConfig } from './src/lib/pwaConfig';
 
@@ -78,6 +79,28 @@ const resolveBuildDate = (): string => {
 
 const APP_VERSION = resolveAppVersion();
 const BUILD_DATE = resolveBuildDate();
+
+const parsePositiveInt = (value: string | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const isCI = Boolean(process.env.CI);
+const defaultLocalVitestWorkers = Math.max(
+  2,
+  Math.min(10, Math.floor(availableParallelism() * 0.7)),
+);
+const configuredVitestWorkers = parsePositiveInt(
+  process.env.VITEST_MAX_WORKERS ?? process.env.VITEST_WORKERS,
+);
+const vitestMaxWorkers =
+  configuredVitestWorkers ?? (isCI ? 2 : defaultLocalVitestWorkers);
+const vitestMinWorkers = isCI
+  ? 1
+  : Math.max(1, Math.floor(vitestMaxWorkers / 2));
 
 const createConfig = (mode: string): AppConfig => ({
   define: {
@@ -216,6 +239,8 @@ const createConfig = (mode: string): AppConfig => ({
     globals: true,
     environment: 'jsdom',
     setupFiles: './tests/setup/setup.ts',
+    maxWorkers: vitestMaxWorkers,
+    minWorkers: vitestMinWorkers,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

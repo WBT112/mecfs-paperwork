@@ -63,6 +63,11 @@ import {
   type DecisionData,
 } from '../formpacks/doctorLetterVisibility';
 import {
+  buildOfflabelDocuments,
+  type OfflabelRenderedDocument,
+} from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
+import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
+import {
   type StorageErrorCode,
   useAutosaveRecord,
   useRecords,
@@ -70,8 +75,20 @@ import {
 } from '../storage/hooks';
 import { getFormpackMeta, upsertFormpackMeta } from '../storage/formpackMeta';
 import { importRecordWithSnapshots } from '../storage/import';
+import {
+  getProfile,
+  hasUsableProfileData,
+  upsertProfile,
+} from '../storage/profiles';
 import type { FormpackMetaEntry, RecordEntry } from '../storage/types';
+import type { FormpackId } from '../formpacks/registry';
+import {
+  extractProfileData,
+  applyProfileData,
+} from '../lib/profile/profileMapping';
 import CollapsibleSection from '../components/CollapsibleSection';
+import FormpackIntroGate from '../components/FormpackIntroGate';
+import FormpackIntroModal from '../components/FormpackIntroModal';
 import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
@@ -159,6 +176,8 @@ const buildErrorMessage = (
 };
 
 const DOCTOR_LETTER_ID = 'doctor-letter';
+const OFFLABEL_ANTRAG_ID = 'offlabel-antrag';
+const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const isValidQ4 = (val: unknown): val is DecisionAnswers['q4'] =>
   Q4_OPTIONS.includes(val as DecisionAnswers['q4'] & string);
 
@@ -183,6 +202,49 @@ const buildDecisionAnswers = (
   q7: isYesNo(decision.q7) ? decision.q7 : undefined,
   q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
 });
+
+const getValueByPath = (
+  obj: Record<string, unknown>,
+  path: string,
+): unknown => {
+  const keys = path.split('.');
+  let current: unknown = obj;
+
+  for (const key of keys) {
+    if (!isRecord(current)) {
+      return undefined;
+    }
+    current = current[key];
+  }
+
+  return current;
+};
+
+const setValueByPath = (
+  obj: Record<string, unknown>,
+  path: string,
+  value: unknown,
+): Record<string, unknown> => {
+  const keys = path.split('.');
+  const next = structuredClone(obj);
+  let cursor: Record<string, unknown> = next;
+
+  keys.forEach((key, index) => {
+    const isLeaf = index === keys.length - 1;
+    if (isLeaf) {
+      cursor[key] = value;
+      return;
+    }
+
+    const candidate = cursor[key];
+    if (!isRecord(candidate)) {
+      cursor[key] = {};
+    }
+    cursor = cursor[key] as Record<string, unknown>;
+  });
+
+  return next;
+};
 
 // Helper: Apply field visibility rules to decision tree UI schema
 const applyFieldVisibility = (
@@ -323,6 +385,66 @@ const renderParagraphs = (
     </>
   );
 };
+
+type OfflabelRenderedBlock = OfflabelRenderedDocument['blocks'][number];
+
+const getOfflabelPreviewBlockKey = (
+  documentId: string,
+  block: OfflabelRenderedBlock,
+): string => {
+  if (block.kind === 'list') {
+    return `${documentId}-${block.kind}-${block.items.join('|')}`;
+  }
+  if (block.kind === 'pageBreak') {
+    return `${documentId}-${block.kind}`;
+  }
+  return `${documentId}-${block.kind}-${block.text}`;
+};
+
+const renderOfflabelPreviewBlock = (
+  documentId: string,
+  block: OfflabelRenderedBlock,
+): ReactNode => {
+  const blockKey = getOfflabelPreviewBlockKey(documentId, block);
+
+  if (block.kind === 'heading') {
+    return <h3 key={blockKey}>{block.text}</h3>;
+  }
+
+  if (block.kind === 'paragraph') {
+    return <p key={blockKey}>{block.text}</p>;
+  }
+
+  if (block.kind === 'list') {
+    if (!block.items.length) {
+      return null;
+    }
+
+    return (
+      <ul key={blockKey}>
+        {block.items.map((item) => (
+          <li key={`${documentId}-${block.kind}-${item}`}>{item}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <p key={blockKey} className="formpack-document-preview__page-break">
+      — Page break —
+    </p>
+  );
+};
+
+const renderOfflabelPreviewDocument = (
+  document: OfflabelRenderedDocument,
+): ReactNode => (
+  <div key={document.id}>
+    {document.blocks.map((block) =>
+      renderOfflabelPreviewBlock(document.id, block),
+    )}
+  </div>
+);
 
 const hasDecisionCaseText = (value: Record<string, unknown>): boolean =>
   typeof value.caseText === 'string' ||
@@ -727,6 +849,20 @@ export default function FormpackDetailPage() {
   );
   const [assetRefreshVersion, setAssetRefreshVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
+  const [profileSaveEnabled, setProfileSaveEnabled] = useState(() => {
+    try {
+      const stored = globalThis.localStorage.getItem(PROFILE_SAVE_KEY);
+      return stored === null ? true : stored === 'true';
+    } catch {
+      return true;
+    }
+  });
+  const [profileHasSavedData, setProfileHasSavedData] = useState(false);
+  const [profileStatus, setProfileStatus] = useState<string | null>(null);
+  const [selectedOfflabelPreviewId, setSelectedOfflabelPreviewId] = useState<
+    'part1' | 'part2' | 'part3'
+  >('part1');
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
   const hasRestoredRecordRef = useRef<string | null>(null);
@@ -762,10 +898,83 @@ export default function FormpackDetailPage() {
       onSaved: (record) => {
         setStorageError(null);
         applyRecordUpdate(record);
+
+        if (profileSaveEnabled && formpackId) {
+          const partial = extractProfileData(
+            formpackId as FormpackId,
+            record.data,
+          );
+          upsertProfile('default', partial).then(
+            (entry) => {
+              setProfileHasSavedData(hasUsableProfileData(entry.data));
+            },
+            () => {
+              // Silently ignore profile save errors.
+            },
+          );
+        }
       },
       onError: setStorageError,
     },
   );
+
+  const refreshProfileState = useCallback(() => {
+    getProfile('default').then(
+      (entry) => {
+        setProfileHasSavedData(
+          entry !== null && hasUsableProfileData(entry.data),
+        );
+      },
+      () => {
+        setProfileHasSavedData(false);
+      },
+    );
+  }, []);
+
+  useEffect(() => {
+    refreshProfileState();
+  }, [refreshProfileState]);
+
+  const handleProfileSaveToggle = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const enabled = event.target.checked;
+      setProfileSaveEnabled(enabled);
+      try {
+        if (enabled) {
+          globalThis.localStorage.setItem(PROFILE_SAVE_KEY, 'true');
+        } else {
+          globalThis.localStorage.removeItem(PROFILE_SAVE_KEY);
+        }
+      } catch {
+        // Ignore storage errors.
+      }
+    },
+    [],
+  );
+
+  const handleApplyProfile = useCallback(async () => {
+    if (!formpackId) {
+      return;
+    }
+    setProfileStatus(null);
+    try {
+      const entry = await getProfile('default');
+      if (!entry || !hasUsableProfileData(entry.data)) {
+        setProfileStatus(t('profileApplyNoData'));
+        return;
+      }
+      const next = applyProfileData(
+        formpackId as FormpackId,
+        formData,
+        entry.data,
+      );
+      setFormData(next);
+      markAsSaved(next);
+      setProfileStatus(t('profileApplySuccess'));
+    } catch {
+      setProfileStatus(t('profileApplyError'));
+    }
+  }, [formpackId, formData, markAsSaved, t]);
 
   useEffect(() => {
     let isActive = true;
@@ -799,6 +1008,7 @@ export default function FormpackDetailPage() {
         setUiSchema(result.uiSchema);
         if (shouldResetFormData) {
           setFormData({});
+          setIsIntroModalOpen(false);
           lastFormpackIdRef.current = requestedFormpackId;
         }
       } catch (error) {
@@ -830,6 +1040,10 @@ export default function FormpackDetailPage() {
       isActive = false;
     };
   }, [assetRefreshVersion, id, locale, t]);
+
+  useEffect(() => {
+    setSelectedOfflabelPreviewId('part1');
+  }, [formpackId]);
 
   useEffect(() => {
     if (!manifest) {
@@ -970,7 +1184,15 @@ export default function FormpackDetailPage() {
 
   // Apply conditional visibility for doctor-letter decision tree
   const conditionalUiSchema = useMemo(() => {
-    if (!normalizedUiSchema || formpackId !== DOCTOR_LETTER_ID) {
+    if (!normalizedUiSchema) {
+      return normalizedUiSchema;
+    }
+
+    if (formpackId === OFFLABEL_ANTRAG_ID) {
+      return applyOfflabelVisibility(normalizedUiSchema, formData);
+    }
+
+    if (formpackId !== DOCTOR_LETTER_ID) {
       return normalizedUiSchema;
     }
 
@@ -1590,16 +1812,56 @@ export default function FormpackDetailPage() {
     [t, formpackId, manifest, formData],
   );
 
-  // Use custom field template for doctor-letter to support InfoBoxes
+  const introGateConfig = manifest?.ui?.introGate;
+  const isIntroGateVisible = useMemo(() => {
+    if (!activeRecord || !introGateConfig?.enabled) {
+      return false;
+    }
+    return getValueByPath(formData, introGateConfig.acceptedFieldPath) !== true;
+  }, [activeRecord, formData, introGateConfig]);
+
+  const tFormpack = useCallback(
+    (key: string) =>
+      t(key, {
+        ns: namespace,
+        defaultValue: key,
+      }),
+    [namespace, t],
+  );
+
+  const introTexts = useMemo(
+    () =>
+      introGateConfig
+        ? {
+            title: tFormpack(introGateConfig.titleKey),
+            body: tFormpack(introGateConfig.bodyKey),
+            checkboxLabel: tFormpack(introGateConfig.checkboxLabelKey),
+            startButtonLabel: tFormpack(introGateConfig.startButtonLabelKey),
+            reopenButtonLabel: tFormpack(introGateConfig.reopenButtonLabelKey),
+          }
+        : null,
+    [introGateConfig, tFormpack],
+  );
+
+  const handleAcceptIntroGate = useCallback(() => {
+    if (!introGateConfig) {
+      return;
+    }
+    setFormData((current) =>
+      setValueByPath(current, introGateConfig.acceptedFieldPath, true),
+    );
+  }, [introGateConfig]);
+
+  // Use custom field template for formpacks that provide InfoBoxes.
   const templates = useMemo(() => {
-    if (formpackId === DOCTOR_LETTER_ID) {
+    if ((manifest?.ui?.infoBoxes?.length ?? 0) > 0) {
       return {
         ...formpackTemplates,
         FieldTemplate: DoctorLetterFieldTemplate,
       };
     }
     return formpackTemplates;
-  }, [formpackId]);
+  }, [manifest?.ui?.infoBoxes]);
   const previewUiSchema =
     conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
   const jsonPreview = useMemo(
@@ -1842,6 +2104,13 @@ export default function FormpackDetailPage() {
   const hasDocumentContent = useMemo(
     () => hasPreviewValue(formData),
     [formData],
+  );
+  const offlabelPreviewDocuments = useMemo(
+    () =>
+      formpackId === OFFLABEL_ANTRAG_ID
+        ? buildOfflabelDocuments(formData, locale)
+        : [],
+    [formData, formpackId, locale],
   );
   const docxTemplateOptions = useMemo(() => {
     if (!manifest?.docx) {
@@ -2200,46 +2469,111 @@ export default function FormpackDetailPage() {
       return null;
     }
 
+    if (isIntroGateVisible && introTexts) {
+      return (
+        <FormpackIntroGate
+          title={introTexts.title}
+          body={introTexts.body}
+          checkboxLabel={introTexts.checkboxLabel}
+          startButtonLabel={introTexts.startButtonLabel}
+          onConfirm={handleAcceptIntroGate}
+        />
+      );
+    }
+
     return (
-      <Suspense fallback={<p>{t('formpackLoading')}</p>}>
-        <LazyForm
-          className={
-            formpackId === DOCTOR_LETTER_ID
-              ? 'formpack-form formpack-form--doctor-letter'
-              : 'formpack-form'
-          }
-          schema={schema}
-          uiSchema={conditionalUiSchema}
-          templates={templates}
-          widgets={formpackWidgets}
-          validator={validator}
-          formData={formData}
-          omitExtraData
-          liveOmit
-          onChange={handleFormChange}
-          onSubmit={handleFormSubmit}
-          formContext={formContext}
-          noHtml5Validate
-          showErrorList={false}
-        >
-          <div className="formpack-form__actions">
-            <div className="formpack-actions__group formpack-actions__group--export">
-              {renderDocxExportControls()}
-            </div>
-            <div className="formpack-actions__group formpack-actions__group--secondary">
-              <button
-                type="button"
-                className="app__button"
-                onClick={handleResetForm}
-              >
-                {t('formpackFormReset')}
-              </button>
-              {renderJsonExportButton()}
-            </div>
-            {renderActionStatus()}
+      <>
+        {introGateConfig?.enabled && introTexts && (
+          <div className="formpack-intro__reopen">
+            <button
+              type="button"
+              className="app__button"
+              onClick={() => setIsIntroModalOpen(true)}
+            >
+              {introTexts.reopenButtonLabel}
+            </button>
           </div>
-        </LazyForm>
-      </Suspense>
+        )}
+        <div className="profile-quickfill">
+          <label className="profile-quickfill__save">
+            <input
+              type="checkbox"
+              checked={profileSaveEnabled}
+              onChange={handleProfileSaveToggle}
+            />
+            {t('profileSaveCheckbox')}
+          </label>
+          <button
+            type="button"
+            className="app__button"
+            disabled={!profileHasSavedData}
+            onClick={handleApplyProfile}
+          >
+            {t('profileApplyButton')}
+          </button>
+          {profileStatus && (
+            <span
+              className={
+                profileStatus === t('profileApplySuccess')
+                  ? 'profile-quickfill__success'
+                  : 'profile-quickfill__error'
+              }
+              aria-live="polite"
+            >
+              {profileStatus}
+            </span>
+          )}
+        </div>
+        <Suspense fallback={<p>{t('formpackLoading')}</p>}>
+          <LazyForm
+            className={
+              formpackId === DOCTOR_LETTER_ID ||
+              formpackId === OFFLABEL_ANTRAG_ID
+                ? 'formpack-form formpack-form--doctor-letter'
+                : 'formpack-form'
+            }
+            schema={schema}
+            uiSchema={conditionalUiSchema}
+            templates={templates}
+            widgets={formpackWidgets}
+            validator={validator}
+            formData={formData}
+            omitExtraData
+            liveOmit
+            onChange={handleFormChange}
+            onSubmit={handleFormSubmit}
+            formContext={formContext}
+            noHtml5Validate
+            showErrorList={false}
+          >
+            <div className="formpack-form__actions">
+              <div className="formpack-actions__group formpack-actions__group--export">
+                {renderDocxExportControls()}
+              </div>
+              <div className="formpack-actions__group formpack-actions__group--secondary">
+                <button
+                  type="button"
+                  className="app__button"
+                  onClick={handleResetForm}
+                >
+                  {t('formpackFormReset')}
+                </button>
+                {renderJsonExportButton()}
+              </div>
+              {renderActionStatus()}
+            </div>
+          </LazyForm>
+        </Suspense>
+        {introGateConfig?.enabled && introTexts && (
+          <FormpackIntroModal
+            isOpen={isIntroModalOpen}
+            title={introTexts.title}
+            body={introTexts.body}
+            closeLabel={t('common.close')}
+            onClose={() => setIsIntroModalOpen(false)}
+          />
+        )}
+      </>
     );
   };
 
@@ -2322,14 +2656,41 @@ export default function FormpackDetailPage() {
   const getJsonPreviewContent = () =>
     Object.keys(formData).length ? jsonPreview : t('formpackFormPreviewEmpty');
 
-  const renderDocumentPreviewContent = () =>
-    hasDocumentContent ? (
-      <div className="formpack-document-preview">{documentPreview}</div>
-    ) : (
+  const renderDocumentPreviewContent = () => {
+    if (formpackId === OFFLABEL_ANTRAG_ID) {
+      return (
+        <div className="formpack-document-preview formpack-document-preview--offlabel">
+          <div className="formpack-document-preview__tabs" role="tablist">
+            {offlabelPreviewDocuments.map((doc) => (
+              <button
+                key={doc.id}
+                role="tab"
+                type="button"
+                className="app__button"
+                aria-selected={selectedOfflabelPreviewId === doc.id}
+                onClick={() => setSelectedOfflabelPreviewId(doc.id)}
+              >
+                {doc.title}
+              </button>
+            ))}
+          </div>
+          {offlabelPreviewDocuments
+            .filter((doc) => doc.id === selectedOfflabelPreviewId)
+            .map((doc) => renderOfflabelPreviewDocument(doc))}
+        </div>
+      );
+    }
+
+    if (hasDocumentContent) {
+      return <div className="formpack-document-preview">{documentPreview}</div>;
+    }
+
+    return (
       <p className="formpack-document-preview__empty">
         {t('formpackDocumentPreviewEmpty')}
       </p>
     );
+  };
 
   return (
     <section className="app__card">
@@ -2388,13 +2749,15 @@ export default function FormpackDetailPage() {
             <h3>{t('formpackFormHeading')}</h3>
             {renderFormContent()}
           </div>
-          <CollapsibleSection
-            id="formpack-document-preview"
-            title={t('formpackDocumentPreviewHeading')}
-            className="formpack-detail__section"
-          >
-            {renderDocumentPreviewContent()}
-          </CollapsibleSection>
+          {!isIntroGateVisible && (
+            <CollapsibleSection
+              id="formpack-document-preview"
+              title={t('formpackDocumentPreviewHeading')}
+              className="formpack-detail__section"
+            >
+              {renderDocumentPreviewContent()}
+            </CollapsibleSection>
+          )}
           <div className="formpack-detail__section formpack-detail__tools-section">
             <div className="formpack-detail__tools-panel">
               <h3 className="formpack-detail__tools-title">

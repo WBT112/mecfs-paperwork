@@ -1,0 +1,233 @@
+import { describe, expect, it } from 'vitest';
+import { buildOfflabelDocuments } from '../../src/formpacks/offlabel-antrag/content/buildOfflabelDocuments';
+
+const IVABRADIN_DIAGNOSIS_TEXT =
+  'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit';
+const SECTION_2A_TEXT = '§ 2 Abs. 1a SGB V';
+
+describe('buildOfflabelDocuments', () => {
+  it('builds three parts and includes point-10 evidence text for known medication', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+        indicationFullyMetOrDoctorConfirms: 'no',
+      },
+      severity: {
+        gdb: '50',
+        mobilityLevel: 'bedbound',
+      },
+    });
+
+    expect(docs).toHaveLength(3);
+    expect(docs.map((doc) => doc.id)).toEqual(['part1', 'part2', 'part3']);
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain('Punkt 2: Die Diagnose ist gesichert');
+    expect(part1Text).not.toContain('Punkt 7:');
+    expect(part1Text).not.toContain('Punkt 9:');
+    expect(part1Text).toContain('Punkt 10:');
+    expect(part1Text).toContain(`Indikation: ${IVABRADIN_DIAGNOSIS_TEXT}`);
+    expect(part1Text).toContain('Dosierung/Dauer: Start 2,5 mg morgens');
+    expect(part1Text).toContain(
+      'Medizinischer Dienst Bund: Begutachtungsanleitung / Begutachtungsmaßstäbe Off-Label-Use (Stand 05/2022).',
+    );
+    expect(part1Text).toContain(
+      'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).',
+    );
+    expect(part1Text).toContain(
+      'Die Erkenntnisse lassen sich auf meine Diagnosen übertragen',
+    );
+    expect(part1Text).not.toContain(SECTION_2A_TEXT);
+
+    const part3Text = docs[2].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+    expect(part3Text).toContain(
+      `Der Patient leidet an den typischen Symptomen der Indikation ${IVABRADIN_DIAGNOSIS_TEXT}.`,
+    );
+  });
+
+  it('builds coherent other-medication flow with point-9 text and user diagnosis', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'other',
+        otherIndication: 'Seltene XYZ-Indikation',
+        standardOfCareTriedFreeText:
+          '- Betablocker (nicht verträglich)\n• Kompressionstherapie ohne ausreichenden Effekt',
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain(
+      'Punkt 1: Das Medikament anderes Medikament oder andere Indikation ist in Deutschland nicht indikationszogen zugelassen',
+    );
+    expect(part1Text).toContain(
+      'Punkt 2: Die Diagnose Seltene XYZ-Indikation ist gesichert',
+    );
+    expect(part1Text).toContain('Punkt 7:');
+    expect(part1Text).toContain('Punkt 9:');
+    expect(part1Text).not.toContain('Punkt 10:');
+    expect(part1Text).toContain('Indikation: Seltene XYZ-Indikation');
+    expect(part1Text).toContain(SECTION_2A_TEXT);
+    expect(part1Text).toContain(
+      'Zusätzlich wurden folgende Therapieversuche unternommen:',
+    );
+
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
+    expect(part1ListItems).toContain('Betablocker (nicht verträglich)');
+    expect(part1ListItems).toContain(
+      'Kompressionstherapie ohne ausreichenden Effekt',
+    );
+
+    const part3Text = docs[2].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+    expect(part3Text).toContain(
+      'Zusätzlich wurden folgende Therapieversuche unternommen:',
+    );
+  });
+
+  it('uses user-entered medication name for other in part 1 and part 2', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'other',
+        otherDrugName: 'Midodrin',
+        otherIndication: 'Orthostatische Intoleranz',
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain(
+      'Punkt 1: Das Medikament Midodrin ist in Deutschland nicht indikationszogen zugelassen',
+    );
+    expect(part2Text).toContain(
+      'für eine Off-Label-Verordnung von Midodrin wegen meiner ME/CFS',
+    );
+  });
+
+  it('adds point 7 for standard medication when §2 checkbox is enabled', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+        applySection2Abs1a: true,
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain('Punkt 7:');
+    expect(part1Text).toContain(SECTION_2A_TEXT);
+  });
+
+  it('ignores standard-of-care free text for standard medication previews', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+        standardOfCareTriedFreeText:
+          'Dieser Text wurde im Other-Flow eingegeben und darf hier nicht erscheinen.',
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).not.toContain(
+      'Dieser Text wurde im Other-Flow eingegeben und darf hier nicht erscheinen.',
+    );
+    expect(part1Text).toContain('Punkt 10:');
+  });
+
+  it('maps legacy drug keys to standard medication facts in preview', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradin',
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain(
+      'Punkt 1: Das Medikament Ivabradin ist in Deutschland nicht indikationszogen zugelassen',
+    );
+    expect(part1Text).toContain('Punkt 10:');
+    expect(part1Text).toContain('Bewertung Ivabradin');
+    expect(part1Text).not.toContain(
+      '[bitte medikamentenspezifische Quelle ergänzen]',
+    );
+  });
+
+  it('fills patient birth date and insurance number in part 3', () => {
+    const docs = buildOfflabelDocuments({
+      patient: {
+        firstName: 'Max',
+        lastName: 'Mustermann',
+        birthDate: '1970-01-02',
+        insuranceNumber: 'X123456789',
+      },
+      request: {
+        drug: 'agomelatin',
+      },
+    });
+
+    const part3Text = docs[2].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part3Text).toContain(
+      'Patient: Max Mustermann, geb. 02.01.1970; Versichertennr.: X123456789',
+    );
+    expect(part3Text).toContain(
+      'Diagnose: postinfektiösem ME/CFS und/oder Long-/Post-COVID mit Fatigue',
+    );
+  });
+
+  it('keeps workflow-canonical preview content for locale en', () => {
+    const docs = buildOfflabelDocuments(
+      {
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'en',
+    );
+
+    expect(docs).toHaveLength(3);
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain('Punkt 1: Das Medikament Ivabradin');
+    expect(part1Text).toContain('Punkt 10:');
+  });
+});

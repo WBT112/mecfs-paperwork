@@ -1,6 +1,9 @@
 # Coverage reports
 coverage/
 
+# ESLint cache
+.eslintcache
+
 # Incremental TS Info
 *.tsbuildinfo
 tsconfig.tsbuildinfo

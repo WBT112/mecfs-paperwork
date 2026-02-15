@@ -26,6 +26,13 @@ export const FORMPACK_META_ENTRY_KEYS = [
   'updatedAt',
 ] as const;
 
+export const PROFILE_ENTRY_KEYS = [
+  'id',
+  'data',
+  'createdAt',
+  'updatedAt',
+] as const;
+
 /**
  * Persistent record entries stored per formpack.
  */
@@ -58,6 +65,49 @@ export type FormpackMetaEntry = {
   versionOrHash: string;
   version?: string;
   hash: string;
+  updatedAt: string;
+};
+
+/**
+ * Reusable patient/doctor/insurer details extracted from form data.
+ */
+export type ProfileData = {
+  patient?: {
+    firstName?: string;
+    lastName?: string;
+    fullName?: string;
+    birthDate?: string;
+    streetAndNumber?: string;
+    postalCode?: string;
+    city?: string;
+    insuranceNumber?: string;
+  };
+  doctor?: {
+    name?: string;
+    title?: string;
+    gender?: string;
+    practice?: string;
+    streetAndNumber?: string;
+    postalCode?: string;
+    city?: string;
+    phone?: string;
+  };
+  insurer?: {
+    name?: string;
+    department?: string;
+    streetAndNumber?: string;
+    postalCode?: string;
+    city?: string;
+  };
+};
+
+/**
+ * Persistent profile entry for saved details.
+ */
+export type ProfileEntry = {
+  id: string;
+  data: ProfileData;
+  createdAt: string;
   updatedAt: string;
 };
 
@@ -107,6 +157,19 @@ export const isFormpackMetaEntry = (
     typeof value.versionOrHash === 'string' &&
     (value.version === undefined || typeof value.version === 'string') &&
     typeof value.hash === 'string' &&
+    typeof value.updatedAt === 'string'
+  );
+};
+
+export const isProfileEntry = (value: unknown): value is ProfileEntry => {
+  if (!isPlainObject(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === 'string' &&
+    isPlainObject(value.data) &&
+    typeof value.createdAt === 'string' &&
     typeof value.updatedAt === 'string'
   );
 };

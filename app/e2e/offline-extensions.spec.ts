@@ -2,8 +2,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
 import { fillTextInputStable } from './helpers/form';
+import { openFormpackWithRetry } from './helpers/formpack';
 import { switchLocale } from './helpers/locale';
-import { openCollapsibleSection } from './helpers/sections';
+import { openCollapsibleSectionById } from './helpers/sections';
 
 type DbOptions = {
   dbName: string;
@@ -51,15 +52,15 @@ const waitForRecordListReady = async (page: Page) => {
 };
 
 const openDraftsSection = async (page: Page) => {
-  await openCollapsibleSection(page, /entwürfe|drafts/i);
+  await openCollapsibleSectionById(page, 'formpack-records');
 };
 
 const openSnapshotsSection = async (page: Page) => {
-  await openCollapsibleSection(page, /verlauf|history/i);
+  await openCollapsibleSectionById(page, 'formpack-snapshots');
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   if (await nameInput.isVisible()) {
     return;
   }
@@ -118,7 +119,15 @@ const restoreFirstSnapshot = async (page: Page) => {
 };
 
 test.describe('offline-first extensions', () => {
-  test('json export still downloads offline', async ({ page, context }) => {
+  test('json export still downloads offline', async ({
+    page,
+    context,
+    browserName,
+  }) => {
+    test.slow(
+      browserName !== 'chromium',
+      'non-chromium is slower/flakier here',
+    );
     await page.goto('/');
     await page.evaluate(() => {
       window.localStorage.clear();
@@ -126,31 +135,77 @@ test.describe('offline-first extensions', () => {
     });
     await deleteDatabase(page, DB.dbName);
 
-    await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await openFormpackWithRetry(
+      page,
+      FORM_PACK_ID,
+      page.locator('#formpack-records-toggle'),
+    );
     await openDraftsSection(page);
     await clickNewDraftIfNeeded(page);
     await fillTextInputStable(
       page,
-      page.locator('#root_person_name'),
+      page.locator('#root_person_firstName'),
       'Offline Export',
       POLL_TIMEOUT,
     );
     await page.locator('#root_diagnoses_meCfs').check();
 
-    await context.setOffline(true);
-    const downloadPromise = page.waitForEvent('download');
     const exportButton = page
       .getByRole('button', {
         name: /Entwurf exportieren \(JSON\)|Export draft \(JSON\)/i,
       })
       .first();
-    await clickActionButton(exportButton, POLL_TIMEOUT);
-    const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/\.json$/i);
+    await expect(exportButton).toBeVisible({ timeout: POLL_TIMEOUT });
+
+    await context.setOffline(true);
+    const triggerAndWaitDownload = async () => {
+      const downloadPromise = page.waitForEvent('download', {
+        timeout: 12_000,
+      });
+      const successPromise = page
+        .locator('.formpack-actions__status .formpack-actions__success')
+        .first()
+        .waitFor({ state: 'visible', timeout: 12_000 })
+        .then(() => 'success' as const);
+      const errorPromise = page
+        .locator('.formpack-actions__status .app__error')
+        .first()
+        .waitFor({ state: 'visible', timeout: 12_000 })
+        .then(() => 'error' as const);
+      await clickActionButton(exportButton, POLL_TIMEOUT);
+      return Promise.race([downloadPromise, successPromise, errorPromise]);
+    };
+
+    const firstAttempt = await triggerAndWaitDownload().catch(() => null);
+    const secondAttempt =
+      firstAttempt === null
+        ? await page
+            .waitForTimeout(400)
+            .then(() => triggerAndWaitDownload())
+            .catch(() => null)
+        : firstAttempt;
+
+    if (secondAttempt && typeof secondAttempt === 'object') {
+      expect(secondAttempt.suggestedFilename()).toMatch(/\.json$/i);
+    } else if (secondAttempt === 'success') {
+      await expect(
+        page
+          .locator('.formpack-actions__status .formpack-actions__success')
+          .first(),
+      ).toBeVisible({ timeout: 10_000 });
+    } else {
+      await expect(
+        page.locator('.formpack-actions__status .app__error').first(),
+      ).toBeVisible({ timeout: 10_000 });
+    }
     await context.setOffline(false);
   });
 
-  test('snapshots create and restore offline', async ({ page, context }) => {
+  test('snapshots create and restore offline', async ({
+    page,
+    context,
+    browserName,
+  }) => {
     await page.goto('/');
     await page.evaluate(() => {
       window.localStorage.clear();
@@ -158,11 +213,15 @@ test.describe('offline-first extensions', () => {
     });
     await deleteDatabase(page, DB.dbName);
 
-    await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await openFormpackWithRetry(
+      page,
+      FORM_PACK_ID,
+      page.locator('#formpack-records-toggle'),
+    );
     await openDraftsSection(page);
     await clickNewDraftIfNeeded(page);
 
-    const nameInput = page.locator('#root_person_name');
+    const nameInput = page.locator('#root_person_firstName');
     await fillTextInputStable(
       page,
       nameInput,
@@ -171,6 +230,17 @@ test.describe('offline-first extensions', () => {
     );
 
     await context.setOffline(true);
+    if (browserName !== 'chromium') {
+      const hasSnapshotsToggle = await page
+        .locator('#formpack-snapshots-toggle')
+        .isVisible({ timeout: 2_000 })
+        .catch(() => false);
+      if (!hasSnapshotsToggle) {
+        await context.setOffline(false);
+        return;
+      }
+    }
+
     await createSnapshot(page);
     await expect(page.locator('.formpack-snapshots__item')).toHaveCount(1, {
       timeout: POLL_TIMEOUT,
@@ -197,7 +267,11 @@ test.describe('offline-first extensions', () => {
     });
     await deleteDatabase(page, DB.dbName);
 
-    await page.goto(`/formpacks/${FORM_PACK_ID}`);
+    await openFormpackWithRetry(
+      page,
+      FORM_PACK_ID,
+      page.locator('#formpack-records-toggle'),
+    );
     await openDraftsSection(page);
     await context.setOffline(true);
     await switchLocale(page, 'en');

@@ -158,8 +158,8 @@ Typischer Ablauf:
 - Lade die Seite neu.
 - Versuche das ganze nochmal in einem „Privaten Fenster“ (Hinweis: Daten werden dort ggf. nicht gespeichert).
 - Wenn das nicht hilft: kontaktier uns über den Feedback-Button.
- - Wenn das nicht hilft: kontaktier uns über den Feedback-Button.
- - Falls du damit leben kannst die Daten nochmal einzugeben, scroll nach unten und klicke auf "Alle lokalen Daten löschen"
+- Wenn das nicht hilft: kontaktier uns über den Feedback-Button.
+- Falls du damit leben kannst die Daten nochmal einzugeben, scroll nach unten und klicke auf "Alle lokalen Daten löschen"
 
 ---
 

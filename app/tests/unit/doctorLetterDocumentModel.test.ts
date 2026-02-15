@@ -65,6 +65,7 @@ describe('buildDocumentModel for doctor-letter', () => {
       expect(result.patient).toEqual({
         firstName: JOHN,
         lastName: DOE,
+        birthDate: null,
         streetAndNumber: 'Main St 123',
         postalCode: '12345',
         city: 'Berlin',
@@ -118,6 +119,7 @@ describe('buildDocumentModel for doctor-letter', () => {
       expect(result.patient).toEqual({
         firstName: JOHN,
         lastName: DOE,
+        birthDate: null,
         streetAndNumber: null,
         postalCode: null,
         city: null,

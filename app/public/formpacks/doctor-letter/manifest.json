@@ -19,6 +19,10 @@
     },
     "mapping": "docx/mapping.json"
   },
+  "meta": {
+    "category": "doctor",
+    "keywords": ["arztbrief", "icd", "kodierung", "arzt", "praxis", "mecfs"]
+  },
   "ui": {
     "infoBoxes": [
       {

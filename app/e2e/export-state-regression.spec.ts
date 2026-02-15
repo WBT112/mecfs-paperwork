@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
-import { openCollapsibleSection } from './helpers/sections';
+import { openFormpackWithRetry } from './helpers/formpack';
+import { openCollapsibleSectionById } from './helpers/sections';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
@@ -19,11 +20,11 @@ const waitForRecordListReady = async (page: Page) => {
 };
 
 const openDraftsSection = async (page: Page) => {
-  await openCollapsibleSection(page, /entwürfe|drafts/i);
+  await openCollapsibleSectionById(page, 'formpack-records');
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   if (await nameInput.isVisible()) {
     return;
   }
@@ -54,11 +55,15 @@ test('json export followed by docx export re-enables actions', async ({
   });
   await deleteDatabase(page, DB_NAME);
 
-  await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await openFormpackWithRetry(
+    page,
+    FORM_PACK_ID,
+    page.locator('#formpack-records-toggle'),
+  );
   await openDraftsSection(page);
   await clickNewDraftIfNeeded(page);
 
-  await page.locator('#root_person_name').fill('Export Regression');
+  await page.locator('#root_person_firstName').fill('Export Regression');
   await page.locator('#root_diagnoses_meCfs').check();
 
   const jsonExportButton = page
@@ -71,8 +76,10 @@ test('json export followed by docx export re-enables actions', async ({
   const jsonDownload = await jsonDownloadPromise;
   expect(jsonDownload.suggestedFilename()).toMatch(/\.json$/i);
 
+  const docxExportButton = page
+    .locator('.formpack-docx-export .app__button')
+    .first();
   const docxSection = page.locator('.formpack-docx-export');
-  const docxExportButton = docxSection.locator('[data-action="docx-export"]');
   await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
 
   const docxDownloadPromise = page.waitForEvent('download');

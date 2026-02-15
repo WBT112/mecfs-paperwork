@@ -176,11 +176,13 @@ export default [
         'error',
         { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
       ],
+      'no-nested-ternary': 'error',
       '@typescript-eslint/no-shadow': 'error',
       'react/no-array-index-key': 'error',
       'react/jsx-no-useless-fragment': 'error',
       'react-hooks/exhaustive-deps': 'error',
       'unicorn/prefer-global-this': 'error',
+      'unicorn/prefer-includes': 'error',
       'unicorn/no-array-callback-reference': 'error',
       'unicorn/prefer-single-call': 'error',
       'unicorn/prefer-optional-catch-binding': 'error',
@@ -191,6 +193,12 @@ export default [
             "JSXAttribute[name.name='role'][value.type='Literal'][value.value='status']",
           message:
             'Use <output> instead of the "status" role to ensure accessibility across all devices.',
+        },
+        {
+          selector:
+            "JSXAttribute[name.name='role'][value.type='Literal'][value.value='dialog']",
+          message:
+            'Use <dialog> instead of the "dialog" role to ensure accessibility across all devices.',
         },
       ],
     },
@@ -213,6 +221,7 @@ export default [
       '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/no-unnecessary-condition': 'error',
       '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+      '@typescript-eslint/no-redundant-type-constituents': 'error',
       '@typescript-eslint/no-unnecessary-type-arguments': 'error',
       '@typescript-eslint/no-unnecessary-type-constraint': 'error',
       '@typescript-eslint/no-unnecessary-type-parameters': 'error',
@@ -242,6 +251,16 @@ export default [
       ...sonarjsAllRules,
       'sonarjs/cognitive-complexity': ['error', 15],
       'sonarjs/duplicates-in-character-class': 'error',
+    },
+  },
+
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: {
+      sonarjs,
+    },
+    rules: {
+      'sonarjs/no-nested-functions': ['error', { threshold: 4 }],
     },
   },
 ];
