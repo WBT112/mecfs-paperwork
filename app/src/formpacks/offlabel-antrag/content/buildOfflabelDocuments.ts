@@ -1,4 +1,7 @@
 import { DRUGS, type DrugKey } from './drugConfig';
+import { resolveMedicationProfile } from '../medications';
+import type { SupportedLocale } from '../../../i18n/locale';
+import { buildOffLabelAntragDocumentModel } from '../export/documentModel';
 
 export type OfflabelRenderedDocument = {
   id: 'part1' | 'part2' | 'part3';
@@ -12,6 +15,14 @@ export type OfflabelRenderedDocument = {
 };
 
 type FormData = Record<string, unknown>;
+type PreviewMedicationFacts = {
+  displayName: string;
+  diagnosisMain: string;
+  targetSymptoms: string;
+  doseAndDuration: string;
+  monitoringAndStop: string;
+  expertSourceText: string;
+};
 
 const getRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -21,7 +32,8 @@ const getRecord = (value: unknown): Record<string, unknown> =>
 const getText = (value: unknown): string =>
   typeof value === 'string' ? value.trim() : '';
 
-const getBool = (value: unknown): boolean => value === true;
+const getBool = (value: unknown): boolean =>
+  value === true || value === 'true' || value === 1;
 
 const formatBirthDate = (value: string): string => {
   const ymdMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
@@ -34,14 +46,34 @@ const formatBirthDate = (value: string): string => {
 const joinLines = (values: string[]): string =>
   values.filter(Boolean).join('\n');
 
+const combineDoseAndDuration = (dose: string, duration: string): string => {
+  if (dose && duration) {
+    return `${dose}; ${duration}`;
+  }
+  return dose || duration;
+};
+
+const parseMultilineItems = (value: string): string[] =>
+  value
+    .split(/\r?\n/)
+    .map((line) =>
+      line
+        .trim()
+        .replace(/^[-*•]\s+/, '')
+        .trim(),
+    )
+    .filter((line) => line.length > 0);
+
 const POINT_7_NOTSTAND =
-  'Es handelt sich um eine lebensbedrohende oder regelmäßig tödlich verlaufende Erkrankung. Die Vorrausetzungen des § 2 Abs. 1a SGB V ist in meinem Fall erfüllt. Bezüglich der Wertung von ME/CFS als eben solche Erkrankung verweise ich auf das Urteil des LSG Niedersachsen-Bremen, Beschluss vom 14.10.2022 - L 4 KR 373/22 B ER. Die Schwere der Erkrankung folgt bei ME/CFS als Systemerkrankung aus der Breite der einer Systemerkrankung immanenten Betroffenheit mehrerer lebensfunktionaler Bereiche wie körperlicher Mobilität, Verrichtungen des täglichen Lebens und Einschränkung der Leistungsfähigkeit im sozialen Umgang. Diese Lebensbereiche sind bei mir stark betroffen. Bei ME/CFS handelt es sich um eine chronische Erkrankung bisher ungeklärter Ätiologie. Chronische Erkrankungen sind per definitionem nicht heilbar, viele chronische Erkrankungen haben einen sogenannten "progredienten Verlauf". Dies bedeutet, der Zustand des Patienten verschlechtert sich im Verlauf der Zeit. Dies ist auch bei meiner Erkrankung der Fall. Es ist ebenfalls regelhaft mit einer Verschlechterung des Gesundheitszustandes zu rechnen bis am Ende eine kritische Phase eintritt, der mit Verlust der Selbstständigkeit, Pflegebedürftigkeit und Zunahme der Beschwerden bis zur Grenze des erträglichen und darüber hinaus zu rechnen ist. Wenn man andere Patienten mit der Erkrankung zum Vergleich heranzieht, so ist meine Situation jetzt schon als kritisch zu bezeichnen, meine Situation ist bereits jetzt vom Verlust von Selbstständigkeit und Pflegebedrütigkeit gekennzeichnet. Damit ist eine wertungsmäßig vergleichbar schwere Erkrankung bereits jetzt bei mir gegeben. Aus meiner Sicht ergibt sich die Vergleichbarkeit zur unmittelbaren Lebensbedrohlichkeit auch daraus, dass ME/CFS als Systemerkrankung progredient verläuft, Verschlechterungen in Schüben auftreten können Zeitpunkt und Schwere des nächsten Schubes – sprich: der nächsten erheblichen abermaligen Verschlechterung – nicht exakt vorhersehbar sind. Eine exakte Zeitangabe ist indes zur Erfüllung der Wertungsgleichheit nicht erforderlich. ME/CFS ist eine Erkrankung, die meist schubförmig verläuft. Hier ist sie mit anderen chronischen Erkrankungen, zum Beispiel der Multiplen Sklerose, vergleichbar. Mein Zustand ist heute schon als kritisch zu bezeichnen. Ein weiterer Schub von ME/CFS kann jederzeit eintreten. Der Zeitraum, in dem eine solche Verschlechterung eintritt, ist innerhalb der nächsten Monate anzusetzen, die Wahrscheinlichkeit des Eintretens einer solchen deutlichen Verschlechterung ist hoch. Damit ist insgesamt die Voraussetzung einer wertungsmäßig vergleichbaren Schwere der Erkrankung iSv § 2 Abs. 1 a SGB V bei mir gegeben.';
+  'Es handelt sich um eine schwerwiegende, die Lebensqualität auf Dauer nachhaltig beeinträchtigende Erkrankung. Die Voraussetzungen des § 2 Abs. 1a SGB V sind in meinem Fall erfüllt. Zur wertungsmäßigen Einordnung bei fehlender Standardtherapie verweise ich ergänzend auf den Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER).';
 
 const POINT_8_STANDARD =
   'Für die Versorgung meiner Erkrankung stehen keine sog. Standard-Therapien des gKV-Leistungskatalogs zur Verfügung. In der Wissenschaft werden allein symptombezogene Versorgungen diskutiert. Die am ehesten einschlägige Leitlinie: „Müdigkeit“ der Arbeitsgemeinschaft der Wissenschaftlichen Medizinischen Fachgesellschaften e. V. spricht in eben jener Leitlinie davon, dass für die kausale Behandlung des ME/CFS bislang keine Medikamente zugelassen sind und verweist auf die britische NICE-Richtlinie. In dieser wird neben Energiemanagment vor allem das Lindern der Symptome in den Fokus gerückt um eine spürbare Beeinflussung des Krankheitsverlaufes oder eine Verhütung der Verschlimmerung zu erreichen. Das begehrte Offlabel Medikament ist für die Erreichung dieser Ziele geeignet. Zusammengefasst ist keine der medizinischen Standardtherapie entsprechende Alternative verfügbar.';
 
 const POINT_10_NO_2A =
   'Die Erkenntnisse lassen sich auf meine Diagnosen übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben.';
+const POINT_10_MD_SOURCE =
+  'Medizinischer Dienst Bund: Begutachtungsanleitung / Begutachtungsmaßstäbe Off-Label-Use (Stand 05/2022).';
 
 const ALLOWED_MERKZEICHEN = new Set(['G', 'aG', 'H', 'B']);
 const ALLOWED_MERKZEICHEN_COMBINATIONS = new Set([
@@ -79,12 +111,58 @@ const parseMerkzeichen = (value: unknown): string[] => {
 const getDrugKey = (value: unknown): DrugKey => {
   if (
     value === 'ivabradine' ||
+    value === 'ivabradin' ||
     value === 'agomelatin' ||
-    value === 'vortioxetine'
+    value === 'vortioxetine' ||
+    value === 'vortioxetin'
   ) {
+    if (value === 'ivabradin') {
+      return 'ivabradine';
+    }
+    if (value === 'vortioxetin') {
+      return 'vortioxetine';
+    }
     return value;
   }
   return 'other';
+};
+
+const resolvePreviewMedicationFacts = (
+  request: Record<string, unknown>,
+  drugKey: DrugKey,
+): PreviewMedicationFacts => {
+  const profile = resolveMedicationProfile(drugKey);
+  const localeFacts = profile?.autoFacts?.de;
+
+  if (profile && !profile.isOther && localeFacts) {
+    return {
+      displayName: profile.displayNameDe,
+      diagnosisMain: localeFacts.diagnosisMain,
+      targetSymptoms: localeFacts.targetSymptoms,
+      doseAndDuration: localeFacts.doseAndDuration,
+      monitoringAndStop: localeFacts.monitoringAndStop,
+      expertSourceText: localeFacts.expertSourceText,
+    };
+  }
+
+  const otherDrugName = getText(request.otherDrugName);
+  const otherIndication = getText(request.otherIndication);
+  const otherTreatmentGoal = getText(request.otherTreatmentGoal);
+  const otherDose = getText(request.otherDose);
+  const otherDuration = getText(request.otherDuration);
+  const otherMonitoring = getText(request.otherMonitoring);
+
+  return {
+    displayName: otherDrugName || DRUGS[drugKey].displayName,
+    diagnosisMain: otherIndication || '[bitte Indikation ergänzen]',
+    targetSymptoms: otherTreatmentGoal || '[bitte Behandlungsziel ergänzen]',
+    doseAndDuration:
+      combineDoseAndDuration(otherDose, otherDuration) ||
+      '[bitte Dosierung/Dauer ergänzen]',
+    monitoringAndStop:
+      otherMonitoring || '[bitte Monitoring/Abbruchkriterien ergänzen]',
+    expertSourceText: '[bitte medikamentenspezifische Quelle ergänzen]',
+  };
 };
 
 const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
@@ -138,11 +216,13 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   const drug = DRUGS[drugKey];
   const point2aNo =
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
-  const applySection2 =
-    drugKey !== 'other' && getBool(request.applySection2Abs1a);
+  const includePoint7 =
+    drugKey === 'other' || getBool(request.applySection2Abs1a);
   const standardCareText = getText(request.standardOfCareTriedFreeText);
-  const otherWarning =
-    'Hinweis: Bei Auswahl „anderes Medikament oder andere Indikation“ wird der Weg über den §2 Abs. 1a SGB V gewählt. Dieser setzt strenge Maßstäbe an Schwere und Dringlichkeit der Behandlung. Die Erfolgsaussichten sind hierbei wesentlich geringer. Für größtmögliche Erfolgschancen sollte der vorformulierte Text nicht 1:1 verwendet werden. Es sollten eigene Quellen und eine detailliertere Einschätzung des Arztes zu Risiko-Nutzen eingeholt werden.';
+  const standardCareItems =
+    drugKey === 'other' ? parseMultilineItems(standardCareText) : [];
+  const facts = resolvePreviewMedicationFacts(request, drugKey);
+  const otherDiagnosis = getText(request.otherIndication);
 
   const point4Text = drug.hasAnnouncedAmrlEntry
     ? 'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI. Auch wenn diese in Aussicht ist, erlaubt es mein Gesundheitszustand nicht auf eine solche zu warten.'
@@ -156,7 +236,15 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     },
     {
       kind: 'paragraph',
-      text: `Punkt 2: ${point2aNo ? 'Die Diagnose ist gesichert' : drug.point2DiagnosisSentence}`,
+      text: `Punkt 2: ${
+        drugKey === 'other'
+          ? otherDiagnosis
+            ? `Die Diagnose ${otherDiagnosis} ist gesichert`
+            : 'Die Diagnose ist gesichert'
+          : point2aNo
+            ? 'Die Diagnose ist gesichert'
+            : drug.point2DiagnosisSentence
+      }`,
     },
     {
       kind: 'paragraph',
@@ -178,16 +266,22 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     },
   ];
 
-  if (applySection2) {
+  if (includePoint7) {
     blocks.push({ kind: 'paragraph', text: `Punkt 7: ${POINT_7_NOTSTAND}` });
   }
 
   blocks.push({ kind: 'paragraph', text: `Punkt 8: ${POINT_8_STANDARD}` });
-  if (standardCareText) {
-    blocks.push({ kind: 'paragraph', text: standardCareText });
+  if (standardCareItems.length > 0) {
+    blocks.push(
+      {
+        kind: 'paragraph',
+        text: 'Zusätzlich wurden folgende Therapieversuche unternommen:',
+      },
+      { kind: 'list', items: standardCareItems },
+    );
   }
 
-  if (applySection2) {
+  if (drugKey === 'other') {
     blocks.push(
       {
         kind: 'paragraph',
@@ -195,24 +289,18 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: 'Diese Erkenntnisse ergeben sich hieraus: Quellen angeben.',
-      },
-      {
-        kind: 'paragraph',
-        text: 'Geplant ist eine Behandlung wie folgt: Dosis, Dauer, Überwachung durch Arzt hier festlegen.',
+        text: `Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`,
       },
     );
-  }
-
-  const point10BaseText =
-    'Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: (HTA-Bericht, Systematisches Review, inkl. Metaanylysen, Evidenzbasierte Richtlinien, randomisierte Kontrollierte Studien). Übertragbarkeit auf den Einzelfall (Gleiche Erkrankung/Gleiche Anwendung). Geplant ist eine Behandlung wie folgt: Indikation, Dosis, Dauer, Überwachung durch Arzt hier festlegen.';
-  blocks.push({
-    kind: 'paragraph',
-    text: point2aNo ? `${point10BaseText} ${POINT_10_NO_2A}` : point10BaseText,
-  });
-
-  if (drugKey === 'other') {
-    blocks.push({ kind: 'paragraph', text: otherWarning });
+  } else {
+    const point10Sources = [POINT_10_MD_SOURCE, facts.expertSourceText];
+    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} Übertragbarkeit auf den Einzelfall (Gleiche Erkrankung/Gleiche Anwendung). Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`;
+    blocks.push({
+      kind: 'paragraph',
+      text: point2aNo
+        ? `${point10BaseText} ${POINT_10_NO_2A}`
+        : point10BaseText,
+    });
   }
 
   return { id: 'part1', title: 'Part 1', blocks };
@@ -255,7 +343,12 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
   const patient = getRecord(formData.patient);
   const point2aNo =
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
-  const drug = DRUGS[getDrugKey(request.drug)].displayName;
+  const drugKey = getDrugKey(request.drug);
+  const facts = resolvePreviewMedicationFacts(request, drugKey);
+  const standardCareItems =
+    drugKey === 'other'
+      ? parseMultilineItems(getText(request.standardOfCareTriedFreeText))
+      : [];
   const patientName =
     [getText(patient.firstName), getText(patient.lastName)]
       .filter(Boolean)
@@ -279,7 +372,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: 'Diagnose: postinfektiöses ME/CFS / Long COVID',
+        text: `Diagnose: ${facts.diagnosisMain}`,
       },
       {
         kind: 'paragraph',
@@ -287,13 +380,22 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von ${drug} zur Behandlung von ME/CFS sinnvoll, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.`,
+        text: `Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von ${facts.displayName} zur Behandlung von ${facts.diagnosisMain} sinnvoll, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.`,
       },
+      ...(standardCareItems.length > 0
+        ? ([
+            {
+              kind: 'paragraph' as const,
+              text: 'Zusätzlich wurden folgende Therapieversuche unternommen:',
+            },
+            { kind: 'list' as const, items: standardCareItems },
+          ] satisfies OfflabelRenderedDocument['blocks'])
+        : []),
       {
         kind: 'paragraph',
         text: point2aNo
-          ? 'Der Patient leidet an den typischen Symptomen der Indikation [XYZ].'
-          : 'Auch die Indikation [XYZ] liegt vor.',
+          ? `Der Patient leidet an den typischen Symptomen der Indikation ${facts.diagnosisMain}.`
+          : `Auch die Indikation ${facts.diagnosisMain} liegt vor.`,
       },
       {
         kind: 'paragraph',
@@ -302,11 +404,11 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
       {
         kind: 'list',
         items: [
-          'Behandlungsziel: relevante Symptomlast lindern, Lebensqualität steigern',
-          'Indikation: [aus Medikament übernehmen]',
-          'Dosierung/Dauer: [entsprechend Studienergebnissen]',
-          'Monitoring/Abbruchkriterien: engmaschige Verlaufskontrolle, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen',
-          'Erwarteter Nutzen / Therapieziel im Einzelfall: [aus Medikament übernehmen]',
+          `Behandlungsziel: ${facts.targetSymptoms}`,
+          `Indikation: ${facts.diagnosisMain}`,
+          `Dosierung/Dauer: ${facts.doseAndDuration}`,
+          `Monitoring/Abbruchkriterien: ${facts.monitoringAndStop}`,
+          `Erwarteter Nutzen / Therapieziel im Einzelfall: ${facts.targetSymptoms}`,
           'Insgesamt ist von einem positiven Risiko-Nutzen Verhältnis auszugehen.',
           'BSNR: __________',
           'LANR: __________',
@@ -316,8 +418,67 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
   };
 };
 
+const buildFromExportModel = (
+  formData: Record<string, unknown>,
+  locale: SupportedLocale,
+): OfflabelRenderedDocument[] => {
+  const model = buildOffLabelAntragDocumentModel(formData, locale);
+
+  return [
+    {
+      id: 'part1',
+      title: 'Part 1',
+      blocks: [
+        {
+          kind: 'heading',
+          text:
+            locale === 'en'
+              ? 'Part 1 – Application to the insurer'
+              : 'Teil 1 – Antrag an die Krankenkasse',
+        },
+        ...model.kk.paragraphs.map((text) => ({
+          kind: 'paragraph' as const,
+          text,
+        })),
+      ],
+    },
+    {
+      id: 'part2',
+      title: 'Part 2',
+      blocks: [
+        {
+          kind: 'heading',
+          text:
+            locale === 'en'
+              ? 'Part 2 – Cover letter to the treating practice'
+              : 'Teil 2 – Schreiben an die behandelnde Praxis',
+        },
+        ...model.arzt.paragraphs.map((text) => ({
+          kind: 'paragraph' as const,
+          text,
+        })),
+      ],
+    },
+    {
+      id: 'part3',
+      title: 'Part 3',
+      blocks: [
+        { kind: 'heading', text: model.part3.title },
+        ...model.part3.paragraphs.map((text) => ({
+          kind: 'paragraph' as const,
+          text,
+        })),
+      ],
+    },
+  ];
+};
+
 export function buildOfflabelDocuments(
   formData: Record<string, unknown>,
+  locale: SupportedLocale = 'de',
 ): OfflabelRenderedDocument[] {
+  if (locale === 'en') {
+    return buildFromExportModel(formData, locale);
+  }
   return [buildPart1(formData), buildPart2(formData), buildPart3(formData)];
 }

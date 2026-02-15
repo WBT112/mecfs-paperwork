@@ -4,13 +4,15 @@ import { applyOfflabelVisibility } from '../../src/formpacks/offlabel-antrag/uiV
 
 const buildUiSchema = (): UiSchema => ({
   request: {
+    indicationFullyMetOrDoctorConfirms: { 'ui:widget': 'radio' },
+    applySection2Abs1a: {},
     otherDrugName: {},
     otherIndication: {},
-    otherTreatmentGoal: {},
-    otherDose: {},
-    otherDuration: {},
-    otherMonitoring: {},
-    standardOfCareTriedFreeText: {},
+    otherTreatmentGoal: { 'ui:widget': 'textarea' },
+    otherDose: { 'ui:widget': 'textarea' },
+    otherDuration: { 'ui:widget': 'textarea' },
+    otherMonitoring: { 'ui:widget': 'textarea' },
+    standardOfCareTriedFreeText: { 'ui:widget': 'textarea' },
   },
 });
 
@@ -45,6 +47,14 @@ describe('applyOfflabelVisibility', () => {
         'ui:widget'
       ],
     ).toBe('hidden');
+    expect(
+      (request.indicationFullyMetOrDoctorConfirms as Record<string, unknown>)[
+        'ui:widget'
+      ],
+    ).toBe('radio');
+    expect(
+      (request.applySection2Abs1a as Record<string, unknown>)['ui:widget'],
+    ).toBeUndefined();
   });
 
   it('shows manual medication fields for other', () => {
@@ -62,20 +72,28 @@ describe('applyOfflabelVisibility', () => {
     ).toBeUndefined();
     expect(
       (request.otherTreatmentGoal as Record<string, unknown>)['ui:widget'],
-    ).toBeUndefined();
+    ).toBe('textarea');
     expect((request.otherDose as Record<string, unknown>)['ui:widget']).toBe(
-      undefined,
+      'textarea',
     );
     expect(
       (request.otherDuration as Record<string, unknown>)['ui:widget'],
-    ).toBeUndefined();
+    ).toBe('textarea');
     expect(
       (request.otherMonitoring as Record<string, unknown>)['ui:widget'],
-    ).toBeUndefined();
+    ).toBe('textarea');
     expect(
       (request.standardOfCareTriedFreeText as Record<string, unknown>)[
         'ui:widget'
       ],
-    ).toBeUndefined();
+    ).toBe('textarea');
+    expect(
+      (request.indicationFullyMetOrDoctorConfirms as Record<string, unknown>)[
+        'ui:widget'
+      ],
+    ).toBe('hidden');
+    expect(
+      (request.applySection2Abs1a as Record<string, unknown>)['ui:widget'],
+    ).toBe('hidden');
   });
 });

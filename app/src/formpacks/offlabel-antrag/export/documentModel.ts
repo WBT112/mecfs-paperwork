@@ -152,6 +152,12 @@ const tr = (
   options: Record<string, unknown> = {},
 ): string => t(key, { defaultValue, ...options });
 
+const localeDefault = (
+  locale: SupportedLocale,
+  de: string,
+  en: string,
+): string => (locale === 'en' ? en : de);
+
 const getRecordValue = (value: unknown): Record<string, unknown> | null =>
   isRecord(value) ? value : null;
 
@@ -279,6 +285,13 @@ export const parseOfflabelAttachments = (
     )
     .filter((line) => line.length > 0);
 };
+
+const buildPriorMeasuresListText = (
+  enteredPriorMeasuresItems: string[],
+): string | null =>
+  enteredPriorMeasuresItems.length > 0
+    ? enteredPriorMeasuresItems.join('; ')
+    : null;
 
 const resolveKnownMedicationProfile = (
   value: string | null,
@@ -618,6 +631,7 @@ const buildKkSignatures = ({
 
 const buildKkParagraphs = ({
   t,
+  locale,
   medicationName,
   medicationIngredient,
   diagnosisMain,
@@ -627,8 +641,10 @@ const buildKkParagraphs = ({
   priorMeasuresText,
   medicationSourceText,
   severitySummary,
+  enteredPriorMeasuresListText,
 }: {
   t: I18nT;
+  locale: SupportedLocale;
   medicationName: string;
   medicationIngredient: string;
   diagnosisMain: string;
@@ -638,11 +654,16 @@ const buildKkParagraphs = ({
   priorMeasuresText: string;
   medicationSourceText: string;
   severitySummary: string;
+  enteredPriorMeasuresListText: string | null;
 }): string[] => [
   tr(
     t,
     'offlabel-antrag.export.part1.p1',
-    'Hiermit beantrage ich die Kostenübernahme für die Off-Label-Verordnung des Wirkstoffs {{medicationIngredient}} zur Behandlung von {{diagnosisMain}}.',
+    localeDefault(
+      locale,
+      'Hiermit beantrage ich die Kostenübernahme für die Off-Label-Verordnung des Wirkstoffs {{medicationIngredient}} zur Behandlung von {{diagnosisMain}}.',
+      'I hereby request cost coverage for off-label prescription of {{medicationIngredient}} to treat {{diagnosisMain}}.',
+    ),
     {
       medicationIngredient,
       diagnosisMain,
@@ -651,12 +672,20 @@ const buildKkParagraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part1.p2',
-    'Die Voraussetzungen für eine Leistung im Off-Label-Use sind erfüllt: Es handelt sich um eine schwerwiegende Erkrankung, für die keine allgemein anerkannte, dem medizinischen Standard entsprechende Therapie verfügbar ist. Es besteht eine nicht ganz entfernt liegende Aussicht auf eine spürbar positive Einwirkung auf den Krankheitsverlauf bzw. die Symptomlast.',
+    localeDefault(
+      locale,
+      'Die Voraussetzungen für eine Leistung im Off-Label-Use sind erfüllt: Es handelt sich um eine schwerwiegende Erkrankung, für die keine allgemein anerkannte, dem medizinischen Standard entsprechende Therapie verfügbar ist. Es besteht eine nicht ganz entfernt liegende Aussicht auf eine spürbar positive Einwirkung auf den Krankheitsverlauf bzw. die Symptomlast.',
+      'The prerequisites for off-label coverage are met: this is a serious condition without a generally accepted standard therapy. There is a not-remote prospect of meaningful positive impact on disease course or symptom burden.',
+    ),
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p3',
-    'Für {{diagnosisMain}} existiert derzeit keine kausale Standardtherapie. Die Versorgung erfolgt symptomorientiert und individuell.',
+    localeDefault(
+      locale,
+      'Für {{diagnosisMain}} existiert derzeit keine kausale Standardtherapie. Die Versorgung erfolgt symptomorientiert und individuell.',
+      'For {{diagnosisMain}}, no causal standard therapy is currently available. Care is symptom-oriented and individualized.',
+    ),
     { diagnosisMain },
   ),
   tr(t, 'offlabel-antrag.export.part1.p4', '{{severitySummary}}', {
@@ -665,12 +694,20 @@ const buildKkParagraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part1.p5',
-    'Ergänzend beantrage ich die Kostenübernahme auch unter dem Gesichtspunkt des § 2 Abs. 1a SGB V. Bei schwerwiegenden Verläufen und fehlenden ausreichend wirksamen Standardoptionen kann eine Einzelfallleistung in Betracht kommen, wenn eine nicht ganz entfernt liegende Aussicht auf eine spürbare positive Einwirkung auf den Krankheitsverlauf besteht. Zur Einordnung der Versorgungssituation bei ME/CFS und der Anwendung des § 2 Abs. 1a SGB V verweise ich auf den Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER; Anlage/Quelle).',
+    localeDefault(
+      locale,
+      'Ergänzend beantrage ich die Kostenübernahme auch unter dem Gesichtspunkt des § 2 Abs. 1a SGB V. Bei schwerwiegenden Verläufen und fehlenden ausreichend wirksamen Standardoptionen kann eine Einzelfallleistung in Betracht kommen, wenn eine nicht ganz entfernt liegende Aussicht auf eine spürbare positive Einwirkung auf den Krankheitsverlauf besteht. Zur Einordnung der Versorgungssituation bei ME/CFS und der Anwendung des § 2 Abs. 1a SGB V verweise ich auf den Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER; Anlage/Quelle).',
+      'In addition, I request cost coverage with explicit consideration of Section 2(1a) SGB V. In severe courses with no sufficiently effective standard options, individual coverage may be considered when there is a not-remote prospect of a meaningful positive impact on disease course. For classification of the ME/CFS care situation and application of Section 2(1a) SGB V, I refer to the decision of LSG Niedersachsen-Bremen dated 2022-10-14 (L 4 KR 373/22 B ER; attachment/source).',
+    ),
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p6',
-    'Das beantragte Medikament: {{medicationName}} ({{medicationIngredient}}).',
+    localeDefault(
+      locale,
+      'Das beantragte Medikament: {{medicationName}} ({{medicationIngredient}}).',
+      'Requested medication: {{medicationName}} ({{medicationIngredient}}).',
+    ),
     {
       medicationName,
       medicationIngredient,
@@ -679,7 +716,11 @@ const buildKkParagraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part1.p7',
-    'Behandlungsziel: {{targetSymptoms}} Dosierung und Behandlungsdauer: {{doseAndDuration}} Monitoring/Abbruchkriterien: {{monitoringAndStop}}',
+    localeDefault(
+      locale,
+      'Behandlungsziel: {{targetSymptoms}} Dosierung und Behandlungsdauer: {{doseAndDuration}} Monitoring/Abbruchkriterien: {{monitoringAndStop}}',
+      'Treatment goal: {{targetSymptoms}} Dosing and duration: {{doseAndDuration}} Monitoring/stop criteria: {{monitoringAndStop}}',
+    ),
     {
       targetSymptoms,
       doseAndDuration,
@@ -688,31 +729,62 @@ const buildKkParagraphs = ({
   ),
   tr(
     t,
-    'offlabel-antrag.export.part1.p11',
-    'Bisherige Maßnahmen: {{priorMeasuresText}}',
-    { priorMeasuresText },
+    enteredPriorMeasuresListText
+      ? 'offlabel-antrag.export.part1.p11.manual'
+      : 'offlabel-antrag.export.part1.p11',
+    enteredPriorMeasuresListText
+      ? localeDefault(
+          locale,
+          'Zusätzlich wurden folgende Therapieversuche unternommen: {{enteredPriorMeasuresListText}}',
+          'Additionally, the following treatment attempts were undertaken: {{enteredPriorMeasuresListText}}',
+        )
+      : localeDefault(
+          locale,
+          'Bisherige Maßnahmen: {{priorMeasuresText}}',
+          'Prior measures: {{priorMeasuresText}}',
+        ),
+    enteredPriorMeasuresListText
+      ? { enteredPriorMeasuresListText }
+      : { priorMeasuresText },
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p12',
-    'Medikamentenspezifische Quellenbasis: {{medicationSourceText}}',
+    localeDefault(
+      locale,
+      'Medikamentenspezifische Quellenbasis: {{medicationSourceText}}',
+      'Medication-specific source basis: {{medicationSourceText}}',
+    ),
     { medicationSourceText },
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p8',
-    'Eine ärztliche Stellungnahme zur medizinischen Notwendigkeit sowie zur individuellen Begründung/Verordnung ist als Vorlage beigefügt. Siehe Begleitschreiben an die behandelnde Praxis (Teil 2) und Vorlage (Teil 3).',
+    localeDefault(
+      locale,
+      'Eine ärztliche Stellungnahme zur medizinischen Notwendigkeit sowie zur individuellen Begründung/Verordnung ist als Vorlage beigefügt. Siehe Begleitschreiben an die behandelnde Praxis (Teil 2) und Vorlage (Teil 3).',
+      'A medical statement on necessity and individualized rationale/prescribing is attached as a template. See cover letter to the treating practice (part 2) and template (part 3).',
+    ),
   ),
   tr(
     t,
     'offlabel-antrag.export.part1.p9',
-    'Ich bitte um eine schriftliche Entscheidung innerhalb der gesetzlichen Fristen. Für Rückfragen stehe ich zur Verfügung.',
+    localeDefault(
+      locale,
+      'Ich bitte um eine schriftliche Entscheidung innerhalb der gesetzlichen Fristen. Für Rückfragen stehe ich zur Verfügung.',
+      'I request a written decision within statutory deadlines. I am available for follow-up questions.',
+    ),
   ),
-  tr(t, 'offlabel-antrag.export.part1.p10', 'Mit freundlichen Grüßen'),
+  tr(
+    t,
+    'offlabel-antrag.export.part1.p10',
+    localeDefault(locale, 'Mit freundlichen Grüßen', 'Sincerely,'),
+  ),
 ];
 
 const buildArztParagraphs = ({
   t,
+  locale,
   patientName,
   doctorName,
   medicationName,
@@ -722,6 +794,7 @@ const buildArztParagraphs = ({
   monitoringAndStop,
 }: {
   t: I18nT;
+  locale: SupportedLocale;
   patientName: string;
   doctorName: string;
   medicationName: string;
@@ -733,28 +806,48 @@ const buildArztParagraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part2.p1',
-    'Sehr geehrte/r Frau/Herr Dr. {{doctorName}},',
+    localeDefault(
+      locale,
+      'Sehr geehrte/r Frau/Herr Dr. {{doctorName}},',
+      'Dear Dr. {{doctorName}},',
+    ),
     { doctorName },
   ),
   tr(
     t,
     'offlabel-antrag.export.part2.p2',
-    'ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (medizinische Notwendigkeit, Schweregrad, bisherige Maßnahmen, erwarteter Nutzen, Monitoring).',
+    localeDefault(
+      locale,
+      'ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (medizinische Notwendigkeit, Schweregrad, bisherige Maßnahmen, erwarteter Nutzen, Monitoring).',
+      'I am preparing a cost-coverage request (part 1) to my insurer for an off-label prescription. I kindly ask for your support via a brief medical statement/findings summary (medical necessity, severity, prior measures, expected benefit, monitoring).',
+    ),
   ),
   tr(
     t,
     'offlabel-antrag.export.part2.p3',
-    'Als fachliche Grundlage dienen die Bewertungen der "Expertengruppe Long COVID Off-Label-Use beim BfArM" zum ausgewählten Wirkstoff (siehe Quellen/Anlagen im Dokument).',
+    localeDefault(
+      locale,
+      'Als fachliche Grundlage dienen die Bewertungen der "Expertengruppe Long COVID Off-Label-Use beim BfArM" zum ausgewählten Wirkstoff (siehe Quellen/Anlagen im Dokument).',
+      'The technical basis is the assessment of the "Expert Group Long COVID Off-Label Use at BfArM" for the selected active ingredient (see sources/attachments).',
+    ),
   ),
   tr(
     t,
     'offlabel-antrag.export.part2.p4',
-    'Ich würde mich freuen, wenn Sie - sofern Sie dies medizinisch vertreten können - die Verordnung vertragsärztlich ausstellen und die Stellungnahme beifügen. Eine vorformulierte Vorlage (Teil 3) ist beigefügt und kann von Ihnen angepasst werden.',
+    localeDefault(
+      locale,
+      'Ich würde mich freuen, wenn Sie - sofern Sie dies medizinisch vertreten können - die Verordnung vertragsärztlich ausstellen und die Stellungnahme beifügen. Eine vorformulierte Vorlage (Teil 3) ist beigefügt und kann von Ihnen angepasst werden.',
+      'Important: Part 1 is my letter to the insurer and is not signed by you. Please provide a separate medical statement/findings summary as an attachment instead. A pre-formulated template (Part 3) is included and can be adapted by your practice.',
+    ),
   ),
   tr(
     t,
     'offlabel-antrag.export.part2.p5',
-    'Kurzüberblick zum Vorhaben: {{medicationName}} ({{medicationIngredient}}); Behandlungsziel: {{targetSymptoms}} Dosierung/Dauer: {{doseAndDuration}} Monitoring/Abbruch: {{monitoringAndStop}}',
+    localeDefault(
+      locale,
+      'Kurzüberblick zum Vorhaben: {{medicationName}} ({{medicationIngredient}}); Behandlungsziel: {{targetSymptoms}} Dosierung/Dauer: {{doseAndDuration}} Monitoring/Abbruch: {{monitoringAndStop}}',
+      'Summary: {{medicationName}} ({{medicationIngredient}}); treatment goal: {{targetSymptoms}} dosing/duration: {{doseAndDuration}} monitoring/stop: {{monitoringAndStop}}',
+    ),
     {
       medicationName,
       medicationIngredient,
@@ -766,7 +859,11 @@ const buildArztParagraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part2.p6',
-    'Vielen Dank für Ihre Unterstützung.\n\nMit freundlichen Grüßen\n{{patientName}}',
+    localeDefault(
+      locale,
+      'Vielen Dank für Ihre Unterstützung.\n\nMit freundlichen Grüßen\n{{patientName}}',
+      'Thank you for your support.\n\nSincerely,\n{{patientName}}',
+    ),
     {
       patientName,
     },
@@ -775,6 +872,7 @@ const buildArztParagraphs = ({
 
 const buildPart3Paragraphs = ({
   t,
+  locale,
   patient,
   diagnosisMain,
   severitySummary,
@@ -785,8 +883,10 @@ const buildPart3Paragraphs = ({
   monitoringAndStop,
   priorMeasuresText,
   medicationSourceText,
+  enteredPriorMeasuresListText,
 }: {
   t: I18nT;
+  locale: SupportedLocale;
   patient: OffLabelAntragDocumentModel['patient'];
   diagnosisMain: string;
   severitySummary: string;
@@ -797,11 +897,16 @@ const buildPart3Paragraphs = ({
   monitoringAndStop: string;
   priorMeasuresText: string;
   medicationSourceText: string;
+  enteredPriorMeasuresListText: string | null;
 }): string[] => [
   tr(
     t,
     'offlabel-antrag.export.part3.p1',
-    'Patient: {{firstName}} {{lastName}}, geb. {{birthDate}}; Versichertennr.: {{insuranceNumber}}',
+    localeDefault(
+      locale,
+      'Patient: {{firstName}} {{lastName}}, geb. {{birthDate}}; Versichertennr.: {{insuranceNumber}}',
+      'Patient: {{firstName}} {{lastName}}, DOB {{birthDate}}; insurance no.: {{insuranceNumber}}',
+    ),
     {
       firstName: patient.firstName,
       lastName: patient.lastName,
@@ -812,34 +917,68 @@ const buildPart3Paragraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part3.p2',
-    'Diagnose / Verdachtsdiagnose: {{diagnosisMain}}',
+    localeDefault(
+      locale,
+      'Diagnose / Verdachtsdiagnose: {{diagnosisMain}}',
+      'Diagnosis / suspected diagnosis: {{diagnosisMain}}',
+    ),
     { diagnosisMain },
   ),
   tr(
     t,
     'offlabel-antrag.export.part3.p3',
-    'Schweregrad / Funktionseinschränkung (kurz): {{severitySummary}}',
+    localeDefault(
+      locale,
+      'Schweregrad / Funktionseinschränkung (kurz): {{severitySummary}}',
+      'Severity / functional impairment (short): {{severitySummary}}',
+    ),
     { severitySummary },
   ),
   tr(
     t,
     'offlabel-antrag.export.part3.p4',
-    'Bisherige Behandlung/Versorgung: Es besteht keine kausale Standardtherapie; die Behandlung erfolgt symptomorientiert. Bisherige Maßnahmen/Medikamente: {{priorMeasuresText}}',
+    localeDefault(
+      locale,
+      'Bisherige Behandlung/Versorgung: Es besteht keine kausale Standardtherapie; die Behandlung erfolgt symptomorientiert. Bisherige Maßnahmen/Medikamente: {{priorMeasuresText}}',
+      'Prior treatment/care: no causal standard therapy available; treatment is symptom-oriented. Prior measures/medication: {{priorMeasuresText}}',
+    ),
     { priorMeasuresText },
   ),
   tr(
     t,
     'offlabel-antrag.export.part3.p5',
-    'Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von {{medicationIngredient}} zur Behandlung von {{diagnosisMain}} medizinisch nachvollziehbar, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.',
+    localeDefault(
+      locale,
+      'Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von {{medicationIngredient}} zur Behandlung von {{diagnosisMain}} medizinisch nachvollziehbar, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.',
+      'Rationale for off-label prescription: from a medical perspective, use of {{medicationIngredient}} for {{diagnosisMain}} is clinically plausible because the condition is severe, no standard therapy is available, and meaningful symptom improvement is plausible.',
+    ),
     {
       medicationIngredient,
       diagnosisMain,
     },
   ),
+  ...(enteredPriorMeasuresListText
+    ? [
+        tr(
+          t,
+          'offlabel-antrag.export.part3.p5a',
+          localeDefault(
+            locale,
+            'Zusätzlich wurden folgende Therapieversuche unternommen: {{enteredPriorMeasuresListText}}',
+            'Additionally, the following treatment attempts were undertaken: {{enteredPriorMeasuresListText}}',
+          ),
+          { enteredPriorMeasuresListText },
+        ),
+      ]
+    : []),
   tr(
     t,
     'offlabel-antrag.export.part3.p6',
-    'Therapieplan (gemäß Fachgrundlage Expertengruppe): Behandlungsziel: {{targetSymptoms}} Dosierung/Dauer: {{doseAndDuration}}',
+    localeDefault(
+      locale,
+      'Therapieplan (gemäß Fachgrundlage Expertengruppe): Behandlungsziel: {{targetSymptoms}} Dosierung/Dauer: {{doseAndDuration}}',
+      'Treatment plan (based on Expert Group evidence): treatment goal: {{targetSymptoms}} dosing/duration: {{doseAndDuration}}',
+    ),
     {
       targetSymptoms,
       doseAndDuration,
@@ -848,7 +987,11 @@ const buildPart3Paragraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part3.p7',
-    'Monitoring/Abbruchkriterien (bitte anpassen): {{monitoringAndStop}}',
+    localeDefault(
+      locale,
+      'Monitoring/Abbruchkriterien (bitte anpassen): {{monitoringAndStop}}',
+      'Monitoring/stop criteria (please adapt): {{monitoringAndStop}}',
+    ),
     {
       monitoringAndStop,
     },
@@ -856,12 +999,20 @@ const buildPart3Paragraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part3.p8',
-    'Erwarteter Nutzen / Therapieziel im Einzelfall (bitte ergänzen): ________________________________',
+    localeDefault(
+      locale,
+      'Erwarteter Nutzen / Therapieziel im Einzelfall (bitte ergänzen): ________________________________',
+      'Expected benefit / individual therapy goal (please add): ________________________________',
+    ),
   ),
   tr(
     t,
     'offlabel-antrag.export.part3.p9',
-    'Datum, Stempel, Unterschrift: ________________________________',
+    localeDefault(
+      locale,
+      'Datum, Stempel, Unterschrift: ________________________________',
+      'Date, stamp, signature: ________________________________',
+    ),
   ),
   tr(
     t,
@@ -875,7 +1026,11 @@ const buildPart3Paragraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part3.p11',
-    'Medikamentenspezifische Quellenbasis: {{medicationSourceText}}',
+    localeDefault(
+      locale,
+      'Medikamentenspezifische Quellenbasis: {{medicationSourceText}}',
+      'Medication-specific source basis: {{medicationSourceText}}',
+    ),
     { medicationSourceText },
   ),
 ];
@@ -1013,6 +1168,12 @@ export const buildOffLabelAntragDocumentModel = (
     defaults.attachmentsFreeText,
   );
   const attachmentsItems = parseOfflabelAttachments(rawAttachmentsFreeText);
+  const enteredPriorMeasuresItems = parseOfflabelAttachments(
+    getStringValue(requestRecord?.standardOfCareTriedFreeText),
+  );
+  const enteredPriorMeasuresListText = buildPriorMeasuresListText(
+    enteredPriorMeasuresItems,
+  );
 
   const facts = resolveDrugFacts({
     t,
@@ -1037,7 +1198,11 @@ export const buildOffLabelAntragDocumentModel = (
     tr(
       t,
       'offlabel-antrag.export.part2.attachmentsAutoItem',
-      'Teil 1: Antrag an die Krankenkasse (Entwurf)',
+      localeDefault(
+        locale,
+        'Teil 1: Antrag an die Krankenkasse (Entwurf)',
+        'Part 1: Insurer application (draft)',
+      ),
     ),
     facts.expertAttachment ??
       (locale === 'de'
@@ -1049,7 +1214,7 @@ export const buildOffLabelAntragDocumentModel = (
   const attachmentsHeading = tr(
     t,
     'offlabel-antrag.export.attachmentsHeading',
-    'Anlagen',
+    localeDefault(locale, 'Anlagen', 'Attachments'),
   );
 
   const kk: OffLabelLetterSection = {
@@ -1062,12 +1227,17 @@ export const buildOffLabelAntragDocumentModel = (
     subject: tr(
       t,
       'offlabel-antrag.export.part1.subject',
-      'Antrag auf Kostenübernahme (Off-Label-Use): {{drug}}',
+      localeDefault(
+        locale,
+        'Antrag auf Kostenübernahme (Off-Label-Use): {{drug}}',
+        'Application for case-by-case cost coverage (off-label use): {{drug}}',
+      ),
       { drug: facts.medicationName },
     ),
     paragraphs: [
       ...buildKkParagraphs({
         t,
+        locale,
         medicationName: facts.medicationName,
         medicationIngredient: facts.medicationIngredient,
         diagnosisMain: facts.diagnosisMain,
@@ -1077,6 +1247,7 @@ export const buildOffLabelAntragDocumentModel = (
         priorMeasuresText: facts.priorMeasuresText,
         medicationSourceText: facts.medicationSourceText,
         severitySummary,
+        enteredPriorMeasuresListText,
       }),
       patientName,
     ],
@@ -1095,10 +1266,15 @@ export const buildOffLabelAntragDocumentModel = (
     subject: tr(
       t,
       'offlabel-antrag.export.part2.subject',
-      'Begleitschreiben zum Off-Label-Antrag (Teil 1) - Bitte um Unterstützung',
+      localeDefault(
+        locale,
+        'Begleitschreiben zum Off-Label-Antrag (Teil 1) - Bitte um Unterstützung',
+        'Cover letter regarding the off-label request (part 1) - request for support',
+      ),
     ),
     paragraphs: buildArztParagraphs({
       t,
+      locale,
       patientName,
       doctorName: doctor.name,
       medicationName: facts.medicationName,
@@ -1116,10 +1292,15 @@ export const buildOffLabelAntragDocumentModel = (
     title: tr(
       t,
       'offlabel-antrag.export.part3.title',
-      'Teil 3 - Vorlage für ärztliche Stellungnahme / Befundbericht (zur Anpassung durch die Praxis)',
+      localeDefault(
+        locale,
+        'Teil 3 - Vorlage für ärztliche Stellungnahme / Befundbericht (zur Anpassung durch die Praxis)',
+        'Part 3 – Template for medical statement / findings report (to be adapted by the practice)',
+      ),
     ),
     paragraphs: buildPart3Paragraphs({
       t,
+      locale,
       patient,
       diagnosisMain: facts.diagnosisMain,
       severitySummary,
@@ -1130,6 +1311,7 @@ export const buildOffLabelAntragDocumentModel = (
       monitoringAndStop: facts.monitoringAndStop,
       priorMeasuresText: facts.priorMeasuresText,
       medicationSourceText: facts.medicationSourceText,
+      enteredPriorMeasuresListText,
     }),
   };
 
@@ -1161,7 +1343,11 @@ export const buildOffLabelAntragDocumentModel = (
     kk,
     arzt,
     part3,
-    sourcesHeading: tr(t, 'offlabel-antrag.export.sourcesHeading', 'Quellen'),
+    sourcesHeading: tr(
+      t,
+      'offlabel-antrag.export.sourcesHeading',
+      localeDefault(locale, 'Quellen', 'Sources'),
+    ),
     sources,
     exportedAtIso: exportedAt.toISOString(),
     exportBundle,

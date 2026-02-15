@@ -188,7 +188,7 @@
       "ui:help": "offlabel-antrag.request.standardOfCareTriedFreeText.help",
       "ui:widget": "textarea",
       "ui:options": {
-        "rows": 6
+        "rows": 8
       }
     }
   },

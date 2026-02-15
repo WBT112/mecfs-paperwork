@@ -1950,8 +1950,10 @@ export default function FormpackDetailPage() {
   );
   const offlabelPreviewDocuments = useMemo(
     () =>
-      formpackId === OFFLABEL_ANTRAG_ID ? buildOfflabelDocuments(formData) : [],
-    [formData, formpackId],
+      formpackId === OFFLABEL_ANTRAG_ID
+        ? buildOfflabelDocuments(formData, locale)
+        : [],
+    [formData, formpackId, locale],
   );
   const docxTemplateOptions = useMemo(() => {
     if (!manifest?.docx) {

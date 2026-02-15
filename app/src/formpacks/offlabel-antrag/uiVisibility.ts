@@ -32,9 +32,14 @@ const getValueByPath = (
 const setWidgetVisibility = (
   node: Record<string, unknown>,
   isHidden: boolean,
+  visibleWidget?: string,
 ): void => {
   if (isHidden) {
     node['ui:widget'] = 'hidden';
+    return;
+  }
+  if (visibleWidget) {
+    node['ui:widget'] = visibleWidget;
     return;
   }
   delete node['ui:widget'];
@@ -58,7 +63,7 @@ export const applyOfflabelVisibility = (
   )
     ? requestUiSchema.indicationFullyMetOrDoctorConfirms
     : {};
-  setWidgetVisibility(indicationUi, isOtherDrug);
+  setWidgetVisibility(indicationUi, isOtherDrug, 'radio');
   requestUiSchema.indicationFullyMetOrDoctorConfirms = indicationUi;
 
   const section2Ui = isRecord(requestUiSchema.applySection2Abs1a)
@@ -82,31 +87,31 @@ export const applyOfflabelVisibility = (
   const otherTreatmentGoalUi = isRecord(requestUiSchema.otherTreatmentGoal)
     ? requestUiSchema.otherTreatmentGoal
     : {};
-  setWidgetVisibility(otherTreatmentGoalUi, !isOtherDrug);
+  setWidgetVisibility(otherTreatmentGoalUi, !isOtherDrug, 'textarea');
   requestUiSchema.otherTreatmentGoal = otherTreatmentGoalUi;
 
   const otherDoseUi = isRecord(requestUiSchema.otherDose)
     ? requestUiSchema.otherDose
     : {};
-  setWidgetVisibility(otherDoseUi, !isOtherDrug);
+  setWidgetVisibility(otherDoseUi, !isOtherDrug, 'textarea');
   requestUiSchema.otherDose = otherDoseUi;
 
   const otherDurationUi = isRecord(requestUiSchema.otherDuration)
     ? requestUiSchema.otherDuration
     : {};
-  setWidgetVisibility(otherDurationUi, !isOtherDrug);
+  setWidgetVisibility(otherDurationUi, !isOtherDrug, 'textarea');
   requestUiSchema.otherDuration = otherDurationUi;
 
   const otherMonitoringUi = isRecord(requestUiSchema.otherMonitoring)
     ? requestUiSchema.otherMonitoring
     : {};
-  setWidgetVisibility(otherMonitoringUi, !isOtherDrug);
+  setWidgetVisibility(otherMonitoringUi, !isOtherDrug, 'textarea');
   requestUiSchema.otherMonitoring = otherMonitoringUi;
 
   const standardOfCareUi = isRecord(requestUiSchema.standardOfCareTriedFreeText)
     ? requestUiSchema.standardOfCareTriedFreeText
     : {};
-  setWidgetVisibility(standardOfCareUi, !isOtherDrug);
+  setWidgetVisibility(standardOfCareUi, !isOtherDrug, 'textarea');
   requestUiSchema.standardOfCareTriedFreeText = standardOfCareUi;
 
   return clonedUiSchema;
