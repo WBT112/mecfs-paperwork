@@ -67,10 +67,10 @@ describe('offlabel-antrag letter builder', () => {
       exportedAt: FIXED_EXPORTED_AT,
     });
 
-    expect(bundle.part2.bodyParagraphs.some((p) => p.includes('Teil 1'))).toBe(
+    expect(bundle.part2.paragraphs.some((p) => p.includes('Teil 1'))).toBe(
       true,
     );
-    expect(bundle.part2.attachmentsItems[0]).toBe(PART1_DRAFT_ATTACHMENT);
+    expect(bundle.part2.attachments[0]).toBe(PART1_DRAFT_ATTACHMENT);
     expect(bundle.part3.title).toContain('Teil 3');
   });
 
@@ -85,14 +85,14 @@ describe('offlabel-antrag letter builder', () => {
       exportedAt: FIXED_EXPORTED_AT,
     });
 
-    expect(bundle.part1.bodyParagraphs.join(' | ')).toContain('Punkt 10:');
-    expect(bundle.part1.attachmentsItems).toContain(
+    expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 10:');
+    expect(bundle.part1.attachments).toContain(
       'Bewertung: Vortioxetin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
     );
-    expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
+    expect(bundle.part1.attachments.join(' | ')).not.toContain(
       'Bewertung Ivabradin',
     );
-    expect(bundle.part1.attachmentsItems.join(' | ')).not.toContain(
+    expect(bundle.part1.attachments.join(' | ')).not.toContain(
       'Bewertung Agomelatin',
     );
   });
@@ -115,10 +115,10 @@ describe('offlabel-antrag letter builder', () => {
       exportedAt: FIXED_EXPORTED_AT,
     });
 
-    expect(bundle.part1.bodyParagraphs.join(' | ')).toContain('Punkt 7:');
-    expect(bundle.part1.bodyParagraphs.join(' | ')).toContain('Punkt 9:');
-    expect(bundle.part1.bodyParagraphs.join(' | ')).not.toContain('Punkt 10:');
-    expect(bundle.part1.attachmentsItems).toEqual([]);
+    expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 7:');
+    expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 9:');
+    expect(bundle.part1.paragraphs.join(' | ')).not.toContain('Punkt 10:');
+    expect(bundle.part1.attachments).toEqual([]);
   });
 
   it('uses locale defaults for fallback values', () => {
@@ -165,9 +165,7 @@ describe('offlabel-antrag letter builder', () => {
     expect(letter.signatureBlocks).toEqual([
       { label: 'Patient/in', name: 'Max Mustermann' },
     ]);
-    expect(letter.bodyParagraphs.some((p) => p.includes('Punkt 10:'))).toBe(
-      true,
-    );
+    expect(letter.paragraphs.some((p) => p.includes('Punkt 10:'))).toBe(true);
   });
 
   it('builds part 2 doctor letter via dedicated builder', () => {
@@ -181,7 +179,7 @@ describe('offlabel-antrag letter builder', () => {
     });
 
     expect(letter.subject).toContain('Begleitschreiben');
-    expect(letter.bodyParagraphs.some((p) => p.includes('Teil 1'))).toBe(true);
-    expect(letter.attachmentsItems[0]).toBe(PART1_DRAFT_ATTACHMENT);
+    expect(letter.paragraphs.some((p) => p.includes('Teil 1'))).toBe(true);
+    expect(letter.attachments[0]).toBe(PART1_DRAFT_ATTACHMENT);
   });
 });

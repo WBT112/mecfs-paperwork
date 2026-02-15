@@ -40,9 +40,9 @@ vi.mock('../../src/formpacks/offlabel-antrag/export/documentModel', () => {
           addresseeLines: [],
           dateLine: '',
           subject: '',
-          bodyParagraphs: [],
+          paragraphs: [],
           attachmentsHeading: '',
-          attachmentsItems: [],
+          attachments: [],
           signatureBlocks: [],
         },
         part2: {
@@ -50,14 +50,14 @@ vi.mock('../../src/formpacks/offlabel-antrag/export/documentModel', () => {
           addresseeLines: [],
           dateLine: '',
           subject: '',
-          bodyParagraphs: [],
+          paragraphs: [],
           attachmentsHeading: '',
-          attachmentsItems: [],
+          attachments: [],
           signatureBlocks: [],
         },
         part3: {
           title: '',
-          bodyParagraphs: [],
+          paragraphs: [],
         },
       },
     }),
@@ -65,7 +65,7 @@ vi.mock('../../src/formpacks/offlabel-antrag/export/documentModel', () => {
 });
 
 describe('offlabel letter builder mapping', () => {
-  it('maps extraLine from section signatures to legacy extraLines array', () => {
+  it('keeps extraLine from section signatures', () => {
     const letter = buildPart1KkLetter({
       locale: 'de',
       model: {},
@@ -76,7 +76,7 @@ describe('offlabel letter builder mapping', () => {
       {
         label: 'Behandelnde/r Ärztin/Arzt',
         name: 'Dr. Test',
-        extraLines: ['Praxis Test'],
+        extraLine: 'Praxis Test',
       },
     ]);
   });

@@ -3,12 +3,11 @@ import {
   buildOffLabelAntragDocumentModel,
   parseOfflabelAttachments,
   type OffLabelExportBundle,
+  type OffLabelLetterSection,
 } from './export/documentModel';
 import type { OfflabelAntragExportDefaults } from '../../export/offlabelAntragDefaults';
-import {
-  toLegacyLetter,
-  type LegacyLetter as OfflabelAntragLetter,
-} from './export/legacyLetter';
+
+export type OfflabelAntragLetter = OffLabelLetterSection;
 
 export type OfflabelAntragExportBundle = OffLabelExportBundle;
 
@@ -77,7 +76,7 @@ export const buildPart1KkLetter = ({
   const projected = buildOffLabelAntragDocumentModel(model, locale, {
     exportedAt,
   });
-  return toLegacyLetter(projected.kk);
+  return projected.kk;
 };
 
 export const buildPart2DoctorLetter = ({
@@ -88,7 +87,7 @@ export const buildPart2DoctorLetter = ({
   const projected = buildOffLabelAntragDocumentModel(model, locale, {
     exportedAt,
   });
-  return toLegacyLetter(projected.arzt);
+  return projected.arzt;
 };
 
 export const buildOfflabelAntragExportBundle = ({

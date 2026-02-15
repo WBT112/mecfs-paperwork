@@ -14,10 +14,6 @@ import {
   type OfflabelRenderedDocument,
 } from '../content/buildOfflabelDocuments';
 import { flattenBlocksToParagraphs } from './flattenBlocksToParagraphs';
-import {
-  toLegacyLetter,
-  type LegacyLetter as OffLabelLegacyLetter,
-} from './legacyLetter';
 
 export type OffLabelSignatureBlock = {
   label: string;
@@ -41,16 +37,16 @@ export type OffLabelPart3Section = {
   paragraphs: string[];
 };
 
-type OffLabelLegacyPart3 = {
+type OffLabelExportPart3 = {
   title: string;
-  bodyParagraphs: string[];
+  paragraphs: string[];
 };
 
 export type OffLabelExportBundle = {
   exportedAtIso: string;
-  part1: OffLabelLegacyLetter;
-  part2: OffLabelLegacyLetter;
-  part3: OffLabelLegacyPart3;
+  part1: OffLabelLetterSection;
+  part2: OffLabelLetterSection;
+  part3: OffLabelExportPart3;
 };
 
 export type OffLabelAntragDocumentModel = {
@@ -461,7 +457,7 @@ export const buildOffLabelAntragDocumentModel = (
     rawAttachmentsFreeText,
     defaults.attachmentsFreeText,
   );
-  const attachmentsItems = parseOfflabelAttachments(rawAttachmentsFreeText);
+  const attachmentEntries = parseOfflabelAttachments(rawAttachmentsFreeText);
 
   const medicationFacts = resolveMedicationFacts({
     requestRecord,
@@ -487,7 +483,7 @@ export const buildOffLabelAntragDocumentModel = (
     ...(medicationFacts.expertAttachment
       ? [medicationFacts.expertAttachment]
       : []),
-    ...attachmentsItems,
+    ...attachmentEntries,
   ];
 
   const attachmentsHeading = tr(
@@ -558,11 +554,11 @@ export const buildOffLabelAntragDocumentModel = (
 
   const exportBundle: OffLabelExportBundle = {
     exportedAtIso: exportedAt.toISOString(),
-    part1: toLegacyLetter(kk),
-    part2: toLegacyLetter(arzt),
+    part1: kk,
+    part2: arzt,
     part3: {
       title: part3.title,
-      bodyParagraphs: part3.paragraphs,
+      paragraphs: part3.paragraphs,
     },
   };
 
@@ -573,7 +569,7 @@ export const buildOffLabelAntragDocumentModel = (
     request,
     attachmentsFreeText,
     attachments: {
-      items: attachmentsItems,
+      items: attachmentEntries,
     },
     kk,
     arzt,
