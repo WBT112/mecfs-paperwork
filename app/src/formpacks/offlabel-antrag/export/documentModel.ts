@@ -5,6 +5,11 @@ import {
   type OfflabelAntragExportDefaults,
 } from '../../../export/offlabelAntragDefaults';
 import { isRecord } from '../../../lib/utils';
+import {
+  MEDICATIONS,
+  type MedicationProfile,
+  resolveMedicationProfile,
+} from '../medications';
 
 export type OffLabelSignatureBlock = {
   label: string;
@@ -82,6 +87,12 @@ export type OffLabelAntragDocumentModel = {
   request: {
     drug: string;
     standardOfCareTriedFreeText: string;
+    otherDrugName: string;
+    otherIndication: string;
+    otherTreatmentGoal: string;
+    otherDose: string;
+    otherDuration: string;
+    otherMonitoring: string;
   };
   attachmentsFreeText: string;
   attachments: {
@@ -101,39 +112,6 @@ type BuildOptions = {
   defaults?: OfflabelAntragExportDefaults;
 };
 
-type KnownDrug = 'agomelatin' | 'ivabradine' | 'vortioxetine';
-const EXPERT_SOURCE_KEYS = {
-  agomelatin: 'offlabel-antrag.export.sources.expert.agomelatin',
-  ivabradine: 'offlabel-antrag.export.sources.expert.ivabradin',
-  vortioxetine: 'offlabel-antrag.export.sources.expert.vortioxetin',
-} as const;
-
-const EXPERT_ATTACHMENT_KEYS = {
-  agomelatin: 'offlabel-antrag.export.attachments.autoExpert.agomelatin',
-  ivabradine: 'offlabel-antrag.export.attachments.autoExpert.ivabradin',
-  vortioxetine: 'offlabel-antrag.export.attachments.autoExpert.vortioxetin',
-} as const;
-
-type ExpertSourceKey =
-  | 'offlabel-antrag.export.sources.expert.agomelatin'
-  | 'offlabel-antrag.export.sources.expert.ivabradin'
-  | 'offlabel-antrag.export.sources.expert.vortioxetin';
-type ExpertAttachmentKey =
-  | 'offlabel-antrag.export.attachments.autoExpert.agomelatin'
-  | 'offlabel-antrag.export.attachments.autoExpert.ivabradin'
-  | 'offlabel-antrag.export.attachments.autoExpert.vortioxetin';
-
-type DrugFacts = {
-  medicationName: string;
-  medicationIngredient: string;
-  diagnosisMain: string;
-  targetSymptoms: string;
-  doseAndDuration: string;
-  monitoringAndStop: string;
-  expertSourceKey: ExpertSourceKey;
-  expertAttachmentKey: ExpertAttachmentKey;
-};
-
 type I18nT = (key: string, options?: Record<string, unknown>) => string;
 
 const FALLBACK_DIAGNOSIS_MAIN_KEY =
@@ -145,98 +123,24 @@ const FALLBACK_DOSE_AND_DURATION =
   'gemäß individueller ärztlicher Entscheidung, zeitlich befristeter Therapieversuch';
 const FALLBACK_MONITORING_AND_STOP =
   'engmaschige Verlaufskontrolle, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen';
-
-const DRUG_FACTS_DE: Record<KnownDrug, DrugFacts> = {
-  agomelatin: {
-    medicationName: 'Agomelatin',
-    medicationIngredient: 'Agomelatin',
-    diagnosisMain:
-      'postinfektiösem ME/CFS und/oder Long-/Post-COVID mit Fatigue',
-    targetSymptoms:
-      'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
-    doseAndDuration:
-      '25 mg zur Nacht; nach 2 Wochen ggf. 50 mg. Behandlungsdauer mindestens 12 Wochen, danach Nutzen-Risiko-Prüfung',
-    monitoringAndStop:
-      'Leberwerte überwachen; bei Leberschädigungssymptomen sofort absetzen; Abbruch bei Transaminasen > 3x oberer Normwert',
-    expertSourceKey: EXPERT_SOURCE_KEYS.agomelatin,
-    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.agomelatin,
-  },
-  ivabradine: {
-    medicationName: 'Ivabradin',
-    medicationIngredient: 'Ivabradin',
-    diagnosisMain:
-      'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
-    targetSymptoms:
-      'Senkung der Herzfrequenz und Verbesserung der gesundheitsbezogenen Lebensqualität (HRQoL)',
-    doseAndDuration:
-      'Start 2,5 mg morgens; Titration bis max. 2x5 mg (Standard 2x5 mg, Abenddosis ggf. weglassen)',
-    monitoringAndStop:
-      'Absetzen erwägen, wenn innerhalb von 3 Monaten keine klinisch relevante Reduktion der Ruhe-HF und nur eingeschränkte Symptomverbesserung erreicht wird; Abbruch bei persistierender Bradykardie (HF <50), Bradykardie-Symptomen oder schweren Nebenwirkungen',
-    expertSourceKey: EXPERT_SOURCE_KEYS.ivabradine,
-    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.ivabradine,
-  },
-  vortioxetine: {
-    medicationName: 'Vortioxetin',
-    medicationIngredient: 'Vortioxetin',
-    diagnosisMain:
-      'Long/Post-COVID mit kognitiven Beeinträchtigungen und/oder depressiven Symptomen',
-    targetSymptoms:
-      'Verbesserung von Kognition und/oder depressiver Symptomatik sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
-    doseAndDuration:
-      '5-20 mg 1x täglich; Start 5 mg, nach 2 Wochen Dosisanpassung; Fortführung bis mindestens 6 Monate nach Symptomfreiheit',
-    monitoringAndStop:
-      'Abbruch bei Serotonin-Syndrom, hyponatriämischer Enzephalopathie, neuroleptischem malignen Syndrom oder nicht tolerierbaren Nebenwirkungen; Hinweis: in Deutschland nicht verfügbar, Import/Verfügbarkeit prüfen',
-    expertSourceKey: EXPERT_SOURCE_KEYS.vortioxetine,
-    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.vortioxetine,
-  },
-};
-
-const DRUG_FACTS_EN: Record<KnownDrug, DrugFacts> = {
-  agomelatin: {
-    medicationName: 'Agomelatine',
-    medicationIngredient: 'Agomelatine',
-    diagnosisMain: 'post-infectious ME/CFS and/or long/post-COVID with fatigue',
-    targetSymptoms:
-      'improvement of fatigue and health-related quality of life (HRQoL)',
-    doseAndDuration:
-      '25 mg at night; after 2 weeks increase to 50 mg if needed. Continue for at least 12 weeks and re-evaluate benefit-risk',
-    monitoringAndStop:
-      'monitor liver function; stop immediately with liver injury symptoms; discontinue if transaminases exceed 3x upper normal limit',
-    expertSourceKey: EXPERT_SOURCE_KEYS.agomelatin,
-    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.agomelatin,
-  },
-  ivabradine: {
-    medicationName: 'Ivabradine',
-    medicationIngredient: 'Ivabradine',
-    diagnosisMain:
-      'post-infectious PoTS in long/post-COVID, especially when beta blockers are not tolerated',
-    targetSymptoms:
-      'heart-rate reduction and improved health-related quality of life (HRQoL)',
-    doseAndDuration:
-      'start at 2.5 mg in the morning; titrate up to max. 5 mg twice daily (standard 5 mg twice daily; evening dose may be omitted)',
-    monitoringAndStop:
-      'consider discontinuation if no clinically relevant resting heart-rate reduction is achieved within 3 months and symptom improvement remains limited; stop with persistent bradycardia (HR <50), bradycardia symptoms, or severe adverse events',
-    expertSourceKey: EXPERT_SOURCE_KEYS.ivabradine,
-    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.ivabradine,
-  },
-  vortioxetine: {
-    medicationName: 'Vortioxetine',
-    medicationIngredient: 'Vortioxetine',
-    diagnosisMain:
-      'long/post-COVID with cognitive impairment and/or depressive symptoms',
-    targetSymptoms:
-      'improvement of cognition and/or depressive symptoms, plus health-related quality of life (HRQoL)',
-    doseAndDuration:
-      '5-20 mg once daily; start with 5 mg and adjust dose after 2 weeks; continue for at least 6 months after symptom remission',
-    monitoringAndStop:
-      'discontinue in serotonin syndrome, hyponatremic encephalopathy, neuroleptic malignant syndrome, or intolerable adverse events; note: not available in Germany, verify import/availability',
-    expertSourceKey: EXPERT_SOURCE_KEYS.vortioxetine,
-    expertAttachmentKey: EXPERT_ATTACHMENT_KEYS.vortioxetine,
-  },
-};
-
-const getFactsTable = (locale: SupportedLocale) =>
-  locale === 'de' ? DRUG_FACTS_DE : DRUG_FACTS_EN;
+const FALLBACK_PRIOR_MEASURES_KEY =
+  'offlabel-antrag.export.defaults.fallbackPriorMeasures';
+const FALLBACK_PRIOR_MEASURES_DE =
+  'Bisherige Maßnahmen wurden ausgeschöpft bzw. waren unzureichend oder nicht verträglich.';
+const FALLBACK_PRIOR_MEASURES_EN =
+  'Prior measures were exhausted, insufficient, or not tolerated.';
+const DEFAULT_EXPERT_SOURCE_DE =
+  MEDICATIONS.ivabradine.autoFacts?.de.expertSourceText ??
+  'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).';
+const DEFAULT_EXPERT_SOURCE_EN =
+  MEDICATIONS.ivabradine.autoFacts?.en.expertSourceText ??
+  'Assessment ivabradine – Expert Group Long COVID Off-Label-Use at BfArM (status 2025-10-15).';
+const DEFAULT_EXPERT_ATTACHMENT_DE =
+  MEDICATIONS.ivabradine.autoFacts?.de.expertAttachmentText ??
+  'Bewertung: Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)';
+const DEFAULT_EXPERT_ATTACHMENT_EN =
+  MEDICATIONS.ivabradine.autoFacts?.en.expertAttachmentText ??
+  'Assessment: Ivabradine – Expert Group Long COVID Off-Label-Use at BfArM (status 2025-10-15)';
 
 const getT = (locale: SupportedLocale): I18nT =>
   i18n.getFixedT(locale, 'formpack:offlabel-antrag');
@@ -376,8 +280,15 @@ export const parseOfflabelAttachments = (
     .filter((line) => line.length > 0);
 };
 
-const isKnownDrug = (value: string | null): value is KnownDrug =>
-  value === 'agomelatin' || value === 'ivabradine' || value === 'vortioxetine';
+const resolveKnownMedicationProfile = (
+  value: string | null,
+): MedicationProfile | null => {
+  const profile = resolveMedicationProfile(value);
+  if (!profile || profile.isOther) {
+    return null;
+  }
+  return profile;
+};
 
 const buildPatientName = (patient: {
   firstName: string;
@@ -546,46 +457,146 @@ const buildSeveritySummary = (
   return fragments.join(' ');
 };
 
-const resolveDrugFacts = (
+const buildDoseAndDuration = (
+  dose: string | null,
+  duration: string | null,
+): string => {
+  if (dose && duration) {
+    return `${dose}; ${duration}`;
+  }
+  return dose ?? duration ?? FALLBACK_DOSE_AND_DURATION;
+};
+
+const resolvePriorMeasuresText = (
   t: I18nT,
   locale: SupportedLocale,
-  knownDrug: KnownDrug | null,
-  fallbackDrugName: string,
+  profile: MedicationProfile | null,
+  requestRecord: Record<string, unknown> | null,
+): string => {
+  if (profile?.autoFacts) {
+    const localeFacts =
+      locale === 'de' ? profile.autoFacts.de : profile.autoFacts.en;
+    return localeFacts.priorMeasuresDefault;
+  }
+
+  const freeText = getStringValue(requestRecord?.standardOfCareTriedFreeText);
+  if (freeText) {
+    return freeText;
+  }
+
+  return tr(
+    t,
+    FALLBACK_PRIOR_MEASURES_KEY,
+    locale === 'de' ? FALLBACK_PRIOR_MEASURES_DE : FALLBACK_PRIOR_MEASURES_EN,
+  );
+};
+
+const getProfileDisplayName = (
+  profile: MedicationProfile,
+  locale: SupportedLocale,
+): string => (locale === 'de' ? profile.displayNameDe : profile.displayNameEn);
+
+const getLocaleFacts = (
+  profile: MedicationProfile | null,
+  locale: SupportedLocale,
 ) => {
-  const facts = knownDrug ? getFactsTable(locale)[knownDrug] : null;
-  const medicationName = facts?.medicationName ?? fallbackDrugName;
-  const medicationIngredient = facts?.medicationIngredient ?? fallbackDrugName;
+  if (!profile?.autoFacts) {
+    return null;
+  }
+
+  return locale === 'de' ? profile.autoFacts.de : profile.autoFacts.en;
+};
+
+const getOtherRequestValues = (
+  requestRecord: Record<string, unknown> | null,
+) => ({
+  otherDrugName: getStringValue(requestRecord?.otherDrugName),
+  otherIndication: getStringValue(requestRecord?.otherIndication),
+  otherTreatmentGoal: getStringValue(requestRecord?.otherTreatmentGoal),
+  otherDose: getStringValue(requestRecord?.otherDose),
+  otherDuration: getStringValue(requestRecord?.otherDuration),
+  otherMonitoring: getStringValue(requestRecord?.otherMonitoring),
+});
+
+const resolveExpertTexts = (
+  locale: SupportedLocale,
+  profile: MedicationProfile | null,
+) => {
+  if (!profile?.autoFacts) {
+    return { expertSource: null, expertAttachment: null };
+  }
+
+  const localeFacts = getLocaleFacts(profile, locale);
+  const expertSource = localeFacts?.expertSourceText ?? null;
+  const expertAttachment = localeFacts?.expertAttachmentText ?? null;
+
+  return { expertSource, expertAttachment };
+};
+
+const resolveDrugFacts = ({
+  t,
+  locale,
+  profile,
+  requestRecord,
+  fallbackDrugName,
+}: {
+  t: I18nT;
+  locale: SupportedLocale;
+  profile: MedicationProfile | null;
+  requestRecord: Record<string, unknown> | null;
+  fallbackDrugName: string;
+}) => {
+  const localeFacts = getLocaleFacts(profile, locale);
+  const fallbackDiagnosis = tr(
+    t,
+    FALLBACK_DIAGNOSIS_MAIN_KEY,
+    FALLBACK_DIAGNOSIS_MAIN_TEXT,
+  );
+  const {
+    otherDrugName,
+    otherIndication,
+    otherTreatmentGoal,
+    otherDose,
+    otherDuration,
+    otherMonitoring,
+  } = getOtherRequestValues(requestRecord);
+  const medicationName = profile
+    ? getProfileDisplayName(profile, locale)
+    : withFallback(otherDrugName, fallbackDrugName);
+  const medicationIngredient = medicationName;
+  const { expertSource, expertAttachment } = resolveExpertTexts(
+    locale,
+    profile,
+  );
+  const medicationSourceText =
+    localeFacts?.expertSourceText ??
+    expertSource ??
+    (locale === 'de' ? DEFAULT_EXPERT_SOURCE_DE : DEFAULT_EXPERT_SOURCE_EN);
 
   return {
-    knownDrug,
     medicationName,
     medicationIngredient,
     diagnosisMain:
-      facts?.diagnosisMain ??
-      tr(t, FALLBACK_DIAGNOSIS_MAIN_KEY, FALLBACK_DIAGNOSIS_MAIN_TEXT),
-    targetSymptoms: facts?.targetSymptoms ?? FALLBACK_TARGET_SYMPTOMS,
-    doseAndDuration: facts?.doseAndDuration ?? FALLBACK_DOSE_AND_DURATION,
-    monitoringAndStop: facts?.monitoringAndStop ?? FALLBACK_MONITORING_AND_STOP,
-    expertSource: facts
-      ? tr(
-          t,
-          facts.expertSourceKey,
-          'Expertengruppe Long COVID Off-Label-Use beim BfArM: Bewertung {{medication}}.',
-          {
-            medication: facts.medicationName,
-          },
-        )
-      : null,
-    expertAttachment: facts
-      ? tr(
-          t,
-          facts.expertAttachmentKey,
-          'Bewertung: {{medication}} - Expertengruppe Long COVID Off-Label-Use beim BfArM',
-          {
-            medication: facts.medicationName,
-          },
-        )
-      : null,
+      localeFacts?.diagnosisMain ??
+      withFallback(otherIndication, fallbackDiagnosis),
+    targetSymptoms:
+      localeFacts?.targetSymptoms ??
+      withFallback(otherTreatmentGoal, FALLBACK_TARGET_SYMPTOMS),
+    doseAndDuration:
+      localeFacts?.doseAndDuration ??
+      buildDoseAndDuration(otherDose, otherDuration),
+    monitoringAndStop:
+      localeFacts?.monitoringAndStop ??
+      withFallback(otherMonitoring, FALLBACK_MONITORING_AND_STOP),
+    priorMeasuresText: resolvePriorMeasuresText(
+      t,
+      locale,
+      profile,
+      requestRecord,
+    ),
+    medicationSourceText,
+    expertSource,
+    expertAttachment,
   };
 };
 
@@ -613,6 +624,8 @@ const buildKkParagraphs = ({
   targetSymptoms,
   doseAndDuration,
   monitoringAndStop,
+  priorMeasuresText,
+  medicationSourceText,
   severitySummary,
 }: {
   t: I18nT;
@@ -622,6 +635,8 @@ const buildKkParagraphs = ({
   targetSymptoms: string;
   doseAndDuration: string;
   monitoringAndStop: string;
+  priorMeasuresText: string;
+  medicationSourceText: string;
   severitySummary: string;
 }): string[] => [
   tr(
@@ -670,6 +685,18 @@ const buildKkParagraphs = ({
       doseAndDuration,
       monitoringAndStop,
     },
+  ),
+  tr(
+    t,
+    'offlabel-antrag.export.part1.p11',
+    'Bisherige Maßnahmen: {{priorMeasuresText}}',
+    { priorMeasuresText },
+  ),
+  tr(
+    t,
+    'offlabel-antrag.export.part1.p12',
+    'Medikamentenspezifische Quellenbasis: {{medicationSourceText}}',
+    { medicationSourceText },
   ),
   tr(
     t,
@@ -756,6 +783,8 @@ const buildPart3Paragraphs = ({
   targetSymptoms,
   doseAndDuration,
   monitoringAndStop,
+  priorMeasuresText,
+  medicationSourceText,
 }: {
   t: I18nT;
   patient: OffLabelAntragDocumentModel['patient'];
@@ -766,6 +795,8 @@ const buildPart3Paragraphs = ({
   targetSymptoms: string;
   doseAndDuration: string;
   monitoringAndStop: string;
+  priorMeasuresText: string;
+  medicationSourceText: string;
 }): string[] => [
   tr(
     t,
@@ -793,7 +824,8 @@ const buildPart3Paragraphs = ({
   tr(
     t,
     'offlabel-antrag.export.part3.p4',
-    'Bisherige Behandlung/Versorgung: Es besteht keine kausale Standardtherapie; die Behandlung erfolgt symptomorientiert. Bisherige Maßnahmen/Medikamente (bitte ergänzen): ________________________________',
+    'Bisherige Behandlung/Versorgung: Es besteht keine kausale Standardtherapie; die Behandlung erfolgt symptomorientiert. Bisherige Maßnahmen/Medikamente: {{priorMeasuresText}}',
+    { priorMeasuresText },
   ),
   tr(
     t,
@@ -840,13 +872,21 @@ const buildPart3Paragraphs = ({
       medicationIngredient,
     },
   ),
+  tr(
+    t,
+    'offlabel-antrag.export.part3.p11',
+    'Medikamentenspezifische Quellenbasis: {{medicationSourceText}}',
+    { medicationSourceText },
+  ),
 ];
 
 const getSourceItems = ({
   t,
+  locale,
   expertSource,
 }: {
   t: I18nT;
+  locale: SupportedLocale;
   expertSource: string | null;
 }): string[] => [
   tr(
@@ -855,11 +895,7 @@ const getSourceItems = ({
     'Medizinischer Dienst Bund: Begutachtungsanleitung / Begutachtungsmaßstäbe Off-Label-Use (Stand 05/2022).',
   ),
   expertSource ??
-    tr(
-      t,
-      EXPERT_SOURCE_KEYS.ivabradine,
-      'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).',
-    ),
+    (locale === 'de' ? DEFAULT_EXPERT_SOURCE_DE : DEFAULT_EXPERT_SOURCE_EN),
   tr(
     t,
     'offlabel-antrag.export.sources.caseLaw',
@@ -899,7 +935,7 @@ export const buildOffLabelAntragDocumentModel = (
   const requestRecord = getRecordValue(formData.request);
 
   const rawDrug = getStringValue(requestRecord?.drug);
-  const knownDrug = isKnownDrug(rawDrug) ? rawDrug : null;
+  const knownMedicationProfile = resolveKnownMedicationProfile(rawDrug);
 
   const patient = {
     ...resolveStringFields(patientRecord, defaults.patient, [
@@ -939,6 +975,36 @@ export const buildOffLabelAntragDocumentModel = (
       'standardOfCareTriedFreeText',
       defaults.request.standardOfCareTriedFreeText,
     ),
+    otherDrugName: withDefaultStringField(
+      requestRecord,
+      'otherDrugName',
+      defaults.request.otherDrugName,
+    ),
+    otherIndication: withDefaultStringField(
+      requestRecord,
+      'otherIndication',
+      defaults.request.otherIndication,
+    ),
+    otherTreatmentGoal: withDefaultStringField(
+      requestRecord,
+      'otherTreatmentGoal',
+      defaults.request.otherTreatmentGoal,
+    ),
+    otherDose: withDefaultStringField(
+      requestRecord,
+      'otherDose',
+      defaults.request.otherDose,
+    ),
+    otherDuration: withDefaultStringField(
+      requestRecord,
+      'otherDuration',
+      defaults.request.otherDuration,
+    ),
+    otherMonitoring: withDefaultStringField(
+      requestRecord,
+      'otherMonitoring',
+      defaults.request.otherMonitoring,
+    ),
   };
 
   const rawAttachmentsFreeText = getStringValue(formData.attachmentsFreeText);
@@ -948,18 +1014,22 @@ export const buildOffLabelAntragDocumentModel = (
   );
   const attachmentsItems = parseOfflabelAttachments(rawAttachmentsFreeText);
 
-  const facts = resolveDrugFacts(t, locale, knownDrug, defaults.request.drug);
+  const facts = resolveDrugFacts({
+    t,
+    locale,
+    profile: knownMedicationProfile,
+    requestRecord,
+    fallbackDrugName: defaults.request.drug,
+  });
   const patientName = buildPatientName(patient);
   const dateLine = getDateLine(locale, patient.city, exportedAt);
   const severitySummary = buildSeveritySummary(t, formData);
 
   const kkAttachments: string[] = [
     facts.expertAttachment ??
-      tr(
-        t,
-        EXPERT_ATTACHMENT_KEYS.ivabradine,
-        'Bewertung: Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
-      ),
+      (locale === 'de'
+        ? DEFAULT_EXPERT_ATTACHMENT_DE
+        : DEFAULT_EXPERT_ATTACHMENT_EN),
     ...attachmentsItems,
   ];
 
@@ -970,11 +1040,9 @@ export const buildOffLabelAntragDocumentModel = (
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
     ),
     facts.expertAttachment ??
-      tr(
-        t,
-        EXPERT_ATTACHMENT_KEYS.ivabradine,
-        'Bewertung: Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
-      ),
+      (locale === 'de'
+        ? DEFAULT_EXPERT_ATTACHMENT_DE
+        : DEFAULT_EXPERT_ATTACHMENT_EN),
     ...attachmentsItems,
   ];
 
@@ -1006,6 +1074,8 @@ export const buildOffLabelAntragDocumentModel = (
         targetSymptoms: facts.targetSymptoms,
         doseAndDuration: facts.doseAndDuration,
         monitoringAndStop: facts.monitoringAndStop,
+        priorMeasuresText: facts.priorMeasuresText,
+        medicationSourceText: facts.medicationSourceText,
         severitySummary,
       }),
       patientName,
@@ -1058,11 +1128,14 @@ export const buildOffLabelAntragDocumentModel = (
       targetSymptoms: facts.targetSymptoms,
       doseAndDuration: facts.doseAndDuration,
       monitoringAndStop: facts.monitoringAndStop,
+      priorMeasuresText: facts.priorMeasuresText,
+      medicationSourceText: facts.medicationSourceText,
     }),
   };
 
   const sources = getSourceItems({
     t,
+    locale,
     expertSource: facts.expertSource,
   });
 

@@ -63,6 +63,7 @@ import {
   type DecisionData,
 } from '../formpacks/doctorLetterVisibility';
 import { buildOfflabelDocuments } from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
+import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
 import {
   type StorageErrorCode,
   useAutosaveRecord,
@@ -245,59 +246,6 @@ const applyFieldVisibility = (
       fieldSchema['ui:widget'] = 'hidden';
     }
   });
-};
-
-const setWidgetVisibility = (
-  node: Record<string, unknown>,
-  isHidden: boolean,
-): void => {
-  if (isHidden) {
-    node['ui:widget'] = 'hidden';
-    return;
-  }
-  delete node['ui:widget'];
-};
-
-const applyOfflabelVisibility = (
-  uiSchema: UiSchema,
-  formData: FormDataState,
-): UiSchema => {
-  const clonedUiSchema = structuredClone(uiSchema);
-  const selectedDrug = getValueByPath(formData, 'request.drug');
-  const isOtherDrug = selectedDrug === 'other';
-
-  if (!isRecord(clonedUiSchema.request)) {
-    return clonedUiSchema;
-  }
-
-  const requestUiSchema = clonedUiSchema.request;
-  const indicationUi = isRecord(
-    requestUiSchema.indicationFullyMetOrDoctorConfirms,
-  )
-    ? requestUiSchema.indicationFullyMetOrDoctorConfirms
-    : {};
-  setWidgetVisibility(indicationUi, isOtherDrug);
-  requestUiSchema.indicationFullyMetOrDoctorConfirms = indicationUi;
-
-  const section2Ui = isRecord(requestUiSchema.applySection2Abs1a)
-    ? requestUiSchema.applySection2Abs1a
-    : {};
-  setWidgetVisibility(section2Ui, isOtherDrug);
-  requestUiSchema.applySection2Abs1a = section2Ui;
-
-  const otherDrugNameUi = isRecord(requestUiSchema.otherDrugName)
-    ? requestUiSchema.otherDrugName
-    : {};
-  setWidgetVisibility(otherDrugNameUi, !isOtherDrug);
-  requestUiSchema.otherDrugName = otherDrugNameUi;
-
-  const otherIndicationUi = isRecord(requestUiSchema.otherIndication)
-    ? requestUiSchema.otherIndication
-    : {};
-  setWidgetVisibility(otherIndicationUi, !isOtherDrug);
-  requestUiSchema.otherIndication = otherIndicationUi;
-
-  return clonedUiSchema;
 };
 
 // Helper: Check if Case 0 result should be hidden

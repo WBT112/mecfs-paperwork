@@ -67,6 +67,12 @@ export type DocumentModel = {
   request?: {
     drug?: string | null;
     standardOfCareTriedFreeText?: string | null;
+    otherDrugName?: string | null;
+    otherIndication?: string | null;
+    otherTreatmentGoal?: string | null;
+    otherDose?: string | null;
+    otherDuration?: string | null;
+    otherMonitoring?: string | null;
   };
   attachmentsFreeText?: string | null;
   attachments?: {

@@ -31,46 +31,46 @@
     },
     "infoBoxes": [
       {
-        "id": "drug-ivabradine",
-        "anchor": "request.drug",
-        "enabled": true,
-        "i18nKey": "offlabel-antrag.ui.infobox.drug.ivabradine",
-        "showIf": [
-          {
-            "path": "request.drug",
-            "op": "eq",
-            "value": "ivabradine"
-          }
-        ],
-        "format": "markdown"
-      },
-      {
-        "id": "drug-agomelatine",
+        "id": "drug-agomelatin",
         "anchor": "request.drug",
         "enabled": true,
         "i18nKey": "offlabel-antrag.ui.infobox.drug.agomelatine",
+        "format": "markdown",
         "showIf": [
           {
             "path": "request.drug",
             "op": "eq",
             "value": "agomelatin"
           }
-        ],
-        "format": "markdown"
+        ]
+      },
+      {
+        "id": "drug-ivabradine",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.ivabradine",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "ivabradine"
+          }
+        ]
       },
       {
         "id": "drug-vortioxetine",
         "anchor": "request.drug",
         "enabled": true,
         "i18nKey": "offlabel-antrag.ui.infobox.drug.vortioxetine",
+        "format": "markdown",
         "showIf": [
           {
             "path": "request.drug",
             "op": "eq",
             "value": "vortioxetine"
           }
-        ],
-        "format": "markdown"
+        ]
       },
       {
         "id": "drug-other",

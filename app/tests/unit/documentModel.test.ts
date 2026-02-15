@@ -241,6 +241,12 @@ describe('formpacks/documentModel', () => {
     expect(result.request).toEqual({
       drug: 'ivabradine',
       standardOfCareTriedFreeText: 'Prior care text',
+      otherDrugName: '—',
+      otherIndication: '—',
+      otherTreatmentGoal: '—',
+      otherDose: '—',
+      otherDuration: '—',
+      otherMonitoring: '—',
     });
     expect(result.attachmentsFreeText).toBe(
       '- Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte',

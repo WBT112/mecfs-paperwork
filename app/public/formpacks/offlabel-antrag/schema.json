@@ -111,6 +111,18 @@
         "otherIndication": {
           "type": "string"
         },
+        "otherTreatmentGoal": {
+          "type": "string"
+        },
+        "otherDose": {
+          "type": "string"
+        },
+        "otherDuration": {
+          "type": "string"
+        },
+        "otherMonitoring": {
+          "type": "string"
+        },
         "standardOfCareTriedFreeText": {
           "type": "string"
         }
@@ -197,5 +209,67 @@
       "type": "string"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "drug": {
+                "const": "other"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "request": {
+            "type": "object",
+            "required": [
+              "otherDrugName",
+              "otherIndication",
+              "otherTreatmentGoal",
+              "otherDose",
+              "otherDuration",
+              "otherMonitoring",
+              "standardOfCareTriedFreeText"
+            ],
+            "properties": {
+              "otherDrugName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherIndication": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherTreatmentGoal": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherDose": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherDuration": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherMonitoring": {
+                "type": "string",
+                "minLength": 1
+              },
+              "standardOfCareTriedFreeText": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

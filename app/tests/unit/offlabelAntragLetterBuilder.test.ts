@@ -1,12 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
 import deTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/de.json';
 import enTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/en.json';
-import { buildOfflabelAntragExportBundle } from '../../src/formpacks/offlabel-antrag/letterBuilder';
+import {
+  buildOfflabelAntragExportBundle,
+  buildPart1KkLetter,
+  buildPart2DoctorLetter,
+  parseAttachments,
+} from '../../src/formpacks/offlabel-antrag/letterBuilder';
 
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
 const FIXED_EXPORTED_AT = new Date('2026-02-10T12:00:00.000Z');
 const EXAMPLE_ATTACHMENT = 'Arztbrief vom 01.01.2026';
+const PART1_DRAFT_ATTACHMENT = 'Teil 1: Antrag an die Krankenkasse (Entwurf)';
+const PART2_OVERVIEW_PREFIX = 'Kurzüberblick zum Vorhaben';
+const PATIENT_SIGNATURE_LABEL = 'Patient/in';
 
 const interpolate = (
   template: string,
@@ -47,7 +55,7 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part3).toBeDefined();
     expect(bundle.part1.signatureBlocks).toEqual([
       {
-        label: 'Patient/in',
+        label: PATIENT_SIGNATURE_LABEL,
         name: 'Max Mustermann',
       },
     ]);
@@ -67,9 +75,7 @@ describe('offlabel-antrag letter builder', () => {
         paragraph.includes('Teil 1'),
       ),
     ).toBe(true);
-    expect(bundle.part2.attachmentsItems[0]).toBe(
-      'Teil 1: Antrag an die Krankenkasse (Entwurf)',
-    );
+    expect(bundle.part2.attachmentsItems[0]).toBe(PART1_DRAFT_ATTACHMENT);
   });
 
   it('keeps part 1 patient-only and builds part 3 content', () => {
@@ -90,13 +96,13 @@ describe('offlabel-antrag letter builder', () => {
 
     expect(bundle.part1.signatureBlocks).toEqual([
       {
-        label: 'Patient/in',
+        label: PATIENT_SIGNATURE_LABEL,
         name: 'Mara Beispiel',
       },
     ]);
     expect(
       bundle.part2.bodyParagraphs.some((paragraph) =>
-        paragraph.includes('Kurzüberblick zum Vorhaben'),
+        paragraph.includes(PART2_OVERVIEW_PREFIX),
       ),
     ).toBe(true);
     expect(bundle.part3.title).toContain('Teil 3');
@@ -115,9 +121,7 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.attachmentsItems[1]).toBe(EXAMPLE_ATTACHMENT);
     expect(bundle.part1.attachmentsItems).toContain(EXAMPLE_ATTACHMENT);
     expect(bundle.part1.attachmentsItems).toContain('Befundbericht');
-    expect(bundle.part2.attachmentsItems[0]).toBe(
-      'Teil 1: Antrag an die Krankenkasse (Entwurf)',
-    );
+    expect(bundle.part2.attachmentsItems[0]).toBe(PART1_DRAFT_ATTACHMENT);
     expect(bundle.part2.attachmentsItems[1]).toContain('Bewertung: Ivabradin');
     expect(bundle.part2.attachmentsItems[2]).toBe(EXAMPLE_ATTACHMENT);
     expect(bundle.part2.attachmentsItems).toContain(EXAMPLE_ATTACHMENT);
@@ -178,5 +182,46 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.senderLines[0]).toBe('Max Example');
     expect(bundle.part1.addresseeLines[0]).toBe('Example Health Insurance');
     expect(bundle.part1.subject).toContain('PLEASE SELECT');
+  });
+
+  it('parses attachment free text via exported helper', () => {
+    expect(parseAttachments(' - Befund A\n• Befund B\n\n')).toEqual([
+      'Befund A',
+      'Befund B',
+    ]);
+    expect(parseAttachments(null)).toEqual([]);
+  });
+
+  it('builds part 1 letter via dedicated builder', () => {
+    const letter = buildPart1KkLetter({
+      locale: 'de',
+      model: {
+        request: { drug: 'agomelatin' },
+      },
+      exportedAt: FIXED_EXPORTED_AT,
+    });
+
+    expect(letter.subject).toContain('Agomelatin');
+    expect(letter.signatureBlocks).toEqual([
+      { label: PATIENT_SIGNATURE_LABEL, name: 'Max Mustermann' },
+    ]);
+    expect(letter.bodyParagraphs.length).toBeGreaterThan(3);
+  });
+
+  it('builds part 2 doctor letter via dedicated builder', () => {
+    const letter = buildPart2DoctorLetter({
+      locale: 'de',
+      model: {
+        doctor: { name: 'Dr. Muster' },
+        request: { drug: 'ivabradine' },
+      },
+      exportedAt: FIXED_EXPORTED_AT,
+    });
+
+    expect(letter.subject).toContain('Begleitschreiben');
+    expect(
+      letter.bodyParagraphs.some((paragraph) => paragraph.includes('Teil 1')),
+    ).toBe(true);
+    expect(letter.attachmentsItems[0]).toBe(PART1_DRAFT_ATTACHMENT);
   });
 });

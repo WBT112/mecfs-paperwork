@@ -114,6 +114,10 @@
       "drug",
       "otherDrugName",
       "otherIndication",
+      "otherTreatmentGoal",
+      "otherDose",
+      "otherDuration",
+      "otherMonitoring",
       "indicationFullyMetOrDoctorConfirms",
       "applySection2Abs1a",
       "standardOfCareTriedFreeText"
@@ -135,6 +139,38 @@
     "otherIndication": {
       "ui:title": "offlabel-antrag.request.otherIndication.label",
       "ui:help": "offlabel-antrag.request.otherIndication.help"
+    },
+    "otherTreatmentGoal": {
+      "ui:title": "offlabel-antrag.request.otherTreatmentGoal.label",
+      "ui:help": "offlabel-antrag.request.otherTreatmentGoal.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 4
+      }
+    },
+    "otherDose": {
+      "ui:title": "offlabel-antrag.request.otherDose.label",
+      "ui:help": "offlabel-antrag.request.otherDose.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 3
+      }
+    },
+    "otherDuration": {
+      "ui:title": "offlabel-antrag.request.otherDuration.label",
+      "ui:help": "offlabel-antrag.request.otherDuration.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 3
+      }
+    },
+    "otherMonitoring": {
+      "ui:title": "offlabel-antrag.request.otherMonitoring.label",
+      "ui:help": "offlabel-antrag.request.otherMonitoring.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 4
+      }
     },
     "indicationFullyMetOrDoctorConfirms": {
       "ui:title": "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.label",

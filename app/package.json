@@ -18,6 +18,7 @@
     "format:check": "prettier . --check",
     "typecheck": "tsc --noEmit",
     "formpack:new": "node scripts/new-formpack.mjs",
+    "formpack:offlabel:sync-medications": "node --import tsx/esm scripts/sync-offlabel-medications.mjs",
     "preformpack:validate": "node scripts/assert-no-root-formpacks.mjs",
     "formpack:validate": "node scripts/validate-formpacks.mjs",
     "quality-gates": "node scripts/run-quality-gates.mjs",

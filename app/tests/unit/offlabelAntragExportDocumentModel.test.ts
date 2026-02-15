@@ -74,6 +74,11 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.sources).toHaveLength(3);
     expect(model.sources[1]).toContain('Bewertung Ivabradin');
     expect(model.sources[2]).toContain(LSG_LABEL);
+    expect(
+      model.kk.paragraphs.some((paragraph) =>
+        paragraph.includes('Bewertung Ivabradin'),
+      ),
+    ).toBe(true);
     expect(model.kk.attachments).toContain(
       'Bewertung: Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
     );
@@ -130,6 +135,66 @@ describe('buildOffLabelAntragDocumentModel', () => {
     ).toBe(true);
     expect(model.sources).toHaveLength(3);
     expect(model.sources[2]).toContain(LSG_LABEL);
+  });
+
+  it('derives prior measures automatically for ivabradine', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(
+      model.kk.paragraphs.some((paragraph) =>
+        paragraph.includes('Betablocker'),
+      ),
+    ).toBe(true);
+    expect(
+      model.part3.paragraphs.some((paragraph) =>
+        paragraph.includes('Betablocker'),
+      ),
+    ).toBe(true);
+  });
+
+  it('uses manual other fields when drug is other', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'other',
+          otherDrugName: 'Midodrin',
+          otherIndication: 'Orthostatische Intoleranz',
+          otherTreatmentGoal: 'Verbesserung von Belastbarkeit und Kreislauf',
+          otherDose: '2,5 mg morgens',
+          otherDuration: '12 Wochen',
+          otherMonitoring: 'Puls, Blutdruck, Nebenwirkungen',
+          standardOfCareTriedFreeText:
+            'Kompressionstherapie und Volumenaufbau waren unzureichend.',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.kk.subject).toContain('Midodrin');
+    expect(
+      model.kk.paragraphs.some((paragraph) =>
+        paragraph.includes('Orthostatische Intoleranz'),
+      ),
+    ).toBe(true);
+    expect(
+      model.kk.paragraphs.some((paragraph) =>
+        paragraph.includes('Kompressionstherapie'),
+      ),
+    ).toBe(true);
+    expect(
+      model.part3.paragraphs.some((paragraph) =>
+        paragraph.includes('Kompressionstherapie'),
+      ),
+    ).toBe(true);
   });
 
   it('always includes part 3 and the part-3 attachment hint', () => {

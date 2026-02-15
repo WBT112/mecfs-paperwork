@@ -27,6 +27,12 @@ export type OfflabelAntragExportDefaults = {
   request: {
     drug: string;
     standardOfCareTriedFreeText: string;
+    otherDrugName: string;
+    otherIndication: string;
+    otherTreatmentGoal: string;
+    otherDose: string;
+    otherDuration: string;
+    otherMonitoring: string;
   };
   attachmentsFreeText: string;
 };
@@ -67,6 +73,12 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
     request: {
       drug: 'BITTE AUSWÄHLEN',
       standardOfCareTriedFreeText: DEFAULT_PLACEHOLDER_TEXT,
+      otherDrugName: DEFAULT_PLACEHOLDER_TEXT,
+      otherIndication: DEFAULT_PLACEHOLDER_TEXT,
+      otherTreatmentGoal: DEFAULT_PLACEHOLDER_TEXT,
+      otherDose: DEFAULT_PLACEHOLDER_TEXT,
+      otherDuration: DEFAULT_PLACEHOLDER_TEXT,
+      otherMonitoring: DEFAULT_PLACEHOLDER_TEXT,
     },
     attachmentsFreeText: DEFAULT_PLACEHOLDER_TEXT,
   },
@@ -97,6 +109,12 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
     request: {
       drug: 'PLEASE SELECT',
       standardOfCareTriedFreeText: DEFAULT_PLACEHOLDER_TEXT,
+      otherDrugName: DEFAULT_PLACEHOLDER_TEXT,
+      otherIndication: DEFAULT_PLACEHOLDER_TEXT,
+      otherTreatmentGoal: DEFAULT_PLACEHOLDER_TEXT,
+      otherDose: DEFAULT_PLACEHOLDER_TEXT,
+      otherDuration: DEFAULT_PLACEHOLDER_TEXT,
+      otherMonitoring: DEFAULT_PLACEHOLDER_TEXT,
     },
     attachmentsFreeText: DEFAULT_PLACEHOLDER_TEXT,
   },
