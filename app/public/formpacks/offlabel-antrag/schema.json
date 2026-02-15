@@ -44,10 +44,18 @@
     "doctor": {
       "type": "object",
       "properties": {
-        "name": {
+        "practice": {
           "type": "string"
         },
-        "practice": {
+        "title": {
+          "type": "string",
+          "enum": ["kein", "Dr.", "Prof. Dr."]
+        },
+        "gender": {
+          "type": "string",
+          "enum": ["Frau", "Herr"]
+        },
+        "name": {
           "type": "string"
         },
         "streetAndNumber": {

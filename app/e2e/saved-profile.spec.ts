@@ -114,11 +114,15 @@ test.describe('saved profile across formpacks', () => {
       timeout: 5_000,
     });
 
-    // Verify person.name was filled (firstName + lastName concatenated)
-    const personName = page.locator('#root_person_name');
-    await expect(personName).toHaveValue(`${PATIENT_FIRST} ${PATIENT_LAST}`, {
-      timeout: 5_000,
-    });
+    // Verify person.firstName and person.lastName were filled
+    await expect(page.locator('#root_person_firstName')).toHaveValue(
+      PATIENT_FIRST,
+      { timeout: 5_000 },
+    );
+    await expect(page.locator('#root_person_lastName')).toHaveValue(
+      PATIENT_LAST,
+      { timeout: 5_000 },
+    );
 
     // Verify doctor.name was filled
     const notfallDoctorName = page.locator('#root_doctor_name');
@@ -179,10 +183,14 @@ test.describe('saved profile across formpacks', () => {
       timeout: 5_000,
     });
 
-    // Person name should be filled (was empty)
-    const personName = page.locator('#root_person_name');
-    await expect(personName).toHaveValue(`${PATIENT_FIRST} ${PATIENT_LAST}`, {
-      timeout: 5_000,
-    });
+    // Person firstName and lastName should be filled (were empty)
+    await expect(page.locator('#root_person_firstName')).toHaveValue(
+      PATIENT_FIRST,
+      { timeout: 5_000 },
+    );
+    await expect(page.locator('#root_person_lastName')).toHaveValue(
+      PATIENT_LAST,
+      { timeout: 5_000 },
+    );
   });
 });

@@ -1,6 +1,7 @@
 {
   "person": {
-    "name": "Max Mustermann",
+    "firstName": "Max",
+    "lastName": "Mustermann",
     "birthDate": "1990-04-12"
   },
   "contacts": [

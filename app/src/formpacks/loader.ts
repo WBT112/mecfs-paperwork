@@ -6,9 +6,11 @@ import type {
   FormpackExportType,
   FormpackManifest,
   FormpackManifestPayload,
+  FormpackMeta,
   FormpackUiConfig,
   FormpackVisibility,
 } from './types';
+import { isFormpackCategory } from './types';
 
 export type FormpackLoaderErrorCode =
   | 'not_found'
@@ -201,6 +203,26 @@ const parseDocxManifest = (
   };
 };
 
+const parseManifestMeta = (value: unknown): FormpackMeta | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const category = isFormpackCategory(value.category)
+    ? value.category
+    : undefined;
+  const keywords = isStringArray(value.keywords) ? value.keywords : undefined;
+
+  if (!category && !keywords) {
+    return undefined;
+  }
+
+  return {
+    ...(category ? { category } : {}),
+    ...(keywords ? { keywords } : {}),
+  };
+};
+
 export const parseManifest = (
   payload: FormpackManifestPayload,
   formpackId: string,
@@ -213,6 +235,7 @@ export const parseManifest = (
   const docx = parseDocxManifest(payload.docx, formpackId);
   const requiresDocx = exports.includes('docx');
   const visibility = getValidatedVisibility(payload);
+  const meta = parseManifestMeta(payload.meta);
 
   if (requiresDocx && !docx) {
     throw new FormpackLoaderError(
@@ -234,6 +257,7 @@ export const parseManifest = (
     ui: isRecord(payload.ui)
       ? (payload.ui as unknown as FormpackUiConfig)
       : undefined,
+    meta,
   };
 };
 

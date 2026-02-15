@@ -60,7 +60,7 @@ const openSnapshotsSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   if (await nameInput.isVisible()) {
     return;
   }
@@ -144,7 +144,7 @@ test.describe('offline-first extensions', () => {
     await clickNewDraftIfNeeded(page);
     await fillTextInputStable(
       page,
-      page.locator('#root_person_name'),
+      page.locator('#root_person_firstName'),
       'Offline Export',
       POLL_TIMEOUT,
     );
@@ -221,7 +221,7 @@ test.describe('offline-first extensions', () => {
     await openDraftsSection(page);
     await clickNewDraftIfNeeded(page);
 
-    const nameInput = page.locator('#root_person_name');
+    const nameInput = page.locator('#root_person_firstName');
     await fillTextInputStable(
       page,
       nameInput,

@@ -54,6 +54,7 @@ describe('extractProfileData', () => {
       patient: {
         firstName: 'Max',
         lastName: 'Mustermann',
+        birthDate: BIRTH_DATE,
         streetAndNumber: STREET_PATIENT,
         postalCode: '12345',
         city: 'Berlin',
@@ -75,6 +76,7 @@ describe('extractProfileData', () => {
     expect(result.patient).toEqual({
       firstName: 'Max',
       lastName: 'Mustermann',
+      birthDate: BIRTH_DATE,
       streetAndNumber: STREET_PATIENT,
       postalCode: '12345',
       city: 'Berlin',
@@ -91,16 +93,21 @@ describe('extractProfileData', () => {
     expect(result.insurer).toBeUndefined();
   });
 
-  it('extracts person.name as patient.fullName from notfallpass', () => {
+  it('extracts person.firstName and person.lastName from notfallpass', () => {
     const formData = {
-      person: { name: PATIENT_NAME, birthDate: BIRTH_DATE },
+      person: {
+        firstName: 'Max',
+        lastName: 'Mustermann',
+        birthDate: BIRTH_DATE,
+      },
       doctor: { name: 'Dr. Schmidt', phone: '030-12345' },
     };
 
     const result = extractProfileData(NOTFALLPASS, formData);
 
     expect(result.patient).toEqual({
-      fullName: PATIENT_NAME,
+      firstName: 'Max',
+      lastName: 'Mustermann',
       birthDate: BIRTH_DATE,
     });
     expect(result.doctor).toEqual({
@@ -122,6 +129,8 @@ describe('extractProfileData', () => {
       },
       doctor: {
         name: DOCTOR_NAME,
+        title: 'Dr.',
+        gender: 'Herr',
         practice: PRACTICE_NAME,
         streetAndNumber: STREET_DOCTOR,
         postalCode: '54321',
@@ -147,6 +156,11 @@ describe('extractProfileData', () => {
     });
     expect(result.patient?.insuranceNumber).toBe('A123456789');
     expect(result.patient?.birthDate).toBe(BIRTH_DATE);
+    expect(result.doctor).toMatchObject({
+      name: DOCTOR_NAME,
+      title: 'Dr.',
+      gender: 'Herr',
+    });
   });
 
   it('ignores empty and whitespace-only values', () => {
@@ -226,7 +240,7 @@ describe('applyProfileData', () => {
     expect((result.patient as AnyRecord).lastName).toBe('Mustermann');
   });
 
-  it('concatenates firstName+lastName into fullName for notfallpass', () => {
+  it('fills firstName and lastName for notfallpass', () => {
     const formData = { person: {} };
     const profile = {
       patient: { firstName: 'Max', lastName: 'Mustermann' },
@@ -234,7 +248,8 @@ describe('applyProfileData', () => {
 
     const result = applyProfileData(NOTFALLPASS, formData, profile);
 
-    expect((result.person as AnyRecord).name).toBe(PATIENT_NAME);
+    expect((result.person as AnyRecord).firstName).toBe('Max');
+    expect((result.person as AnyRecord).lastName).toBe('Mustermann');
   });
 
   it('does not split fullName when firstName/lastName already exist in profile', () => {

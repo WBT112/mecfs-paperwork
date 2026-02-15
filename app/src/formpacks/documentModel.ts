@@ -222,6 +222,7 @@ const buildDoctorLetterModel = (
     patient: {
       firstName: getStringValue(patient?.firstName),
       lastName: getStringValue(patient?.lastName),
+      birthDate: formatBirthDate(getStringValue(patient?.birthDate)),
       streetAndNumber: getStringValue(patient?.streetAndNumber),
       postalCode: getStringValue(patient?.postalCode),
       city: getStringValue(patient?.city),
@@ -244,16 +245,30 @@ const buildDoctorLetterModel = (
   };
 };
 
+const computePersonName = (
+  formData: Record<string, unknown>,
+): string | null => {
+  const person = getRecordValue(formData.person);
+  const firstName = getStringValue(person?.firstName);
+  const lastName = getStringValue(person?.lastName);
+  return [firstName, lastName].filter(Boolean).join(' ') || null;
+};
+
 const buildNotfallpassModel = (
   formData: Record<string, unknown>,
   locale: SupportedLocale,
   baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
 ): DocumentModel => {
+  const person = {
+    ...baseModel.person,
+    name: computePersonName(formData),
+  };
+
   const diagnosisParagraphs: string[] = [];
   const { meCfs, pots, longCovid } = getDiagnosisFlags(formData);
 
   if (!meCfs) {
-    return { diagnosisParagraphs, ...baseModel };
+    return { diagnosisParagraphs, ...baseModel, person };
   }
 
   const t = i18n.getFixedT(locale, 'formpack:notfallpass');
@@ -280,7 +295,7 @@ const buildNotfallpassModel = (
     );
   }
 
-  return { diagnosisParagraphs, ...baseModel };
+  return { diagnosisParagraphs, ...baseModel, person };
 };
 
 const buildOfflabelAntragModel = (

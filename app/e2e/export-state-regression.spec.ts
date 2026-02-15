@@ -24,7 +24,7 @@ const openDraftsSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   if (await nameInput.isVisible()) {
     return;
   }
@@ -63,7 +63,7 @@ test('json export followed by docx export re-enables actions', async ({
   await openDraftsSection(page);
   await clickNewDraftIfNeeded(page);
 
-  await page.locator('#root_person_name').fill('Export Regression');
+  await page.locator('#root_person_firstName').fill('Export Regression');
   await page.locator('#root_diagnoses_meCfs').check();
 
   const jsonExportButton = page

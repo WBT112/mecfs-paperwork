@@ -71,7 +71,11 @@ describe('formpacks/documentModel', () => {
 
   it('builds notfallpass model with diagnosis paragraphs', () => {
     const formData: Record<string, unknown> = {
-      person: { name: 'Alice', birthDate: '1980-01-02' },
+      person: {
+        firstName: 'Alice',
+        lastName: 'Wonder',
+        birthDate: '1980-01-02',
+      },
       diagnoses: { meCfs: true, pots: true, longCovid: false },
       medications: [{ name: 'm1' }],
       contacts: [{ name: 'c1' }],
@@ -86,7 +90,7 @@ describe('formpacks/documentModel', () => {
     expect(model.diagnosisParagraphs).toContain(
       deTranslations['notfallpass.export.diagnoses.pots.paragraph'],
     );
-    expect(model.person.name).toBe('Alice');
+    expect(model.person.name).toBe('Alice Wonder');
     expect(model.doctor.name).toBe('Dr');
   });
 

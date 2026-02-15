@@ -67,6 +67,7 @@ const PATIENT_FIELDS_WITH_ADDRESS = [
 const PATIENT_FIELDS_BASIC = [
   'firstName',
   'lastName',
+  'birthDate',
   'streetAndNumber',
   'postalCode',
   'city',
@@ -76,14 +77,6 @@ const DOCTOR_FIELDS_FULL = [
   'name',
   'title',
   'gender',
-  'practice',
-  'streetAndNumber',
-  'postalCode',
-  'city',
-] as const;
-
-const DOCTOR_FIELDS_ADDRESS = [
-  'name',
   'practice',
   'streetAndNumber',
   'postalCode',
@@ -105,8 +98,12 @@ const extractNotfallpass = (formData: Record<string, unknown>): ProfileData => {
   const patientData: ProfileData['patient'] = {};
   let hasPatient = false;
 
-  if (person && isNonEmptyString(person.name)) {
-    patientData.fullName = person.name;
+  if (person && isNonEmptyString(person.firstName)) {
+    patientData.firstName = person.firstName;
+    hasPatient = true;
+  }
+  if (person && isNonEmptyString(person.lastName)) {
+    patientData.lastName = person.lastName;
     hasPatient = true;
   }
   if (person && isNonEmptyString(person.birthDate)) {
@@ -161,7 +158,7 @@ export const extractProfileData = (
         doctor: extractCategory(
           formData,
           'doctor',
-          DOCTOR_FIELDS_ADDRESS,
+          DOCTOR_FIELDS_FULL,
         ) as ProfileData['doctor'],
         insurer: extractCategory(
           formData,
@@ -243,22 +240,24 @@ export const applyProfileData = (
         fillEmpty(result, 'patient', 'firstName', firstName);
       }
 
-      applyCategory(result, 'doctor', DOCTOR_FIELDS_ADDRESS, profile.doctor);
+      applyCategory(result, 'doctor', DOCTOR_FIELDS_FULL, profile.doctor);
       applyCategory(result, 'insurer', INSURER_FIELDS, profile.insurer);
       break;
     }
     case 'notfallpass': {
       const patient = profile.patient;
 
-      // firstName + lastName → fullName concatenation
       if (patient) {
-        let fullName = patient.fullName;
-        if (!fullName && (patient.firstName ?? patient.lastName)) {
-          fullName = [patient.firstName, patient.lastName]
-            .filter(Boolean)
-            .join(' ');
+        fillEmpty(result, 'person', 'firstName', patient.firstName);
+        fillEmpty(result, 'person', 'lastName', patient.lastName);
+
+        // fullName → firstName/lastName split fallback
+        if (patient.fullName && !patient.firstName && !patient.lastName) {
+          const { firstName, lastName } = splitFullName(patient.fullName);
+          fillEmpty(result, 'person', 'lastName', lastName);
+          fillEmpty(result, 'person', 'firstName', firstName);
         }
-        fillEmpty(result, 'person', 'name', fullName);
+
         fillEmpty(result, 'person', 'birthDate', patient.birthDate);
       }
 

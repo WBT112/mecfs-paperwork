@@ -10,9 +10,14 @@
   ],
   "person": {
     "ui:title": "notfallpass.section.person.title",
-    "name": {
-      "ui:title": "notfallpass.person.name.label",
-      "ui:help": "notfallpass.person.name.help"
+    "ui:order": ["firstName", "lastName", "birthDate"],
+    "firstName": {
+      "ui:title": "notfallpass.person.firstName.label",
+      "ui:help": "notfallpass.person.firstName.help"
+    },
+    "lastName": {
+      "ui:title": "notfallpass.person.lastName.label",
+      "ui:help": "notfallpass.person.lastName.help"
     },
     "birthDate": {
       "ui:title": "notfallpass.person.birthDate.label",

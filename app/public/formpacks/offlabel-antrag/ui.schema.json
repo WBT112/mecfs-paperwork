@@ -51,19 +51,29 @@
   "doctor": {
     "ui:title": "offlabel-antrag.section.doctor.title",
     "ui:order": [
-      "name",
       "practice",
+      "title",
+      "gender",
+      "name",
       "streetAndNumber",
       "postalCode",
       "city"
     ],
-    "name": {
-      "ui:title": "offlabel-antrag.doctor.name.label",
-      "ui:help": "offlabel-antrag.doctor.name.help"
-    },
     "practice": {
       "ui:title": "offlabel-antrag.doctor.practice.label",
       "ui:help": "offlabel-antrag.doctor.practice.help"
+    },
+    "title": {
+      "ui:title": "offlabel-antrag.doctor.title.label",
+      "ui:help": "offlabel-antrag.doctor.title.help"
+    },
+    "gender": {
+      "ui:title": "offlabel-antrag.doctor.gender.label",
+      "ui:help": "offlabel-antrag.doctor.gender.help"
+    },
+    "name": {
+      "ui:title": "offlabel-antrag.doctor.name.label",
+      "ui:help": "offlabel-antrag.doctor.name.help"
     },
     "streetAndNumber": {
       "ui:title": "offlabel-antrag.doctor.streetAndNumber.label",

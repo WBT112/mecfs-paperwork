@@ -13,6 +13,10 @@
     "json"
   ],
   "visibility": "dev",
+  "meta": {
+    "category": "insurer",
+    "keywords": ["offlabel", "kostenübernahme", "krankenkasse", "medikament", "antrag"]
+  },
   "docx": {
     "templates": {
       "a4": "templates/a4.docx"
