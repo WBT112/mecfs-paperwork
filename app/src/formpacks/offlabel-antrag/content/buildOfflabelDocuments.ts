@@ -23,6 +23,14 @@ const getText = (value: unknown): string =>
 
 const getBool = (value: unknown): boolean => value === true;
 
+const formatBirthDate = (value: string): string => {
+  const ymdMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!ymdMatch) {
+    return value;
+  }
+  return `${ymdMatch[3]}.${ymdMatch[2]}.${ymdMatch[1]}`;
+};
+
 const joinLines = (values: string[]): string =>
   values.filter(Boolean).join('\n');
 
@@ -244,9 +252,18 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
 
 const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
   const request = getRecord(formData.request);
+  const patient = getRecord(formData.patient);
   const point2aNo =
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
   const drug = DRUGS[getDrugKey(request.drug)].displayName;
+  const patientName =
+    [getText(patient.firstName), getText(patient.lastName)]
+      .filter(Boolean)
+      .join(' ') || '__________';
+  const patientBirthDate = formatBirthDate(getText(patient.birthDate));
+  const insuranceNumber = getText(patient.insuranceNumber);
+  const resolvedBirthDate = patientBirthDate || '__________';
+  const resolvedInsuranceNumber = insuranceNumber || '__________';
 
   return {
     id: 'part3',
@@ -258,7 +275,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: 'Patient: __________, geb. __________; Versichertennr.: __________',
+        text: `Patient: ${patientName}, geb. ${resolvedBirthDate}; Versichertennr.: ${resolvedInsuranceNumber}`,
       },
       {
         kind: 'paragraph',

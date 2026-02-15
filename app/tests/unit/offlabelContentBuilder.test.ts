@@ -61,4 +61,27 @@ describe('buildOfflabelDocuments', () => {
       'Hinweis: Bei Auswahl „anderes Medikament oder andere Indikation“',
     );
   });
+
+  it('fills patient birth date and insurance number in part 3', () => {
+    const docs = buildOfflabelDocuments({
+      patient: {
+        firstName: 'Max',
+        lastName: 'Mustermann',
+        birthDate: '1970-01-02',
+        insuranceNumber: 'X123456789',
+      },
+      request: {
+        drug: 'agomelatin',
+      },
+    });
+
+    const part3Text = docs[2].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part3Text).toContain(
+      'Patient: Max Mustermann, geb. 02.01.1970; Versichertennr.: X123456789',
+    );
+  });
 });
