@@ -99,6 +99,32 @@ describe('buildOfflabelDocuments', () => {
     );
   });
 
+  it('uses user-entered medication name for other in part 1 and part 2', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'other',
+        otherDrugName: 'Midodrin',
+        otherIndication: 'Orthostatische Intoleranz',
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain(
+      'Punkt 1: Das Medikament Midodrin ist in Deutschland nicht indikationszogen zugelassen',
+    );
+    expect(part2Text).toContain(
+      'für eine Off-Label-Verordnung von Midodrin wegen meiner ME/CFS',
+    );
+  });
+
   it('adds point 7 for standard medication when §2 checkbox is enabled', () => {
     const docs = buildOfflabelDocuments({
       request: {

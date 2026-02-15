@@ -232,7 +232,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     { kind: 'heading', text: 'Teil 1 – Antrag an die Krankenkasse' },
     {
       kind: 'paragraph',
-      text: `Punkt 1: Das Medikament ${drug.displayName} ist in Deutschland nicht indikationszogen zugelassen`,
+      text: `Punkt 1: Das Medikament ${facts.displayName} ist in Deutschland nicht indikationszogen zugelassen`,
     },
     {
       kind: 'paragraph',
@@ -308,7 +308,10 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
 
 const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
   const doctor = getRecord(formData.doctor);
-  const drug = DRUGS[getDrugKey(getRecord(formData.request).drug)].displayName;
+  const request = getRecord(formData.request);
+  const drugKey = getDrugKey(request.drug);
+  const facts = resolvePreviewMedicationFacts(request, drugKey);
+  const drug = facts.displayName;
   const addressLines = joinLines([
     getText(doctor.name),
     getText(doctor.practice),

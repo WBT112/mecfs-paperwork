@@ -72,7 +72,17 @@ import {
 } from '../storage/hooks';
 import { getFormpackMeta, upsertFormpackMeta } from '../storage/formpackMeta';
 import { importRecordWithSnapshots } from '../storage/import';
+import {
+  getProfile,
+  hasUsableProfileData,
+  upsertProfile,
+} from '../storage/profiles';
 import type { FormpackMetaEntry, RecordEntry } from '../storage/types';
+import type { FormpackId } from '../formpacks/registry';
+import {
+  extractProfileData,
+  applyProfileData,
+} from '../lib/profile/profileMapping';
 import CollapsibleSection from '../components/CollapsibleSection';
 import FormpackIntroGate from '../components/FormpackIntroGate';
 import FormpackIntroModal from '../components/FormpackIntroModal';
@@ -164,6 +174,7 @@ const buildErrorMessage = (
 
 const DOCTOR_LETTER_ID = 'doctor-letter';
 const OFFLABEL_ANTRAG_ID = 'offlabel-antrag';
+const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const isValidQ4 = (val: unknown): val is DecisionAnswers['q4'] =>
   Q4_OPTIONS.includes(val as DecisionAnswers['q4'] & string);
 
@@ -776,6 +787,15 @@ export default function FormpackDetailPage() {
   const [assetRefreshVersion, setAssetRefreshVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
+  const [profileSaveEnabled, setProfileSaveEnabled] = useState(() => {
+    try {
+      return globalThis.localStorage.getItem(PROFILE_SAVE_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [profileHasSavedData, setProfileHasSavedData] = useState(false);
+  const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [selectedOfflabelPreviewId, setSelectedOfflabelPreviewId] = useState<
     'part1' | 'part2' | 'part3'
   >('part1');
@@ -814,10 +834,83 @@ export default function FormpackDetailPage() {
       onSaved: (record) => {
         setStorageError(null);
         applyRecordUpdate(record);
+
+        if (profileSaveEnabled && formpackId) {
+          const partial = extractProfileData(
+            formpackId as FormpackId,
+            record.data,
+          );
+          upsertProfile('default', partial).then(
+            (entry) => {
+              setProfileHasSavedData(hasUsableProfileData(entry.data));
+            },
+            () => {
+              // Silently ignore profile save errors.
+            },
+          );
+        }
       },
       onError: setStorageError,
     },
   );
+
+  const refreshProfileState = useCallback(() => {
+    getProfile('default').then(
+      (entry) => {
+        setProfileHasSavedData(
+          entry !== null && hasUsableProfileData(entry.data),
+        );
+      },
+      () => {
+        setProfileHasSavedData(false);
+      },
+    );
+  }, []);
+
+  useEffect(() => {
+    refreshProfileState();
+  }, [refreshProfileState]);
+
+  const handleProfileSaveToggle = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      const enabled = event.target.checked;
+      setProfileSaveEnabled(enabled);
+      try {
+        if (enabled) {
+          globalThis.localStorage.setItem(PROFILE_SAVE_KEY, 'true');
+        } else {
+          globalThis.localStorage.removeItem(PROFILE_SAVE_KEY);
+        }
+      } catch {
+        // Ignore storage errors.
+      }
+    },
+    [],
+  );
+
+  const handleApplyProfile = useCallback(async () => {
+    if (!formpackId) {
+      return;
+    }
+    setProfileStatus(null);
+    try {
+      const entry = await getProfile('default');
+      if (!entry || !hasUsableProfileData(entry.data)) {
+        setProfileStatus(t('profileApplyNoData'));
+        return;
+      }
+      const next = applyProfileData(
+        formpackId as FormpackId,
+        formData,
+        entry.data,
+      );
+      setFormData(next);
+      markAsSaved(next);
+      setProfileStatus(t('profileApplySuccess'));
+    } catch {
+      setProfileStatus(t('profileApplyError'));
+    }
+  }, [formpackId, formData, markAsSaved, t]);
 
   useEffect(() => {
     let isActive = true;
@@ -2337,6 +2430,36 @@ export default function FormpackDetailPage() {
             </button>
           </div>
         )}
+        <div className="profile-quickfill">
+          <label className="profile-quickfill__save">
+            <input
+              type="checkbox"
+              checked={profileSaveEnabled}
+              onChange={handleProfileSaveToggle}
+            />
+            {t('profileSaveCheckbox')}
+          </label>
+          <button
+            type="button"
+            className="app__button"
+            disabled={!profileHasSavedData}
+            onClick={handleApplyProfile}
+          >
+            {t('profileApplyButton')}
+          </button>
+          {profileStatus && (
+            <span
+              className={
+                profileStatus === t('profileApplySuccess')
+                  ? 'profile-quickfill__success'
+                  : 'profile-quickfill__error'
+              }
+              aria-live="polite"
+            >
+              {profileStatus}
+            </span>
+          )}
+        </div>
         <Suspense fallback={<p>{t('formpackLoading')}</p>}>
           <LazyForm
             className={

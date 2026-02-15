@@ -1,8 +1,12 @@
 import { useEffect } from 'react';
 import { act, render, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import type { RecordEntry, SnapshotEntry } from '../../../src/storage/types';
-import { useRecords, useSnapshots } from '../../../src/storage/hooks';
+import {
+  useRecords,
+  useSnapshots,
+  useAutosaveRecord,
+} from '../../../src/storage/hooks';
 import {
   createRecord as createRecordEntry,
   deleteRecord as deleteRecordEntry,
@@ -13,6 +17,7 @@ import {
 import { StorageUnavailableError } from '../../../src/storage/db';
 import {
   clearSnapshots as clearSnapshotsEntry,
+  getSnapshot,
   listSnapshots,
 } from '../../../src/storage/snapshots';
 
@@ -107,6 +112,7 @@ describe('storage hooks', () => {
     vi.mocked(createRecordEntry).mockReset();
     vi.mocked(getRecordEntry).mockReset();
     vi.mocked(updateRecordEntry).mockReset();
+    vi.mocked(getSnapshot).mockReset();
   });
 
   it('creates a record and sets active/records', async () => {
@@ -312,5 +318,292 @@ describe('storage hooks', () => {
 
     expect(result).toBe(0);
     expect(clearSnapshotsEntry).not.toHaveBeenCalled();
+  });
+
+  it('loads a snapshot by id', async () => {
+    const snapshot = createSnapshot({ id: 'snap-load' });
+    vi.mocked(getSnapshot).mockResolvedValue(snapshot);
+
+    const { getLatest } = renderSnapshotsHook(SNAPSHOT_RECORD_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let loaded: SnapshotEntry | null | undefined;
+    await act(async () => {
+      loaded = await getLatest()?.loadSnapshot('snap-load');
+    });
+
+    expect(loaded).toEqual(snapshot);
+    expect(getSnapshot).toHaveBeenCalledWith('snap-load');
+  });
+
+  it('sets error when loadSnapshot fails', async () => {
+    vi.mocked(getSnapshot).mockRejectedValue(new Error('read error'));
+
+    const { getLatest } = renderSnapshotsHook(SNAPSHOT_RECORD_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let loaded: SnapshotEntry | null | undefined;
+    await act(async () => {
+      loaded = await getLatest()?.loadSnapshot('snap-fail');
+    });
+
+    expect(loaded).toBeNull();
+    expect(getLatest()?.errorCode).toBe('operation');
+  });
+
+  it('sets error when clearSnapshots fails', async () => {
+    vi.mocked(clearSnapshotsEntry).mockRejectedValue(new Error('clear error'));
+
+    const { getLatest } = renderSnapshotsHook(SNAPSHOT_RECORD_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let result: number | undefined;
+    await act(async () => {
+      result = await getLatest()?.clearSnapshots();
+    });
+
+    expect(result).toBe(0);
+    expect(getLatest()?.errorCode).toBe('operation');
+  });
+});
+
+describe('useAutosaveRecord', () => {
+  const AUTOSAVE_DELAY = 50;
+  const AUTOSAVE_RECORD_ID = 'autosave-record';
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(updateRecordEntry).mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const renderAutosaveHook = (initialProps: {
+    recordId: string | null;
+    formData: Record<string, unknown>;
+    baselineData: Record<string, unknown> | null;
+    onSaved?: (record: RecordEntry) => void;
+    onError?: (code: string) => void;
+  }) => {
+    type HookResult = ReturnType<typeof useAutosaveRecord>;
+    let latest: HookResult | null = null;
+
+    const TestComponent = (props: typeof initialProps) => {
+      const value = useAutosaveRecord(
+        props.recordId,
+        props.formData,
+        'de',
+        props.baselineData,
+        {
+          delay: AUTOSAVE_DELAY,
+          onSaved: props.onSaved,
+          onError: props.onError,
+        },
+      );
+      useEffect(() => {
+        latest = value;
+      }, [value]);
+      return null;
+    };
+
+    const { rerender, unmount } = render(<TestComponent {...initialProps} />);
+
+    return {
+      getLatest: () => latest,
+      rerender: (props: typeof initialProps) =>
+        rerender(<TestComponent {...props} />),
+      unmount,
+    };
+  };
+
+  it('does not save when recordId is null', async () => {
+    renderAutosaveHook({
+      recordId: null,
+      formData: { field: 'value' },
+      baselineData: null,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    expect(updateRecordEntry).not.toHaveBeenCalled();
+  });
+
+  it('does not save when formData equals baseline', async () => {
+    const data = { field: 'value' };
+
+    renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: data,
+      baselineData: data,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    expect(updateRecordEntry).not.toHaveBeenCalled();
+  });
+
+  it('saves after delay when formData changes from baseline', async () => {
+    const savedRecord = createRecord({ id: AUTOSAVE_RECORD_ID });
+    vi.mocked(updateRecordEntry).mockResolvedValue(savedRecord);
+    const onSaved = vi.fn();
+
+    const { rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'initial' },
+      baselineData: { field: 'initial' },
+      onSaved,
+    });
+
+    // Change form data
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: { field: 'initial' },
+      onSaved,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    // Wait for the async updateRecordEntry to resolve
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(updateRecordEntry).toHaveBeenCalledWith(AUTOSAVE_RECORD_ID, {
+      data: { field: 'changed' },
+      locale: 'de',
+    });
+    expect(onSaved).toHaveBeenCalledWith(savedRecord);
+  });
+
+  it('calls onError when save fails', async () => {
+    vi.mocked(updateRecordEntry).mockRejectedValue(new Error('db error'));
+    const onError = vi.fn();
+
+    const { rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'initial' },
+      baselineData: { field: 'initial' },
+      onError,
+    });
+
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: { field: 'initial' },
+      onError,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(onError).toHaveBeenCalledWith('operation');
+  });
+
+  it('returns markAsSaved that updates the baseline', async () => {
+    vi.mocked(updateRecordEntry).mockResolvedValue(
+      createRecord({ id: AUTOSAVE_RECORD_ID }),
+    );
+
+    // Use a stable reference for baselineData to avoid the second effect
+    // resetting lastSavedRef on each render (mirrors real behavior where
+    // activeRecord.data is a stable reference).
+    const stableBaseline = { field: 'initial' };
+
+    const { getLatest, rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'initial' },
+      baselineData: stableBaseline,
+    });
+
+    // Mark current data as saved manually
+    act(() => {
+      getLatest()?.markAsSaved({ field: 'changed' });
+    });
+
+    // Now re-render with { field: 'changed' } — should NOT trigger save
+    // because markAsSaved already updated the baseline
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: stableBaseline,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    expect(updateRecordEntry).not.toHaveBeenCalled();
+  });
+
+  it('cleans up timeout on unmount', async () => {
+    vi.mocked(updateRecordEntry).mockResolvedValue(
+      createRecord({ id: AUTOSAVE_RECORD_ID }),
+    );
+
+    const { rerender, unmount } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'initial' },
+      baselineData: { field: 'initial' },
+    });
+
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: { field: 'initial' },
+    });
+
+    // Unmount before the timer fires
+    unmount();
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    expect(updateRecordEntry).not.toHaveBeenCalled();
+  });
+
+  it('calls onError with unavailable for StorageUnavailableError', async () => {
+    vi.mocked(updateRecordEntry).mockRejectedValue(
+      new StorageUnavailableError('no idb'),
+    );
+    const onError = vi.fn();
+
+    const { rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'initial' },
+      baselineData: { field: 'initial' },
+      onError,
+    });
+
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: { field: 'initial' },
+      onError,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(onError).toHaveBeenCalledWith('unavailable');
   });
 });
