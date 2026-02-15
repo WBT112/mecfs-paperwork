@@ -123,6 +123,7 @@
         "bellScore": {
           "type": "string",
           "enum": [
+            "0",
             "10",
             "20",
             "30",

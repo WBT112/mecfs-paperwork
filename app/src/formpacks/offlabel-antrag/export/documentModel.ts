@@ -485,6 +485,9 @@ const buildSeveritySummary = (
   }
 
   const bellScore = getStringValue(severity.bellScore);
+  const bellAssessment = bellScore
+    ? tr(t, `offlabel-antrag.export.severity.bell.assessment.${bellScore}`, '')
+    : null;
   const gdb = getStringValue(severity.gdb);
   const merkzeichen = gdb ? getMerkzeichenValues(severity.merkzeichen) : [];
   const pflegegrad = getStringValue(severity.pflegegrad);
@@ -505,8 +508,9 @@ const buildSeveritySummary = (
     {
       key: 'offlabel-antrag.export.severity.bell',
       value: bellScore,
-      defaultValue: 'Mein Funktionsniveau liegt bei Bell-Score {{bellScore}}.',
-      options: { bellScore },
+      defaultValue:
+        'Mein Bell-Score liegt bei {{bellScore}}. {{bellAssessment}}',
+      options: { bellScore, bellAssessment },
     },
     {
       key: 'offlabel-antrag.export.severity.gdb',

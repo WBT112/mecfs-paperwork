@@ -181,7 +181,10 @@ describe('buildOffLabelAntragDocumentModel', () => {
       { exportedAt: FIXED_EXPORTED_AT },
     );
 
-    expect(model.kk.paragraphs[3]).toContain('Bell-Score 40');
+    expect(model.kk.paragraphs[3]).toContain('Bell-Score liegt bei 40');
+    expect(model.kk.paragraphs[3]).toContain(
+      'leichte oder Schreibtischarbeit schaffe ich für etwa 3 bis 4 Stunden täglich',
+    );
     expect(model.kk.paragraphs[3]).toContain('GdB) von 50');
     expect(model.kk.paragraphs[3]).toContain('Merkzeichen G, H');
     expect(model.kk.paragraphs[3]).toContain('Pflegegrad 3');

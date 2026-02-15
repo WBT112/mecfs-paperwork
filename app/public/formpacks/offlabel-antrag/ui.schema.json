@@ -171,6 +171,7 @@
       "ui:title": "offlabel-antrag.severity.bellScore.label",
       "ui:help": "offlabel-antrag.severity.bellScore.help",
       "ui:enumNames": [
+        "offlabel-antrag.severity.bellScore.option.0",
         "offlabel-antrag.severity.bellScore.option.10",
         "offlabel-antrag.severity.bellScore.option.20",
         "offlabel-antrag.severity.bellScore.option.30",
