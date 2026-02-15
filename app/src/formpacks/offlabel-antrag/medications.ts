@@ -232,7 +232,7 @@ export const STANDARD_MEDICATION_KEYS = OFFLABEL_MEDICATION_KEYS.filter(
 
 export const isMedicationKey = (value: unknown): value is MedicationKey =>
   typeof value === 'string' &&
-  OFFLABEL_MEDICATION_KEYS.some((candidate) => candidate === value);
+  OFFLABEL_MEDICATION_KEYS.includes(value as MedicationKey);
 
 export const resolveMedicationProfile = (
   value: unknown,

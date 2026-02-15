@@ -62,7 +62,10 @@ import {
   clearHiddenFields,
   type DecisionData,
 } from '../formpacks/doctorLetterVisibility';
-import { buildOfflabelDocuments } from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
+import {
+  buildOfflabelDocuments,
+  type OfflabelRenderedDocument,
+} from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
 import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
 import {
   type StorageErrorCode,
@@ -382,6 +385,66 @@ const renderParagraphs = (
     </>
   );
 };
+
+type OfflabelRenderedBlock = OfflabelRenderedDocument['blocks'][number];
+
+const getOfflabelPreviewBlockKey = (
+  documentId: string,
+  block: OfflabelRenderedBlock,
+): string => {
+  if (block.kind === 'list') {
+    return `${documentId}-${block.kind}-${block.items.join('|')}`;
+  }
+  if (block.kind === 'pageBreak') {
+    return `${documentId}-${block.kind}`;
+  }
+  return `${documentId}-${block.kind}-${block.text}`;
+};
+
+const renderOfflabelPreviewBlock = (
+  documentId: string,
+  block: OfflabelRenderedBlock,
+): ReactNode => {
+  const blockKey = getOfflabelPreviewBlockKey(documentId, block);
+
+  if (block.kind === 'heading') {
+    return <h3 key={blockKey}>{block.text}</h3>;
+  }
+
+  if (block.kind === 'paragraph') {
+    return <p key={blockKey}>{block.text}</p>;
+  }
+
+  if (block.kind === 'list') {
+    if (!block.items.length) {
+      return null;
+    }
+
+    return (
+      <ul key={blockKey}>
+        {block.items.map((item) => (
+          <li key={`${documentId}-${block.kind}-${item}`}>{item}</li>
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <p key={blockKey} className="formpack-document-preview__page-break">
+      — Page break —
+    </p>
+  );
+};
+
+const renderOfflabelPreviewDocument = (
+  document: OfflabelRenderedDocument,
+): ReactNode => (
+  <div key={document.id}>
+    {document.blocks.map((block) =>
+      renderOfflabelPreviewBlock(document.id, block),
+    )}
+  </div>
+);
 
 const hasDecisionCaseText = (value: Record<string, unknown>): boolean =>
   typeof value.caseText === 'string' ||
@@ -2593,71 +2656,41 @@ export default function FormpackDetailPage() {
   const getJsonPreviewContent = () =>
     Object.keys(formData).length ? jsonPreview : t('formpackFormPreviewEmpty');
 
-  const renderDocumentPreviewContent = () =>
-    formpackId === OFFLABEL_ANTRAG_ID ? (
-      <div className="formpack-document-preview formpack-document-preview--offlabel">
-        <div className="formpack-document-preview__tabs" role="tablist">
-          {offlabelPreviewDocuments.map((doc) => (
-            <button
-              key={doc.id}
-              role="tab"
-              type="button"
-              className="app__button"
-              aria-selected={selectedOfflabelPreviewId === doc.id}
-              onClick={() => setSelectedOfflabelPreviewId(doc.id)}
-            >
-              {doc.title}
-            </button>
-          ))}
+  const renderDocumentPreviewContent = () => {
+    if (formpackId === OFFLABEL_ANTRAG_ID) {
+      return (
+        <div className="formpack-document-preview formpack-document-preview--offlabel">
+          <div className="formpack-document-preview__tabs" role="tablist">
+            {offlabelPreviewDocuments.map((doc) => (
+              <button
+                key={doc.id}
+                role="tab"
+                type="button"
+                className="app__button"
+                aria-selected={selectedOfflabelPreviewId === doc.id}
+                onClick={() => setSelectedOfflabelPreviewId(doc.id)}
+              >
+                {doc.title}
+              </button>
+            ))}
+          </div>
+          {offlabelPreviewDocuments
+            .filter((doc) => doc.id === selectedOfflabelPreviewId)
+            .map((doc) => renderOfflabelPreviewDocument(doc))}
         </div>
-        {offlabelPreviewDocuments
-          .filter((doc) => doc.id === selectedOfflabelPreviewId)
-          .map((doc) => (
-            <div key={doc.id}>
-              {doc.blocks.map((block) => {
-                const blockKey =
-                  block.kind === 'list'
-                    ? `${doc.id}-${block.kind}-${block.items.join('|')}`
-                    : block.kind === 'pageBreak'
-                      ? `${doc.id}-${block.kind}`
-                      : `${doc.id}-${block.kind}-${block.text}`;
-                if (block.kind === 'heading') {
-                  return <h3 key={blockKey}>{block.text}</h3>;
-                }
-                if (block.kind === 'paragraph') {
-                  return <p key={blockKey}>{block.text}</p>;
-                }
-                if (block.kind === 'list') {
-                  if (!block.items.length) {
-                    return null;
-                  }
-                  return (
-                    <ul key={blockKey}>
-                      {block.items.map((item) => (
-                        <li key={`${doc.id}-${block.kind}-${item}`}>{item}</li>
-                      ))}
-                    </ul>
-                  );
-                }
-                return (
-                  <p
-                    key={blockKey}
-                    className="formpack-document-preview__page-break"
-                  >
-                    — Page break —
-                  </p>
-                );
-              })}
-            </div>
-          ))}
-      </div>
-    ) : hasDocumentContent ? (
-      <div className="formpack-document-preview">{documentPreview}</div>
-    ) : (
+      );
+    }
+
+    if (hasDocumentContent) {
+      return <div className="formpack-document-preview">{documentPreview}</div>;
+    }
+
+    return (
       <p className="formpack-document-preview__empty">
         {t('formpackDocumentPreviewEmpty')}
       </p>
     );
+  };
 
   return (
     <section className="app__card">

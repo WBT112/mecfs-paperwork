@@ -14,7 +14,7 @@ export default function FormpackIntroModal({
   body,
   closeLabel,
   onClose,
-}: FormpackIntroModalProps) {
+}: Readonly<FormpackIntroModalProps>) {
   if (!isOpen) {
     return null;
   }
@@ -27,12 +27,7 @@ export default function FormpackIntroModal({
         onClick={onClose}
         aria-label={closeLabel}
       />
-      <div
-        className="formpack-intro-modal__content"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
+      <dialog open className="formpack-intro-modal__content" aria-label={title}>
         <div className="formpack-intro-modal__header">
           <h4>{title}</h4>
           <button type="button" className="app__button" onClick={onClose}>
@@ -42,7 +37,7 @@ export default function FormpackIntroModal({
         <div className="formpack-intro-modal__body">
           <MarkdownRenderer content={body} />
         </div>
-      </div>
+      </dialog>
     </div>
   );
 }

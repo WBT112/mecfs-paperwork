@@ -2,7 +2,7 @@
   "name": "mecfs-paperwork-app",
   "private": true,
   "license": "Apache-2.0",
-  "version": "0.0.0",
+  "version": "0.6.0",
   "type": "module",
   "scripts": {
     "predev": "node scripts/assert-no-root-formpacks.mjs && node scripts/sync-funding.mjs",

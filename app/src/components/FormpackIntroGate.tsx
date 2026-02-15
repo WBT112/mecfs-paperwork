@@ -15,7 +15,7 @@ export default function FormpackIntroGate({
   checkboxLabel,
   startButtonLabel,
   onConfirm,
-}: FormpackIntroGateProps) {
+}: Readonly<FormpackIntroGateProps>) {
   const [isAccepted, setIsAccepted] = useState(false);
 
   return (

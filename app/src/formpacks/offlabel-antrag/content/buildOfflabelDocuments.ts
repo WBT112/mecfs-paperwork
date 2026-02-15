@@ -223,6 +223,16 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     drugKey === 'other' ? parseMultilineItems(standardCareText) : [];
   const facts = resolvePreviewMedicationFacts(request, drugKey);
   const otherDiagnosis = getText(request.otherIndication);
+  const point2Text = (() => {
+    if (drugKey === 'other') {
+      return otherDiagnosis
+        ? `Die Diagnose ${otherDiagnosis} ist gesichert`
+        : 'Die Diagnose ist gesichert';
+    }
+    return point2aNo
+      ? 'Die Diagnose ist gesichert'
+      : drug.point2DiagnosisSentence;
+  })();
 
   const point4Text = drug.hasAnnouncedAmrlEntry
     ? 'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI. Auch wenn diese in Aussicht ist, erlaubt es mein Gesundheitszustand nicht auf eine solche zu warten.'
@@ -236,15 +246,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     },
     {
       kind: 'paragraph',
-      text: `Punkt 2: ${
-        drugKey === 'other'
-          ? otherDiagnosis
-            ? `Die Diagnose ${otherDiagnosis} ist gesichert`
-            : 'Die Diagnose ist gesichert'
-          : point2aNo
-            ? 'Die Diagnose ist gesichert'
-            : drug.point2DiagnosisSentence
-      }`,
+      text: `Punkt 2: ${point2Text}`,
     },
     {
       kind: 'paragraph',

@@ -35,6 +35,9 @@ describe('normalizeExportRevisions', () => {
     expect(normalizeExportRevisions([{ data: {} }, { label: 123 }])).toBe(
       'invalid_revisions',
     );
+    expect(normalizeExportRevisions([{ data: {}, label: 123 }])).toBe(
+      'invalid_revisions',
+    );
     expect(
       normalizeExportRevisions([{ data: {}, createdAt: new Date() }]),
     ).toBe('invalid_revisions');
@@ -122,6 +125,13 @@ describe('validateJsonImport', () => {
     vi.unstubAllGlobals();
   });
 
+  it('returns an invalid_json error for empty import files', () => {
+    const result = validateJsonImport('', mockSchema, PRIMARY_FORMPACK_ID);
+
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_json');
+  });
+
   it('returns an error for invalid app metadata', () => {
     const invalidAppJson = JSON.stringify({
       app: { id: 123 },
@@ -157,6 +167,24 @@ describe('validateJsonImport', () => {
     );
     expect(result.payload).toBe(null);
     expect(result.error?.code).toBe('formpack_mismatch');
+  });
+
+  it('returns invalid_payload when formpack metadata is missing required id', () => {
+    const invalidFormpackJson = JSON.stringify({
+      formpack: { version: '1.0.0' },
+      record: {
+        locale: 'en',
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      invalidFormpackJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_payload');
   });
 
   it('returns an error for an unknown formpack ID', () => {
@@ -305,6 +333,24 @@ describe('validateJsonImport', () => {
     expect(result.error?.code).toBe('unsupported_locale');
   });
 
+  it('returns invalid_payload when locale is missing in payload and record', () => {
+    const missingLocaleJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      missingLocaleJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_payload');
+  });
+
   it('returns invalid_revisions when payload revisions are malformed', () => {
     const invalidRevisionsJson = JSON.stringify({
       formpack: { id: PRIMARY_FORMPACK_ID },
@@ -380,5 +426,126 @@ describe('validateJsonImport', () => {
         bellScore: '40',
       },
     });
+  });
+
+  it('accepts legacy top-level data/locale payload and keeps formpack version', () => {
+    const legacyJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID, version: '2.4.0' },
+      locale: 'de',
+      data: { name: 'Legacy' },
+    });
+
+    const result = validateJsonImport(
+      legacyJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload).toBeDefined();
+    expect(result.payload?.formpack.version).toBe('2.4.0');
+    expect(result.payload?.record.locale).toBe('de');
+    expect(result.payload?.record.title).toBeUndefined();
+    expect(result.payload?.record.data).toEqual({ name: 'Legacy' });
+  });
+
+  it('removes readOnly fields and preserves unknown fields when additionalProperties are allowed', () => {
+    const flexibleSchema = {
+      type: 'object',
+      additionalProperties: true,
+      properties: {
+        generatedAt: { type: 'string', readOnly: true },
+        metadata: {
+          type: 'object',
+          additionalProperties: true,
+          properties: {
+            internalId: { type: 'string', readOnly: true },
+            note: { type: 'string' },
+          },
+        },
+      },
+    } as const satisfies RJSFSchema;
+
+    const inputJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID, version: '1.2.3' },
+      app: { id: 'mecfs-paperwork', version: '0.6.0' },
+      record: {
+        locale: 'de',
+        data: {
+          generatedAt: '2026-01-01',
+          metadata: {
+            internalId: 'secret',
+            note: 'kept',
+          },
+          keepMe: 'yes',
+        },
+      },
+    });
+
+    const result = validateJsonImport(
+      inputJson,
+      flexibleSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.formpack.version).toBe('1.2.3');
+    expect(result.payload?.record.data).toEqual({
+      metadata: { note: 'kept' },
+      keepMe: 'yes',
+    });
+  });
+
+  it('applies required defaults for missing fields (except enum fields)', () => {
+    const defaultsSchema = {
+      type: 'object',
+      properties: {
+        requiredText: { type: 'string' },
+        requiredList: { type: 'array', items: { type: 'string' } },
+        requiredObject: {
+          type: 'object',
+          properties: {
+            nestedText: { type: 'string' },
+          },
+          required: ['nestedText'],
+        },
+        requiredEnum: {
+          type: 'string',
+          enum: ['a', 'b'],
+        },
+      },
+      required: [
+        'requiredText',
+        'requiredList',
+        'requiredObject',
+        'requiredEnum',
+      ],
+    } as const satisfies RJSFSchema;
+
+    const inputJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: {},
+      },
+    });
+
+    const result = validateJsonImport(
+      inputJson,
+      defaultsSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.record.data).toEqual({
+      requiredText: '',
+      requiredList: [],
+      requiredObject: {
+        nestedText: '',
+      },
+    });
+    expect(
+      Object.hasOwn(result.payload?.record.data ?? {}, 'requiredEnum'),
+    ).toBe(false);
   });
 });

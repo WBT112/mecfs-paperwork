@@ -2,11 +2,9 @@ import type { UiSchema } from '@rjsf/utils';
 import { isRecord } from '../../lib/utils';
 
 type FormDataState = Record<string, unknown>;
+type UiNode = Record<string, unknown>;
 
-const getValueByPath = (
-  source: unknown,
-  dottedPath: string,
-): unknown | undefined => {
+const getValueByPath = (source: unknown, dottedPath: string): unknown => {
   if (!dottedPath) {
     return source;
   }
@@ -30,7 +28,7 @@ const getValueByPath = (
 };
 
 const setWidgetVisibility = (
-  node: Record<string, unknown>,
+  node: UiNode,
   isHidden: boolean,
   visibleWidget?: string,
 ): void => {
@@ -49,70 +47,39 @@ export const applyOfflabelVisibility = (
   uiSchema: UiSchema,
   formData: FormDataState,
 ): UiSchema => {
-  const clonedUiSchema = structuredClone(uiSchema);
   const selectedDrug = getValueByPath(formData, 'request.drug');
   const isOtherDrug = selectedDrug === 'other';
 
-  if (!isRecord(clonedUiSchema.request)) {
-    return clonedUiSchema;
+  if (!isRecord(uiSchema.request)) {
+    return uiSchema;
   }
 
-  const requestUiSchema = clonedUiSchema.request;
-  const indicationUi = isRecord(
-    requestUiSchema.indicationFullyMetOrDoctorConfirms,
-  )
-    ? requestUiSchema.indicationFullyMetOrDoctorConfirms
-    : {};
-  setWidgetVisibility(indicationUi, isOtherDrug, 'radio');
-  requestUiSchema.indicationFullyMetOrDoctorConfirms = indicationUi;
+  const clonedUiSchema = structuredClone(uiSchema);
+  const requestUiSchema = clonedUiSchema.request as UiNode;
+  const applyFieldVisibility = (
+    key: string,
+    hideField: boolean,
+    visibleWidget?: string,
+  ): void => {
+    const currentNode = requestUiSchema[key];
+    const fieldUiNode = isRecord(currentNode) ? currentNode : {};
+    setWidgetVisibility(fieldUiNode, hideField, visibleWidget);
+    requestUiSchema[key] = fieldUiNode;
+  };
 
-  const section2Ui = isRecord(requestUiSchema.applySection2Abs1a)
-    ? requestUiSchema.applySection2Abs1a
-    : {};
-  setWidgetVisibility(section2Ui, isOtherDrug);
-  requestUiSchema.applySection2Abs1a = section2Ui;
-
-  const otherDrugNameUi = isRecord(requestUiSchema.otherDrugName)
-    ? requestUiSchema.otherDrugName
-    : {};
-  setWidgetVisibility(otherDrugNameUi, !isOtherDrug);
-  requestUiSchema.otherDrugName = otherDrugNameUi;
-
-  const otherIndicationUi = isRecord(requestUiSchema.otherIndication)
-    ? requestUiSchema.otherIndication
-    : {};
-  setWidgetVisibility(otherIndicationUi, !isOtherDrug);
-  requestUiSchema.otherIndication = otherIndicationUi;
-
-  const otherTreatmentGoalUi = isRecord(requestUiSchema.otherTreatmentGoal)
-    ? requestUiSchema.otherTreatmentGoal
-    : {};
-  setWidgetVisibility(otherTreatmentGoalUi, !isOtherDrug, 'textarea');
-  requestUiSchema.otherTreatmentGoal = otherTreatmentGoalUi;
-
-  const otherDoseUi = isRecord(requestUiSchema.otherDose)
-    ? requestUiSchema.otherDose
-    : {};
-  setWidgetVisibility(otherDoseUi, !isOtherDrug, 'textarea');
-  requestUiSchema.otherDose = otherDoseUi;
-
-  const otherDurationUi = isRecord(requestUiSchema.otherDuration)
-    ? requestUiSchema.otherDuration
-    : {};
-  setWidgetVisibility(otherDurationUi, !isOtherDrug, 'textarea');
-  requestUiSchema.otherDuration = otherDurationUi;
-
-  const otherMonitoringUi = isRecord(requestUiSchema.otherMonitoring)
-    ? requestUiSchema.otherMonitoring
-    : {};
-  setWidgetVisibility(otherMonitoringUi, !isOtherDrug, 'textarea');
-  requestUiSchema.otherMonitoring = otherMonitoringUi;
-
-  const standardOfCareUi = isRecord(requestUiSchema.standardOfCareTriedFreeText)
-    ? requestUiSchema.standardOfCareTriedFreeText
-    : {};
-  setWidgetVisibility(standardOfCareUi, !isOtherDrug, 'textarea');
-  requestUiSchema.standardOfCareTriedFreeText = standardOfCareUi;
+  applyFieldVisibility(
+    'indicationFullyMetOrDoctorConfirms',
+    isOtherDrug,
+    'radio',
+  );
+  applyFieldVisibility('applySection2Abs1a', isOtherDrug);
+  applyFieldVisibility('otherDrugName', !isOtherDrug);
+  applyFieldVisibility('otherIndication', !isOtherDrug);
+  applyFieldVisibility('otherTreatmentGoal', !isOtherDrug, 'textarea');
+  applyFieldVisibility('otherDose', !isOtherDrug, 'textarea');
+  applyFieldVisibility('otherDuration', !isOtherDrug, 'textarea');
+  applyFieldVisibility('otherMonitoring', !isOtherDrug, 'textarea');
+  applyFieldVisibility('standardOfCareTriedFreeText', !isOtherDrug, 'textarea');
 
   return clonedUiSchema;
 };
