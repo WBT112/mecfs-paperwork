@@ -2463,7 +2463,8 @@ export default function FormpackDetailPage() {
         <Suspense fallback={<p>{t('formpackLoading')}</p>}>
           <LazyForm
             className={
-              formpackId === DOCTOR_LETTER_ID
+              formpackId === DOCTOR_LETTER_ID ||
+              formpackId === OFFLABEL_ANTRAG_ID
                 ? 'formpack-form formpack-form--doctor-letter'
                 : 'formpack-form'
             }
