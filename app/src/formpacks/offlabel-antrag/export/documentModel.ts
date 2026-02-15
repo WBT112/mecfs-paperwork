@@ -14,6 +14,10 @@ import {
   type OfflabelRenderedDocument,
 } from '../content/buildOfflabelDocuments';
 import { flattenBlocksToParagraphs } from './flattenBlocksToParagraphs';
+import {
+  toLegacyLetter,
+  type LegacyLetter as OffLabelLegacyLetter,
+} from './legacyLetter';
 
 export type OffLabelSignatureBlock = {
   label: string;
@@ -35,21 +39,6 @@ export type OffLabelLetterSection = {
 export type OffLabelPart3Section = {
   title: string;
   paragraphs: string[];
-};
-
-type OffLabelLegacyLetter = {
-  senderLines: string[];
-  addresseeLines: string[];
-  dateLine: string;
-  subject: string;
-  bodyParagraphs: string[];
-  attachmentsHeading: string;
-  attachmentsItems: string[];
-  signatureBlocks: Array<{
-    label: string;
-    name: string;
-    extraLines?: string[];
-  }>;
 };
 
 type OffLabelLegacyPart3 = {
@@ -124,6 +113,16 @@ type MedicationFacts = {
   expertSource: string | null;
   expertAttachment: string | null;
 };
+
+const REQUEST_DEFAULT_FIELDS = [
+  'standardOfCareTriedFreeText',
+  'otherDrugName',
+  'otherIndication',
+  'otherTreatmentGoal',
+  'otherDose',
+  'otherDuration',
+  'otherMonitoring',
+] as const;
 
 const DEFAULT_PART3_TITLE_KEY = 'offlabel-antrag.export.part3.title';
 const DEFAULT_PART3_TITLE =
@@ -400,23 +399,6 @@ const buildSourceItems = ({
   return sources;
 };
 
-const toLegacyLetter = (
-  section: OffLabelLetterSection,
-): OffLabelLegacyLetter => ({
-  senderLines: section.senderLines,
-  addresseeLines: section.addresseeLines,
-  dateLine: section.dateLine,
-  subject: section.subject,
-  bodyParagraphs: section.paragraphs,
-  attachmentsHeading: section.attachmentsHeading,
-  attachmentsItems: section.attachments,
-  signatureBlocks: section.signatureBlocks.map((block) => ({
-    label: block.label,
-    name: block.name,
-    ...(block.extraLine ? { extraLines: [block.extraLine] } : {}),
-  })),
-});
-
 export const buildOffLabelAntragDocumentModel = (
   formData: Record<string, unknown>,
   locale: SupportedLocale,
@@ -467,40 +449,10 @@ export const buildOffLabelAntragDocumentModel = (
 
   const request = {
     drug: rawDrug ?? '',
-    standardOfCareTriedFreeText: withDefaultStringField(
+    ...resolveStringFields(
       requestRecord,
-      'standardOfCareTriedFreeText',
-      defaults.request.standardOfCareTriedFreeText,
-    ),
-    otherDrugName: withDefaultStringField(
-      requestRecord,
-      'otherDrugName',
-      defaults.request.otherDrugName,
-    ),
-    otherIndication: withDefaultStringField(
-      requestRecord,
-      'otherIndication',
-      defaults.request.otherIndication,
-    ),
-    otherTreatmentGoal: withDefaultStringField(
-      requestRecord,
-      'otherTreatmentGoal',
-      defaults.request.otherTreatmentGoal,
-    ),
-    otherDose: withDefaultStringField(
-      requestRecord,
-      'otherDose',
-      defaults.request.otherDose,
-    ),
-    otherDuration: withDefaultStringField(
-      requestRecord,
-      'otherDuration',
-      defaults.request.otherDuration,
-    ),
-    otherMonitoring: withDefaultStringField(
-      requestRecord,
-      'otherMonitoring',
-      defaults.request.otherMonitoring,
+      defaults.request,
+      REQUEST_DEFAULT_FIELDS,
     ),
   };
 
