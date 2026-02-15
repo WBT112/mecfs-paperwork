@@ -8,7 +8,6 @@ import {
 import type { OfflabelAntragExportDefaults } from '../../export/offlabelAntragDefaults';
 
 export type OfflabelAntragLetter = OffLabelLetterSection;
-
 export type OfflabelAntragExportBundle = OffLabelExportBundle;
 
 type OfflabelAntragBundleInput = {
@@ -64,31 +63,28 @@ type BuildLetterContext = {
   exportedAt: Date;
 };
 
+type LetterSectionKey = 'kk' | 'arzt';
+
 export const parseAttachments = (
   attachmentsFreeText: string | null | undefined,
 ): string[] => parseOfflabelAttachments(attachmentsFreeText);
 
-export const buildPart1KkLetter = ({
-  locale,
-  model,
-  exportedAt,
-}: BuildLetterContext): OfflabelAntragLetter => {
+const buildLetterSection = (
+  section: LetterSectionKey,
+  context: BuildLetterContext,
+): OfflabelAntragLetter => {
+  const { locale, model, exportedAt } = context;
   const projected = buildOffLabelAntragDocumentModel(model, locale, {
     exportedAt,
   });
-  return projected.kk;
+  return projected[section];
 };
 
-export const buildPart2DoctorLetter = ({
-  locale,
-  model,
-  exportedAt,
-}: BuildLetterContext): OfflabelAntragLetter => {
-  const projected = buildOffLabelAntragDocumentModel(model, locale, {
-    exportedAt,
-  });
-  return projected.arzt;
-};
+export const buildPart1KkLetter = (context: BuildLetterContext) =>
+  buildLetterSection('kk', context);
+
+export const buildPart2DoctorLetter = (context: BuildLetterContext) =>
+  buildLetterSection('arzt', context);
 
 export const buildOfflabelAntragExportBundle = ({
   locale,

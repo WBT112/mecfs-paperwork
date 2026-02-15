@@ -1,8 +1,13 @@
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
-import { isRecord } from '../lib/utils';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
+import {
+  formatBirthDate,
+  getArrayValue,
+  getRecordValue,
+  getStringValue,
+} from './modelValueUtils';
 import {
   buildOffLabelAntragDocumentModel,
   type OffLabelExportBundle,
@@ -98,7 +103,7 @@ export type DocumentModel = {
 const getDiagnosisFlags = (
   formData: Record<string, unknown>,
 ): DiagnosisFlags => {
-  const diagnoses = isRecord(formData.diagnoses) ? formData.diagnoses : null;
+  const diagnoses = getRecordValue(formData.diagnoses);
   return {
     meCfs: diagnoses?.meCfs === true,
     pots: diagnoses?.pots === true,
@@ -106,47 +111,16 @@ const getDiagnosisFlags = (
   };
 };
 
-const getStringValue = (value: unknown): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed.length ? trimmed : null;
-};
-
-const formatBirthDate = (value: string | null): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  const ymdDashMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (ymdDashMatch) {
-    return `${ymdDashMatch[3]}-${ymdDashMatch[2]}-${ymdDashMatch[1]}`;
-  }
-
-  const ymdSlashMatch = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(value);
-  if (ymdSlashMatch) {
-    return `${ymdSlashMatch[3]}-${ymdSlashMatch[2]}-${ymdSlashMatch[1]}`;
-  }
-
-  const dmyDotMatch = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
-  if (dmyDotMatch) {
-    return `${dmyDotMatch[1]}-${dmyDotMatch[2]}-${dmyDotMatch[3]}`;
-  }
-
-  const dmyDashMatch = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
-  if (dmyDashMatch) {
-    return `${dmyDashMatch[1]}-${dmyDashMatch[2]}-${dmyDashMatch[3]}`;
-  }
-
-  return value;
-};
-
-const getRecordValue = (value: unknown): Record<string, unknown> | null =>
-  isRecord(value) ? value : null;
-
-const getArrayValue = (value: unknown): unknown[] =>
-  Array.isArray(value) ? value : [];
+const projectRecordList = <T>(
+  value: unknown,
+  project: (record: Record<string, unknown>) => T | null,
+): T[] =>
+  getArrayValue(value)
+    .map((entry) => {
+      const record = getRecordValue(entry);
+      return record ? project(record) : null;
+    })
+    .filter((entry): entry is T => Boolean(entry));
 
 const buildBaseDocumentModel = (
   formData: Record<string, unknown>,
@@ -155,37 +129,25 @@ const buildBaseDocumentModel = (
   const diagnoses = getRecordValue(formData.diagnoses);
   const doctor = getRecordValue(formData.doctor);
 
-  const contacts = getArrayValue(formData.contacts)
-    .map((entry) => {
-      const record = getRecordValue(entry);
-      if (!record) {
-        return null;
-      }
-      const name = getStringValue(record.name);
-      const phone = getStringValue(record.phone);
-      const relation = getStringValue(record.relation);
-      if (!name && !phone && !relation) {
-        return null;
-      }
-      return { name, phone, relation };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  const contacts = projectRecordList(formData.contacts, (record) => {
+    const name = getStringValue(record.name);
+    const phone = getStringValue(record.phone);
+    const relation = getStringValue(record.relation);
+    if (!name && !phone && !relation) {
+      return null;
+    }
+    return { name, phone, relation };
+  });
 
-  const medications = getArrayValue(formData.medications)
-    .map((entry) => {
-      const record = getRecordValue(entry);
-      if (!record) {
-        return null;
-      }
-      const name = getStringValue(record.name);
-      const dosage = getStringValue(record.dosage);
-      const schedule = getStringValue(record.schedule);
-      if (!name && !dosage && !schedule) {
-        return null;
-      }
-      return { name, dosage, schedule };
-    })
-    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  const medications = projectRecordList(formData.medications, (record) => {
+    const name = getStringValue(record.name);
+    const dosage = getStringValue(record.dosage);
+    const schedule = getStringValue(record.schedule);
+    if (!name && !dosage && !schedule) {
+      return null;
+    }
+    return { name, dosage, schedule };
+  });
 
   return {
     person: {
@@ -327,6 +289,7 @@ const buildOfflabelAntragModel = (
   baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
 ): DocumentModel => {
   const projected = buildOffLabelAntragDocumentModel(formData, locale);
+  const doctor = getRecordValue(formData.doctor);
 
   return {
     diagnosisParagraphs: [],
@@ -335,8 +298,8 @@ const buildOfflabelAntragModel = (
     doctor: {
       ...baseModel.doctor,
       practice: projected.doctor.practice,
-      title: getStringValue(getRecordValue(formData.doctor)?.title),
-      gender: getStringValue(getRecordValue(formData.doctor)?.gender),
+      title: getStringValue(doctor?.title),
+      gender: getStringValue(doctor?.gender),
       name: projected.doctor.name,
       streetAndNumber: projected.doctor.streetAndNumber,
       postalCode: projected.doctor.postalCode,

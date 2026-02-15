@@ -4,7 +4,11 @@ import {
   getOfflabelAntragExportDefaults,
   type OfflabelAntragExportDefaults,
 } from '../../../export/offlabelAntragDefaults';
-import { isRecord } from '../../../lib/utils';
+import {
+  formatBirthDate,
+  getRecordValue,
+  getStringValue,
+} from '../../modelValueUtils';
 import {
   type MedicationProfile,
   resolveMedicationProfile,
@@ -134,17 +138,6 @@ const tr = (
   options: Record<string, unknown> = {},
 ): string => t(key, { defaultValue, ...options });
 
-const getRecordValue = (value: unknown): Record<string, unknown> | null =>
-  isRecord(value) ? value : null;
-
-const getStringValue = (value: unknown): string | null => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-};
-
 const withFallback = (
   value: string | null | undefined,
   fallback: string,
@@ -167,41 +160,12 @@ const resolveStringFields = <FieldName extends string>(
   defaults: Record<FieldName, string>,
   fields: readonly FieldName[],
 ): Record<FieldName, string> =>
-  fields.reduce(
-    (resolved, field) => ({
-      ...resolved,
-      [field]: withDefaultStringField(record, field, defaults[field]),
-    }),
-    {} as Record<FieldName, string>,
-  );
-
-const formatBirthDate = (value: string | null): string | null => {
-  if (!value) {
-    return null;
-  }
-
-  const ymdDashMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (ymdDashMatch) {
-    return `${ymdDashMatch[3]}-${ymdDashMatch[2]}-${ymdDashMatch[1]}`;
-  }
-
-  const ymdSlashMatch = /^(\d{4})\/(\d{2})\/(\d{2})$/.exec(value);
-  if (ymdSlashMatch) {
-    return `${ymdSlashMatch[3]}-${ymdSlashMatch[2]}-${ymdSlashMatch[1]}`;
-  }
-
-  const dmyDotMatch = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(value);
-  if (dmyDotMatch) {
-    return `${dmyDotMatch[1]}-${dmyDotMatch[2]}-${dmyDotMatch[3]}`;
-  }
-
-  const dmyDashMatch = /^(\d{2})-(\d{2})-(\d{4})$/.exec(value);
-  if (dmyDashMatch) {
-    return `${dmyDashMatch[1]}-${dmyDashMatch[2]}-${dmyDashMatch[3]}`;
-  }
-
-  return value;
-};
+  Object.fromEntries(
+    fields.map((field) => [
+      field,
+      withDefaultStringField(record, field, defaults[field]),
+    ]),
+  ) as Record<FieldName, string>;
 
 export const parseOfflabelAttachments = (
   attachmentsFreeText: string | null | undefined,
