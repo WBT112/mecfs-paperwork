@@ -195,6 +195,8 @@
   "offlabel-antrag.ui.intro.reopenButtonLabel": "Hinweise anzeigen",
   "offlabel-antrag.request.drug.option.other": "anderes Medikament oder andere Indikation",
   "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.label": "Ich erfülle die vorgegebene Diagnose/Indikation vollständig oder mein Arzt wird mir diese bestätigen",
+  "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.option.yes": "Ja",
+  "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.option.no": "Nein",
   "offlabel-antrag.ui.infobox.p2a": "Ja auswählen, wenn die Diagnose so in einem Dokument auftaucht oder auftauchen soll. Es wird in den Arztbefund ein entsprechender Passus eingebaut, der die Indikation bestätigt.\nFalls Nein bitte Nein auswählen. Die Erfolgschancen sinken allerdings in diesem Fall. Im Arztschreiben wird ein Passus aufgenommen, der bestätigt, dass die Symptome der entsprechenden Indikation bestehen.",
   "offlabel-antrag.request.applySection2Abs1a.label": "Hilfsweise gleichzeitig Antrag nach § 2 Abs. 1a SGB V stellen",
   "offlabel-antrag.ui.infobox.section2a": "Teilweise werden eng abgegrenzte Krankheiten ausgewählt, Beispiel: postinfektiöses ME/CFS. Wir bemühen uns hier um eine möglichst breite Formulierung. Der MD kann aber ggf. aufgrund der Datenlage (z.B. ME/CFS aber keine Long-Covid Diagnose) hier anderer Meinung sein. Sollte hier mit dem Hinweis auf nicht vorliegende Indikation eine Ablehnung erfolgen kann gleichzeitig hilfsweise (ergänzend) ein Antrag nach 2 Abs. 1a SGB V (Notstand) gestellt werden. Die Chancen sind hierbei aber deutlich geringer.",

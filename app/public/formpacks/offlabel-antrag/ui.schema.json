@@ -140,8 +140,8 @@
       "ui:title": "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.label",
       "ui:widget": "radio",
       "ui:enumNames": [
-        "common.yes",
-        "common.no"
+        "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.option.yes",
+        "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.option.no"
       ]
     },
     "applySection2Abs1a": {
