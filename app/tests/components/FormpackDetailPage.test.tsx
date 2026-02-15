@@ -19,6 +19,7 @@ import {
 import type { FormpackManifest } from '../../src/formpacks/types';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import type { RecordEntry, SnapshotEntry } from '../../src/storage/types';
+import type { OfflabelRenderedDocument } from '../../src/formpacks/offlabel-antrag/content/buildOfflabelDocuments';
 
 const testConstants = vi.hoisted(() => ({
   FORMPACK_ID: 'notfallpass',
@@ -134,6 +135,17 @@ const importState = vi.hoisted(() => ({
 
 const visibilityState = vi.hoisted(() => ({
   isDevUiEnabled: true,
+}));
+const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
+
+const offlabelPreviewState = vi.hoisted(() => ({
+  buildDocuments:
+    vi.fn<
+      (
+        formData: Record<string, unknown>,
+        locale: 'de' | 'en',
+      ) => OfflabelRenderedDocument[]
+    >(),
 }));
 
 const ARIA_EXPANDED = 'aria-expanded';
@@ -340,6 +352,16 @@ vi.mock('../../src/formpacks/visibility', async (importOriginal) => {
   };
 });
 
+vi.mock(
+  '../../src/formpacks/offlabel-antrag/content/buildOfflabelDocuments',
+  () => ({
+    buildOfflabelDocuments: (
+      formData: Record<string, unknown>,
+      locale: 'de' | 'en',
+    ) => offlabelPreviewState.buildDocuments(formData, locale),
+  }),
+);
+
 vi.mock('../../src/storage/hooks', () => ({
   useRecords: () => ({
     records: storageState.records,
@@ -428,6 +450,8 @@ describe('FormpackDetailPage', () => {
     jsonExportState.buildJsonExportPayload.mockReset();
     jsonExportState.buildJsonExportFilename.mockReset();
     jsonExportState.downloadJsonExport.mockReset();
+    offlabelPreviewState.buildDocuments.mockReset();
+    offlabelPreviewState.buildDocuments.mockReturnValue([]);
     visibilityState.isDevUiEnabled = true;
     formpackState.manifest = {
       id: record.formpackId,
@@ -787,6 +811,66 @@ describe('FormpackDetailPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders offlabel document preview tabs and block kinds', async () => {
+    const attachmentItem = 'Attachment 1';
+    const secondTabTitle = 'Teil 2';
+    const offlabelRecord = {
+      ...record,
+      formpackId: OFFLABEL_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [offlabelRecord];
+    storageState.activeRecord = offlabelRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: OFFLABEL_FORMPACK_ID,
+    };
+    offlabelPreviewState.buildDocuments.mockReturnValue([
+      {
+        id: 'part1',
+        title: 'Teil 1',
+        blocks: [
+          { kind: 'heading', text: 'Heading 1' },
+          { kind: 'paragraph', text: 'Paragraph 1' },
+          { kind: 'list', items: [attachmentItem] },
+          { kind: 'pageBreak' },
+        ],
+      },
+      {
+        id: 'part2',
+        title: secondTabTitle,
+        blocks: [
+          { kind: 'heading', text: 'Heading 2' },
+          { kind: 'list', items: [] },
+        ],
+      },
+      {
+        id: 'part3',
+        title: 'Teil 3',
+        blocks: [{ kind: 'paragraph', text: 'Paragraph 3' }],
+      },
+    ]);
+
+    render(
+      <TestRouter initialEntries={[`/formpacks/${OFFLABEL_FORMPACK_ID}`]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openSection(sectionLabels.documentPreview);
+
+    expect(await screen.findByText('Heading 1')).toBeInTheDocument();
+    expect(screen.getByText('Paragraph 1')).toBeInTheDocument();
+    expect(screen.getByText(attachmentItem)).toBeInTheDocument();
+    expect(screen.getByText('— Page break —')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: secondTabTitle }));
+    expect(screen.getByText('Heading 2')).toBeInTheDocument();
+    expect(screen.queryByText(attachmentItem)).not.toBeInTheDocument();
+  });
+
   it('imports JSON as a new record and shows success', async () => {
     const payload = {
       version: 1,
@@ -925,6 +1009,65 @@ describe('FormpackDetailPage', () => {
       );
       expect(storageState.refreshSnapshots).toHaveBeenCalled();
       expect(confirmSpy).toHaveBeenCalledWith('importOverwriteConfirm');
+    } finally {
+      restoreText();
+      confirmSpy.mockRestore();
+    }
+  });
+
+  it('switches import mode back to new after selecting overwrite', async () => {
+    const payload = {
+      version: 1,
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        title: 'Imported',
+        locale: 'de',
+        data: { name: 'Ada' },
+      },
+      revisions: [],
+    };
+    importState.validateJsonImport.mockReturnValue({
+      payload,
+      error: null,
+    });
+    storageImportState.importRecordWithSnapshots.mockResolvedValue(record);
+    const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+    const restoreText = mockFileText(IMPORT_FILE_CONTENT);
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    try {
+      render(
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </TestRouter>,
+      );
+
+      await openImportSection();
+      await userEvent.upload(
+        await screen.findByLabelText('formpackImportLabel'),
+        file,
+      );
+
+      await userEvent.click(
+        screen.getByLabelText('formpackImportModeOverwrite'),
+      );
+      await userEvent.click(screen.getByLabelText('formpackImportModeNew'));
+      await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+
+      await waitFor(() =>
+        expect(
+          storageImportState.importRecordWithSnapshots,
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            mode: 'new',
+          }),
+        ),
+      );
+      expect(confirmSpy).not.toHaveBeenCalled();
     } finally {
       restoreText();
       confirmSpy.mockRestore();

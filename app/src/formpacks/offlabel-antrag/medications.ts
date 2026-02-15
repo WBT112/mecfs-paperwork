@@ -8,12 +8,20 @@ export const OFFLABEL_MEDICATION_KEYS = [
 export type MedicationKey = (typeof OFFLABEL_MEDICATION_KEYS)[number];
 export type StandardMedicationKey = Exclude<MedicationKey, 'other'>;
 
-type MedicationAutoFacts = {
+type LocalizedText = {
+  de: string;
+  en: string;
+};
+
+type MedicationFactsWithoutSources = {
   diagnosisMain: string;
   targetSymptoms: string;
   doseAndDuration: string;
   monitoringAndStop: string;
   priorMeasuresDefault: string;
+};
+
+type MedicationAutoFacts = MedicationFactsWithoutSources & {
   expertSourceText: string;
   expertAttachmentText: string;
 };
@@ -34,35 +42,105 @@ export type MedicationProfile = {
   autoFacts?: MedicationAutoFactsByLocale;
 };
 
-type MedicationFactsInput = readonly [
+type MedicationFactsTuple = readonly [
   diagnosisMain: string,
   targetSymptoms: string,
   doseAndDuration: string,
   monitoringAndStop: string,
   priorMeasuresDefault: string,
-  expertSourceText: string,
-  expertAttachmentText: string,
 ];
 
-type StandardMedicationProfileInput = {
-  key: StandardMedicationKey;
-  displayNameDe: string;
-  displayNameEn: string;
-  infoBoxI18nKey: string;
-  de: MedicationFactsInput;
-  en: MedicationFactsInput;
+type MedicationInputTuple = readonly [
+  key: StandardMedicationKey,
+  displayNameDe: string,
+  displayNameEn: string,
+  infoBoxI18nKey: string,
+  expertSourceDate: string,
+  deFacts: MedicationFactsTuple,
+  enFacts: MedicationFactsTuple,
+];
+
+const PRIOR_MEASURES_DEFAULT: LocalizedText = {
+  de: 'Bisherige symptomorientierte Maßnahmen wurden ausgeschöpft bzw. waren nicht ausreichend wirksam oder nicht verträglich.',
+  en: 'Prior symptom-oriented measures have been exhausted, were insufficient, or were not tolerated.',
 };
 
-const buildAutoFacts = (input: MedicationFactsInput): MedicationAutoFacts => {
+const MEDICATION_INPUTS: readonly MedicationInputTuple[] = [
+  [
+    'agomelatin',
+    'Agomelatin',
+    'Agomelatine',
+    'offlabel-antrag.ui.infobox.drug.agomelatine',
+    '02.12.2025',
+    [
+      'postinfektiösem ME/CFS und/oder Long-/Post-COVID mit Fatigue',
+      'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
+      '25 mg zur Nacht; nach 2 Wochen ggf. 50 mg. Behandlungsdauer mindestens 12 Wochen, danach Nutzen-Risiko-Prüfung',
+      'Leberwerte überwachen; bei Leberschädigungssymptomen sofort absetzen; Abbruch bei Transaminasen > 3x oberer Normwert',
+      PRIOR_MEASURES_DEFAULT.de,
+    ],
+    [
+      'post-infectious ME/CFS and/or long/post-COVID with fatigue',
+      'improvement of fatigue and health-related quality of life (HRQoL)',
+      '25 mg at night; after 2 weeks increase to 50 mg if needed. Continue for at least 12 weeks and re-evaluate benefit-risk',
+      'monitor liver function; stop immediately with liver injury symptoms; discontinue if transaminases exceed 3x upper normal limit',
+      PRIOR_MEASURES_DEFAULT.en,
+    ],
+  ],
+  [
+    'ivabradine',
+    'Ivabradin',
+    'Ivabradine',
+    'offlabel-antrag.ui.infobox.drug.ivabradine',
+    '15.10.2025',
+    [
+      'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
+      'Senkung der Herzfrequenz und Verbesserung der gesundheitsbezogenen Lebensqualität (HRQoL)',
+      'Start 2,5 mg morgens; Titration bis max. 2x5 mg (Standard 2x5 mg, Abenddosis ggf. weglassen)',
+      'Absetzen erwägen, wenn innerhalb von 3 Monaten keine klinisch relevante Reduktion der Ruhe-HF und nur eingeschränkte Symptomverbesserung erreicht wird; Abbruch bei persistierender Bradykardie (HF <50), Bradykardie-Symptomen oder schweren Nebenwirkungen',
+      'Betablocker wurden bereits eingesetzt, waren nicht verträglich oder nicht geeignet; weitere symptomorientierte Maßnahmen waren unzureichend.',
+    ],
+    [
+      'post-infectious PoTS in long/post-COVID, especially when beta blockers are not tolerated',
+      'heart-rate reduction and improved health-related quality of life (HRQoL)',
+      'start at 2.5 mg in the morning; titrate up to max. 5 mg twice daily (standard 5 mg twice daily; evening dose may be omitted)',
+      'consider discontinuation if no clinically relevant resting heart-rate reduction is achieved within 3 months and symptom improvement remains limited; stop with persistent bradycardia (HR <50), bradycardia symptoms, or severe adverse events',
+      'Beta blockers were already used but not tolerated or not suitable; further symptom-oriented measures were insufficient.',
+    ],
+  ],
+  [
+    'vortioxetine',
+    'Vortioxetin',
+    'Vortioxetine',
+    'offlabel-antrag.ui.infobox.drug.vortioxetine',
+    '15.10.2025',
+    [
+      'Long/Post-COVID mit kognitiven Beeinträchtigungen und/oder depressiven Symptomen',
+      'Verbesserung von Kognition und/oder depressiver Symptomatik sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
+      '5-20 mg 1x täglich; Start 5 mg, nach 2 Wochen Dosisanpassung; Fortführung bis mindestens 6 Monate nach Symptomfreiheit',
+      'Abbruch bei Serotonin-Syndrom, hyponatriämischer Enzephalopathie, neuroleptischem malignen Syndrom oder nicht tolerierbaren Nebenwirkungen; Hinweis: in Deutschland nicht verfügbar, Import/Verfügbarkeit prüfen',
+      PRIOR_MEASURES_DEFAULT.de,
+    ],
+    [
+      'long/post-COVID with cognitive impairment and/or depressive symptoms',
+      'improvement of cognition and/or depressive symptoms, plus health-related quality of life (HRQoL)',
+      '5-20 mg once daily; start with 5 mg and adjust dose after 2 weeks; continue for at least 6 months after symptom remission',
+      'discontinue in serotonin syndrome, hyponatremic encephalopathy, neuroleptic malignant syndrome, or intolerable adverse events; note: not available in Germany, verify import/availability',
+      PRIOR_MEASURES_DEFAULT.en,
+    ],
+  ],
+] as const;
+
+const buildFactsWithoutSources = (
+  tuple: MedicationFactsTuple,
+): MedicationFactsWithoutSources => {
   const [
     diagnosisMain,
     targetSymptoms,
     doseAndDuration,
     monitoringAndStop,
     priorMeasuresDefault,
-    expertSourceText,
-    expertAttachmentText,
-  ] = input;
+  ] = tuple;
 
   return {
     diagnosisMain,
@@ -70,122 +148,67 @@ const buildAutoFacts = (input: MedicationFactsInput): MedicationAutoFacts => {
     doseAndDuration,
     monitoringAndStop,
     priorMeasuresDefault,
-    expertSourceText,
-    expertAttachmentText,
   };
 };
 
-const buildLocalizedAutoFacts = (
-  de: MedicationFactsInput,
-  en: MedicationFactsInput,
-): MedicationAutoFactsByLocale => ({
-  de: buildAutoFacts(de),
-  en: buildAutoFacts(en),
-});
+const buildExpertTexts = (
+  locale: keyof LocalizedText,
+  displayName: string,
+  standDate: string,
+): Pick<MedicationAutoFacts, 'expertSourceText' | 'expertAttachmentText'> => {
+  if (locale === 'de') {
+    return {
+      expertSourceText: `Bewertung ${displayName} – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand ${standDate}).`,
+      expertAttachmentText: `Bewertung: ${displayName} – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand ${standDate})`,
+    };
+  }
 
-const createStandardMedicationProfile = ({
-  key,
-  displayNameDe,
-  displayNameEn,
-  infoBoxI18nKey,
-  de,
-  en,
-}: StandardMedicationProfileInput): MedicationProfile => ({
-  key,
-  displayNameDe,
-  displayNameEn,
-  isOther: false,
-  requiresManualFields: false,
-  requiresPriorMeasures: false,
-  infoBoxI18nKey,
-  autoFacts: buildLocalizedAutoFacts(de, en),
-});
+  const dateIso = standDate.split('.').reverse().join('-');
+  return {
+    expertSourceText: `Assessment ${displayName.toLowerCase()} – Expert Group Long COVID Off-Label-Use at BfArM (status ${dateIso}).`,
+    expertAttachmentText: `Assessment: ${displayName} – Expert Group Long COVID Off-Label-Use at BfArM (status ${dateIso})`,
+  };
+};
 
-const PRIOR_MEASURES_DEFAULT_DE =
-  'Bisherige symptomorientierte Maßnahmen wurden ausgeschöpft bzw. waren nicht ausreichend wirksam oder nicht verträglich.';
-const PRIOR_MEASURES_DEFAULT_EN =
-  'Prior symptom-oriented measures have been exhausted, were insufficient, or were not tolerated.';
+const createStandardMedicationProfile = (
+  input: MedicationInputTuple,
+): MedicationProfile => {
+  const [
+    key,
+    displayNameDe,
+    displayNameEn,
+    infoBoxI18nKey,
+    expertSourceDate,
+    deFacts,
+    enFacts,
+  ] = input;
 
-const MEDICATION_PROFILE_INPUTS: readonly StandardMedicationProfileInput[] = [
-  {
-    key: 'agomelatin',
-    displayNameDe: 'Agomelatin',
-    displayNameEn: 'Agomelatine',
-    infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.agomelatine',
-    de: [
-      'postinfektiösem ME/CFS und/oder Long-/Post-COVID mit Fatigue',
-      'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
-      '25 mg zur Nacht; nach 2 Wochen ggf. 50 mg. Behandlungsdauer mindestens 12 Wochen, danach Nutzen-Risiko-Prüfung',
-      'Leberwerte überwachen; bei Leberschädigungssymptomen sofort absetzen; Abbruch bei Transaminasen > 3x oberer Normwert',
-      PRIOR_MEASURES_DEFAULT_DE,
-      'Bewertung Agomelatin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 02.12.2025).',
-      'Bewertung: Agomelatin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 02.12.2025)',
-    ],
-    en: [
-      'post-infectious ME/CFS and/or long/post-COVID with fatigue',
-      'improvement of fatigue and health-related quality of life (HRQoL)',
-      '25 mg at night; after 2 weeks increase to 50 mg if needed. Continue for at least 12 weeks and re-evaluate benefit-risk',
-      'monitor liver function; stop immediately with liver injury symptoms; discontinue if transaminases exceed 3x upper normal limit',
-      PRIOR_MEASURES_DEFAULT_EN,
-      'Assessment agomelatine – Expert Group Long COVID Off-Label-Use at BfArM (status 2025-12-02).',
-      'Assessment: Agomelatine – Expert Group Long COVID Off-Label-Use at BfArM (status 2025-12-02)',
-    ],
-  },
-  {
-    key: 'ivabradine',
-    displayNameDe: 'Ivabradin',
-    displayNameEn: 'Ivabradine',
-    infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.ivabradine',
-    de: [
-      'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
-      'Senkung der Herzfrequenz und Verbesserung der gesundheitsbezogenen Lebensqualität (HRQoL)',
-      'Start 2,5 mg morgens; Titration bis max. 2x5 mg (Standard 2x5 mg, Abenddosis ggf. weglassen)',
-      'Absetzen erwägen, wenn innerhalb von 3 Monaten keine klinisch relevante Reduktion der Ruhe-HF und nur eingeschränkte Symptomverbesserung erreicht wird; Abbruch bei persistierender Bradykardie (HF <50), Bradykardie-Symptomen oder schweren Nebenwirkungen',
-      'Betablocker wurden bereits eingesetzt, waren nicht verträglich oder nicht geeignet; weitere symptomorientierte Maßnahmen waren unzureichend.',
-      'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).',
-      'Bewertung: Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
-    ],
-    en: [
-      'post-infectious PoTS in long/post-COVID, especially when beta blockers are not tolerated',
-      'heart-rate reduction and improved health-related quality of life (HRQoL)',
-      'start at 2.5 mg in the morning; titrate up to max. 5 mg twice daily (standard 5 mg twice daily; evening dose may be omitted)',
-      'consider discontinuation if no clinically relevant resting heart-rate reduction is achieved within 3 months and symptom improvement remains limited; stop with persistent bradycardia (HR <50), bradycardia symptoms, or severe adverse events',
-      'Beta blockers were already used but not tolerated or not suitable; further symptom-oriented measures were insufficient.',
-      'Assessment ivabradine – Expert Group Long COVID Off-Label-Use at BfArM (status 2025-10-15).',
-      'Assessment: Ivabradine – Expert Group Long COVID Off-Label-Use at BfArM (status 2025-10-15)',
-    ],
-  },
-  {
-    key: 'vortioxetine',
-    displayNameDe: 'Vortioxetin',
-    displayNameEn: 'Vortioxetine',
-    infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.vortioxetine',
-    de: [
-      'Long/Post-COVID mit kognitiven Beeinträchtigungen und/oder depressiven Symptomen',
-      'Verbesserung von Kognition und/oder depressiver Symptomatik sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
-      '5-20 mg 1x täglich; Start 5 mg, nach 2 Wochen Dosisanpassung; Fortführung bis mindestens 6 Monate nach Symptomfreiheit',
-      'Abbruch bei Serotonin-Syndrom, hyponatriämischer Enzephalopathie, neuroleptischem malignen Syndrom oder nicht tolerierbaren Nebenwirkungen; Hinweis: in Deutschland nicht verfügbar, Import/Verfügbarkeit prüfen',
-      PRIOR_MEASURES_DEFAULT_DE,
-      'Bewertung Vortioxetin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).',
-      'Bewertung: Vortioxetin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
-    ],
-    en: [
-      'long/post-COVID with cognitive impairment and/or depressive symptoms',
-      'improvement of cognition and/or depressive symptoms, plus health-related quality of life (HRQoL)',
-      '5-20 mg once daily; start with 5 mg and adjust dose after 2 weeks; continue for at least 6 months after symptom remission',
-      'discontinue in serotonin syndrome, hyponatremic encephalopathy, neuroleptic malignant syndrome, or intolerable adverse events; note: not available in Germany, verify import/availability',
-      PRIOR_MEASURES_DEFAULT_EN,
-      'Assessment vortioxetine – Expert Group Long COVID Off-Label-Use at BfArM (status 2025-10-15).',
-      'Assessment: Vortioxetine – Expert Group Long COVID Off-Label-Use at BfArM (status 2025-10-15)',
-    ],
-  },
-] as const;
+  return {
+    key,
+    displayNameDe,
+    displayNameEn,
+    isOther: false,
+    requiresManualFields: false,
+    requiresPriorMeasures: false,
+    infoBoxI18nKey,
+    autoFacts: {
+      de: {
+        ...buildFactsWithoutSources(deFacts),
+        ...buildExpertTexts('de', displayNameDe, expertSourceDate),
+      },
+      en: {
+        ...buildFactsWithoutSources(enFacts),
+        ...buildExpertTexts('en', displayNameEn, expertSourceDate),
+      },
+    },
+  };
+};
 
 const STANDARD_MEDICATION_PROFILES = Object.fromEntries(
-  MEDICATION_PROFILE_INPUTS.map((input) => [
-    input.key,
-    createStandardMedicationProfile(input),
-  ]),
+  MEDICATION_INPUTS.map((input) => {
+    const [key] = input;
+    return [key, createStandardMedicationProfile(input)];
+  }),
 ) as Record<StandardMedicationKey, MedicationProfile>;
 
 const OTHER_MEDICATION_PROFILE: MedicationProfile = {

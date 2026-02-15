@@ -2,6 +2,7 @@ import type { SupportedLocale } from '../../i18n/locale';
 import {
   buildOffLabelAntragDocumentModel,
   parseOfflabelAttachments,
+  type OffLabelAntragDocumentModel,
   type OffLabelExportBundle,
   type OffLabelLetterSection,
 } from './export/documentModel';
@@ -10,45 +11,26 @@ import type { OfflabelAntragExportDefaults } from '../../export/offlabelAntragDe
 export type OfflabelAntragLetter = OffLabelLetterSection;
 export type OfflabelAntragExportBundle = OffLabelExportBundle;
 
-type OfflabelAntragBundleInput = {
-  patient?: {
-    firstName?: string | null;
-    lastName?: string | null;
-    birthDate?: string | null;
-    insuranceNumber?: string | null;
-    streetAndNumber?: string | null;
-    postalCode?: string | null;
-    city?: string | null;
-  };
-  doctor?: {
-    name?: string | null;
-    practice?: string | null;
-    streetAndNumber?: string | null;
-    postalCode?: string | null;
-    city?: string | null;
-  };
-  insurer?: {
-    name?: string | null;
-    department?: string | null;
-    streetAndNumber?: string | null;
-    postalCode?: string | null;
-    city?: string | null;
-  };
-  request?: {
-    drug?: string | null;
-    standardOfCareTriedFreeText?: string | null;
-    otherDrugName?: string | null;
-    otherIndication?: string | null;
-    otherTreatmentGoal?: string | null;
-    otherDose?: string | null;
-    otherDuration?: string | null;
-    otherMonitoring?: string | null;
-  };
-  attachmentsFreeText?: string | null;
-  attachments?: {
-    items?: string[];
-  };
+type DeepPartial<T> = {
+  [Key in keyof T]?: T[Key] extends Array<infer Item>
+    ? Array<DeepPartial<Item>>
+    : T[Key] extends object
+      ? DeepPartial<T[Key]>
+      : T[Key];
 };
+
+type OfflabelAntragBundleInput = DeepPartial<
+  Omit<
+    OffLabelAntragDocumentModel,
+    | 'kk'
+    | 'arzt'
+    | 'part3'
+    | 'sourcesHeading'
+    | 'sources'
+    | 'exportedAtIso'
+    | 'exportBundle'
+  >
+>;
 
 type BuildOfflabelAntragExportBundleArgs = {
   locale: SupportedLocale;

@@ -114,6 +114,13 @@ type MedicationFacts = {
   expertAttachment: string | null;
 };
 
+type LetterCompositionInput = {
+  senderLines: string[];
+  addresseeLines: string[];
+  dateLine: string;
+  attachmentsHeading: string;
+};
+
 const REQUEST_DEFAULT_FIELDS = [
   'standardOfCareTriedFreeText',
   'otherDrugName',
@@ -359,6 +366,31 @@ const buildSourceItems = ({
   return sources;
 };
 
+const buildLetterSection = ({
+  senderLines,
+  addresseeLines,
+  dateLine,
+  subject,
+  paragraphs,
+  attachmentsHeading,
+  attachments,
+  signatureBlocks,
+}: LetterCompositionInput & {
+  subject: string;
+  paragraphs: string[];
+  attachments: string[];
+  signatureBlocks: OffLabelSignatureBlock[];
+}): OffLabelLetterSection => ({
+  senderLines,
+  addresseeLines,
+  dateLine,
+  subject,
+  paragraphs,
+  attachmentsHeading,
+  attachments,
+  signatureBlocks,
+});
+
 export const buildOffLabelAntragDocumentModel = (
   formData: Record<string, unknown>,
   locale: SupportedLocale,
@@ -443,6 +475,18 @@ export const buildOffLabelAntragDocumentModel = (
   const patientName = buildPatientName(patient);
   const dateLine = getDateLine(locale, patient.city, exportedAt);
 
+  const attachmentsHeading = tr(
+    t,
+    'offlabel-antrag.export.attachmentsHeading',
+    locale === 'en' ? 'Attachments' : 'Anlagen',
+  );
+  const letterInput: LetterCompositionInput = {
+    senderLines: buildPatientSenderLines(patientName, patient),
+    dateLine,
+    attachmentsHeading,
+    addresseeLines: [],
+  };
+
   const userAndExpertAttachments = [
     ...(medicationFacts.expertAttachment
       ? [medicationFacts.expertAttachment]
@@ -450,19 +494,12 @@ export const buildOffLabelAntragDocumentModel = (
     ...attachmentEntries,
   ];
 
-  const attachmentsHeading = tr(
-    t,
-    'offlabel-antrag.export.attachmentsHeading',
-    locale === 'en' ? 'Attachments' : 'Anlagen',
-  );
-
-  const kk: OffLabelLetterSection = {
-    senderLines: buildPatientSenderLines(patientName, patient),
+  const kk = buildLetterSection({
+    ...letterInput,
     addresseeLines: buildAddressLines(
       [insurer.name, insurer.department],
       insurer,
     ),
-    dateLine,
     subject: tr(
       t,
       'offlabel-antrag.export.part1.subject',
@@ -472,18 +509,16 @@ export const buildOffLabelAntragDocumentModel = (
       { drug: medicationFacts.medicationName },
     ),
     paragraphs: kkParagraphs,
-    attachmentsHeading,
     attachments: userAndExpertAttachments,
     signatureBlocks: buildKkSignatures({
       t,
       patientName,
     }),
-  };
+  });
 
-  const arzt: OffLabelLetterSection = {
-    senderLines: buildPatientSenderLines(patientName, patient),
+  const arzt = buildLetterSection({
+    ...letterInput,
     addresseeLines: buildAddressLines([doctor.practice, doctor.name], doctor),
-    dateLine,
     subject: tr(
       t,
       'offlabel-antrag.export.part2.subject',
@@ -492,7 +527,6 @@ export const buildOffLabelAntragDocumentModel = (
         : 'Begleitschreiben zum Off-Label-Antrag (Teil 1) - Bitte um Unterstützung',
     ),
     paragraphs: arztParagraphs,
-    attachmentsHeading,
     attachments: [
       tr(
         t,
@@ -504,7 +538,7 @@ export const buildOffLabelAntragDocumentModel = (
       ...userAndExpertAttachments,
     ],
     signatureBlocks: [],
-  };
+  });
 
   const part3: OffLabelPart3Section = {
     title: part3Title,

@@ -231,6 +231,45 @@ describe('validateJsonImport', () => {
     expect(result.error?.code).toBe('invalid_payload');
   });
 
+  it('returns an error when record.name exists but is not a string', () => {
+    const invalidRecordJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'en',
+        name: 123,
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      invalidRecordJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_payload');
+  });
+
+  it('uses record.title when present and valid', () => {
+    const validJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'en',
+        title: 'Custom Title',
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      validJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.record.title).toBe('Custom Title');
+  });
+
   it('returns an error when record metadata is not an object', () => {
     const invalidRecordJson = JSON.stringify({
       formpack: { id: PRIMARY_FORMPACK_ID },
@@ -264,6 +303,39 @@ describe('validateJsonImport', () => {
     );
     expect(result.payload).toBe(null);
     expect(result.error?.code).toBe('unsupported_locale');
+  });
+
+  it('returns invalid_revisions when payload revisions are malformed', () => {
+    const invalidRevisionsJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: { name: 'Test' },
+      },
+      revisions: [{ data: {} }, { label: 3 }],
+    });
+
+    const result = validateJsonImport(
+      invalidRevisionsJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_revisions');
+  });
+
+  it('returns invalid_payload when root json is not an object', () => {
+    const invalidRootJson = JSON.stringify(['not', 'an', 'object']);
+
+    const result = validateJsonImport(
+      invalidRootJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_payload');
   });
 
   it('ignores legacy unknown fields when schema disallows additional properties', () => {

@@ -17,6 +17,32 @@ const buildUiSchema = (): UiSchema => ({
 });
 
 describe('applyOfflabelVisibility', () => {
+  it('returns unchanged ui schema when request node is missing', () => {
+    const uiSchema: UiSchema = {};
+    const result = applyOfflabelVisibility(uiSchema, {
+      request: { drug: 'other' },
+    });
+
+    expect(result).toEqual(uiSchema);
+  });
+
+  it('handles non-record request form data without throwing', () => {
+    const uiSchema = buildUiSchema();
+    const result = applyOfflabelVisibility(uiSchema, {
+      request: [],
+    });
+    const request = result.request as Record<string, unknown>;
+
+    expect(
+      (request.otherDrugName as Record<string, unknown>)['ui:widget'],
+    ).toBe('hidden');
+    expect(
+      (request.indicationFullyMetOrDoctorConfirms as Record<string, unknown>)[
+        'ui:widget'
+      ],
+    ).toBe('radio');
+  });
+
   it('hides manual medication fields for standard medications', () => {
     const uiSchema = buildUiSchema();
     const result = applyOfflabelVisibility(uiSchema, {

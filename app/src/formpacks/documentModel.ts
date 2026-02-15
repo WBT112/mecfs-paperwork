@@ -319,6 +319,22 @@ const buildOfflabelAntragModel = (
   };
 };
 
+const withEmptyDiagnosis = (
+  model: Omit<DocumentModel, 'diagnosisParagraphs'>,
+): DocumentModel => ({ diagnosisParagraphs: [], ...model });
+
+type ModelBuilder = (
+  formData: Record<string, unknown>,
+  locale: SupportedLocale,
+  baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
+) => DocumentModel;
+
+const FORMPACK_MODEL_BUILDERS: Partial<Record<string, ModelBuilder>> = {
+  'doctor-letter': buildDoctorLetterModel,
+  notfallpass: buildNotfallpassModel,
+  'offlabel-antrag': buildOfflabelAntragModel,
+};
+
 /**
  * Builds a document projection for exports using formpack i18n content.
  */
@@ -330,20 +346,11 @@ export const buildDocumentModel = (
   const baseModel = buildBaseDocumentModel(formData);
 
   if (!formpackId) {
-    return { diagnosisParagraphs: [], ...baseModel };
+    return withEmptyDiagnosis(baseModel);
   }
 
-  if (formpackId === 'doctor-letter') {
-    return buildDoctorLetterModel(formData, locale, baseModel);
-  }
-
-  if (formpackId === 'notfallpass') {
-    return buildNotfallpassModel(formData, locale, baseModel);
-  }
-
-  if (formpackId === 'offlabel-antrag') {
-    return buildOfflabelAntragModel(formData, locale, baseModel);
-  }
-
-  return { diagnosisParagraphs: [], ...baseModel };
+  const modelBuilder = FORMPACK_MODEL_BUILDERS[formpackId];
+  return modelBuilder
+    ? modelBuilder(formData, locale, baseModel)
+    : withEmptyDiagnosis(baseModel);
 };
