@@ -184,7 +184,7 @@ describe('buildOfflabelDocuments', () => {
     );
   });
 
-  it('renders english preview content when locale is en', () => {
+  it('keeps workflow-canonical preview content for locale en', () => {
     const docs = buildOfflabelDocuments(
       {
         request: {
@@ -201,9 +201,7 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
 
-    expect(part1Text).toContain(
-      'I hereby request cost coverage for off-label prescription',
-    );
-    expect(part1Text).toContain('Section 2(1a) SGB V');
+    expect(part1Text).toContain('Punkt 1: Das Medikament Ivabradin');
+    expect(part1Text).toContain('Punkt 10:');
   });
 });

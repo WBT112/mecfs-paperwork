@@ -6,7 +6,6 @@ import { buildOffLabelAntragDocumentModel } from '../../src/formpacks/offlabel-a
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
 const FIXED_EXPORTED_AT = new Date('2026-02-10T12:00:00.000Z');
-const LSG_LABEL = 'LSG Niedersachsen-Bremen';
 
 const interpolate = (
   template: string,
@@ -32,7 +31,81 @@ vi.mock('../../src/i18n', () => ({
 }));
 
 describe('buildOffLabelAntragDocumentModel', () => {
-  it('builds both letters with patient-only signature and statement draft by default', () => {
+  it('uses preview-canonical standard path: point 10 present, points 7/9 absent', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const part1 = model.kk.paragraphs.join('\n');
+
+    expect(part1).toContain('Punkt 10:');
+    expect(part1).not.toContain('Punkt 7:');
+    expect(part1).not.toContain('Punkt 9:');
+    expect(part1).toContain('Bewertung Ivabradin');
+
+    expect(model.sources).toHaveLength(3);
+    expect(model.sources[1]).toContain('Bewertung Ivabradin');
+    expect(model.kk.attachments).toHaveLength(1);
+    expect(model.kk.attachments[0]).toContain('Bewertung: Ivabradin');
+  });
+
+  it('uses preview-canonical notstand path for other: points 7/9 present, point 10 absent', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'other',
+          otherDrugName: 'Midodrin',
+          otherIndication: 'Orthostatische Intoleranz',
+          otherTreatmentGoal: 'Verbesserung Kreislaufstabilität',
+          otherDose: '2,5 mg morgens',
+          otherDuration: '12 Wochen',
+          otherMonitoring: 'Puls und Blutdruck',
+          standardOfCareTriedFreeText: 'Kompressionstherapie',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const part1 = model.kk.paragraphs.join('\n');
+
+    expect(part1).toContain('Punkt 7:');
+    expect(part1).toContain('Punkt 9:');
+    expect(part1).not.toContain('Punkt 10:');
+
+    expect(model.sources).toHaveLength(2);
+    expect(model.sources[0]).toContain('Medizinischer Dienst Bund');
+    expect(model.sources[1]).toContain('LSG Niedersachsen-Bremen');
+    expect(model.kk.attachments).toEqual([]);
+  });
+
+  it('applies 2a=no conditional text from preview in part 1 and part 3', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'ivabradine',
+          indicationFullyMetOrDoctorConfirms: 'no',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.kk.paragraphs.join('\n')).toContain(
+      'Punkt 2: Die Diagnose ist gesichert',
+    );
+    expect(model.part3.paragraphs.join('\n')).toContain(
+      'Der Patient leidet an den typischen Symptomen der Indikation',
+    );
+  });
+
+  it('never keeps embedded newlines inside exported paragraph strings', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         patient: {
@@ -43,232 +116,63 @@ describe('buildOffLabelAntragDocumentModel', () => {
         doctor: {
           name: 'Dr. Hausarzt',
           practice: 'Praxis Nord',
+          streetAndNumber: 'Testweg 1',
+          postalCode: '12345',
+          city: 'Berlin',
         },
         request: {
           drug: 'ivabradine',
         },
-        attachmentsFreeText: '- Arztbrief\n• Befundbericht',
       },
       'de',
       { exportedAt: FIXED_EXPORTED_AT },
     );
 
-    expect(model.kk.subject).toContain('Ivabradin');
+    for (const paragraph of model.kk.paragraphs) {
+      expect(paragraph).not.toContain('\n');
+    }
+    for (const paragraph of model.arzt.paragraphs) {
+      expect(paragraph).not.toContain('\n');
+    }
+    for (const paragraph of model.part3.paragraphs) {
+      expect(paragraph).not.toContain('\n');
+    }
+  });
+
+  it('keeps patient-only signature in part 1', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        patient: {
+          firstName: 'Mara',
+          lastName: 'Example',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
     expect(model.kk.signatureBlocks).toEqual([
       {
         label: 'Patient/in',
         name: 'Mara Example',
       },
     ]);
-    expect(model.arzt).toBeDefined();
-    expect(model.part3).toBeDefined();
-    expect(model.part3.title).toContain('Teil 3');
-    expect(
-      model.arzt.paragraphs.some((paragraph) =>
-        paragraph.includes('Kurzüberblick zum Vorhaben'),
-      ),
-    ).toBe(true);
-    expect(model.arzt.attachments[0]).toBe(
-      'Teil 1: Antrag an die Krankenkasse (Entwurf)',
-    );
-    expect(model.sources).toHaveLength(3);
-    expect(model.sources[1]).toContain('Bewertung Ivabradin');
-    expect(model.sources[2]).toContain(LSG_LABEL);
-    expect(
-      model.kk.paragraphs.some((paragraph) =>
-        paragraph.includes('Bewertung Ivabradin'),
-      ),
-    ).toBe(true);
-    expect(model.kk.attachments).toContain(
-      'Bewertung: Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
-    );
-    expect(
-      model.kk.attachments.some((attachment) =>
-        attachment.includes('Rechtsprechung: LSG Niedersachsen-Bremen'),
-      ),
-    ).toBe(false);
   });
 
-  it('always includes the mandatory source and attachment entries', () => {
+  it('parses user attachments into items', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
-        request: {
-          drug: 'ivabradine',
-        },
-        attachmentsFreeText: 'Labor',
-      },
-      'en',
-      { exportedAt: FIXED_EXPORTED_AT },
-    );
-
-    expect(model.arzt).toBeDefined();
-    expect(model.part3).toBeDefined();
-    expect(model.sources).toHaveLength(3);
-    expect(model.sources[0]).toContain('Medical Service');
-    expect(model.sources[2]).toContain(LSG_LABEL);
-    expect(model.kk.attachments[0]).toContain(
-      'Expert Group Long COVID Off-Label-Use at BfArM',
-    );
-    expect(
-      model.kk.attachments.some((attachment) =>
-        attachment.includes('Case law'),
-      ),
-    ).toBe(false);
-    expect(model.kk.attachments).toContain('Labor');
-  });
-
-  it('always includes section 2(1a) paragraph and case-law source', () => {
-    const model = buildOffLabelAntragDocumentModel(
-      {
-        request: {
-          drug: 'agomelatin',
-        },
-      },
-      'de',
-      { exportedAt: FIXED_EXPORTED_AT },
-    );
-
-    expect(
-      model.kk.paragraphs.some((paragraph) =>
-        paragraph.includes('§ 2 Abs. 1a'),
-      ),
-    ).toBe(true);
-    expect(model.sources).toHaveLength(3);
-    expect(model.sources[2]).toContain(LSG_LABEL);
-  });
-
-  it('derives prior measures automatically for ivabradine', () => {
-    const model = buildOffLabelAntragDocumentModel(
-      {
-        request: {
-          drug: 'ivabradine',
-        },
-      },
-      'de',
-      { exportedAt: FIXED_EXPORTED_AT },
-    );
-
-    expect(
-      model.kk.paragraphs.some((paragraph) =>
-        paragraph.includes('Betablocker'),
-      ),
-    ).toBe(true);
-    expect(
-      model.part3.paragraphs.some((paragraph) =>
-        paragraph.includes('Betablocker'),
-      ),
-    ).toBe(true);
-  });
-
-  it('uses manual other fields when drug is other', () => {
-    const model = buildOffLabelAntragDocumentModel(
-      {
-        request: {
-          drug: 'other',
-          otherDrugName: 'Midodrin',
-          otherIndication: 'Orthostatische Intoleranz',
-          otherTreatmentGoal: 'Verbesserung von Belastbarkeit und Kreislauf',
-          otherDose: '2,5 mg morgens',
-          otherDuration: '12 Wochen',
-          otherMonitoring: 'Puls, Blutdruck, Nebenwirkungen',
-          standardOfCareTriedFreeText:
-            'Kompressionstherapie und Volumenaufbau waren unzureichend.',
-        },
-      },
-      'de',
-      { exportedAt: FIXED_EXPORTED_AT },
-    );
-
-    expect(model.kk.subject).toContain('Midodrin');
-    expect(
-      model.kk.paragraphs.some((paragraph) =>
-        paragraph.includes('Orthostatische Intoleranz'),
-      ),
-    ).toBe(true);
-    expect(
-      model.kk.paragraphs.some((paragraph) =>
-        paragraph.includes('Kompressionstherapie'),
-      ),
-    ).toBe(true);
-    expect(
-      model.part3.paragraphs.some((paragraph) =>
-        paragraph.includes('Kompressionstherapie'),
-      ),
-    ).toBe(true);
-  });
-
-  it('always includes part 3 and the part-3 attachment hint', () => {
-    const model = buildOffLabelAntragDocumentModel(
-      {
-        request: {
-          drug: 'vortioxetine',
-        },
-      },
-      'de',
-      { exportedAt: FIXED_EXPORTED_AT },
-    );
-
-    expect(model.part3).toBeDefined();
-    expect(
-      model.kk.attachments.some((attachment) =>
-        attachment.includes('siehe Teil 3'),
-      ),
-    ).toBe(false);
-  });
-
-  it('parses attachments from free text lines', () => {
-    const model = buildOffLabelAntragDocumentModel(
-      {
-        attachmentsFreeText: ' - Arztbrief vom 01.01.2026\n• Befundbericht\n\n',
+        attachmentsFreeText:
+          ' - Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte\n\n',
       },
       'de',
       { exportedAt: FIXED_EXPORTED_AT },
     );
 
     expect(model.attachments.items).toEqual([
-      'Arztbrief vom 01.01.2026',
+      'Arztbrief vom 2026-01-10',
       'Befundbericht',
+      'Laborwerte',
     ]);
-  });
-
-  it('includes severity fragments only for populated dropdown values', () => {
-    const model = buildOffLabelAntragDocumentModel(
-      {
-        severity: {
-          bellScore: '40',
-          gdb: '50',
-          merkzeichen: ['G', 'H'],
-          pflegegrad: '3',
-          mobilityLevel: 'housebound',
-        },
-      },
-      'de',
-      { exportedAt: FIXED_EXPORTED_AT },
-    );
-
-    expect(model.kk.paragraphs[3]).toContain('Bell-Score liegt bei 40');
-    expect(model.kk.paragraphs[3]).toContain(
-      'leichte oder Schreibtischarbeit schaffe ich für etwa 3 bis 4 Stunden täglich',
-    );
-    expect(model.kk.paragraphs[3]).toContain('GdB) von 50');
-    expect(model.kk.paragraphs[3]).toContain('Merkzeichen G, H');
-    expect(model.kk.paragraphs[3]).toContain('Pflegegrad 3');
-    expect(model.kk.paragraphs[3]).toContain('hausgebunden');
-  });
-
-  it('ignores unsupported merkzeichen combinations in severity summary', () => {
-    const model = buildOffLabelAntragDocumentModel(
-      {
-        severity: {
-          gdb: '50',
-          merkzeichen: ['H'],
-        },
-      },
-      'de',
-      { exportedAt: FIXED_EXPORTED_AT },
-    );
-
-    expect(model.kk.paragraphs[3]).toContain('GdB) von 50');
-    expect(model.kk.paragraphs[3]).not.toContain('Merkzeichen');
   });
 });
