@@ -8,6 +8,8 @@ const IVABRADINE_EXPERT_SOURCE =
   'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).';
 const CASE_TRANSFER_YES_TEXT =
   'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.';
+const EVIDENCE_NOTE_TEXT =
+  'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit;';
 
 describe('buildOfflabelDocuments', () => {
   it('builds three parts and includes point-10 evidence text for known medication', () => {
@@ -43,6 +45,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(
       'Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen',
     );
+    expect(part1Text).toContain(EVIDENCE_NOTE_TEXT);
     expect(part1Text).not.toContain(
       'Übertragbarkeit auf den Einzelfall (Gleiche Erkrankung/Gleiche Anwendung).',
     );
@@ -118,6 +121,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).not.toContain('Punkt 10:');
     expect(part1Text).toContain('Indikation: Seltene XYZ-Indikation');
     expect(part1Text).toContain(SECTION_2A_TEXT);
+    expect(part1Text).toContain(EVIDENCE_NOTE_TEXT);
     expect(part1Text).toContain(
       'Zusätzlich wurden folgende Therapieversuche unternommen:',
     );
@@ -167,6 +171,25 @@ describe('buildOfflabelDocuments', () => {
       'Zudem wurden mir die Merkzeichen G, H, B zuerkannt.',
     );
     expect(part1ListItems).not.toContain('Lt. Leitfaden je nach Schwere');
+  });
+
+  it('renders all selected merkzeichen checkboxes without combo filtering', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+      },
+      severity: {
+        merkzeichen: ['aG', 'G', 'B', 'H'],
+      },
+    });
+
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
+
+    expect(part1ListItems).toContain(
+      'Zudem wurden mir die Merkzeichen G, aG, H, B zuerkannt.',
+    );
   });
 
   it('renders expanded work-status severity wording without bell-score duplication', () => {
@@ -277,6 +300,7 @@ describe('buildOfflabelDocuments', () => {
     );
     expect(part1Text).toContain('Punkt 10:');
     expect(part1Text).toContain(CASE_TRANSFER_YES_TEXT);
+    expect(part1Text).toContain(EVIDENCE_NOTE_TEXT);
     expect(part1Text).toContain('Bewertung Ivabradin');
     const yesPathSourceIndex = part1Text.indexOf(IVABRADINE_EXPERT_SOURCE);
     const yesPathTransferIndex = part1Text.indexOf(CASE_TRANSFER_YES_TEXT);

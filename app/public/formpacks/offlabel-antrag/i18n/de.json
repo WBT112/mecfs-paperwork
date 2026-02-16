@@ -145,7 +145,7 @@
   "offlabel-antrag.severity.bellScore.option.90": "90",
   "offlabel-antrag.severity.gdb.help": "Wähle den dokumentierten GdB.",
   "offlabel-antrag.severity.gdb.label": "Grad der Behinderung (GdB)",
-  "offlabel-antrag.severity.merkzeichen.help": "Optionales Merkzeichen zum GdB (zulässig: G, aG, G+H, G+B, G+B+H, aG+H, aG+B, aG+B+H).",
+  "offlabel-antrag.severity.merkzeichen.help": "Optionale Merkzeichen zum GdB (G, aG, H, B).",
   "offlabel-antrag.severity.merkzeichen.label": "Merkzeichen",
   "offlabel-antrag.severity.pflegegrad.help": "Wähle den dokumentierten Pflegegrad.",
   "offlabel-antrag.severity.pflegegrad.label": "Pflegegrad",

@@ -145,7 +145,7 @@
   "offlabel-antrag.severity.bellScore.option.90": "90",
   "offlabel-antrag.severity.gdb.help": "Select the documented disability degree.",
   "offlabel-antrag.severity.gdb.label": "Disability degree (GdB)",
-  "offlabel-antrag.severity.merkzeichen.help": "Optional marker linked to disability degree (allowed: G, aG, G+H, G+B, G+B+H, aG+H, aG+B, aG+B+H).",
+  "offlabel-antrag.severity.merkzeichen.help": "Optional markers linked to disability degree (G, aG, H, B).",
   "offlabel-antrag.severity.merkzeichen.label": "Special marker",
   "offlabel-antrag.severity.pflegegrad.help": "Select the documented care level.",
   "offlabel-antrag.severity.pflegegrad.label": "Care level",

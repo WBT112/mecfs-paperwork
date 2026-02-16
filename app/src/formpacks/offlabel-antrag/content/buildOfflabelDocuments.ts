@@ -70,10 +70,11 @@ const POINT_7_NOTSTAND =
 const POINT_8_STANDARD =
   'Für die Versorgung meiner Erkrankung stehen keine sog. Standard-Therapien des gKV-Leistungskatalogs zur Verfügung. In der Wissenschaft werden allein symptombezogene Versorgungen diskutiert. Die am ehesten einschlägige Leitlinie: „Müdigkeit“ der Arbeitsgemeinschaft der Wissenschaftlichen Medizinischen Fachgesellschaften e. V. spricht in eben jener Leitlinie davon, dass für die kausale Behandlung des ME/CFS bislang keine Medikamente zugelassen sind und verweist auf die britische NICE-Richtlinie. In dieser wird neben Energiemanagment vor allem das Lindern der Symptome in den Fokus gerückt um eine spürbare Beeinflussung des Krankheitsverlaufes oder eine Verhütung der Verschlimmerung zu erreichen. Die Leitlinie enthält keine positiven Empfehlungen zur medikamentösen Therapie. Aufgelistet und diskutiert werden zahlreiche Therapieversuche mit sehr unterschiedlichen Ansätzen. Explizit wird zusammengefasst, dass es keine belastbare evidenzbasierte Grundlage für den Einsatz bestimmter Arzneimittel gibt. Das begehrte Offlabel Medikament ist für die Erreichung dieser Ziele geeignet. Zusammengefasst ist keine der medizinischen Standardtherapie entsprechende Alternative verfügbar.';
 
-const POINT_10_NO_2A =
-  'Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben. Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen, insbesondere aufgrund unterschiedlicher Ursachen und Komorbiditäten. Das trifft auch auf Patientinnen und Patienten mit Long-/Post-COVID zu.';
-const POINT_10_YES_2A =
-  'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.';
+const POINT_10_EVIDENCE_NOTE =
+  'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit; ich bitte um eine vollständige sozialmedizinische Würdigung einschließlich ggf. ergänzender Literaturrecherche im Einzelfall.';
+
+const POINT_10_NO_2A = `Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben. Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen, insbesondere aufgrund unterschiedlicher Ursachen und Komorbiditäten. Das trifft auch auf Patientinnen und Patienten mit Long-/Post-COVID zu. ${POINT_10_EVIDENCE_NOTE}`;
+const POINT_10_YES_2A = `Diese Erkenntnisse sind auf meinen Einzelfall übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
 
 const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
   '100':
@@ -103,16 +104,6 @@ const WORK_STATUS_SEVERITY_LINES: Record<string, string> = {
 };
 
 const ALLOWED_MERKZEICHEN = new Set(['G', 'aG', 'H', 'B']);
-const ALLOWED_MERKZEICHEN_COMBINATIONS = new Set([
-  'G',
-  'aG',
-  'G|H',
-  'G|B',
-  'G|H|B',
-  'aG|B',
-  'aG|H',
-  'aG|H|B',
-]);
 const MERKZEICHEN_ORDER = ['G', 'aG', 'H', 'B'] as const;
 
 const parseMerkzeichen = (value: unknown): string[] => {
@@ -120,7 +111,7 @@ const parseMerkzeichen = (value: unknown): string[] => {
     return [];
   }
 
-  const normalized = [...new Set(value)]
+  return [...new Set(value)]
     .filter((entry): entry is string => typeof entry === 'string')
     .map((entry) => entry.trim())
     .filter((entry) => ALLOWED_MERKZEICHEN.has(entry))
@@ -129,10 +120,6 @@ const parseMerkzeichen = (value: unknown): string[] => {
         MERKZEICHEN_ORDER.indexOf(left as (typeof MERKZEICHEN_ORDER)[number]) -
         MERKZEICHEN_ORDER.indexOf(right as (typeof MERKZEICHEN_ORDER)[number]),
     );
-
-  return ALLOWED_MERKZEICHEN_COMBINATIONS.has(normalized.join('|'))
-    ? normalized
-    : [];
 };
 
 const getDrugKey = (value: unknown): DrugKey => {
@@ -321,7 +308,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     blocks.push(
       {
         kind: 'paragraph',
-        text: 'Punkt 9: Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risko-Nutzen-Bewertung (siehe Arztbefund).',
+        text: `Punkt 9: Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risko-Nutzen-Bewertung (siehe Arztbefund). ${POINT_10_EVIDENCE_NOTE}`,
       },
       {
         kind: 'paragraph',
