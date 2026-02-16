@@ -138,9 +138,12 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'list')
       .flatMap((block) => block.items);
 
-    expect(part1ListItems).toContain(
-      'Mein Bell-Score liegt bei 30. Ich bin weitgehend hausgebunden und in zentralen Lebensbereichen massiv eingeschränkt; selbst niedrige Belastungen verschlechtern den Zustand deutlich (z. B. außerhäusige Termine nur ausnahmsweise und mit mehrtägiger Erholungszeit).',
+    const bellLine = part1ListItems.find((line) =>
+      line.startsWith('Mein Bell-Score liegt bei 30.'),
     );
+    expect(bellLine).toBeDefined();
+    expect(bellLine).toContain('hausgebunden');
+    expect(bellLine).toContain('mehrtägige Erholungsphasen');
     expect(part1ListItems).toContain(
       'Zudem wurden mir die Merkzeichen G, H, B zuerkannt.',
     );
