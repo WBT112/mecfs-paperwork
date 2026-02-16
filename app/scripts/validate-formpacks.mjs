@@ -72,6 +72,17 @@ const MANIFEST_SCHEMA = {
         mapping: { type: 'string', minLength: 1 },
       },
     },
+    meta: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        category: { enum: ['insurer', 'doctor', 'general', 'other'] },
+        keywords: {
+          type: 'array',
+          items: { type: 'string', minLength: 1 },
+        },
+      },
+    },
     ui: {
       type: 'object',
       additionalProperties: false,
