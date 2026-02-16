@@ -75,16 +75,41 @@ const POINT_10_NO_2A =
 const POINT_10_MD_SOURCE =
   'Medizinischer Dienst Bund: Begutachtungsanleitung / Begutachtungsmaßstäbe Off-Label-Use (Stand 05/2022).';
 
+const BELL_SCORE_ASSESSMENTS: Record<string, string> = {
+  '100':
+    'Ich habe keine Symptome in Ruhe oder bei Belastung und bin insgesamt ohne Einschränkungen voll leistungsfähig.',
+  '90':
+    'Ich habe in Ruhe keine Symptome und bei körperlicher sowie geistiger Belastung nur leichte Symptome.',
+  '80':
+    'Ich habe leichte Symptome in Ruhe, die sich bei Belastung verstärken, und bin vor allem bei anstrengenden Tätigkeiten eingeschränkt.',
+  '70':
+    'Ich habe leichte Symptome in Ruhe und spürbare Einschränkungen in den täglichen Aktivitäten.',
+  '60':
+    'Ich habe leichte Symptome in Ruhe und deutliche Einschränkungen im Alltag; körperlich belastende Vollzeitarbeit ist mir nicht möglich.',
+  '50':
+    'Ich habe mittelschwere Symptome in Ruhe und bei Belastung und kann nur leichte Tätigkeiten für wenige Stunden täglich mit Ruhepausen ausführen.',
+  '40':
+    'Ich habe mittelschwere Symptome in Ruhe und bei Belastung; mein Funktionsniveau ist deutlich reduziert und ich kann nur kurze leichte Tätigkeiten mit Ruhepausen ausführen.',
+  '30':
+    'Ich habe mittelschwere bis schwere Symptome in Ruhe und schwere Symptome bei Belastung; ich bin in der Regel ans Haus gebunden.',
+  '20':
+    'Ich habe mittelschwere bis schwere Symptome in Ruhe und schwere Symptome bei Belastung; ich kann das Haus fast nie verlassen und bin den größten Teil des Tages bettlägerig.',
+  '10':
+    'Ich habe schwere Symptome in Ruhe, bin die meiste Zeit bettlägerig und kann das Haus nicht verlassen.',
+  '0':
+    'Ich habe durchgehend schwere Symptome, bin dauerhaft bettlägerig und kann selbst einfachste Pflegemaßnahmen nicht selbstständig durchführen.',
+};
+
 const ALLOWED_MERKZEICHEN = new Set(['G', 'aG', 'H', 'B']);
 const ALLOWED_MERKZEICHEN_COMBINATIONS = new Set([
   'G',
   'aG',
   'G|H',
-  'B|G',
-  'B|G|H',
-  'B|aG',
-  'H|aG',
-  'B|H|aG',
+  'G|B',
+  'G|H|B',
+  'aG|B',
+  'aG|H',
+  'aG|H|B',
 ]);
 const MERKZEICHEN_ORDER = ['G', 'aG', 'H', 'B'] as const;
 
@@ -167,12 +192,18 @@ const resolvePreviewMedicationFacts = (
 
 const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   const lines: string[] = [];
-  if (getText(severity.bellScore)) {
-    lines.push('Lt. Leitfaden je nach Schwere');
+  const bellScore = getText(severity.bellScore);
+  if (bellScore) {
+    const assessment = BELL_SCORE_ASSESSMENTS[bellScore];
+    lines.push(
+      assessment
+        ? `Mein Bell-Score liegt bei ${bellScore}. ${assessment}`
+        : `Mein Bell-Score liegt bei ${bellScore}.`,
+    );
   }
   const gdb = getText(severity.gdb);
   if (gdb) {
-    lines.push(`Ich einen Grad der Behinderung von ${gdb}`);
+    lines.push(`Ich habe einen Grad der Behinderung von ${gdb}.`);
   }
   const merkzeichen = parseMerkzeichen(severity.merkzeichen).join(', ');
   if (merkzeichen) {
@@ -332,11 +363,15 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} wegen meiner ME/CFS vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel, bisherige Maßnahmen, erwarteter Nutzen, Monitoring, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen).`,
+        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} wegen meiner ME/CFS vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel, bisherige Maßnahmen, erwarteter Nutzen, Monitoring, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen) sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.`,
       },
       {
         kind: 'paragraph',
-        text: 'Haftungshinweis: Die beigefügten Formulierungen sind eine Arbeitshilfe und müssen vor Nutzung medizinisch geprüft und individuell angepasst werden.',
+        text: 'Zu Ihrer Absicherung unterschreibe ich zudem nach ausführlicher Beratung folgenden Haftungsausschluss:',
+      },
+      {
+        kind: 'paragraph',
+        text: `Ich erkläre hiermit, dass ich ausführlich über die Risiken und möglichen Nebenwirkungen der Behandlung mit einem nicht für meine Indikation zugelassenen Medikament ${drug} („Off-Label-Use“) informiert wurde und ausreichend Gelegenheit hatte Fragen zu stellen. Ich fühle mich ausreichend aufgeklärt und stimme einer Behandlung zu. Außerdem verzichte ich aufgrund der Behandlung mit dem Medikament entstehenden Haftungsansprüche gegenüber meiner Ärztin/meinem Arzt.`,
       },
       { kind: 'pageBreak' },
     ],

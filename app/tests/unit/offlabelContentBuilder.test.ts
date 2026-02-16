@@ -99,6 +99,30 @@ describe('buildOfflabelDocuments', () => {
     );
   });
 
+  it('renders bell score and merkzeichen details in severity list', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+      },
+      severity: {
+        bellScore: '30',
+        merkzeichen: ['G', 'H', 'B'],
+      },
+    });
+
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
+
+    expect(part1ListItems).toContain(
+      'Mein Bell-Score liegt bei 30. Ich habe mittelschwere bis schwere Symptome in Ruhe und schwere Symptome bei Belastung; ich bin in der Regel ans Haus gebunden.',
+    );
+    expect(part1ListItems).toContain(
+      'Zudem wurden mir die Merkzeichen G, H, B zuerkannt.',
+    );
+    expect(part1ListItems).not.toContain('Lt. Leitfaden je nach Schwere');
+  });
+
   it('uses user-entered medication name for other in part 1 and part 2', () => {
     const docs = buildOfflabelDocuments({
       request: {
@@ -122,6 +146,12 @@ describe('buildOfflabelDocuments', () => {
     );
     expect(part2Text).toContain(
       'für eine Off-Label-Verordnung von Midodrin wegen meiner ME/CFS',
+    );
+    expect(part2Text).toContain(
+      'sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.',
+    );
+    expect(part2Text).toContain(
+      'nicht für meine Indikation zugelassenen Medikament Midodrin („Off-Label-Use“)',
     );
   });
 
