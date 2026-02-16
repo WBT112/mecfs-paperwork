@@ -42,6 +42,11 @@ describe('buildOfflabelDocuments', () => {
       'Die Erkenntnisse lassen sich auf meine Diagnosen übertragen',
     );
     expect(part1Text).not.toContain(SECTION_2A_TEXT);
+    expect(part1Text).toContain('Sehr geehrte Damen und Herren,');
+    expect(part1Text).toContain(
+      'hiermit beantrage ich die Kostenübernahme für das Medikament Ivabradin im Rahmen des Off-Label-Use',
+    );
+    expect(part1Text).toContain('Mit freundlichen Grüßen');
 
     const part3Text = docs[2].blocks
       .filter((block) => block.kind === 'paragraph')
@@ -50,6 +55,26 @@ describe('buildOfflabelDocuments', () => {
     expect(part3Text).toContain(
       `Der Patient leidet an den typischen Symptomen der Indikation ${IVABRADIN_DIAGNOSIS_TEXT}.`,
     );
+  });
+
+  it('uses the patient name in part-1 closing line', () => {
+    const docs = buildOfflabelDocuments({
+      patient: {
+        firstName: 'Max',
+        lastName: 'Mustermann',
+      },
+      request: {
+        drug: 'ivabradine',
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain('Mit freundlichen Grüßen');
+    expect(part1Text).toContain('Max Mustermann');
   });
 
   it('builds coherent other-medication flow with point-9 text and user diagnosis', () => {

@@ -243,6 +243,7 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
 const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   const request = getRecord(formData.request);
   const severity = getRecord(formData.severity);
+  const patient = getRecord(formData.patient);
   const drugKey = getDrugKey(request.drug);
   const drug = DRUGS[drugKey];
   const point2aNo =
@@ -253,6 +254,10 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   const standardCareItems =
     drugKey === 'other' ? parseMultilineItems(standardCareText) : [];
   const facts = resolvePreviewMedicationFacts(request, drugKey);
+  const patientName =
+    [getText(patient.firstName), getText(patient.lastName)]
+      .filter(Boolean)
+      .join(' ') || '__________';
   const otherDiagnosis = getText(request.otherIndication);
   const point2Text = (() => {
     if (drugKey === 'other') {
@@ -271,6 +276,18 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
 
   const blocks: OfflabelRenderedDocument['blocks'] = [
     { kind: 'heading', text: 'Teil 1 – Antrag an die Krankenkasse' },
+    {
+      kind: 'paragraph',
+      text: 'Sehr geehrte Damen und Herren,',
+    },
+    {
+      kind: 'paragraph',
+      text: `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisMain}.`,
+    },
+    {
+      kind: 'paragraph',
+      text: 'Zur Prüfung meines Antrags habe ich die maßgeblichen Punkte nachfolgend strukturiert dargestellt:',
+    },
     {
       kind: 'paragraph',
       text: `Punkt 1: Das Medikament ${facts.displayName} ist in Deutschland nicht indikationszogen zugelassen`,
@@ -335,6 +352,21 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
         : point10BaseText,
     });
   }
+
+  blocks.push(
+    {
+      kind: 'paragraph',
+      text: 'Ich bitte um eine zeitnahe schriftliche Entscheidung. Für Rückfragen stehe ich gerne zur Verfügung.',
+    },
+    {
+      kind: 'paragraph',
+      text: 'Mit freundlichen Grüßen',
+    },
+    {
+      kind: 'paragraph',
+      text: patientName,
+    },
+  );
 
   return { id: 'part1', title: 'Part 1', blocks };
 };
