@@ -210,8 +210,7 @@
       "gdb",
       "merkzeichen",
       "pflegegrad",
-      "workStatus",
-      "mobilityLevel"
+      "workStatus"
     ],
     "bellScore": {
       "ui:title": "offlabel-antrag.severity.bellScore.label",
@@ -251,15 +250,6 @@
         "offlabel-antrag.severity.workStatus.option.emRente",
         "offlabel-antrag.severity.workStatus.option.berentet",
         "offlabel-antrag.severity.workStatus.option.teilzeit"
-      ]
-    },
-    "mobilityLevel": {
-      "ui:title": "offlabel-antrag.severity.mobilityLevel.label",
-      "ui:help": "offlabel-antrag.severity.mobilityLevel.help",
-      "ui:enumNames": [
-        "offlabel-antrag.severity.mobilityLevel.option.housebound",
-        "offlabel-antrag.severity.mobilityLevel.option.bedbound",
-        "offlabel-antrag.severity.mobilityLevel.option.fullyBedbound"
       ]
     }
   },

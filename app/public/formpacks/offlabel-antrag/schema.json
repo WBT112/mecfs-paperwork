@@ -201,14 +201,6 @@
             "Berentet",
             "Teilzeit arbeitsfähig"
           ]
-        },
-        "mobilityLevel": {
-          "type": "string",
-          "enum": [
-            "housebound",
-            "bedbound",
-            "fullyBedbound"
-          ]
         }
       },
       "additionalProperties": false

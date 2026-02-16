@@ -14,7 +14,6 @@ describe('buildOfflabelDocuments', () => {
       },
       severity: {
         gdb: '50',
-        mobilityLevel: 'bedbound',
       },
     });
 
@@ -140,7 +139,7 @@ describe('buildOfflabelDocuments', () => {
       .flatMap((block) => block.items);
 
     expect(part1ListItems).toContain(
-      'Mein Bell-Score liegt bei 30. Ich habe mittelschwere bis schwere Symptome in Ruhe und schwere Symptome bei Belastung; ich bin in der Regel ans Haus gebunden.',
+      'Mein Bell-Score liegt bei 30. Ich bin weitgehend hausgebunden und in zentralen Lebensbereichen massiv eingeschränkt; selbst niedrige Belastungen verschlechtern den Zustand deutlich (z. B. außerhäusige Termine nur ausnahmsweise und mit mehrtägiger Erholungszeit).',
     );
     expect(part1ListItems).toContain(
       'Zudem wurden mir die Merkzeichen G, H, B zuerkannt.',

@@ -77,27 +77,17 @@ const POINT_10_MD_SOURCE =
 
 const BELL_SCORE_ASSESSMENTS: Record<string, string> = {
   '100':
-    'Ich habe keine Symptome in Ruhe oder bei Belastung und bin insgesamt ohne Einschränkungen voll leistungsfähig.',
-  '90':
-    'Ich habe in Ruhe keine Symptome und bei körperlicher sowie geistiger Belastung nur leichte Symptome.',
-  '80':
-    'Ich habe leichte Symptome in Ruhe, die sich bei Belastung verstärken, und bin vor allem bei anstrengenden Tätigkeiten eingeschränkt.',
-  '70':
-    'Ich habe leichte Symptome in Ruhe und spürbare Einschränkungen in den täglichen Aktivitäten.',
-  '60':
-    'Ich habe leichte Symptome in Ruhe und deutliche Einschränkungen im Alltag; körperlich belastende Vollzeitarbeit ist mir nicht möglich.',
-  '50':
-    'Ich habe mittelschwere Symptome in Ruhe und bei Belastung und kann nur leichte Tätigkeiten für wenige Stunden täglich mit Ruhepausen ausführen.',
-  '40':
-    'Ich habe mittelschwere Symptome in Ruhe und bei Belastung; mein Funktionsniveau ist deutlich reduziert und ich kann nur kurze leichte Tätigkeiten mit Ruhepausen ausführen.',
-  '30':
-    'Ich habe mittelschwere bis schwere Symptome in Ruhe und schwere Symptome bei Belastung; ich bin in der Regel ans Haus gebunden.',
-  '20':
-    'Ich habe mittelschwere bis schwere Symptome in Ruhe und schwere Symptome bei Belastung; ich kann das Haus fast nie verlassen und bin den größten Teil des Tages bettlägerig.',
-  '10':
-    'Ich habe schwere Symptome in Ruhe, bin die meiste Zeit bettlägerig und kann das Haus nicht verlassen.',
-  '0':
-    'Ich habe durchgehend schwere Symptome, bin dauerhaft bettlägerig und kann selbst einfachste Pflegemaßnahmen nicht selbstständig durchführen.',
+    'Trotz Beschwerdefreiheit bin ich wegen ME/CFS weiterhin auf konsequente Belastungssteuerung angewiesen, um Rückfälle zu vermeiden; meine Teilhabe ist aktuell stabil.',
+  '90': 'Schon moderate körperliche oder kognitive Belastungen können relevante Beschwerden auslösen; meine Aktivitäten und soziale Teilhabe sind nur mit strikter Selbstbegrenzung möglich (z. B. Terminplanung mit Erholungszeiten).',
+  '80': 'Bereits im Alltag bestehen deutliche Einschränkungen mit Belastungsverschlechterung; Teilhabe ist nur reduziert möglich (z. B. Haushaltsaufgaben nur abschnittsweise, soziale Aktivitäten stark begrenzt).',
+  '70': 'Meine Funktionsfähigkeit ist klar eingeschränkt; regelmäßige Alltagsaktivitäten sind nur noch in reduziertem Umfang möglich (z. B. Wege außer Haus nur selten, wiederholte Ruhephasen tagsüber erforderlich).',
+  '60': 'Die Erkrankung führt zu einer erheblichen und dauerhaften Teilhabeeinschränkung; eine belastbare Erwerbstätigkeit ist praktisch nicht möglich (z. B. Tätigkeiten nur kurzzeitig und nur unter flexiblen Schonbedingungen).',
+  '50': 'Ich habe auch in Ruhe relevante Symptome; selbst leichte Tätigkeiten sind nur stundenweise mit zwingenden Ruhepausen durchführbar (z. B. kurze Schreibtischtätigkeit, danach deutliche Zustandsverschlechterung).',
+  '40': 'Mein Aktivitätsniveau ist stark reduziert; bereits geringe Belastungen führen zu schwerer Erschöpfung und eingeschränkter Teilhabe (z. B. nur wenige Stunden sehr leichte Tätigkeiten, keine verlässliche Tagesstruktur).',
+  '30': 'Ich bin weitgehend hausgebunden und in zentralen Lebensbereichen massiv eingeschränkt; selbst niedrige Belastungen verschlechtern den Zustand deutlich (z. B. außerhäusige Termine nur ausnahmsweise und mit mehrtägiger Erholungszeit).',
+  '20': 'Ich bin nahezu vollständig von gesellschaftlicher Teilhabe ausgeschlossen; das Verlassen des Hauses ist fast nie möglich, große Tagesanteile sind bettlägerig (z. B. Konzentration oft nur kurzzeitig, selbst Basisaktivitäten nur mit Hilfe).',
+  '10': 'Es besteht ein hochgradig schwerer Verlauf mit überwiegender Bettlägerigkeit; ich kann das Haus nicht verlassen und bin in Alltagsaktivitäten nahezu vollständig abhängig (z. B. Körperpflege und Nahrungszubereitung nur mit Unterstützung).',
+  '0': 'Es liegt ein Extremverlauf mit dauerhafter Bettlägerigkeit vor; eigenständige Aktivitäten und soziale Teilhabe sind faktisch aufgehoben (z. B. selbst einfachste Pflegemaßnahmen nicht mehr selbstständig möglich).',
 };
 
 const ALLOWED_MERKZEICHEN = new Set(['G', 'aG', 'H', 'B']);
@@ -217,23 +207,6 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   if (workStatus) {
     lines.push(
       `Ich bin in meiner Erwerbsfähigkeit eingeschränkt, aktuell ${workStatus}`,
-    );
-  }
-
-  const mobility = getText(severity.mobilityLevel);
-  if (mobility === 'housebound') {
-    lines.push(
-      'Durch die Schwere der Erkrankung kann ich das Haus nur in Ausnahmefällen verlassen. Ich bin in meinen Aktivitäten und der Teilhabe in allen Lebensbereichen massiv eingeschränkt. Diesen Brief kann ich nur mit Hilfe verfassen und muss mich hiervon mehrere Tage erholen.',
-    );
-  }
-  if (mobility === 'bedbound') {
-    lines.push(
-      'Durch die Schwere meiner Erkrankung kann ich das Bett die meiste Zeit des Tages nicht verlassen. Ich bin in meinen Aktivitäten und der Teilhabe in allen Lebensbereichen extrem eingeschränkt. Diesen Brief kann ich nur mit Hilfe verfassen und werde hiervon eine Zustandsverschlechterung davontragen.',
-    );
-  }
-  if (mobility === 'fullyBedbound') {
-    lines.push(
-      'Durch die Schwere meiner Erkrankung kann ich das Bett nicht mehr verlassen. Ich bin in jeglichen Aktivitäten vollständig eingeschränkt und die Teilhabe in allen Lebensbereichen ist nicht existent. Diesen Brief kann ich nicht selbst verfassen.',
     );
   }
 
