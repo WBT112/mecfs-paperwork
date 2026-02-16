@@ -75,19 +75,19 @@ const POINT_10_NO_2A =
 const POINT_10_MD_SOURCE =
   'Medizinischer Dienst Bund: Begutachtungsanleitung / Begutachtungsmaßstäbe Off-Label-Use (Stand 05/2022).';
 
-const BELL_SCORE_ASSESSMENTS: Record<string, string> = {
+const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
   '100':
-    'Trotz vorübergehender Beschwerdestabilität bin ich wegen ME/CFS weiterhin auf striktes Pacing angewiesen, um Rückfälle und deutliche Zustandsverschlechterungen zu vermeiden (z. B. feste Belastungsobergrenzen, konsequente Ruhefenster nach Terminen).',
-  '90': 'Schon moderat erhöhte körperliche oder kognitive Belastungen können spürbare Beschwerden auslösen; Aktivitäten und soziale Teilhabe sind nur mit enger Selbstbegrenzung möglich (z. B. Terminplanung mit Erholungszeit, Vermeidung von Reizüberflutung, reduzierte spontane Alltagsaktivität).',
-  '80': 'Im Alltag bestehen bereits klare funktionelle Einschränkungen mit Belastungsverschlechterung; Teilhabe ist nur reduziert und nicht verlässlich planbar möglich (z. B. Haushaltsaufgaben nur abschnittsweise, soziale Kontakte nur kurz und selten, Wege außer Haus nur mit anschließender Erholung).',
-  '70': 'Meine Funktionsfähigkeit ist deutlich eingeschränkt; regelmäßige Alltagsaktivitäten gelingen nur in reduziertem Umfang und mit hohem Erholungsbedarf (z. B. Einkäufe nur begleitet oder stark verkürzt, administrative Aufgaben nur in kurzen Intervallen, häufige Liegephasen tagsüber).',
-  '60': 'Die Erkrankung führt zu einer erheblichen und dauerhaften Teilhabeeinschränkung; eine belastbare Erwerbstätigkeit ist faktisch kaum möglich (z. B. Tätigkeiten nur kurzzeitig, wiederkehrende Leistungseinbrüche nach geringer Belastung, verlässliche Tagesstruktur nicht stabil aufrechterhaltbar).',
-  '50': 'Ich habe auch in Ruhe relevante Symptome; selbst leichte Tätigkeiten sind nur für kurze Zeit mit zwingenden Ruhepausen möglich (z. B. kurze Schreibtischtätigkeit oder einfache Haushaltsaufgabe, danach ausgeprägte Erschöpfung, kognitive Einbrüche und Rückzug für den restlichen Tag).',
-  '40': 'Mein Aktivitätsniveau ist stark reduziert; bereits geringe Belastungen führen zu schwerer Erschöpfung und massiver Einschränkung der Teilhabe (z. B. nur wenige Stunden sehr leichte Tätigkeiten, keine verlässliche Terminwahrnehmung, wiederholte Verschlechterungen trotz Schonung).',
-  '30': 'Ich bin weitgehend hausgebunden und in zentralen Lebensbereichen massiv eingeschränkt; selbst niedrige Belastungen verschlechtern den Zustand deutlich und anhaltend (z. B. außerhäusige Termine nur ausnahmsweise, danach mehrtägige Erholungsphasen, Kommunikation und Konzentration nur kurz möglich).',
-  '20': 'Ich bin nahezu vollständig von gesellschaftlicher Teilhabe ausgeschlossen; das Verlassen des Hauses ist fast nie möglich, große Tagesanteile sind bettlägerig (z. B. Konzentration oft nur kurzzeitig, Basisaktivitäten wie Körperpflege oder Nahrungsaufnahme nur mit Unterstützung, ausgeprägte Reizempfindlichkeit).',
-  '10': 'Es besteht ein hochgradig schwerer Verlauf mit überwiegender Bettlägerigkeit; ich kann das Haus nicht verlassen und bin in nahezu allen Alltagsaktivitäten auf Hilfe angewiesen (z. B. Körperpflege, Nahrungszubereitung, Organisation von Terminen und Kommunikation nur mit Unterstützung).',
-  '0': 'Es liegt ein Extremverlauf mit dauerhafter Bettlägerigkeit vor; eigenständige Aktivitäten und soziale Teilhabe sind faktisch aufgehoben (z. B. selbst einfachste Pflegemaßnahmen nicht mehr selbstständig möglich, durchgehend Hilfe bei Versorgung und Kommunikation erforderlich).',
+    'ich feste Belastungsobergrenzen einhalte, nach Terminen konsequente Ruhefenster plane und Belastungsspitzen vermeide, um Rückfälle zu verhindern.',
+  '90': 'ich Termine nur mit anschließender Erholungszeit plane, Reizüberflutung vermeide und spontane Aktivitäten deutlich reduziere.',
+  '80': 'ich Haushaltsaufgaben nur abschnittsweise erledigen kann, soziale Kontakte nur kurz und selten möglich sind und Wege außer Haus anschließende Erholung erfordern.',
+  '70': 'Einkäufe nur begleitet oder stark verkürzt möglich sind, administrative Aufgaben nur in kurzen Intervallen gelingen und tagsüber häufige Liegephasen erforderlich sind.',
+  '60': 'Tätigkeiten nur kurzzeitig möglich sind, nach geringer Belastung wiederkehrende Leistungseinbrüche auftreten und eine verlässliche Tagesstruktur nicht stabil aufrechterhaltbar ist.',
+  '50': 'schon kurze Schreibtischtätigkeit oder einfache Haushaltsaufgaben zu ausgeprägter Erschöpfung, kognitiven Einbrüchen und Rückzug für den restlichen Tag führen.',
+  '40': 'nur wenige Stunden sehr leichter Tätigkeit möglich sind, Termine nicht verlässlich wahrgenommen werden können und trotz Schonung wiederholte Verschlechterungen auftreten.',
+  '30': 'ich weitgehend hausgebunden bin, außerhäusige Termine nur ausnahmsweise möglich sind, anschließend mehrtägige Erholungsphasen folgen und Kommunikation sowie Konzentration nur kurz möglich sind.',
+  '20': 'das Haus fast nie verlassen werden kann, große Tagesanteile bettlägerig verbracht werden, Konzentration oft nur kurzzeitig möglich ist und Basisaktivitäten wie Körperpflege oder Nahrungsaufnahme nur mit Unterstützung gelingen.',
+  '10': 'das Haus nicht verlassen werden kann und bei Körperpflege, Nahrungszubereitung, Terminorganisation und Kommunikation regelmäßig Hilfe erforderlich ist.',
+  '0': 'selbst einfachste Pflegemaßnahmen nicht mehr selbstständig möglich sind und bei Versorgung sowie Kommunikation durchgehend Unterstützung erforderlich ist.',
 };
 
 const ALLOWED_MERKZEICHEN = new Set(['G', 'aG', 'H', 'B']);
@@ -184,11 +184,11 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   const lines: string[] = [];
   const bellScore = getText(severity.bellScore);
   if (bellScore) {
-    const assessment = BELL_SCORE_ASSESSMENTS[bellScore];
+    const activityExamples = BELL_SCORE_ACTIVITY_EXAMPLES[bellScore];
     lines.push(
-      assessment
-        ? `Mein Bell-Score liegt bei ${bellScore}. ${assessment}`
-        : `Mein Bell-Score liegt bei ${bellScore}.`,
+      activityExamples
+        ? `Der Bell-Score ist eine zentrale Kennzahl für meinen funktionellen Schweregrad. Mein Bell-Score liegt bei ${bellScore}. Meine Teilhabe am gesellschaftlichen und beruflichen Leben ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt. Das zeigt sich im Alltag unter anderem daran, dass ${activityExamples}`
+        : `Der Bell-Score ist eine zentrale Kennzahl für meinen funktionellen Schweregrad. Mein Bell-Score liegt bei ${bellScore}. Meine Teilhabe am gesellschaftlichen und beruflichen Leben ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt.`,
     );
   }
   const gdb = getText(severity.gdb);

@@ -139,11 +139,13 @@ describe('buildOfflabelDocuments', () => {
       .flatMap((block) => block.items);
 
     const bellLine = part1ListItems.find((line) =>
-      line.startsWith('Mein Bell-Score liegt bei 30.'),
+      line.includes('Mein Bell-Score liegt bei 30.'),
     );
     expect(bellLine).toBeDefined();
+    expect(bellLine).toContain('Der Bell-Score ist eine zentrale Kennzahl');
     expect(bellLine).toContain('hausgebunden');
     expect(bellLine).toContain('mehrtägige Erholungsphasen');
+    expect(bellLine).toContain('grundsätzlich und dauerhaft eingeschränkt');
     expect(part1ListItems).toContain(
       'Zudem wurden mir die Merkzeichen G, H, B zuerkannt.',
     );
