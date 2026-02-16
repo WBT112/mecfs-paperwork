@@ -1,7 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 type FileSpec = {
   filename: string;
@@ -23,11 +23,6 @@ const requiredAssets: FileSpec[] = [
 ];
 
 describe('brand assets', () => {
-  beforeAll(async () => {
-    const { run } = await import('../../scripts/generate-brand-assets');
-    await run();
-  });
-
   it('keeps the index metadata aligned with generated assets', async () => {
     const indexHtml = await readFile(path.join(appRoot, 'index.html'), 'utf-8');
 
