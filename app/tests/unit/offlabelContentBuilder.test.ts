@@ -145,6 +145,7 @@ describe('buildOfflabelDocuments', () => {
     expect(bellLine).toContain('Der Bell-Score ist eine zentrale Kennzahl');
     expect(bellLine).toContain('hausgebunden');
     expect(bellLine).toContain('mehrtägige Erholungsphasen');
+    expect(bellLine).toContain('soziale');
     expect(bellLine).toContain('grundsätzlich und dauerhaft eingeschränkt');
     expect(part1ListItems).toContain(
       'Zudem wurden mir die Merkzeichen G, H, B zuerkannt.',

@@ -187,8 +187,8 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
     const activityExamples = BELL_SCORE_ACTIVITY_EXAMPLES[bellScore];
     lines.push(
       activityExamples
-        ? `Der Bell-Score ist eine zentrale Kennzahl für meinen funktionellen Schweregrad. Mein Bell-Score liegt bei ${bellScore}. Meine Teilhabe am gesellschaftlichen und beruflichen Leben ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt. Das zeigt sich im Alltag unter anderem daran, dass ${activityExamples}`
-        : `Der Bell-Score ist eine zentrale Kennzahl für meinen funktionellen Schweregrad. Mein Bell-Score liegt bei ${bellScore}. Meine Teilhabe am gesellschaftlichen und beruflichen Leben ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt.`,
+        ? `Der Bell-Score ist eine zentrale Kennzahl für meinen funktionellen Schweregrad. Mein Bell-Score liegt bei ${bellScore}. Meine soziale, gesellschaftliche und berufliche Teilhabe ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt. Das zeigt sich im Alltag unter anderem daran, dass ${activityExamples}`
+        : `Der Bell-Score ist eine zentrale Kennzahl für meinen funktionellen Schweregrad. Mein Bell-Score liegt bei ${bellScore}. Meine soziale, gesellschaftliche und berufliche Teilhabe ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt.`,
     );
   }
   const gdb = getText(severity.gdb);
