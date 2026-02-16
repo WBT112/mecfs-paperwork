@@ -293,6 +293,30 @@ describe('applyProfileData', () => {
     expect((result.insurer as AnyRecord).city).toBe('Hamburg');
   });
 
+  it('splits fullName into firstName/lastName for offlabel-antrag', () => {
+    const formData = { patient: {} };
+    const profile = {
+      patient: { fullName: 'Anna Schmidt' },
+    };
+
+    const result = applyProfileData(OFFLABEL, formData, profile);
+
+    expect((result.patient as AnyRecord).firstName).toBe('Anna');
+    expect((result.patient as AnyRecord).lastName).toBe('Schmidt');
+  });
+
+  it('splits fullName into firstName/lastName for notfallpass', () => {
+    const formData = { person: {} };
+    const profile = {
+      patient: { fullName: 'Max Mustermann' },
+    };
+
+    const result = applyProfileData(NOTFALLPASS, formData, profile);
+
+    expect((result.person as AnyRecord).firstName).toBe('Max');
+    expect((result.person as AnyRecord).lastName).toBe('Mustermann');
+  });
+
   it('does not modify the original formData object', () => {
     const formData = { patient: { firstName: 'Original' } };
     const profile = { patient: { lastName: 'Added' } };
