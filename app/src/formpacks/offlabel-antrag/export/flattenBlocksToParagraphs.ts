@@ -6,6 +6,7 @@ type FlattenOptions = {
   includeHeadings?: boolean;
   listPrefix?: string;
   dropKinds?: PreviewBlock['kind'][];
+  blankLineBetweenBlocks?: boolean;
 };
 
 const splitParagraphText = (value: string): string[] =>
@@ -24,20 +25,31 @@ const buildDropKinds = (
   return dropKinds;
 };
 
-const appendParagraph = (paragraphs: string[], text: string): void => {
-  paragraphs.push(...splitParagraphText(text));
-};
+const mapListItems = (items: string[], listPrefix: string): string[] =>
+  items.flatMap((item) =>
+    splitParagraphText(item).map((line) => `${listPrefix}${line}`),
+  );
 
-const appendListItems = (
-  paragraphs: string[],
-  items: string[],
-  listPrefix: string,
-): void => {
-  for (const item of items) {
-    for (const line of splitParagraphText(item)) {
-      paragraphs.push(`${listPrefix}${line}`);
-    }
+const mapBlockToParagraphs = (
+  block: PreviewBlock,
+  {
+    includeHeadings,
+    listPrefix,
+  }: {
+    includeHeadings: boolean;
+    listPrefix: string;
+  },
+): string[] => {
+  if (block.kind === 'heading') {
+    return includeHeadings ? splitParagraphText(block.text) : [];
   }
+  if (block.kind === 'paragraph') {
+    return splitParagraphText(block.text);
+  }
+  if (block.kind === 'list') {
+    return mapListItems(block.items, listPrefix);
+  }
+  return [];
 };
 
 export function flattenBlocksToParagraphs(
@@ -46,30 +58,27 @@ export function flattenBlocksToParagraphs(
 ): string[] {
   const includeHeadings = opts.includeHeadings ?? false;
   const listPrefix = opts.listPrefix ?? '• ';
+  const blankLineBetweenBlocks = opts.blankLineBetweenBlocks ?? false;
   const dropKinds = buildDropKinds(opts.dropKinds);
+  const blockParagraphs = blocks
+    .filter((block) => !dropKinds.has(block.kind))
+    .map((block) =>
+      mapBlockToParagraphs(block, {
+        includeHeadings,
+        listPrefix,
+      }),
+    )
+    .filter((paragraphs) => paragraphs.length > 0);
+
+  if (!blankLineBetweenBlocks) {
+    return blockParagraphs.flat();
+  }
 
   const paragraphs: string[] = [];
-
-  for (const block of blocks) {
-    if (dropKinds.has(block.kind)) {
-      continue;
-    }
-
-    if (block.kind === 'heading') {
-      if (!includeHeadings) {
-        continue;
-      }
-      appendParagraph(paragraphs, block.text);
-      continue;
-    }
-
-    if (block.kind === 'paragraph') {
-      appendParagraph(paragraphs, block.text);
-      continue;
-    }
-
-    if (block.kind === 'list') {
-      appendListItems(paragraphs, block.items, listPrefix);
+  for (let index = 0; index < blockParagraphs.length; index += 1) {
+    paragraphs.push(...blockParagraphs[index]);
+    if (index < blockParagraphs.length - 1) {
+      paragraphs.push('');
     }
   }
 

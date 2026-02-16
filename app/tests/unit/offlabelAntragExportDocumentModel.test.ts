@@ -6,6 +6,10 @@ import { buildOffLabelAntragDocumentModel } from '../../src/formpacks/offlabel-a
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
 const FIXED_EXPORTED_AT = new Date('2026-02-10T12:00:00.000Z');
+const TEST_DOCTOR_NAME = 'Dr. Hausarzt';
+const TEST_DOCTOR_PRACTICE = 'Praxis Nord';
+const TEST_INSURER_NAME = 'Musterkasse';
+const TEST_INSURER_DEPARTMENT = 'Leistungsabteilung';
 
 const interpolate = (
   template: string,
@@ -53,6 +57,20 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.sources[0]).toContain('Bewertung Ivabradin');
     expect(model.kk.attachments).toHaveLength(1);
     expect(model.kk.attachments[0]).toContain('Bewertung: Ivabradin');
+  });
+
+  it('inserts blank DOCX paragraphs between part 1 points for readability', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.kk.paragraphs).toContain('');
   });
 
   it('uses preview-canonical notstand path for other: points 7/9 present, point 10 absent', () => {
@@ -113,8 +131,8 @@ describe('buildOffLabelAntragDocumentModel', () => {
           city: 'Hamburg',
         },
         doctor: {
-          name: 'Dr. Hausarzt',
-          practice: 'Praxis Nord',
+          name: TEST_DOCTOR_NAME,
+          practice: TEST_DOCTOR_PRACTICE,
           streetAndNumber: 'Testweg 1',
           postalCode: '12345',
           city: 'Berlin',
@@ -173,5 +191,65 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'Befundbericht',
       'Laborwerte',
     ]);
+  });
+
+  it('keeps practice address only in header and uses the updated part-2 subject', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        doctor: {
+          name: TEST_DOCTOR_NAME,
+          practice: TEST_DOCTOR_PRACTICE,
+          streetAndNumber: 'Testweg 1',
+          postalCode: '12345',
+          city: 'Berlin',
+        },
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const part2Text = model.arzt.paragraphs.join('\n');
+
+    expect(model.arzt.subject).toBe(
+      'Begleitschreiben zum Off-Label-Antrag - Bitte um Unterstützung',
+    );
+    expect(part2Text).not.toContain('Adressat:');
+    expect(part2Text).not.toContain(TEST_DOCTOR_PRACTICE);
+    expect(part2Text).not.toContain(TEST_DOCTOR_NAME);
+    expect(part2Text).not.toContain('Testweg 1');
+    expect(part2Text).not.toContain('12345 Berlin');
+  });
+
+  it('uses insurer as addressee and the updated subject in part 3', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        insurer: {
+          name: TEST_INSURER_NAME,
+          department: TEST_INSURER_DEPARTMENT,
+          streetAndNumber: 'Kassenweg 3',
+          postalCode: '54321',
+          city: 'Kassel',
+        },
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const part3Text = model.part3.paragraphs.join('\n');
+
+    expect(part3Text).toContain(
+      `Adressat: ${TEST_INSURER_NAME}, ${TEST_INSURER_DEPARTMENT}`,
+    );
+    expect(part3Text).toContain('Kassenweg 3');
+    expect(part3Text).toContain('54321 Kassel');
+    expect(part3Text).toContain(
+      'Betreff: Ärztliche Stellungnahme / Befundbericht zum Offlabel-User',
+    );
   });
 });

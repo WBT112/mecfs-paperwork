@@ -31,6 +31,13 @@ describe('buildOffLabelAntragDocumentModel fallbacks', () => {
     expect(model.part3.title).toBe(
       'Teil 3 – Vorlage für ärztliche Stellungnahme / Befundbericht (zur Anpassung durch die Praxis)',
     );
-    expect(model.part3.paragraphs).toEqual([]);
+    expect(model.part3.paragraphs).toEqual([
+      'Adressat: Musterkrankenkasse, Leistungsabteilung',
+      'Kassenweg 3',
+      '12345 Musterstadt',
+      '',
+      'Betreff: Ärztliche Stellungnahme / Befundbericht zum Offlabel-User',
+      '',
+    ]);
   });
 });

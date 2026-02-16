@@ -36,4 +36,24 @@ describe('flattenBlocksToParagraphs', () => {
 
     expect(paragraphs).toEqual(['Keep me']);
   });
+
+  it('adds a blank line between rendered blocks when configured', () => {
+    const paragraphs = flattenBlocksToParagraphs(
+      [
+        { kind: 'paragraph', text: 'Punkt 1' },
+        { kind: 'paragraph', text: 'Punkt 2' },
+        { kind: 'list', items: ['Anlage A', 'Anlage B'] },
+      ],
+      { blankLineBetweenBlocks: true },
+    );
+
+    expect(paragraphs).toEqual([
+      'Punkt 1',
+      '',
+      'Punkt 2',
+      '',
+      '• Anlage A',
+      '• Anlage B',
+    ]);
+  });
 });

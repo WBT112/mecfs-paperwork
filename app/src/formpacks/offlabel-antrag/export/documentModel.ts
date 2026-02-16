@@ -134,6 +134,9 @@ const REQUEST_DEFAULT_FIELDS = [
 const DEFAULT_PART3_TITLE_KEY = 'offlabel-antrag.export.part3.title';
 const DEFAULT_PART3_TITLE =
   'Teil 3 – Vorlage für ärztliche Stellungnahme / Befundbericht (zur Anpassung durch die Praxis)';
+const DEFAULT_PART3_SUBJECT_KEY = 'offlabel-antrag.export.part3.subject';
+const DEFAULT_PART3_SUBJECT =
+  'Ärztliche Stellungnahme / Befundbericht zum Offlabel-User';
 
 const getT = (locale: SupportedLocale): I18nT =>
   i18n.getFixedT(locale, 'formpack:offlabel-antrag');
@@ -292,6 +295,7 @@ const getPreviewPart = (
 
 const buildPartParagraphs = (
   part: OfflabelRenderedDocument | null,
+  options: { blankLineBetweenBlocks?: boolean } = {},
 ): string[] => {
   if (!part) {
     return [];
@@ -299,14 +303,66 @@ const buildPartParagraphs = (
 
   return flattenBlocksToParagraphs(part.blocks, {
     includeHeadings: false,
+    blankLineBetweenBlocks: options.blankLineBetweenBlocks ?? false,
   });
 };
 
 const buildPart2Paragraphs = (
   part: OfflabelRenderedDocument | null,
 ): string[] => {
-  const paragraphs = buildPartParagraphs(part);
-  return paragraphs.filter((paragraph) => !paragraph.startsWith('Adressat:'));
+  if (!part) {
+    return [];
+  }
+
+  const bodyBlocks = part.blocks.filter(
+    (block) =>
+      !(
+        block.kind === 'paragraph' &&
+        (block.text.startsWith('Adressat:') ||
+          block.text.startsWith('Addressee:'))
+      ),
+  );
+
+  return flattenBlocksToParagraphs(bodyBlocks, {
+    includeHeadings: false,
+  });
+};
+
+const buildPart3HeaderParagraphs = ({
+  t,
+  locale,
+  insurer,
+}: {
+  t: I18nT;
+  locale: SupportedLocale;
+  insurer: {
+    name: string;
+    department: string;
+    streetAndNumber: string;
+    postalCode: string;
+    city: string;
+  };
+}): string[] => {
+  const addresseeTitle = tr(
+    t,
+    'offlabel-antrag.export.part3.addresseeTitle',
+    locale === 'en' ? 'Addressee' : 'Adressat',
+  );
+  const subjectTitle = tr(
+    t,
+    'offlabel-antrag.export.part3.subjectTitle',
+    locale === 'en' ? 'Subject' : 'Betreff',
+  );
+  const subject = tr(t, DEFAULT_PART3_SUBJECT_KEY, DEFAULT_PART3_SUBJECT);
+
+  return [
+    `${addresseeTitle}: ${[insurer.name, insurer.department].filter(Boolean).join(', ')}`,
+    insurer.streetAndNumber,
+    buildPostalCityLine(insurer.postalCode, insurer.city),
+    '',
+    `${subjectTitle}: ${subject}`,
+    '',
+  ];
 };
 
 const resolvePart3Title = (
@@ -461,9 +517,18 @@ export const buildOffLabelAntragDocumentModel = (
   const previewPart2 = getPreviewPart(previewDocuments, 'part2');
   const previewPart3 = getPreviewPart(previewDocuments, 'part3');
 
-  const kkParagraphs = buildPartParagraphs(previewPart1);
+  const kkParagraphs = buildPartParagraphs(previewPart1, {
+    blankLineBetweenBlocks: true,
+  });
   const arztParagraphs = buildPart2Paragraphs(previewPart2);
-  const part3Paragraphs = buildPartParagraphs(previewPart3);
+  const part3Paragraphs = [
+    ...buildPart3HeaderParagraphs({
+      t,
+      locale,
+      insurer,
+    }),
+    ...buildPartParagraphs(previewPart3),
+  ];
   const part3Title = resolvePart3Title(t, previewPart3);
 
   const patientName = buildPatientName(patient);
@@ -518,7 +583,7 @@ export const buildOffLabelAntragDocumentModel = (
       'offlabel-antrag.export.part2.subject',
       locale === 'en'
         ? 'Cover letter regarding the off-label request (part 1) - request for support'
-        : 'Begleitschreiben zum Off-Label-Antrag (Teil 1) - Bitte um Unterstützung',
+        : 'Begleitschreiben zum Off-Label-Antrag - Bitte um Unterstützung',
     ),
     paragraphs: arztParagraphs,
     attachments: [

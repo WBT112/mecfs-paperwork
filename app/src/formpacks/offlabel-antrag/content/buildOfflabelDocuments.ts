@@ -330,12 +330,13 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     );
   } else {
     const point10Sources = [facts.expertSourceText].filter(Boolean);
-    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`;
+    const point10CaseTransferText = point2aNo
+      ? POINT_10_NO_2A
+      : POINT_10_YES_2A;
+    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText} Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`;
     blocks.push({
       kind: 'paragraph',
-      text: point2aNo
-        ? `${point10BaseText} ${POINT_10_NO_2A}`
-        : `${point10BaseText} ${POINT_10_YES_2A}`,
+      text: point10BaseText,
     });
   }
 

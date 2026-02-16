@@ -4,6 +4,10 @@ import { buildOfflabelDocuments } from '../../src/formpacks/offlabel-antrag/cont
 const IVABRADIN_DIAGNOSIS_TEXT =
   'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit';
 const SECTION_2A_TEXT = '§ 2 Abs. 1a SGB V';
+const IVABRADINE_EXPERT_SOURCE =
+  'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).';
+const CASE_TRANSFER_YES_TEXT =
+  'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.';
 
 describe('buildOfflabelDocuments', () => {
   it('builds three parts and includes point-10 evidence text for known medication', () => {
@@ -32,18 +36,20 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(`Indikation: ${IVABRADIN_DIAGNOSIS_TEXT}`);
     expect(part1Text).toContain('Dosierung/Dauer: Start 2,5 mg morgens');
     expect(part1Text).not.toContain('Medizinischer Dienst Bund');
-    expect(part1Text).toContain(
-      'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).',
-    );
+    expect(part1Text).toContain(IVABRADINE_EXPERT_SOURCE);
     expect(part1Text).toContain(
       'Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen',
     );
     expect(part1Text).not.toContain(
       'Übertragbarkeit auf den Einzelfall (Gleiche Erkrankung/Gleiche Anwendung).',
     );
-    expect(part1Text).not.toContain(
-      'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.',
+    expect(part1Text).not.toContain(CASE_TRANSFER_YES_TEXT);
+    const noPathSourceIndex = part1Text.indexOf(IVABRADINE_EXPERT_SOURCE);
+    const noPathTransferIndex = part1Text.indexOf(
+      'Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen',
     );
+    expect(noPathSourceIndex).toBeGreaterThan(-1);
+    expect(noPathTransferIndex).toBeGreaterThan(noPathSourceIndex);
     expect(part1Text).not.toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain('Sehr geehrte Damen und Herren,');
     expect(part1Text).toContain(
@@ -264,10 +270,12 @@ describe('buildOfflabelDocuments', () => {
       'Punkt 1: Das Medikament Ivabradin ist in Deutschland nicht indikationszogen zugelassen',
     );
     expect(part1Text).toContain('Punkt 10:');
-    expect(part1Text).toContain(
-      'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.',
-    );
+    expect(part1Text).toContain(CASE_TRANSFER_YES_TEXT);
     expect(part1Text).toContain('Bewertung Ivabradin');
+    const yesPathSourceIndex = part1Text.indexOf(IVABRADINE_EXPERT_SOURCE);
+    const yesPathTransferIndex = part1Text.indexOf(CASE_TRANSFER_YES_TEXT);
+    expect(yesPathSourceIndex).toBeGreaterThan(-1);
+    expect(yesPathTransferIndex).toBeGreaterThan(yesPathSourceIndex);
     expect(part1Text).not.toContain(
       '[bitte medikamentenspezifische Quelle ergänzen]',
     );
