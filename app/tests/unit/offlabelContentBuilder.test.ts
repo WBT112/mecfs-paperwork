@@ -40,6 +40,9 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(
       'Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen',
     );
+    expect(part1Text).toContain(
+      'Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen',
+    );
     expect(part1Text).not.toContain(
       'Übertragbarkeit auf den Einzelfall (Gleiche Erkrankung/Gleiche Anwendung).',
     );
@@ -54,6 +57,9 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain('Sehr geehrte Damen und Herren,');
     expect(part1Text).toContain(
       'hiermit beantrage ich die Kostenübernahme für das Medikament Ivabradin im Rahmen des Off-Label-Use',
+    );
+    expect(part1Text).toContain(
+      'Die Leitlinie enthält keine positiven Empfehlungen zur medikamentösen Therapie.',
     );
     expect(part1Text).toContain('Mit freundlichen Grüßen');
 
