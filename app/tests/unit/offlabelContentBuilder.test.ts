@@ -31,14 +31,18 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain('Punkt 10:');
     expect(part1Text).toContain(`Indikation: ${IVABRADIN_DIAGNOSIS_TEXT}`);
     expect(part1Text).toContain('Dosierung/Dauer: Start 2,5 mg morgens');
-    expect(part1Text).toContain(
-      'Medizinischer Dienst Bund: Begutachtungsanleitung / Begutachtungsmaßstäbe Off-Label-Use (Stand 05/2022).',
-    );
+    expect(part1Text).not.toContain('Medizinischer Dienst Bund');
     expect(part1Text).toContain(
       'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).',
     );
     expect(part1Text).toContain(
-      'Die Erkenntnisse lassen sich auf meine Diagnosen übertragen',
+      'Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen',
+    );
+    expect(part1Text).not.toContain(
+      'Übertragbarkeit auf den Einzelfall (Gleiche Erkrankung/Gleiche Anwendung).',
+    );
+    expect(part1Text).not.toContain(
+      'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.',
     );
     expect(part1Text).not.toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain('Sehr geehrte Damen und Herren,');
@@ -153,6 +157,28 @@ describe('buildOfflabelDocuments', () => {
     expect(part1ListItems).not.toContain('Lt. Leitfaden je nach Schwere');
   });
 
+  it('renders expanded work-status severity wording without bell-score duplication', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+      },
+      severity: {
+        workStatus: 'Arbeitsunfähig',
+      },
+    });
+
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
+
+    const workStatusLine = part1ListItems.find((line) =>
+      line.startsWith('Ich bin derzeit arbeitsunfähig;'),
+    );
+    expect(workStatusLine).toBeDefined();
+    expect(workStatusLine).toContain('Erwerbstätigkeit');
+    expect(workStatusLine).not.toContain('Bell-Score');
+  });
+
   it('uses user-entered medication name for other in part 1 and part 2', () => {
     const docs = buildOfflabelDocuments({
       request: {
@@ -238,6 +264,9 @@ describe('buildOfflabelDocuments', () => {
       'Punkt 1: Das Medikament Ivabradin ist in Deutschland nicht indikationszogen zugelassen',
     );
     expect(part1Text).toContain('Punkt 10:');
+    expect(part1Text).toContain(
+      'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.',
+    );
     expect(part1Text).toContain('Bewertung Ivabradin');
     expect(part1Text).not.toContain(
       '[bitte medikamentenspezifische Quelle ergänzen]',

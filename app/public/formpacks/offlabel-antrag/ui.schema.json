@@ -248,7 +248,6 @@
       "ui:enumNames": [
         "offlabel-antrag.severity.workStatus.option.au",
         "offlabel-antrag.severity.workStatus.option.emRente",
-        "offlabel-antrag.severity.workStatus.option.berentet",
         "offlabel-antrag.severity.workStatus.option.teilzeit"
       ]
     }

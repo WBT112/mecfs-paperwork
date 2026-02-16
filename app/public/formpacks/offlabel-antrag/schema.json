@@ -196,9 +196,8 @@
         "workStatus": {
           "type": "string",
           "enum": [
-            "AU",
-            "EM-Rente",
-            "Berentet",
+            "Arbeitsunfähig",
+            "Erwerbsminderungsrente",
             "Teilzeit arbeitsfähig"
           ]
         }

@@ -71,9 +71,9 @@ const POINT_8_STANDARD =
   'Für die Versorgung meiner Erkrankung stehen keine sog. Standard-Therapien des gKV-Leistungskatalogs zur Verfügung. In der Wissenschaft werden allein symptombezogene Versorgungen diskutiert. Die am ehesten einschlägige Leitlinie: „Müdigkeit“ der Arbeitsgemeinschaft der Wissenschaftlichen Medizinischen Fachgesellschaften e. V. spricht in eben jener Leitlinie davon, dass für die kausale Behandlung des ME/CFS bislang keine Medikamente zugelassen sind und verweist auf die britische NICE-Richtlinie. In dieser wird neben Energiemanagment vor allem das Lindern der Symptome in den Fokus gerückt um eine spürbare Beeinflussung des Krankheitsverlaufes oder eine Verhütung der Verschlimmerung zu erreichen. Das begehrte Offlabel Medikament ist für die Erreichung dieser Ziele geeignet. Zusammengefasst ist keine der medizinischen Standardtherapie entsprechende Alternative verfügbar.';
 
 const POINT_10_NO_2A =
-  'Die Erkenntnisse lassen sich auf meine Diagnosen übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben.';
-const POINT_10_MD_SOURCE =
-  'Medizinischer Dienst Bund: Begutachtungsanleitung / Begutachtungsmaßstäbe Off-Label-Use (Stand 05/2022).';
+  'Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben.';
+const POINT_10_YES_2A =
+  'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.';
 
 const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
   '100':
@@ -88,6 +88,18 @@ const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
   '20': 'das Haus fast nie verlassen werden kann, große Tagesanteile bettlägerig verbracht werden, Konzentration oft nur kurzzeitig möglich ist und Basisaktivitäten wie Körperpflege oder Nahrungsaufnahme nur mit Unterstützung gelingen.',
   '10': 'das Haus nicht verlassen werden kann und bei Körperpflege, Nahrungszubereitung, Terminorganisation und Kommunikation regelmäßig Hilfe erforderlich ist.',
   '0': 'selbst einfachste Pflegemaßnahmen nicht mehr selbstständig möglich sind und bei Versorgung sowie Kommunikation durchgehend Unterstützung erforderlich ist.',
+};
+
+const WORK_STATUS_SEVERITY_LINES: Record<string, string> = {
+  Arbeitsunfähig:
+    'Ich bin derzeit arbeitsunfähig; schon geringe körperliche oder kognitive Anforderungen führen zu einer relevanten Verschlechterung, sodass eine regelmäßige Erwerbstätigkeit nicht tragfähig möglich ist.',
+  AU: 'Ich bin derzeit arbeitsunfähig; schon geringe körperliche oder kognitive Anforderungen führen zu einer relevanten Verschlechterung, sodass eine regelmäßige Erwerbstätigkeit nicht tragfähig möglich ist.',
+  Erwerbsminderungsrente:
+    'Ich beziehe eine Erwerbsminderungsrente, weil meine krankheitsbedingte Leistungsminderung so ausgeprägt ist, dass die Anforderungen des allgemeinen Arbeitsmarktes dauerhaft nicht mehr erfüllbar sind.',
+  'EM-Rente':
+    'Ich beziehe eine Erwerbsminderungsrente, weil meine krankheitsbedingte Leistungsminderung so ausgeprägt ist, dass die Anforderungen des allgemeinen Arbeitsmarktes dauerhaft nicht mehr erfüllbar sind.',
+  'Teilzeit arbeitsfähig':
+    'Ich bin nur eingeschränkt teilzeit arbeitsfähig; selbst in reduziertem Umfang sind engmaschige Pausen, flexible Belastungssteuerung und krankheitsbedingte Ausfallzeiten erforderlich.',
 };
 
 const ALLOWED_MERKZEICHEN = new Set(['G', 'aG', 'H', 'B']);
@@ -206,7 +218,8 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   const workStatus = getText(severity.workStatus);
   if (workStatus) {
     lines.push(
-      `Ich bin in meiner Erwerbsfähigkeit eingeschränkt, aktuell ${workStatus}`,
+      WORK_STATUS_SEVERITY_LINES[workStatus] ??
+        `Meine Erwerbsfähigkeit ist krankheitsbedingt deutlich eingeschränkt; aktuell ist mein Arbeitsstatus ${workStatus}.`,
     );
   }
 
@@ -316,13 +329,13 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       },
     );
   } else {
-    const point10Sources = [POINT_10_MD_SOURCE, facts.expertSourceText];
-    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} Übertragbarkeit auf den Einzelfall (Gleiche Erkrankung/Gleiche Anwendung). Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`;
+    const point10Sources = [facts.expertSourceText].filter(Boolean);
+    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`;
     blocks.push({
       kind: 'paragraph',
       text: point2aNo
         ? `${point10BaseText} ${POINT_10_NO_2A}`
-        : point10BaseText,
+        : `${point10BaseText} ${POINT_10_YES_2A}`,
     });
   }
 

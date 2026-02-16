@@ -343,13 +343,7 @@ const buildSourceItems = ({
   t: I18nT;
   expertSource: string | null;
 }): string[] => {
-  const sources = [
-    tr(
-      t,
-      'offlabel-antrag.export.sources.mdBund',
-      'Medizinischer Dienst Bund: Begutachtungsanleitung / Begutachtungsmaßstäbe Off-Label-Use (Stand 05/2022).',
-    ),
-  ];
+  const sources: string[] = [];
 
   if (expertSource) {
     sources.push(expertSource);

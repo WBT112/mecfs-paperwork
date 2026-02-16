@@ -49,8 +49,8 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part1).not.toContain('Punkt 9:');
     expect(part1).toContain('Bewertung Ivabradin');
 
-    expect(model.sources).toHaveLength(3);
-    expect(model.sources[1]).toContain('Bewertung Ivabradin');
+    expect(model.sources).toHaveLength(2);
+    expect(model.sources[0]).toContain('Bewertung Ivabradin');
     expect(model.kk.attachments).toHaveLength(1);
     expect(model.kk.attachments[0]).toContain('Bewertung: Ivabradin');
   });
@@ -79,9 +79,8 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part1).toContain('Punkt 9:');
     expect(part1).not.toContain('Punkt 10:');
 
-    expect(model.sources).toHaveLength(2);
-    expect(model.sources[0]).toContain('Medizinischer Dienst Bund');
-    expect(model.sources[1]).toContain('LSG Niedersachsen-Bremen');
+    expect(model.sources).toHaveLength(1);
+    expect(model.sources[0]).toContain('LSG Niedersachsen-Bremen');
     expect(model.kk.attachments).toEqual([]);
   });
 
