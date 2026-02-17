@@ -1,5 +1,9 @@
-import { DRUGS, type DrugKey } from './drugConfig';
-import { resolveMedicationProfile } from '../medications';
+import {
+  normalizeMedicationKey,
+  resolveMedicationProfile,
+  type MedicationKey,
+  type MedicationProfile,
+} from '../medications';
 import type { SupportedLocale } from '../../../i18n/locale';
 import { buildOffLabelAntragDocumentModel } from '../export/documentModel';
 
@@ -132,35 +136,22 @@ const parseMerkzeichen = (value: unknown): string[] => {
     );
 };
 
-const getDrugKey = (value: unknown): DrugKey => {
-  if (
-    value === 'ivabradine' ||
-    value === 'ivabradin' ||
-    value === 'agomelatin' ||
-    value === 'vortioxetine' ||
-    value === 'vortioxetin'
-  ) {
-    if (value === 'ivabradin') {
-      return 'ivabradine';
-    }
-    if (value === 'vortioxetin') {
-      return 'vortioxetine';
-    }
-    return value;
-  }
-  return 'other';
+const resolveMedicationProfileOrThrow = (
+  value: unknown,
+): { key: MedicationKey; profile: MedicationProfile } => {
+  const key = normalizeMedicationKey(value);
+  const profile = resolveMedicationProfile(key);
+  return { key, profile };
 };
 
 const resolvePreviewMedicationFacts = (
   request: Record<string, unknown>,
-  drugKey: DrugKey,
+  drugProfile: MedicationProfile,
 ): PreviewMedicationFacts => {
-  const profile = resolveMedicationProfile(drugKey);
-  const localeFacts = profile?.autoFacts?.de;
-
-  if (profile && !profile.isOther && localeFacts) {
+  const localeFacts = drugProfile.autoFacts?.de;
+  if (!drugProfile.isOther && localeFacts) {
     return {
-      displayName: profile.displayNameDe,
+      displayName: drugProfile.displayNameDe,
       diagnosisMain: localeFacts.diagnosisMain,
       targetSymptoms: localeFacts.targetSymptoms,
       doseAndDuration: localeFacts.doseAndDuration,
@@ -177,7 +168,7 @@ const resolvePreviewMedicationFacts = (
   const otherMonitoring = getText(request.otherMonitoring);
 
   return {
-    displayName: otherDrugName || DRUGS[drugKey].displayName,
+    displayName: otherDrugName || drugProfile.displayNameDe,
     diagnosisMain: otherIndication || '[bitte Indikation ergänzen]',
     targetSymptoms: otherTreatmentGoal || '[bitte Behandlungsziel ergänzen]',
     doseAndDuration:
@@ -227,8 +218,9 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   const request = getRecord(formData.request);
   const severity = getRecord(formData.severity);
   const patient = getRecord(formData.patient);
-  const drugKey = getDrugKey(request.drug);
-  const drug = DRUGS[drugKey];
+  const { key: drugKey, profile: drug } = resolveMedicationProfileOrThrow(
+    request.drug,
+  );
   const point2aNo =
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
   const applySection2Abs1a = getBool(request.applySection2Abs1a);
@@ -236,7 +228,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   const standardCareText = getText(request.standardOfCareTriedFreeText);
   const standardCareItems =
     drugKey === 'other' ? parseMultilineItems(standardCareText) : [];
-  const facts = resolvePreviewMedicationFacts(request, drugKey);
+  const facts = resolvePreviewMedicationFacts(request, drug);
   const patientName =
     [getText(patient.firstName), getText(patient.lastName)]
       .filter(Boolean)
@@ -250,7 +242,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     }
     return point2aNo
       ? 'Die Diagnose ist gesichert'
-      : drug.point2DiagnosisSentence;
+      : drug.point2DiagnosisSentenceDe;
   })();
 
   const point4Text = drug.hasAnnouncedAmrlEntry
@@ -375,8 +367,10 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
 const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
   const doctor = getRecord(formData.doctor);
   const request = getRecord(formData.request);
-  const drugKey = getDrugKey(request.drug);
-  const facts = resolvePreviewMedicationFacts(request, drugKey);
+  const { profile: drugProfile } = resolveMedicationProfileOrThrow(
+    request.drug,
+  );
+  const facts = resolvePreviewMedicationFacts(request, drugProfile);
   const drug = facts.displayName;
   const addressLines = joinLines([
     getText(doctor.name),
@@ -416,8 +410,9 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
   const patient = getRecord(formData.patient);
   const point2aNo =
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
-  const drugKey = getDrugKey(request.drug);
-  const facts = resolvePreviewMedicationFacts(request, drugKey);
+  const { key: drugKey, profile: drugProfile } =
+    resolveMedicationProfileOrThrow(request.drug);
+  const facts = resolvePreviewMedicationFacts(request, drugProfile);
   const standardCareItems =
     drugKey === 'other'
       ? parseMultilineItems(getText(request.standardOfCareTriedFreeText))

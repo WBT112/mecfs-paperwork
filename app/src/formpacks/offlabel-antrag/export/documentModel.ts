@@ -243,7 +243,7 @@ const isBuiltInMedicationProfile = (
   value: string | null,
 ): MedicationProfile | null => {
   const profile = resolveMedicationProfile(value);
-  if (!profile || profile.isOther) {
+  if (profile.isOther) {
     return null;
   }
   return profile;

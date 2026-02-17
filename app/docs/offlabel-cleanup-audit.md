@@ -32,31 +32,32 @@ technical debt without changing runtime behavior.
 
 ## Known debt / legacy areas
 
-1. Test-compat wrapper module:
-   - `src/formpacks/offlabel-antrag/letterBuilder.ts`
-   - Currently used by unit tests, not by runtime export flow.
-2. Duplicate medication source data:
-   - `src/formpacks/offlabel-antrag/content/drugConfig.ts`
-   - `src/formpacks/offlabel-antrag/medications.ts`
-   - Overlapping fields are maintained in two places.
-3. Unreferenced static PDFs:
+1. Unreferenced static PDFs:
    - `public/formpacks/offlabel-antrag/assets/*.pdf`
    - Files are intentionally kept as manual asset repository.
-4. Locale coupling:
+2. Locale coupling:
    - EN preview path is partially coupled to current export/model logic.
    - Not changed in this conservative cleanup.
+
+## Recently resolved
+
+1. Removed test-only wrapper module:
+   - `src/formpacks/offlabel-antrag/letterBuilder.ts`
+   - Tests now assert directly against `export/documentModel.ts`.
+2. Consolidated medication source data:
+   - `src/formpacks/offlabel-antrag/content/drugConfig.ts` removed
+   - `src/formpacks/offlabel-antrag/medications.ts` is the single source.
 
 ## Risk classification and recommended follow-ups
 
 ### Low risk
 
-1. Keep adding drift guards between medication sources.
+1. Keep adding registry drift/integrity guards in unit tests.
 2. Improve inline documentation around offlabel export wiring.
 
 ### Medium risk
 
-1. Consolidate `drugConfig.ts` and `medications.ts` into one source of truth.
-2. Remove `letterBuilder.ts` after migrating dependent tests.
+1. Rework locale coupling so EN preview no longer depends on DE flow behavior.
 
 ### High risk
 

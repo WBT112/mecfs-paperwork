@@ -2,11 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 import deTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/de.json';
 import enTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/en.json';
 import {
-  buildOfflabelAntragExportBundle,
-  buildPart1KkLetter,
-  buildPart2DoctorLetter,
-  parseAttachments,
-} from '../../src/formpacks/offlabel-antrag/letterBuilder';
+  buildOffLabelAntragDocumentModel,
+  parseOfflabelAttachments,
+} from '../../src/formpacks/offlabel-antrag/export/documentModel';
 
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
@@ -38,15 +36,15 @@ vi.mock('../../src/i18n', () => ({
 
 describe('offlabel-antrag letter builder', () => {
   it('always creates the full 3-part export bundle', () => {
-    const bundle = buildOfflabelAntragExportBundle({
-      locale: 'de',
-      documentModel: {
+    const bundle = buildOffLabelAntragDocumentModel(
+      {
         request: {
           drug: '',
         },
       },
-      exportedAt: FIXED_EXPORTED_AT,
-    });
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    ).exportBundle;
 
     expect(bundle.part1).toBeDefined();
     expect(bundle.part2).toBeDefined();
@@ -61,11 +59,9 @@ describe('offlabel-antrag letter builder', () => {
   });
 
   it('references part 1 in part 2 and keeps part 3 title', () => {
-    const bundle = buildOfflabelAntragExportBundle({
-      locale: 'de',
-      documentModel: {},
+    const bundle = buildOffLabelAntragDocumentModel({}, 'de', {
       exportedAt: FIXED_EXPORTED_AT,
-    });
+    }).exportBundle;
 
     expect(bundle.part2.paragraphs.some((p) => p.includes('Teil 1'))).toBe(
       true,
@@ -75,15 +71,15 @@ describe('offlabel-antrag letter builder', () => {
   });
 
   it('uses med-specific expert source and attachment for built-in medication', () => {
-    const bundle = buildOfflabelAntragExportBundle({
-      locale: 'de',
-      documentModel: {
+    const bundle = buildOffLabelAntragDocumentModel(
+      {
         request: {
           drug: 'vortioxetine',
         },
       },
-      exportedAt: FIXED_EXPORTED_AT,
-    });
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    ).exportBundle;
 
     expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 10:');
     expect(bundle.part1.attachments).toContain(
@@ -98,9 +94,8 @@ describe('offlabel-antrag letter builder', () => {
   });
 
   it('does not inject any expert attachment for other medication', () => {
-    const bundle = buildOfflabelAntragExportBundle({
-      locale: 'de',
-      documentModel: {
+    const bundle = buildOffLabelAntragDocumentModel(
+      {
         request: {
           drug: 'other',
           otherDrugName: 'Midodrin',
@@ -112,8 +107,9 @@ describe('offlabel-antrag letter builder', () => {
           standardOfCareTriedFreeText: 'Kompressionstherapie',
         },
       },
-      exportedAt: FIXED_EXPORTED_AT,
-    });
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    ).exportBundle;
 
     expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 7:');
     expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 9:');
@@ -122,9 +118,8 @@ describe('offlabel-antrag letter builder', () => {
   });
 
   it('uses locale defaults for fallback values', () => {
-    const bundle = buildOfflabelAntragExportBundle({
-      locale: 'en',
-      documentModel: {
+    const bundle = buildOffLabelAntragDocumentModel(
+      {
         patient: {
           firstName: '',
           lastName: '',
@@ -136,8 +131,9 @@ describe('offlabel-antrag letter builder', () => {
           name: '',
         },
       },
-      exportedAt: FIXED_EXPORTED_AT,
-    });
+      'en',
+      { exportedAt: FIXED_EXPORTED_AT },
+    ).exportBundle;
 
     expect(bundle.part1.senderLines[0]).toBe('Max Example');
     expect(bundle.part1.addresseeLines[0]).toBe('Example Health Insurance');
@@ -145,21 +141,21 @@ describe('offlabel-antrag letter builder', () => {
   });
 
   it('parses attachment free text via exported helper', () => {
-    expect(parseAttachments(' - Befund A\n• Befund B\n\n')).toEqual([
+    expect(parseOfflabelAttachments(' - Befund A\n• Befund B\n\n')).toEqual([
       'Befund A',
       'Befund B',
     ]);
-    expect(parseAttachments(null)).toEqual([]);
+    expect(parseOfflabelAttachments(null)).toEqual([]);
   });
 
-  it('builds part 1 letter via dedicated builder', () => {
-    const letter = buildPart1KkLetter({
-      locale: 'de',
-      model: {
+  it('exposes part 1 letter via document model', () => {
+    const letter = buildOffLabelAntragDocumentModel(
+      {
         request: { drug: 'agomelatin' },
       },
-      exportedAt: FIXED_EXPORTED_AT,
-    });
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    ).kk;
 
     expect(letter.subject).toContain('Agomelatin');
     expect(letter.signatureBlocks).toEqual([
@@ -168,15 +164,15 @@ describe('offlabel-antrag letter builder', () => {
     expect(letter.paragraphs.some((p) => p.includes('Punkt 10:'))).toBe(true);
   });
 
-  it('builds part 2 doctor letter via dedicated builder', () => {
-    const letter = buildPart2DoctorLetter({
-      locale: 'de',
-      model: {
+  it('exposes part 2 doctor letter via document model', () => {
+    const letter = buildOffLabelAntragDocumentModel(
+      {
         doctor: { name: 'Dr. Muster' },
         request: { drug: 'ivabradine' },
       },
-      exportedAt: FIXED_EXPORTED_AT,
-    });
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    ).arzt;
 
     expect(letter.subject).toContain('Begleitschreiben');
     expect(letter.paragraphs.some((p) => p.includes('Teil 1'))).toBe(true);

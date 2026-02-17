@@ -35,6 +35,9 @@ export type MedicationProfile = {
   key: MedicationKey;
   displayNameDe: string;
   displayNameEn: string;
+  point2DiagnosisSentenceDe: string;
+  point2DiagnosisSentenceEn: string;
+  hasAnnouncedAmrlEntry: boolean;
   isOther: boolean;
   requiresManualFields: boolean;
   requiresPriorMeasures: boolean;
@@ -54,6 +57,9 @@ type MedicationInputTuple = readonly [
   key: StandardMedicationKey,
   displayNameDe: string,
   displayNameEn: string,
+  point2DiagnosisSentenceDe: string,
+  point2DiagnosisSentenceEn: string,
+  hasAnnouncedAmrlEntry: boolean,
   infoBoxI18nKey: string,
   expertSourceDate: string,
   deFacts: MedicationFactsTuple,
@@ -70,6 +76,9 @@ const MEDICATION_INPUTS: readonly MedicationInputTuple[] = [
     'agomelatin',
     'Agomelatin',
     'Agomelatine',
+    'Die Diagnose Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/ Chronischem Fatigue-Syndrom (ME/CFS) und bei Long/Post-COVID ist gesichert (siehe Befunde)',
+    'The diagnosis of fatigue in post-infectious myalgic encephalomyelitis/chronic fatigue syndrome (ME/CFS) and in long/post-COVID is established (see findings).',
+    false,
     'offlabel-antrag.ui.infobox.drug.agomelatine',
     '02.12.2025',
     [
@@ -91,6 +100,9 @@ const MEDICATION_INPUTS: readonly MedicationInputTuple[] = [
     'ivabradine',
     'Ivabradin',
     'Ivabradine',
+    'Die Diagnose: COVID-19 assoziiertes PoTS ist gesichert (siehe Befunde)',
+    'The diagnosis of COVID-19 associated PoTS is established (see findings).',
+    true,
     'offlabel-antrag.ui.infobox.drug.ivabradine',
     '15.10.2025',
     [
@@ -112,6 +124,9 @@ const MEDICATION_INPUTS: readonly MedicationInputTuple[] = [
     'vortioxetine',
     'Vortioxetin',
     'Vortioxetine',
+    'Die Diagnose kognitive Beeinträchtigungen und/oder depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
+    'The diagnosis of cognitive impairment and/or depressive symptoms in long/post-COVID is established.',
+    false,
     'offlabel-antrag.ui.infobox.drug.vortioxetine',
     '15.10.2025',
     [
@@ -177,6 +192,9 @@ const createStandardMedicationProfile = (
     key,
     displayNameDe,
     displayNameEn,
+    point2DiagnosisSentenceDe,
+    point2DiagnosisSentenceEn,
+    hasAnnouncedAmrlEntry,
     infoBoxI18nKey,
     expertSourceDate,
     deFacts,
@@ -187,6 +205,9 @@ const createStandardMedicationProfile = (
     key,
     displayNameDe,
     displayNameEn,
+    point2DiagnosisSentenceDe,
+    point2DiagnosisSentenceEn,
+    hasAnnouncedAmrlEntry,
     isOther: false,
     requiresManualFields: false,
     requiresPriorMeasures: false,
@@ -215,6 +236,9 @@ const OTHER_MEDICATION_PROFILE: MedicationProfile = {
   key: 'other',
   displayNameDe: 'anderes Medikament oder andere Indikation',
   displayNameEn: 'other medication or other indication',
+  point2DiagnosisSentenceDe: '',
+  point2DiagnosisSentenceEn: '',
+  hasAnnouncedAmrlEntry: false,
   isOther: true,
   requiresManualFields: true,
   requiresPriorMeasures: true,
@@ -234,7 +258,23 @@ export const isMedicationKey = (value: unknown): value is MedicationKey =>
   typeof value === 'string' &&
   OFFLABEL_MEDICATION_KEYS.includes(value as MedicationKey);
 
-export const resolveMedicationProfile = (
-  value: unknown,
-): MedicationProfile | null =>
-  isMedicationKey(value) ? MEDICATIONS[value] : null;
+const LEGACY_MEDICATION_KEY_ALIASES: Partial<Record<string, MedicationKey>> = {
+  ivabradin: 'ivabradine',
+  vortioxetin: 'vortioxetine',
+};
+
+export const normalizeMedicationKey = (value: unknown): MedicationKey => {
+  if (isMedicationKey(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const aliasMatch = LEGACY_MEDICATION_KEY_ALIASES[value];
+    if (aliasMatch) {
+      return aliasMatch;
+    }
+  }
+  return 'other';
+};
+
+export const resolveMedicationProfile = (value: unknown): MedicationProfile =>
+  MEDICATIONS[normalizeMedicationKey(value)];

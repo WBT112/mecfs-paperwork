@@ -252,4 +252,45 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'Betreff: Ärztliche Stellungnahme / Befundbericht zum Offlabel-User',
     );
   });
+
+  it('exposes a complete exportBundle with all three parts', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.exportBundle.part1).toBeDefined();
+    expect(model.exportBundle.part2).toBeDefined();
+    expect(model.exportBundle.part3).toBeDefined();
+    expect(model.exportBundle.part2.attachments[0]).toBe(
+      'Teil 1: Antrag an die Krankenkasse (Entwurf)',
+    );
+    expect(model.exportBundle.part1.signatureBlocks).toEqual([
+      {
+        label: 'Patient/in',
+        name: 'Max Mustermann',
+      },
+    ]);
+  });
+
+  it('keeps exportBundle sections aligned with projected kk/arzt/part3 sections', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'agomelatin',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.exportBundle.part1).toEqual(model.kk);
+    expect(model.exportBundle.part2).toEqual(model.arzt);
+    expect(model.exportBundle.part3).toEqual(model.part3);
+  });
 });
