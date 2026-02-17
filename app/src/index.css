@@ -1541,14 +1541,6 @@ body {
   background: var(--color-surface);
 }
 
-.formpack-document-preview__note {
-  margin-top: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid var(--color-note-border);
-  background: var(--color-note-bg);
-  border-radius: 8px;
-}
-
 .formpack-document-preview__tabs {
   display: flex;
   gap: 0.5rem;

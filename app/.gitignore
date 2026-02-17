@@ -1,5 +1,6 @@
 # Coverage reports
 coverage/
+reports/
 
 # ESLint cache
 .eslintcache

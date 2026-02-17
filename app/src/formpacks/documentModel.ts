@@ -1,7 +1,13 @@
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
-import { resolveDecisionTree, type DecisionAnswers } from './decisionEngine';
+import { resolveDecisionTree } from './decisionEngine';
+import { normalizeDecisionAnswers } from './doctor-letter/decisionAnswers';
+import {
+  DOCTOR_LETTER_FORMPACK_ID,
+  NOTFALLPASS_FORMPACK_ID,
+  OFFLABEL_ANTRAG_FORMPACK_ID,
+} from './ids';
 import {
   formatBirthDate,
   getArrayValue,
@@ -192,34 +198,6 @@ const projectDoctorDetails = (
   city: getStringValue(doctor?.city),
 });
 
-const getYesNoValue = (value: unknown): 'yes' | 'no' | undefined => {
-  if (value === 'yes' || value === true) return 'yes';
-  if (value === 'no' || value === false) return 'no';
-  return undefined;
-};
-
-const getDecisionAnswers = (
-  decision: Record<string, unknown> | null,
-): DecisionAnswers => ({
-  q1: getYesNoValue(decision?.q1),
-  q2: getYesNoValue(decision?.q2),
-  q3: getYesNoValue(decision?.q3),
-  q4:
-    typeof decision?.q4 === 'string'
-      ? (decision.q4 as DecisionAnswers['q4'])
-      : undefined,
-  q5:
-    typeof decision?.q5 === 'string'
-      ? (decision.q5 as DecisionAnswers['q5'])
-      : undefined,
-  q6: getYesNoValue(decision?.q6),
-  q7: getYesNoValue(decision?.q7),
-  q8:
-    typeof decision?.q8 === 'string'
-      ? (decision.q8 as DecisionAnswers['q8'])
-      : undefined,
-});
-
 const buildDoctorLetterModel = (
   formData: Record<string, unknown>,
   locale: SupportedLocale,
@@ -230,7 +208,7 @@ const buildDoctorLetterModel = (
   const doctorDetails = projectDoctorDetails(doctor);
   const decision = getRecordValue(formData.decision);
 
-  const decisionAnswers = getDecisionAnswers(decision);
+  const decisionAnswers = normalizeDecisionAnswers(decision ?? {});
   const result = resolveDecisionTree(decisionAnswers);
   const t = i18n.getFixedT(locale, 'formpack:doctor-letter');
   const rawCaseText = t(result.caseKey, {
@@ -362,9 +340,9 @@ type ModelBuilder = (
 ) => DocumentModel;
 
 const FORMPACK_MODEL_BUILDERS: Partial<Record<string, ModelBuilder>> = {
-  'doctor-letter': buildDoctorLetterModel,
-  notfallpass: buildNotfallpassModel,
-  'offlabel-antrag': buildOfflabelAntragModel,
+  [DOCTOR_LETTER_FORMPACK_ID]: buildDoctorLetterModel,
+  [NOTFALLPASS_FORMPACK_ID]: buildNotfallpassModel,
+  [OFFLABEL_ANTRAG_FORMPACK_ID]: buildOfflabelAntragModel,
 };
 
 /**

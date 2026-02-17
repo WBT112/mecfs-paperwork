@@ -40,6 +40,7 @@ import { hasPreviewValue } from '../lib/preview';
 import { getFirstItem, isRecord } from '../lib/utils';
 import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
+import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
 import {
   FormpackLoaderError,
   loadFormpackManifest,
@@ -50,13 +51,16 @@ import { FORMPACKS_UPDATED_EVENT } from '../formpacks/backgroundRefresh';
 import { deriveFormpackRevisionSignature } from '../formpacks/metadata';
 import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
 import type { FormpackManifest, InfoBoxConfig } from '../formpacks/types';
+import { resolveDecisionTree } from '../formpacks/decisionEngine';
 import {
-  resolveDecisionTree,
-  Q4_OPTIONS,
-  Q5_OPTIONS,
-  Q8_OPTIONS,
-  type DecisionAnswers,
-} from '../formpacks/decisionEngine';
+  isCompletedCase0Path,
+  normalizeDecisionAnswers,
+} from '../formpacks/doctor-letter/decisionAnswers';
+import {
+  DOCTOR_LETTER_FORMPACK_ID,
+  NOTFALLPASS_FORMPACK_ID,
+  OFFLABEL_ANTRAG_FORMPACK_ID,
+} from '../formpacks/ids';
 import {
   getFieldVisibility,
   clearHiddenFields,
@@ -175,76 +179,11 @@ const buildErrorMessage = (
   return t('formpackLoadError');
 };
 
-const DOCTOR_LETTER_ID = 'doctor-letter';
-const OFFLABEL_ANTRAG_ID = 'offlabel-antrag';
 const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
-const isValidQ4 = (val: unknown): val is DecisionAnswers['q4'] =>
-  Q4_OPTIONS.includes(val as DecisionAnswers['q4'] & string);
 
-const isValidQ5 = (val: unknown): val is DecisionAnswers['q5'] =>
-  Q5_OPTIONS.includes(val as DecisionAnswers['q5'] & string);
-
-const isValidQ8 = (val: unknown): val is DecisionAnswers['q8'] =>
-  Q8_OPTIONS.includes(val as DecisionAnswers['q8'] & string);
-
-const isYesNo = (val: unknown): val is 'yes' | 'no' =>
-  val === 'yes' || val === 'no';
-
-const buildDecisionAnswers = (
-  decision: Record<string, unknown>,
-): DecisionAnswers => ({
-  q1: isYesNo(decision.q1) ? decision.q1 : undefined,
-  q2: isYesNo(decision.q2) ? decision.q2 : undefined,
-  q3: isYesNo(decision.q3) ? decision.q3 : undefined,
-  q4: isValidQ4(decision.q4) ? decision.q4 : undefined,
-  q5: isValidQ5(decision.q5) ? decision.q5 : undefined,
-  q6: isYesNo(decision.q6) ? decision.q6 : undefined,
-  q7: isYesNo(decision.q7) ? decision.q7 : undefined,
-  q8: isValidQ8(decision.q8) ? decision.q8 : undefined,
-});
-
-const getValueByPath = (
-  obj: Record<string, unknown>,
-  path: string,
-): unknown => {
-  const keys = path.split('.');
-  let current: unknown = obj;
-
-  for (const key of keys) {
-    if (!isRecord(current)) {
-      return undefined;
-    }
-    current = current[key];
-  }
-
-  return current;
-};
-
-const setValueByPath = (
-  obj: Record<string, unknown>,
-  path: string,
-  value: unknown,
-): Record<string, unknown> => {
-  const keys = path.split('.');
-  const next = structuredClone(obj);
-  let cursor: Record<string, unknown> = next;
-
-  keys.forEach((key, index) => {
-    const isLeaf = index === keys.length - 1;
-    if (isLeaf) {
-      cursor[key] = value;
-      return;
-    }
-
-    const candidate = cursor[key];
-    if (!isRecord(candidate)) {
-      cursor[key] = {};
-    }
-    cursor = cursor[key] as Record<string, unknown>;
-  });
-
-  return next;
-};
+const isDoctorLetterStyledFormpack = (formpackId: string | null): boolean =>
+  formpackId === DOCTOR_LETTER_FORMPACK_ID ||
+  formpackId === OFFLABEL_ANTRAG_FORMPACK_ID;
 
 // Helper: Apply field visibility rules to decision tree UI schema
 const applyFieldVisibility = (
@@ -264,7 +203,7 @@ const applyFieldVisibility = (
 
 // Helper: Check if Case 0 result should be hidden
 const shouldHideCase0Result = (decision: DecisionData): boolean => {
-  const result = resolveDecisionTree(buildDecisionAnswers(decision));
+  const result = resolveDecisionTree(normalizeDecisionAnswers(decision));
   const isCase0 = result.caseId === 0;
 
   if (!isCase0) {
@@ -272,12 +211,8 @@ const shouldHideCase0Result = (decision: DecisionData): boolean => {
   }
 
   // Check if Case 0 is a valid completed path
-  const isValidCase0 =
-    (decision.q1 === 'no' && decision.q6 === 'no') ||
-    (decision.q1 === 'no' && decision.q6 === 'yes' && decision.q7 === 'no');
-
-  // Only hide if Case 0 is due to incomplete tree, not a valid path
-  return !isValidCase0;
+  // Only hide if Case 0 is due to incomplete tree, not a valid path.
+  return !isCompletedCase0Path(decision);
 };
 
 type PreviewValueResolver = (
@@ -1188,11 +1123,11 @@ export default function FormpackDetailPage() {
       return normalizedUiSchema;
     }
 
-    if (formpackId === OFFLABEL_ANTRAG_ID) {
+    if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
       return applyOfflabelVisibility(normalizedUiSchema, formData);
     }
 
-    if (formpackId !== DOCTOR_LETTER_ID) {
+    if (formpackId !== DOCTOR_LETTER_FORMPACK_ID) {
       return normalizedUiSchema;
     }
 
@@ -1448,7 +1383,7 @@ export default function FormpackDetailPage() {
 
   const resolveAndPopulateDoctorLetterCase = useCallback(
     (decision: Record<string, unknown>): string => {
-      const result = resolveDecisionTree(buildDecisionAnswers(decision));
+      const result = resolveDecisionTree(normalizeDecisionAnswers(decision));
 
       const rawText = t(result.caseKey, {
         ns: `formpack:${formpackId}`,
@@ -1466,7 +1401,10 @@ export default function FormpackDetailPage() {
       const nextData = event.formData as FormDataState;
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
-      if (formpackId === DOCTOR_LETTER_ID && isRecord(nextData.decision)) {
+      if (
+        formpackId === DOCTOR_LETTER_FORMPACK_ID &&
+        isRecord(nextData.decision)
+      ) {
         const originalDecision = nextData.decision as DecisionData;
 
         // Clear hidden fields to prevent stale values from affecting decision tree
@@ -1488,7 +1426,10 @@ export default function FormpackDetailPage() {
 
   // Resolve decision tree after formData changes (for doctor-letter only)
   useEffect(() => {
-    if (formpackId === DOCTOR_LETTER_ID && isRecord(formData.decision)) {
+    if (
+      formpackId === DOCTOR_LETTER_FORMPACK_ID &&
+      isRecord(formData.decision)
+    ) {
       const decision = formData.decision as DecisionData;
       const currentCaseText = decision.resolvedCaseText;
       const newCaseText = resolveAndPopulateDoctorLetterCase(decision);
@@ -1817,7 +1758,7 @@ export default function FormpackDetailPage() {
     if (!activeRecord || !introGateConfig?.enabled) {
       return false;
     }
-    return getValueByPath(formData, introGateConfig.acceptedFieldPath) !== true;
+    return getPathValue(formData, introGateConfig.acceptedFieldPath) !== true;
   }, [activeRecord, formData, introGateConfig]);
 
   const tFormpack = useCallback(
@@ -1848,7 +1789,7 @@ export default function FormpackDetailPage() {
       return;
     }
     setFormData((current) =>
-      setValueByPath(current, introGateConfig.acceptedFieldPath, true),
+      setPathValueImmutable(current, introGateConfig.acceptedFieldPath, true),
     );
   }, [introGateConfig]);
 
@@ -2107,7 +2048,7 @@ export default function FormpackDetailPage() {
   );
   const offlabelPreviewDocuments = useMemo(
     () =>
-      formpackId === OFFLABEL_ANTRAG_ID
+      formpackId === OFFLABEL_ANTRAG_FORMPACK_ID
         ? buildOfflabelDocuments(formData, locale)
         : [],
     [formData, formpackId, locale],
@@ -2121,7 +2062,10 @@ export default function FormpackDetailPage() {
       { id: 'a4', label: t('formpackDocxTemplateA4Option') },
     ];
 
-    if (manifest.id === 'notfallpass' && manifest.docx.templates.wallet) {
+    if (
+      manifest.id === NOTFALLPASS_FORMPACK_ID &&
+      manifest.docx.templates.wallet
+    ) {
       options.push({
         id: 'wallet',
         label: t('formpackDocxTemplateWalletOption'),
@@ -2527,8 +2471,7 @@ export default function FormpackDetailPage() {
         <Suspense fallback={<p>{t('formpackLoading')}</p>}>
           <LazyForm
             className={
-              formpackId === DOCTOR_LETTER_ID ||
-              formpackId === OFFLABEL_ANTRAG_ID
+              isDoctorLetterStyledFormpack(formpackId)
                 ? 'formpack-form formpack-form--doctor-letter'
                 : 'formpack-form'
             }
@@ -2657,7 +2600,7 @@ export default function FormpackDetailPage() {
     Object.keys(formData).length ? jsonPreview : t('formpackFormPreviewEmpty');
 
   const renderDocumentPreviewContent = () => {
-    if (formpackId === OFFLABEL_ANTRAG_ID) {
+    if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
       return (
         <div className="formpack-document-preview formpack-document-preview--offlabel">
           <div className="formpack-document-preview__tabs" role="tablist">

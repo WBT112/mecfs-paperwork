@@ -29,8 +29,14 @@ import {
 } from './downloadUtils';
 import { getRecord } from '../storage/records';
 import { isRecord, getFirstItem } from '../lib/utils';
+import { getPathValue, setPathValueMutableSafe } from '../lib/pathAccess';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { buildI18nContext } from './buildI18nContext';
+import {
+  DOCTOR_LETTER_FORMPACK_ID,
+  NOTFALLPASS_FORMPACK_ID,
+  OFFLABEL_ANTRAG_FORMPACK_ID,
+} from '../formpacks/ids';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 export type DocxTemplateId = 'a4' | 'wallet';
@@ -84,7 +90,7 @@ const assertTemplateAllowed = (
   formpackId: string,
   templateId: DocxTemplateId,
 ) => {
-  if (templateId === 'wallet' && formpackId !== 'notfallpass') {
+  if (templateId === 'wallet' && formpackId !== NOTFALLPASS_FORMPACK_ID) {
     throw new Error(
       'Wallet DOCX export is only supported for the notfallpass formpack.',
     );
@@ -93,8 +99,6 @@ const assertTemplateAllowed = (
 
 const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-const DOCTOR_LETTER_FORMPACK_ID = 'doctor-letter';
-const OFFLABEL_ANTRAG_FORMPACK_ID = 'offlabel-antrag';
 const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
 const DOCX_LITERAL_DELIMITER = '§§DOCX_XML§§';
 // Session cache keeps DOCX assets available when the app is offline.
@@ -288,67 +292,6 @@ export const getDocxErrorKey = (error: unknown): DocxErrorKey => {
   }
 };
 
-const getPathValue = (source: unknown, path: string): unknown => {
-  if (!path) {
-    return undefined;
-  }
-
-  return path.split('.').reduce<unknown>((current, segment) => {
-    if (!isRecord(current) && !Array.isArray(current)) {
-      return undefined;
-    }
-
-    if (isRecord(current)) {
-      return current[segment];
-    }
-
-    // Array access via numeric segments.
-    const index = Number(segment);
-    if (Number.isNaN(index)) {
-      return undefined;
-    }
-    return current[index];
-  }, source);
-};
-
-const isSafePathSegment = (segment: string): boolean =>
-  segment !== '__proto__' &&
-  segment !== 'constructor' &&
-  segment !== 'prototype';
-
-const setPathValue = (
-  target: Record<string, unknown>,
-  path: string,
-  value: unknown,
-) => {
-  if (!path || path.trim().length === 0) {
-    return;
-  }
-
-  const segments = path.split('.');
-  let cursor: Record<string, unknown> = target;
-
-  segments.forEach((segment, index) => {
-    if (!isSafePathSegment(segment)) {
-      // Prevent prototype pollution via dangerous keys.
-      return;
-    }
-
-    const isLeaf = index === segments.length - 1;
-
-    if (isLeaf) {
-      cursor[segment] = value;
-      return;
-    }
-
-    if (!isRecord(cursor[segment])) {
-      cursor[segment] = {};
-    }
-
-    cursor = cursor[segment] as Record<string, unknown>;
-  });
-};
-
 const isEmptyTemplateValue = (value: unknown): boolean =>
   typeof value !== 'string' || value.trim().length === 0;
 
@@ -384,8 +327,19 @@ const applyDefaultForPath = (
 ): void => {
   const current = getPathValue(context, path);
   if (isEmptyTemplateValue(current)) {
-    setPathValue(context, path, fallback);
+    setPathValueMutableSafe(context, path, fallback);
   }
+};
+
+type PathFallbackEntry = readonly [path: string, fallback: string];
+
+const applyDefaultsForPaths = (
+  context: DocxTemplateContext,
+  entries: readonly PathFallbackEntry[],
+): void => {
+  entries.forEach(([path, fallback]) => {
+    applyDefaultForPath(context, path, fallback);
+  });
 };
 
 export const applyDocxExportDefaults = (
@@ -404,51 +358,27 @@ export const applyDocxExportDefaults = (
 
   if (formpackId === DOCTOR_LETTER_FORMPACK_ID) {
     const defaults = getDoctorLetterExportDefaults(locale);
-
-    applyDefaultForPath(
-      normalized,
-      'patient.firstName',
-      defaults.patient.firstName,
-    );
-    applyDefaultForPath(
-      normalized,
-      'patient.lastName',
-      defaults.patient.lastName,
-    );
-    applyDefaultForPath(
-      normalized,
-      'patient.streetAndNumber',
-      defaults.patient.streetAndNumber,
-    );
-    applyDefaultForPath(
-      normalized,
-      'patient.postalCode',
-      defaults.patient.postalCode,
-    );
-    applyDefaultForPath(normalized, 'patient.city', defaults.patient.city);
-
-    applyDefaultForPath(normalized, 'doctor.name', defaults.doctor.name);
-    applyDefaultForPath(
-      normalized,
-      'doctor.streetAndNumber',
-      defaults.doctor.streetAndNumber,
-    );
-    applyDefaultForPath(
-      normalized,
-      'doctor.postalCode',
-      defaults.doctor.postalCode,
-    );
-    applyDefaultForPath(normalized, 'doctor.city', defaults.doctor.city);
+    applyDefaultsForPaths(normalized, [
+      ['patient.firstName', defaults.patient.firstName],
+      ['patient.lastName', defaults.patient.lastName],
+      ['patient.streetAndNumber', defaults.patient.streetAndNumber],
+      ['patient.postalCode', defaults.patient.postalCode],
+      ['patient.city', defaults.patient.city],
+      ['doctor.name', defaults.doctor.name],
+      ['doctor.streetAndNumber', defaults.doctor.streetAndNumber],
+      ['doctor.postalCode', defaults.doctor.postalCode],
+      ['doctor.city', defaults.doctor.city],
+    ]);
 
     const shouldApplyDecisionFallback =
       !sourceData || !hasDoctorLetterDecisionAnswers(sourceData);
     if (shouldApplyDecisionFallback) {
-      setPathValue(
+      setPathValueMutableSafe(
         normalized,
         'decision.caseText',
         defaults.decision.fallbackCaseText,
       );
-      setPathValue(normalized, 'decision.caseParagraphs', [
+      setPathValueMutableSafe(normalized, 'decision.caseParagraphs', [
         defaults.decision.fallbackCaseText,
       ]);
     }
@@ -456,86 +386,31 @@ export const applyDocxExportDefaults = (
 
   if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
     const defaults = getOfflabelAntragExportDefaults(locale);
-
-    applyDefaultForPath(
-      normalized,
-      'patient.firstName',
-      defaults.patient.firstName,
-    );
-    applyDefaultForPath(
-      normalized,
-      'patient.lastName',
-      defaults.patient.lastName,
-    );
-    applyDefaultForPath(
-      normalized,
-      'patient.birthDate',
-      defaults.patient.birthDate,
-    );
-    applyDefaultForPath(
-      normalized,
-      'patient.insuranceNumber',
-      defaults.patient.insuranceNumber,
-    );
-    applyDefaultForPath(
-      normalized,
-      'patient.streetAndNumber',
-      defaults.patient.streetAndNumber,
-    );
-    applyDefaultForPath(
-      normalized,
-      'patient.postalCode',
-      defaults.patient.postalCode,
-    );
-    applyDefaultForPath(normalized, 'patient.city', defaults.patient.city);
-
-    applyDefaultForPath(
-      normalized,
-      'doctor.practice',
-      defaults.doctor.practice,
-    );
-    applyDefaultForPath(normalized, 'doctor.name', defaults.doctor.name);
-    applyDefaultForPath(
-      normalized,
-      'doctor.streetAndNumber',
-      defaults.doctor.streetAndNumber,
-    );
-    applyDefaultForPath(
-      normalized,
-      'doctor.postalCode',
-      defaults.doctor.postalCode,
-    );
-    applyDefaultForPath(normalized, 'doctor.city', defaults.doctor.city);
-
-    applyDefaultForPath(normalized, 'insurer.name', defaults.insurer.name);
-    applyDefaultForPath(
-      normalized,
-      'insurer.department',
-      defaults.insurer.department,
-    );
-    applyDefaultForPath(
-      normalized,
-      'insurer.streetAndNumber',
-      defaults.insurer.streetAndNumber,
-    );
-    applyDefaultForPath(
-      normalized,
-      'insurer.postalCode',
-      defaults.insurer.postalCode,
-    );
-    applyDefaultForPath(normalized, 'insurer.city', defaults.insurer.city);
-
-    applyDefaultForPath(normalized, 'request.drug', defaults.request.drug);
-    applyDefaultForPath(
-      normalized,
-      'request.standardOfCareTriedFreeText',
-      defaults.request.standardOfCareTriedFreeText,
-    );
-    applyDefaultForPath(
-      normalized,
-      'attachmentsFreeText',
-      defaults.attachmentsFreeText,
-    );
+    applyDefaultsForPaths(normalized, [
+      ['patient.firstName', defaults.patient.firstName],
+      ['patient.lastName', defaults.patient.lastName],
+      ['patient.birthDate', defaults.patient.birthDate],
+      ['patient.insuranceNumber', defaults.patient.insuranceNumber],
+      ['patient.streetAndNumber', defaults.patient.streetAndNumber],
+      ['patient.postalCode', defaults.patient.postalCode],
+      ['patient.city', defaults.patient.city],
+      ['doctor.practice', defaults.doctor.practice],
+      ['doctor.name', defaults.doctor.name],
+      ['doctor.streetAndNumber', defaults.doctor.streetAndNumber],
+      ['doctor.postalCode', defaults.doctor.postalCode],
+      ['doctor.city', defaults.doctor.city],
+      ['insurer.name', defaults.insurer.name],
+      ['insurer.department', defaults.insurer.department],
+      ['insurer.streetAndNumber', defaults.insurer.streetAndNumber],
+      ['insurer.postalCode', defaults.insurer.postalCode],
+      ['insurer.city', defaults.insurer.city],
+      ['request.drug', defaults.request.drug],
+      [
+        'request.standardOfCareTriedFreeText',
+        defaults.request.standardOfCareTriedFreeText,
+      ],
+      ['attachmentsFreeText', defaults.attachmentsFreeText],
+    ]);
   }
 
   return normalized;
@@ -547,7 +422,11 @@ export const ensureExportedAtIso = (
 ): DocxTemplateContext => {
   const normalized = cloneTemplateContext(context);
   if (getPathValue(normalized, 'exportedAtIso') === undefined) {
-    setPathValue(normalized, 'exportedAtIso', exportedAt.toISOString());
+    setPathValueMutableSafe(
+      normalized,
+      'exportedAtIso',
+      exportedAt.toISOString(),
+    );
   }
   return normalized;
 };
@@ -761,7 +640,10 @@ const addBlankLinesBetweenDoctorLetterParagraphs = (
   path: string,
   entries: unknown[],
 ): unknown[] => {
-  if (formpackId !== 'doctor-letter' || path !== 'decision.caseParagraphs') {
+  if (
+    formpackId !== DOCTOR_LETTER_FORMPACK_ID ||
+    path !== 'decision.caseParagraphs'
+  ) {
     return entries;
   }
 
@@ -929,7 +811,7 @@ export const mapDocumentDataToTemplate = async (
       fieldUiSchema,
       field.path,
     );
-    setPathValue(context, field.var, value);
+    setPathValueMutableSafe(context, field.var, value);
   });
 
   mapping.loops?.forEach((loop) => {
@@ -956,7 +838,7 @@ export const mapDocumentDataToTemplate = async (
       loop.path,
       entries,
     );
-    setPathValue(context, loop.var, normalizedEntries);
+    setPathValueMutableSafe(context, loop.var, normalizedEntries);
   });
 
   return context;
