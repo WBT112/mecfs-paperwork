@@ -348,6 +348,34 @@ describe('buildDocumentModel for doctor-letter', () => {
       );
       expect(result.decision?.caseText).toMatch(/fluoroquinolon/i);
     });
+
+    it('accepts boolean decision answers and resolves the same case', () => {
+      const result = buildDocumentModel(FORMPACK_ID, 'de', {
+        patient: {
+          firstName: 'Bool',
+          lastName: 'Case',
+        },
+        doctor: {
+          practice: 'Praxis Boolean',
+          title: DR_TITLE,
+          gender: 'Herr',
+          name: 'Test',
+        },
+        decision: {
+          q1: true,
+          q2: true,
+          q3: false,
+          q5: FLUOROQUINOLONES,
+        },
+      });
+
+      expect(result.decision?.caseId).toBe(14);
+      const expectedText = buildExpectedCaseText(deTranslations[CASE_14_KEY]);
+      expect(result.decision?.caseText).toBe(expectedText);
+      expect(result.decision?.caseParagraphs).toEqual(
+        splitParagraphs(deTranslations[CASE_14_KEY]),
+      );
+    });
   });
 
   describe('end-to-end mapping verification', () => {

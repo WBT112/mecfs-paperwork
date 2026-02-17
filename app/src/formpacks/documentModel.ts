@@ -170,6 +170,28 @@ const buildBaseDocumentModel = (
   };
 };
 
+type ProjectedDoctorDetails = {
+  practice: string | null;
+  title: string | null;
+  gender: string | null;
+  name: string | null;
+  streetAndNumber: string | null;
+  postalCode: string | null;
+  city: string | null;
+};
+
+const projectDoctorDetails = (
+  doctor: Record<string, unknown> | null,
+): ProjectedDoctorDetails => ({
+  practice: getStringValue(doctor?.practice),
+  title: getStringValue(doctor?.title),
+  gender: getStringValue(doctor?.gender),
+  name: getStringValue(doctor?.name),
+  streetAndNumber: getStringValue(doctor?.streetAndNumber),
+  postalCode: getStringValue(doctor?.postalCode),
+  city: getStringValue(doctor?.city),
+});
+
 const getYesNoValue = (value: unknown): 'yes' | 'no' | undefined => {
   if (value === 'yes' || value === true) return 'yes';
   if (value === 'no' || value === false) return 'no';
@@ -205,6 +227,7 @@ const buildDoctorLetterModel = (
 ): DocumentModel => {
   const patient = getRecordValue(formData.patient);
   const doctor = getRecordValue(formData.doctor);
+  const doctorDetails = projectDoctorDetails(doctor);
   const decision = getRecordValue(formData.decision);
 
   const decisionAnswers = getDecisionAnswers(decision);
@@ -229,13 +252,7 @@ const buildDoctorLetterModel = (
     },
     doctor: {
       ...baseModel.doctor,
-      practice: getStringValue(doctor?.practice),
-      title: getStringValue(doctor?.title),
-      gender: getStringValue(doctor?.gender),
-      name: getStringValue(doctor?.name),
-      streetAndNumber: getStringValue(doctor?.streetAndNumber),
-      postalCode: getStringValue(doctor?.postalCode),
-      city: getStringValue(doctor?.city),
+      ...doctorDetails,
     },
     decision: {
       caseId: result.caseId,
@@ -305,6 +322,7 @@ const buildOfflabelAntragModel = (
 ): DocumentModel => {
   const projected = buildOffLabelAntragDocumentModel(formData, locale);
   const doctor = getRecordValue(formData.doctor);
+  const doctorDetails = projectDoctorDetails(doctor);
 
   return {
     diagnosisParagraphs: [],
@@ -312,9 +330,8 @@ const buildOfflabelAntragModel = (
     patient: projected.patient,
     doctor: {
       ...baseModel.doctor,
+      ...doctorDetails,
       practice: projected.doctor.practice,
-      title: getStringValue(doctor?.title),
-      gender: getStringValue(doctor?.gender),
       name: projected.doctor.name,
       streetAndNumber: projected.doctor.streetAndNumber,
       postalCode: projected.doctor.postalCode,

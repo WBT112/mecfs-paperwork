@@ -198,6 +198,8 @@ describe('formpacks/documentModel', () => {
       doctor: {
         name: 'Dr. Example',
         practice: 'Practice',
+        title: 'Dr.',
+        gender: 'Frau',
         streetAndNumber: 'Doc Street 2',
         postalCode: '22222',
         city: 'Doc City',
@@ -231,6 +233,8 @@ describe('formpacks/documentModel', () => {
     expect(result.doctor).toMatchObject({
       name: 'Dr. Example',
       practice: 'Practice',
+      title: 'Dr.',
+      gender: 'Frau',
       streetAndNumber: 'Doc Street 2',
       postalCode: '22222',
       city: 'Doc City',
