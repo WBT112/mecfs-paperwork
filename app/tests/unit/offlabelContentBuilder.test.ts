@@ -10,6 +10,14 @@ const CASE_TRANSFER_YES_TEXT =
   'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.';
 const EVIDENCE_NOTE_TEXT =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit;';
+const HILFSANTRAG_INTRO_TEXT =
+  'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V.';
+const POINT_10_BRIDGE_TEXT =
+  'Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde';
+const POINT_10_SAFETY_TEXT =
+  'Die beantragte Therapie erfolgt entsprechend der dargestellten evidenzbasierten Empfehlungen ärztlich kontrolliert, befristet und unter klar definierten Abbruchkriterien.';
+const POINT_7_SAFETY_TEXT =
+  'Die beantragte Therapie erfolgt im Rahmen einer sorgfältigen individuellen Nutzen-Risiko-Abwägung, ärztlich überwacht und zeitlich befristet.';
 
 describe('buildOfflabelDocuments', () => {
   it('builds three parts and includes point-10 evidence text for known medication', () => {
@@ -122,6 +130,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain('Indikation: Seltene XYZ-Indikation');
     expect(part1Text).toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain(EVIDENCE_NOTE_TEXT);
+    expect(part1Text).toContain(POINT_7_SAFETY_TEXT);
     expect(part1Text).toContain(
       'Zusätzlich wurden folgende Therapieversuche unternommen:',
     );
@@ -259,8 +268,15 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
 
+    expect(part1Text).toContain(HILFSANTRAG_INTRO_TEXT);
     expect(part1Text).toContain('Punkt 7:');
+    expect(part1Text).toContain(
+      'Punkt 7: Im Rahmen des hilfsweise gestellten Antrags nach § 2 Abs. 1a SGB V sind die Voraussetzungen in meinem Fall erfüllt.',
+    );
     expect(part1Text).toContain(SECTION_2A_TEXT);
+    expect(part1Text).toContain(POINT_10_BRIDGE_TEXT);
+    expect(part1Text).toContain(POINT_10_SAFETY_TEXT);
+    expect(part1Text).toContain(POINT_7_SAFETY_TEXT);
   });
 
   it('ignores standard-of-care free text for standard medication previews', () => {

@@ -8,6 +8,12 @@ import {
 } from './export/documentModel';
 import type { OfflabelAntragExportDefaults } from '../../export/offlabelAntragDefaults';
 
+/**
+ * RATIONALE: This module is currently a compatibility/test facade.
+ * The runtime export path uses `buildOffLabelAntragDocumentModel` directly.
+ * Keep this wrapper stable for existing unit tests; removal can happen in a
+ * dedicated aggressive cleanup once test contracts are migrated.
+ */
 export type OfflabelAntragLetter = OffLabelLetterSection;
 export type OfflabelAntragExportBundle = OffLabelExportBundle;
 

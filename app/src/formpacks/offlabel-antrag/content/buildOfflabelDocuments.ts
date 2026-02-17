@@ -64,8 +64,14 @@ const parseMultilineItems = (value: string): string[] =>
     )
     .filter((line) => line.length > 0);
 
+const POINT_HILFSANTRAG_INTRO =
+  'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V. Dies gilt insbesondere für den Fall, dass eine zulassungsreife Datenlage im engeren Sinne verneint wird.';
+
 const POINT_7_NOTSTAND =
-  'Es handelt sich um eine schwerwiegende, die Lebensqualität auf Dauer nachhaltig beeinträchtigende Erkrankung. Die Voraussetzungen des § 2 Abs. 1a SGB V sind in meinem Fall erfüllt. Zur wertungsmäßigen Einordnung bei fehlender Standardtherapie verweise ich ergänzend auf den Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER).';
+  'Im Rahmen des hilfsweise gestellten Antrags nach § 2 Abs. 1a SGB V sind die Voraussetzungen in meinem Fall erfüllt. Es handelt sich um eine schwerwiegende, die Lebensqualität auf Dauer nachhaltig beeinträchtigende Erkrankung. Zur wertungsmäßigen Einordnung bei fehlender Standardtherapie verweise ich ergänzend auf den Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER).';
+
+const POINT_7_NOTSTAND_THERAPY_SAFETY =
+  'Die beantragte Therapie erfolgt im Rahmen einer sorgfältigen individuellen Nutzen-Risiko-Abwägung, ärztlich überwacht und zeitlich befristet. Eine engmaschige Verlaufskontrolle ist vorgesehen. Bei fehlender Wirksamkeit oder relevanten Nebenwirkungen wird die Behandlung unverzüglich beendet. Die Therapie dient der Verhinderung einer weiteren Verschlechterung sowie der Erzielung einer spürbaren positiven Einwirkung auf den Krankheitsverlauf.';
 
 const POINT_8_STANDARD =
   'Für die Versorgung meiner Erkrankung stehen keine sog. Standard-Therapien des gKV-Leistungskatalogs zur Verfügung. In der Wissenschaft werden allein symptombezogene Versorgungen diskutiert. Die am ehesten einschlägige Leitlinie: „Müdigkeit“ der Arbeitsgemeinschaft der Wissenschaftlichen Medizinischen Fachgesellschaften e. V. spricht in eben jener Leitlinie davon, dass für die kausale Behandlung des ME/CFS bislang keine Medikamente zugelassen sind und verweist auf die britische NICE-Richtlinie. In dieser wird neben Energiemanagment vor allem das Lindern der Symptome in den Fokus gerückt um eine spürbare Beeinflussung des Krankheitsverlaufes oder eine Verhütung der Verschlimmerung zu erreichen. Die Leitlinie enthält keine positiven Empfehlungen zur medikamentösen Therapie. Aufgelistet und diskutiert werden zahlreiche Therapieversuche mit sehr unterschiedlichen Ansätzen. Explizit wird zusammengefasst, dass es keine belastbare evidenzbasierte Grundlage für den Einsatz bestimmter Arzneimittel gibt. Das begehrte Offlabel Medikament ist für die Erreichung dieser Ziele geeignet. Zusammengefasst ist keine der medizinischen Standardtherapie entsprechende Alternative verfügbar.';
@@ -75,6 +81,10 @@ const POINT_10_EVIDENCE_NOTE =
 
 const POINT_10_NO_2A = `Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben. Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen, insbesondere aufgrund unterschiedlicher Ursachen und Komorbiditäten. Das trifft auch auf Patientinnen und Patienten mit Long-/Post-COVID zu. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_YES_2A = `Diese Erkenntnisse sind auf meinen Einzelfall übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
+const POINT_10_SECTION_2A_BRIDGE =
+  'Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde, bestehen jedenfalls veröffentlichte Erkenntnisse, die eine zuverlässige Nutzen-Risiko-Abwägung ermöglichen; hilfsweise wird daher die Leistung nach § 2 Abs. 1a SGB V begehrt.';
+const POINT_10_STANDARD_THERAPY_SAFETY =
+  'Die beantragte Therapie erfolgt entsprechend der dargestellten evidenzbasierten Empfehlungen ärztlich kontrolliert, befristet und unter klar definierten Abbruchkriterien. Eine regelmäßige Verlaufskontrolle sowie eine dokumentierte Nutzen-Risiko-Abwägung sind vorgesehen. Bei fehlender Wirksamkeit oder nicht tolerierbaren Nebenwirkungen wird die Behandlung unverzüglich beendet.';
 
 const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
   '100':
@@ -221,8 +231,8 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   const drug = DRUGS[drugKey];
   const point2aNo =
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
-  const includePoint7 =
-    drugKey === 'other' || getBool(request.applySection2Abs1a);
+  const applySection2Abs1a = getBool(request.applySection2Abs1a);
+  const includePoint7 = drugKey === 'other' || applySection2Abs1a;
   const standardCareText = getText(request.standardOfCareTriedFreeText);
   const standardCareItems =
     drugKey === 'other' ? parseMultilineItems(standardCareText) : [];
@@ -257,6 +267,14 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       kind: 'paragraph',
       text: `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisMain}.`,
     },
+    ...(applySection2Abs1a
+      ? ([
+          {
+            kind: 'paragraph' as const,
+            text: POINT_HILFSANTRAG_INTRO,
+          },
+        ] satisfies OfflabelRenderedDocument['blocks'])
+      : []),
     {
       kind: 'paragraph',
       text: 'Zur Prüfung meines Antrags habe ich die maßgeblichen Punkte nachfolgend strukturiert dargestellt:',
@@ -303,6 +321,12 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       { kind: 'list', items: standardCareItems },
     );
   }
+  if (includePoint7) {
+    blocks.push({
+      kind: 'paragraph',
+      text: POINT_7_NOTSTAND_THERAPY_SAFETY,
+    });
+  }
 
   if (drugKey === 'other') {
     blocks.push(
@@ -320,7 +344,10 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     const point10CaseTransferText = point2aNo
       ? POINT_10_NO_2A
       : POINT_10_YES_2A;
-    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText} Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`;
+    const point10BridgeText = applySection2Abs1a
+      ? ` ${POINT_10_SECTION_2A_BRIDGE}`
+      : '';
+    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}. ${POINT_10_STANDARD_THERAPY_SAFETY}`;
     blocks.push({
       kind: 'paragraph',
       text: point10BaseText,
