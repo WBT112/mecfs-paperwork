@@ -241,7 +241,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
         : 'Die Diagnose ist gesichert';
     }
     return point2aNo
-      ? 'Die Diagnose ist gesichert'
+      ? 'Die vorgegebene Diagnose/Indikation ist noch nicht vollständig bestätigt und wird ärztlich nachgereicht.'
       : drug.point2DiagnosisSentenceDe;
   })();
 
@@ -273,7 +273,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     },
     {
       kind: 'paragraph',
-      text: `Punkt 1: Das Medikament ${facts.displayName} ist in Deutschland nicht indikationszogen zugelassen`,
+      text: `Punkt 1: Das Medikament ${facts.displayName} ist in Deutschland nicht indikationsbezogen zugelassen`,
     },
     {
       kind: 'paragraph',
@@ -324,7 +324,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     blocks.push(
       {
         kind: 'paragraph',
-        text: `Punkt 9: Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risko-Nutzen-Bewertung (siehe Arztbefund). ${POINT_10_EVIDENCE_NOTE}`,
+        text: `Punkt 9: Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risiko-Nutzen-Bewertung (siehe Arztbefund). ${POINT_10_EVIDENCE_NOTE}`,
       },
       {
         kind: 'paragraph',
@@ -390,7 +390,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} wegen meiner ME/CFS vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel, bisherige Maßnahmen, erwarteter Nutzen, Monitoring, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen) sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.`,
+        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} wegen meiner Erkrankung (${facts.diagnosisMain}) vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel, bisherige Maßnahmen, erwarteter Nutzen, Monitoring, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen) sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.`,
       },
       {
         kind: 'paragraph',
@@ -444,7 +444,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: 'Der Patient leidet an ME/CFS, einer lebensbedrohlichen und die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung. Die Diagnose ist gesichert.',
+        text: `Der Patient leidet an einer schwerwiegenden, die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung. Die aktuelle Indikation lautet ${facts.diagnosisMain}.`,
       },
       {
         kind: 'paragraph',

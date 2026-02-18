@@ -39,7 +39,9 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
 
-    expect(part1Text).toContain('Punkt 2: Die Diagnose ist gesichert');
+    expect(part1Text).toContain(
+      'Punkt 2: Die vorgegebene Diagnose/Indikation ist noch nicht vollständig bestätigt und wird ärztlich nachgereicht.',
+    );
     expect(part1Text).not.toContain('Punkt 7:');
     expect(part1Text).not.toContain('Punkt 9:');
     expect(part1Text).toContain('Punkt 10:');
@@ -119,7 +121,7 @@ describe('buildOfflabelDocuments', () => {
       .join('\n');
 
     expect(part1Text).toContain(
-      'Punkt 1: Das Medikament anderes Medikament oder andere Indikation ist in Deutschland nicht indikationszogen zugelassen',
+      'Punkt 1: Das Medikament anderes Medikament oder andere Indikation ist in Deutschland nicht indikationsbezogen zugelassen',
     );
     expect(part1Text).toContain(
       'Punkt 2: Die Diagnose Seltene XYZ-Indikation ist gesichert',
@@ -242,10 +244,10 @@ describe('buildOfflabelDocuments', () => {
       .join('\n');
 
     expect(part1Text).toContain(
-      'Punkt 1: Das Medikament Midodrin ist in Deutschland nicht indikationszogen zugelassen',
+      'Punkt 1: Das Medikament Midodrin ist in Deutschland nicht indikationsbezogen zugelassen',
     );
     expect(part2Text).toContain(
-      'für eine Off-Label-Verordnung von Midodrin wegen meiner ME/CFS',
+      'für eine Off-Label-Verordnung von Midodrin wegen meiner Erkrankung (Orthostatische Intoleranz)',
     );
     expect(part2Text).toContain(
       'sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.',
@@ -312,7 +314,7 @@ describe('buildOfflabelDocuments', () => {
       .join('\n');
 
     expect(part1Text).toContain(
-      'Punkt 1: Das Medikament Ivabradin ist in Deutschland nicht indikationszogen zugelassen',
+      'Punkt 1: Das Medikament Ivabradin ist in Deutschland nicht indikationsbezogen zugelassen',
     );
     expect(part1Text).toContain('Punkt 10:');
     expect(part1Text).toContain(CASE_TRANSFER_YES_TEXT);

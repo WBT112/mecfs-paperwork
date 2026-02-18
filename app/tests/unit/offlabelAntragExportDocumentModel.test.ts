@@ -115,7 +115,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     expect(model.kk.paragraphs.join('\n')).toContain(
-      'Punkt 2: Die Diagnose ist gesichert',
+      'Punkt 2: Die vorgegebene Diagnose/Indikation ist noch nicht vollständig bestätigt und wird ärztlich nachgereicht.',
     );
     expect(model.part3.paragraphs.join('\n')).toContain(
       'Der Patient leidet an den typischen Symptomen der Indikation',
