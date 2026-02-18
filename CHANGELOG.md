@@ -28,20 +28,20 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 ## [0.5.0] - 2026-02-09
 
 ### Added
-- **doctor-letter Formpack:** ICD-10 Briefgenerator für ME/CFS mit Unterstützung für die neuen ICD-10-GM2026 Kodierungen (G93.30, G93.31, G93.39, R53.0).
-- **PDF Export:** Client-seitige PDF-Generierung für doctor-letter mit @react-pdf/renderer (A4-Format, Offline-fähig).
-- **Entscheidungslogik:** Intelligente Fallunterscheidung basierend auf ME/CFS-Kriterien (IOM, CCC), Ursachen (Infektionen, Impfungen, Medikamente) und Symptomen (PEM, chronische Fatigue).
-- **Annexe:** Zwei unterstützende Bilddateien (ICD-10-Schema und Praxisleitfaden-Auszug) für besseres Verständnis.
-- **Infoboxen:** Kontextuelle Hilfeboxen mit Links zu Praxisleitfaden und Diagnosefragebögen.
-- **PWA-Caching-Strategie:** Dokumentierte und implementierte bounded offline-first Caching-Strategie mit Workbox (`app/src/pwa/sw.ts`, `docs/pwa-caching.md`).
+- **doctor-letter Formpack:** ICD-10 letter generator for ME/CFS with support for the new ICD-10-GM2026 codes (G93.30, G93.31, G93.39, R53.0).
+- **PDF Export:** Client-side PDF generation for doctor-letter using @react-pdf/renderer (A4 format, offline-capable).
+- **Decision logic:** Intelligent case differentiation based on ME/CFS criteria (IOM, CCC), causes (infections, vaccinations, medications), and symptoms (PEM, chronic fatigue).
+- **Annexes:** Two supporting image files (ICD-10 schema and practice guideline excerpt) for better understanding.
+- **Infoboxes:** Contextual help boxes with links to practice guidelines and diagnostic questionnaires.
+- **PWA caching strategy:** Documented and implemented bounded offline-first caching strategy with Workbox (`app/src/pwa/sw.ts`, `docs/pwa-caching.md`).
 
 ### Changed
-- Formpack-Registry erweitert um `doctor-letter` Formpack.
-- PDF-Export-Infrastruktur: Einführung von `PdfExportButton`, `PdfExportRuntime`, Template-Registry und Liberation-Schriftarten.
-- Export-Dokumentation aktualisiert mit PDF-Export-Anleitung (`docs/formats/pdf-export.md`).
+- Formpack registry extended with `doctor-letter` formpack.
+- PDF export infrastructure: Introduction of `PdfExportButton`, `PdfExportRuntime`, template registry, and Liberation fonts.
+- Export documentation updated with PDF export guide (`docs/formats/pdf-export.md`).
 
 ### Security
-- **Privacy-Hinweis dokumentiert:** Klarstellung in der Threat-Model-Dokumentation, dass lokaler Browser-Speicher (IndexedDB, localStorage) nicht automatisch verschlüsselt ist. Risiken und Mitigationsstrategien hinzugefügt (`docs/security/threat-model.md`).
+- **Privacy notice documented:** Clarification in threat model documentation that local browser storage (IndexedDB, localStorage) is not automatically encrypted. Risks and mitigation strategies added (`docs/security/threat-model.md`).
 
 
 ## [0.1.0] - 2026-01-14
