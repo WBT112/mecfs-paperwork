@@ -111,7 +111,6 @@ type MedicationFacts = {
   medicationName: string;
   medicationIngredient: string;
   expertSource: string | null;
-  expertAttachment: string | null;
 };
 
 type LetterCompositionInput = {
@@ -269,7 +268,6 @@ const resolveMedicationFacts = ({
       medicationIngredient:
         locale === 'en' ? profile.displayNameEn : profile.displayNameDe,
       expertSource: localeFacts.expertSourceText,
-      expertAttachment: localeFacts.expertAttachmentText,
     };
   }
 
@@ -283,7 +281,6 @@ const resolveMedicationFacts = ({
     medicationName: otherDrugName,
     medicationIngredient: otherDrugName,
     expertSource: null,
-    expertAttachment: null,
   };
 };
 
@@ -546,15 +543,13 @@ export const buildOffLabelAntragDocumentModel = (
     addresseeLines: [],
   };
 
-  const userAndExpertAttachments = [
-    ...(medicationFacts.expertAttachment
-      ? [medicationFacts.expertAttachment]
-      : []),
-    ...attachmentEntries,
-  ];
+  const userAttachments = attachmentEntries;
+  const kkAttachmentsHeading =
+    userAttachments.length > 0 ? attachmentsHeading : '';
 
   const kk = buildLetterSection({
     ...letterInput,
+    attachmentsHeading: kkAttachmentsHeading,
     addresseeLines: buildAddressLines(
       [insurer.name, insurer.department],
       insurer,
@@ -568,7 +563,7 @@ export const buildOffLabelAntragDocumentModel = (
       { drug: medicationFacts.medicationName },
     ),
     paragraphs: kkParagraphs,
-    attachments: userAndExpertAttachments,
+    attachments: userAttachments,
     signatureBlocks: buildKkSignatures({
       t,
       patientName,
@@ -594,7 +589,7 @@ export const buildOffLabelAntragDocumentModel = (
           ? 'Part 1: Insurer application (draft)'
           : 'Teil 1: Antrag an die Krankenkasse (Entwurf)',
       ),
-      ...userAndExpertAttachments,
+      ...userAttachments,
     ],
     signatureBlocks: [],
   });

@@ -55,8 +55,8 @@ describe('buildOffLabelAntragDocumentModel', () => {
 
     expect(model.sources).toHaveLength(2);
     expect(model.sources[0]).toContain('Bewertung Ivabradin');
-    expect(model.kk.attachments).toHaveLength(1);
-    expect(model.kk.attachments[0]).toContain('Bewertung: Ivabradin');
+    expect(model.kk.attachments).toEqual([]);
+    expect(model.kk.attachmentsHeading).toBe('');
   });
 
   it('inserts blank DOCX paragraphs between part 1 points for readability', () => {
@@ -197,6 +197,12 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'Befundbericht',
       'Laborwerte',
     ]);
+    expect(model.kk.attachments).toEqual([
+      'Arztbrief vom 2026-01-10',
+      'Befundbericht',
+      'Laborwerte',
+    ]);
+    expect(model.kk.attachmentsHeading).toBe('Anlagen');
   });
 
   it('keeps practice address only in header and uses the updated part-2 subject', () => {

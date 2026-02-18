@@ -70,8 +70,8 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part3.title).toContain('Teil 3');
   });
 
-  it('uses med-specific expert source and attachment for built-in medication', () => {
-    const bundle = buildOffLabelAntragDocumentModel(
+  it('keeps med-specific expert source and omits auto-attachments in part 1', () => {
+    const model = buildOffLabelAntragDocumentModel(
       {
         request: {
           drug: 'vortioxetine',
@@ -79,18 +79,12 @@ describe('offlabel-antrag letter builder', () => {
       },
       'de',
       { exportedAt: FIXED_EXPORTED_AT },
-    ).exportBundle;
+    );
+    const bundle = model.exportBundle;
 
     expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 10:');
-    expect(bundle.part1.attachments).toContain(
-      'Bewertung: Vortioxetin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025)',
-    );
-    expect(bundle.part1.attachments.join(' | ')).not.toContain(
-      'Bewertung Ivabradin',
-    );
-    expect(bundle.part1.attachments.join(' | ')).not.toContain(
-      'Bewertung Agomelatin',
-    );
+    expect(model.sources[0]).toContain('Bewertung Vortioxetin');
+    expect(bundle.part1.attachments).toEqual([]);
   });
 
   it('does not inject any expert attachment for other medication', () => {
