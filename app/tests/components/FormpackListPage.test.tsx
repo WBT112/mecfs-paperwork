@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+import './formpackListPage.mockSetup';
 import FormpackListPage from '../../src/pages/FormpackListPage';
 import { TestRouter } from '../setup/testRouter';
 
@@ -44,29 +45,6 @@ vi.mock('../../src/formpacks/loader', () => ({
       visibility: 'public',
     },
   ]),
-}));
-
-vi.mock('../../src/i18n/formpack', () => ({
-  loadFormpackI18n: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('../../src/formpacks/visibility', () => ({
-  filterVisibleFormpacks: vi.fn((data: unknown): unknown[] =>
-    Array.isArray(data) ? data : [],
-  ),
-}));
-
-vi.mock('react-i18next', () => {
-  // Stable reference to avoid infinite re-renders from useEffect([t])
-  const t = (key: string) => key;
-  return {
-    useTranslation: () => ({ t, i18n: { language: 'de' } }),
-    initReactI18next: { type: '3rdParty', init: () => undefined },
-  };
-});
-
-vi.mock('../../src/i18n/useLocale', () => ({
-  useLocale: () => ({ locale: 'de' }),
 }));
 
 const renderPage = () =>
