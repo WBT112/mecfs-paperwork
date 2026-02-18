@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from './helpers';
 import { openFormpackWithRetry } from './helpers/formpack';
+import { switchLocale } from './helpers/locale';
 import { openCollapsibleSectionById } from './helpers/sections';
 
 const DB_NAME = 'mecfs-paperwork';
@@ -41,6 +42,59 @@ const selectDrugByLabelText = async (page: Page, labelSnippet: string) => {
   await select.selectOption(value);
 };
 
+const selectDrugByValue = async (page: Page, value: string) => {
+  const select = page.locator('#root_request_drug');
+  await expect(select).toBeVisible({ timeout: 20_000 });
+
+  const resolvedValue = await select.evaluate((node, desired) => {
+    const optionValues = Array.from((node as HTMLSelectElement).options).map(
+      (option) => ({
+        value: option.value,
+        label: option.textContent?.toLowerCase() ?? '',
+      }),
+    );
+
+    const normalized = desired.toLowerCase();
+    const aliasMap: Record<string, string[]> = {
+      ivabradine: ['ivabradine', 'ivabradin'],
+      vortioxetine: ['vortioxetine', 'vortioxetin'],
+      agomelatin: ['agomelatin', 'agomelatine'],
+      other: ['other', 'anderes medikament', 'other medication'],
+    };
+    const candidates = aliasMap[normalized] ?? [normalized];
+
+    const byValue = optionValues.find((option) =>
+      candidates.includes(option.value.toLowerCase()),
+    );
+    if (byValue) {
+      return byValue.value;
+    }
+
+    const byLabel = optionValues.find((option) =>
+      candidates.some((candidate) => option.label.includes(candidate)),
+    );
+    return byLabel?.value ?? null;
+  }, value);
+
+  if (!resolvedValue) {
+    throw new Error(`No drug option found for value "${value}".`);
+  }
+
+  await select.selectOption(resolvedValue);
+};
+
+const setTheme = async (page: Page, theme: 'dark' | 'light') => {
+  const themeSelect = page.locator('#theme-select');
+  await expect(themeSelect).toBeVisible({ timeout: 20_000 });
+  await themeSelect.selectOption(theme);
+  await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+};
+
+const openPart1Preview = async (page: Page) => {
+  await openCollapsibleSectionById(page, 'formpack-document-preview');
+  await page.getByRole('tab', { name: /part 1/i }).click();
+};
+
 test.describe('offlabel workflow preview regressions', () => {
   test.setTimeout(90_000);
 
@@ -73,6 +127,77 @@ test.describe('offlabel workflow preview regressions', () => {
     await expect(preview).toContainText(/Punkt 7:/i);
     await expect(preview).toContainText(/§ 2 Abs\. 1a SGB V/i);
     await expect(preview).toContainText(/Punkt 10:/i);
+  });
+
+  test('standard path (dark/de) keeps point 10 and excludes points 7 and 9', async ({
+    page,
+  }) => {
+    await setTheme(page, 'dark');
+    await selectDrugByValue(page, 'ivabradine');
+    await openPart1Preview(page);
+    const preview = page.locator(
+      '#formpack-document-preview-content .formpack-document-preview',
+    );
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText(/Punkt 10:/i);
+    await expect(preview).not.toContainText(/Punkt 7:/i);
+    await expect(preview).not.toContainText(/Punkt 9:/i);
+  });
+
+  test('standard path (en + light) adds auxiliary §2 wording and keeps point 10', async ({
+    page,
+  }) => {
+    await switchLocale(page, 'en');
+    await setTheme(page, 'light');
+    await selectDrugByValue(page, 'ivabradine');
+    await page.locator('#root_request_applySection2Abs1a').check();
+
+    await openPart1Preview(page);
+    const preview = page.locator(
+      '#formpack-document-preview-content .formpack-document-preview',
+    );
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText(
+      /Hilfsweise stelle ich.*§ 2 Abs\. 1a SGB V/i,
+    );
+    await expect(preview).toContainText(
+      /Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+    );
+    await expect(preview).toContainText(/Punkt 10:/i);
+  });
+
+  test('other path (dark/de) uses direct §2 wording with point 7 and 9 only', async ({
+    page,
+  }) => {
+    await setTheme(page, 'dark');
+    await selectDrugByValue(page, 'other');
+    await page.locator('#root_request_otherDrugName').fill('Midodrin');
+    await page
+      .locator('#root_request_otherIndication')
+      .fill('Orthostatische Intoleranz');
+    await page
+      .locator('#root_request_otherTreatmentGoal')
+      .fill('Verbesserung Kreislaufstabilität');
+    await page.locator('#root_request_otherDose').fill('2,5 mg morgens');
+    await page.locator('#root_request_otherDuration').fill('12 Wochen');
+    await page
+      .locator('#root_request_otherMonitoring')
+      .fill('Puls und Blutdruck');
+
+    await openPart1Preview(page);
+    const preview = page.locator(
+      '#formpack-document-preview-content .formpack-document-preview',
+    );
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText(/Punkt 7:/i);
+    await expect(preview).toContainText(
+      /Punkt 7: Ich beantrage eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+    );
+    await expect(preview).not.toContainText(
+      /Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+    );
+    await expect(preview).toContainText(/Punkt 9:/i);
+    await expect(preview).not.toContainText(/Punkt 10:/i);
   });
 
   test('clears other-only standard-of-care text from preview after switching back to standard medication', async ({

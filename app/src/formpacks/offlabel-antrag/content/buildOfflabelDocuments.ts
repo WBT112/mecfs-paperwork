@@ -74,6 +74,10 @@ const LSG_REFERENCE_TEXT =
 const POINT_HILFSANTRAG_INTRO = `Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V. Dies gilt insbesondere für den Fall, dass eine zulassungsreife Datenlage im engeren Sinne verneint wird. Zur wertungsmäßigen Einordnung verweise ich ergänzend auf den ${LSG_REFERENCE_TEXT}.`;
 
 const POINT_7_NOTSTAND = `Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V. Es handelt sich um eine lebensbedrohliche oder regelmäßig tödlich verlaufende Erkrankung. Die Voraussetzungen des § 2 Abs. 1a SGB V sind in meinem Fall erfüllt. Bezüglich der Wertung von ME/CFS als eben solche Erkrankung verweise ich auf den ${LSG_REFERENCE_TEXT}. Die Schwere der Erkrankung folgt bei ME/CFS als Systemerkrankung aus der Breite der Betroffenheit mehrerer lebensfunktionaler Bereiche wie körperlicher Mobilität, Verrichtungen des täglichen Lebens und Einschränkung der Leistungsfähigkeit im sozialen Umgang. Diese Lebensbereiche sind bei mir stark betroffen. Bei ME/CFS handelt es sich um eine chronische Erkrankung bisher ungeklärter Ätiologie. Chronische Erkrankungen sind per Definition nicht heilbar; viele chronische Erkrankungen haben einen progredienten Verlauf. Das bedeutet, der Gesundheitszustand verschlechtert sich im Zeitverlauf. Dies ist auch bei meiner Erkrankung der Fall. Es ist mit einer weiteren Verschlechterung zu rechnen bis hin zu einer kritischen Phase mit Verlust von Selbstständigkeit, Pflegebedürftigkeit und deutlicher Zunahme der Beschwerden. Im Vergleich mit anderen Betroffenen ist meine Situation bereits jetzt kritisch und durch Verlust von Selbstständigkeit sowie Pflegebedürftigkeit geprägt. Damit ist eine wertungsmäßig vergleichbar schwere Erkrankung bereits jetzt bei mir gegeben. Aus meiner Sicht ergibt sich die Vergleichbarkeit zur unmittelbaren Lebensbedrohlichkeit auch daraus, dass ME/CFS als Systemerkrankung progredient verläuft, Verschlechterungen in Schüben auftreten können und Zeitpunkt sowie Schwere des nächsten Schubes nicht exakt vorhersehbar sind. Eine exakte Zeitangabe ist zur Erfüllung der Wertungsgleichheit nicht erforderlich. ME/CFS verläuft häufig schubförmig und ist insoweit mit anderen chronischen Erkrankungen wie Multipler Sklerose vergleichbar. Ein weiterer Schub kann jederzeit eintreten; der Zeitraum einer erneuten erheblichen Verschlechterung ist innerhalb der nächsten Monate anzusetzen und die Wahrscheinlichkeit des Eintretens ist hoch. Damit ist insgesamt die Voraussetzung einer wertungsmäßig vergleichbaren Schwere der Erkrankung im Sinne von § 2 Abs. 1a SGB V bei mir erfüllt.`;
+const POINT_7_NOTSTAND_DIRECT = POINT_7_NOTSTAND.replace(
+  'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
+  'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+);
 
 const POINT_7_NOTSTAND_THERAPY_SAFETY =
   'Die beantragte Therapie erfolgt im Rahmen einer sorgfältigen individuellen Nutzen-Risiko-Abwägung, ärztlich überwacht und zeitlich befristet. Eine engmaschige Verlaufskontrolle ist vorgesehen. Bei fehlender Wirksamkeit oder relevanten Nebenwirkungen wird die Behandlung unverzüglich beendet. Die Therapie dient der Verhinderung einer weiteren Verschlechterung sowie der Erzielung einer spürbaren positiven Einwirkung auf den Krankheitsverlauf.';
@@ -225,6 +229,8 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
   const applySection2Abs1a = getBool(request.applySection2Abs1a);
   const includePoint7 = drugKey === 'other' || applySection2Abs1a;
+  const point7Text =
+    drugKey === 'other' ? POINT_7_NOTSTAND_DIRECT : POINT_7_NOTSTAND;
   const standardCareText = getText(request.standardOfCareTriedFreeText);
   const standardCareItems =
     drugKey === 'other' ? parseMultilineItems(standardCareText) : [];
@@ -300,7 +306,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   ];
 
   if (includePoint7) {
-    blocks.push({ kind: 'paragraph', text: `Punkt 7: ${POINT_7_NOTSTAND}` });
+    blocks.push({ kind: 'paragraph', text: `Punkt 7: ${point7Text}` });
   }
 
   blocks.push({ kind: 'paragraph', text: `Punkt 8: ${POINT_8_STANDARD}` });

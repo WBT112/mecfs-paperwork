@@ -258,20 +258,9 @@ export const isMedicationKey = (value: unknown): value is MedicationKey =>
   typeof value === 'string' &&
   OFFLABEL_MEDICATION_KEYS.includes(value as MedicationKey);
 
-const LEGACY_MEDICATION_KEY_ALIASES: Partial<Record<string, MedicationKey>> = {
-  ivabradin: 'ivabradine',
-  vortioxetin: 'vortioxetine',
-};
-
 export const normalizeMedicationKey = (value: unknown): MedicationKey => {
   if (isMedicationKey(value)) {
     return value;
-  }
-  if (typeof value === 'string') {
-    const aliasMatch = LEGACY_MEDICATION_KEY_ALIASES[value];
-    if (aliasMatch) {
-      return aliasMatch;
-    }
   }
   return 'other';
 };

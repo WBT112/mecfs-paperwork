@@ -127,6 +127,12 @@ describe('buildOfflabelDocuments', () => {
       'Punkt 2: Die Diagnose Seltene XYZ-Indikation ist gesichert',
     );
     expect(part1Text).toContain('Punkt 7:');
+    expect(part1Text).toContain(
+      'Punkt 7: Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+    );
+    expect(part1Text).not.toContain(
+      'Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
+    );
     expect(part1Text).toContain('Punkt 9:');
     expect(part1Text).not.toContain('Punkt 10:');
     expect(part1Text).toContain('Indikation: Seltene XYZ-Indikation');
@@ -301,10 +307,10 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain('Punkt 10:');
   });
 
-  it('maps legacy drug keys to standard medication facts in preview', () => {
+  it('falls back to the other path for unknown medication keys', () => {
     const docs = buildOfflabelDocuments({
       request: {
-        drug: 'ivabradin',
+        drug: 'unknown-drug',
       },
     });
 
@@ -314,19 +320,11 @@ describe('buildOfflabelDocuments', () => {
       .join('\n');
 
     expect(part1Text).toContain(
-      'Punkt 1: Das Medikament Ivabradin ist in Deutschland nicht indikationsbezogen zugelassen',
+      'Punkt 1: Das Medikament anderes Medikament oder andere Indikation ist in Deutschland nicht indikationsbezogen zugelassen',
     );
-    expect(part1Text).toContain('Punkt 10:');
-    expect(part1Text).toContain(CASE_TRANSFER_YES_TEXT);
-    expect(part1Text).toContain(EVIDENCE_NOTE_TEXT);
-    expect(part1Text).toContain('Bewertung Ivabradin');
-    const yesPathSourceIndex = part1Text.indexOf(IVABRADINE_EXPERT_SOURCE);
-    const yesPathTransferIndex = part1Text.indexOf(CASE_TRANSFER_YES_TEXT);
-    expect(yesPathSourceIndex).toBeGreaterThan(-1);
-    expect(yesPathTransferIndex).toBeGreaterThan(yesPathSourceIndex);
-    expect(part1Text).not.toContain(
-      '[bitte medikamentenspezifische Quelle ergänzen]',
-    );
+    expect(part1Text).toContain('Punkt 7:');
+    expect(part1Text).toContain('Punkt 9:');
+    expect(part1Text).not.toContain('Punkt 10:');
   });
 
   it('fills patient birth date and insurance number in part 3', () => {

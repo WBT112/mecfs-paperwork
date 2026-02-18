@@ -4,6 +4,7 @@ import { expectNoSeriousA11yViolations } from './helpers/a11y';
 
 const DB_NAME = 'mecfs-paperwork';
 const FORMPACK_ID = 'doctor-letter';
+const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
 const POLL_TIMEOUT = 60_000;
 const DOCTOR_LETTER_A11Y_EXCLUSIONS = [
   '#root_doctor_title',
@@ -36,6 +37,19 @@ const expectFocusVisible = async (locator: Locator) => {
       locator.evaluate((element) => element.matches(':focus-visible')),
     )
     .toBe(true);
+};
+
+const acceptOfflabelIntroGate = async (page: Page) => {
+  const introHeading = page.getByRole('heading', { name: /hinweise/i });
+  await expect(introHeading).toBeVisible({ timeout: POLL_TIMEOUT });
+
+  await page
+    .getByLabel(/Habe verstanden, Nutzung auf eigenes Risiko/i)
+    .check({ force: true });
+  await page.getByRole('button', { name: /weiter/i }).click();
+  await expect(page.locator('.formpack-form')).toBeVisible({
+    timeout: POLL_TIMEOUT,
+  });
 };
 
 test.describe('a11y baseline', () => {
@@ -93,6 +107,52 @@ test.describe('a11y baseline', () => {
       // NOTE: These are known legacy issues in upstream/embedded rendering.
       // Keep exclusions as narrow selectors so new regressions still fail CI.
       exclude: DOCTOR_LETTER_A11Y_EXCLUSIONS,
+    });
+  });
+
+  test('offlabel intro gate has no serious/critical violations', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto(`/formpacks/${OFFLABEL_FORMPACK_ID}`);
+    await expect(page.getByRole('heading', { name: /hinweise/i })).toBeVisible({
+      timeout: POLL_TIMEOUT,
+    });
+    await expectNoSeriousA11yViolations(page, {
+      routeLabel: `/formpacks/${OFFLABEL_FORMPACK_ID}#intro`,
+      // NOTE: The intro gate body is intentionally scrollable and currently
+      // flagged by axe with scrollable-region-focusable. Keep this exclusion
+      // scoped to the gate container so the rest of the page remains gated.
+      exclude: ['.formpack-intro-gate__content'],
+    });
+  });
+
+  test('offlabel form has no serious/critical violations after intro accept (light mode)', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto(`/formpacks/${OFFLABEL_FORMPACK_ID}`);
+    await acceptOfflabelIntroGate(page);
+
+    const themeSelect = page.locator('#theme-select');
+    await expect(themeSelect).toBeVisible({ timeout: POLL_TIMEOUT });
+    await themeSelect.selectOption('light');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+    await expectNoSeriousA11yViolations(page, {
+      routeLabel: `/formpacks/${OFFLABEL_FORMPACK_ID}#form-light`,
     });
   });
 

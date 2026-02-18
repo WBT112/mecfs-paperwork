@@ -96,6 +96,12 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part1).toContain('Punkt 7:');
     expect(part1).toContain('Punkt 9:');
     expect(part1).not.toContain('Punkt 10:');
+    expect(part1).toContain(
+      'Punkt 7: Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+    );
+    expect(part1).not.toContain(
+      'Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
+    );
 
     expect(model.sources).toHaveLength(1);
     expect(model.sources[0]).toContain('LSG Niedersachsen-Bremen');
