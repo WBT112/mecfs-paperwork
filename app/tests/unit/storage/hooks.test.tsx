@@ -418,6 +418,38 @@ describe('useAutosaveRecord', () => {
     };
   };
 
+  const expectAutosaveErrorCode = async (
+    rejectedValue: Error,
+    expectedCode: string,
+  ) => {
+    vi.mocked(updateRecordEntry).mockRejectedValue(rejectedValue);
+    const onError = vi.fn();
+
+    const { rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'initial' },
+      baselineData: { field: 'initial' },
+      onError,
+    });
+
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: { field: 'initial' },
+      onError,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    await act(async () => {
+      await vi.runAllTimersAsync();
+    });
+
+    expect(onError).toHaveBeenCalledWith(expectedCode);
+  };
+
   it('does not save when recordId is null', async () => {
     renderAutosaveHook({
       recordId: null,
@@ -485,32 +517,7 @@ describe('useAutosaveRecord', () => {
   });
 
   it('calls onError when save fails', async () => {
-    vi.mocked(updateRecordEntry).mockRejectedValue(new Error('db error'));
-    const onError = vi.fn();
-
-    const { rerender } = renderAutosaveHook({
-      recordId: AUTOSAVE_RECORD_ID,
-      formData: { field: 'initial' },
-      baselineData: { field: 'initial' },
-      onError,
-    });
-
-    rerender({
-      recordId: AUTOSAVE_RECORD_ID,
-      formData: { field: 'changed' },
-      baselineData: { field: 'initial' },
-      onError,
-    });
-
-    await act(async () => {
-      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
-    });
-
-    await act(async () => {
-      await vi.runAllTimersAsync();
-    });
-
-    expect(onError).toHaveBeenCalledWith('operation');
+    await expectAutosaveErrorCode(new Error('db error'), 'operation');
   });
 
   it('returns markAsSaved that updates the baseline', async () => {
@@ -577,33 +584,9 @@ describe('useAutosaveRecord', () => {
   });
 
   it('calls onError with unavailable for StorageUnavailableError', async () => {
-    vi.mocked(updateRecordEntry).mockRejectedValue(
+    await expectAutosaveErrorCode(
       new StorageUnavailableError('no idb'),
+      'unavailable',
     );
-    const onError = vi.fn();
-
-    const { rerender } = renderAutosaveHook({
-      recordId: AUTOSAVE_RECORD_ID,
-      formData: { field: 'initial' },
-      baselineData: { field: 'initial' },
-      onError,
-    });
-
-    rerender({
-      recordId: AUTOSAVE_RECORD_ID,
-      formData: { field: 'changed' },
-      baselineData: { field: 'initial' },
-      onError,
-    });
-
-    await act(async () => {
-      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
-    });
-
-    await act(async () => {
-      await vi.runAllTimersAsync();
-    });
-
-    expect(onError).toHaveBeenCalledWith('unavailable');
   });
 });
