@@ -106,8 +106,12 @@
       "path": "arzt.attachmentsHeading"
     },
     {
-      "var": "part3.title",
-      "path": "part3.title"
+      "var": "part3.dateLine",
+      "path": "part3.dateLine"
+    },
+    {
+      "var": "part3.subject",
+      "path": "part3.subject"
     },
     {
       "var": "sourcesHeading",
@@ -158,6 +162,14 @@
     {
       "var": "arzt.signatureBlocks",
       "path": "arzt.signatureBlocks"
+    },
+    {
+      "var": "part3.senderLines",
+      "path": "part3.senderLines"
+    },
+    {
+      "var": "part3.addresseeLines",
+      "path": "part3.addresseeLines"
     },
     {
       "var": "part3.paragraphs",

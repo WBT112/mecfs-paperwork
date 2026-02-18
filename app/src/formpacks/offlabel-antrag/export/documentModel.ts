@@ -38,11 +38,19 @@ export type OffLabelLetterSection = {
 
 export type OffLabelPart3Section = {
   title: string;
+  senderLines: string[];
+  addresseeLines: string[];
+  dateLine: string;
+  subject: string;
   paragraphs: string[];
 };
 
 type OffLabelExportPart3 = {
   title: string;
+  senderLines: string[];
+  addresseeLines: string[];
+  dateLine: string;
+  subject: string;
   paragraphs: string[];
 };
 
@@ -130,9 +138,6 @@ const REQUEST_DEFAULT_FIELDS = [
   'otherMonitoring',
 ] as const;
 
-const DEFAULT_PART3_TITLE_KEY = 'offlabel-antrag.export.part3.title';
-const DEFAULT_PART3_TITLE =
-  'Teil 3 – Vorlage für ärztliche Stellungnahme / Befundbericht (zur Anpassung durch die Praxis)';
 const DEFAULT_PART3_SUBJECT_KEY = 'offlabel-antrag.export.part3.subject';
 const DEFAULT_PART3_SUBJECT =
   'Ärztliche Stellungnahme / Befundbericht zum Offlabel-User';
@@ -325,69 +330,7 @@ const buildPart2Paragraphs = (
   });
 };
 
-const buildPart3HeaderParagraphs = ({
-  t,
-  locale,
-  insurer,
-}: {
-  t: I18nT;
-  locale: SupportedLocale;
-  insurer: {
-    name: string;
-    department: string;
-    streetAndNumber: string;
-    postalCode: string;
-    city: string;
-  };
-}): string[] => {
-  const addresseeTitle = tr(
-    t,
-    'offlabel-antrag.export.part3.addresseeTitle',
-    locale === 'en' ? 'Addressee' : 'Adressat',
-  );
-  const subjectTitle = tr(
-    t,
-    'offlabel-antrag.export.part3.subjectTitle',
-    locale === 'en' ? 'Subject' : 'Betreff',
-  );
-  const subject = tr(t, DEFAULT_PART3_SUBJECT_KEY, DEFAULT_PART3_SUBJECT);
-
-  return [
-    `${addresseeTitle}: ${[insurer.name, insurer.department].filter(Boolean).join(', ')}`,
-    insurer.streetAndNumber,
-    buildPostalCityLine(insurer.postalCode, insurer.city),
-    '',
-    `${subjectTitle}: ${subject}`,
-    '',
-  ];
-};
-
-const resolvePart3Title = (
-  t: I18nT,
-  part3: OfflabelRenderedDocument | null,
-): string => {
-  const headingBlock = part3?.blocks.find((block) => block.kind === 'heading');
-  if (headingBlock && headingBlock.text.trim().length > 0) {
-    return headingBlock.text.trim();
-  }
-  return tr(t, DEFAULT_PART3_TITLE_KEY, DEFAULT_PART3_TITLE);
-};
-
-const buildPatientSignature = (
-  t: I18nT,
-  patientName: string,
-): OffLabelSignatureBlock => ({
-  label: tr(t, 'offlabel-antrag.export.signatures.patientLabel', 'Patient/in'),
-  name: patientName,
-});
-
-const buildKkSignatures = ({
-  t,
-  patientName,
-}: {
-  t: I18nT;
-  patientName: string;
-}): OffLabelSignatureBlock[] => [buildPatientSignature(t, patientName)];
+const buildKkSignatures = (): OffLabelSignatureBlock[] => [];
 
 const buildSourceItems = ({
   t,
@@ -518,15 +461,7 @@ export const buildOffLabelAntragDocumentModel = (
     blankLineBetweenBlocks: true,
   });
   const arztParagraphs = buildPart2Paragraphs(previewPart2);
-  const part3Paragraphs = [
-    ...buildPart3HeaderParagraphs({
-      t,
-      locale,
-      insurer,
-    }),
-    ...buildPartParagraphs(previewPart3),
-  ];
-  const part3Title = resolvePart3Title(t, previewPart3);
+  const part3Paragraphs = buildPartParagraphs(previewPart3);
 
   const patientName = buildPatientName(patient);
   const dateLine = getDateLine(locale, patient.city, exportedAt);
@@ -564,10 +499,7 @@ export const buildOffLabelAntragDocumentModel = (
     ),
     paragraphs: kkParagraphs,
     attachments: userAttachments,
-    signatureBlocks: buildKkSignatures({
-      t,
-      patientName,
-    }),
+    signatureBlocks: buildKkSignatures(),
   });
 
   const arzt = buildLetterSection({
@@ -595,7 +527,14 @@ export const buildOffLabelAntragDocumentModel = (
   });
 
   const part3: OffLabelPart3Section = {
-    title: part3Title,
+    title: '',
+    senderLines: buildAddressLines([doctor.practice, doctor.name], doctor),
+    addresseeLines: buildAddressLines(
+      [insurer.name, insurer.department],
+      insurer,
+    ),
+    dateLine,
+    subject: tr(t, DEFAULT_PART3_SUBJECT_KEY, DEFAULT_PART3_SUBJECT),
     paragraphs: part3Paragraphs,
   };
 
@@ -610,6 +549,10 @@ export const buildOffLabelAntragDocumentModel = (
     part2: arzt,
     part3: {
       title: part3.title,
+      senderLines: part3.senderLines,
+      addresseeLines: part3.addresseeLines,
+      dateLine: part3.dateLine,
+      subject: part3.subject,
       paragraphs: part3.paragraphs,
     },
   };

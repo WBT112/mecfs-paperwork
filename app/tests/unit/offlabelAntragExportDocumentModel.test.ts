@@ -121,7 +121,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     expect(model.kk.paragraphs.join('\n')).toContain(
-      'Punkt 2: Die vorgegebene Diagnose/Indikation ist noch nicht vollständig bestätigt und wird ärztlich nachgereicht.',
+      'Punkt 2: Die Diagnose ist gesichert.',
     );
     expect(model.part3.paragraphs.join('\n')).toContain(
       'Der Patient leidet an den typischen Symptomen der Indikation',
@@ -162,7 +162,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     }
   });
 
-  it('keeps patient-only signature in part 1', () => {
+  it('omits signature blocks in part 1', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         patient: {
@@ -174,12 +174,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       { exportedAt: FIXED_EXPORTED_AT },
     );
 
-    expect(model.kk.signatureBlocks).toEqual([
-      {
-        label: 'Patient/in',
-        name: 'Mara Example',
-      },
-    ]);
+    expect(model.kk.signatureBlocks).toEqual([]);
   });
 
   it('parses user attachments into items', () => {
@@ -235,9 +230,16 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part2Text).not.toContain('12345 Berlin');
   });
 
-  it('uses insurer as addressee and the updated subject in part 3', () => {
+  it('uses insurer addressee/header fields and the updated subject in part 3', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
+        doctor: {
+          name: TEST_DOCTOR_NAME,
+          practice: TEST_DOCTOR_PRACTICE,
+          streetAndNumber: 'Praxisstraße 2',
+          postalCode: '12345',
+          city: 'Musterstadt',
+        },
         insurer: {
           name: TEST_INSURER_NAME,
           department: TEST_INSURER_DEPARTMENT,
@@ -253,16 +255,22 @@ describe('buildOffLabelAntragDocumentModel', () => {
       { exportedAt: FIXED_EXPORTED_AT },
     );
 
-    const part3Text = model.part3.paragraphs.join('\n');
-
-    expect(part3Text).toContain(
-      `Adressat: ${TEST_INSURER_NAME}, ${TEST_INSURER_DEPARTMENT}`,
+    expect(model.part3.senderLines).toEqual([
+      TEST_DOCTOR_PRACTICE,
+      TEST_DOCTOR_NAME,
+      'Praxisstraße 2',
+      '12345 Musterstadt',
+    ]);
+    expect(model.part3.addresseeLines).toEqual([
+      TEST_INSURER_NAME,
+      TEST_INSURER_DEPARTMENT,
+      'Kassenweg 3',
+      '54321 Kassel',
+    ]);
+    expect(model.part3.subject).toBe(
+      'Ärztliche Stellungnahme / Befundbericht zum Offlabel-User',
     );
-    expect(part3Text).toContain('Kassenweg 3');
-    expect(part3Text).toContain('54321 Kassel');
-    expect(part3Text).toContain(
-      'Betreff: Ärztliche Stellungnahme / Befundbericht zum Offlabel-User',
-    );
+    expect(model.part3.title).toBe('');
   });
 
   it('exposes a complete exportBundle with all three parts', () => {
@@ -282,12 +290,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.exportBundle.part2.attachments[0]).toBe(
       'Teil 1: Antrag an die Krankenkasse (Entwurf)',
     );
-    expect(model.exportBundle.part1.signatureBlocks).toEqual([
-      {
-        label: 'Patient/in',
-        name: 'Max Mustermann',
-      },
-    ]);
+    expect(model.exportBundle.part1.signatureBlocks).toEqual([]);
   });
 
   it('keeps exportBundle sections aligned with projected kk/arzt/part3 sections', () => {

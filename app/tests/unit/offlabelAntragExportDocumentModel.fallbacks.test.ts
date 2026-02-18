@@ -28,16 +28,22 @@ describe('buildOffLabelAntragDocumentModel fallbacks', () => {
 
     expect(model.kk.paragraphs).toEqual([]);
     expect(model.arzt.paragraphs).toEqual([]);
-    expect(model.part3.title).toBe(
-      'Teil 3 – Vorlage für ärztliche Stellungnahme / Befundbericht (zur Anpassung durch die Praxis)',
-    );
-    expect(model.part3.paragraphs).toEqual([
-      'Adressat: Musterkrankenkasse, Leistungsabteilung',
+    expect(model.part3.title).toBe('');
+    expect(model.part3.senderLines).toEqual([
+      'Hausarztpraxis Beispiel',
+      'Dr. med. Erika Beispiel',
+      'Praxisstraße 2',
+      '12345 Musterstadt',
+    ]);
+    expect(model.part3.addresseeLines).toEqual([
+      'Musterkrankenkasse',
+      'Leistungsabteilung',
       'Kassenweg 3',
       '12345 Musterstadt',
-      '',
-      'Betreff: Ärztliche Stellungnahme / Befundbericht zum Offlabel-User',
-      '',
     ]);
+    expect(model.part3.subject).toBe(
+      'Ärztliche Stellungnahme / Befundbericht zum Offlabel-User',
+    );
+    expect(model.part3.paragraphs).toEqual([]);
   });
 });

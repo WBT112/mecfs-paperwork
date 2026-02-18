@@ -247,13 +247,12 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
         : 'Die Diagnose ist gesichert';
     }
     return point2aNo
-      ? 'Die vorgegebene Diagnose/Indikation ist noch nicht vollständig bestätigt und wird ärztlich nachgereicht.'
+      ? 'Die Diagnose ist gesichert.'
       : drug.point2DiagnosisSentenceDe;
   })();
 
-  const point4Text = drug.hasAnnouncedAmrlEntry
-    ? 'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI. Auch wenn diese in Aussicht ist, erlaubt es mein Gesundheitszustand nicht auf eine solche zu warten.'
-    : 'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI';
+  const point4Text =
+    'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI';
 
   const blocks: OfflabelRenderedDocument['blocks'] = [
     { kind: 'heading', text: 'Teil 1 – Antrag an die Krankenkasse' },

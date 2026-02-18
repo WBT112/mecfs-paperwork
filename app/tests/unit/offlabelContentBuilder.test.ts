@@ -39,9 +39,7 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
 
-    expect(part1Text).toContain(
-      'Punkt 2: Die vorgegebene Diagnose/Indikation ist noch nicht vollständig bestätigt und wird ärztlich nachgereicht.',
-    );
+    expect(part1Text).toContain('Punkt 2: Die Diagnose ist gesichert.');
     expect(part1Text).not.toContain('Punkt 7:');
     expect(part1Text).not.toContain('Punkt 9:');
     expect(part1Text).toContain('Punkt 10:');
@@ -349,7 +347,7 @@ describe('buildOfflabelDocuments', () => {
       'Patient: Max Mustermann, geb. 02.01.1970; Versichertennr.: X123456789',
     );
     expect(part3Text).toContain(
-      'Diagnose: postinfektiösem ME/CFS und/oder Long-/Post-COVID mit Fatigue',
+      'Diagnose: postinfektiöses ME/CFS und/oder Long-/Post-COVID mit Fatigue',
     );
   });
 

@@ -49,16 +49,11 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1).toBeDefined();
     expect(bundle.part2).toBeDefined();
     expect(bundle.part3).toBeDefined();
-    expect(bundle.part1.signatureBlocks).toEqual([
-      {
-        label: 'Patient/in',
-        name: 'Max Mustermann',
-      },
-    ]);
+    expect(bundle.part1.signatureBlocks).toEqual([]);
     expect(bundle.part1.subject).toContain('BITTE AUSWÄHLEN');
   });
 
-  it('references part 1 in part 2 and keeps part 3 title', () => {
+  it('references part 1 in part 2 and omits part 3 title', () => {
     const bundle = buildOffLabelAntragDocumentModel({}, 'de', {
       exportedAt: FIXED_EXPORTED_AT,
     }).exportBundle;
@@ -67,7 +62,7 @@ describe('offlabel-antrag letter builder', () => {
       true,
     );
     expect(bundle.part2.attachments[0]).toBe(PART1_DRAFT_ATTACHMENT);
-    expect(bundle.part3.title).toContain('Teil 3');
+    expect(bundle.part3.title).toBe('');
   });
 
   it('keeps med-specific expert source and omits auto-attachments in part 1', () => {
@@ -152,9 +147,7 @@ describe('offlabel-antrag letter builder', () => {
     ).kk;
 
     expect(letter.subject).toContain('Agomelatin');
-    expect(letter.signatureBlocks).toEqual([
-      { label: 'Patient/in', name: 'Max Mustermann' },
-    ]);
+    expect(letter.signatureBlocks).toEqual([]);
     expect(letter.paragraphs.some((p) => p.includes('Punkt 10:'))).toBe(true);
   });
 

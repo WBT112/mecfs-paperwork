@@ -31,6 +31,8 @@ describe('offlabel-antrag A4 DOCX template', () => {
     expect(xml).toContain('{{FOR item IN kk.attachments}}');
     expect(xml).toContain('{{FOR p2 IN arzt.paragraphs}}');
     expect(xml).toContain('{{FOR aItem IN arzt.attachments}}');
+    expect(xml).toContain('{{FOR s3 IN part3.senderLines}}');
+    expect(xml).toContain('{{FOR a3 IN part3.addresseeLines}}');
     expect(xml).toContain('{{FOR p3 IN part3.paragraphs}}');
   });
 
@@ -47,5 +49,7 @@ describe('offlabel-antrag A4 DOCX template', () => {
     const xml = await loadOfflabelTemplateXml();
 
     expect(xml).toContain('<w:br w:type="page"/>');
+    expect(xml).not.toContain('{{part3.title}}');
+    expect(xml).toContain('Betreff: {{part3.subject}}');
   });
 });

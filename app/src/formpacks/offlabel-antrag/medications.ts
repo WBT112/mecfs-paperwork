@@ -37,7 +37,6 @@ export type MedicationProfile = {
   displayNameEn: string;
   point2DiagnosisSentenceDe: string;
   point2DiagnosisSentenceEn: string;
-  hasAnnouncedAmrlEntry: boolean;
   isOther: boolean;
   requiresManualFields: boolean;
   requiresPriorMeasures: boolean;
@@ -59,7 +58,6 @@ type MedicationInputTuple = readonly [
   displayNameEn: string,
   point2DiagnosisSentenceDe: string,
   point2DiagnosisSentenceEn: string,
-  hasAnnouncedAmrlEntry: boolean,
   infoBoxI18nKey: string,
   expertSourceDate: string,
   deFacts: MedicationFactsTuple,
@@ -78,11 +76,10 @@ const MEDICATION_INPUTS: readonly MedicationInputTuple[] = [
     'Agomelatine',
     'Die Diagnose Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/ Chronischem Fatigue-Syndrom (ME/CFS) und bei Long/Post-COVID ist gesichert (siehe Befunde)',
     'The diagnosis of fatigue in post-infectious myalgic encephalomyelitis/chronic fatigue syndrome (ME/CFS) and in long/post-COVID is established (see findings).',
-    false,
     'offlabel-antrag.ui.infobox.drug.agomelatine',
     '02.12.2025',
     [
-      'postinfektiösem ME/CFS und/oder Long-/Post-COVID mit Fatigue',
+      'postinfektiöses ME/CFS und/oder Long-/Post-COVID mit Fatigue',
       'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
       '25 mg zur Nacht; nach 2 Wochen ggf. 50 mg. Behandlungsdauer mindestens 12 Wochen, danach Nutzen-Risiko-Prüfung',
       'Leberwerte überwachen; bei Leberschädigungssymptomen sofort absetzen; Abbruch bei Transaminasen > 3x oberer Normwert',
@@ -102,7 +99,6 @@ const MEDICATION_INPUTS: readonly MedicationInputTuple[] = [
     'Ivabradine',
     'Die Diagnose: COVID-19 assoziiertes PoTS ist gesichert (siehe Befunde)',
     'The diagnosis of COVID-19 associated PoTS is established (see findings).',
-    true,
     'offlabel-antrag.ui.infobox.drug.ivabradine',
     '15.10.2025',
     [
@@ -126,7 +122,6 @@ const MEDICATION_INPUTS: readonly MedicationInputTuple[] = [
     'Vortioxetine',
     'Die Diagnose kognitive Beeinträchtigungen und/oder depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
     'The diagnosis of cognitive impairment and/or depressive symptoms in long/post-COVID is established.',
-    false,
     'offlabel-antrag.ui.infobox.drug.vortioxetine',
     '15.10.2025',
     [
@@ -194,7 +189,6 @@ const createStandardMedicationProfile = (
     displayNameEn,
     point2DiagnosisSentenceDe,
     point2DiagnosisSentenceEn,
-    hasAnnouncedAmrlEntry,
     infoBoxI18nKey,
     expertSourceDate,
     deFacts,
@@ -207,7 +201,6 @@ const createStandardMedicationProfile = (
     displayNameEn,
     point2DiagnosisSentenceDe,
     point2DiagnosisSentenceEn,
-    hasAnnouncedAmrlEntry,
     isOther: false,
     requiresManualFields: false,
     requiresPriorMeasures: false,
@@ -238,7 +231,6 @@ const OTHER_MEDICATION_PROFILE: MedicationProfile = {
   displayNameEn: 'other medication or other indication',
   point2DiagnosisSentenceDe: '',
   point2DiagnosisSentenceEn: '',
-  hasAnnouncedAmrlEntry: false,
   isOther: true,
   requiresManualFields: true,
   requiresPriorMeasures: true,
