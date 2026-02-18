@@ -271,7 +271,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(HILFSANTRAG_INTRO_TEXT);
     expect(part1Text).toContain('Punkt 7:');
     expect(part1Text).toContain(
-      'Punkt 7: Im Rahmen des hilfsweise gestellten Antrags nach § 2 Abs. 1a SGB V sind die Voraussetzungen in meinem Fall erfüllt.',
+      'Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
     );
     expect(part1Text).toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain(POINT_10_BRIDGE_TEXT);
