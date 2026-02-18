@@ -405,6 +405,7 @@ export const applyDocxExportDefaults = (
       ['insurer.postalCode', defaults.insurer.postalCode],
       ['insurer.city', defaults.insurer.city],
       ['request.drug', defaults.request.drug],
+      ['request.selectedIndicationKey', defaults.request.selectedIndicationKey],
       [
         'request.standardOfCareTriedFreeText',
         defaults.request.standardOfCareTriedFreeText,

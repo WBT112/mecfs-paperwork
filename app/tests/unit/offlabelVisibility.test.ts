@@ -6,6 +6,7 @@ const buildUiSchema = (): UiSchema => ({
   request: {
     indicationFullyMetOrDoctorConfirms: { 'ui:widget': 'radio' },
     applySection2Abs1a: {},
+    selectedIndicationKey: {},
     otherDrugName: {},
     otherIndication: {},
     otherTreatmentGoal: { 'ui:widget': 'textarea' },
@@ -54,6 +55,9 @@ describe('applyOfflabelVisibility', () => {
       (request.otherDrugName as Record<string, unknown>)['ui:widget'],
     ).toBe('hidden');
     expect(
+      (request.selectedIndicationKey as Record<string, unknown>)['ui:widget'],
+    ).toBe('hidden');
+    expect(
       (request.otherIndication as Record<string, unknown>)['ui:widget'],
     ).toBe('hidden');
     expect(
@@ -83,6 +87,42 @@ describe('applyOfflabelVisibility', () => {
     ).toBeUndefined();
   });
 
+  it('shows selected indication selector only for medications with multiple indications', () => {
+    const uiSchema = buildUiSchema();
+    const result = applyOfflabelVisibility(
+      uiSchema,
+      { request: { drug: 'agomelatin' } },
+      'de',
+    );
+    const request = result.request as Record<string, unknown>;
+    const selectedIndication = request.selectedIndicationKey as Record<
+      string,
+      unknown
+    >;
+    const selectedIndicationOptions = selectedIndication[
+      'ui:options'
+    ] as Record<string, unknown>;
+    const enumOptions = selectedIndicationOptions.enumOptions as Array<
+      Record<string, string>
+    >;
+
+    expect(selectedIndication['ui:widget']).toBeUndefined();
+    expect(selectedIndication['ui:enumNames']).toEqual([
+      'postinfektiöses ME/CFS mit Fatigue',
+      'Long-/Post-COVID mit Fatigue',
+    ]);
+    expect(enumOptions).toEqual([
+      {
+        value: 'agomelatin.mecfs_fatigue',
+        label: 'postinfektiöses ME/CFS mit Fatigue',
+      },
+      {
+        value: 'agomelatin.long_post_covid_fatigue',
+        label: 'Long-/Post-COVID mit Fatigue',
+      },
+    ]);
+  });
+
   it('shows manual medication fields for other', () => {
     const uiSchema = buildUiSchema();
     const result = applyOfflabelVisibility(uiSchema, {
@@ -93,6 +133,9 @@ describe('applyOfflabelVisibility', () => {
     expect(
       (request.otherDrugName as Record<string, unknown>)['ui:widget'],
     ).toBeUndefined();
+    expect(
+      (request.selectedIndicationKey as Record<string, unknown>)['ui:widget'],
+    ).toBe('hidden');
     expect(
       (request.otherIndication as Record<string, unknown>)['ui:widget'],
     ).toBeUndefined();

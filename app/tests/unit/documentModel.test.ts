@@ -248,6 +248,7 @@ describe('formpacks/documentModel', () => {
     });
     expect(result.request).toEqual({
       drug: 'ivabradine',
+      selectedIndicationKey: '',
       standardOfCareTriedFreeText: 'Prior care text',
       otherDrugName: '—',
       otherIndication: '—',

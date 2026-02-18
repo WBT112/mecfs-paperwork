@@ -19,10 +19,21 @@ describe('offlabel medication source consistency', () => {
 
       expect(profile.isOther).toBe(false);
       expect(profile.displayNameDe.length).toBeGreaterThan(0);
-      expect(profile.point2DiagnosisSentenceDe.length).toBeGreaterThan(0);
-      expect(profile.point2DiagnosisSentenceEn.length).toBeGreaterThan(0);
-      expect(profile.autoFacts?.de.diagnosisMain.length).toBeGreaterThan(0);
-      expect(profile.autoFacts?.en.diagnosisMain.length).toBeGreaterThan(0);
+      expect(profile.indications.length).toBeGreaterThan(0);
+      expect(profile.autoFacts?.de.doseAndDuration.length).toBeGreaterThan(0);
+      expect(profile.autoFacts?.en.doseAndDuration.length).toBeGreaterThan(0);
+      for (const indication of profile.indications) {
+        expect(indication.key.startsWith(`${key}.`)).toBe(true);
+        expect(indication.texts.de.label.length).toBeGreaterThan(0);
+        expect(indication.texts.en.label.length).toBeGreaterThan(0);
+        expect(indication.texts.de.diagnosisNominative.length).toBeGreaterThan(
+          0,
+        );
+        expect(indication.texts.de.diagnosisDative.length).toBeGreaterThan(0);
+        expect(
+          indication.texts.de.point2ConfirmationSentence.length,
+        ).toBeGreaterThan(0);
+      }
     }
   });
 
@@ -33,7 +44,6 @@ describe('offlabel medication source consistency', () => {
     expect(other.isOther).toBe(true);
     expect(other.requiresManualFields).toBe(true);
     expect(other.autoFacts).toBeUndefined();
-    expect(other.point2DiagnosisSentenceDe).toBe('');
-    expect(other.point2DiagnosisSentenceEn).toBe('');
+    expect(other.indications).toEqual([]);
   });
 });

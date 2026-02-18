@@ -112,6 +112,7 @@ describe('applyDocxExportDefaults', () => {
       },
       request: {
         drug: '',
+        selectedIndicationKey: '',
         standardOfCareTriedFreeText: '',
       },
       attachmentsFreeText: '',
@@ -151,6 +152,7 @@ describe('applyDocxExportDefaults', () => {
       },
       request: {
         drug: 'BITTE AUSWÄHLEN',
+        selectedIndicationKey: '',
         standardOfCareTriedFreeText: '—',
       },
       attachmentsFreeText: '—',
@@ -186,6 +188,7 @@ describe('applyDocxExportDefaults', () => {
       },
       request: {
         drug: 'ivabradine',
+        selectedIndicationKey: '',
         standardOfCareTriedFreeText: 'Existing prior care',
       },
       attachmentsFreeText: 'Existing attachment',

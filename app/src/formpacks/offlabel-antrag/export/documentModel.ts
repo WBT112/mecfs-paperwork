@@ -87,6 +87,7 @@ export type OffLabelAntragDocumentModel = {
   };
   request: {
     drug: string;
+    selectedIndicationKey: string;
     standardOfCareTriedFreeText: string;
     otherDrugName: string;
     otherIndication: string;
@@ -129,6 +130,7 @@ type LetterCompositionInput = {
 };
 
 const REQUEST_DEFAULT_FIELDS = [
+  'selectedIndicationKey',
   'standardOfCareTriedFreeText',
   'otherDrugName',
   'otherIndication',

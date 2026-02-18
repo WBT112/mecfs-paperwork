@@ -70,6 +70,7 @@ import {
   buildOfflabelDocuments,
   type OfflabelRenderedDocument,
 } from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
+import { resolveMedicationProfile } from '../formpacks/offlabel-antrag/medications';
 import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
 import {
   type StorageErrorCode,
@@ -214,6 +215,11 @@ const shouldHideCase0Result = (decision: DecisionData): boolean => {
   // Only hide if Case 0 is due to incomplete tree, not a valid path.
   return !isCompletedCase0Path(decision);
 };
+
+const toStringArray = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string')
+    : [];
 
 type PreviewValueResolver = (
   value: unknown,
@@ -1116,6 +1122,75 @@ export default function FormpackDetailPage() {
         : null,
     [schema, translatedUiSchema],
   );
+  const formSchema = useMemo(() => {
+    if (!schema || formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
+      return schema;
+    }
+    if (!isRecord(schema.properties)) {
+      return schema;
+    }
+
+    const requestSchemaNode = (schema.properties as Record<string, unknown>)
+      .request;
+    if (
+      !isRecord(requestSchemaNode) ||
+      !isRecord(requestSchemaNode.properties)
+    ) {
+      return schema;
+    }
+
+    const selectedIndicationSchemaNode =
+      requestSchemaNode.properties.selectedIndicationKey;
+    if (!isRecord(selectedIndicationSchemaNode)) {
+      return schema;
+    }
+
+    const selectedDrug = getPathValue(formData, 'request.drug');
+    const profile = resolveMedicationProfile(selectedDrug);
+    const scopedIndicationEnum = profile.indications.map(
+      (indication) => indication.key,
+    );
+    const fallbackEnum = toStringArray(selectedIndicationSchemaNode.enum);
+    const nextEnum =
+      scopedIndicationEnum.length > 0 ? scopedIndicationEnum : fallbackEnum;
+    const currentEnum = toStringArray(selectedIndicationSchemaNode.enum);
+
+    if (
+      currentEnum.length === nextEnum.length &&
+      currentEnum.every((entry, index) => entry === nextEnum[index])
+    ) {
+      return schema;
+    }
+
+    const clonedSchema = structuredClone(schema);
+    const clonedRequestSchemaNode = isRecord(
+      (clonedSchema.properties as Record<string, unknown>).request,
+    )
+      ? ((clonedSchema.properties as Record<string, unknown>).request as Record<
+          string,
+          unknown
+        >)
+      : null;
+    const clonedRequestProperties = clonedRequestSchemaNode
+      ? clonedRequestSchemaNode.properties
+      : null;
+    const clonedSelectedIndicationNode =
+      clonedRequestProperties &&
+      isRecord(
+        (clonedRequestProperties as Record<string, unknown>)
+          .selectedIndicationKey,
+      )
+        ? ((clonedRequestProperties as Record<string, unknown>)
+            .selectedIndicationKey as Record<string, unknown>)
+        : null;
+
+    if (!clonedSelectedIndicationNode) {
+      return schema;
+    }
+
+    clonedSelectedIndicationNode.enum = [...nextEnum];
+    return clonedSchema;
+  }, [formData, formpackId, schema]);
 
   // Apply conditional visibility for doctor-letter decision tree
   const conditionalUiSchema = useMemo(() => {
@@ -1124,7 +1199,7 @@ export default function FormpackDetailPage() {
     }
 
     if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
-      return applyOfflabelVisibility(normalizedUiSchema, formData);
+      return applyOfflabelVisibility(normalizedUiSchema, formData, locale);
     }
 
     if (formpackId !== DOCTOR_LETTER_FORMPACK_ID) {
@@ -1159,7 +1234,7 @@ export default function FormpackDetailPage() {
     }
 
     return clonedUiSchema;
-  }, [normalizedUiSchema, formpackId, formData]);
+  }, [normalizedUiSchema, formpackId, formData, locale]);
 
   const dateFormatter = useMemo(
     () =>
@@ -1399,6 +1474,36 @@ export default function FormpackDetailPage() {
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = useCallback(
     (event) => {
       const nextData = event.formData as FormDataState;
+
+      if (
+        formpackId === OFFLABEL_ANTRAG_FORMPACK_ID &&
+        isRecord(nextData.request)
+      ) {
+        const request = nextData.request;
+        const profile = resolveMedicationProfile(request.drug);
+        const requestedIndicationKey =
+          typeof request.selectedIndicationKey === 'string'
+            ? request.selectedIndicationKey
+            : '';
+        const fallbackIndicationKey = profile.indications[0]?.key;
+        const hasValidSelectedIndication =
+          requestedIndicationKey.length > 0 &&
+          profile.indications.some(
+            (entry) => entry.key === requestedIndicationKey,
+          );
+        if (profile.isOther) {
+          const { selectedIndicationKey: _unused, ...otherRequest } = request;
+          nextData.request = otherRequest;
+        } else {
+          const normalizedSelectedIndicationKey = hasValidSelectedIndication
+            ? requestedIndicationKey
+            : fallbackIndicationKey || '';
+          nextData.request = {
+            ...request,
+            selectedIndicationKey: normalizedSelectedIndicationKey,
+          };
+        }
+      }
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
       if (
@@ -1840,10 +1945,14 @@ export default function FormpackDetailPage() {
       return null;
     }
 
-    const schemaProps = isRecord(schema?.properties)
-      ? (schema.properties as Record<string, RJSFSchema>)
+    const schemaProps = isRecord(formSchema?.properties)
+      ? (formSchema.properties as Record<string, RJSFSchema>)
       : null;
-    const keys = getOrderedKeys(schema ?? undefined, previewUiSchema, formData);
+    const keys = getOrderedKeys(
+      formSchema ?? undefined,
+      previewUiSchema,
+      formData,
+    );
     const sections = keys
       .map<ReactNode>((key) => {
         const entry = formData[key];
@@ -1901,7 +2010,7 @@ export default function FormpackDetailPage() {
       );
 
     return sections.length ? sections : null;
-  }, [formData, previewUiSchema, resolvePreviewValue, schema]);
+  }, [formData, formSchema, previewUiSchema, resolvePreviewValue]);
   const handleExportJson = useCallback(() => {
     if (!manifest || !activeRecord) {
       return;
@@ -1940,7 +2049,7 @@ export default function FormpackDetailPage() {
         recordId: activeRecord.id,
         variant: docxTemplateId,
         locale,
-        schema,
+        schema: formSchema,
         uiSchema: previewUiSchema,
         manifest,
       });
@@ -1963,7 +2072,7 @@ export default function FormpackDetailPage() {
     locale,
     manifest,
     previewUiSchema,
-    schema,
+    formSchema,
     t,
   ]);
 
@@ -2409,7 +2518,7 @@ export default function FormpackDetailPage() {
       );
     }
 
-    if (!schema || !conditionalUiSchema || !validator) {
+    if (!formSchema || !conditionalUiSchema || !validator) {
       return null;
     }
 
@@ -2475,7 +2584,7 @@ export default function FormpackDetailPage() {
                 ? 'formpack-form formpack-form--doctor-letter'
                 : 'formpack-form'
             }
-            schema={schema}
+            schema={formSchema}
             uiSchema={conditionalUiSchema}
             templates={templates}
             widgets={formpackWidgets}

@@ -40,6 +40,31 @@ const selectDrugByLabelText = async (page: Page, labelSnippet: string) => {
   await select.selectOption(value);
 };
 
+const selectIndicationByLabelText = async (
+  page: Page,
+  labelSnippet: string,
+) => {
+  const select = page.locator('#root_request_selectedIndicationKey');
+  await expect(select).toBeVisible({ timeout: 20_000 });
+
+  const value = await select.evaluate((node, snippet) => {
+    const options = Array.from((node as HTMLSelectElement).options);
+    const loweredSnippet = snippet.toLowerCase();
+    const match = options.find((option) =>
+      option.textContent?.toLowerCase().includes(loweredSnippet),
+    );
+    return match?.value ?? null;
+  }, labelSnippet);
+
+  if (!value) {
+    throw new Error(
+      `No indication option found for label snippet "${labelSnippet}".`,
+    );
+  }
+
+  await select.selectOption(value);
+};
+
 const selectDrugByValue = async (page: Page, value: string) => {
   const select = page.locator('#root_request_drug');
   await expect(select).toBeVisible({ timeout: 20_000 });
@@ -157,6 +182,24 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     );
     await expect(preview).toContainText(/Punkt 9:/i);
     await expect(preview).not.toContainText(/Punkt 10:/i);
+  });
+
+  test('multi-indication medications use the selected indication on mobile @mobile', async ({
+    page,
+  }) => {
+    await switchLocale(page, 'en');
+    await selectDrugByValue(page, 'vortioxetine');
+    await selectIndicationByLabelText(page, 'depressive symptoms');
+    await openPart1Preview(page);
+
+    const preview = page.locator(
+      '#formpack-document-preview-content .formpack-document-preview',
+    );
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText(
+      /Long\/Post-COVID mit depressiven Symptomen/i,
+    );
+    await expect(preview).not.toContainText(/und\/oder/i);
   });
 
   test('clears other-only standard-of-care text from preview after switching back to standard medication @mobile', async ({

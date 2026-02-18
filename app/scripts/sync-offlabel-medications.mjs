@@ -33,7 +33,13 @@ const syncSchema = (schema) => {
   if (!requestProps?.drug) {
     throw new Error('offlabel schema is missing request.drug');
   }
+  if (!requestProps?.selectedIndicationKey) {
+    throw new Error('offlabel schema is missing request.selectedIndicationKey');
+  }
   requestProps.drug.enum = [...OFFLABEL_MEDICATION_KEYS];
+  requestProps.selectedIndicationKey.enum = OFFLABEL_MEDICATION_KEYS.flatMap(
+    (key) => MEDICATIONS[key].indications.map((indication) => indication.key),
+  );
   return schema;
 };
 

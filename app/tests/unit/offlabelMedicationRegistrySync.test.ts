@@ -16,8 +16,15 @@ describe('offlabel medication sync drift guard', () => {
     const requestSchema = (request.request as JsonObject)
       .properties as JsonObject;
     const drug = requestSchema.drug as JsonObject;
+    const selectedIndicationKey =
+      requestSchema.selectedIndicationKey as JsonObject;
 
     expect(drug.enum).toEqual([...OFFLABEL_MEDICATION_KEYS]);
+    expect(selectedIndicationKey.enum).toEqual(
+      OFFLABEL_MEDICATION_KEYS.flatMap((key) =>
+        MEDICATIONS[key].indications.map((indication) => indication.key),
+      ),
+    );
   });
 
   it('keeps ui enum names in sync with medication keys', () => {

@@ -59,6 +59,36 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.kk.attachmentsHeading).toBe('');
   });
 
+  it('projects selected indication into DOCX paragraphs for multi-indication medications', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'vortioxetine',
+          selectedIndicationKey: 'vortioxetine.long_post_covid_depressive',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const part1 = model.kk.paragraphs.join('\n');
+    const part3 = model.part3.paragraphs.join('\n');
+
+    expect(part1).toContain(
+      'zur Behandlung von Long/Post-COVID mit depressiven Symptomen',
+    );
+    expect(part1).toContain(
+      'Punkt 2: Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
+    );
+    expect(part1).toContain(
+      'Indikation: Long/Post-COVID mit depressiven Symptomen',
+    );
+    expect(part3).toContain(
+      'Diagnose: Long/Post-COVID mit depressiven Symptomen',
+    );
+    expect(part1).not.toContain('und/oder');
+  });
+
   it('inserts blank DOCX paragraphs between part 1 points for readability', () => {
     const model = buildOffLabelAntragDocumentModel(
       {

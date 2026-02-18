@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildOfflabelDocuments } from '../../src/formpacks/offlabel-antrag/content/buildOfflabelDocuments';
 
 const IVABRADIN_DIAGNOSIS_TEXT =
-  'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit';
+  'postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit';
 const SECTION_2A_TEXT = '§ 2 Abs. 1a SGB V';
 const IVABRADINE_EXPERT_SOURCE =
   'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).';
@@ -346,8 +346,57 @@ describe('buildOfflabelDocuments', () => {
     expect(part3Text).toContain(
       'Patient: Max Mustermann, geb. 02.01.1970; Versichertennr.: X123456789',
     );
+    expect(part3Text).toContain('Diagnose: postinfektiöses ME/CFS mit Fatigue');
+  });
+
+  it('uses selected agomelatin indication consistently without "und/oder"', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'agomelatin',
+        selectedIndicationKey: 'agomelatin.long_post_covid_fatigue',
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain(
+      'zur Behandlung von Long-/Post-COVID mit Fatigue',
+    );
+    expect(part1Text).toContain(
+      'Punkt 2: Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde)',
+    );
+    expect(part1Text).toContain('Indikation: Long-/Post-COVID mit Fatigue');
+    expect(part1Text).not.toContain('und/oder');
+  });
+
+  it('uses selected vortioxetin indication in preview and part 3', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'vortioxetine',
+        selectedIndicationKey: 'vortioxetine.long_post_covid_depressive',
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+    const part3Text = docs[2].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain(
+      'zur Behandlung von Long/Post-COVID mit depressiven Symptomen',
+    );
+    expect(part1Text).toContain(
+      'Punkt 2: Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
+    );
     expect(part3Text).toContain(
-      'Diagnose: postinfektiöses ME/CFS und/oder Long-/Post-COVID mit Fatigue',
+      'Diagnose: Long/Post-COVID mit depressiven Symptomen',
     );
   });
 

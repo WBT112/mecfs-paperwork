@@ -119,6 +119,8 @@
   "offlabel-antrag.request.otherIndication.label": "Other indication",
   "offlabel-antrag.request.otherMonitoring.help": "Required field: physician monitoring and stop criteria.",
   "offlabel-antrag.request.otherMonitoring.label": "Monitoring/stop criteria (other)",
+  "offlabel-antrag.request.selectedIndicationKey.help": "If multiple indications are available, select the indication matching your case.",
+  "offlabel-antrag.request.selectedIndicationKey.label": "Indication",
   "offlabel-antrag.request.otherTreatmentGoal.help": "Required field for individual requests using \"other\".",
   "offlabel-antrag.request.otherTreatmentGoal.label": "Treatment goal (other)",
   "offlabel-antrag.request.standardOfCareTriedFreeText.help": "Multiline field: one treatment attempt per line (e.g. beta blocker, compression therapy, volume expansion).",

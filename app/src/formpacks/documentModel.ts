@@ -77,6 +77,7 @@ export type DocumentModel = {
   };
   request?: {
     drug?: string | null;
+    selectedIndicationKey?: string | null;
     standardOfCareTriedFreeText?: string | null;
     otherDrugName?: string | null;
     otherIndication?: string | null;

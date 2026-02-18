@@ -1,4 +1,5 @@
 import {
+  resolveMedicationIndication,
   normalizeMedicationKey,
   resolveMedicationProfile,
   type MedicationKey,
@@ -21,7 +22,9 @@ export type OfflabelRenderedDocument = {
 type FormData = Record<string, unknown>;
 type PreviewMedicationFacts = {
   displayName: string;
-  diagnosisMain: string;
+  diagnosisNominative: string;
+  diagnosisDative: string;
+  point2ConfirmationSentence: string;
   targetSymptoms: string;
   doseAndDuration: string;
   monitoringAndStop: string;
@@ -153,11 +156,18 @@ const resolvePreviewMedicationFacts = (
   drugProfile: MedicationProfile,
 ): PreviewMedicationFacts => {
   const localeFacts = drugProfile.autoFacts?.de;
-  if (!drugProfile.isOther && localeFacts) {
+  const selectedIndication = resolveMedicationIndication(
+    drugProfile,
+    request.selectedIndicationKey,
+    'de',
+  );
+  if (!drugProfile.isOther && localeFacts && selectedIndication) {
     return {
       displayName: drugProfile.displayNameDe,
-      diagnosisMain: localeFacts.diagnosisMain,
-      targetSymptoms: localeFacts.targetSymptoms,
+      diagnosisNominative: selectedIndication.diagnosisNominative,
+      diagnosisDative: selectedIndication.diagnosisDative,
+      point2ConfirmationSentence: selectedIndication.point2ConfirmationSentence,
+      targetSymptoms: selectedIndication.targetSymptoms,
       doseAndDuration: localeFacts.doseAndDuration,
       monitoringAndStop: localeFacts.monitoringAndStop,
       expertSourceText: localeFacts.expertSourceText,
@@ -173,7 +183,11 @@ const resolvePreviewMedicationFacts = (
 
   return {
     displayName: otherDrugName || drugProfile.displayNameDe,
-    diagnosisMain: otherIndication || '[bitte Indikation ergänzen]',
+    diagnosisNominative: otherIndication || '[bitte Indikation ergänzen]',
+    diagnosisDative: otherIndication || '[bitte Indikation ergänzen]',
+    point2ConfirmationSentence: otherIndication
+      ? `Die Diagnose ${otherIndication} ist gesichert`
+      : 'Die Diagnose ist gesichert',
     targetSymptoms: otherTreatmentGoal || '[bitte Behandlungsziel ergänzen]',
     doseAndDuration:
       combineDoseAndDuration(otherDose, otherDuration) ||
@@ -248,7 +262,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     }
     return point2aNo
       ? 'Die Diagnose ist gesichert.'
-      : drug.point2DiagnosisSentenceDe;
+      : facts.point2ConfirmationSentence;
   })();
 
   const point4Text =
@@ -262,7 +276,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     },
     {
       kind: 'paragraph',
-      text: `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisMain}.`,
+      text: `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisDative}.`,
     },
     ...(applySection2Abs1a
       ? ([
@@ -333,7 +347,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`,
+        text: `Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisNominative}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`,
       },
     );
   } else {
@@ -344,7 +358,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     const point10BridgeText = applySection2Abs1a
       ? ` ${POINT_10_SECTION_2A_BRIDGE}`
       : '';
-    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisMain}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}. ${POINT_10_STANDARD_THERAPY_SAFETY}`;
+    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisNominative}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}. ${POINT_10_STANDARD_THERAPY_SAFETY}`;
     blocks.push({
       kind: 'paragraph',
       text: point10BaseText,
@@ -395,7 +409,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} wegen meiner Erkrankung (${facts.diagnosisMain}) vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel, bisherige Maßnahmen, erwarteter Nutzen, Monitoring, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen) sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.`,
+        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} wegen meiner Erkrankung (${facts.diagnosisNominative}) vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel, bisherige Maßnahmen, erwarteter Nutzen, Monitoring, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen) sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.`,
       },
       {
         kind: 'paragraph',
@@ -445,15 +459,15 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Diagnose: ${facts.diagnosisMain}`,
+        text: `Diagnose: ${facts.diagnosisNominative}`,
       },
       {
         kind: 'paragraph',
-        text: `Der Patient leidet an einer schwerwiegenden, die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung. Die aktuelle Indikation lautet ${facts.diagnosisMain}.`,
+        text: `Der Patient leidet an einer schwerwiegenden, die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung. Die aktuelle Indikation lautet ${facts.diagnosisNominative}.`,
       },
       {
         kind: 'paragraph',
-        text: `Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von ${facts.displayName} zur Behandlung von ${facts.diagnosisMain} sinnvoll, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.`,
+        text: `Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von ${facts.displayName} zur Behandlung von ${facts.diagnosisDative} sinnvoll, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.`,
       },
       ...(standardCareItems.length > 0
         ? ([
@@ -467,8 +481,8 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
       {
         kind: 'paragraph',
         text: point2aNo
-          ? `Der Patient leidet an den typischen Symptomen der Indikation ${facts.diagnosisMain}.`
-          : `Auch die Indikation ${facts.diagnosisMain} liegt vor.`,
+          ? `Der Patient leidet an den typischen Symptomen der Indikation ${facts.diagnosisNominative}.`
+          : `Auch die Indikation ${facts.diagnosisNominative} liegt vor.`,
       },
       {
         kind: 'paragraph',
@@ -478,7 +492,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
         kind: 'list',
         items: [
           `Behandlungsziel: ${facts.targetSymptoms}`,
-          `Indikation: ${facts.diagnosisMain}`,
+          `Indikation: ${facts.diagnosisNominative}`,
           `Dosierung/Dauer: ${facts.doseAndDuration}`,
           `Monitoring/Abbruchkriterien: ${facts.monitoringAndStop}`,
           `Erwarteter Nutzen / Therapieziel im Einzelfall: ${facts.targetSymptoms}`,

@@ -49,11 +49,18 @@
         },
         "title": {
           "type": "string",
-          "enum": ["kein", "Dr.", "Prof. Dr."]
+          "enum": [
+            "kein",
+            "Dr.",
+            "Prof. Dr."
+          ]
         },
         "gender": {
           "type": "string",
-          "enum": ["Frau", "Herr"]
+          "enum": [
+            "Frau",
+            "Herr"
+          ]
         },
         "name": {
           "type": "string"
@@ -101,6 +108,16 @@
             "ivabradine",
             "vortioxetine",
             "other"
+          ]
+        },
+        "selectedIndicationKey": {
+          "type": "string",
+          "enum": [
+            "agomelatin.mecfs_fatigue",
+            "agomelatin.long_post_covid_fatigue",
+            "ivabradine.pots_long_post_covid",
+            "vortioxetine.long_post_covid_cognitive",
+            "vortioxetine.long_post_covid_depressive"
           ]
         },
         "indicationFullyMetOrDoctorConfirms": {

@@ -15,7 +15,13 @@
   "visibility": "dev",
   "meta": {
     "category": "insurer",
-    "keywords": ["offlabel", "kostenübernahme", "krankenkasse", "medikament", "antrag"]
+    "keywords": [
+      "offlabel",
+      "kostenübernahme",
+      "krankenkasse",
+      "medikament",
+      "antrag"
+    ]
   },
   "docx": {
     "templates": {

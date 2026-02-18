@@ -119,6 +119,8 @@
   "offlabel-antrag.request.otherIndication.label": "Andere Indikation",
   "offlabel-antrag.request.otherMonitoring.help": "Pflichtfeld: Überwachung durch Arzt und Abbruchkriterien.",
   "offlabel-antrag.request.otherMonitoring.label": "Monitoring/Abbruchkriterien (other)",
+  "offlabel-antrag.request.selectedIndicationKey.help": "Falls mehrere Indikationen verfügbar sind, wähle die passende Indikation für deinen Fall.",
+  "offlabel-antrag.request.selectedIndicationKey.label": "Indikation",
   "offlabel-antrag.request.otherTreatmentGoal.help": "Pflichtfeld für den individuellen Antrag bei „other“.",
   "offlabel-antrag.request.otherTreatmentGoal.label": "Behandlungsziel (other)",
   "offlabel-antrag.request.standardOfCareTriedFreeText.help": "Mehrzeiliges Feld: eine Therapie pro Zeile (z. B. Betablocker, Kompressionstherapie, Volumenaufbau).",

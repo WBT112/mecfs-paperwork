@@ -26,6 +26,7 @@ export type OfflabelAntragExportDefaults = {
   };
   request: {
     drug: string;
+    selectedIndicationKey: string;
     standardOfCareTriedFreeText: string;
     otherDrugName: string;
     otherIndication: string;
@@ -72,6 +73,7 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
     },
     request: {
       drug: 'BITTE AUSWÄHLEN',
+      selectedIndicationKey: '',
       standardOfCareTriedFreeText: DEFAULT_PLACEHOLDER_TEXT,
       otherDrugName: DEFAULT_PLACEHOLDER_TEXT,
       otherIndication: DEFAULT_PLACEHOLDER_TEXT,
@@ -108,6 +110,7 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
     },
     request: {
       drug: 'PLEASE SELECT',
+      selectedIndicationKey: '',
       standardOfCareTriedFreeText: DEFAULT_PLACEHOLDER_TEXT,
       otherDrugName: DEFAULT_PLACEHOLDER_TEXT,
       otherIndication: DEFAULT_PLACEHOLDER_TEXT,
