@@ -46,7 +46,7 @@
     "@rjsf/utils": "^6.1.2",
     "@rjsf/validator-ajv8": "^6.2.5",
     "@types/sanitize-html": "^2.16.0",
-    "ajv": "^8.17.1",
+    "ajv": "^8.18.0",
     "ajv-formats": "^2.1.1",
     "buffer": "^6.0.3",
     "docx-templates": "^4.15.0",
