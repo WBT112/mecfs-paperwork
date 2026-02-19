@@ -72,6 +72,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     const part1 = model.kk.paragraphs.join('\n');
+    const part2 = model.arzt.paragraphs.join('\n');
     const part3 = model.part3.paragraphs.join('\n');
 
     expect(part1).toContain(
@@ -86,7 +87,15 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part3).toContain(
       'Diagnose: Long/Post-COVID mit depressiven Symptomen',
     );
+    expect(part2).toContain(
+      'für eine Off-Label-Verordnung von Vortioxetin mit der Indikation Long/Post-COVID mit depressiven Symptomen',
+    );
+    expect(part3).toContain(
+      'zur Behandlung der Indikation Long/Post-COVID mit depressiven Symptomen',
+    );
     expect(part1).not.toContain('und/oder');
+    expect(part2).not.toContain('und/oder');
+    expect(part3).not.toContain('und/oder');
   });
 
   it('inserts blank DOCX paragraphs between part 1 points for readability', () => {

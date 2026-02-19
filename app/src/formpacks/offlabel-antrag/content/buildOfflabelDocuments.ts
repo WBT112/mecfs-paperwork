@@ -409,7 +409,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} wegen meiner Erkrankung (${facts.diagnosisNominative}) vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel, bisherige Maßnahmen, erwarteter Nutzen, Monitoring, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen) sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.`,
+        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} mit der Indikation ${facts.diagnosisNominative} vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel, bisherige Maßnahmen, erwarteter Nutzen, Monitoring, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen) sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.`,
       },
       {
         kind: 'paragraph',
@@ -467,7 +467,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von ${facts.displayName} zur Behandlung von ${facts.diagnosisDative} sinnvoll, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.`,
+        text: `Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von ${facts.displayName} zur Behandlung der Indikation ${facts.diagnosisNominative} sinnvoll, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.`,
       },
       ...(standardCareItems.length > 0
         ? ([

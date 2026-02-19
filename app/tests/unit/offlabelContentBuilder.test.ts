@@ -251,7 +251,7 @@ describe('buildOfflabelDocuments', () => {
       'Punkt 1: Das Medikament Midodrin ist in Deutschland nicht indikationsbezogen zugelassen',
     );
     expect(part2Text).toContain(
-      'für eine Off-Label-Verordnung von Midodrin wegen meiner Erkrankung (Orthostatische Intoleranz)',
+      'für eine Off-Label-Verordnung von Midodrin mit der Indikation Orthostatische Intoleranz',
     );
     expect(part2Text).toContain(
       'sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.',
@@ -361,6 +361,14 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+    const part3Text = docs[2].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
 
     expect(part1Text).toContain(
       'zur Behandlung von Long-/Post-COVID mit Fatigue',
@@ -370,6 +378,14 @@ describe('buildOfflabelDocuments', () => {
     );
     expect(part1Text).toContain('Indikation: Long-/Post-COVID mit Fatigue');
     expect(part1Text).not.toContain('und/oder');
+    expect(part2Text).toContain(
+      'für eine Off-Label-Verordnung von Agomelatin mit der Indikation Long-/Post-COVID mit Fatigue',
+    );
+    expect(part2Text).not.toContain('und/oder');
+    expect(part3Text).toContain(
+      'zur Behandlung der Indikation Long-/Post-COVID mit Fatigue',
+    );
+    expect(part3Text).not.toContain('und/oder');
   });
 
   it('uses selected vortioxetin indication in preview and part 3', () => {
