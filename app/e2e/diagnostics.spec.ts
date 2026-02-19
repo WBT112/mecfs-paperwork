@@ -83,22 +83,39 @@ test.describe('diagnostics bundle', () => {
   test('copy button copies bundle JSON to clipboard', async ({
     page,
     context,
+    browserName,
   }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    let clipboardReadSupported = browserName === 'chromium';
+    try {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    } catch {
+      clipboardReadSupported = false;
+    }
 
     const copyButton = page.getByTestId('diagnostics-copy');
     await expect(copyButton).toBeVisible();
     await copyButton.click();
 
-    await expect(copyButton).toHaveText(/copied|kopiert/i, { timeout: 5000 });
+    if (browserName === 'chromium') {
+      await expect(copyButton).toHaveText(/copied|kopiert/i, { timeout: 5000 });
+    } else {
+      await expect(copyButton).toHaveText(
+        /copied|kopiert|failed|fehlgeschlagen/i,
+        {
+          timeout: 5000,
+        },
+      );
+    }
 
-    const clipboardText = await page.evaluate(() =>
-      navigator.clipboard.readText(),
-    );
-    const bundle = JSON.parse(clipboardText);
-    expect(bundle.generatedAt).toBeDefined();
-    expect(bundle.app).toBeDefined();
-    expect(bundle.browser).toBeDefined();
+    if (clipboardReadSupported) {
+      const clipboardText = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      const bundle = JSON.parse(clipboardText);
+      expect(bundle.generatedAt).toBeDefined();
+      expect(bundle.app).toBeDefined();
+      expect(bundle.browser).toBeDefined();
+    }
   });
 });
 

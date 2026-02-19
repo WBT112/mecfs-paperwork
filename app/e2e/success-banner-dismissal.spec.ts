@@ -15,7 +15,7 @@ const createNewDraft = async (page: Page) => {
   });
   await expect(newDraftButton).toBeVisible({ timeout: POLL_TIMEOUT });
   await newDraftButton.click();
-  await expect(page.locator('#root_person_name')).toBeVisible({
+  await expect(page.locator('#root_person_firstName')).toBeVisible({
     timeout: POLL_TIMEOUT,
   });
 };
@@ -66,7 +66,7 @@ test('dismisses success messages when other action buttons are clicked', async (
 
   await page.goto(`/formpacks/${FORM_PACK_ID}`);
   await createNewDraft(page);
-  await page.locator('#root_person_name').fill('Test User');
+  await page.locator('#root_person_firstName').fill('Test User');
 
   const docxSection = page.locator('.formpack-docx-export');
   const docxExportButton = docxSection.locator('[data-action="docx-export"]');

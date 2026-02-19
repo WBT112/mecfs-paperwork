@@ -1,6 +1,6 @@
+import { toError } from '../errors';
+
 const DB_NAME = 'mecfs-paperwork';
-const toError = (reason: unknown, fallbackMessage: string): Error =>
-  reason instanceof Error ? reason : new Error(fallbackMessage);
 
 export const resetAllLocalData = async (): Promise<void> => {
   // 1. Delete IndexedDB database

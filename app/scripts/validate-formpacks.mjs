@@ -72,10 +72,43 @@ const MANIFEST_SCHEMA = {
         mapping: { type: 'string', minLength: 1 },
       },
     },
+    meta: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        category: { enum: ['insurer', 'doctor', 'general', 'other'] },
+        keywords: {
+          type: 'array',
+          items: { type: 'string', minLength: 1 },
+        },
+      },
+    },
     ui: {
       type: 'object',
       additionalProperties: false,
       properties: {
+        introGate: {
+          type: 'object',
+          additionalProperties: false,
+          required: [
+            'enabled',
+            'acceptedFieldPath',
+            'titleKey',
+            'bodyKey',
+            'checkboxLabelKey',
+            'startButtonLabelKey',
+            'reopenButtonLabelKey',
+          ],
+          properties: {
+            enabled: { type: 'boolean' },
+            acceptedFieldPath: { type: 'string', minLength: 1 },
+            titleKey: { type: 'string', minLength: 1 },
+            bodyKey: { type: 'string', minLength: 1 },
+            checkboxLabelKey: { type: 'string', minLength: 1 },
+            startButtonLabelKey: { type: 'string', minLength: 1 },
+            reopenButtonLabelKey: { type: 'string', minLength: 1 },
+          },
+        },
         infoBoxes: {
           type: 'array',
           items: {
@@ -563,12 +596,12 @@ const validateContract = async ({ formpackId, errors }) => {
     }
 
     const exportsList = Array.isArray(manifest.exports) ? manifest.exports : [];
-    if (!exportsList.includes('docx') || !exportsList.includes('json')) {
+    if (!exportsList.includes('json')) {
       collectErrors(
         errors,
         formpackId,
         manifestPath,
-        new Error('Manifest exports must include "docx" and "json".'),
+        new Error('Manifest exports must include "json".'),
       );
     }
 

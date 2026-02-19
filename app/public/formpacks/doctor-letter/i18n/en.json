@@ -10,6 +10,8 @@
   "doctor-letter.patient.firstName.help": "Patient's first name",
   "doctor-letter.patient.lastName.label": "Last name",
   "doctor-letter.patient.lastName.help": "Patient's last name",
+  "doctor-letter.patient.birthDate.label": "Date of birth",
+  "doctor-letter.patient.birthDate.help": "Optional date of birth",
   "doctor-letter.patient.streetAndNumber.label": "Street and house number",
   "doctor-letter.patient.streetAndNumber.help": "Patient's street and house number",
   "doctor-letter.patient.postalCode.label": "Postal code",

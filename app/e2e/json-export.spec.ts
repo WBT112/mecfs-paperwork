@@ -111,7 +111,7 @@ const openImportSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
 
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
@@ -186,7 +186,7 @@ for (const locale of locales) {
       let recordId = await waitForStableActiveRecordId(page);
       await waitForRecordById(page, recordId, { timeout: POLL_TIMEOUT });
 
-      await fillTextInputStable(page, '#root_person_name', fakeName);
+      await fillTextInputStable(page, '#root_person_firstName', fakeName);
       await fillTextInputStable(page, '#root_person_birthDate', fakeBirthDate);
       await fillTextInputStable(page, '#root_doctor_phone', fakePhone);
 
@@ -202,7 +202,7 @@ for (const locale of locales) {
       await waitForRecordField(
         page,
         recordId,
-        (record) => record?.data?.person?.name ?? '',
+        (record) => record?.data?.person?.firstName ?? '',
         fakeName,
       );
       await waitForRecordField(
@@ -270,7 +270,7 @@ for (const locale of locales) {
       expect(payload.record.locale).toBe(locale);
       expect(payload.data).toMatchObject({
         person: {
-          name: fakeName,
+          firstName: fakeName,
           birthDate: fakeBirthDate,
         },
         doctor: {
@@ -309,7 +309,9 @@ for (const locale of locales) {
         })
         .not.toBe(activeIdBeforeImport);
 
-      await expect(page.locator('#root_person_name')).toHaveValue(fakeName);
+      await expect(page.locator('#root_person_firstName')).toHaveValue(
+        fakeName,
+      );
       await expect(page.locator('#root_person_birthDate')).toHaveValue(
         fakeBirthDate,
       );

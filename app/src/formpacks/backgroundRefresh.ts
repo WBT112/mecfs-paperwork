@@ -120,7 +120,9 @@ const refreshSingleFormpack = async (formpackId: string): Promise<boolean> => {
     hash: signature.hash,
   });
 
-  return true;
+  // NOTE: First-time metadata bootstrap should not invalidate runtime caches.
+  // The active page load already fetched current assets for this revision.
+  return existing !== null;
 };
 
 let activeRefreshRun: Promise<FormpackRefreshResult> | null = null;

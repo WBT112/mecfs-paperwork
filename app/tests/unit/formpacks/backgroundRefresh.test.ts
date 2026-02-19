@@ -173,6 +173,29 @@ describe('formpacks/backgroundRefresh', () => {
     expect(headers.get('x-formpack-refresh')).toBe('1');
   });
 
+  it('bootstraps metadata without invalidating caches when no baseline exists', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    installFetchMock();
+    getFormpackMeta.mockResolvedValue(null);
+
+    const result = await runFormpackBackgroundRefresh();
+
+    expect(result.skippedOffline).toBe(false);
+    expect(result.updatedIds).toEqual([]);
+    expect(upsertFormpackMeta).toHaveBeenCalledWith({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.1',
+      version: '1.0.1',
+      hash: 'new-hash',
+    });
+    expect(clearFormpackCaches).not.toHaveBeenCalled();
+    expect(clearFormpackI18nCache).not.toHaveBeenCalled();
+  });
+
   it('does not refresh unchanged revisions', async () => {
     Object.defineProperty(navigator, 'onLine', {
       configurable: true,

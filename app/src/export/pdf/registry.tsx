@@ -27,11 +27,29 @@ const buildDoctorLetterConfig = async (): Promise<PdfExportConfig> => {
   };
 };
 
+const buildOfflabelAntragConfig = async (): Promise<PdfExportConfig> => {
+  const [
+    { buildOfflabelAntragPdfDocumentModel },
+    { default: OfflabelAntragPdfDocument },
+  ] = await Promise.all([
+    import('../../formpacks/offlabel-antrag/export/pdfDocumentModel'),
+    import('./templates/OfflabelAntragPdfDocument'),
+  ]);
+
+  return {
+    buildModel: buildOfflabelAntragPdfDocumentModel,
+    renderDocument: (model) => <OfflabelAntragPdfDocument model={model} />,
+  };
+};
+
 export const getPdfExportConfig = async (
   formpackId: string | null,
 ): Promise<PdfExportConfig | null> => {
   if (formpackId === 'doctor-letter') {
     return buildDoctorLetterConfig();
+  }
+  if (formpackId === 'offlabel-antrag') {
+    return buildOfflabelAntragConfig();
   }
   return null;
 };
