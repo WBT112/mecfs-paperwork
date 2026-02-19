@@ -767,6 +767,39 @@ describe('FormpackDetailPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('renders PDF export controls for offlabel-antrag when pdf export is declared', async () => {
+    const offlabelRecord = {
+      ...record,
+      formpackId: OFFLABEL_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [offlabelRecord];
+    storageState.activeRecord = offlabelRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: OFFLABEL_FORMPACK_ID,
+      exports: ['docx', 'pdf'],
+      docx: {
+        templates: {
+          a4: TEMPLATE_A4,
+        },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    render(
+      <TestRouter initialEntries={[`/formpacks/${OFFLABEL_FORMPACK_ID}`]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(
+      await screen.findByText(PDF_EXPORT_CONTROLS_LABEL),
+    ).toBeInTheDocument();
+  });
+
   it('shows PDF success and error statuses via PDF callbacks', async () => {
     formpackState.manifest = {
       ...formpackState.manifest,

@@ -10,6 +10,7 @@
   "descriptionKey": "offlabel-antrag.description",
   "exports": [
     "docx",
+    "pdf",
     "json"
   ],
   "visibility": "dev",
