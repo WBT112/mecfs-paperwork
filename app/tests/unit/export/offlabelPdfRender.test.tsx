@@ -35,7 +35,7 @@ const buildTemplateData = (
       subject: 'Antrag auf Kostenübernahme',
       paragraphs: ['Punkt 1: ...', '', 'Punkt 2: ...'],
       attachmentsHeading: 'Anlagen',
-      attachments: ['Arztbrief 01/2026'],
+      attachments: ['Arztbrief 01/2026', 'Arztbrief 01/2026'],
       signatureBlocks: [],
     },
     part2: {
@@ -128,6 +128,41 @@ describe('OfflabelAntragPdfDocument', () => {
       <OfflabelAntragPdfDocument
         model={{
           meta: { createdAtIso: CREATED_AT_ISO, locale: 'de' },
+          sections: [],
+        }}
+      />,
+    ).toBlob();
+
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('renders english fallbacks for attachment and source headings', async () => {
+    const templateData = buildTemplateData({
+      locale: 'en',
+      sourcesHeading: '',
+      sources: ['Source A', 'Source A'],
+    });
+
+    const blob = await pdf(
+      <OfflabelAntragPdfDocument
+        model={{
+          meta: {
+            createdAtIso: CREATED_AT_ISO,
+            locale: 'en',
+            templateData,
+          },
+          sections: [],
+        }}
+      />,
+    ).toBlob();
+
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('renders with no meta and falls back to default locale/template data', async () => {
+    const blob = await pdf(
+      <OfflabelAntragPdfDocument
+        model={{
           sections: [],
         }}
       />,

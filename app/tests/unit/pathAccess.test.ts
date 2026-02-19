@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   getPathValue,
   setPathValueImmutable,
@@ -6,6 +6,7 @@ import {
 } from '../../src/lib/pathAccess';
 
 const ARRAY_VALUE_PATH = 'items.1.value';
+const NESTED_ARRAY_VALUE_PATH = 'nested.0.value';
 
 describe('pathAccess', () => {
   describe('getPathValue', () => {
@@ -50,6 +51,25 @@ describe('pathAccess', () => {
       expect(getPathValue(updated, ARRAY_VALUE_PATH)).toBe('updated');
       expect(getPathValue(source, ARRAY_VALUE_PATH)).toBe('b');
     });
+
+    it('falls back to recursive cloning when structuredClone is unavailable', () => {
+      const source = { nested: [{ value: 'a' }] } as Record<string, unknown>;
+      const originalStructuredClone = globalThis.structuredClone;
+
+      vi.stubGlobal('structuredClone', undefined);
+      try {
+        const updated = setPathValueImmutable(
+          source,
+          NESTED_ARRAY_VALUE_PATH,
+          'updated',
+        );
+
+        expect(getPathValue(updated, NESTED_ARRAY_VALUE_PATH)).toBe('updated');
+        expect(getPathValue(source, NESTED_ARRAY_VALUE_PATH)).toBe('a');
+      } finally {
+        vi.stubGlobal('structuredClone', originalStructuredClone);
+      }
+    });
   });
 
   describe('setPathValueMutableSafe', () => {
@@ -58,6 +78,24 @@ describe('pathAccess', () => {
       setPathValueMutableSafe(target, 'a.b.c', 123);
 
       expect(target).toEqual({ a: { b: { c: 123 } } });
+    });
+
+    it('creates intermediate containers for arrays and objects', () => {
+      const target = { list: [] } as Record<string, unknown>;
+
+      setPathValueMutableSafe(target, 'list.0.name', 'created');
+
+      expect(getPathValue(target, 'list.0.name')).toBe('created');
+    });
+
+    it('ignores writes when path is empty or mismatched for arrays', () => {
+      const target = { list: ['keep'] } as Record<string, unknown>;
+
+      setPathValueMutableSafe(target, '', 'ignored');
+      setPathValueMutableSafe(target, 'list.notAnIndex.value', 'ignored');
+
+      expect(getPathValue(target, 'list.0')).toBe('keep');
+      expect(getPathValue(target, 'list.notAnIndex.value')).toBeUndefined();
     });
 
     it('blocks prototype-pollution segments', () => {
