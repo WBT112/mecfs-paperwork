@@ -259,6 +259,45 @@ describe('buildOfflabelDocuments', () => {
     expect(part2Text).toContain(
       'nicht für meine Indikation zugelassenen Medikament Midodrin („Off-Label-Use“)',
     );
+    expect(part2Text).toContain(
+      'Haftungsansprüche gegenüber meiner Ärztin/meinem Arzt.',
+    );
+  });
+
+  it('uses a gender-specific liability phrase for female doctors in part 2', () => {
+    const docs = buildOfflabelDocuments({
+      doctor: {
+        gender: 'Frau',
+      },
+      request: {
+        drug: 'ivabradine',
+      },
+    });
+
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part2Text).toContain('Haftungsansprüche gegenüber meiner Ärztin.');
+  });
+
+  it('uses a gender-specific liability phrase for male doctors in part 2', () => {
+    const docs = buildOfflabelDocuments({
+      doctor: {
+        gender: 'Herr',
+      },
+      request: {
+        drug: 'ivabradine',
+      },
+    });
+
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part2Text).toContain('Haftungsansprüche gegenüber meinem Arzt.');
   });
 
   it('adds point 7 for standard medication when §2 checkbox is enabled', () => {

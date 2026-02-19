@@ -71,6 +71,17 @@ const parseMultilineItems = (value: string): string[] =>
     )
     .filter((line) => line.length > 0);
 
+const resolveDoctorLiabilityTarget = (doctorGenderValue: unknown): string => {
+  const normalizedGender = getText(doctorGenderValue).toLowerCase();
+  if (normalizedGender === 'frau') {
+    return 'meiner Ärztin';
+  }
+  if (normalizedGender === 'herr') {
+    return 'meinem Arzt';
+  }
+  return 'meiner Ärztin/meinem Arzt';
+};
+
 const LSG_REFERENCE_TEXT =
   'Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER)';
 
@@ -391,6 +402,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
   );
   const facts = resolvePreviewMedicationFacts(request, drugProfile);
   const drug = facts.displayName;
+  const liabilityTarget = resolveDoctorLiabilityTarget(doctor.gender);
   const addressLines = joinLines([
     getText(doctor.name),
     getText(doctor.practice),
@@ -417,7 +429,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Ich erkläre hiermit, dass ich ausführlich über die Risiken und möglichen Nebenwirkungen der Behandlung mit einem nicht für meine Indikation zugelassenen Medikament ${drug} („Off-Label-Use“) informiert wurde und ausreichend Gelegenheit hatte Fragen zu stellen. Ich fühle mich ausreichend aufgeklärt und stimme einer Behandlung zu. Außerdem verzichte ich aufgrund der Behandlung mit dem Medikament entstehenden Haftungsansprüche gegenüber meiner Ärztin/meinem Arzt.`,
+        text: `Ich erkläre hiermit, dass ich ausführlich über die Risiken und möglichen Nebenwirkungen der Behandlung mit einem nicht für meine Indikation zugelassenen Medikament ${drug} („Off-Label-Use“) informiert wurde und ausreichend Gelegenheit hatte Fragen zu stellen. Ich fühle mich ausreichend aufgeklärt und stimme einer Behandlung zu. Außerdem verzichte ich auf die aufgrund der Behandlung mit dem Medikament entstehenden Haftungsansprüche gegenüber ${liabilityTarget}.`,
       },
       { kind: 'pageBreak' },
     ],
