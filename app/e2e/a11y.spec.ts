@@ -39,9 +39,7 @@ const acceptOfflabelIntroGate = async (page: Page) => {
   const introHeading = page.getByRole('heading', { name: /hinweise/i });
   await expect(introHeading).toBeVisible({ timeout: POLL_TIMEOUT });
 
-  await page
-    .getByLabel(OFFLABEL_INTRO_CHECKBOX_LABEL)
-    .check({ force: true });
+  await page.getByLabel(OFFLABEL_INTRO_CHECKBOX_LABEL).check({ force: true });
   await page.getByRole('button', { name: /weiter/i }).click();
   await expect(page.locator('.formpack-form')).toBeVisible({
     timeout: POLL_TIMEOUT,

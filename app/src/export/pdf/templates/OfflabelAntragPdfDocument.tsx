@@ -1,10 +1,6 @@
 import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import type { DocumentModel } from '../types';
-import {
-  ensurePdfFontsRegistered,
-  PDF_FONT_FAMILY_SANS,
-  PDF_FONT_FAMILY_SERIF,
-} from '../fonts';
+import { ensurePdfFontsRegistered, PDF_FONT_FAMILY_SANS } from '../fonts';
 import type { OfflabelPdfTemplateData } from '../../../formpacks/offlabel-antrag/export/pdfDocumentModel';
 
 type LetterLike = {
@@ -46,7 +42,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   subject: {
-    fontFamily: PDF_FONT_FAMILY_SERIF,
+    fontFamily: PDF_FONT_FAMILY_SANS,
     fontWeight: 700,
     fontSize: 11,
     marginBottom: 12,
@@ -61,7 +57,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   attachmentsHeading: {
-    fontFamily: PDF_FONT_FAMILY_SERIF,
+    fontFamily: PDF_FONT_FAMILY_SANS,
     fontWeight: 700,
     marginBottom: 4,
   },

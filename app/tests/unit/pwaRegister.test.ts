@@ -1,6 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const registerSW = vi.hoisted(() => vi.fn());
+type RegisterSwOptions = {
+  immediate?: boolean;
+  onNeedRefresh?: () => void;
+};
+
+type UpdateSwHandler = (reloadPage?: boolean) => Promise<void>;
+
+const registerSW = vi.hoisted(() =>
+  vi.fn(
+    (_options?: RegisterSwOptions): UpdateSwHandler =>
+      vi.fn(async () => undefined),
+  ),
+);
 
 vi.mock('virtual:pwa-register', () => ({
   registerSW,
@@ -39,9 +51,7 @@ describe('registerServiceWorker', () => {
   it('registers the service worker when allowed', () => {
     registerServiceWorker({ DEV: false });
     expect(registerSW).toHaveBeenCalled();
-    const options = registerSW.mock.calls[0]?.[0] as
-      | { immediate?: boolean; onNeedRefresh?: () => void }
-      | undefined;
+    const options = registerSW.mock.calls[0]?.[0];
     expect(options?.immediate).toBe(true);
     expect(typeof options?.onNeedRefresh).toBe('function');
   });
@@ -51,8 +61,10 @@ describe('registerServiceWorker', () => {
     expect(registerSW).not.toHaveBeenCalled();
   });
 
-  it('emits a passive update event when a waiting worker is detected', () => {
+  it('emits an update event and activates a waiting service worker', () => {
     const listener = vi.fn();
+    const updateSW = vi.fn(async () => undefined);
+    registerSW.mockReturnValueOnce(updateSW);
     const unsubscribe = subscribeServiceWorkerWaiting(listener);
 
     registerServiceWorker({ DEV: false });
@@ -63,10 +75,11 @@ describe('registerServiceWorker', () => {
       throw new Error('Expected registerSW to be called.');
     }
 
-    const options = call[0] as { onNeedRefresh?: () => void };
+    const options = call[0] as RegisterSwOptions;
     expect(options.onNeedRefresh).toBeDefined();
     options.onNeedRefresh?.();
     expect(listener).toHaveBeenCalledTimes(1);
+    expect(updateSW).toHaveBeenCalledWith(true);
 
     unsubscribe();
   });

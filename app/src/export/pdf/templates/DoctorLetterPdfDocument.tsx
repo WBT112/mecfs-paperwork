@@ -8,11 +8,7 @@ import {
   View,
 } from '@react-pdf/renderer';
 import type { DocumentBlock, DocumentModel } from '../types';
-import {
-  ensurePdfFontsRegistered,
-  PDF_FONT_FAMILY_SANS,
-  PDF_FONT_FAMILY_SERIF,
-} from '../fonts';
+import { ensurePdfFontsRegistered, PDF_FONT_FAMILY_SANS } from '../fonts';
 
 import annex1SchemaImg from '../../../assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg';
 import annex2GuideExcerptImg from '../../../assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png';
@@ -89,7 +85,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   subject: {
-    fontFamily: PDF_FONT_FAMILY_SERIF,
+    fontFamily: PDF_FONT_FAMILY_SANS,
     fontSize: 11,
     fontWeight: 700,
     marginBottom: 12,
@@ -98,7 +94,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   attachmentsTitle: {
-    fontFamily: PDF_FONT_FAMILY_SERIF,
+    fontFamily: PDF_FONT_FAMILY_SANS,
     fontWeight: 700,
     fontSize: 10,
     marginBottom: 4,
@@ -115,7 +111,7 @@ const styles = StyleSheet.create({
   },
   // Annex pages
   annexTitle: {
-    fontFamily: PDF_FONT_FAMILY_SERIF,
+    fontFamily: PDF_FONT_FAMILY_SANS,
     fontWeight: 700,
     textDecoration: 'underline',
     marginBottom: 12,
