@@ -7,6 +7,11 @@ export const getProfile = async (id: string): Promise<ProfileEntry | null> => {
   return entry ?? null;
 };
 
+export const deleteProfile = async (id: string): Promise<void> => {
+  const db = await openStorage();
+  await db.delete('profiles', id);
+};
+
 /**
  * Returns true if the profile data contains at least one non-empty string value.
  */

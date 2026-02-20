@@ -81,6 +81,7 @@ import {
 import { getFormpackMeta, upsertFormpackMeta } from '../storage/formpackMeta';
 import { importRecordWithSnapshots } from '../storage/import';
 import {
+  deleteProfile,
   getProfile,
   hasUsableProfileData,
   upsertProfile,
@@ -881,16 +882,33 @@ export default function FormpackDetailPage() {
       const enabled = event.target.checked;
       setProfileSaveEnabled(enabled);
       try {
-        if (enabled) {
-          globalThis.localStorage.setItem(PROFILE_SAVE_KEY, 'true');
-        } else {
-          globalThis.localStorage.removeItem(PROFILE_SAVE_KEY);
-        }
+        globalThis.localStorage.setItem(
+          PROFILE_SAVE_KEY,
+          enabled ? 'true' : 'false',
+        );
       } catch {
         // Ignore storage errors.
       }
+
+      if (!enabled && profileHasSavedData) {
+        const shouldDeleteExisting =
+          typeof globalThis.confirm === 'function'
+            ? globalThis.confirm(t('profileDeleteConfirmPrompt'))
+            : false;
+
+        if (shouldDeleteExisting) {
+          deleteProfile('default').then(
+            () => {
+              setProfileHasSavedData(false);
+            },
+            () => {
+              // Silently ignore profile delete errors.
+            },
+          );
+        }
+      }
     },
-    [],
+    [profileHasSavedData, t],
   );
 
   const handleApplyProfile = useCallback(async () => {

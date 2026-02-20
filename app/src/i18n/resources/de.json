@@ -111,6 +111,7 @@
   "profileApplySuccess": "Stammdaten übernommen.",
   "profileApplyNoData": "Keine Stammdaten vorhanden.",
   "profileApplyError": "Stammdaten konnten nicht geladen werden.",
+  "profileDeleteConfirmPrompt": "Möchtest du bereits gespeicherte Stammdaten jetzt löschen?",
   "formpackFormNoActiveRecord": "Wähle oder erstelle einen Entwurf, um mit der Eingabe zu beginnen.",
   "formpackFormPreviewHeading": "Formulardaten-Vorschau",
   "formpackFormPreviewEmpty": "Noch keine Daten eingegeben.",

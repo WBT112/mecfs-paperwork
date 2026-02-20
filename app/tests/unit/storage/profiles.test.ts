@@ -7,6 +7,7 @@ const FIXED_TIMESTAMP = '2024-01-01T00:00:00.000Z';
 const mockDb = {
   get: vi.fn(),
   put: vi.fn(),
+  delete: vi.fn(),
 };
 
 vi.mock('../../../src/storage/db', () => ({
@@ -17,6 +18,7 @@ describe('profiles storage', () => {
   beforeEach(() => {
     mockDb.get.mockReset();
     mockDb.put.mockReset();
+    mockDb.delete.mockReset();
   });
 
   describe('getProfile', () => {
@@ -141,6 +143,18 @@ describe('profiles storage', () => {
 
       expect(result.data.patient?.firstName).toBeUndefined();
       expect(result.data.patient?.lastName).toBe('Valid');
+    });
+  });
+
+  describe('deleteProfile', () => {
+    it('deletes a stored profile entry by id', async () => {
+      const { deleteProfile } = await import('../../../src/storage/profiles');
+
+      mockDb.delete.mockResolvedValue(undefined);
+
+      await deleteProfile(PROFILE_ID);
+
+      expect(mockDb.delete).toHaveBeenCalledWith('profiles', PROFILE_ID);
     });
   });
 

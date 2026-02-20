@@ -111,6 +111,7 @@
   "profileApplySuccess": "Master data applied.",
   "profileApplyNoData": "No master data found.",
   "profileApplyError": "Could not load master data.",
+  "profileDeleteConfirmPrompt": "Do you want to delete previously saved master data now?",
   "formpackFormNoActiveRecord": "Select or create a draft to start entering data.",
   "formpackFormPreviewHeading": "Form data preview",
   "formpackFormPreviewEmpty": "No data entered yet.",

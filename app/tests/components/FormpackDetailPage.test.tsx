@@ -173,6 +173,7 @@ const pdfExportControlsState = vi.hoisted(() => ({
 const profileState = vi.hoisted(() => ({
   getProfile: vi.fn(),
   upsertProfile: vi.fn(),
+  deleteProfile: vi.fn(),
   hasUsableProfileData: vi.fn((data: Record<string, unknown> | null) =>
     Boolean(data && Object.keys(data).length > 0),
   ),
@@ -403,6 +404,7 @@ vi.mock('../../src/export/pdf/PdfExportControls', () => ({
 vi.mock('../../src/storage/profiles', () => ({
   getProfile: profileState.getProfile,
   upsertProfile: profileState.upsertProfile,
+  deleteProfile: profileState.deleteProfile,
   hasUsableProfileData: profileState.hasUsableProfileData,
 }));
 
@@ -525,6 +527,7 @@ describe('FormpackDetailPage', () => {
     pdfExportControlsState.props = null;
     profileState.getProfile.mockReset();
     profileState.upsertProfile.mockReset();
+    profileState.deleteProfile.mockReset();
     profileState.hasUsableProfileData.mockClear();
     profileMappingState.extractProfileData.mockClear();
     profileMappingState.applyProfileData.mockClear();
@@ -565,6 +568,7 @@ describe('FormpackDetailPage', () => {
     });
     profileState.getProfile.mockResolvedValue(null);
     profileState.upsertProfile.mockResolvedValue({ data: {} });
+    profileState.deleteProfile.mockResolvedValue(undefined);
     profileState.hasUsableProfileData.mockImplementation(
       (data: Record<string, unknown> | null) =>
         Boolean(data && Object.keys(data).length > 0),
@@ -1141,7 +1145,7 @@ describe('FormpackDetailPage', () => {
 
   it('toggles profile quickfill persistence in localStorage', async () => {
     const setItemSpy = vi.spyOn(window.localStorage.__proto__, 'setItem');
-    const removeItemSpy = vi.spyOn(window.localStorage.__proto__, 'removeItem');
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1156,9 +1160,12 @@ describe('FormpackDetailPage', () => {
     });
 
     await userEvent.click(checkbox);
-    expect(removeItemSpy).toHaveBeenCalledWith(
+    expect(setItemSpy).toHaveBeenCalledWith(
       'mecfs-paperwork.profile.saveEnabled',
+      'false',
     );
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(profileState.deleteProfile).not.toHaveBeenCalled();
 
     await userEvent.click(checkbox);
     expect(setItemSpy).toHaveBeenCalledWith(
@@ -1166,8 +1173,42 @@ describe('FormpackDetailPage', () => {
       'true',
     );
 
+    confirmSpy.mockRestore();
     setItemSpy.mockRestore();
-    removeItemSpy.mockRestore();
+  });
+
+  it('prompts for deleting saved profile data when disabling profile save', async () => {
+    profileState.getProfile.mockResolvedValueOnce({
+      data: { patient: { firstName: 'Alice' } },
+    });
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    const checkbox = await screen.findByRole('checkbox', {
+      name: 'profileSaveCheckbox',
+    });
+    const applyButton = await screen.findByRole('button', {
+      name: 'profileApplyButton',
+    });
+    await waitFor(() => expect(applyButton).toBeEnabled());
+
+    await userEvent.click(checkbox);
+
+    expect(confirmSpy).toHaveBeenCalledWith('profileDeleteConfirmPrompt');
+    await waitFor(() =>
+      expect(profileState.deleteProfile).toHaveBeenCalledWith('default'),
+    );
+    await waitFor(() => expect(applyButton).toBeDisabled());
+
+    confirmSpy.mockRestore();
   });
 
   it('applies profile data and shows success status', async () => {
