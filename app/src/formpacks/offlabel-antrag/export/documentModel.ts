@@ -142,7 +142,8 @@ const REQUEST_DEFAULT_FIELDS = [
 
 const DEFAULT_PART3_SUBJECT_KEY = 'offlabel-antrag.export.part3.subject';
 const DEFAULT_PART3_SUBJECT =
-  'Ärztliche Stellungnahme / Befundbericht zum Offlabel-User';
+  'Ärztliche Stellungnahme / Befundbericht zum Off-Label-Use';
+const PART2_TITLE = 'Teil 2 – Schreiben an die behandelnde Praxis';
 
 const getT = (locale: SupportedLocale): I18nT =>
   i18n.getFixedT(locale, 'formpack:offlabel-antrag');
@@ -299,7 +300,10 @@ const getPreviewPart = (
 
 const buildPartParagraphs = (
   part: OfflabelRenderedDocument | null,
-  options: { blankLineBetweenBlocks?: boolean } = {},
+  options: {
+    blankLineBetweenBlocks?: boolean;
+    compactAroundKinds?: OfflabelRenderedDocument['blocks'][number]['kind'][];
+  } = {},
 ): string[] => {
   if (!part) {
     return [];
@@ -308,6 +312,7 @@ const buildPartParagraphs = (
   return flattenBlocksToParagraphs(part.blocks, {
     includeHeadings: false,
     blankLineBetweenBlocks: options.blankLineBetweenBlocks ?? false,
+    compactAroundKinds: options.compactAroundKinds,
   });
 };
 
@@ -328,8 +333,10 @@ const buildPart2Paragraphs = (
   );
 
   return flattenBlocksToParagraphs(bodyBlocks, {
-    includeHeadings: false,
-  });
+    includeHeadings: true,
+    blankLineBetweenBlocks: true,
+    compactAroundKinds: ['heading', 'list'],
+  }).filter((paragraph) => paragraph !== PART2_TITLE);
 };
 
 const buildKkSignatures = (): OffLabelSignatureBlock[] => [];
@@ -461,9 +468,13 @@ export const buildOffLabelAntragDocumentModel = (
 
   const kkParagraphs = buildPartParagraphs(previewPart1, {
     blankLineBetweenBlocks: true,
+    compactAroundKinds: ['list'],
   });
   const arztParagraphs = buildPart2Paragraphs(previewPart2);
-  const part3Paragraphs = buildPartParagraphs(previewPart3);
+  const part3Paragraphs = buildPartParagraphs(previewPart3, {
+    blankLineBetweenBlocks: true,
+    compactAroundKinds: ['list'],
+  });
 
   const patientName = buildPatientName(patient);
   const dateLine = getDateLine(locale, patient.city, exportedAt);

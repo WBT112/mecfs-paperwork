@@ -125,7 +125,7 @@ describe('offlabel-antrag letter builder', () => {
     ).exportBundle;
 
     expect(bundle.part1.senderLines[0]).toBe('Max Example');
-    expect(bundle.part1.addresseeLines[0]).toBe('Example Health Insurance');
+    expect(bundle.part1.addresseeLines[0]).toBe('AOK Minus');
     expect(bundle.part1.subject).toContain('PLEASE SELECT');
   });
 
@@ -154,6 +154,7 @@ describe('offlabel-antrag letter builder', () => {
   it('exposes part 2 doctor letter via document model', () => {
     const letter = buildOffLabelAntragDocumentModel(
       {
+        patient: { firstName: 'Mara', lastName: 'Example' },
         doctor: { name: 'Dr. Muster' },
         request: { drug: 'ivabradine' },
       },
@@ -163,6 +164,18 @@ describe('offlabel-antrag letter builder', () => {
 
     expect(letter.subject).toContain('Begleitschreiben');
     expect(letter.paragraphs.some((p) => p.includes('Teil 1'))).toBe(true);
+    expect(
+      letter.paragraphs.some((p) =>
+        p.includes('Haftungsausschluss (vom Patienten zu unterzeichnen)'),
+      ),
+    ).toBe(true);
+    expect(
+      letter.paragraphs.some((p) =>
+        p.includes('Vielen Dank für Ihre Unterstützung.'),
+      ),
+    ).toBe(true);
+    expect(letter.paragraphs).toContain('Mit freundlichen Grüßen');
+    expect(letter.paragraphs).toContain('Mara Example');
     expect(letter.attachments[0]).toBe(PART1_DRAFT_ATTACHMENT);
   });
 });

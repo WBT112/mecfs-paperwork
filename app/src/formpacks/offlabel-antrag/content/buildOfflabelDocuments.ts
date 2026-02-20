@@ -85,29 +85,30 @@ const resolveDoctorLiabilityTarget = (doctorGenderValue: unknown): string => {
 const LSG_REFERENCE_TEXT =
   'Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER)';
 
-const POINT_HILFSANTRAG_INTRO = `Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V. Dies gilt insbesondere für den Fall, dass eine zulassungsreife Datenlage im engeren Sinne verneint wird. Zur wertungsmäßigen Einordnung verweise ich ergänzend auf den ${LSG_REFERENCE_TEXT}.`;
+const POINT_HILFSANTRAG_INTRO = `Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V. Dies gilt insbesondere für den Fall, dass eine zulassungsreife Datenlage im engeren Sinne verneint wird.`;
 
-const POINT_7_NOTSTAND = `Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V. Es handelt sich um eine lebensbedrohliche oder regelmäßig tödlich verlaufende Erkrankung. Die Voraussetzungen des § 2 Abs. 1a SGB V sind in meinem Fall erfüllt. Bezüglich der Wertung von ME/CFS als eben solche Erkrankung verweise ich auf den ${LSG_REFERENCE_TEXT}. Die Schwere der Erkrankung folgt bei ME/CFS als Systemerkrankung aus der Breite der Betroffenheit mehrerer lebensfunktionaler Bereiche wie körperlicher Mobilität, Verrichtungen des täglichen Lebens und Einschränkung der Leistungsfähigkeit im sozialen Umgang. Diese Lebensbereiche sind bei mir stark betroffen. Bei ME/CFS handelt es sich um eine chronische Erkrankung bisher ungeklärter Ätiologie. Chronische Erkrankungen sind per Definition nicht heilbar; viele chronische Erkrankungen haben einen progredienten Verlauf. Das bedeutet, der Gesundheitszustand verschlechtert sich im Zeitverlauf. Dies ist auch bei meiner Erkrankung der Fall. Es ist mit einer weiteren Verschlechterung zu rechnen bis hin zu einer kritischen Phase mit Verlust von Selbstständigkeit, Pflegebedürftigkeit und deutlicher Zunahme der Beschwerden. Im Vergleich mit anderen Betroffenen ist meine Situation bereits jetzt kritisch und durch Verlust von Selbstständigkeit sowie Pflegebedürftigkeit geprägt. Damit ist eine wertungsmäßig vergleichbar schwere Erkrankung bereits jetzt bei mir gegeben. Aus meiner Sicht ergibt sich die Vergleichbarkeit zur unmittelbaren Lebensbedrohlichkeit auch daraus, dass ME/CFS als Systemerkrankung progredient verläuft, Verschlechterungen in Schüben auftreten können und Zeitpunkt sowie Schwere des nächsten Schubes nicht exakt vorhersehbar sind. Eine exakte Zeitangabe ist zur Erfüllung der Wertungsgleichheit nicht erforderlich. ME/CFS verläuft häufig schubförmig und ist insoweit mit anderen chronischen Erkrankungen wie Multipler Sklerose vergleichbar. Ein weiterer Schub kann jederzeit eintreten; der Zeitraum einer erneuten erheblichen Verschlechterung ist innerhalb der nächsten Monate anzusetzen und die Wahrscheinlichkeit des Eintretens ist hoch. Damit ist insgesamt die Voraussetzung einer wertungsmäßig vergleichbaren Schwere der Erkrankung im Sinne von § 2 Abs. 1a SGB V bei mir erfüllt.`;
+const POINT_7_NOTSTAND = `Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V. Es handelt sich um eine lebensbedrohliche oder regelmäßig tödlich verlaufende Erkrankung. Die Voraussetzungen des § 2 Abs. 1a SGB V sind in meinem Fall erfüllt. Bezüglich der Wertung von ME/CFS als eben solche Erkrankung verweise ich auf den ${LSG_REFERENCE_TEXT}. Die Schwere der Erkrankung folgt bei ME/CFS als Systemerkrankung aus der Breite der Betroffenheit mehrerer lebensfunktionaler Bereiche wie körperlicher Mobilität, Verrichtungen des täglichen Lebens und Einschränkung der Leistungsfähigkeit im sozialen Umgang. Diese Lebensbereiche sind bei mir stark betroffen. Bei ME/CFS handelt es sich um eine chronische Erkrankung bisher ungeklärter Ätiologie. Chronische Erkrankungen sind per Definition nicht heilbar; viele chronische Erkrankungen haben einen progredienten Verlauf. Das bedeutet, der Gesundheitszustand verschlechtert sich im Zeitverlauf. Dies ist auch bei meiner Erkrankung der Fall. Es ist mit einer weiteren Verschlechterung zu rechnen. Im Vergleich mit anderen Betroffenen ist meine Situation bereits jetzt kritisch und durch Verlust von Selbstständigkeit sowie Pflegebedürftigkeit geprägt. Damit ist eine wertungsmäßig vergleichbar schwere Erkrankung bereits jetzt bei mir gegeben. Aus meiner Sicht ergibt sich die Vergleichbarkeit zur unmittelbaren Lebensbedrohlichkeit auch daraus, dass ME/CFS als Systemerkrankung progredient und häufig schubförmig verläuft und insoweit mit anderen chronischen Erkrankungen wie Multipler Sklerose vergleichbar ist. Zeitpunkt und Schwere des nächsten Schubes sind nicht exakt vorhersehbar; eine exakte Zeitangabe ist zur Erfüllung der Wertungsgleichheit nicht erforderlich. Weitere erhebliche Verschlechterungen können jederzeit eintreten, auch innerhalb der nächsten Monate, und ihre Eintrittswahrscheinlichkeit ist hoch. Damit ist insgesamt die Voraussetzung einer wertungsmäßig vergleichbaren Schwere der Erkrankung im Sinne von § 2 Abs. 1a SGB V bei mir erfüllt.`;
 const POINT_7_NOTSTAND_DIRECT = POINT_7_NOTSTAND.replace(
   'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
   'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
 );
 
-const POINT_7_NOTSTAND_THERAPY_SAFETY =
-  'Die beantragte Therapie erfolgt im Rahmen einer sorgfältigen individuellen Nutzen-Risiko-Abwägung, ärztlich überwacht und zeitlich befristet. Eine engmaschige Verlaufskontrolle ist vorgesehen. Bei fehlender Wirksamkeit oder relevanten Nebenwirkungen wird die Behandlung unverzüglich beendet. Die Therapie dient der Verhinderung einer weiteren Verschlechterung sowie der Erzielung einer spürbaren positiven Einwirkung auf den Krankheitsverlauf.';
+const THERAPY_SAFETY_STATEMENT =
+  'Die beantragte Therapie erfolgt im Rahmen einer sorgfältigen individuellen Nutzen-Risiko-Abwägung, ärztlich überwacht und zeitlich befristet. Eine regelmäßige, engmaschige Verlaufskontrolle ist vorgesehen. Bei fehlender Wirksamkeit oder relevanten Nebenwirkungen wird die Behandlung unverzüglich beendet. Die Therapie dient der Verhinderung einer weiteren Verschlechterung sowie der Erzielung einer spürbaren positiven Einwirkung auf den Krankheitsverlauf.';
+
+const PART2_TITLE = 'Teil 2 – Schreiben an die behandelnde Praxis';
+const PART2_LIABILITY_HEADING =
+  'Haftungsausschluss (vom Patienten zu unterzeichnen)';
 
 const POINT_8_STANDARD =
-  'Für die Versorgung meiner Erkrankung stehen keine sog. Standard-Therapien des gKV-Leistungskatalogs zur Verfügung. In der Wissenschaft werden allein symptombezogene Versorgungen diskutiert. Die am ehesten einschlägige Leitlinie: „Müdigkeit“ der Arbeitsgemeinschaft der Wissenschaftlichen Medizinischen Fachgesellschaften e. V. spricht in eben jener Leitlinie davon, dass für die kausale Behandlung des ME/CFS bislang keine Medikamente zugelassen sind und verweist auf die britische NICE-Richtlinie. In dieser wird neben Energiemanagment vor allem das Lindern der Symptome in den Fokus gerückt um eine spürbare Beeinflussung des Krankheitsverlaufes oder eine Verhütung der Verschlimmerung zu erreichen. Die Leitlinie enthält keine positiven Empfehlungen zur medikamentösen Therapie. Aufgelistet und diskutiert werden zahlreiche Therapieversuche mit sehr unterschiedlichen Ansätzen. Explizit wird zusammengefasst, dass es keine belastbare evidenzbasierte Grundlage für den Einsatz bestimmter Arzneimittel gibt. Vor diesem Hintergrund erscheint der beantragte Off-Label-Einsatz als medizinisch nachvollziehbarer und geeigneter Behandlungsversuch. Zusammengefasst ist keine der medizinischen Standardtherapie entsprechende Alternative verfügbar.';
+  'Für die Versorgung meiner Erkrankung stehen keine Standardtherapien des GKV-Leistungskatalogs zur Verfügung. In der wissenschaftlichen Literatur werden derzeit vor allem symptombezogene Behandlungsansätze diskutiert. Die einschlägige AWMF-Leitlinie „Müdigkeit“ stellt ausdrücklich fest, dass für die kausale Behandlung von ME/CFS bislang keine Medikamente zugelassen sind, und verweist auf die britische NICE-Leitlinie. Diese fokussiert neben Energiemanagement insbesondere die Linderung von Symptomen, um den Krankheitsverlauf möglichst günstig zu beeinflussen und eine Verschlechterung zu vermeiden. Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht; vielmehr werden verschiedene Therapieversuche mit heterogener Evidenzlage dargestellt. Zusammenfassend wird festgestellt, dass keine belastbare evidenzbasierte Grundlage für den Einsatz bestimmter Arzneimittel besteht. Vor diesem Hintergrund ist der beantragte Off-Label-Einsatz als medizinisch nachvollziehbarer und geeigneter Behandlungsversuch anzusehen. Eine der medizinischen Standardtherapie entsprechende Alternative ist nicht verfügbar.';
 
 const POINT_10_EVIDENCE_NOTE =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit; ich bitte um eine vollständige sozialmedizinische Würdigung einschließlich ggf. ergänzender Literaturrecherche im Einzelfall.';
 
 const POINT_10_NO_2A = `Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben. Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen, insbesondere aufgrund unterschiedlicher Ursachen und Komorbiditäten. Das trifft auch auf Patientinnen und Patienten mit Long-/Post-COVID zu. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_YES_2A = `Diese Erkenntnisse sind auf meinen Einzelfall übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
-const POINT_10_SECTION_2A_BRIDGE = `Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde, bestehen jedenfalls veröffentlichte Erkenntnisse, die eine zuverlässige Nutzen-Risiko-Abwägung ermöglichen; hilfsweise wird daher die Leistung nach § 2 Abs. 1a SGB V begehrt. Zur wertungsmäßigen Einordnung verweise ich ergänzend auf den ${LSG_REFERENCE_TEXT}.`;
-const POINT_10_STANDARD_THERAPY_SAFETY =
-  'Die beantragte Therapie erfolgt entsprechend der dargestellten evidenzbasierten Empfehlungen ärztlich kontrolliert, befristet und unter klar definierten Abbruchkriterien. Eine regelmäßige Verlaufskontrolle sowie eine dokumentierte Nutzen-Risiko-Abwägung sind vorgesehen. Bei fehlender Wirksamkeit oder nicht tolerierbaren Nebenwirkungen wird die Behandlung unverzüglich beendet.';
-
+const POINT_10_SECTION_2A_BRIDGE = `Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde, bestehen jedenfalls veröffentlichte Erkenntnisse, die eine zuverlässige Nutzen-Risiko-Abwägung ermöglichen; hilfsweise wird daher die Leistung nach § 2 Abs. 1a SGB V begehrt.`;
 const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
   '100':
     'ich feste Belastungsobergrenzen einhalte, nach Terminen konsequente Ruhefenster plane und Belastungsspitzen vermeide, um Rückfälle zu verhindern.',
@@ -128,9 +129,9 @@ const WORK_STATUS_SEVERITY_LINES: Record<string, string> = {
     'Ich bin derzeit arbeitsunfähig; schon geringe körperliche oder kognitive Anforderungen führen zu einer relevanten Verschlechterung, sodass eine regelmäßige Erwerbstätigkeit nicht tragfähig möglich ist.',
   AU: 'Ich bin derzeit arbeitsunfähig; schon geringe körperliche oder kognitive Anforderungen führen zu einer relevanten Verschlechterung, sodass eine regelmäßige Erwerbstätigkeit nicht tragfähig möglich ist.',
   Erwerbsminderungsrente:
-    'Ich beziehe eine Erwerbsminderungsrente, weil meine krankheitsbedingte Leistungsminderung so ausgeprägt ist, dass die Anforderungen des allgemeinen Arbeitsmarktes dauerhaft nicht mehr erfüllbar sind.',
+    'Ich beziehe eine Erwerbsminderungsrente, weil meine krankheitsbedingte Leistungsminderung so ausgeprägt ist, dass die Anforderungen des allgemeinen Arbeitsmarktes nicht mehr erfüllbar sind.',
   'EM-Rente':
-    'Ich beziehe eine Erwerbsminderungsrente, weil meine krankheitsbedingte Leistungsminderung so ausgeprägt ist, dass die Anforderungen des allgemeinen Arbeitsmarktes dauerhaft nicht mehr erfüllbar sind.',
+    'Ich beziehe eine Erwerbsminderungsrente, weil meine krankheitsbedingte Leistungsminderung so ausgeprägt ist, dass die Anforderungen des allgemeinen Arbeitsmarktes nicht mehr erfüllbar sind.',
   'Teilzeit arbeitsfähig':
     'Ich bin nur eingeschränkt teilzeit arbeitsfähig; selbst in reduziertem Umfang sind engmaschige Pausen, flexible Belastungssteuerung und krankheitsbedingte Ausfallzeiten erforderlich.',
 };
@@ -209,6 +210,13 @@ const resolvePreviewMedicationFacts = (
   };
 };
 
+const buildTreatmentPlanItems = (facts: PreviewMedicationFacts): string[] => [
+  `Indikation: ${facts.diagnosisNominative}`,
+  `Behandlungsziel: ${facts.targetSymptoms}`,
+  `Dosierung/Dauer: ${facts.doseAndDuration}`,
+  `Überwachung/Abbruch: ${facts.monitoringAndStop}`,
+];
+
 const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   const lines: string[] = [];
   const bellScore = getText(severity.bellScore);
@@ -216,8 +224,8 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
     const activityExamples = BELL_SCORE_ACTIVITY_EXAMPLES[bellScore];
     lines.push(
       activityExamples
-        ? `Der Bell-Score ist eine zentrale Kennzahl für meinen funktionellen Schweregrad. Mein Bell-Score liegt bei ${bellScore}. Meine soziale, gesellschaftliche und berufliche Teilhabe ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt. Das zeigt sich im Alltag unter anderem daran, dass ${activityExamples}`
-        : `Der Bell-Score ist eine zentrale Kennzahl für meinen funktionellen Schweregrad. Mein Bell-Score liegt bei ${bellScore}. Meine soziale, gesellschaftliche und berufliche Teilhabe ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt.`,
+        ? `Der Bell-Score ist eine zentrale Kennzahl für den funktionellen Schweregrad der Erkrankung ME/CFS. Mein Bell-Score liegt bei ${bellScore}. Meine soziale, gesellschaftliche und berufliche Teilhabe ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt. Das zeigt sich im Alltag unter anderem daran, dass ${activityExamples}`
+        : `Der Bell-Score ist eine zentrale Kennzahl für den funktionellen Schweregrad der Erkrankung ME/CFS. Mein Bell-Score liegt bei ${bellScore}. Meine soziale, gesellschaftliche und berufliche Teilhabe ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt.`,
     );
   }
   const gdb = getText(severity.gdb);
@@ -277,7 +285,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   })();
 
   const point4Text =
-    'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI';
+    'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI.';
 
   const blocks: OfflabelRenderedDocument['blocks'] = [
     { kind: 'heading', text: 'Teil 1 – Antrag an die Krankenkasse' },
@@ -303,7 +311,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     },
     {
       kind: 'paragraph',
-      text: `Punkt 1: Das Medikament ${facts.displayName} ist in Deutschland nicht indikationsbezogen zugelassen`,
+      text: `Punkt 1: Das Medikament ${facts.displayName} ist in Deutschland nicht indikationsbezogen zugelassen.`,
     },
     {
       kind: 'paragraph',
@@ -343,13 +351,6 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       { kind: 'list', items: standardCareItems },
     );
   }
-  if (includePoint7) {
-    blocks.push({
-      kind: 'paragraph',
-      text: POINT_7_NOTSTAND_THERAPY_SAFETY,
-    });
-  }
-
   if (drugKey === 'other') {
     blocks.push(
       {
@@ -358,7 +359,12 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisNominative}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}.`,
+        text: 'Geplant ist eine Behandlung wie folgt:',
+      },
+      { kind: 'list', items: buildTreatmentPlanItems(facts) },
+      {
+        kind: 'paragraph',
+        text: THERAPY_SAFETY_STATEMENT,
       },
     );
   } else {
@@ -369,11 +375,18 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     const point10BridgeText = applySection2Abs1a
       ? ` ${POINT_10_SECTION_2A_BRIDGE}`
       : '';
-    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt: Indikation: ${facts.diagnosisNominative}. Behandlungsziel: ${facts.targetSymptoms}. Dosierung/Dauer: ${facts.doseAndDuration}. Überwachung/Abbruch: ${facts.monitoringAndStop}. ${POINT_10_STANDARD_THERAPY_SAFETY}`;
-    blocks.push({
-      kind: 'paragraph',
-      text: point10BaseText,
-    });
+    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt:`;
+    blocks.push(
+      {
+        kind: 'paragraph',
+        text: point10BaseText,
+      },
+      { kind: 'list', items: buildTreatmentPlanItems(facts) },
+      {
+        kind: 'paragraph',
+        text: THERAPY_SAFETY_STATEMENT,
+      },
+    );
   }
 
   blocks.push(
@@ -396,12 +409,17 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
 
 const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
   const doctor = getRecord(formData.doctor);
+  const patient = getRecord(formData.patient);
   const request = getRecord(formData.request);
   const { profile: drugProfile } = resolveMedicationProfileOrThrow(
     request.drug,
   );
   const facts = resolvePreviewMedicationFacts(request, drugProfile);
   const drug = facts.displayName;
+  const patientName =
+    [getText(patient.firstName), getText(patient.lastName)]
+      .filter(Boolean)
+      .join(' ') || '__________';
   const liabilityTarget = resolveDoctorLiabilityTarget(doctor.gender);
   const addressLines = joinLines([
     getText(doctor.name),
@@ -414,22 +432,47 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
     id: 'part2',
     title: 'Part 2',
     blocks: [
-      { kind: 'heading', text: 'Teil 2 – Schreiben an die behandelnde Praxis' },
+      { kind: 'heading', text: PART2_TITLE },
       {
         kind: 'paragraph',
         text: `Adressat:\n${addressLines || '________________'}`,
       },
       {
         kind: 'paragraph',
-        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} mit der Indikation ${facts.diagnosisNominative} vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel, bisherige Maßnahmen, erwarteter Nutzen, Monitoring, Abbruch bei fehlendem Nutzen oder relevanten Nebenwirkungen) sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.`,
+        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} mit der Indikation ${facts.diagnosisNominative} vor.`,
       },
       {
         kind: 'paragraph',
-        text: 'Zu Ihrer Absicherung unterschreibe ich zudem nach ausführlicher Beratung folgenden Haftungsausschluss:',
+        text: 'Ich bitte Sie um Unterstützung bei der medizinischen Einordnung und Begleitung des Antrags, insbesondere durch:',
+      },
+      {
+        kind: 'list',
+        items: [
+          'eine kurze ärztliche Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel)',
+          'eine Darstellung bisheriger Maßnahmen, des erwarteten Nutzens sowie des geplanten Monitorings',
+          'die Festlegung klarer Abbruchkriterien bei fehlendem Nutzen oder relevanten Nebenwirkungen',
+          'die ärztliche Begleitung der Behandlung im Verlauf',
+        ],
       },
       {
         kind: 'paragraph',
-        text: `Ich erkläre hiermit, dass ich ausführlich über die Risiken und möglichen Nebenwirkungen der Behandlung mit einem nicht für meine Indikation zugelassenen Medikament ${drug} („Off-Label-Use“) informiert wurde und ausreichend Gelegenheit hatte Fragen zu stellen. Ich fühle mich ausreichend aufgeklärt und stimme einer Behandlung zu. Außerdem verzichte ich auf die aufgrund der Behandlung mit dem Medikament entstehenden Haftungsansprüche gegenüber ${liabilityTarget}.`,
+        text: 'Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen. Vielen Dank für Ihre Unterstützung.',
+      },
+      {
+        kind: 'heading',
+        text: PART2_LIABILITY_HEADING,
+      },
+      {
+        kind: 'paragraph',
+        text: `Ich erkläre hiermit, dass ich ausführlich über die Risiken und möglichen Nebenwirkungen der Behandlung mit einem nicht für meine Indikation zugelassenen Medikament ${drug} („Off-Label-Use“) informiert wurde und ausreichend Gelegenheit hatte, Fragen zu stellen. Ich fühle mich ausreichend aufgeklärt und stimme einer Behandlung zu. Außerdem verzichte ich auf die aufgrund der Behandlung mit dem Medikament entstehenden Haftungsansprüche gegenüber ${liabilityTarget}.`,
+      },
+      {
+        kind: 'paragraph',
+        text: 'Mit freundlichen Grüßen',
+      },
+      {
+        kind: 'paragraph',
+        text: patientName,
       },
       { kind: 'pageBreak' },
     ],

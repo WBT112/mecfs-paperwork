@@ -65,8 +65,8 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
       city: 'Musterstadt',
     },
     insurer: {
-      name: 'Musterkrankenkasse',
-      department: 'Leistungsabteilung',
+      name: 'AOK Minus',
+      department: 'Ablehnungen',
       streetAndNumber: 'Kassenweg 3',
       postalCode: DEFAULT_SAMPLE_POSTAL_CODE,
       city: 'Musterstadt',
@@ -102,8 +102,8 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
       city: EN_EXAMPLE_CITY,
     },
     insurer: {
-      name: 'Example Health Insurance',
-      department: 'Benefits Department',
+      name: 'AOK Minus',
+      department: 'Ablehnungen',
       streetAndNumber: 'Insurance Road 3',
       postalCode: DEFAULT_SAMPLE_POSTAL_CODE,
       city: EN_EXAMPLE_CITY,

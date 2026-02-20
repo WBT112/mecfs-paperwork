@@ -6,13 +6,15 @@ import { openCollapsibleSectionById } from '../helpers/sections';
 
 const DB_NAME = 'mecfs-paperwork';
 const FORM_PACK_ID = 'offlabel-antrag';
+const OFFLABEL_INTRO_CHECKBOX_LABEL =
+  /Ich habe verstanden|Habe verstanden, Nutzung auf eigenes Risiko|I understand, use at my own risk/i;
 
 const acceptIntroGate = async (page: Page) => {
   const introHeading = page.getByRole('heading', { name: /hinweise/i });
   await expect(introHeading).toBeVisible({ timeout: 20_000 });
 
   await page
-    .getByLabel(/Habe verstanden, Nutzung auf eigenes Risiko/i)
+    .getByLabel(OFFLABEL_INTRO_CHECKBOX_LABEL)
     .check({ force: true });
   await page.getByRole('button', { name: /weiter/i }).click();
   await expect(page.locator('.formpack-form')).toBeVisible({ timeout: 20_000 });

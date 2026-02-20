@@ -144,8 +144,8 @@ describe('applyDocxExportDefaults', () => {
         city: 'Musterstadt',
       },
       insurer: {
-        name: 'Musterkrankenkasse',
-        department: 'Leistungsabteilung',
+        name: 'AOK Minus',
+        department: 'Ablehnungen',
         streetAndNumber: 'Kassenweg 3',
         postalCode: '12345',
         city: 'Musterstadt',

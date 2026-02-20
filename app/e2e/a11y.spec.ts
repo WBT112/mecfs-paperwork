@@ -6,6 +6,8 @@ const DB_NAME = 'mecfs-paperwork';
 const FORMPACK_ID = 'doctor-letter';
 const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
 const POLL_TIMEOUT = 60_000;
+const OFFLABEL_INTRO_CHECKBOX_LABEL =
+  /Ich habe verstanden|Habe verstanden, Nutzung auf eigenes Risiko|I understand, use at my own risk/i;
 
 const tabUntilFocused = async (
   page: Page,
@@ -38,7 +40,7 @@ const acceptOfflabelIntroGate = async (page: Page) => {
   await expect(introHeading).toBeVisible({ timeout: POLL_TIMEOUT });
 
   await page
-    .getByLabel(/Habe verstanden, Nutzung auf eigenes Risiko/i)
+    .getByLabel(OFFLABEL_INTRO_CHECKBOX_LABEL)
     .check({ force: true });
   await page.getByRole('button', { name: /weiter/i }).click();
   await expect(page.locator('.formpack-form')).toBeVisible({

@@ -132,9 +132,9 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
         de: {
           label: 'postinfektiöses ME/CFS mit Fatigue',
           diagnosisNominative: 'postinfektiöses ME/CFS mit Fatigue',
-          diagnosisDative: 'postinfektiösem ME/CFS mit Fatigue',
+          diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue',
           point2ConfirmationSentence:
-            'Die Diagnose Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/Chronischem Fatigue-Syndrom (ME/CFS) ist gesichert (siehe Befunde)',
+            'Die Diagnose Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/chronischem Fatigue-Syndrom (ME/CFS) ist gesichert (siehe Befunde)',
           targetSymptoms:
             'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
         },
@@ -198,7 +198,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisDative:
             'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
           point2ConfirmationSentence:
-            'Die Diagnose: COVID-19 assoziiertes PoTS ist gesichert (siehe Befunde)',
+            'Die Diagnose COVID-19-assoziiertes PoTS ist gesichert (siehe Befunde)',
           targetSymptoms:
             'Senkung der Herzfrequenz und Verbesserung der gesundheitsbezogenen Lebensqualität (HRQoL)',
         },

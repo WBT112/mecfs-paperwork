@@ -14,10 +14,9 @@ const HILFSANTRAG_INTRO_TEXT =
   'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V.';
 const POINT_10_BRIDGE_TEXT =
   'Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde';
-const POINT_10_SAFETY_TEXT =
-  'Die beantragte Therapie erfolgt entsprechend der dargestellten evidenzbasierten Empfehlungen ärztlich kontrolliert, befristet und unter klar definierten Abbruchkriterien.';
-const POINT_7_SAFETY_TEXT =
+const THERAPY_SAFETY_TEXT =
   'Die beantragte Therapie erfolgt im Rahmen einer sorgfältigen individuellen Nutzen-Risiko-Abwägung, ärztlich überwacht und zeitlich befristet.';
+const CLOSING_GREETING_TEXT = 'Mit freundlichen Grüßen';
 
 describe('buildOfflabelDocuments', () => {
   it('builds three parts and includes point-10 evidence text for known medication', () => {
@@ -38,13 +37,20 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
 
     expect(part1Text).toContain('Punkt 2: Die Diagnose ist gesichert.');
     expect(part1Text).not.toContain('Punkt 7:');
     expect(part1Text).not.toContain('Punkt 9:');
     expect(part1Text).toContain('Punkt 10:');
-    expect(part1Text).toContain(`Indikation: ${IVABRADIN_DIAGNOSIS_TEXT}`);
-    expect(part1Text).toContain('Dosierung/Dauer: Start 2,5 mg morgens');
+    expect(part1ListItems).toContain(`Indikation: ${IVABRADIN_DIAGNOSIS_TEXT}`);
+    expect(
+      part1ListItems.some((item) =>
+        item.startsWith('Dosierung/Dauer: Start 2,5 mg morgens'),
+      ),
+    ).toBe(true);
     expect(part1Text).not.toContain('Medizinischer Dienst Bund');
     expect(part1Text).toContain(IVABRADINE_EXPERT_SOURCE);
     expect(part1Text).toContain(
@@ -70,9 +76,9 @@ describe('buildOfflabelDocuments', () => {
       'hiermit beantrage ich die Kostenübernahme für das Medikament Ivabradin im Rahmen des Off-Label-Use',
     );
     expect(part1Text).toContain(
-      'Die Leitlinie enthält keine positiven Empfehlungen zur medikamentösen Therapie.',
+      'Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht;',
     );
-    expect(part1Text).toContain('Mit freundlichen Grüßen');
+    expect(part1Text).toContain(CLOSING_GREETING_TEXT);
 
     const part3Text = docs[2].blocks
       .filter((block) => block.kind === 'paragraph')
@@ -99,7 +105,7 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
 
-    expect(part1Text).toContain('Mit freundlichen Grüßen');
+    expect(part1Text).toContain(CLOSING_GREETING_TEXT);
     expect(part1Text).toContain('Max Mustermann');
   });
 
@@ -133,10 +139,9 @@ describe('buildOfflabelDocuments', () => {
     );
     expect(part1Text).toContain('Punkt 9:');
     expect(part1Text).not.toContain('Punkt 10:');
-    expect(part1Text).toContain('Indikation: Seltene XYZ-Indikation');
+    expect(part1Text).toContain(THERAPY_SAFETY_TEXT);
     expect(part1Text).toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain(EVIDENCE_NOTE_TEXT);
-    expect(part1Text).toContain(POINT_7_SAFETY_TEXT);
     expect(part1Text).toContain(
       'Zusätzlich wurden folgende Therapieversuche unternommen:',
     );
@@ -148,6 +153,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1ListItems).toContain(
       'Kompressionstherapie ohne ausreichenden Effekt',
     );
+    expect(part1ListItems).toContain('Indikation: Seltene XYZ-Indikation');
 
     const part3Text = docs[2].blocks
       .filter((block) => block.kind === 'paragraph')
@@ -231,6 +237,10 @@ describe('buildOfflabelDocuments', () => {
 
   it('uses user-entered medication name for other in part 1 and part 2', () => {
     const docs = buildOfflabelDocuments({
+      patient: {
+        firstName: 'Max',
+        lastName: 'Mustermann',
+      },
       request: {
         drug: 'other',
         otherDrugName: 'Midodrin',
@@ -246,6 +256,12 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part2Headings = docs[1].blocks
+      .filter((block) => block.kind === 'heading')
+      .map((block) => block.text);
+    const part2ListItems = docs[1].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
 
     expect(part1Text).toContain(
       'Punkt 1: Das Medikament Midodrin ist in Deutschland nicht indikationsbezogen zugelassen',
@@ -254,7 +270,13 @@ describe('buildOfflabelDocuments', () => {
       'für eine Off-Label-Verordnung von Midodrin mit der Indikation Orthostatische Intoleranz',
     );
     expect(part2Text).toContain(
-      'sowie die Begleitung bei der Behandlung. Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen.',
+      'Ich bitte Sie um Unterstützung bei der medizinischen Einordnung und Begleitung des Antrags, insbesondere durch:',
+    );
+    expect(part2ListItems).toContain(
+      'die ärztliche Begleitung der Behandlung im Verlauf',
+    );
+    expect(part2Text).toContain(
+      'Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen. Vielen Dank für Ihre Unterstützung.',
     );
     expect(part2Text).toContain(
       'nicht für meine Indikation zugelassenen Medikament Midodrin („Off-Label-Use“)',
@@ -262,6 +284,11 @@ describe('buildOfflabelDocuments', () => {
     expect(part2Text).toContain(
       'Haftungsansprüche gegenüber meiner Ärztin/meinem Arzt.',
     );
+    expect(part2Headings).toContain(
+      'Haftungsausschluss (vom Patienten zu unterzeichnen)',
+    );
+    expect(part2Text).toContain(CLOSING_GREETING_TEXT);
+    expect(part2Text).toContain('Max Mustermann');
   });
 
   it('uses a gender-specific liability phrase for female doctors in part 2', () => {
@@ -320,8 +347,8 @@ describe('buildOfflabelDocuments', () => {
     );
     expect(part1Text).toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain(POINT_10_BRIDGE_TEXT);
-    expect(part1Text).toContain(POINT_10_SAFETY_TEXT);
-    expect(part1Text).toContain(POINT_7_SAFETY_TEXT);
+    expect(part1Text).toContain(THERAPY_SAFETY_TEXT);
+    expect(part1Text.split(THERAPY_SAFETY_TEXT)).toHaveLength(2);
   });
 
   it('ignores standard-of-care free text for standard medication previews', () => {
@@ -400,6 +427,9 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
     const part2Text = docs[1].blocks
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
@@ -415,7 +445,9 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(
       'Punkt 2: Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde)',
     );
-    expect(part1Text).toContain('Indikation: Long-/Post-COVID mit Fatigue');
+    expect(part1ListItems).toContain(
+      'Indikation: Long-/Post-COVID mit Fatigue',
+    );
     expect(part1Text).not.toContain('und/oder');
     expect(part2Text).toContain(
       'für eine Off-Label-Verordnung von Agomelatin mit der Indikation Long-/Post-COVID mit Fatigue',

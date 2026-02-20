@@ -3,6 +3,8 @@ import { deleteDatabase } from './helpers';
 
 const DB_NAME = 'mecfs-paperwork';
 const FORM_PACK_ID = 'offlabel-antrag';
+const OFFLABEL_INTRO_CHECKBOX_LABEL =
+  /Ich habe verstanden|Habe verstanden, Nutzung auf eigenes Risiko|I understand, use at my own risk/i;
 
 test.setTimeout(60_000);
 test.beforeEach(async ({ page }) => {
@@ -35,9 +37,7 @@ test('blocks form until intro is accepted and keeps form stable after notes moda
   page,
 }) => {
   const introHeading = page.getByRole('heading', { name: /hinweise/i });
-  const acceptanceCheckbox = page.getByLabel(
-    /Habe verstanden, Nutzung auf eigenes Risiko/i,
-  );
+  const acceptanceCheckbox = page.getByLabel(OFFLABEL_INTRO_CHECKBOX_LABEL);
   const continueButton = page.getByRole('button', { name: /weiter/i });
 
   await expect(introHeading).toBeVisible();

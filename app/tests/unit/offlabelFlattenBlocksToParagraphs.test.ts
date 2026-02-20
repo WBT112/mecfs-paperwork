@@ -56,4 +56,30 @@ describe('flattenBlocksToParagraphs', () => {
       '• Anlage B',
     ]);
   });
+
+  it('supports compact spacing around configured block kinds', () => {
+    const paragraphs = flattenBlocksToParagraphs(
+      [
+        { kind: 'paragraph', text: 'Einleitung' },
+        { kind: 'heading', text: 'Haftungsausschluss' },
+        { kind: 'paragraph', text: 'Text A' },
+        { kind: 'list', items: ['A', 'B'] },
+        { kind: 'paragraph', text: 'Schluss' },
+      ],
+      {
+        includeHeadings: true,
+        blankLineBetweenBlocks: true,
+        compactAroundKinds: ['heading', 'list'],
+      },
+    );
+
+    expect(paragraphs).toEqual([
+      'Einleitung',
+      'Haftungsausschluss',
+      'Text A',
+      '• A',
+      '• B',
+      'Schluss',
+    ]);
+  });
 });

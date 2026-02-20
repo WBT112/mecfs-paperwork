@@ -36,13 +36,13 @@ describe('buildOffLabelAntragDocumentModel fallbacks', () => {
       '12345 Musterstadt',
     ]);
     expect(model.part3.addresseeLines).toEqual([
-      'Musterkrankenkasse',
-      'Leistungsabteilung',
+      'AOK Minus',
+      'Ablehnungen',
       'Kassenweg 3',
       '12345 Musterstadt',
     ]);
     expect(model.part3.subject).toBe(
-      'Ärztliche Stellungnahme / Befundbericht zum Offlabel-User',
+      'Ärztliche Stellungnahme / Befundbericht zum Off-Label-Use',
     );
     expect(model.part3.paragraphs).toEqual([]);
   });

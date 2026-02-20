@@ -84,6 +84,13 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part1).toContain(
       'Indikation: Long/Post-COVID mit depressiven Symptomen',
     );
+    expect(
+      model.kk.paragraphs.some(
+        (paragraph) =>
+          paragraph ===
+          '• Indikation: Long/Post-COVID mit depressiven Symptomen',
+      ),
+    ).toBe(true);
     expect(part3).toContain(
       'Diagnose: Long/Post-COVID mit depressiven Symptomen',
     );
@@ -98,7 +105,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part3).not.toContain('und/oder');
   });
 
-  it('inserts blank DOCX paragraphs between part 1 points for readability', () => {
+  it('inserts blank DOCX paragraphs between blocks across all document parts for readability', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         request: {
@@ -110,6 +117,8 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     expect(model.kk.paragraphs).toContain('');
+    expect(model.arzt.paragraphs).toContain('');
+    expect(model.part3.paragraphs).toContain('');
   });
 
   it('uses preview-canonical notstand path for other: points 7/9 present, point 10 absent', () => {
@@ -307,7 +316,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       '54321 Kassel',
     ]);
     expect(model.part3.subject).toBe(
-      'Ärztliche Stellungnahme / Befundbericht zum Offlabel-User',
+      'Ärztliche Stellungnahme / Befundbericht zum Off-Label-Use',
     );
     expect(model.part3.title).toBe('');
   });

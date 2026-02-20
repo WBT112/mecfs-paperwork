@@ -36,6 +36,16 @@ describe('offlabel-antrag A4 DOCX template', () => {
     expect(xml).toContain('{{FOR p3 IN part3.paragraphs}}');
   });
 
+  it('renders part-2 liability heading in bold via conditional paragraph formatting', async () => {
+    const xml = await loadOfflabelTemplateXml();
+
+    expect(xml).toContain(
+      "{{IF $p2 === 'Haftungsausschluss (vom Patienten zu unterzeichnen)'}}",
+    );
+    expect(xml).toContain('{{ELSE}}');
+    expect(xml).toContain('{{END-IF}}');
+  });
+
   it('renders part 2, part 3 and sources without optional wrappers', async () => {
     const xml = await loadOfflabelTemplateXml();
 
