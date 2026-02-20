@@ -6,12 +6,6 @@ const DB_NAME = 'mecfs-paperwork';
 const FORMPACK_ID = 'doctor-letter';
 const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
 const POLL_TIMEOUT = 60_000;
-const DOCTOR_LETTER_A11Y_EXCLUSIONS = [
-  '#root_doctor_title',
-  '#root_doctor_gender',
-  '.info-box a[href*="praxisleitfaden.mecfs.de"]',
-  '.info-box a[href$="/icc"]',
-];
 
 const tabUntilFocused = async (
   page: Page,
@@ -104,9 +98,6 @@ test.describe('a11y baseline', () => {
     });
     await expectNoSeriousA11yViolations(page, {
       routeLabel: `/formpacks/${FORMPACK_ID}`,
-      // NOTE: These are known legacy issues in upstream/embedded rendering.
-      // Keep exclusions as narrow selectors so new regressions still fail CI.
-      exclude: DOCTOR_LETTER_A11Y_EXCLUSIONS,
     });
   });
 
@@ -126,10 +117,6 @@ test.describe('a11y baseline', () => {
     });
     await expectNoSeriousA11yViolations(page, {
       routeLabel: `/formpacks/${OFFLABEL_FORMPACK_ID}#intro`,
-      // NOTE: The intro gate body is intentionally scrollable and currently
-      // flagged by axe with scrollable-region-focusable. Keep this exclusion
-      // scoped to the gate container so the rest of the page remains gated.
-      exclude: ['.formpack-intro-gate__content'],
     });
   });
 
