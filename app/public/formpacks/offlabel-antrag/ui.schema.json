@@ -209,7 +209,6 @@
   },
   "severity": {
     "ui:title": "offlabel-antrag.section.severity.title",
-    "ui:description": "offlabel-antrag.section.severity.help",
     "ui:order": [
       "bellScore",
       "gdb",

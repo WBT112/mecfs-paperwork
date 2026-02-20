@@ -130,7 +130,6 @@
   "offlabel-antrag.section.insurer.title": "Insurer",
   "offlabel-antrag.section.patient.title": "Patient",
   "offlabel-antrag.section.request.title": "Application",
-  "offlabel-antrag.section.severity.help": "These values are optional and included in the generated letter text.",
   "offlabel-antrag.section.severity.title": "Severity and care level",
   "offlabel-antrag.severity.bellScore.help": "Select the documented Bell score.",
   "offlabel-antrag.severity.bellScore.label": "Bell score",
