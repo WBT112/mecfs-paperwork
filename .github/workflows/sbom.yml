@@ -139,7 +139,7 @@ jobs:
         run: cat sbom-summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Grype scan (workspace SBOM)
-        uses: anchore/scan-action@v6
+        uses: anchore/scan-action@v7
         with:
           sbom: sbom.workspace.cdx.json
           output-format: json
