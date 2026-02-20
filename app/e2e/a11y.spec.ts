@@ -47,7 +47,7 @@ const acceptOfflabelIntroGate = async (page: Page) => {
 };
 
 test.describe('a11y baseline', () => {
-  test('home route has no serious/critical violations', async ({
+  test('home route has no moderate/serious/critical violations', async ({
     page,
     browserName,
   }) => {
@@ -61,7 +61,7 @@ test.describe('a11y baseline', () => {
     await expectNoSeriousA11yViolations(page, { routeLabel: '/' });
   });
 
-  test('formpacks route has no serious/critical violations', async ({
+  test('formpacks route has no moderate/serious/critical violations', async ({
     page,
     browserName,
   }) => {
@@ -75,7 +75,7 @@ test.describe('a11y baseline', () => {
     await expectNoSeriousA11yViolations(page, { routeLabel: '/formpacks' });
   });
 
-  test('doctor-letter route has no serious/critical violations', async ({
+  test('doctor-letter route has no moderate/serious/critical violations', async ({
     page,
     browserName,
   }) => {
@@ -101,7 +101,7 @@ test.describe('a11y baseline', () => {
     });
   });
 
-  test('offlabel intro gate has no serious/critical violations', async ({
+  test('offlabel intro gate has no moderate/serious/critical violations', async ({
     page,
     browserName,
   }) => {
@@ -120,7 +120,7 @@ test.describe('a11y baseline', () => {
     });
   });
 
-  test('offlabel form has no serious/critical violations after intro accept (light mode)', async ({
+  test('offlabel form has no moderate/serious/critical violations after intro accept (light mode)', async ({
     page,
     browserName,
   }) => {
@@ -141,6 +141,46 @@ test.describe('a11y baseline', () => {
     await expectNoSeriousA11yViolations(page, {
       routeLabel: `/formpacks/${OFFLABEL_FORMPACK_ID}#form-light`,
     });
+  });
+
+  test('offlabel form has no moderate/serious/critical violations after intro accept (dark mode)', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto(`/formpacks/${OFFLABEL_FORMPACK_ID}`);
+    await acceptOfflabelIntroGate(page);
+
+    const themeSelect = page.locator('#theme-select');
+    await expect(themeSelect).toBeVisible({ timeout: POLL_TIMEOUT });
+    await themeSelect.selectOption('dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+    await expectNoSeriousA11yViolations(page, {
+      routeLabel: `/formpacks/${OFFLABEL_FORMPACK_ID}#form-dark`,
+    });
+  });
+
+  test('help route has no moderate/serious/critical violations', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto('/help');
+    await expect(page.getByRole('heading').first()).toBeVisible({
+      timeout: POLL_TIMEOUT,
+    });
+    await expectNoSeriousA11yViolations(page, { routeLabel: '/help' });
   });
 
   test('keyboard smoke reaches primary actions with visible focus', async ({

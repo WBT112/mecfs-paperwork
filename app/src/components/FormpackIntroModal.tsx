@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import MarkdownRenderer from './Markdown/MarkdownRenderer';
 
 type FormpackIntroModalProps = {
@@ -15,6 +16,9 @@ export default function FormpackIntroModal({
   closeLabel,
   onClose,
 }: Readonly<FormpackIntroModalProps>) {
+  const headingId = useId();
+  const bodyId = useId();
+
   if (!isOpen) {
     return null;
   }
@@ -27,14 +31,20 @@ export default function FormpackIntroModal({
         onClick={onClose}
         aria-label={closeLabel}
       />
-      <dialog open className="formpack-intro-modal__content" aria-label={title}>
+      <dialog
+        open
+        className="formpack-intro-modal__content"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        aria-describedby={bodyId}
+      >
         <div className="formpack-intro-modal__header">
-          <h4>{title}</h4>
+          <h4 id={headingId}>{title}</h4>
           <button type="button" className="app__button" onClick={onClose}>
             {closeLabel}
           </button>
         </div>
-        <div className="formpack-intro-modal__body">
+        <div id={bodyId} className="formpack-intro-modal__body">
           <MarkdownRenderer content={body} />
         </div>
       </dialog>

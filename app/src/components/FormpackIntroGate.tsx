@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import MarkdownRenderer from './Markdown/MarkdownRenderer';
 
 type FormpackIntroGateProps = {
@@ -17,15 +17,23 @@ export default function FormpackIntroGate({
   onConfirm,
 }: Readonly<FormpackIntroGateProps>) {
   const [isAccepted, setIsAccepted] = useState(false);
+  const headingId = useId();
+  const contentId = useId();
+  const checkboxId = useId();
 
   return (
     <div className="formpack-intro-gate">
-      <h4>{title}</h4>
-      <div className="formpack-intro-gate__content">
+      <h4 id={headingId}>{title}</h4>
+      <div
+        id={contentId}
+        className="formpack-intro-gate__content"
+        aria-labelledby={headingId}
+      >
         <MarkdownRenderer content={body} />
       </div>
-      <label className="formpack-intro-gate__checkbox">
+      <label className="formpack-intro-gate__checkbox" htmlFor={checkboxId}>
         <input
+          id={checkboxId}
           type="checkbox"
           checked={isAccepted}
           onChange={(event) => setIsAccepted(event.target.checked)}
