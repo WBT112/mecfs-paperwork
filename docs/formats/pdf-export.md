@@ -4,13 +4,13 @@
 PDF exports are generated client-side in the browser using `@react-pdf/renderer` and `BlobProvider`. No network requests are made at runtime beyond loading the app’s static assets, so PDF exports work offline after the app is loaded.
 
 ## Current scope
-- Supported formpacks: `doctor-letter`
+- Supported formpacks: `doctor-letter`, `offlabel-antrag`
 - Output format: A4, auto-pagination for long content
-- Content parity: patient section, doctor/practice section, case result, export date
+- Content parity: PDF is rendered from each formpack's projected export model.
 
 ## Adding PDF export for a new formpack
 1. Add `"pdf"` to the formpack’s `exports` array in `app/public/formpacks/<id>/manifest.json`.
-2. Create a document model builder in `app/src/formpacks/<id>/export/documentModel.ts` that returns a `DocumentModel` from `app/src/export/pdf/types.ts`.
+2. Create a PDF document model builder in `app/src/formpacks/<id>/export/pdfDocumentModel.ts` that returns a `DocumentModel` from `app/src/export/pdf/types.ts`.
 3. Create a PDF template component in `app/src/export/pdf/templates/` that renders the model.
 4. Register the template in `app/src/export/pdf/registry.ts`.
 5. Add i18n keys for any headings/labels in `app/public/formpacks/<id>/i18n/de.json` and `app/public/formpacks/<id>/i18n/en.json`.
