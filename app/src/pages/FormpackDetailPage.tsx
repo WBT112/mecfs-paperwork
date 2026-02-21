@@ -75,6 +75,10 @@ import {
   isMedicationKey,
   resolveMedicationProfile,
 } from '../formpacks/offlabel-antrag/medications';
+import {
+  resolveOfflabelFocusTarget,
+  type OfflabelFocusTarget,
+} from '../formpacks/offlabel-antrag/focusTarget';
 import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
 import {
   type StorageErrorCode,
@@ -189,6 +193,15 @@ const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const FORM_PRIMARY_FOCUS_SELECTOR =
   '.formpack-form input:not([type="hidden"]):not([disabled]), .formpack-form select:not([disabled]), .formpack-form textarea:not([disabled]), .formpack-form button:not([disabled]), .formpack-form [tabindex]:not([tabindex="-1"])';
 const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
+
+const OFFLABEL_FOCUS_SELECTOR_BY_TARGET: Record<OfflabelFocusTarget, string> = {
+  'request.otherDrugName':
+    '#root_request_otherDrugName, [name="root_request_otherDrugName"]',
+  'request.selectedIndicationKey':
+    '#root_request_selectedIndicationKey, [name="root_request_selectedIndicationKey"]',
+  'request.indicationFullyMetOrDoctorConfirms':
+    '#root_request_indicationFullyMetOrDoctorConfirms_0, input[name="root_request_indicationFullyMetOrDoctorConfirms"]',
+};
 
 const isDoctorLetterStyledFormpack = (formpackId: string | null): boolean =>
   formpackId === DOCTOR_LETTER_FORMPACK_ID ||
@@ -929,6 +942,8 @@ export default function FormpackDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
   const [pendingIntroFocus, setPendingIntroFocus] = useState(false);
+  const [pendingOfflabelFocusTarget, setPendingOfflabelFocusTarget] =
+    useState<OfflabelFocusTarget | null>(null);
   const [profileSaveEnabled, setProfileSaveEnabled] = useState(() => {
     try {
       const stored = globalThis.localStorage.getItem(PROFILE_SAVE_KEY);
@@ -1577,10 +1592,22 @@ export default function FormpackDetailPage() {
         formpackId === OFFLABEL_ANTRAG_FORMPACK_ID &&
         isRecord(nextData.request)
       ) {
-        nextData.request = normalizeOfflabelRequest(
+        const previousRequest = isRecord(formData.request)
+          ? formData.request
+          : null;
+        const normalizedRequest = normalizeOfflabelRequest(
           nextData.request,
           showDevMedicationOptions,
         );
+        nextData.request = normalizedRequest;
+        const focusTarget = resolveOfflabelFocusTarget(
+          previousRequest,
+          normalizedRequest,
+          showDevMedicationOptions,
+        );
+        if (focusTarget) {
+          setPendingOfflabelFocusTarget(focusTarget);
+        }
       }
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
@@ -1604,7 +1631,7 @@ export default function FormpackDetailPage() {
 
       setFormData(nextData);
     },
-    [formpackId, setFormData],
+    [formData.request, formpackId, setFormData],
   );
 
   useEffect(() => {
@@ -2041,6 +2068,49 @@ export default function FormpackDetailPage() {
       cancelled = true;
     };
   }, [isIntroGateVisible, pendingIntroFocus]);
+
+  useEffect(() => {
+    if (
+      formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID ||
+      !pendingOfflabelFocusTarget ||
+      isIntroGateVisible
+    ) {
+      return;
+    }
+
+    const selector =
+      OFFLABEL_FOCUS_SELECTOR_BY_TARGET[pendingOfflabelFocusTarget];
+    let cancelled = false;
+    let attempts = 0;
+
+    const tryFocus = () => {
+      if (cancelled) {
+        return;
+      }
+
+      const root = formContentRef.current;
+      const target = root?.querySelector<HTMLElement>(selector);
+      if (target) {
+        target.focus();
+        setPendingOfflabelFocusTarget(null);
+        return;
+      }
+
+      if (attempts < 6) {
+        attempts += 1;
+        globalThis.setTimeout(tryFocus, 50);
+        return;
+      }
+
+      root?.querySelector<HTMLElement>(FORM_FALLBACK_FOCUS_SELECTOR)?.focus();
+      setPendingOfflabelFocusTarget(null);
+    };
+
+    globalThis.setTimeout(tryFocus, 0);
+    return () => {
+      cancelled = true;
+    };
+  }, [formpackId, isIntroGateVisible, pendingOfflabelFocusTarget]);
 
   // Use custom field template for formpacks that provide InfoBoxes.
   const templates = useMemo(() => {
@@ -2565,14 +2635,21 @@ export default function FormpackDetailPage() {
     }
 
     const pdfControls = renderPdfExportControls();
+    const isOfflabelFormpack = formpackId === OFFLABEL_ANTRAG_FORMPACK_ID;
     const hasMultipleDocxTemplates = docxTemplateOptions.length > 1;
     const hasPdfControls = Boolean(pdfControls);
     const docxExportClassName = hasMultipleDocxTemplates
       ? 'formpack-docx-export'
       : 'formpack-docx-export formpack-docx-export--single-template';
-    const docxButtonsClassName = hasPdfControls
+    const docxButtonsClassNameBase = hasPdfControls
       ? 'formpack-docx-export__buttons'
       : 'formpack-docx-export__buttons formpack-docx-export__buttons--single-action';
+    const docxButtonsClassName = isOfflabelFormpack
+      ? `${docxButtonsClassNameBase} formpack-docx-export__buttons--offlabel`
+      : docxButtonsClassNameBase;
+    const docxButtonClassName = isOfflabelFormpack
+      ? 'app__button formpack-docx-export__button--primary'
+      : 'app__button';
 
     return (
       <div className={docxExportClassName}>
@@ -2603,7 +2680,7 @@ export default function FormpackDetailPage() {
         <div className={docxButtonsClassName}>
           <button
             type="button"
-            className="app__button"
+            className={docxButtonClassName}
             onClick={handleExportDocx}
             data-action="docx-export"
             disabled={storageError === 'unavailable' || isDocxExporting}

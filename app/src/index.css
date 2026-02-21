@@ -813,6 +813,12 @@ body {
   max-width: 80ch;
 }
 
+.info-box--offlabel-flow-status {
+  margin: 0 0 0.75rem;
+  border-left-width: 4px;
+  font-size: 0.95rem;
+}
+
 .info-box__icon {
   flex: 0 0 auto;
   line-height: 1.2;
@@ -1277,6 +1283,18 @@ body {
 
 .formpack-docx-export__buttons--single-action {
   grid-template-columns: minmax(0, 1fr);
+}
+
+.formpack-docx-export__buttons--offlabel {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.formpack-docx-export__button--primary {
+  font-weight: 700;
+}
+
+.formpack-docx-export__buttons--offlabel .formpack-pdf-export .app__button {
+  font-weight: 500;
 }
 
 .formpack-docx-export__label {

@@ -134,6 +134,44 @@ test.describe('offlabel workflow preview regressions', () => {
     await openCollapsibleSectionById(page, 'formpack-document-preview');
   });
 
+  test('shows flow status and moves focus to the next relevant field on medication switch', async ({
+    page,
+  }) => {
+    await selectDrugByValue(page, 'ivabradine');
+    await expect(
+      page.getByText(/Antragsweg: Regulärer Off-Label-Antrag/i),
+    ).toBeVisible();
+
+    await page
+      .getByLabel(
+        /Hilfsweise gleichzeitig Antrag nach § 2 Abs\. 1a SGB V stellen/i,
+      )
+      .check();
+    await expect(
+      page.getByText(
+        /Antragsweg: Regulärer Off-Label-Antrag mit hilfsweisem Antrag nach § 2 Abs\. 1a SGB V/i,
+      ),
+    ).toBeVisible();
+
+    await selectDrugByValue(page, 'other');
+    await expect(
+      page.getByText(/Antragsweg: Direkter Antrag nach § 2 Abs\. 1a SGB V/i),
+    ).toBeVisible();
+    await expect(page.locator('#root_request_otherDrugName')).toBeFocused();
+
+    await selectDrugByValue(page, 'agomelatin');
+    await expect(
+      page.locator('#root_request_selectedIndicationKey'),
+    ).toBeFocused();
+
+    await selectDrugByValue(page, 'ivabradine');
+    const indicationConfirmationInput = page
+      .locator('input[name="root_request_indicationFullyMetOrDoctorConfirms"]')
+      .first();
+    await expect(indicationConfirmationInput).toBeVisible();
+    await expect(indicationConfirmationInput).toBeFocused();
+  });
+
   test('adds point 7 for standard medication when §2 checkbox is enabled', async ({
     page,
   }) => {

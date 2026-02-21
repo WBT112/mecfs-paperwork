@@ -98,6 +98,58 @@
         ]
       },
       {
+        "id": "offlabel-flow-status-regular",
+        "anchor": "request",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.flowStatus.regular",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          },
+          {
+            "path": "request.applySection2Abs1a",
+            "op": "neq",
+            "value": true
+          }
+        ]
+      },
+      {
+        "id": "offlabel-flow-status-regular-aux",
+        "anchor": "request",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.flowStatus.regularWithAux",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          },
+          {
+            "path": "request.applySection2Abs1a",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      {
+        "id": "offlabel-flow-status-direct-section2",
+        "anchor": "request",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.flowStatus.directSection2",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "other"
+          }
+        ]
+      },
+      {
         "id": "indication-selection",
         "anchor": "request.selectedIndicationKey",
         "enabled": true,

@@ -15,6 +15,9 @@ import {
 } from '../../../src/storage/snapshots';
 import { openStorage } from '../../../src/storage/db';
 
+const RECORD_ID = 'record-1';
+const SNAPSHOT_ID = 'snapshot-123';
+
 vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
 }));
@@ -81,21 +84,17 @@ describe('snapshots storage', () => {
     const now = new Date('2025-01-02T10:00:00.000Z');
     vi.useFakeTimers();
     vi.setSystemTime(now);
-    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'snapshot-123') });
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => SNAPSHOT_ID) });
 
-    snapshotIndex.getAllKeys.mockResolvedValue(['snapshot-123']);
+    snapshotIndex.getAllKeys.mockResolvedValue([SNAPSHOT_ID]);
 
-    const resultPromise = createSnapshot(
-      'record-1',
-      { field: 'value' },
-      'Auto',
-    );
+    const resultPromise = createSnapshot(RECORD_ID, { field: 'value' }, 'Auto');
     resolveDone?.();
     const snapshot = await resultPromise;
 
     expect(snapshot).toEqual({
-      id: 'snapshot-123',
-      recordId: 'record-1',
+      id: SNAPSHOT_ID,
+      recordId: RECORD_ID,
       label: 'Auto',
       data: { field: 'value' },
       createdAt: now.toISOString(),
@@ -107,19 +106,19 @@ describe('snapshots storage', () => {
     const snapshots = [
       {
         id: 'one',
-        recordId: 'record-1',
+        recordId: RECORD_ID,
         data: {},
         createdAt: '2024-01-01T00:00:00.000Z',
       },
       {
         id: 'two',
-        recordId: 'record-1',
+        recordId: RECORD_ID,
         data: {},
         createdAt: '2024-01-03T00:00:00.000Z',
       },
       {
         id: 'three',
-        recordId: 'record-1',
+        recordId: RECORD_ID,
         data: {},
         createdAt: '2024-01-02T00:00:00.000Z',
       },
@@ -127,12 +126,12 @@ describe('snapshots storage', () => {
 
     db.getAllFromIndex?.mockResolvedValue(snapshots);
 
-    const result = await listSnapshots('record-1');
+    const result = await listSnapshots(RECORD_ID);
 
     expect(db.getAllFromIndex).toHaveBeenCalledWith(
       'snapshots',
       'by_recordId',
-      'record-1',
+      RECORD_ID,
     );
     expect(result.map((entry) => entry.id)).toEqual(['two', 'three', 'one']);
   });
@@ -147,7 +146,7 @@ describe('snapshots storage', () => {
   });
 
   it('clears snapshots for the record and waits for the transaction', async () => {
-    const recordId = 'record-1';
+    const recordId = RECORD_ID;
     snapshotIndex.getAllKeys.mockResolvedValue(['snapshot-1', 'snapshot-2']);
 
     let resolved = false;

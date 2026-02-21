@@ -4,6 +4,7 @@ import { isRecord } from './utils';
 import { InfoBox } from '../components/InfoBox';
 import { getInfoBoxesForField } from '../formpacks/doctorLetterInfoBox';
 import type { InfoBoxConfig } from '../formpacks/types';
+import { OFFLABEL_ANTRAG_FORMPACK_ID } from '../formpacks/ids';
 
 type DoctorLetterFieldTemplateProps = Omit<
   FieldTemplateProps,
@@ -104,6 +105,27 @@ export function DoctorLetterFieldTemplate(
     infoBoxes,
     formData,
   );
+  const isOfflabelRequestContainer =
+    formContext.formpackId === OFFLABEL_ANTRAG_FORMPACK_ID &&
+    fieldAnchor === 'request';
+  const flowStatusInfoBoxes = applicableInfoBoxes.filter((infoBox) =>
+    infoBox.id.startsWith('offlabel-flow-status-'),
+  );
+  const regularInfoBoxes = applicableInfoBoxes.filter(
+    (infoBox) => !infoBox.id.startsWith('offlabel-flow-status-'),
+  );
+
+  const renderInfoBox = (infoBox: InfoBoxConfig, className = '') => (
+    <InfoBox
+      key={infoBox.id}
+      message={t(infoBox.i18nKey, {
+        ns: namespace,
+        defaultValue: infoBox.i18nKey,
+      })}
+      format={infoBox.format ?? 'text'}
+      className={className}
+    />
+  );
 
   return (
     <div className={classNames} style={style}>
@@ -113,20 +135,15 @@ export function DoctorLetterFieldTemplate(
           {required && <span className="required">*</span>}
         </label>
       )}
+      {isOfflabelRequestContainer &&
+        flowStatusInfoBoxes.map((infoBox) =>
+          renderInfoBox(infoBox, 'info-box--offlabel-flow-status'),
+        )}
       {description}
       {children}
       {errors}
       {help}
-      {applicableInfoBoxes.map((infoBox) => (
-        <InfoBox
-          key={infoBox.id}
-          message={t(infoBox.i18nKey, {
-            ns: namespace,
-            defaultValue: infoBox.i18nKey,
-          })}
-          format={infoBox.format ?? 'text'}
-        />
-      ))}
+      {regularInfoBoxes.map((infoBox) => renderInfoBox(infoBox))}
       {isDecisionQuestion && (
         <div className="formpack-decision-divider" aria-hidden="true" />
       )}

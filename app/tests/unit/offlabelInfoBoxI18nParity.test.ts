@@ -26,4 +26,17 @@ describe('offlabel info box i18n parity', () => {
       'offlabel-antrag.ui.infobox.selectedIndicationKey',
     );
   });
+
+  it('keeps flow-status keys aligned in DE and EN', () => {
+    const flowStatusKeys = [
+      'offlabel-antrag.ui.flowStatus.regular',
+      'offlabel-antrag.ui.flowStatus.regularWithAux',
+      'offlabel-antrag.ui.flowStatus.directSection2',
+    ];
+
+    for (const key of flowStatusKeys) {
+      expect(deJson).toHaveProperty(key);
+      expect(enJson).toHaveProperty(key);
+    }
+  });
 });

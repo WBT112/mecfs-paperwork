@@ -120,6 +120,7 @@
   },
   "request": {
     "ui:title": "offlabel-antrag.section.request.title",
+    "ui:description": "offlabel-antrag.section.request.description",
     "ui:order": [
       "drug",
       "selectedIndicationKey",
@@ -209,6 +210,7 @@
   },
   "severity": {
     "ui:title": "offlabel-antrag.section.severity.title",
+    "ui:description": "offlabel-antrag.section.severity.description",
     "ui:order": [
       "bellScore",
       "gdb",

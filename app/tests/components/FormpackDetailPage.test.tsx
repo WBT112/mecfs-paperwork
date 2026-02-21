@@ -827,6 +827,13 @@ describe('FormpackDetailPage', () => {
     expect(
       await screen.findByText(PDF_EXPORT_CONTROLS_LABEL),
     ).toBeInTheDocument();
+    const docxButton = screen.getByRole('button', {
+      name: DOCX_EXPORT_BUTTON_LABEL,
+    });
+    expect(docxButton).toHaveClass('formpack-docx-export__button--primary');
+    expect(docxButton.closest('.formpack-docx-export__buttons')).toHaveClass(
+      'formpack-docx-export__buttons--offlabel',
+    );
   });
 
   it('shows PDF success and error statuses via PDF callbacks', async () => {
