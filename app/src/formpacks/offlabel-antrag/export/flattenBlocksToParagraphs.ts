@@ -5,6 +5,7 @@ type PreviewBlock = OfflabelRenderedDocument['blocks'][number];
 type FlattenOptions = {
   includeHeadings?: boolean;
   listPrefix?: string;
+  listWrapAt?: number;
   dropKinds?: PreviewBlock['kind'][];
   blankLineBetweenBlocks?: boolean;
   compactAroundKinds?: PreviewBlock['kind'][];
@@ -26,9 +27,68 @@ const buildDropKinds = (
   return dropKinds;
 };
 
-const mapListItems = (items: string[], listPrefix: string): string[] =>
+const wrapLineByWords = (line: string, maxLength: number): string[] => {
+  if (line.length <= maxLength) {
+    return [line];
+  }
+
+  const words = line.split(/\s+/).filter((word) => word.length > 0);
+  if (words.length === 0) {
+    return [line];
+  }
+
+  const wrapped: string[] = [];
+  let current = '';
+
+  for (const word of words) {
+    const candidate = current.length === 0 ? word : `${current} ${word}`;
+    if (candidate.length <= maxLength) {
+      current = candidate;
+      continue;
+    }
+
+    if (current.length > 0) {
+      wrapped.push(current);
+      current = word;
+      continue;
+    }
+
+    wrapped.push(word);
+  }
+
+  if (current.length > 0) {
+    wrapped.push(current);
+  }
+
+  return wrapped.length > 0 ? wrapped : [line];
+};
+
+const mapListLine = (
+  line: string,
+  listPrefix: string,
+  listWrapAt?: number,
+): string[] => {
+  if (!listWrapAt || listWrapAt < 1) {
+    return [`${listPrefix}${line}`];
+  }
+
+  const wrapped = wrapLineByWords(line, listWrapAt);
+  const continuationPrefix = '\u00A0'.repeat(Math.max(2, listPrefix.length));
+
+  return wrapped.map((entry, index) =>
+    index === 0 ? `${listPrefix}${entry}` : `${continuationPrefix}${entry}`,
+  );
+};
+
+const mapListItems = (
+  items: string[],
+  listPrefix: string,
+  listWrapAt?: number,
+): string[] =>
   items.flatMap((item) =>
-    splitParagraphText(item).map((line) => `${listPrefix}${line}`),
+    splitParagraphText(item).flatMap((line) =>
+      mapListLine(line, listPrefix, listWrapAt),
+    ),
   );
 
 const mapBlockToParagraphs = (
@@ -36,9 +96,11 @@ const mapBlockToParagraphs = (
   {
     includeHeadings,
     listPrefix,
+    listWrapAt,
   }: {
     includeHeadings: boolean;
     listPrefix: string;
+    listWrapAt?: number;
   },
 ): string[] => {
   if (block.kind === 'heading') {
@@ -48,7 +110,7 @@ const mapBlockToParagraphs = (
     return splitParagraphText(block.text);
   }
   if (block.kind === 'list') {
-    return mapListItems(block.items, listPrefix);
+    return mapListItems(block.items, listPrefix, listWrapAt);
   }
   return [];
 };
@@ -59,6 +121,7 @@ export function flattenBlocksToParagraphs(
 ): string[] {
   const includeHeadings = opts.includeHeadings ?? false;
   const listPrefix = opts.listPrefix ?? '• ';
+  const listWrapAt = opts.listWrapAt;
   const blankLineBetweenBlocks = opts.blankLineBetweenBlocks ?? false;
   const compactAroundKinds = new Set(opts.compactAroundKinds ?? []);
   const dropKinds = buildDropKinds(opts.dropKinds);
@@ -69,6 +132,7 @@ export function flattenBlocksToParagraphs(
       paragraphs: mapBlockToParagraphs(block, {
         includeHeadings,
         listPrefix,
+        listWrapAt,
       }),
     }))
     .filter((entry) => entry.paragraphs.length > 0);

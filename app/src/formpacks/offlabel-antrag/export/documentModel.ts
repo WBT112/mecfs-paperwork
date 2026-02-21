@@ -303,6 +303,7 @@ const buildPartParagraphs = (
   options: {
     blankLineBetweenBlocks?: boolean;
     compactAroundKinds?: OfflabelRenderedDocument['blocks'][number]['kind'][];
+    listWrapAt?: number;
   } = {},
 ): string[] => {
   if (!part) {
@@ -313,6 +314,7 @@ const buildPartParagraphs = (
     includeHeadings: false,
     blankLineBetweenBlocks: options.blankLineBetweenBlocks ?? false,
     compactAroundKinds: options.compactAroundKinds,
+    listWrapAt: options.listWrapAt,
   });
 };
 
@@ -336,6 +338,7 @@ const buildPart2Paragraphs = (
     includeHeadings: true,
     blankLineBetweenBlocks: true,
     compactAroundKinds: ['heading', 'list'],
+    listWrapAt: 100,
   }).filter((paragraph) => paragraph !== PART2_TITLE);
 };
 
@@ -469,11 +472,13 @@ export const buildOffLabelAntragDocumentModel = (
   const kkParagraphs = buildPartParagraphs(previewPart1, {
     blankLineBetweenBlocks: true,
     compactAroundKinds: ['list'],
+    listWrapAt: 100,
   });
   const arztParagraphs = buildPart2Paragraphs(previewPart2);
   const part3Paragraphs = buildPartParagraphs(previewPart3, {
     blankLineBetweenBlocks: true,
     compactAroundKinds: ['list'],
+    listWrapAt: 100,
   });
 
   const patientName = buildPatientName(patient);

@@ -82,4 +82,22 @@ describe('flattenBlocksToParagraphs', () => {
       'Schluss',
     ]);
   });
+
+  it('wraps long list items with indented continuation lines when configured', () => {
+    const paragraphs = flattenBlocksToParagraphs(
+      [
+        {
+          kind: 'list',
+          items: ['Dieser Listeneintrag wird bei kleinem Grenzwert sauber umbrochen'],
+        },
+      ],
+      { listWrapAt: 26 },
+    );
+
+    expect(paragraphs).toEqual([
+      '• Dieser Listeneintrag wird',
+      '\u00A0\u00A0bei kleinem Grenzwert',
+      '\u00A0\u00A0sauber umbrochen',
+    ]);
+  });
 });
