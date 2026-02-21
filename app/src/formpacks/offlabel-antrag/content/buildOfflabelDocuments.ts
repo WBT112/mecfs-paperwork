@@ -71,6 +71,19 @@ const parseMultilineItems = (value: string): string[] =>
     )
     .filter((line) => line.length > 0);
 
+const joinGermanWithUnd = (values: string[]): string => {
+  if (values.length === 0) {
+    return '';
+  }
+  if (values.length === 1) {
+    return values[0];
+  }
+  if (values.length === 2) {
+    return `${values[0]} und ${values[1]}`;
+  }
+  return `${values.slice(0, -1).join(', ')} und ${values[values.length - 1]}`;
+};
+
 const resolveDoctorLiabilityTarget = (doctorGenderValue: unknown): string => {
   const normalizedGender = getText(doctorGenderValue).toLowerCase();
   if (normalizedGender === 'frau') {
@@ -223,23 +236,53 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   if (bellScore) {
     const activityExamples = BELL_SCORE_ACTIVITY_EXAMPLES[bellScore];
     lines.push(
+      `Der Bell-Score ist eine zentrale Kennzahl für den funktionellen Schweregrad der Erkrankung ME/CFS. Mein aktueller Bell-Score beträgt ${bellScore} und dokumentiert den aktuellen funktionellen Schweregrad.`,
+    );
+    lines.push(
       activityExamples
-        ? `Der Bell-Score ist eine zentrale Kennzahl für den funktionellen Schweregrad der Erkrankung ME/CFS. Mein Bell-Score liegt bei ${bellScore}. Meine soziale, gesellschaftliche und berufliche Teilhabe ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt. Das zeigt sich im Alltag unter anderem daran, dass ${activityExamples}`
-        : `Der Bell-Score ist eine zentrale Kennzahl für den funktionellen Schweregrad der Erkrankung ME/CFS. Mein Bell-Score liegt bei ${bellScore}. Meine soziale, gesellschaftliche und berufliche Teilhabe ist aufgrund der Erkrankung grundsätzlich und dauerhaft eingeschränkt.`,
+        ? `Meine soziale, gesellschaftliche und berufliche Teilhabe ist krankheitsbedingt grundsätzlich und dauerhaft eingeschränkt. Im Alltag zeigt sich dies unter anderem daran, dass ${activityExamples}`
+        : 'Meine soziale, gesellschaftliche und berufliche Teilhabe ist krankheitsbedingt grundsätzlich und dauerhaft eingeschränkt.',
     );
   }
+
   const gdb = getText(severity.gdb);
-  if (gdb) {
-    lines.push(`Ich habe einen Grad der Behinderung von ${gdb}.`);
-  }
   const merkzeichen = parseMerkzeichen(severity.merkzeichen).join(', ');
-  if (merkzeichen) {
-    lines.push(`Zudem wurden mir die Merkzeichen ${merkzeichen} zuerkannt.`);
-  }
   const pflegegrad = getText(severity.pflegegrad);
-  if (pflegegrad) {
-    lines.push(`Mir wurde ein Pflegegrad ${pflegegrad} zuerkannt.`);
+  const objectiveIndicators: Array<{ text: string; isPlural: boolean }> = [];
+  if (gdb) {
+    objectiveIndicators.push({
+      text: `ein Grad der Behinderung von ${gdb}`,
+      isPlural: false,
+    });
   }
+  if (merkzeichen) {
+    objectiveIndicators.push({
+      text: `die Merkzeichen ${merkzeichen}`,
+      isPlural: true,
+    });
+  }
+  if (pflegegrad) {
+    objectiveIndicators.push({
+      text: `Pflegegrad ${pflegegrad}`,
+      isPlural: false,
+    });
+  }
+
+  if (objectiveIndicators.length === 1) {
+    const [singleIndicator] = objectiveIndicators;
+    lines.push(
+      singleIndicator.isPlural
+        ? `Als weiterer objektiver Schwereindikator sind bei mir ${singleIndicator.text} dokumentiert.`
+        : `Als weiterer objektiver Schwereindikator liegt bei mir ${singleIndicator.text} vor.`,
+    );
+  } else if (objectiveIndicators.length > 1) {
+    lines.push(
+      `Als weitere objektive Schwereindikatoren liegen bei mir ${joinGermanWithUnd(
+        objectiveIndicators.map((indicator) => indicator.text),
+      )} vor.`,
+    );
+  }
+
   const workStatus = getText(severity.workStatus);
   if (workStatus) {
     lines.push(

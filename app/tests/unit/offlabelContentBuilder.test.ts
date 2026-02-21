@@ -180,16 +180,19 @@ describe('buildOfflabelDocuments', () => {
       .flatMap((block) => block.items);
 
     const bellLine = part1ListItems.find((line) =>
-      line.includes('Mein Bell-Score liegt bei 30.'),
+      line.includes('Mein aktueller Bell-Score beträgt 30'),
     );
     expect(bellLine).toBeDefined();
     expect(bellLine).toContain('Der Bell-Score ist eine zentrale Kennzahl');
-    expect(bellLine).toContain('hausgebunden');
-    expect(bellLine).toContain('mehrtägige Erholungsphasen');
-    expect(bellLine).toContain('soziale');
-    expect(bellLine).toContain('grundsätzlich und dauerhaft eingeschränkt');
+    const participationLine = part1ListItems.find((line) =>
+      line.startsWith('Meine soziale, gesellschaftliche und berufliche Teilhabe'),
+    );
+    expect(participationLine).toBeDefined();
+    expect(participationLine).toContain('hausgebunden');
+    expect(participationLine).toContain('mehrtägige Erholungsphasen');
+    expect(participationLine).toContain('grundsätzlich und dauerhaft eingeschränkt');
     expect(part1ListItems).toContain(
-      'Zudem wurden mir die Merkzeichen G, H, B zuerkannt.',
+      'Als weiterer objektiver Schwereindikator sind bei mir die Merkzeichen G, H, B dokumentiert.',
     );
     expect(part1ListItems).not.toContain('Lt. Leitfaden je nach Schwere');
   });
@@ -209,7 +212,7 @@ describe('buildOfflabelDocuments', () => {
       .flatMap((block) => block.items);
 
     expect(part1ListItems).toContain(
-      'Zudem wurden mir die Merkzeichen G, aG, H, B zuerkannt.',
+      'Als weiterer objektiver Schwereindikator sind bei mir die Merkzeichen G, aG, H, B dokumentiert.',
     );
   });
 
