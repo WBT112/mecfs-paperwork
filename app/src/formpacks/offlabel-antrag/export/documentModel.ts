@@ -339,9 +339,8 @@ const buildPart2Paragraphs = (
   return flattenBlocksToParagraphs(bodyBlocks, {
     includeHeadings: true,
     blankLineBetweenBlocks: true,
-    compactAroundKinds: ['heading', 'list'],
-    listWrapAt: 78,
-    listPrefix: '•\t',
+    compactAroundKinds: ['heading'],
+    listPrefix: '',
   }).filter((paragraph) => paragraph !== PART2_TITLE);
 };
 
@@ -474,16 +473,12 @@ export const buildOffLabelAntragDocumentModel = (
 
   const kkParagraphs = buildPartParagraphs(previewPart1, {
     blankLineBetweenBlocks: true,
-    compactAroundKinds: ['list'],
-    listWrapAt: 78,
-    listPrefix: '•\t',
+    listPrefix: '',
   });
   const arztParagraphs = buildPart2Paragraphs(previewPart2);
   const part3Paragraphs = buildPartParagraphs(previewPart3, {
     blankLineBetweenBlocks: true,
-    compactAroundKinds: ['list'],
-    listWrapAt: 78,
-    listPrefix: '•\t',
+    listPrefix: '',
   });
 
   const patientName = buildPatientName(patient);

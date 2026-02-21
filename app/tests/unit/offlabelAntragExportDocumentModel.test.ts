@@ -88,7 +88,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       model.kk.paragraphs.some(
         (paragraph) =>
           paragraph ===
-          '•\tIndikation: Long/Post-COVID mit depressiven Symptomen',
+          'Indikation: Long/Post-COVID mit depressiven Symptomen',
       ),
     ).toBe(true);
     expect(part3).toContain(
@@ -119,6 +119,35 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.kk.paragraphs).toContain('');
     expect(model.arzt.paragraphs).toContain('');
     expect(model.part3.paragraphs).toContain('');
+  });
+
+  it('keeps one blank line before and after list blocks in exported paragraphs', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'agomelatin',
+          selectedIndicationKey: 'agomelatin.long_post_covid_fatigue',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const firstListIndex = model.kk.paragraphs.findIndex((paragraph) =>
+      /^(Indikation|Behandlungsziel|Dosierung\/Dauer|Überwachung\/Abbruch):/.test(
+        paragraph,
+      ),
+    );
+    expect(firstListIndex).toBeGreaterThan(0);
+    expect(model.kk.paragraphs[firstListIndex - 1]).toBe('');
+
+    const lastListIndex = model.kk.paragraphs.findLastIndex((paragraph) =>
+      /^(Indikation|Behandlungsziel|Dosierung\/Dauer|Überwachung\/Abbruch):/.test(
+        paragraph,
+      ),
+    );
+    expect(lastListIndex).toBeGreaterThan(firstListIndex);
+    expect(model.kk.paragraphs[lastListIndex + 1]).toBe('');
   });
 
   it('uses preview-canonical notstand path for other: points 7/9 present, point 10 absent', () => {
