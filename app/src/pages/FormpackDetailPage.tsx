@@ -2531,31 +2531,37 @@ export default function FormpackDetailPage() {
     }
 
     const pdfControls = renderPdfExportControls();
+    const hasMultipleDocxTemplates = docxTemplateOptions.length > 1;
+    const docxExportClassName = hasMultipleDocxTemplates
+      ? 'formpack-docx-export'
+      : 'formpack-docx-export formpack-docx-export--single-template';
 
     return (
-      <div className="formpack-docx-export">
-        <div className="formpack-docx-export__template">
-          <label
-            className="formpack-docx-export__label"
-            htmlFor="docx-template-select"
-          >
-            {t('formpackDocxTemplateLabel')}
-            <select
-              id="docx-template-select"
-              className="formpack-docx-export__select"
-              value={docxTemplateId}
-              onChange={(event) =>
-                setDocxTemplateId(event.target.value as DocxTemplateId)
-              }
+      <div className={docxExportClassName}>
+        {hasMultipleDocxTemplates && (
+          <div className="formpack-docx-export__template">
+            <label
+              className="formpack-docx-export__label"
+              htmlFor="docx-template-select"
             >
-              {docxTemplateOptions.map((option) => (
-                <option key={option.id} value={option.id}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+              {t('formpackDocxTemplateLabel')}
+              <select
+                id="docx-template-select"
+                className="formpack-docx-export__select"
+                value={docxTemplateId}
+                onChange={(event) =>
+                  setDocxTemplateId(event.target.value as DocxTemplateId)
+                }
+              >
+                {docxTemplateOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
         <div className="formpack-docx-export__buttons">
           <button
             type="button"

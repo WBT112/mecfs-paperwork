@@ -98,6 +98,20 @@
         ]
       },
       {
+        "id": "indication-selection",
+        "anchor": "request.selectedIndicationKey",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.selectedIndicationKey",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          }
+        ]
+      },
+      {
         "id": "indication-confirmation",
         "anchor": "request.indicationFullyMetOrDoctorConfirms",
         "enabled": true,

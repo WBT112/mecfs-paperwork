@@ -1246,6 +1246,10 @@ body {
   width: 100%;
 }
 
+.formpack-docx-export--single-template {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .formpack-docx-export__template {
   display: flex;
   flex-wrap: nowrap;

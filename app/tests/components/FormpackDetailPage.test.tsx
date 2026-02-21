@@ -2371,6 +2371,34 @@ describe('FormpackDetailPage', () => {
     await waitFor(() => expect(select).toHaveValue('a4'));
   });
 
+  it('hides the DOCX template selector when only one template is available', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: ['docx'],
+      docx: {
+        templates: {
+          a4: TEMPLATE_A4,
+        },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(
+      screen.queryByLabelText('formpackDocxTemplateLabel'),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
+    ).toBeInTheDocument();
+  });
+
   it('exports JSON backups when requested', async () => {
     formpackState.manifest = {
       ...formpackState.manifest,
