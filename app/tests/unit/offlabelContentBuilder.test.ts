@@ -85,7 +85,7 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
     expect(part3Text).toContain(
-      `Der Patient leidet an den typischen Symptomen der Indikation ${IVABRADIN_DIAGNOSIS_TEXT}.`,
+      `Die klinische Symptomatik ist mit der genannten Indikation ${IVABRADIN_DIAGNOSIS_TEXT} vereinbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
     );
   });
 
@@ -479,6 +479,8 @@ describe('buildOfflabelDocuments', () => {
     expect(part3Text).toContain(
       'zur Behandlung der Indikation Long-/Post-COVID mit Fatigue',
     );
+    expect(part3Text).not.toContain('Auch die Indikation');
+    expect(part3Text).not.toContain('typischen Symptomen der Indikation');
     expect(part3Text).not.toContain('und/oder');
   });
 

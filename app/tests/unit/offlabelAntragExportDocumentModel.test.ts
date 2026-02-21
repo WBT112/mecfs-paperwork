@@ -202,7 +202,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'Punkt 2: Die Diagnose ist gesichert.',
     );
     expect(model.part3.paragraphs.join('\n')).toContain(
-      'Der Patient leidet an den typischen Symptomen der Indikation',
+      'Die klinische Symptomatik ist mit der genannten Indikation',
     );
   });
 

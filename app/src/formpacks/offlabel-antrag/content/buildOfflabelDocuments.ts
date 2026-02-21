@@ -602,12 +602,14 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
             { kind: 'list' as const, items: standardCareItems },
           ] satisfies OfflabelRenderedDocument['blocks'])
         : []),
-      {
-        kind: 'paragraph',
-        text: point2aNo
-          ? `Der Patient leidet an den typischen Symptomen der Indikation ${facts.diagnosisNominative}.`
-          : `Auch die Indikation ${facts.diagnosisNominative} liegt vor.`,
-      },
+      ...(point2aNo
+        ? ([
+            {
+              kind: 'paragraph' as const,
+              text: `Die klinische Symptomatik ist mit der genannten Indikation ${facts.diagnosisNominative} vereinbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
+            },
+          ] satisfies OfflabelRenderedDocument['blocks'])
+        : []),
       {
         kind: 'paragraph',
         text: 'Bisherige Behandlung/Versorgung: Es besteht keine kausale Standardtherapie; die Behandlung erfolgt symptomorientiert. Daher ist auch keine der medizinischen Standardtherapie entsprechende Alternative verfügbar.',
