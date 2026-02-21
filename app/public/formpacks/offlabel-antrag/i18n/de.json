@@ -31,7 +31,7 @@
   "offlabel-antrag.export.part1.p6": "Das beantragte Medikament: {{medicationName}} ({{medicationIngredient}}).",
   "offlabel-antrag.export.part1.p7": "Behandlungsziel: {{targetSymptoms}} Dosierung und Behandlungsdauer: {{doseAndDuration}} Monitoring/Abbruchkriterien: {{monitoringAndStop}}",
   "offlabel-antrag.export.part1.p8": "Eine ärztliche Stellungnahme zur medizinischen Notwendigkeit sowie zur individuellen Begründung/Verordnung ist als Vorlage beigefügt. Siehe Begleitschreiben an die behandelnde Praxis (Teil 2) und Vorlage (Teil 3).",
-  "offlabel-antrag.export.part1.p9": "Ich bitte um eine schriftliche Entscheidung innerhalb der gesetzlichen Fristen. Für Rückfragen stehe ich zur Verfügung.",
+  "offlabel-antrag.export.part1.p9": "Ich bitte um eine Entscheidung innerhalb der gesetzlichen Fristen. Für Rückfragen stehe ich zur Verfügung.",
   "offlabel-antrag.export.part1.subject": "Antrag auf Kostenübernahme (Off-Label-Use): {{drug}}",
   "offlabel-antrag.export.part2.attachmentsAutoItem": "Teil 1: Antrag an die Krankenkasse (Entwurf)",
   "offlabel-antrag.export.part2.p1": "Sehr geehrte/r Frau/Herr Dr. {{doctorName}},",

@@ -276,6 +276,35 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.kk.attachmentsHeading).toBe('Anlagen');
   });
 
+  it('applies formal closing spacing before signature and attachments', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        patient: {
+          firstName: 'Mara',
+          lastName: 'Example',
+        },
+        request: {
+          drug: 'ivabradine',
+        },
+        attachmentsFreeText: 'Befundbericht',
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const greetingIndex = model.kk.paragraphs.indexOf(
+      'Mit freundlichen Grüßen',
+    );
+    const signatureIndex = model.kk.paragraphs.indexOf('Mara Example');
+    expect(greetingIndex).toBeGreaterThan(0);
+    expect(signatureIndex).toBe(greetingIndex + 4);
+    expect(model.kk.paragraphs[greetingIndex - 1]).toBe('');
+    expect(model.kk.paragraphs[signatureIndex - 1]).toBe('');
+    expect(model.kk.paragraphs[signatureIndex - 2]).toBe('');
+    expect(model.kk.paragraphs[signatureIndex - 3]).toBe('');
+    expect(model.kk.paragraphs.at(-1)).toBe('');
+  });
+
   it('keeps practice address only in header and uses the updated part-2 subject', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
@@ -301,9 +330,14 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
     expect(part2Text).not.toContain('Adressat:');
     expect(part2Text).not.toContain(TEST_DOCTOR_PRACTICE);
-    expect(part2Text).not.toContain(TEST_DOCTOR_NAME);
+    expect(part2Text).toContain(`Guten Tag ${TEST_DOCTOR_NAME},`);
     expect(part2Text).not.toContain('Testweg 1');
     expect(part2Text).not.toContain('12345 Berlin');
+    expect(part2Text.indexOf('Mit freundlichen Grüßen')).toBeLessThan(
+      part2Text.indexOf('Haftungsausschluss (vom Patienten zu unterzeichnen)'),
+    );
+    expect(model.arzt.attachments).toEqual([]);
+    expect(model.arzt.attachmentsHeading).toBe('');
   });
 
   it('uses insurer addressee/header fields and the updated subject in part 3', () => {
@@ -363,9 +397,8 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.exportBundle.part1).toBeDefined();
     expect(model.exportBundle.part2).toBeDefined();
     expect(model.exportBundle.part3).toBeDefined();
-    expect(model.exportBundle.part2.attachments[0]).toBe(
-      'Teil 1: Antrag an die Krankenkasse (Entwurf)',
-    );
+    expect(model.exportBundle.part2.attachments).toEqual([]);
+    expect(model.exportBundle.part2.attachmentsHeading).toBe('');
     expect(model.exportBundle.part1.signatureBlocks).toEqual([]);
   });
 

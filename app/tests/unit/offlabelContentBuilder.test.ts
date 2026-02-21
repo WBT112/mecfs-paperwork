@@ -280,8 +280,9 @@ describe('buildOfflabelDocuments', () => {
       'Ich bitte Sie um Unterstützung bei der medizinischen Einordnung und Begleitung des Antrags, insbesondere durch:',
     );
     expect(part2ListItems).toContain(
-      'die ärztliche Begleitung der Behandlung im Verlauf',
+      'Die ärztliche Begleitung der Behandlung im Verlauf',
     );
+    expect(part2Text).toContain('Sehr geehrte Damen und Herren,');
     expect(part2Text).toContain(
       'Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen. Vielen Dank für Ihre Unterstützung.',
     );
@@ -294,6 +295,17 @@ describe('buildOfflabelDocuments', () => {
     expect(part2Headings).toContain(
       'Haftungsausschluss (vom Patienten zu unterzeichnen)',
     );
+    const greetingBlockIndex = docs[1].blocks.findIndex(
+      (block) =>
+        block.kind === 'paragraph' && block.text === CLOSING_GREETING_TEXT,
+    );
+    const liabilityHeadingIndex = docs[1].blocks.findIndex(
+      (block) =>
+        block.kind === 'heading' &&
+        block.text === 'Haftungsausschluss (vom Patienten zu unterzeichnen)',
+    );
+    expect(greetingBlockIndex).toBeGreaterThan(-1);
+    expect(liabilityHeadingIndex).toBeGreaterThan(greetingBlockIndex);
     expect(part2Text).toContain(CLOSING_GREETING_TEXT);
     expect(part2Text).toContain('Max Mustermann');
   });
@@ -302,6 +314,7 @@ describe('buildOfflabelDocuments', () => {
     const docs = buildOfflabelDocuments({
       doctor: {
         gender: 'Frau',
+        name: 'Muster',
       },
       request: {
         drug: 'ivabradine',
@@ -313,6 +326,7 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
 
+    expect(part2Text).toContain('Sehr geehrte Frau Muster,');
     expect(part2Text).toContain('Haftungsansprüche gegenüber meiner Ärztin.');
   });
 
@@ -320,6 +334,7 @@ describe('buildOfflabelDocuments', () => {
     const docs = buildOfflabelDocuments({
       doctor: {
         gender: 'Herr',
+        name: 'Muster',
       },
       request: {
         drug: 'ivabradine',
@@ -331,6 +346,7 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
 
+    expect(part2Text).toContain('Sehr geehrter Herr Muster,');
     expect(part2Text).toContain('Haftungsansprüche gegenüber meinem Arzt.');
   });
 

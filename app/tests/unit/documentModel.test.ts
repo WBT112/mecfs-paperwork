@@ -266,8 +266,7 @@ describe('formpacks/documentModel', () => {
     expect(result.kk?.subject).toContain('Ivabradin');
     expect(result.sources?.length).toBeGreaterThan(0);
     expect(result.exportBundle?.part2).toBeDefined();
-    expect(result.exportBundle?.part2.attachments[0]).toBe(
-      'Teil 1: Antrag an die Krankenkasse (Entwurf)',
-    );
+    expect(result.exportBundle?.part2.attachments).toEqual([]);
+    expect(result.exportBundle?.part2.attachmentsHeading).toBe('');
   });
 });

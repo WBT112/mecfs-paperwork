@@ -95,6 +95,27 @@ const resolveDoctorLiabilityTarget = (doctorGenderValue: unknown): string => {
   return 'meiner Ärztin/meinem Arzt';
 };
 
+const resolveDoctorSalutation = (doctor: Record<string, unknown>): string => {
+  const gender = getText(doctor.gender).toLowerCase();
+  const rawTitle = getText(doctor.title);
+  const title = rawTitle && rawTitle.toLowerCase() !== 'kein' ? rawTitle : '';
+  const name = getText(doctor.name);
+  const fullName = [title, name].filter(Boolean).join(' ').trim();
+
+  if (gender === 'frau') {
+    return fullName
+      ? `Sehr geehrte Frau ${fullName},`
+      : 'Sehr geehrte Frau Doktor,';
+  }
+  if (gender === 'herr') {
+    return fullName
+      ? `Sehr geehrter Herr ${fullName},`
+      : 'Sehr geehrter Herr Doktor,';
+  }
+
+  return fullName ? `Guten Tag ${fullName},` : 'Sehr geehrte Damen und Herren,';
+};
+
 const LSG_REFERENCE_TEXT =
   'Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER)';
 
@@ -114,7 +135,7 @@ const PART2_LIABILITY_HEADING =
   'Haftungsausschluss (vom Patienten zu unterzeichnen)';
 
 const POINT_8_STANDARD =
-  'Für die Versorgung meiner Erkrankung stehen keine Standardtherapien des GKV-Leistungskatalogs zur Verfügung. In der wissenschaftlichen Literatur werden derzeit vor allem symptombezogene Behandlungsansätze diskutiert. Die einschlägige AWMF-Leitlinie „Müdigkeit“ stellt ausdrücklich fest, dass für die kausale Behandlung von ME/CFS bislang keine Medikamente zugelassen sind, und verweist auf die britische NICE-Leitlinie. Diese fokussiert neben Energiemanagement insbesondere die Linderung von Symptomen, um den Krankheitsverlauf möglichst günstig zu beeinflussen und eine Verschlechterung zu vermeiden. Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht; vielmehr werden verschiedene Therapieversuche mit heterogener Evidenzlage dargestellt. Zusammenfassend wird festgestellt, dass keine belastbare evidenzbasierte Grundlage für den Einsatz bestimmter Arzneimittel besteht. Vor diesem Hintergrund ist der beantragte Off-Label-Einsatz als medizinisch nachvollziehbarer und geeigneter Behandlungsversuch anzusehen. Eine der medizinischen Standardtherapie entsprechende Alternative ist nicht verfügbar.';
+  'Für die Versorgung meiner Erkrankung stehen keine Standardtherapien des GKV-Leistungskatalogs zur Verfügung. In der wissenschaftlichen Literatur werden derzeit vor allem symptombezogene Behandlungsansätze diskutiert. Die einschlägige AWMF-Leitlinie „Müdigkeit“ stellt ausdrücklich fest, dass für die kausale Behandlung von ME/CFS bislang keine Medikamente zugelassen sind, und verweist auf die britische NICE-Leitlinie. Diese fokussiert neben Energiemanagement insbesondere die Linderung von Symptomen, um den Krankheitsverlauf möglichst günstig zu beeinflussen und eine Verschlechterung zu vermeiden. Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht; vielmehr werden verschiedene Therapieversuche mit heterogener Evidenzlage dargestellt. Vor diesem Hintergrund ist der beantragte Off-Label-Einsatz als medizinisch nachvollziehbarer und geeigneter Behandlungsversuch anzusehen. Eine der medizinischen Standardtherapie entsprechende Alternative ist nicht verfügbar.';
 
 const POINT_10_EVIDENCE_NOTE =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit; ich bitte um eine vollständige sozialmedizinische Würdigung einschließlich ggf. ergänzender Literaturrecherche im Einzelfall.';
@@ -435,7 +456,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   blocks.push(
     {
       kind: 'paragraph',
-      text: 'Ich bitte um eine zeitnahe schriftliche Entscheidung. Für Rückfragen stehe ich gerne zur Verfügung.',
+      text: 'Ich bitte um eine zeitnahe Entscheidung. Für Rückfragen stehe ich gerne zur Verfügung.',
     },
     {
       kind: 'paragraph',
@@ -464,6 +485,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       .filter(Boolean)
       .join(' ') || '__________';
   const liabilityTarget = resolveDoctorLiabilityTarget(doctor.gender);
+  const salutation = resolveDoctorSalutation(doctor);
   const addressLines = joinLines([
     getText(doctor.name),
     getText(doctor.practice),
@@ -482,7 +504,11 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} mit der Indikation ${facts.diagnosisNominative} vor.`,
+        text: salutation,
+      },
+      {
+        kind: 'paragraph',
+        text: `Ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} mit der Indikation ${facts.diagnosisNominative} vor.`,
       },
       {
         kind: 'paragraph',
@@ -491,23 +517,15 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       {
         kind: 'list',
         items: [
-          'eine kurze ärztliche Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel)',
-          'eine Darstellung bisheriger Maßnahmen, des erwarteten Nutzens sowie des geplanten Monitorings',
-          'die Festlegung klarer Abbruchkriterien bei fehlendem Nutzen oder relevanten Nebenwirkungen',
-          'die ärztliche Begleitung der Behandlung im Verlauf',
+          'Eine kurze ärztliche Stellungnahme/Befundzusammenfassung (Indikation, medizinische Notwendigkeit, Schweregrad, Behandlungsziel)',
+          'Eine Darstellung bisheriger Maßnahmen, des erwarteten Nutzens sowie des geplanten Monitorings',
+          'Die Festlegung klarer Abbruchkriterien bei fehlendem Nutzen oder relevanten Nebenwirkungen',
+          'Die ärztliche Begleitung der Behandlung im Verlauf',
         ],
       },
       {
         kind: 'paragraph',
         text: 'Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen. Vielen Dank für Ihre Unterstützung.',
-      },
-      {
-        kind: 'heading',
-        text: PART2_LIABILITY_HEADING,
-      },
-      {
-        kind: 'paragraph',
-        text: `Ich erkläre hiermit, dass ich ausführlich über die Risiken und möglichen Nebenwirkungen der Behandlung mit einem nicht für meine Indikation zugelassenen Medikament ${drug} („Off-Label-Use“) informiert wurde und ausreichend Gelegenheit hatte, Fragen zu stellen. Ich fühle mich ausreichend aufgeklärt und stimme einer Behandlung zu. Außerdem verzichte ich auf die aufgrund der Behandlung mit dem Medikament entstehenden Haftungsansprüche gegenüber ${liabilityTarget}.`,
       },
       {
         kind: 'paragraph',
@@ -516,6 +534,14 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       {
         kind: 'paragraph',
         text: patientName,
+      },
+      {
+        kind: 'heading',
+        text: PART2_LIABILITY_HEADING,
+      },
+      {
+        kind: 'paragraph',
+        text: `Ich erkläre hiermit, dass ich ausführlich über die Risiken und möglichen Nebenwirkungen der Behandlung mit einem nicht für meine Indikation zugelassenen Medikament ${drug} („Off-Label-Use“) informiert wurde und ausreichend Gelegenheit hatte, Fragen zu stellen. Ich fühle mich ausreichend aufgeklärt und stimme einer Behandlung zu. Außerdem verzichte ich auf die aufgrund der Behandlung mit dem Medikament entstehenden Haftungsansprüche gegenüber ${liabilityTarget}.`,
       },
       { kind: 'pageBreak' },
     ],
@@ -561,7 +587,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Der Patient leidet an einer schwerwiegenden, die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung. Die aktuelle Indikation lautet ${facts.diagnosisNominative}.`,
+        text: 'Der Patient leidet an einer schwerwiegenden, die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung.',
       },
       {
         kind: 'paragraph',
@@ -595,6 +621,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
           `Monitoring/Abbruchkriterien: ${facts.monitoringAndStop}`,
           `Erwarteter Nutzen / Therapieziel im Einzelfall: ${facts.targetSymptoms}`,
           'Insgesamt ist von einem positiven Risiko-Nutzen Verhältnis auszugehen.',
+          'Informationen für die Krankenkasse:',
           'BSNR: __________',
           'LANR: __________',
         ],

@@ -106,8 +106,17 @@ const styles = StyleSheet.create({
   paragraph: {
     marginBottom: 10,
   },
+  singleBlankLine: {
+    minHeight: 12,
+  },
+  threeBlankLines: {
+    minHeight: 36,
+  },
+  greetingLine: {
+    marginBottom: 0,
+  },
   signatureName: {
-    marginTop: 16,
+    marginTop: 0,
   },
   // Annex pages
   annexTitle: {
@@ -476,10 +485,15 @@ export const DoctorLetterPdfDocument = ({
           </Text>
         ))}
 
-        <Text style={styles.paragraph}>{copy.closingGreeting}</Text>
+        <View style={styles.singleBlankLine} />
+        <Text style={[styles.paragraph, styles.greetingLine]}>
+          {copy.closingGreeting}
+        </Text>
+        <View style={styles.threeBlankLines} />
 
         <Text style={styles.signatureName}>{signatureName}</Text>
 
+        <View style={styles.singleBlankLine} />
         <View style={styles.attachmentsBlock}>
           <Text style={styles.attachmentsTitle}>{copy.attachmentsTitle}</Text>
           {copy.attachmentsItems.map((item) => (

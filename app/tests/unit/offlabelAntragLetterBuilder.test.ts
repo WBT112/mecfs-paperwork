@@ -9,7 +9,6 @@ import {
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
 const FIXED_EXPORTED_AT = new Date('2026-02-10T12:00:00.000Z');
-const PART1_DRAFT_ATTACHMENT = 'Teil 1: Antrag an die Krankenkasse (Entwurf)';
 
 const interpolate = (
   template: string,
@@ -61,7 +60,8 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part2.paragraphs.some((p) => p.includes('Teil 1'))).toBe(
       true,
     );
-    expect(bundle.part2.attachments[0]).toBe(PART1_DRAFT_ATTACHMENT);
+    expect(bundle.part2.attachments).toEqual([]);
+    expect(bundle.part2.attachmentsHeading).toBe('');
     expect(bundle.part3.title).toBe('');
   });
 
@@ -176,6 +176,7 @@ describe('offlabel-antrag letter builder', () => {
     ).toBe(true);
     expect(letter.paragraphs).toContain('Mit freundlichen Grüßen');
     expect(letter.paragraphs).toContain('Mara Example');
-    expect(letter.attachments[0]).toBe(PART1_DRAFT_ATTACHMENT);
+    expect(letter.attachments).toEqual([]);
+    expect(letter.attachmentsHeading).toBe('');
   });
 });

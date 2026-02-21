@@ -144,6 +144,7 @@ const DEFAULT_PART3_SUBJECT_KEY = 'offlabel-antrag.export.part3.subject';
 const DEFAULT_PART3_SUBJECT =
   'Ärztliche Stellungnahme / Befundbericht zum Off-Label-Use';
 const PART2_TITLE = 'Teil 2 – Schreiben an die behandelnde Praxis';
+const GREETING_LINES = new Set(['Mit freundlichen Grüßen', 'Kind regards']);
 
 const getT = (locale: SupportedLocale): I18nT =>
   i18n.getFixedT(locale, 'formpack:offlabel-antrag');
@@ -344,6 +345,59 @@ const buildPart2Paragraphs = (
   }).filter((paragraph) => paragraph !== PART2_TITLE);
 };
 
+const enforceClosingLayout = (
+  paragraphs: string[],
+  opts: { appendBlankBeforeAttachments: boolean },
+): string[] => {
+  const greetingIndex = paragraphs.findIndex((line) =>
+    GREETING_LINES.has(line.trim()),
+  );
+  if (greetingIndex < 0) {
+    if (!opts.appendBlankBeforeAttachments) {
+      return paragraphs;
+    }
+    const withTrailingBlank = [...paragraphs];
+    if (withTrailingBlank.length === 0 || withTrailingBlank.at(-1) !== '') {
+      withTrailingBlank.push('');
+    }
+    return withTrailingBlank;
+  }
+
+  const signatureIndex = paragraphs.findIndex(
+    (line, index) => index > greetingIndex && line.trim().length > 0,
+  );
+  if (signatureIndex < 0) {
+    return paragraphs;
+  }
+
+  const beforeGreeting = paragraphs.slice(0, greetingIndex);
+  while (beforeGreeting.length > 0 && beforeGreeting.at(-1) === '') {
+    beforeGreeting.pop();
+  }
+
+  const afterSignature = paragraphs.slice(signatureIndex + 1);
+  const result = [
+    ...beforeGreeting,
+    '',
+    paragraphs[greetingIndex],
+    '',
+    '',
+    '',
+    paragraphs[signatureIndex],
+    ...afterSignature,
+  ];
+
+  if (!opts.appendBlankBeforeAttachments) {
+    return result;
+  }
+
+  const trailing = [...result];
+  if (trailing.length === 0 || trailing.at(-1) !== '') {
+    trailing.push('');
+  }
+  return trailing;
+};
+
 const buildKkSignatures = (): OffLabelSignatureBlock[] => [];
 
 const buildSourceItems = ({
@@ -471,11 +525,11 @@ export const buildOffLabelAntragDocumentModel = (
   const previewPart2 = getPreviewPart(previewDocuments, 'part2');
   const previewPart3 = getPreviewPart(previewDocuments, 'part3');
 
-  const kkParagraphs = buildPartParagraphs(previewPart1, {
+  const kkBaseParagraphs = buildPartParagraphs(previewPart1, {
     blankLineBetweenBlocks: true,
     listPrefix: '',
   });
-  const arztParagraphs = buildPart2Paragraphs(previewPart2);
+  const arztBaseParagraphs = buildPart2Paragraphs(previewPart2);
   const part3Paragraphs = buildPartParagraphs(previewPart3, {
     blankLineBetweenBlocks: true,
     listPrefix: '',
@@ -499,6 +553,12 @@ export const buildOffLabelAntragDocumentModel = (
   const userAttachments = attachmentEntries;
   const kkAttachmentsHeading =
     userAttachments.length > 0 ? attachmentsHeading : '';
+  const kkParagraphs = enforceClosingLayout(kkBaseParagraphs, {
+    appendBlankBeforeAttachments: userAttachments.length > 0,
+  });
+  const arztParagraphs = enforceClosingLayout(arztBaseParagraphs, {
+    appendBlankBeforeAttachments: false,
+  });
 
   const kk = buildLetterSection({
     ...letterInput,
@@ -522,6 +582,7 @@ export const buildOffLabelAntragDocumentModel = (
 
   const arzt = buildLetterSection({
     ...letterInput,
+    attachmentsHeading: '',
     addresseeLines: buildAddressLines([doctor.practice, doctor.name], doctor),
     subject: tr(
       t,
@@ -531,16 +592,7 @@ export const buildOffLabelAntragDocumentModel = (
         : 'Begleitschreiben zum Off-Label-Antrag - Bitte um Unterstützung',
     ),
     paragraphs: arztParagraphs,
-    attachments: [
-      tr(
-        t,
-        'offlabel-antrag.export.part2.attachmentsAutoItem',
-        locale === 'en'
-          ? 'Part 1: Insurer application (draft)'
-          : 'Teil 1: Antrag an die Krankenkasse (Entwurf)',
-      ),
-      ...userAttachments,
-    ],
+    attachments: [],
     signatureBlocks: [],
   });
 
