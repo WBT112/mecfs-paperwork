@@ -342,6 +342,99 @@ const applyDefaultsForPaths = (
   });
 };
 
+const hasMappedPath = (mapping: DocxMapping, path: string): boolean =>
+  mapping.fields.some((field) => field.path === path) ||
+  Boolean(mapping.loops?.some((loop) => loop.path === path));
+
+const shouldEmbedOfflabelLiabilityFallback = (
+  formpackId: string,
+  mapping: DocxMapping,
+): boolean => {
+  if (formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
+    return false;
+  }
+  return !hasMappedPath(mapping, 'arzt.liabilityParagraphs');
+};
+
+const appendOfflabelLiabilityFallbackToPart2 = (
+  documentData: DocumentModel,
+  formpackId: string,
+  mapping: DocxMapping,
+): DocumentModel => {
+  if (!shouldEmbedOfflabelLiabilityFallback(formpackId, mapping)) {
+    return documentData;
+  }
+
+  const liabilityParagraphsRaw = getPathValue(
+    documentData,
+    'arzt.liabilityParagraphs',
+  );
+  if (
+    !Array.isArray(liabilityParagraphsRaw) ||
+    liabilityParagraphsRaw.length < 1
+  ) {
+    return documentData;
+  }
+
+  const liabilityParagraphs = liabilityParagraphsRaw
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter((entry) => entry.length > 0);
+  if (liabilityParagraphs.length < 1) {
+    return documentData;
+  }
+
+  const part2ParagraphsRaw = getPathValue(documentData, 'arzt.paragraphs');
+  const part2Paragraphs = Array.isArray(part2ParagraphsRaw)
+    ? part2ParagraphsRaw.map((entry) =>
+        typeof entry === 'string' ? entry : '',
+      )
+    : [];
+  const liabilityHeading = getPathValue(documentData, 'arzt.liabilityHeading');
+  const liabilityHeadingText =
+    typeof liabilityHeading === 'string' ? liabilityHeading.trim() : '';
+  const liabilityDateLine = getPathValue(
+    documentData,
+    'arzt.liabilityDateLine',
+  );
+  const liabilityDateLineText =
+    typeof liabilityDateLine === 'string' ? liabilityDateLine.trim() : '';
+  const liabilitySignerName = getPathValue(
+    documentData,
+    'arzt.liabilitySignerName',
+  );
+  const liabilitySignerNameText =
+    typeof liabilitySignerName === 'string' ? liabilitySignerName.trim() : '';
+
+  const mergedPart2Paragraphs = [...part2Paragraphs];
+  if (mergedPart2Paragraphs.length > 0 && mergedPart2Paragraphs.at(-1) !== '') {
+    mergedPart2Paragraphs.push('');
+  }
+  if (liabilityHeadingText.length > 0) {
+    mergedPart2Paragraphs.push(liabilityHeadingText, '');
+  }
+  mergedPart2Paragraphs.push(...liabilityParagraphs);
+  if (liabilityDateLineText.length > 0 || liabilitySignerNameText.length > 0) {
+    mergedPart2Paragraphs.push('');
+  }
+  if (liabilityDateLineText.length > 0) {
+    mergedPart2Paragraphs.push(`Datum: ${liabilityDateLineText}`);
+  }
+  if (liabilitySignerNameText.length > 0) {
+    mergedPart2Paragraphs.push(
+      `Name Patient/in: ${liabilitySignerNameText}`,
+      'Unterschrift: ____________________',
+    );
+  }
+
+  const clonedDocumentData = cloneTemplateValue(documentData) as DocumentModel;
+  setPathValueMutableSafe(
+    clonedDocumentData as unknown as Record<string, unknown>,
+    'arzt.paragraphs',
+    mergedPart2Paragraphs,
+  );
+  return clonedDocumentData;
+};
+
 export const applyDocxExportDefaults = (
   context: DocxTemplateContext,
   formpackId: string,
@@ -780,6 +873,11 @@ export const mapDocumentDataToTemplate = async (
   if (!docxUiSchemaCache.has(formpackId)) {
     docxUiSchemaCache.set(formpackId, uiSchema ?? null);
   }
+  const mappedDocumentData = appendOfflabelLiabilityFallbackToPart2(
+    documentData,
+    formpackId,
+    mapping,
+  );
   const resolveValue = (
     value: unknown,
     schemaNode?: RJSFSchema,
@@ -806,7 +904,7 @@ export const mapDocumentDataToTemplate = async (
     const fieldSchema = getSchemaNodeForPath(schema, field.path);
     const fieldUiSchema = getUiSchemaNodeForPath(uiSchema, field.path);
     const value = normalizeFieldValue(
-      getPathValue(documentData, field.path),
+      getPathValue(mappedDocumentData, field.path),
       resolveValue,
       fieldSchema,
       fieldUiSchema,
@@ -816,7 +914,7 @@ export const mapDocumentDataToTemplate = async (
   });
 
   mapping.loops?.forEach((loop) => {
-    const value = getPathValue(documentData, loop.path);
+    const value = getPathValue(mappedDocumentData, loop.path);
     const loopSchema = getSchemaNodeForPath(schema, loop.path);
     const loopUiSchema = getUiSchemaNodeForPath(uiSchema, loop.path);
     const itemSchema = getArrayItemSchema(loopSchema);
