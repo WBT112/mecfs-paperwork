@@ -102,4 +102,24 @@ describe('flattenBlocksToParagraphs', () => {
       '\tsauber umbrochen',
     ]);
   });
+
+  it('inserts blank lines between list items when configured', () => {
+    const paragraphs = flattenBlocksToParagraphs(
+      [
+        {
+          kind: 'list',
+          items: ['Erster Punkt', 'Zweiter Punkt', 'Dritter Punkt'],
+        },
+      ],
+      { listPrefix: '', listItemBlankLines: true },
+    );
+
+    expect(paragraphs).toEqual([
+      'Erster Punkt',
+      '',
+      'Zweiter Punkt',
+      '',
+      'Dritter Punkt',
+    ]);
+  });
 });

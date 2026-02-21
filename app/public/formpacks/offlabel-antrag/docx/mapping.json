@@ -102,6 +102,18 @@
       "path": "arzt.subject"
     },
     {
+      "var": "arzt.liabilityHeading",
+      "path": "arzt.liabilityHeading"
+    },
+    {
+      "var": "arzt.liabilityDateLine",
+      "path": "arzt.liabilityDateLine"
+    },
+    {
+      "var": "arzt.liabilitySignerName",
+      "path": "arzt.liabilitySignerName"
+    },
+    {
       "var": "arzt.attachmentsHeading",
       "path": "arzt.attachmentsHeading"
     },
@@ -154,6 +166,10 @@
     {
       "var": "arzt.paragraphs",
       "path": "arzt.paragraphs"
+    },
+    {
+      "var": "arzt.liabilityParagraphs",
+      "path": "arzt.liabilityParagraphs"
     },
     {
       "var": "arzt.attachments",

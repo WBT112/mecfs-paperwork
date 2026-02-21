@@ -6,6 +6,7 @@ type FlattenOptions = {
   includeHeadings?: boolean;
   listPrefix?: string;
   listWrapAt?: number;
+  listItemBlankLines?: boolean;
   dropKinds?: PreviewBlock['kind'][];
   blankLineBetweenBlocks?: boolean;
   compactAroundKinds?: PreviewBlock['kind'][];
@@ -84,12 +85,17 @@ const mapListItems = (
   items: string[],
   listPrefix: string,
   listWrapAt?: number,
+  listItemBlankLines = false,
 ): string[] =>
-  items.flatMap((item) =>
-    splitParagraphText(item).flatMap((line) =>
+  items.flatMap((item, index) => {
+    const mapped = splitParagraphText(item).flatMap((line) =>
       mapListLine(line, listPrefix, listWrapAt),
-    ),
-  );
+    );
+    if (!listItemBlankLines || index === items.length - 1) {
+      return mapped;
+    }
+    return [...mapped, ''];
+  });
 
 const mapBlockToParagraphs = (
   block: PreviewBlock,
@@ -97,10 +103,12 @@ const mapBlockToParagraphs = (
     includeHeadings,
     listPrefix,
     listWrapAt,
+    listItemBlankLines,
   }: {
     includeHeadings: boolean;
     listPrefix: string;
     listWrapAt?: number;
+    listItemBlankLines?: boolean;
   },
 ): string[] => {
   if (block.kind === 'heading') {
@@ -110,7 +118,12 @@ const mapBlockToParagraphs = (
     return splitParagraphText(block.text);
   }
   if (block.kind === 'list') {
-    return mapListItems(block.items, listPrefix, listWrapAt);
+    return mapListItems(
+      block.items,
+      listPrefix,
+      listWrapAt,
+      listItemBlankLines,
+    );
   }
   return [];
 };
@@ -122,6 +135,7 @@ export function flattenBlocksToParagraphs(
   const includeHeadings = opts.includeHeadings ?? false;
   const listPrefix = opts.listPrefix ?? '• ';
   const listWrapAt = opts.listWrapAt;
+  const listItemBlankLines = opts.listItemBlankLines ?? false;
   const blankLineBetweenBlocks = opts.blankLineBetweenBlocks ?? false;
   const compactAroundKinds = new Set(opts.compactAroundKinds ?? []);
   const dropKinds = buildDropKinds(opts.dropKinds);
@@ -133,6 +147,7 @@ export function flattenBlocksToParagraphs(
         includeHeadings,
         listPrefix,
         listWrapAt,
+        listItemBlankLines,
       }),
     }))
     .filter((entry) => entry.paragraphs.length > 0);

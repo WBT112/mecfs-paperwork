@@ -166,14 +166,20 @@ describe('offlabel-antrag letter builder', () => {
     expect(letter.paragraphs.some((p) => p.includes('Teil 1'))).toBe(true);
     expect(
       letter.paragraphs.some((p) =>
-        p.includes('Haftungsausschluss (vom Patienten zu unterzeichnen)'),
+        p.includes('Vielen Dank für Ihre Unterstützung.'),
       ),
     ).toBe(true);
     expect(
       letter.paragraphs.some((p) =>
-        p.includes('Vielen Dank für Ihre Unterstützung.'),
+        p.includes('Haftungsausschluss (vom Patienten zu unterzeichnen)'),
       ),
-    ).toBe(true);
+    ).toBe(false);
+    expect(letter.liabilityHeading).toBe(
+      'Haftungsausschluss (vom Patienten zu unterzeichnen)',
+    );
+    expect(letter.liabilityParagraphs?.[0]).toContain(
+      'Ich erkläre hiermit, dass ich ausführlich über die Risiken',
+    );
     expect(letter.paragraphs).toContain('Mit freundlichen Grüßen');
     expect(letter.paragraphs).toContain('Mara Example');
     expect(letter.attachments).toEqual([]);

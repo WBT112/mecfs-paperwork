@@ -258,8 +258,6 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
     const activityExamples = BELL_SCORE_ACTIVITY_EXAMPLES[bellScore];
     lines.push(
       `Der Bell-Score ist eine zentrale Kennzahl für den funktionellen Schweregrad der Erkrankung ME/CFS. Mein aktueller Bell-Score beträgt ${bellScore} und dokumentiert den aktuellen funktionellen Schweregrad.`,
-    );
-    lines.push(
       activityExamples
         ? `Meine soziale, gesellschaftliche und berufliche Teilhabe ist krankheitsbedingt grundsätzlich und dauerhaft eingeschränkt. Im Alltag zeigt sich dies unter anderem daran, dass ${activityExamples}`
         : 'Meine soziale, gesellschaftliche und berufliche Teilhabe ist krankheitsbedingt grundsätzlich und dauerhaft eingeschränkt.',
@@ -302,6 +300,8 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
         objectiveIndicators.map((indicator) => indicator.text),
       )} vor.`,
     );
+  } else {
+    // No additional objective indicators provided.
   }
 
   const workStatus = getText(severity.workStatus);
@@ -669,6 +669,28 @@ const buildFromExportModel = (
           kind: 'paragraph' as const,
           text,
         })),
+        ...(model.arzt.liabilityHeading &&
+        model.arzt.liabilityParagraphs &&
+        model.arzt.liabilityParagraphs.length > 0
+          ? ([
+              {
+                kind: 'heading' as const,
+                text: model.arzt.liabilityHeading,
+              },
+              ...model.arzt.liabilityParagraphs.map((text) => ({
+                kind: 'paragraph' as const,
+                text,
+              })),
+              {
+                kind: 'paragraph' as const,
+                text: `Date: ${model.arzt.liabilityDateLine ?? ''}`,
+              },
+              {
+                kind: 'paragraph' as const,
+                text: `Patient name: ${model.arzt.liabilitySignerName ?? ''}`,
+              },
+            ] satisfies OfflabelRenderedDocument['blocks'])
+          : []),
       ],
     },
     {

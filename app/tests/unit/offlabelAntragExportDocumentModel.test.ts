@@ -10,6 +10,8 @@ const TEST_DOCTOR_NAME = 'Dr. Hausarzt';
 const TEST_DOCTOR_PRACTICE = 'Praxis Nord';
 const TEST_INSURER_NAME = 'Musterkasse';
 const TEST_INSURER_DEPARTMENT = 'Leistungsabteilung';
+const PART2_LIABILITY_HEADING =
+  'Haftungsausschluss (vom Patienten zu unterzeichnen)';
 
 const interpolate = (
   template: string,
@@ -333,9 +335,13 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part2Text).toContain(`Guten Tag ${TEST_DOCTOR_NAME},`);
     expect(part2Text).not.toContain('Testweg 1');
     expect(part2Text).not.toContain('12345 Berlin');
-    expect(part2Text.indexOf('Mit freundlichen Grüßen')).toBeLessThan(
-      part2Text.indexOf('Haftungsausschluss (vom Patienten zu unterzeichnen)'),
+    expect(part2Text).not.toContain(PART2_LIABILITY_HEADING);
+    expect(model.arzt.liabilityHeading).toBe(PART2_LIABILITY_HEADING);
+    expect(model.arzt.liabilityParagraphs?.join('\n')).toContain(
+      'Ich erkläre hiermit, dass ich ausführlich über die Risiken',
     );
+    expect(model.arzt.liabilityDateLine).toMatch(/\d{1,2}\.\d{1,2}\.\d{4}/);
+    expect(model.arzt.liabilitySignerName).toBe('Max Mustermann');
     expect(model.arzt.attachments).toEqual([]);
     expect(model.arzt.attachmentsHeading).toBe('');
   });
@@ -399,6 +405,9 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.exportBundle.part3).toBeDefined();
     expect(model.exportBundle.part2.attachments).toEqual([]);
     expect(model.exportBundle.part2.attachmentsHeading).toBe('');
+    expect(model.exportBundle.part2.liabilityHeading).toBe(
+      PART2_LIABILITY_HEADING,
+    );
     expect(model.exportBundle.part1.signatureBlocks).toEqual([]);
   });
 

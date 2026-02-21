@@ -31,6 +31,10 @@ export type OffLabelLetterSection = {
   dateLine: string;
   subject: string;
   paragraphs: string[];
+  liabilityHeading?: string;
+  liabilityParagraphs?: string[];
+  liabilityDateLine?: string;
+  liabilitySignerName?: string;
   attachmentsHeading: string;
   attachments: string[];
   signatureBlocks: OffLabelSignatureBlock[];
@@ -144,6 +148,8 @@ const DEFAULT_PART3_SUBJECT_KEY = 'offlabel-antrag.export.part3.subject';
 const DEFAULT_PART3_SUBJECT =
   'Ärztliche Stellungnahme / Befundbericht zum Off-Label-Use';
 const PART2_TITLE = 'Teil 2 – Schreiben an die behandelnde Praxis';
+const PART2_LIABILITY_HEADING =
+  'Haftungsausschluss (vom Patienten zu unterzeichnen)';
 const GREETING_LINES = new Set(['Mit freundlichen Grüßen', 'Kind regards']);
 
 const getT = (locale: SupportedLocale): I18nT =>
@@ -247,6 +253,11 @@ const getDateLine = (
   return `${city}, ${formattedDate}`;
 };
 
+const getDateOnly = (locale: SupportedLocale, exportedAt: Date): string => {
+  const localeTag = locale === 'de' ? 'de-DE' : 'en-US';
+  return new Intl.DateTimeFormat(localeTag).format(exportedAt);
+};
+
 const isBuiltInMedicationProfile = (
   value: string | null,
 ): MedicationProfile | null => {
@@ -306,6 +317,7 @@ const buildPartParagraphs = (
     compactAroundKinds?: OfflabelRenderedDocument['blocks'][number]['kind'][];
     listWrapAt?: number;
     listPrefix?: string;
+    listItemBlankLines?: boolean;
   } = {},
 ): string[] => {
   if (!part) {
@@ -318,14 +330,27 @@ const buildPartParagraphs = (
     compactAroundKinds: options.compactAroundKinds,
     listWrapAt: options.listWrapAt,
     listPrefix: options.listPrefix,
+    listItemBlankLines: options.listItemBlankLines,
   });
+};
+
+const trimSurroundingBlankLines = (paragraphs: string[]): string[] => {
+  let start = 0;
+  let end = paragraphs.length;
+  while (start < end && paragraphs[start] === '') {
+    start += 1;
+  }
+  while (end > start && paragraphs[end - 1] === '') {
+    end -= 1;
+  }
+  return paragraphs.slice(start, end);
 };
 
 const buildPart2Paragraphs = (
   part: OfflabelRenderedDocument | null,
-): string[] => {
+): { body: string[]; liabilityParagraphs: string[] } => {
   if (!part) {
-    return [];
+    return { body: [], liabilityParagraphs: [] };
   }
 
   const bodyBlocks = part.blocks.filter(
@@ -337,12 +362,27 @@ const buildPart2Paragraphs = (
       ),
   );
 
-  return flattenBlocksToParagraphs(bodyBlocks, {
+  const flattened = flattenBlocksToParagraphs(bodyBlocks, {
     includeHeadings: true,
     blankLineBetweenBlocks: true,
     compactAroundKinds: ['heading'],
     listPrefix: '',
+    listItemBlankLines: true,
   }).filter((paragraph) => paragraph !== PART2_TITLE);
+
+  const liabilityHeadingIndex = flattened.findIndex(
+    (paragraph) => paragraph === PART2_LIABILITY_HEADING,
+  );
+  if (liabilityHeadingIndex < 0) {
+    return { body: flattened, liabilityParagraphs: [] };
+  }
+
+  return {
+    body: trimSurroundingBlankLines(flattened.slice(0, liabilityHeadingIndex)),
+    liabilityParagraphs: trimSurroundingBlankLines(
+      flattened.slice(liabilityHeadingIndex + 1),
+    ),
+  };
 };
 
 const enforceClosingLayout = (
@@ -430,12 +470,20 @@ const buildLetterSection = ({
   dateLine,
   subject,
   paragraphs,
+  liabilityHeading,
+  liabilityParagraphs,
+  liabilityDateLine,
+  liabilitySignerName,
   attachmentsHeading,
   attachments,
   signatureBlocks,
 }: LetterCompositionInput & {
   subject: string;
   paragraphs: string[];
+  liabilityHeading?: string;
+  liabilityParagraphs?: string[];
+  liabilityDateLine?: string;
+  liabilitySignerName?: string;
   attachments: string[];
   signatureBlocks: OffLabelSignatureBlock[];
 }): OffLabelLetterSection => ({
@@ -444,6 +492,10 @@ const buildLetterSection = ({
   dateLine,
   subject,
   paragraphs,
+  liabilityHeading,
+  liabilityParagraphs,
+  liabilityDateLine,
+  liabilitySignerName,
   attachmentsHeading,
   attachments,
   signatureBlocks,
@@ -524,15 +576,18 @@ export const buildOffLabelAntragDocumentModel = (
   const previewPart1 = getPreviewPart(previewDocuments, 'part1');
   const previewPart2 = getPreviewPart(previewDocuments, 'part2');
   const previewPart3 = getPreviewPart(previewDocuments, 'part3');
+  const previewPart2Content = buildPart2Paragraphs(previewPart2);
 
   const kkBaseParagraphs = buildPartParagraphs(previewPart1, {
     blankLineBetweenBlocks: true,
     listPrefix: '',
+    listItemBlankLines: true,
   });
-  const arztBaseParagraphs = buildPart2Paragraphs(previewPart2);
+  const arztBaseParagraphs = previewPart2Content.body;
   const part3Paragraphs = buildPartParagraphs(previewPart3, {
     blankLineBetweenBlocks: true,
     listPrefix: '',
+    listItemBlankLines: true,
   });
 
   const patientName = buildPatientName(patient);
@@ -592,6 +647,17 @@ export const buildOffLabelAntragDocumentModel = (
         : 'Begleitschreiben zum Off-Label-Antrag - Bitte um Unterstützung',
     ),
     paragraphs: arztParagraphs,
+    liabilityHeading:
+      previewPart2Content.liabilityParagraphs.length > 0
+        ? PART2_LIABILITY_HEADING
+        : '',
+    liabilityParagraphs: previewPart2Content.liabilityParagraphs,
+    liabilityDateLine:
+      previewPart2Content.liabilityParagraphs.length > 0
+        ? getDateOnly(locale, exportedAt)
+        : '',
+    liabilitySignerName:
+      previewPart2Content.liabilityParagraphs.length > 0 ? patientName : '',
     attachments: [],
     signatureBlocks: [],
   });

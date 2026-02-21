@@ -30,20 +30,21 @@ describe('offlabel-antrag A4 DOCX template', () => {
     expect(xml).toContain('{{FOR p IN kk.paragraphs}}');
     expect(xml).toContain('{{FOR item IN kk.attachments}}');
     expect(xml).toContain('{{FOR p2 IN arzt.paragraphs}}');
-    expect(xml).toContain('{{FOR aItem IN arzt.attachments}}');
+    expect(xml).toContain('{{FOR liability IN arzt.liabilityParagraphs}}');
+    expect(xml).not.toContain('{{FOR aItem IN arzt.attachments}}');
     expect(xml).toContain('{{FOR s3 IN part3.senderLines}}');
     expect(xml).toContain('{{FOR a3 IN part3.addresseeLines}}');
     expect(xml).toContain('{{FOR p3 IN part3.paragraphs}}');
   });
 
-  it('renders part-2 liability heading in bold via conditional paragraph formatting', async () => {
+  it('renders part-2 liability heading in bold and with signer metadata', async () => {
     const xml = await loadOfflabelTemplateXml();
 
-    expect(xml).toContain(
-      "{{IF $p2 === 'Haftungsausschluss (vom Patienten zu unterzeichnen)'}}",
-    );
-    expect(xml).toContain('{{ELSE}}');
-    expect(xml).toContain('{{END-IF}}');
+    expect(xml).toContain('{{arzt.liabilityHeading}}');
+    expect(xml).toContain('<w:rPr><w:b/><w:bCs/></w:rPr>');
+    expect(xml).toContain('Datum: {{arzt.liabilityDateLine}}');
+    expect(xml).toContain('Name Patient/in: {{arzt.liabilitySignerName}}');
+    expect(xml).toContain('Unterschrift: ____________________');
   });
 
   it('renders part 2, part 3 and sources without optional wrappers', async () => {

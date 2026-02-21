@@ -9,6 +9,10 @@ type LetterLike = {
   dateLine: string;
   subject: string;
   paragraphs: string[];
+  liabilityHeading?: string;
+  liabilityParagraphs?: string[];
+  liabilityDateLine?: string;
+  liabilitySignerName?: string;
   attachments?: string[];
   attachmentsHeading?: string;
 };
@@ -48,10 +52,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   paragraph: {
-    marginBottom: 10,
+    marginBottom: 4,
   },
   spacerParagraph: {
-    marginBottom: 10,
+    marginBottom: 6,
   },
   attachmentsBlock: {
     marginTop: 10,
@@ -203,6 +207,25 @@ const renderLetterPage = ({
   );
 };
 
+const renderLiabilityPage = ({ data }: { data: LetterLike }) => {
+  if (!data.liabilityHeading || !data.liabilityParagraphs?.length) {
+    return null;
+  }
+
+  return (
+    <Page size="A4" style={styles.page}>
+      <Text style={styles.subject}>{data.liabilityHeading}</Text>
+      {renderParagraphs(data.liabilityParagraphs, 'liability')}
+      <Text style={styles.spacerParagraph}> </Text>
+      <Text style={styles.paragraph}>Datum: {data.liabilityDateLine}</Text>
+      <Text style={styles.paragraph}>
+        Name Patient/in: {data.liabilitySignerName}
+      </Text>
+      <Text style={styles.paragraph}>Unterschrift: ____________________</Text>
+    </Page>
+  );
+};
+
 const EMPTY_LETTER: LetterLike = {
   senderLines: [],
   addresseeLines: [],
@@ -232,17 +255,18 @@ const OfflabelAntragPdfDocument = ({ model }: { model: DocumentModel }) => {
       {renderLetterPage({
         data: part1,
         locale,
+        includeSources: true,
+        sourcesHeading: templateData?.sourcesHeading,
+        sources: templateData?.sources,
       })}
       {renderLetterPage({
         data: part2,
         locale,
       })}
+      {renderLiabilityPage({ data: part2 })}
       {renderLetterPage({
         data: part3,
         locale,
-        includeSources: true,
-        sourcesHeading: templateData?.sourcesHeading,
-        sources: templateData?.sources,
       })}
     </Document>
   );
