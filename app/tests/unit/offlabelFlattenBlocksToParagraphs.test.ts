@@ -88,7 +88,9 @@ describe('flattenBlocksToParagraphs', () => {
       [
         {
           kind: 'list',
-          items: ['Dieser Listeneintrag wird bei kleinem Grenzwert sauber umbrochen'],
+          items: [
+            'Dieser Listeneintrag wird bei kleinem Grenzwert sauber umbrochen',
+          ],
         },
       ],
       { listWrapAt: 26 },
