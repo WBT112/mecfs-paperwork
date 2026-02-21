@@ -142,7 +142,7 @@ describe('applyOfflabelVisibility', () => {
       'Agomelatin',
       'Ivabradin',
       'Vortioxetin',
-      'anderes Medikament oder andere Indikation',
+      'anderes Medikament',
     ]);
     expect(enumOptions).toEqual([
       { value: 'agomelatin', label: 'Agomelatin' },
@@ -150,7 +150,7 @@ describe('applyOfflabelVisibility', () => {
       { value: 'vortioxetine', label: 'Vortioxetin' },
       {
         value: 'other',
-        label: 'anderes Medikament oder andere Indikation',
+        label: 'anderes Medikament',
       },
     ]);
   });

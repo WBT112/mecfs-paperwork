@@ -771,6 +771,31 @@ describe('FormpackDetailPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('does not render PDF controls when pdf export is not declared', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: ['docx'],
+    };
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(
+      await screen.findByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(PDF_EXPORT_CONTROLS_LABEL),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'formpackRecordExportPdf' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('renders PDF export controls for offlabel-antrag when pdf export is declared', async () => {
     const offlabelRecord = {
       ...record,
@@ -1095,6 +1120,11 @@ describe('FormpackDetailPage', () => {
     expect(
       screen.getByRole('button', { name: INTRO_REOPEN_KEY }),
     ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
+      ).toHaveFocus(),
+    );
   });
 
   it('opens and closes intro modal via reopen button', async () => {

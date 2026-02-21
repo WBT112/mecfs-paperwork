@@ -186,6 +186,9 @@ const buildErrorMessage = (
 };
 
 const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
+const FORM_PRIMARY_FOCUS_SELECTOR =
+  '.formpack-form input:not([type="hidden"]):not([disabled]), .formpack-form select:not([disabled]), .formpack-form textarea:not([disabled]), .formpack-form button:not([disabled]), .formpack-form [tabindex]:not([tabindex="-1"])';
+const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
 
 const isDoctorLetterStyledFormpack = (formpackId: string | null): boolean =>
   formpackId === DOCTOR_LETTER_FORMPACK_ID ||
@@ -925,6 +928,7 @@ export default function FormpackDetailPage() {
   const [assetRefreshVersion, setAssetRefreshVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
+  const [pendingIntroFocus, setPendingIntroFocus] = useState(false);
   const [profileSaveEnabled, setProfileSaveEnabled] = useState(() => {
     try {
       const stored = globalThis.localStorage.getItem(PROFILE_SAVE_KEY);
@@ -939,6 +943,7 @@ export default function FormpackDetailPage() {
     'part1' | 'part2' | 'part3'
   >('part1');
   const importInputRef = useRef<HTMLInputElement | null>(null);
+  const formContentRef = useRef<HTMLDivElement | null>(null);
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
   const hasRestoredRecordRef = useRef<string | null>(null);
   const formpackId = manifest?.id ?? null;
@@ -1989,10 +1994,53 @@ export default function FormpackDetailPage() {
     if (!introGateConfig) {
       return;
     }
+    setPendingIntroFocus(true);
     setFormData((current) =>
       setPathValueImmutable(current, introGateConfig.acceptedFieldPath, true),
     );
   }, [introGateConfig]);
+
+  useEffect(() => {
+    if (!pendingIntroFocus || isIntroGateVisible) {
+      return;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+
+    const tryFocus = () => {
+      if (cancelled) {
+        return;
+      }
+
+      const root = formContentRef.current;
+      const target = root?.querySelector<HTMLElement>(
+        FORM_PRIMARY_FOCUS_SELECTOR,
+      );
+      if (target) {
+        target.focus();
+        setPendingIntroFocus(false);
+        return;
+      }
+
+      if (attempts < 6) {
+        attempts += 1;
+        globalThis.setTimeout(tryFocus, 50);
+        return;
+      }
+
+      const fallback = root?.querySelector<HTMLElement>(
+        FORM_FALLBACK_FOCUS_SELECTOR,
+      );
+      fallback?.focus();
+      setPendingIntroFocus(false);
+    };
+
+    globalThis.setTimeout(tryFocus, 0);
+    return () => {
+      cancelled = true;
+    };
+  }, [isIntroGateVisible, pendingIntroFocus]);
 
   // Use custom field template for formpacks that provide InfoBoxes.
   const templates = useMemo(() => {
@@ -2476,25 +2524,11 @@ export default function FormpackDetailPage() {
 
   const renderPdfExportControls = () => {
     const pdfSupported = manifest.exports.includes('pdf');
-    const disabled = storageError === 'unavailable' || !pdfSupported;
+    const disabled = storageError === 'unavailable';
     const resolvedFormpackId = manifest.id;
 
     if (!pdfSupported) {
-      return (
-        <div className="formpack-pdf-export">
-          <button
-            type="button"
-            className="app__button"
-            disabled
-            title={t('formpackPdfExportUnavailable')}
-          >
-            {t('formpackRecordExportPdf')}
-          </button>
-          <span className="formpack-pdf-export__note">
-            {t('formpackPdfExportUnavailable')}
-          </span>
-        </div>
-      );
+      return null;
     }
 
     return (
@@ -2532,9 +2566,13 @@ export default function FormpackDetailPage() {
 
     const pdfControls = renderPdfExportControls();
     const hasMultipleDocxTemplates = docxTemplateOptions.length > 1;
+    const hasPdfControls = Boolean(pdfControls);
     const docxExportClassName = hasMultipleDocxTemplates
       ? 'formpack-docx-export'
       : 'formpack-docx-export formpack-docx-export--single-template';
+    const docxButtonsClassName = hasPdfControls
+      ? 'formpack-docx-export__buttons'
+      : 'formpack-docx-export__buttons formpack-docx-export__buttons--single-action';
 
     return (
       <div className={docxExportClassName}>
@@ -2562,7 +2600,7 @@ export default function FormpackDetailPage() {
             </label>
           </div>
         )}
-        <div className="formpack-docx-export__buttons">
+        <div className={docxButtonsClassName}>
           <button
             type="button"
             className="app__button"
@@ -2626,18 +2664,20 @@ export default function FormpackDetailPage() {
 
     if (isIntroGateVisible && introTexts) {
       return (
-        <FormpackIntroGate
-          title={introTexts.title}
-          body={introTexts.body}
-          checkboxLabel={introTexts.checkboxLabel}
-          startButtonLabel={introTexts.startButtonLabel}
-          onConfirm={handleAcceptIntroGate}
-        />
+        <div ref={formContentRef}>
+          <FormpackIntroGate
+            title={introTexts.title}
+            body={introTexts.body}
+            checkboxLabel={introTexts.checkboxLabel}
+            startButtonLabel={introTexts.startButtonLabel}
+            onConfirm={handleAcceptIntroGate}
+          />
+        </div>
       );
     }
 
     return (
-      <>
+      <div ref={formContentRef}>
         {introGateConfig?.enabled && introTexts && (
           <div className="formpack-intro__reopen">
             <button
@@ -2727,7 +2767,7 @@ export default function FormpackDetailPage() {
             onClose={() => setIsIntroModalOpen(false)}
           />
         )}
-      </>
+      </div>
     );
   };
 

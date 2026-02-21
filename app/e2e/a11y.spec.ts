@@ -166,6 +166,29 @@ test.describe('a11y baseline', () => {
     });
   });
 
+  test('offlabel intro acceptance moves focus into the form', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto(`/formpacks/${OFFLABEL_FORMPACK_ID}`);
+    await acceptOfflabelIntroGate(page);
+
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const active = document.activeElement as HTMLElement | null;
+          return Boolean(active?.closest('.formpack-form'));
+        }),
+      )
+      .toBe(true);
+  });
+
   test('help route has no moderate/serious/critical violations', async ({
     page,
     browserName,

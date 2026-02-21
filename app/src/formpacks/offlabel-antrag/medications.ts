@@ -331,8 +331,8 @@ const STANDARD_MEDICATION_PROFILES = Object.fromEntries(
 
 const OTHER_MEDICATION_PROFILE: MedicationProfile = {
   key: 'other',
-  displayNameDe: 'anderes Medikament oder andere Indikation',
-  displayNameEn: 'other medication or other indication',
+  displayNameDe: 'anderes Medikament',
+  displayNameEn: 'other medication',
   visibility: 'public',
   indications: [],
   isOther: true,
