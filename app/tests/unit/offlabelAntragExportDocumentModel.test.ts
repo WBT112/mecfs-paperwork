@@ -87,8 +87,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(
       model.kk.paragraphs.some(
         (paragraph) =>
-          paragraph ===
-          'Indikation: Long/Post-COVID mit depressiven Symptomen',
+          paragraph === 'Indikation: Long/Post-COVID mit depressiven Symptomen',
       ),
     ).toBe(true);
     expect(part3).toContain(

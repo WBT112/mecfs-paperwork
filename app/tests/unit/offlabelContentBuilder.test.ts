@@ -185,12 +185,16 @@ describe('buildOfflabelDocuments', () => {
     expect(bellLine).toBeDefined();
     expect(bellLine).toContain('Der Bell-Score ist eine zentrale Kennzahl');
     const participationLine = part1ListItems.find((line) =>
-      line.startsWith('Meine soziale, gesellschaftliche und berufliche Teilhabe'),
+      line.startsWith(
+        'Meine soziale, gesellschaftliche und berufliche Teilhabe',
+      ),
     );
     expect(participationLine).toBeDefined();
     expect(participationLine).toContain('hausgebunden');
     expect(participationLine).toContain('mehrtägige Erholungsphasen');
-    expect(participationLine).toContain('grundsätzlich und dauerhaft eingeschränkt');
+    expect(participationLine).toContain(
+      'grundsätzlich und dauerhaft eingeschränkt',
+    );
     expect(part1ListItems).toContain(
       'Als weiterer objektiver Schwereindikator sind bei mir die Merkzeichen G, H, B dokumentiert.',
     );
