@@ -22,8 +22,10 @@ vi.mock('../../../src/storage/db', () => ({
 describe('snapshots storage', () => {
   type MockSnapshotIndex = {
     getAllKeys: Mock;
+    getAll: Mock;
   };
   type MockSnapshotStore = {
+    add: Mock;
     index: Mock;
     delete: Mock;
   };
@@ -46,9 +48,11 @@ describe('snapshots storage', () => {
 
   beforeEach(() => {
     snapshotIndex = {
-      getAllKeys: vi.fn(),
+      getAllKeys: vi.fn().mockResolvedValue([]),
+      getAll: vi.fn().mockResolvedValue([]),
     };
     snapshotStore = {
+      add: vi.fn(),
       index: vi.fn(() => snapshotIndex),
       delete: vi.fn(),
     };
@@ -79,11 +83,15 @@ describe('snapshots storage', () => {
     vi.setSystemTime(now);
     vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'snapshot-123') });
 
-    const snapshot = await createSnapshot(
+    snapshotIndex.getAllKeys.mockResolvedValue(['snapshot-123']);
+
+    const resultPromise = createSnapshot(
       'record-1',
       { field: 'value' },
       'Auto',
     );
+    resolveDone?.();
+    const snapshot = await resultPromise;
 
     expect(snapshot).toEqual({
       id: 'snapshot-123',
@@ -92,7 +100,7 @@ describe('snapshots storage', () => {
       data: { field: 'value' },
       createdAt: now.toISOString(),
     });
-    expect(db.add).toHaveBeenCalledWith('snapshots', snapshot);
+    expect(snapshotStore.add).toHaveBeenCalledWith(snapshot);
   });
 
   it('lists snapshots sorted by newest first', async () => {

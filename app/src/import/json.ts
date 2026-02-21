@@ -54,9 +54,21 @@ export type ImportValidationResult =
 
 type OptionalRjsfSchema = RJSFSchema | boolean | undefined;
 
+/** Maximum accepted import size (10 MB). */
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+
+/** Maximum nesting depth for recursive schema operations. */
+const MAX_SCHEMA_DEPTH = 50;
+
 const parseJson = (
   value: string,
 ): { payload: unknown } | { error: 'invalid_json'; message: string } => {
+  if (value.length > MAX_IMPORT_BYTES) {
+    return {
+      error: 'invalid_json',
+      message: 'The file exceeds the 10 MB size limit.',
+    };
+  }
   const normalized = value.replace(/^\uFEFF/, '').trimStart();
   if (!normalized) {
     return { error: 'invalid_json', message: 'The file is empty.' };
@@ -134,7 +146,11 @@ const validateSchema = (schema: RJSFSchema, data: unknown): boolean => {
 
 // Create a lenient version of schema for import validation
 // Removes 'required' and 'minLength' constraints to allow partial data import
-const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
+const makeLenientSchema = (schema: RJSFSchema, depth = 0): RJSFSchema => {
+  if (depth > MAX_SCHEMA_DEPTH) {
+    return schema;
+  }
+
   const lenient = { ...schema };
 
   // Remove top-level 'required' constraint
@@ -151,7 +167,10 @@ const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
 
         // Recursively handle nested objects
         if (propCopy.type === 'object') {
-          properties[key] = makeLenientSchema(propCopy as RJSFSchema);
+          properties[key] = makeLenientSchema(
+            propCopy as RJSFSchema,
+            depth + 1,
+          );
         } else {
           properties[key] = propCopy;
         }
@@ -193,8 +212,9 @@ const resolveSchemaDefaultValue = (schema: OptionalRjsfSchema): unknown => {
 const removeReadOnlyFields = (
   schema: RJSFSchema,
   data: Record<string, unknown>,
+  depth = 0,
 ): Record<string, unknown> => {
-  if (!schema.properties) {
+  if (depth > MAX_SCHEMA_DEPTH || !schema.properties) {
     return data;
   }
 
@@ -215,7 +235,11 @@ const removeReadOnlyFields = (
 
     // Recursively handle nested objects
     if (propertySchema.type === 'object' && isRecord(normalized[key])) {
-      normalized[key] = removeReadOnlyFields(propertySchema, normalized[key]);
+      normalized[key] = removeReadOnlyFields(
+        propertySchema,
+        normalized[key],
+        depth + 1,
+      );
     }
   }
 
@@ -239,7 +263,12 @@ const getFirstItemSchema = (
 const removeUnknownSchemaFields = (
   schema: OptionalRjsfSchema,
   data: unknown,
+  depth = 0,
 ): unknown => {
+  if (depth > MAX_SCHEMA_DEPTH) {
+    return data;
+  }
+
   if (!schema || typeof schema !== 'object') {
     return data;
   }
@@ -249,7 +278,9 @@ const removeUnknownSchemaFields = (
     if (!itemSchema) {
       return data;
     }
-    return data.map((item) => removeUnknownSchemaFields(itemSchema, item));
+    return data.map((item) =>
+      removeUnknownSchemaFields(itemSchema, item, depth + 1),
+    );
   }
 
   if (!isRecord(data)) {
@@ -275,7 +306,11 @@ const removeUnknownSchemaFields = (
       continue;
     }
 
-    normalized[key] = removeUnknownSchemaFields(propertySchema, value);
+    normalized[key] = removeUnknownSchemaFields(
+      propertySchema,
+      value,
+      depth + 1,
+    );
   }
 
   return normalized;
@@ -315,6 +350,7 @@ const addRequiredDefaults = (
 const applyNestedDefaults = (
   schema: RJSFSchema,
   normalized: Record<string, unknown>,
+  depth: number,
 ): void => {
   if (!schema.properties) {
     return;
@@ -331,7 +367,11 @@ const applyNestedDefaults = (
       propertySchema.type === 'object' &&
       isRecord(normalized[key])
     ) {
-      normalized[key] = applySchemaDefaults(propertySchema, normalized[key]);
+      normalized[key] = applySchemaDefaults(
+        propertySchema,
+        normalized[key],
+        depth + 1,
+      );
     }
   }
 };
@@ -339,8 +379,9 @@ const applyNestedDefaults = (
 const applySchemaDefaults = (
   schema: RJSFSchema,
   data: Record<string, unknown>,
+  depth = 0,
 ): Record<string, unknown> => {
-  if (!schema.properties) {
+  if (depth > MAX_SCHEMA_DEPTH || !schema.properties) {
     return data;
   }
 
@@ -350,7 +391,7 @@ const applySchemaDefaults = (
   addRequiredDefaults(schema, normalized);
 
   // Recursively apply defaults to nested objects
-  applyNestedDefaults(schema, normalized);
+  applyNestedDefaults(schema, normalized, depth);
 
   return normalized;
 };

@@ -991,6 +991,13 @@ export const buildDocxExportFilename = (
 /**
  * Generates a DOCX report from a template and context.
  *
+ * SECURITY: docx-templates uses eval() internally for template expressions.
+ * Template files (.docx) are bundled and not user-supplied, so the eval scope
+ * is controlled. The `data` context contains user form values — these are safe
+ * because they are inserted via INS commands (string interpolation), not
+ * executed as code. Do NOT set `noSandbox: true` or allow user-supplied
+ * template files.
+ *
  * Note: createReport can throw (template errors, missing placeholders, invalid loops).
  */
 export const createDocxReport = async (
