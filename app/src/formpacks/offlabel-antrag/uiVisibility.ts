@@ -4,6 +4,7 @@ import { isRecord } from '../../lib/utils';
 import type { SupportedLocale } from '../../i18n/locale';
 import {
   getMedicationIndications,
+  getVisibleMedicationOptions,
   hasMultipleMedicationIndications,
   resolveMedicationProfile,
 } from './medications';
@@ -31,11 +32,16 @@ export const applyOfflabelVisibility = (
   uiSchema: UiSchema,
   formData: FormDataState,
   locale: SupportedLocale = 'de',
+  showDevMedications = false,
 ): UiSchema => {
   const selectedDrug = getPathValue(formData, 'request.drug');
   const isOtherDrug = selectedDrug === 'other';
   const medicationProfile = resolveMedicationProfile(selectedDrug);
   const indicationOptions = getMedicationIndications(selectedDrug, locale);
+  const medicationOptions = getVisibleMedicationOptions(
+    locale,
+    showDevMedications,
+  );
   const shouldShowIndicationSelector =
     !isOtherDrug && hasMultipleMedicationIndications(medicationProfile);
 
@@ -70,6 +76,24 @@ export const applyOfflabelVisibility = (
   applyFieldVisibility('otherDuration', !isOtherDrug, 'textarea');
   applyFieldVisibility('otherMonitoring', !isOtherDrug, 'textarea');
   applyFieldVisibility('standardOfCareTriedFreeText', !isOtherDrug, 'textarea');
+
+  const selectedDrugNode = isRecord(requestUiSchema.drug)
+    ? requestUiSchema.drug
+    : {};
+  selectedDrugNode['ui:enumNames'] = medicationOptions.map(
+    ({ label }) => label,
+  );
+  const drugUiOptions = isRecord(selectedDrugNode['ui:options'])
+    ? (selectedDrugNode['ui:options'] as UiNode)
+    : {};
+  selectedDrugNode['ui:options'] = {
+    ...drugUiOptions,
+    enumOptions: medicationOptions.map(({ key, label }) => ({
+      value: key,
+      label,
+    })),
+  };
+  requestUiSchema.drug = selectedDrugNode;
 
   const selectedIndicationNode = isRecord(requestUiSchema.selectedIndicationKey)
     ? requestUiSchema.selectedIndicationKey

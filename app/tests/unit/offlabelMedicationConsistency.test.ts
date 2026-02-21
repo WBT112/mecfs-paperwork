@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  getVisibleMedicationKeys,
   MEDICATIONS,
   OFFLABEL_MEDICATION_KEYS,
   STANDARD_MEDICATION_KEYS,
@@ -18,6 +19,7 @@ describe('offlabel medication source consistency', () => {
       const profile = MEDICATIONS[key];
 
       expect(profile.isOther).toBe(false);
+      expect(profile.visibility).toBe('public');
       expect(profile.displayNameDe.length).toBeGreaterThan(0);
       expect(profile.indications.length).toBeGreaterThan(0);
       expect(profile.autoFacts?.de.doseAndDuration.length).toBeGreaterThan(0);
@@ -42,8 +44,18 @@ describe('offlabel medication source consistency', () => {
 
     expect(other).toBeDefined();
     expect(other.isOther).toBe(true);
+    expect(other.visibility).toBe('public');
     expect(other.requiresManualFields).toBe(true);
     expect(other.autoFacts).toBeUndefined();
     expect(other.indications).toEqual([]);
+  });
+
+  it('returns all medication keys when no dev-only medications are configured', () => {
+    expect(getVisibleMedicationKeys(false)).toEqual([
+      ...OFFLABEL_MEDICATION_KEYS,
+    ]);
+    expect(getVisibleMedicationKeys(true)).toEqual([
+      ...OFFLABEL_MEDICATION_KEYS,
+    ]);
   });
 });

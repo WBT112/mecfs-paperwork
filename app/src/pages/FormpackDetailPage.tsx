@@ -70,7 +70,11 @@ import {
   buildOfflabelDocuments,
   type OfflabelRenderedDocument,
 } from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
-import { resolveMedicationProfile } from '../formpacks/offlabel-antrag/medications';
+import {
+  getVisibleMedicationKeys,
+  isMedicationKey,
+  resolveMedicationProfile,
+} from '../formpacks/offlabel-antrag/medications';
 import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
 import {
   type StorageErrorCode,
@@ -187,6 +191,8 @@ const isDoctorLetterStyledFormpack = (formpackId: string | null): boolean =>
   formpackId === DOCTOR_LETTER_FORMPACK_ID ||
   formpackId === OFFLABEL_ANTRAG_FORMPACK_ID;
 
+const showDevMedicationOptions = isFormpackVisible({ visibility: 'dev' });
+
 // Helper: Apply field visibility rules to decision tree UI schema
 const applyFieldVisibility = (
   decisionUiSchema: Record<string, unknown>,
@@ -221,6 +227,133 @@ const toStringArray = (value: unknown): string[] =>
   Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === 'string')
     : [];
+
+const hasSameStringArray = (left: string[], right: string[]): boolean =>
+  left.length === right.length &&
+  left.every((entry, index) => entry === right[index]);
+
+const normalizeOfflabelRequest = (
+  request: Record<string, unknown>,
+  showDevMedications: boolean,
+): Record<string, unknown> => {
+  const visibleMedicationKeys = getVisibleMedicationKeys(showDevMedications);
+  const fallbackDrug = visibleMedicationKeys[0] ?? 'other';
+  const requestedDrug = isMedicationKey(request.drug) ? request.drug : null;
+  const normalizedDrug =
+    requestedDrug && visibleMedicationKeys.includes(requestedDrug)
+      ? requestedDrug
+      : fallbackDrug;
+  const profile = resolveMedicationProfile(normalizedDrug);
+  const requestedIndicationKey =
+    typeof request.selectedIndicationKey === 'string'
+      ? request.selectedIndicationKey
+      : '';
+  const fallbackIndicationKey = profile.indications[0]?.key ?? '';
+  const hasValidIndication =
+    requestedIndicationKey.length > 0 &&
+    profile.indications.some((entry) => entry.key === requestedIndicationKey);
+  const normalizedIndicationKey = hasValidIndication
+    ? requestedIndicationKey
+    : fallbackIndicationKey;
+
+  if (profile.isOther) {
+    const { selectedIndicationKey: _unused, ...otherRequest } = request;
+    return {
+      ...otherRequest,
+      drug: normalizedDrug,
+    };
+  }
+
+  return {
+    ...request,
+    drug: normalizedDrug,
+    selectedIndicationKey: normalizedIndicationKey,
+  };
+};
+
+const buildOfflabelFormSchema = (
+  schema: RJSFSchema,
+  formData: FormDataState,
+  showDevMedications: boolean,
+): RJSFSchema => {
+  if (!isRecord(schema.properties)) {
+    return schema;
+  }
+
+  const requestSchemaNode = (schema.properties as Record<string, unknown>)
+    .request;
+  if (!isRecord(requestSchemaNode) || !isRecord(requestSchemaNode.properties)) {
+    return schema;
+  }
+
+  const requestProperties = requestSchemaNode.properties;
+  const selectedIndicationSchemaNode = requestProperties.selectedIndicationKey;
+  const selectedDrugSchemaNode = requestProperties.drug;
+  if (
+    !isRecord(selectedIndicationSchemaNode) ||
+    !isRecord(selectedDrugSchemaNode)
+  ) {
+    return schema;
+  }
+
+  const visibleMedicationKeys = getVisibleMedicationKeys(showDevMedications);
+  const normalizedRequest = normalizeOfflabelRequest(
+    {
+      drug: getPathValue(formData, 'request.drug'),
+    },
+    showDevMedications,
+  );
+  const profile = resolveMedicationProfile(normalizedRequest.drug);
+  const scopedIndicationEnum = profile.indications.map(
+    (indication) => indication.key,
+  );
+  const fallbackIndicationEnum = toStringArray(
+    selectedIndicationSchemaNode.enum,
+  );
+  const nextIndicationEnum =
+    scopedIndicationEnum.length > 0
+      ? scopedIndicationEnum
+      : fallbackIndicationEnum;
+  const currentIndicationEnum = toStringArray(
+    selectedIndicationSchemaNode.enum,
+  );
+  const currentDrugEnum = toStringArray(selectedDrugSchemaNode.enum);
+
+  if (
+    hasSameStringArray(currentDrugEnum, visibleMedicationKeys) &&
+    hasSameStringArray(currentIndicationEnum, nextIndicationEnum)
+  ) {
+    return schema;
+  }
+
+  const clonedSchema = structuredClone(schema);
+  if (!isRecord(clonedSchema.properties)) {
+    return schema;
+  }
+  const clonedRequestSchemaNode = (
+    clonedSchema.properties as Record<string, unknown>
+  ).request;
+  if (
+    !isRecord(clonedRequestSchemaNode) ||
+    !isRecord(clonedRequestSchemaNode.properties)
+  ) {
+    return schema;
+  }
+  const clonedRequestProperties = clonedRequestSchemaNode.properties;
+  const clonedSelectedIndicationNode =
+    clonedRequestProperties.selectedIndicationKey;
+  const clonedSelectedDrugNode = clonedRequestProperties.drug;
+  if (
+    !isRecord(clonedSelectedIndicationNode) ||
+    !isRecord(clonedSelectedDrugNode)
+  ) {
+    return schema;
+  }
+
+  clonedSelectedDrugNode.enum = [...visibleMedicationKeys];
+  clonedSelectedIndicationNode.enum = [...nextIndicationEnum];
+  return clonedSchema;
+};
 
 type PreviewValueResolver = (
   value: unknown,
@@ -1144,70 +1277,7 @@ export default function FormpackDetailPage() {
     if (!schema || formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
       return schema;
     }
-    if (!isRecord(schema.properties)) {
-      return schema;
-    }
-
-    const requestSchemaNode = (schema.properties as Record<string, unknown>)
-      .request;
-    if (
-      !isRecord(requestSchemaNode) ||
-      !isRecord(requestSchemaNode.properties)
-    ) {
-      return schema;
-    }
-
-    const selectedIndicationSchemaNode =
-      requestSchemaNode.properties.selectedIndicationKey;
-    if (!isRecord(selectedIndicationSchemaNode)) {
-      return schema;
-    }
-
-    const selectedDrug = getPathValue(formData, 'request.drug');
-    const profile = resolveMedicationProfile(selectedDrug);
-    const scopedIndicationEnum = profile.indications.map(
-      (indication) => indication.key,
-    );
-    const fallbackEnum = toStringArray(selectedIndicationSchemaNode.enum);
-    const nextEnum =
-      scopedIndicationEnum.length > 0 ? scopedIndicationEnum : fallbackEnum;
-    const currentEnum = toStringArray(selectedIndicationSchemaNode.enum);
-
-    if (
-      currentEnum.length === nextEnum.length &&
-      currentEnum.every((entry, index) => entry === nextEnum[index])
-    ) {
-      return schema;
-    }
-
-    const clonedSchema = structuredClone(schema);
-    const clonedRequestSchemaNode = isRecord(
-      (clonedSchema.properties as Record<string, unknown>).request,
-    )
-      ? ((clonedSchema.properties as Record<string, unknown>).request as Record<
-          string,
-          unknown
-        >)
-      : null;
-    const clonedRequestProperties = clonedRequestSchemaNode
-      ? clonedRequestSchemaNode.properties
-      : null;
-    const clonedSelectedIndicationNode =
-      clonedRequestProperties &&
-      isRecord(
-        (clonedRequestProperties as Record<string, unknown>)
-          .selectedIndicationKey,
-      )
-        ? ((clonedRequestProperties as Record<string, unknown>)
-            .selectedIndicationKey as Record<string, unknown>)
-        : null;
-
-    if (!clonedSelectedIndicationNode) {
-      return schema;
-    }
-
-    clonedSelectedIndicationNode.enum = [...nextEnum];
-    return clonedSchema;
+    return buildOfflabelFormSchema(schema, formData, showDevMedicationOptions);
   }, [formData, formpackId, schema]);
 
   // Apply conditional visibility for doctor-letter decision tree
@@ -1217,7 +1287,12 @@ export default function FormpackDetailPage() {
     }
 
     if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
-      return applyOfflabelVisibility(normalizedUiSchema, formData, locale);
+      return applyOfflabelVisibility(
+        normalizedUiSchema,
+        formData,
+        locale,
+        showDevMedicationOptions,
+      );
     }
 
     if (formpackId !== DOCTOR_LETTER_FORMPACK_ID) {
@@ -1497,30 +1572,10 @@ export default function FormpackDetailPage() {
         formpackId === OFFLABEL_ANTRAG_FORMPACK_ID &&
         isRecord(nextData.request)
       ) {
-        const request = nextData.request;
-        const profile = resolveMedicationProfile(request.drug);
-        const requestedIndicationKey =
-          typeof request.selectedIndicationKey === 'string'
-            ? request.selectedIndicationKey
-            : '';
-        const fallbackIndicationKey = profile.indications[0]?.key;
-        const hasValidSelectedIndication =
-          requestedIndicationKey.length > 0 &&
-          profile.indications.some(
-            (entry) => entry.key === requestedIndicationKey,
-          );
-        if (profile.isOther) {
-          const { selectedIndicationKey: _unused, ...otherRequest } = request;
-          nextData.request = otherRequest;
-        } else {
-          const normalizedSelectedIndicationKey = hasValidSelectedIndication
-            ? requestedIndicationKey
-            : fallbackIndicationKey || '';
-          nextData.request = {
-            ...request,
-            selectedIndicationKey: normalizedSelectedIndicationKey,
-          };
-        }
+        nextData.request = normalizeOfflabelRequest(
+          nextData.request,
+          showDevMedicationOptions,
+        );
       }
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
@@ -1546,6 +1601,29 @@ export default function FormpackDetailPage() {
     },
     [formpackId, setFormData],
   );
+
+  useEffect(() => {
+    if (
+      formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID ||
+      !isRecord(formData.request)
+    ) {
+      return;
+    }
+
+    const request = formData.request;
+    const normalizedRequest = normalizeOfflabelRequest(
+      request,
+      showDevMedicationOptions,
+    );
+    if (JSON.stringify(request) === JSON.stringify(normalizedRequest)) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      request: normalizedRequest,
+    }));
+  }, [formData, formpackId, setFormData]);
 
   // Resolve decision tree after formData changes (for doctor-letter only)
   useEffect(() => {

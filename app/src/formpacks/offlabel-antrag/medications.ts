@@ -7,6 +7,7 @@ export const OFFLABEL_MEDICATION_KEYS = [
 
 export type MedicationKey = (typeof OFFLABEL_MEDICATION_KEYS)[number];
 export type StandardMedicationKey = Exclude<MedicationKey, 'other'>;
+export type MedicationVisibility = 'public' | 'dev';
 
 export type MedicationLocale = 'de' | 'en';
 
@@ -40,6 +41,7 @@ export type MedicationProfile = {
   key: MedicationKey;
   displayNameDe: string;
   displayNameEn: string;
+  visibility: MedicationVisibility;
   indications: MedicationIndication[];
   isOther: boolean;
   requiresManualFields: boolean;
@@ -58,6 +60,7 @@ type StandardMedicationInput = {
   key: StandardMedicationKey;
   displayNameDe: string;
   displayNameEn: string;
+  visibility?: MedicationVisibility;
   infoBoxI18nKey: string;
   expertSourceDate: string;
   indications: MedicationIndication[];
@@ -301,6 +304,7 @@ const createStandardMedicationProfile = (
     key: input.key,
     displayNameDe: input.displayNameDe,
     displayNameEn: input.displayNameEn,
+    visibility: input.visibility ?? 'public',
     indications: [...input.indications],
     isOther: false,
     requiresManualFields: false,
@@ -329,6 +333,7 @@ const OTHER_MEDICATION_PROFILE: MedicationProfile = {
   key: 'other',
   displayNameDe: 'anderes Medikament oder andere Indikation',
   displayNameEn: 'other medication or other indication',
+  visibility: 'public',
   indications: [],
   isOther: true,
   requiresManualFields: true,
@@ -358,6 +363,38 @@ export const normalizeMedicationKey = (value: unknown): MedicationKey => {
 
 export const resolveMedicationProfile = (value: unknown): MedicationProfile =>
   MEDICATIONS[normalizeMedicationKey(value)];
+
+export const isMedicationVisible = (
+  value: unknown,
+  showDevMedications = false,
+): boolean => {
+  const profile = resolveMedicationProfile(value);
+  return profile.visibility === 'public' || showDevMedications;
+};
+
+export const getVisibleMedicationKeys = (
+  showDevMedications = false,
+): MedicationKey[] =>
+  OFFLABEL_MEDICATION_KEYS.filter((key) =>
+    isMedicationVisible(key, showDevMedications),
+  );
+
+export const getMedicationDisplayName = (
+  key: MedicationKey,
+  locale: MedicationLocale,
+): string => {
+  const profile = MEDICATIONS[key];
+  return locale === 'de' ? profile.displayNameDe : profile.displayNameEn;
+};
+
+export const getVisibleMedicationOptions = (
+  locale: MedicationLocale,
+  showDevMedications = false,
+): Array<{ key: MedicationKey; label: string }> =>
+  getVisibleMedicationKeys(showDevMedications).map((key) => ({
+    key,
+    label: getMedicationDisplayName(key, locale),
+  }));
 
 export type MedicationIndicationOption = {
   key: string;

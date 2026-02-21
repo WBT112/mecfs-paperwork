@@ -4,6 +4,7 @@ import { applyOfflabelVisibility } from '../../src/formpacks/offlabel-antrag/uiV
 
 const buildUiSchema = (): UiSchema => ({
   request: {
+    drug: {},
     indicationFullyMetOrDoctorConfirms: { 'ui:widget': 'radio' },
     applySection2Abs1a: {},
     selectedIndicationKey: {},
@@ -119,6 +120,37 @@ describe('applyOfflabelVisibility', () => {
       {
         value: 'agomelatin.long_post_covid_fatigue',
         label: 'Long-/Post-COVID mit Fatigue',
+      },
+    ]);
+  });
+
+  it('sets localized medication enum options for request.drug', () => {
+    const uiSchema = buildUiSchema();
+    const result = applyOfflabelVisibility(
+      uiSchema,
+      { request: { drug: 'ivabradine' } },
+      'de',
+    );
+    const request = result.request as Record<string, unknown>;
+    const drug = request.drug as Record<string, unknown>;
+    const drugOptions = drug['ui:options'] as Record<string, unknown>;
+    const enumOptions = drugOptions.enumOptions as Array<
+      Record<string, string>
+    >;
+
+    expect(drug['ui:enumNames']).toEqual([
+      'Agomelatin',
+      'Ivabradin',
+      'Vortioxetin',
+      'anderes Medikament oder andere Indikation',
+    ]);
+    expect(enumOptions).toEqual([
+      { value: 'agomelatin', label: 'Agomelatin' },
+      { value: 'ivabradine', label: 'Ivabradin' },
+      { value: 'vortioxetine', label: 'Vortioxetin' },
+      {
+        value: 'other',
+        label: 'anderes Medikament oder andere Indikation',
       },
     ]);
   });
