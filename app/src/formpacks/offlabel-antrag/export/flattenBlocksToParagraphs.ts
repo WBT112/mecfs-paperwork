@@ -73,7 +73,7 @@ const mapListLine = (
   }
 
   const wrapped = wrapLineByWords(line, listWrapAt);
-  const continuationPrefix = '\u00A0'.repeat(Math.max(2, listPrefix.length));
+  const continuationPrefix = '\t';
 
   return wrapped.map((entry, index) =>
     index === 0 ? `${listPrefix}${entry}` : `${continuationPrefix}${entry}`,

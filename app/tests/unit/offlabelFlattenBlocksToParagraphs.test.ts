@@ -98,8 +98,8 @@ describe('flattenBlocksToParagraphs', () => {
 
     expect(paragraphs).toEqual([
       '• Dieser Listeneintrag wird',
-      '\u00A0\u00A0bei kleinem Grenzwert',
-      '\u00A0\u00A0sauber umbrochen',
+      '\tbei kleinem Grenzwert',
+      '\tsauber umbrochen',
     ]);
   });
 });
