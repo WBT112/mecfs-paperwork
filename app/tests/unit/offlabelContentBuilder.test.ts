@@ -19,7 +19,7 @@ const THERAPY_SAFETY_TEXT =
 const CLOSING_GREETING_TEXT = 'Mit freundlichen Grüßen';
 
 describe('buildOfflabelDocuments', () => {
-  it('builds three parts and includes point-10 evidence text for known medication', () => {
+  it('builds three parts and includes evidence text for known medication', () => {
     const docs = buildOfflabelDocuments({
       request: {
         drug: 'ivabradine',
@@ -41,11 +41,23 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'list')
       .flatMap((block) => block.items);
 
-    expect(part1Text).toContain('Punkt 2: Die Diagnose ist gesichert.');
-    expect(part1Text).not.toContain('Punkt 7:');
-    expect(part1Text).not.toContain('Punkt 9:');
-    expect(part1Text).toContain('Punkt 10:');
-    expect(part1ListItems).toContain(`Indikation: ${IVABRADIN_DIAGNOSIS_TEXT}`);
+    expect(part1ListItems).toContain('Die Diagnose ist gesichert.');
+    expect(part1Text).not.toContain(
+      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+    );
+    expect(part1Text).not.toContain(
+      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
+    expect(part1Text).toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
+    expect(part1Text).not.toMatch(/Punkt \d+:/);
+    expect(part1ListItems).toContain(
+      `Klinische Symptomatik (vergleichbar mit ${IVABRADIN_DIAGNOSIS_TEXT})`,
+    );
+    expect(part1ListItems).not.toContain(
+      `Indikation: ${IVABRADIN_DIAGNOSIS_TEXT}`,
+    );
     expect(
       part1ListItems.some((item) =>
         item.startsWith('Dosierung/Dauer: Start 2,5 mg morgens'),
@@ -76,13 +88,13 @@ describe('buildOfflabelDocuments', () => {
       'hiermit beantrage ich die Kostenübernahme für das Medikament Ivabradin im Rahmen des Off-Label-Use',
     );
     expect(part1Text).toContain(
-      'zur symptomorientierten Behandlung bei einer klinischen Symptomatik, die mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vereinbar ist',
+      'zur symptomorientierten Behandlung bei einer klinischen Symptomatik, die mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vergleichbar ist',
     );
     expect(part1Text).not.toContain(
       'zur Behandlung von postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
     );
     expect(part1Text).toContain(
-      'Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht;',
+      'Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht.',
     );
     expect(part1Text).toContain(CLOSING_GREETING_TEXT);
 
@@ -91,7 +103,7 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
     expect(part2Text).toContain(
-      'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vereinbar; die abschließende diagnostische Einordnung erfolgt ärztlich.',
+      'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vergleichbar.',
     );
     expect(part2Text).not.toContain(
       'mit der Indikation postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
@@ -126,7 +138,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain('Max Mustermann');
   });
 
-  it('builds coherent other-medication flow with point-9 text and user diagnosis', () => {
+  it('builds coherent other-medication flow with user diagnosis', () => {
     const docs = buildOfflabelDocuments({
       request: {
         drug: 'other',
@@ -140,22 +152,33 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
 
-    expect(part1Text).toContain(
-      'Punkt 1: Das Medikament anderes Medikament ist in Deutschland nicht indikationsbezogen zugelassen',
+    expect(
+      part1ListItems.some((item) =>
+        item.includes(
+          'Das Medikament anderes Medikament ist in Deutschland nicht indikationsbezogen zugelassen',
+        ),
+      ),
+    ).toBe(true);
+    expect(part1ListItems).toContain(
+      'Die Diagnose Seltene XYZ-Indikation ist gesichert',
     );
     expect(part1Text).toContain(
-      'Punkt 2: Die Diagnose Seltene XYZ-Indikation ist gesichert',
-    );
-    expect(part1Text).toContain('Punkt 7:');
-    expect(part1Text).toContain(
-      'Punkt 7: Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
     );
     expect(part1Text).not.toContain(
-      'Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
     );
-    expect(part1Text).toContain('Punkt 9:');
-    expect(part1Text).not.toContain('Punkt 10:');
+    expect(part1Text).toContain(
+      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
+    expect(part1Text).not.toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
+    expect(part1Text).not.toMatch(/Punkt \d+:/);
     expect(part1Text).toContain(THERAPY_SAFETY_TEXT);
     expect(part1Text).toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain(EVIDENCE_NOTE_TEXT);
@@ -163,9 +186,6 @@ describe('buildOfflabelDocuments', () => {
       'Zusätzlich wurden folgende Therapieversuche unternommen:',
     );
 
-    const part1ListItems = docs[0].blocks
-      .filter((block) => block.kind === 'list')
-      .flatMap((block) => block.items);
     expect(part1ListItems).toContain('Betablocker (nicht verträglich)');
     expect(part1ListItems).toContain(
       'Kompressionstherapie ohne ausreichenden Effekt',
@@ -276,6 +296,9 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
     const part2Text = docs[1].blocks
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
@@ -287,9 +310,13 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'list')
       .flatMap((block) => block.items);
 
-    expect(part1Text).toContain(
-      'Punkt 1: Das Medikament Midodrin ist in Deutschland nicht indikationsbezogen zugelassen',
-    );
+    expect(
+      part1ListItems.some((item) =>
+        item.includes(
+          'Das Medikament Midodrin ist in Deutschland nicht indikationsbezogen zugelassen',
+        ),
+      ),
+    ).toBe(true);
     expect(part2Text).toContain(
       'für eine Off-Label-Verordnung von Midodrin mit der Indikation Orthostatische Intoleranz',
     );
@@ -367,7 +394,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part2Text).toContain('Haftungsansprüche gegenüber meinem Arzt.');
   });
 
-  it('adds point 7 for standard medication when §2 checkbox is enabled', () => {
+  it('adds §2 wording for standard medication when checkbox is enabled', () => {
     const docs = buildOfflabelDocuments({
       request: {
         drug: 'ivabradine',
@@ -381,9 +408,8 @@ describe('buildOfflabelDocuments', () => {
       .join('\n');
 
     expect(part1Text).toContain(HILFSANTRAG_INTRO_TEXT);
-    expect(part1Text).toContain('Punkt 7:');
     expect(part1Text).toContain(
-      'Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
     );
     expect(part1Text).toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain(POINT_10_BRIDGE_TEXT);
@@ -408,7 +434,9 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).not.toContain(
       'Dieser Text wurde im Other-Flow eingegeben und darf hier nicht erscheinen.',
     );
-    expect(part1Text).toContain('Punkt 10:');
+    expect(part1Text).toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
   });
 
   it('falls back to the other path for unknown medication keys', () => {
@@ -422,13 +450,27 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
 
+    expect(
+      part1ListItems.some((item) =>
+        item.includes(
+          'Das Medikament anderes Medikament ist in Deutschland nicht indikationsbezogen zugelassen',
+        ),
+      ),
+    ).toBe(true);
     expect(part1Text).toContain(
-      'Punkt 1: Das Medikament anderes Medikament ist in Deutschland nicht indikationsbezogen zugelassen',
+      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
     );
-    expect(part1Text).toContain('Punkt 7:');
-    expect(part1Text).toContain('Punkt 9:');
-    expect(part1Text).not.toContain('Punkt 10:');
+    expect(part1Text).toContain(
+      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
+    expect(part1Text).not.toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
+    expect(part1Text).not.toMatch(/Punkt \d+:/);
   });
 
   it('fills patient birth date and insurance number in part 3', () => {
@@ -482,8 +524,8 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(
       'zur Behandlung von Long-/Post-COVID mit Fatigue',
     );
-    expect(part1Text).toContain(
-      'Punkt 2: Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde)',
+    expect(part1ListItems).toContain(
+      'Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde)',
     );
     expect(part1ListItems).toContain(
       'Indikation: Long-/Post-COVID mit Fatigue',
@@ -513,6 +555,9 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
     const part3Text = docs[2].blocks
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
@@ -521,8 +566,8 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(
       'zur Behandlung von Long/Post-COVID mit depressiven Symptomen',
     );
-    expect(part1Text).toContain(
-      'Punkt 2: Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
+    expect(part1ListItems).toContain(
+      'Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
     );
     expect(part3Text).toContain(
       'Diagnose: Long/Post-COVID mit depressiven Symptomen',
@@ -546,7 +591,12 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
 
-    expect(part1Text).toContain('Punkt 1: Das Medikament Ivabradin');
-    expect(part1Text).toContain('Punkt 10:');
+    expect(part1Text).toContain(
+      'Das Medikament Ivabradin ist in Deutschland nicht indikationsbezogen zugelassen',
+    );
+    expect(part1Text).toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
+    expect(part1Text).not.toMatch(/Punkt \d+:/);
   });
 });

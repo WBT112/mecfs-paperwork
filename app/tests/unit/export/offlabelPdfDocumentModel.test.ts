@@ -67,7 +67,7 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
     ]);
   });
 
-  it('matches point branching from the DOCX-parity document model', () => {
+  it('matches branching from the DOCX-parity document model', () => {
     const standardModel = buildOffLabelAntragDocumentModel(
       {
         request: {
@@ -88,9 +88,15 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
     });
 
     const standardPart1Text = standardModel.kk.paragraphs.join('\n');
-    expect(standardPart1Text).toContain('Punkt 10:');
-    expect(standardPart1Text).not.toContain('Punkt 7:');
-    expect(standardPart1Text).not.toContain('Punkt 9:');
+    expect(standardPart1Text).toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
+    expect(standardPart1Text).not.toContain(
+      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+    );
+    expect(standardPart1Text).not.toContain(
+      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
 
     const standardTemplateData = standardPdfModel.meta?.templateData as {
       exportBundle: { part1: { paragraphs: string[] } };
@@ -117,9 +123,15 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
     );
 
     const otherPart1Text = otherModel.kk.paragraphs.join('\n');
-    expect(otherPart1Text).toContain('Punkt 7:');
-    expect(otherPart1Text).toContain('Punkt 9:');
-    expect(otherPart1Text).not.toContain('Punkt 10:');
+    expect(otherPart1Text).toContain(
+      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+    );
+    expect(otherPart1Text).toContain(
+      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
+    expect(otherPart1Text).not.toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
   });
 
   it('keeps sources medication-specific', () => {

@@ -37,7 +37,7 @@ vi.mock('../../src/i18n', () => ({
 }));
 
 describe('buildOffLabelAntragDocumentModel', () => {
-  it('uses preview-canonical standard path: point 10 present, points 7/9 absent', () => {
+  it('uses preview-canonical standard path with evidence text and without §2-only wording', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         request: {
@@ -50,9 +50,16 @@ describe('buildOffLabelAntragDocumentModel', () => {
 
     const part1 = model.kk.paragraphs.join('\n');
 
-    expect(part1).toContain('Punkt 10:');
-    expect(part1).not.toContain('Punkt 7:');
-    expect(part1).not.toContain('Punkt 9:');
+    expect(part1).toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
+    expect(part1).not.toContain(
+      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
+    expect(part1).not.toContain(
+      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+    );
+    expect(part1).not.toMatch(/Punkt \d+:/);
     expect(part1).toContain('Bewertung Ivabradin');
 
     expect(model.sources).toHaveLength(2);
@@ -81,7 +88,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'zur Behandlung von Long/Post-COVID mit depressiven Symptomen',
     );
     expect(part1).toContain(
-      'Punkt 2: Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
+      'Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
     );
     expect(part1).toContain(
       'Indikation: Long/Post-COVID mit depressiven Symptomen',
@@ -151,7 +158,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.kk.paragraphs[lastListIndex + 1]).toBe('');
   });
 
-  it('uses preview-canonical notstand path for other: points 7/9 present, point 10 absent', () => {
+  it('uses preview-canonical notstand path for other', () => {
     const model = buildOffLabelAntragDocumentModel(
       {
         request: {
@@ -171,15 +178,19 @@ describe('buildOffLabelAntragDocumentModel', () => {
 
     const part1 = model.kk.paragraphs.join('\n');
 
-    expect(part1).toContain('Punkt 7:');
-    expect(part1).toContain('Punkt 9:');
-    expect(part1).not.toContain('Punkt 10:');
     expect(part1).toContain(
-      'Punkt 7: Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
     );
     expect(part1).not.toContain(
-      'Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
     );
+    expect(part1).toContain(
+      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
+    expect(part1).not.toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
+    expect(part1).not.toMatch(/Punkt \d+:/);
 
     expect(model.sources).toHaveLength(1);
     expect(model.sources[0]).toContain('LSG Niedersachsen-Bremen');
@@ -199,7 +210,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     expect(model.kk.paragraphs.join('\n')).toContain(
-      'Punkt 2: Die Diagnose ist gesichert.',
+      'Die Diagnose ist gesichert.',
     );
     expect(model.kk.paragraphs.join('\n')).toContain(
       'zur symptomorientierten Behandlung bei einer klinischen Symptomatik',
@@ -208,13 +219,19 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'zur Behandlung von postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
     );
     expect(model.arzt.paragraphs.join('\n')).toContain(
-      'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vereinbar; die abschließende diagnostische Einordnung erfolgt ärztlich.',
+      'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vergleichbar.',
     );
     expect(model.arzt.paragraphs.join('\n')).not.toContain(
       'mit der Indikation postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
     );
     expect(model.part3.paragraphs.join('\n')).toContain(
       'Die klinische Symptomatik ist mit der genannten Indikation',
+    );
+    expect(model.kk.paragraphs.join('\n')).toContain(
+      'Klinische Symptomatik (vergleichbar mit postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit)',
+    );
+    expect(model.kk.paragraphs.join('\n')).not.toContain(
+      'Indikation: postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
     );
   });
 

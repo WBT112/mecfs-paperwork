@@ -79,7 +79,9 @@ describe('offlabel-antrag letter builder', () => {
     );
     const bundle = model.exportBundle;
 
-    expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 10:');
+    expect(bundle.part1.paragraphs.join(' | ')).toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
     expect(model.sources[0]).toContain('Bewertung Vortioxetin');
     expect(bundle.part1.attachments).toEqual([]);
   });
@@ -102,9 +104,15 @@ describe('offlabel-antrag letter builder', () => {
       { exportedAt: FIXED_EXPORTED_AT },
     ).exportBundle;
 
-    expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 7:');
-    expect(bundle.part1.paragraphs.join(' | ')).toContain('Punkt 9:');
-    expect(bundle.part1.paragraphs.join(' | ')).not.toContain('Punkt 10:');
+    expect(bundle.part1.paragraphs.join(' | ')).toContain(
+      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+    );
+    expect(bundle.part1.paragraphs.join(' | ')).toContain(
+      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
+    expect(bundle.part1.paragraphs.join(' | ')).not.toContain(
+      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+    );
     expect(bundle.part1.attachments).toEqual([]);
   });
 
@@ -150,7 +158,13 @@ describe('offlabel-antrag letter builder', () => {
 
     expect(letter.subject).toContain('Agomelatin');
     expect(letter.signatureBlocks).toEqual([]);
-    expect(letter.paragraphs.some((p) => p.includes('Punkt 10:'))).toBe(true);
+    expect(
+      letter.paragraphs.some((p) =>
+        p.includes(
+          'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+        ),
+      ),
+    ).toBe(true);
   });
 
   it('exposes part 2 doctor letter via document model', () => {

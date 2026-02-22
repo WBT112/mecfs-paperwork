@@ -172,7 +172,7 @@ test.describe('offlabel workflow preview regressions', () => {
     await expect(indicationConfirmationInput).toBeFocused();
   });
 
-  test('adds point 7 for standard medication when §2 checkbox is enabled', async ({
+  test('adds §2 wording for standard medication when checkbox is enabled', async ({
     page,
   }) => {
     await selectDrugByLabelText(page, 'Ivabradin');
@@ -187,12 +187,16 @@ test.describe('offlabel workflow preview regressions', () => {
       '#formpack-document-preview-content .formpack-document-preview',
     );
     await expect(preview).toBeVisible();
-    await expect(preview).toContainText(/Punkt 7:/i);
     await expect(preview).toContainText(/§ 2 Abs\. 1a SGB V/i);
-    await expect(preview).toContainText(/Punkt 10:/i);
+    await expect(preview).toContainText(
+      /Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+    );
+    await expect(preview).toContainText(
+      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+    );
   });
 
-  test('standard path (dark/de) keeps point 10 and excludes points 7 and 9', async ({
+  test('standard path (dark/de) keeps evidence block and excludes §2-only wording', async ({
     page,
   }) => {
     await setTheme(page, 'dark');
@@ -202,9 +206,15 @@ test.describe('offlabel workflow preview regressions', () => {
       '#formpack-document-preview-content .formpack-document-preview',
     );
     await expect(preview).toBeVisible();
-    await expect(preview).toContainText(/Punkt 10:/i);
-    await expect(preview).not.toContainText(/Punkt 7:/i);
-    await expect(preview).not.toContainText(/Punkt 9:/i);
+    await expect(preview).toContainText(
+      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+    );
+    await expect(preview).not.toContainText(
+      /Ich beantrage (hilfsweise )?eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+    );
+    await expect(preview).not.toContainText(
+      /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
+    );
   });
 
   test('multi-indication medications use the selected indication in preview (de)', async ({
@@ -222,12 +232,12 @@ test.describe('offlabel workflow preview regressions', () => {
       /zur Behandlung von Long-\/Post-COVID mit Fatigue/i,
     );
     await expect(preview).toContainText(
-      /Punkt 2: Die Diagnose Fatigue bei Long-\/Post-COVID ist gesichert/i,
+      /Die Diagnose Fatigue bei Long-\/Post-COVID ist gesichert/i,
     );
     await expect(preview).not.toContainText(/und\/oder/i);
   });
 
-  test('standard path (en + light) adds auxiliary §2 wording and keeps point 10', async ({
+  test('standard path (en + light) adds auxiliary §2 wording and keeps evidence block', async ({
     page,
   }) => {
     await switchLocale(page, 'en');
@@ -244,12 +254,14 @@ test.describe('offlabel workflow preview regressions', () => {
       /Hilfsweise stelle ich.*§ 2 Abs\. 1a SGB V/i,
     );
     await expect(preview).toContainText(
-      /Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
     );
-    await expect(preview).toContainText(/Punkt 10:/i);
+    await expect(preview).toContainText(
+      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+    );
   });
 
-  test('other path (dark/de) uses direct §2 wording with point 7 and 9 only', async ({
+  test('other path (dark/de) uses direct §2 wording and the individual-case evidence block only', async ({
     page,
   }) => {
     await setTheme(page, 'dark');
@@ -272,15 +284,18 @@ test.describe('offlabel workflow preview regressions', () => {
       '#formpack-document-preview-content .formpack-document-preview',
     );
     await expect(preview).toBeVisible();
-    await expect(preview).toContainText(/Punkt 7:/i);
     await expect(preview).toContainText(
-      /Punkt 7: Ich beantrage eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Ich beantrage eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
     );
     await expect(preview).not.toContainText(
-      /Punkt 7: Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
     );
-    await expect(preview).toContainText(/Punkt 9:/i);
-    await expect(preview).not.toContainText(/Punkt 10:/i);
+    await expect(preview).toContainText(
+      /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
+    );
+    await expect(preview).not.toContainText(
+      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+    );
   });
 
   test('clears other-only standard-of-care text from preview after switching back to standard medication', async ({
@@ -311,12 +326,18 @@ test.describe('offlabel workflow preview regressions', () => {
     await page.getByRole('tab', { name: /part 1/i }).click();
     await expect(preview).toBeVisible();
     await expect(preview).toContainText(otherOnlyText);
-    await expect(preview).toContainText(/Punkt 9:/i);
+    await expect(preview).toContainText(
+      /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
+    );
 
     await selectDrugByLabelText(page, 'Ivabradin');
 
     await expect(preview).not.toContainText(otherOnlyText);
-    await expect(preview).not.toContainText(/Punkt 9:/i);
-    await expect(preview).toContainText(/Punkt 10:/i);
+    await expect(preview).not.toContainText(
+      /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
+    );
+    await expect(preview).toContainText(
+      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+    );
   });
 });

@@ -135,7 +135,7 @@ const PART2_LIABILITY_HEADING =
   'Haftungsausschluss (vom Patienten zu unterzeichnen)';
 
 const POINT_8_STANDARD =
-  'Für die Versorgung meiner Erkrankung stehen keine Standardtherapien des GKV-Leistungskatalogs zur Verfügung. In der wissenschaftlichen Literatur werden derzeit vor allem symptombezogene Behandlungsansätze diskutiert. Die einschlägige AWMF-Leitlinie „Müdigkeit“ stellt ausdrücklich fest, dass für die kausale Behandlung von ME/CFS bislang keine Medikamente zugelassen sind, und verweist auf die britische NICE-Leitlinie. Diese fokussiert neben Energiemanagement insbesondere die Linderung von Symptomen, um den Krankheitsverlauf möglichst günstig zu beeinflussen und eine Verschlechterung zu vermeiden. Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht; vielmehr werden verschiedene Therapieversuche mit heterogener Evidenzlage dargestellt. Vor diesem Hintergrund ist der beantragte Off-Label-Einsatz als medizinisch nachvollziehbarer und geeigneter Behandlungsversuch anzusehen. Eine der medizinischen Standardtherapie entsprechende Alternative ist nicht verfügbar.';
+  'Für die Versorgung meiner Erkrankung stehen keine Standardtherapien des GKV-Leistungskatalogs zur Verfügung. In der wissenschaftlichen Literatur werden derzeit vor allem symptombezogene Behandlungsansätze diskutiert. Die einschlägige AWMF-Leitlinie „Müdigkeit“ stellt ausdrücklich fest, dass für die kausale Behandlung von ME/CFS bislang keine Medikamente zugelassen sind, und verweist auf die britische NICE-Leitlinie. Diese fokussiert neben Energiemanagement insbesondere die Linderung von Symptomen, um den Krankheitsverlauf möglichst günstig zu beeinflussen und eine Verschlechterung zu vermeiden. Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht. Vor diesem Hintergrund ist der beantragte Off-Label-Einsatz als medizinisch nachvollziehbarer und geeigneter Behandlungsversuch anzusehen. Eine der medizinischen Standardtherapie entsprechende Alternative ist nicht verfügbar.';
 
 const POINT_10_EVIDENCE_NOTE =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit; ich bitte um eine vollständige sozialmedizinische Würdigung einschließlich ggf. ergänzender Literaturrecherche im Einzelfall.';
@@ -244,12 +244,21 @@ const resolvePreviewMedicationFacts = (
   };
 };
 
-const buildTreatmentPlanItems = (facts: PreviewMedicationFacts): string[] => [
-  `Indikation: ${facts.diagnosisNominative}`,
-  `Behandlungsziel: ${facts.targetSymptoms}`,
-  `Dosierung/Dauer: ${facts.doseAndDuration}`,
-  `Überwachung/Abbruch: ${facts.monitoringAndStop}`,
-];
+const buildTreatmentPlanItems = (
+  facts: PreviewMedicationFacts,
+  opts: { diagnosisMode?: 'indication' | 'comparableSymptoms' } = {},
+): string[] => {
+  const diagnosisMode = opts.diagnosisMode ?? 'indication';
+
+  return [
+    diagnosisMode === 'comparableSymptoms'
+      ? `Klinische Symptomatik (vergleichbar mit ${facts.diagnosisNominative})`
+      : `Indikation: ${facts.diagnosisNominative}`,
+    `Behandlungsziel: ${facts.targetSymptoms}`,
+    `Dosierung/Dauer: ${facts.doseAndDuration}`,
+    `Überwachung/Abbruch: ${facts.monitoringAndStop}`,
+  ];
+};
 
 const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   const lines: string[] = [];
@@ -349,11 +358,18 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   })();
   const openingRequestText =
     drugKey !== 'other' && point2aNo
-      ? `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur symptomorientierten Behandlung bei einer klinischen Symptomatik, die mit ${facts.diagnosisDative} vereinbar ist.`
+      ? `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur symptomorientierten Behandlung bei einer klinischen Symptomatik, die mit ${facts.diagnosisDative} vergleichbar ist.`
       : `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisDative}.`;
 
   const point4Text =
     'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI.';
+  const point1To5Items = [
+    `Das Medikament ${facts.displayName} ist in Deutschland nicht indikationsbezogen zugelassen.`,
+    point2Text,
+    'Für das Medikament ist kein (unter-)gesetzlicher Ausschluss vorhanden.',
+    point4Text,
+    'Es handelt sich nicht um eine studienbedingte Medikation, ich benötige das Medikament dringend zur Behandlung meiner Erkrankung.',
+  ];
 
   const blocks: OfflabelRenderedDocument['blocks'] = [
     { kind: 'heading', text: 'Teil 1 – Antrag an die Krankenkasse' },
@@ -377,26 +393,10 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       kind: 'paragraph',
       text: 'Zur Prüfung meines Antrags habe ich die maßgeblichen Punkte nachfolgend strukturiert dargestellt:',
     },
+    { kind: 'list', items: point1To5Items },
     {
       kind: 'paragraph',
-      text: `Punkt 1: Das Medikament ${facts.displayName} ist in Deutschland nicht indikationsbezogen zugelassen.`,
-    },
-    {
-      kind: 'paragraph',
-      text: `Punkt 2: ${point2Text}`,
-    },
-    {
-      kind: 'paragraph',
-      text: 'Punkt 3: Für das Medikament ist kein (unter-)gesetzlicher Ausschluss vorhanden.',
-    },
-    { kind: 'paragraph', text: `Punkt 4: ${point4Text}` },
-    {
-      kind: 'paragraph',
-      text: 'Punkt 5: Es handelt sich nicht um eine studienbedingte Medikation, ich benötige das Medikament dringend zur Behandlung meiner Erkrankung.',
-    },
-    {
-      kind: 'paragraph',
-      text: 'Punkt 6: Es handelt sich um eine lebensbedrohliche und die Lebensqualität auf Dauer nachhaltig beeinträchtigende Erkrankung. (Hvidberg MF, Brinth LS, Olesen AV, Petersen KD, Ehlers L. The Health-Related Quality of Life for Patients with Myalgic Encephalomyelitis / Chronic Fatigue Syndrome (ME/CFS). PLOS ONE. 2015;10(7):e0132421. doi:10.1371/journal.pone.0132421. PMID: 26147503; PMCID: PMC4492975). Meine Erkrankung hebt sich durch ihre Schwere vom Durchschnitt der Erkrankungen deutlich ab, was sich auch in meiner persönlichen Situation zeigt:',
+      text: 'Es handelt sich um eine lebensbedrohliche und die Lebensqualität auf Dauer nachhaltig beeinträchtigende Erkrankung. (Hvidberg MF, Brinth LS, Olesen AV, Petersen KD, Ehlers L. The Health-Related Quality of Life for Patients with Myalgic Encephalomyelitis / Chronic Fatigue Syndrome (ME/CFS). PLOS ONE. 2015;10(7):e0132421. doi:10.1371/journal.pone.0132421. PMID: 26147503; PMCID: PMC4492975). Meine Erkrankung hebt sich durch ihre Schwere vom Durchschnitt der Erkrankungen deutlich ab, was sich auch in meiner persönlichen Situation zeigt:',
     },
     { kind: 'list', items: buildSeverityLines(severity) },
     {
@@ -406,10 +406,10 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   ];
 
   if (includePoint7) {
-    blocks.push({ kind: 'paragraph', text: `Punkt 7: ${point7Text}` });
+    blocks.push({ kind: 'paragraph', text: point7Text });
   }
 
-  blocks.push({ kind: 'paragraph', text: `Punkt 8: ${POINT_8_STANDARD}` });
+  blocks.push({ kind: 'paragraph', text: POINT_8_STANDARD });
   if (standardCareItems.length > 0) {
     blocks.push(
       {
@@ -423,7 +423,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     blocks.push(
       {
         kind: 'paragraph',
-        text: `Punkt 9: Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risiko-Nutzen-Bewertung (siehe Arztbefund). ${POINT_10_EVIDENCE_NOTE}`,
+        text: `Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risiko-Nutzen-Bewertung (siehe Arztbefund). ${POINT_10_EVIDENCE_NOTE}`,
       },
       {
         kind: 'paragraph',
@@ -443,13 +443,18 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     const point10BridgeText = applySection2Abs1a
       ? ` ${POINT_10_SECTION_2A_BRIDGE}`
       : '';
-    const point10BaseText = `Punkt 10: Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt:`;
+    const point10BaseText = `Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt:`;
     blocks.push(
       {
         kind: 'paragraph',
         text: point10BaseText,
       },
-      { kind: 'list', items: buildTreatmentPlanItems(facts) },
+      {
+        kind: 'list',
+        items: buildTreatmentPlanItems(facts, {
+          diagnosisMode: point2aNo ? 'comparableSymptoms' : 'indication',
+        }),
+      },
       {
         kind: 'paragraph',
         text: THERAPY_SAFETY_STATEMENT,
@@ -515,7 +520,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       {
         kind: 'paragraph',
         text: point2aNo
-          ? `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} vor. Die klinische Symptomatik ist mit ${facts.diagnosisDative} vereinbar; die abschließende diagnostische Einordnung erfolgt ärztlich.`
+          ? `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} vor. Die klinische Symptomatik ist mit ${facts.diagnosisDative} vergleichbar.`
           : `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} mit der Indikation ${facts.diagnosisNominative} vor.`,
       },
       {
@@ -626,7 +631,9 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
         kind: 'list',
         items: [
           `Behandlungsziel: ${facts.targetSymptoms}`,
-          `Indikation: ${facts.diagnosisNominative}`,
+          point2aNo
+            ? `Klinische Symptomatik (vergleichbar mit ${facts.diagnosisNominative})`
+            : `Indikation: ${facts.diagnosisNominative}`,
           `Dosierung/Dauer: ${facts.doseAndDuration}`,
           `Monitoring/Abbruchkriterien: ${facts.monitoringAndStop}`,
           `Erwarteter Nutzen / Therapieziel im Einzelfall: ${facts.targetSymptoms}`,
