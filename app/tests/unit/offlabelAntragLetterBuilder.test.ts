@@ -161,9 +161,7 @@ describe('offlabel-antrag letter builder', () => {
     expect(letter.subject).toContain('Agomelatin');
     expect(letter.signatureBlocks).toEqual([]);
     expect(
-      letter.paragraphs.some((p) =>
-        p.includes(EVIDENCE_SUFFICIENT_TEXT),
-      ),
+      letter.paragraphs.some((p) => p.includes(EVIDENCE_SUFFICIENT_TEXT)),
     ).toBe(true);
   });
 
