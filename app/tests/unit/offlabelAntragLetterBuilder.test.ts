@@ -9,6 +9,8 @@ import {
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
 const FIXED_EXPORTED_AT = new Date('2026-02-10T12:00:00.000Z');
+const EVIDENCE_SUFFICIENT_TEXT =
+  'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen';
 
 const interpolate = (
   template: string,
@@ -80,7 +82,7 @@ describe('offlabel-antrag letter builder', () => {
     const bundle = model.exportBundle;
 
     expect(bundle.part1.paragraphs.join(' | ')).toContain(
-      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+      EVIDENCE_SUFFICIENT_TEXT,
     );
     expect(model.sources[0]).toContain('Bewertung Vortioxetin');
     expect(bundle.part1.attachments).toEqual([]);
@@ -111,7 +113,7 @@ describe('offlabel-antrag letter builder', () => {
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
     );
     expect(bundle.part1.paragraphs.join(' | ')).not.toContain(
-      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
+      EVIDENCE_SUFFICIENT_TEXT,
     );
     expect(bundle.part1.attachments).toEqual([]);
   });
@@ -160,9 +162,7 @@ describe('offlabel-antrag letter builder', () => {
     expect(letter.signatureBlocks).toEqual([]);
     expect(
       letter.paragraphs.some((p) =>
-        p.includes(
-          'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
-        ),
+        p.includes(EVIDENCE_SUFFICIENT_TEXT),
       ),
     ).toBe(true);
   });

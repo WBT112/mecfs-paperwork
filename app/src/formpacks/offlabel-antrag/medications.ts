@@ -133,8 +133,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     indications: [
       createIndication('agomelatin.mecfs_fatigue', {
         de: {
-          label: 'postinfektiöses ME/CFS mit Fatigue',
-          diagnosisNominative: 'postinfektiöses ME/CFS mit Fatigue',
+          label: 'postinfektiöse ME/CFS mit Fatigue',
+          diagnosisNominative: 'postinfektiöse ME/CFS mit Fatigue',
           diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue',
           point2ConfirmationSentence:
             'Die Diagnose Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/chronischem Fatigue-Syndrom (ME/CFS) ist gesichert (siehe Befunde)',

@@ -3,6 +3,8 @@ import { buildOfflabelDocuments } from '../../src/formpacks/offlabel-antrag/cont
 
 const IVABRADIN_DIAGNOSIS_TEXT =
   'postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit';
+const IVABRADIN_DIAGNOSIS_DATIVE_TEXT =
+  'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit';
 const SECTION_2A_TEXT = '§ 2 Abs. 1a SGB V';
 const IVABRADINE_EXPERT_SOURCE =
   'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).';
@@ -10,6 +12,12 @@ const CASE_TRANSFER_YES_TEXT =
   'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.';
 const EVIDENCE_NOTE_TEXT =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit;';
+const EVIDENCE_SUFFICIENT_TEXT =
+  'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen';
+const EVIDENCE_NOT_SUFFICIENT_TEXT =
+  'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild';
+const DIRECT_SECTION_2A_REQUEST_TEXT =
+  'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.';
 const HILFSANTRAG_INTRO_TEXT =
   'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V.';
 const POINT_10_BRIDGE_TEXT =
@@ -42,18 +50,12 @@ describe('buildOfflabelDocuments', () => {
       .flatMap((block) => block.items);
 
     expect(part1ListItems).toContain('Die Diagnose ist gesichert.');
-    expect(part1Text).not.toContain(
-      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
-    );
-    expect(part1Text).not.toContain(
-      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
-    );
-    expect(part1Text).toContain(
-      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
-    );
+    expect(part1Text).not.toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
+    expect(part1Text).not.toContain(EVIDENCE_NOT_SUFFICIENT_TEXT);
+    expect(part1Text).toContain(EVIDENCE_SUFFICIENT_TEXT);
     expect(part1Text).not.toMatch(/Punkt \d+:/);
     expect(part1ListItems).toContain(
-      `Klinische Symptomatik (vergleichbar mit ${IVABRADIN_DIAGNOSIS_TEXT})`,
+      `Klinische Symptomatik (vergleichbar mit ${IVABRADIN_DIAGNOSIS_DATIVE_TEXT})`,
     );
     expect(part1ListItems).not.toContain(
       `Indikation: ${IVABRADIN_DIAGNOSIS_TEXT}`,
@@ -114,7 +116,7 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
     expect(part3Text).toContain(
-      `Die klinische Symptomatik ist mit der genannten Indikation ${IVABRADIN_DIAGNOSIS_TEXT} vereinbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
+      `Die klinische Symptomatik ist mit ${IVABRADIN_DIAGNOSIS_DATIVE_TEXT} vergleichbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
     );
   });
 
@@ -166,18 +168,12 @@ describe('buildOfflabelDocuments', () => {
     expect(part1ListItems).toContain(
       'Die Diagnose Seltene XYZ-Indikation ist gesichert',
     );
-    expect(part1Text).toContain(
-      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
-    );
+    expect(part1Text).toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
     expect(part1Text).not.toContain(
       'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
     );
-    expect(part1Text).toContain(
-      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
-    );
-    expect(part1Text).not.toContain(
-      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
-    );
+    expect(part1Text).toContain(EVIDENCE_NOT_SUFFICIENT_TEXT);
+    expect(part1Text).not.toContain(EVIDENCE_SUFFICIENT_TEXT);
     expect(part1Text).not.toMatch(/Punkt \d+:/);
     expect(part1Text).toContain(THERAPY_SAFETY_TEXT);
     expect(part1Text).toContain(SECTION_2A_TEXT);
@@ -292,10 +288,6 @@ describe('buildOfflabelDocuments', () => {
       },
     });
 
-    const part1Text = docs[0].blocks
-      .filter((block) => block.kind === 'paragraph')
-      .map((block) => block.text)
-      .join('\n');
     const part1ListItems = docs[0].blocks
       .filter((block) => block.kind === 'list')
       .flatMap((block) => block.items);
@@ -434,9 +426,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).not.toContain(
       'Dieser Text wurde im Other-Flow eingegeben und darf hier nicht erscheinen.',
     );
-    expect(part1Text).toContain(
-      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
-    );
+    expect(part1Text).toContain(EVIDENCE_SUFFICIENT_TEXT);
   });
 
   it('falls back to the other path for unknown medication keys', () => {
@@ -461,15 +451,9 @@ describe('buildOfflabelDocuments', () => {
         ),
       ),
     ).toBe(true);
-    expect(part1Text).toContain(
-      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
-    );
-    expect(part1Text).toContain(
-      'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
-    );
-    expect(part1Text).not.toContain(
-      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
-    );
+    expect(part1Text).toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
+    expect(part1Text).toContain(EVIDENCE_NOT_SUFFICIENT_TEXT);
+    expect(part1Text).not.toContain(EVIDENCE_SUFFICIENT_TEXT);
     expect(part1Text).not.toMatch(/Punkt \d+:/);
   });
 
@@ -494,7 +478,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part3Text).toContain(
       'Patient: Max Mustermann, geb. 02.01.1970; Versichertennr.: X123456789',
     );
-    expect(part3Text).toContain('Diagnose: postinfektiöses ME/CFS mit Fatigue');
+    expect(part3Text).toContain('Diagnose: postinfektiöse ME/CFS mit Fatigue');
   });
 
   it('uses selected agomelatin indication consistently without "und/oder"', () => {
@@ -594,9 +578,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(
       'Das Medikament Ivabradin ist in Deutschland nicht indikationsbezogen zugelassen',
     );
-    expect(part1Text).toContain(
-      'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
-    );
+    expect(part1Text).toContain(EVIDENCE_SUFFICIENT_TEXT);
     expect(part1Text).not.toMatch(/Punkt \d+:/);
   });
 });

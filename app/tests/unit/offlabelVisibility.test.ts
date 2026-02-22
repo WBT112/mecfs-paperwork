@@ -109,13 +109,13 @@ describe('applyOfflabelVisibility', () => {
 
     expect(selectedIndication['ui:widget']).toBeUndefined();
     expect(selectedIndication['ui:enumNames']).toEqual([
-      'postinfektiöses ME/CFS mit Fatigue',
+      'postinfektiöse ME/CFS mit Fatigue',
       'Long-/Post-COVID mit Fatigue',
     ]);
     expect(enumOptions).toEqual([
       {
         value: 'agomelatin.mecfs_fatigue',
-        label: 'postinfektiöses ME/CFS mit Fatigue',
+        label: 'postinfektiöse ME/CFS mit Fatigue',
       },
       {
         value: 'agomelatin.long_post_covid_fatigue',

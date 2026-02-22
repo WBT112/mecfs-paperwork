@@ -252,7 +252,7 @@ const buildTreatmentPlanItems = (
 
   return [
     diagnosisMode === 'comparableSymptoms'
-      ? `Klinische Symptomatik (vergleichbar mit ${facts.diagnosisNominative})`
+      ? `Klinische Symptomatik (vergleichbar mit ${facts.diagnosisDative})`
       : `Indikation: ${facts.diagnosisNominative}`,
     `Behandlungsziel: ${facts.targetSymptoms}`,
     `Dosierung/Dauer: ${facts.doseAndDuration}`,
@@ -619,7 +619,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
         ? ([
             {
               kind: 'paragraph' as const,
-              text: `Die klinische Symptomatik ist mit der genannten Indikation ${facts.diagnosisNominative} vereinbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
+              text: `Die klinische Symptomatik ist mit ${facts.diagnosisDative} vergleichbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
             },
           ] satisfies OfflabelRenderedDocument['blocks'])
         : []),
@@ -632,7 +632,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
         items: [
           `Behandlungsziel: ${facts.targetSymptoms}`,
           point2aNo
-            ? `Klinische Symptomatik (vergleichbar mit ${facts.diagnosisNominative})`
+            ? `Klinische Symptomatik (vergleichbar mit ${facts.diagnosisDative})`
             : `Indikation: ${facts.diagnosisNominative}`,
           `Dosierung/Dauer: ${facts.doseAndDuration}`,
           `Monitoring/Abbruchkriterien: ${facts.monitoringAndStop}`,
