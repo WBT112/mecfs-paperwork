@@ -201,6 +201,18 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.kk.paragraphs.join('\n')).toContain(
       'Punkt 2: Die Diagnose ist gesichert.',
     );
+    expect(model.kk.paragraphs.join('\n')).toContain(
+      'zur symptomorientierten Behandlung bei einer klinischen Symptomatik',
+    );
+    expect(model.kk.paragraphs.join('\n')).not.toContain(
+      'zur Behandlung von postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
+    );
+    expect(model.arzt.paragraphs.join('\n')).toContain(
+      'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vereinbar; die abschließende diagnostische Einordnung erfolgt ärztlich.',
+    );
+    expect(model.arzt.paragraphs.join('\n')).not.toContain(
+      'mit der Indikation postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
+    );
     expect(model.part3.paragraphs.join('\n')).toContain(
       'Die klinische Symptomatik ist mit der genannten Indikation',
     );
@@ -253,6 +265,31 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
 
     expect(model.kk.signatureBlocks).toEqual([]);
+  });
+
+  it('uses date-only line in part 3 without city prefix', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        patient: {
+          city: 'Hamburg',
+        },
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const expectedDateOnly = new Intl.DateTimeFormat('de-DE').format(
+      FIXED_EXPORTED_AT,
+    );
+    expect(model.part3.dateLine).toBe(expectedDateOnly);
+    expect(model.kk.dateLine).toBe(expectedDateOnly);
+    expect(model.arzt.dateLine).toBe(expectedDateOnly);
+    expect(model.part3.dateLine).not.toContain('Hamburg');
+    expect(model.kk.dateLine).not.toContain('Hamburg');
+    expect(model.arzt.dateLine).not.toContain('Hamburg');
   });
 
   it('parses user attachments into items', () => {

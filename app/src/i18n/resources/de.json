@@ -46,7 +46,7 @@
   "footerSponsor": "Unterstützen",
   "footerVersionLabel": "Version: {{version}} • {{date}}",
   "formpackListTitle": "Hilfsangebote",
-  "formpackListDescription": "Hier werden die aktuell verfügbaren Hilfsangebote angezeigt. Mehr sind in Arbeit. Falls du dabei helfen möchtest, melde dich bei uns.",
+  "formpackListDescription": "Hier werden die aktuell verfügbaren Hilfsangebote angezeigt. Mehr sind in Arbeit. Falls du dabei helfen möchtest, melde dich bei uns. Alle Eingaben werden lokal auf deinem Gerät verarbeitet und sind freiwillig.",
   "formpackListEmpty": "Es sind noch keine Hilfsangebote verfügbar.",
   "formpackSearchPlaceholder": "Hilfsangebote durchsuchen\u2026",
   "formpackSearchEmpty": "Keine Ergebnisse.",

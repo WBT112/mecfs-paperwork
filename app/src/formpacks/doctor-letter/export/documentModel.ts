@@ -161,7 +161,6 @@ export const buildDoctorLetterDocumentModel = ({
     dateLabel,
     formattedDate,
     exportedAtIso: exportedAt.toISOString(),
-    labels,
   };
 
   return {

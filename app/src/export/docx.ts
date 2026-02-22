@@ -422,6 +422,7 @@ const appendOfflabelLiabilityFallbackToPart2 = (
   if (liabilitySignerNameText.length > 0) {
     mergedPart2Paragraphs.push(
       `Name Patient/in: ${liabilitySignerNameText}`,
+      '',
       'Unterschrift: ____________________',
     );
   }

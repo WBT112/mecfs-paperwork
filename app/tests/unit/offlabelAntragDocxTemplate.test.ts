@@ -45,6 +45,9 @@ describe('offlabel-antrag A4 DOCX template', () => {
     expect(xml).toContain('Datum: {{arzt.liabilityDateLine}}');
     expect(xml).toContain('Name Patient/in: {{arzt.liabilitySignerName}}');
     expect(xml).toContain('Unterschrift: ____________________');
+    expect(xml).toMatch(
+      /Name Patient\/in: \{\{arzt\.liabilitySignerName\}\}<\/w:t><\/w:r><\/w:p>\s*<w:p><w:r><w:t xml:space="preserve"> <\/w:t><\/w:r><\/w:p>\s*<w:p><w:r><w:t>Unterschrift: ____________________/,
+    );
   });
 
   it('renders part 2, part 3 and sources without optional wrappers', async () => {

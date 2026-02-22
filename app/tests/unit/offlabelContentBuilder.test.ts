@@ -76,9 +76,26 @@ describe('buildOfflabelDocuments', () => {
       'hiermit beantrage ich die Kostenübernahme für das Medikament Ivabradin im Rahmen des Off-Label-Use',
     );
     expect(part1Text).toContain(
+      'zur symptomorientierten Behandlung bei einer klinischen Symptomatik, die mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vereinbar ist',
+    );
+    expect(part1Text).not.toContain(
+      'zur Behandlung von postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
+    );
+    expect(part1Text).toContain(
       'Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht;',
     );
     expect(part1Text).toContain(CLOSING_GREETING_TEXT);
+
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+    expect(part2Text).toContain(
+      'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vereinbar; die abschließende diagnostische Einordnung erfolgt ärztlich.',
+    );
+    expect(part2Text).not.toContain(
+      'mit der Indikation postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
+    );
 
     const part3Text = docs[2].blocks
       .filter((block) => block.kind === 'paragraph')

@@ -814,9 +814,22 @@ body {
 }
 
 .info-box--offlabel-flow-status {
-  margin: 0 0 0.75rem;
+  --color-info-bg: #e8f5e9;
+  --color-info-border: #2e7d32;
+  --color-info-text: #1b4332;
+  --color-info-link: #1b4332;
+  --color-info-link-hover: #102a20;
+  margin: 0.75rem 0 0;
   border-left-width: 4px;
   font-size: 0.95rem;
+}
+
+:root[data-theme='dark'] .info-box--offlabel-flow-status {
+  --color-info-bg: #1b3024;
+  --color-info-border: #4ade80;
+  --color-info-text: #d1fae5;
+  --color-info-link: #ecfdf5;
+  --color-info-link-hover: #bbf7d0;
 }
 
 .info-box__icon {

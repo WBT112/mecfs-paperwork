@@ -46,7 +46,7 @@
   "footerSponsor": "Sponsor",
   "footerVersionLabel": "Version: {{version}} • {{date}}",
   "formpackListTitle": "Support offers",
-  "formpackListDescription": "Here you can see the currently available support offers. More are in progress. If you want to help, get in touch.",
+  "formpackListDescription": "Here you can see the currently available support offers. More are in progress. If you want to help, get in touch. All inputs are processed locally on your device and are optional.",
   "formpackListEmpty": "No support offers are available yet.",
   "formpackSearchPlaceholder": "Search forms\u2026",
   "formpackSearchEmpty": "No results.",

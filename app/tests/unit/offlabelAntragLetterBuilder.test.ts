@@ -52,14 +52,16 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.subject).toContain('BITTE AUSWÄHLEN');
   });
 
-  it('references part 1 in part 2 and omits part 3 title', () => {
+  it('references the reimbursement request in part 2 and omits part 3 title', () => {
     const bundle = buildOffLabelAntragDocumentModel({}, 'de', {
       exportedAt: FIXED_EXPORTED_AT,
     }).exportBundle;
 
-    expect(bundle.part2.paragraphs.some((p) => p.includes('Teil 1'))).toBe(
-      true,
-    );
+    expect(
+      bundle.part2.paragraphs.some((p) =>
+        p.includes('Ich bereite einen Antrag auf Kostenübernahme'),
+      ),
+    ).toBe(true);
     expect(bundle.part2.attachments).toEqual([]);
     expect(bundle.part2.attachmentsHeading).toBe('');
     expect(bundle.part3.title).toBe('');
@@ -163,7 +165,11 @@ describe('offlabel-antrag letter builder', () => {
     ).arzt;
 
     expect(letter.subject).toContain('Begleitschreiben');
-    expect(letter.paragraphs.some((p) => p.includes('Teil 1'))).toBe(true);
+    expect(
+      letter.paragraphs.some((p) =>
+        p.includes('Ich bereite einen Antrag auf Kostenübernahme'),
+      ),
+    ).toBe(true);
     expect(
       letter.paragraphs.some((p) =>
         p.includes('Vielen Dank für Ihre Unterstützung.'),

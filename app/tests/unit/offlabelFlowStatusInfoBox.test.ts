@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import manifest from '../../public/formpacks/offlabel-antrag/manifest.json';
-import { shouldShowInfoBox } from '../../src/formpacks/doctorLetterInfoBox';
+import { shouldShowInfoBox } from '../../src/formpacks/formpackInfoBox';
 import type { InfoBoxConfig } from '../../src/formpacks/types';
 
 const FLOW_STATUS_PREFIX = 'offlabel-flow-status-';

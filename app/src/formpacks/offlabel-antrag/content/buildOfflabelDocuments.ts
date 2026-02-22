@@ -257,7 +257,7 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   if (bellScore) {
     const activityExamples = BELL_SCORE_ACTIVITY_EXAMPLES[bellScore];
     lines.push(
-      `Der Bell-Score ist eine zentrale Kennzahl für den funktionellen Schweregrad der Erkrankung ME/CFS. Mein aktueller Bell-Score beträgt ${bellScore} und dokumentiert den aktuellen funktionellen Schweregrad.`,
+      `Der Bell-Score ist eine zentrale Kennzahl für den funktionellen Schweregrad der Erkrankung ME/CFS. Mein aktueller Bell-Score beträgt ${bellScore} und dokumentiert mein aktuelles Funktionsniveau.`,
       activityExamples
         ? `Meine soziale, gesellschaftliche und berufliche Teilhabe ist krankheitsbedingt grundsätzlich und dauerhaft eingeschränkt. Im Alltag zeigt sich dies unter anderem daran, dass ${activityExamples}`
         : 'Meine soziale, gesellschaftliche und berufliche Teilhabe ist krankheitsbedingt grundsätzlich und dauerhaft eingeschränkt.',
@@ -347,6 +347,10 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       ? 'Die Diagnose ist gesichert.'
       : facts.point2ConfirmationSentence;
   })();
+  const openingRequestText =
+    drugKey !== 'other' && point2aNo
+      ? `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur symptomorientierten Behandlung bei einer klinischen Symptomatik, die mit ${facts.diagnosisDative} vereinbar ist.`
+      : `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisDative}.`;
 
   const point4Text =
     'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI.';
@@ -359,7 +363,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     },
     {
       kind: 'paragraph',
-      text: `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisDative}.`,
+      text: openingRequestText,
     },
     ...(applySection2Abs1a
       ? ([
@@ -478,6 +482,8 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
   const { profile: drugProfile } = resolveMedicationProfileOrThrow(
     request.drug,
   );
+  const point2aNo =
+    getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
   const facts = resolvePreviewMedicationFacts(request, drugProfile);
   const drug = facts.displayName;
   const patientName =
@@ -508,7 +514,9 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} mit der Indikation ${facts.diagnosisNominative} vor.`,
+        text: point2aNo
+          ? `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} vor. Die klinische Symptomatik ist mit ${facts.diagnosisDative} vereinbar; die abschließende diagnostische Einordnung erfolgt ärztlich.`
+          : `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} mit der Indikation ${facts.diagnosisNominative} vor.`,
       },
       {
         kind: 'paragraph',

@@ -1,6 +1,6 @@
 {
   "offlabel-antrag.attachmentsFreeText.help": "One attachment per line, e.g. doctor letter, findings, lab results.",
-  "offlabel-antrag.description": "Capture an off-label application with core data and request details for insurer and doctor.",
+  "offlabel-antrag.description": "Create a template for a health-insurance reimbursement request for an off-label medication, including a cover letter and a physician report template.",
   "offlabel-antrag.doctor.city.help": "Optional practice city",
   "offlabel-antrag.doctor.city.label": "City",
   "offlabel-antrag.doctor.gender.help": "Salutation of the doctor (leave empty for generic greeting)",

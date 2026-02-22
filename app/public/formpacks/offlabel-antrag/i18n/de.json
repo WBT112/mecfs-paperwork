@@ -1,6 +1,6 @@
 {
   "offlabel-antrag.attachmentsFreeText.help": "Eine Anlage pro Zeile, z. B. Arztbrief, Befundbericht, Laborwerte.",
-  "offlabel-antrag.description": "Erfasse einen Off-Label-Antrag mit Stammdaten und Grundinformationen für Krankenkasse und Arzt.",
+  "offlabel-antrag.description": "Erstelle eine Vorlage für einen Antrag an die Krankenkasse zur Kostenerstattung einer Off-Label-Medikation, mit Begleitschreiben und Befundvorlage für den Arzt.",
   "offlabel-antrag.doctor.city.help": "Ort der Praxis",
   "offlabel-antrag.doctor.city.label": "Ort",
   "offlabel-antrag.doctor.gender.help": "Anrede des Arztes (Feld offen lassen für: 'Sehr geehrte Damen und Herren')",
@@ -35,7 +35,7 @@
   "offlabel-antrag.export.part1.subject": "Antrag auf Kostenübernahme (Off-Label-Use): {{drug}}",
   "offlabel-antrag.export.part2.attachmentsAutoItem": "Teil 1: Antrag an die Krankenkasse (Entwurf)",
   "offlabel-antrag.export.part2.p1": "Sehr geehrte/r Frau/Herr Dr. {{doctorName}},",
-  "offlabel-antrag.export.part2.p2": "ich bereite einen Antrag auf Kostenübernahme (Teil 1) bei meiner Krankenkasse für eine Off-Label-Verordnung vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (medizinische Notwendigkeit, Schweregrad, bisherige Maßnahmen, erwarteter Nutzen, Monitoring).",
+  "offlabel-antrag.export.part2.p2": "ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für eine Off-Label-Verordnung vor. Ich bitte Sie um Ihre Unterstützung in Form einer kurzen ärztlichen Stellungnahme/Befundzusammenfassung (medizinische Notwendigkeit, Schweregrad, bisherige Maßnahmen, erwarteter Nutzen, Monitoring).",
   "offlabel-antrag.export.part2.p3": "Als fachliche Grundlage dienen die Bewertungen der \"Expertengruppe Long COVID Off-Label-Use beim BfArM\" zum ausgewählten Wirkstoff (siehe Quellen/Anlagen im Dokument).",
   "offlabel-antrag.export.part2.p4": "Wichtig: Teil 1 ist ein Schreiben von mir an die Krankenkasse und wird nicht von Ihnen unterschrieben. Bitte erstellen Sie stattdessen eine separate ärztliche Stellungnahme/Befundzusammenfassung als Anlage. Eine vorformulierte Vorlage (Teil 3) ist beigefügt und kann von Ihnen angepasst werden.",
   "offlabel-antrag.export.part2.p5": "Kurzüberblick zum Vorhaben: {{medicationName}} ({{medicationIngredient}}); Behandlungsziel: {{targetSymptoms}} Dosierung/Dauer: {{doseAndDuration}} Monitoring/Abbruch: {{monitoringAndStop}}",

@@ -243,16 +243,6 @@ const buildAddressLines = (
   buildPostalCityLine(address.postalCode, address.city),
 ];
 
-const getDateLine = (
-  locale: SupportedLocale,
-  city: string,
-  exportedAt: Date,
-): string => {
-  const localeTag = locale === 'de' ? 'de-DE' : 'en-US';
-  const formattedDate = new Intl.DateTimeFormat(localeTag).format(exportedAt);
-  return `${city}, ${formattedDate}`;
-};
-
 const getDateOnly = (locale: SupportedLocale, exportedAt: Date): string => {
   const localeTag = locale === 'de' ? 'de-DE' : 'en-US';
   return new Intl.DateTimeFormat(localeTag).format(exportedAt);
@@ -591,7 +581,7 @@ export const buildOffLabelAntragDocumentModel = (
   });
 
   const patientName = buildPatientName(patient);
-  const dateLine = getDateLine(locale, patient.city, exportedAt);
+  const dateLine = getDateOnly(locale, exportedAt);
 
   const attachmentsHeading = tr(
     t,
@@ -669,7 +659,7 @@ export const buildOffLabelAntragDocumentModel = (
       [insurer.name, insurer.department],
       insurer,
     ),
-    dateLine,
+    dateLine: getDateOnly(locale, exportedAt),
     subject: tr(t, DEFAULT_PART3_SUBJECT_KEY, DEFAULT_PART3_SUBJECT),
     paragraphs: part3Paragraphs,
   };

@@ -34,7 +34,7 @@ import {
   formpackTemplates,
   type FormpackFormContext,
 } from '../lib/rjsfTemplates';
-import { DoctorLetterFieldTemplate } from '../lib/rjsfDoctorLetterFieldTemplate';
+import { FormpackFieldTemplate } from '../lib/rjsfFormpackFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
 import { getFirstItem, isRecord } from '../lib/utils';
@@ -203,7 +203,7 @@ const OFFLABEL_FOCUS_SELECTOR_BY_TARGET: Record<OfflabelFocusTarget, string> = {
     '#root_request_indicationFullyMetOrDoctorConfirms_0, input[name="root_request_indicationFullyMetOrDoctorConfirms"]',
 };
 
-const isDoctorLetterStyledFormpack = (formpackId: string | null): boolean =>
+const hasLetterLayout = (formpackId: string | null): boolean =>
   formpackId === DOCTOR_LETTER_FORMPACK_ID ||
   formpackId === OFFLABEL_ANTRAG_FORMPACK_ID;
 
@@ -2117,7 +2117,7 @@ export default function FormpackDetailPage() {
     if ((manifest?.ui?.infoBoxes?.length ?? 0) > 0) {
       return {
         ...formpackTemplates,
-        FieldTemplate: DoctorLetterFieldTemplate,
+        FieldTemplate: FormpackFieldTemplate,
       };
     }
     return formpackTemplates;
@@ -2799,7 +2799,7 @@ export default function FormpackDetailPage() {
         <Suspense fallback={<p>{t('formpackLoading')}</p>}>
           <LazyForm
             className={
-              isDoctorLetterStyledFormpack(formpackId)
+              hasLetterLayout(formpackId)
                 ? 'formpack-form formpack-form--doctor-letter'
                 : 'formpack-form'
             }

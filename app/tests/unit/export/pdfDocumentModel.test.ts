@@ -89,23 +89,6 @@ describe('buildDoctorLetterDocumentModel', () => {
       throw new Error('Expected a kvTable block for doctor rows.');
     }
 
-    const templateData = model.meta?.templateData as
-      | {
-          labels?: {
-            patient?: Record<string, string>;
-            doctor?: Record<string, string>;
-          };
-          dateLabel?: string;
-        }
-      | undefined;
-
-    const expectedPatientLabelOrder = [
-      templateData?.labels?.patient?.firstName,
-      templateData?.labels?.patient?.lastName,
-      templateData?.labels?.patient?.streetAndNumber,
-      templateData?.labels?.patient?.postalCode,
-      templateData?.labels?.patient?.city,
-    ].filter((value): value is string => Boolean(value));
     const patientRows = patientSection.blocks.find(
       (block) => block.type === 'kvTable',
     );
@@ -113,23 +96,24 @@ describe('buildDoctorLetterDocumentModel', () => {
     if (!patientRows) {
       throw new Error('Expected a kvTable block for patient rows.');
     }
-    expect(patientRows.rows.map((row) => row[0])).toEqual(
-      expectedPatientLabelOrder,
-    );
+    expect(patientRows.rows.map((row) => row[0])).toEqual([
+      'Vorname',
+      'Name',
+      'Straße und Hausnummer',
+      'PLZ',
+      'Ort',
+    ]);
 
-    const expectedDoctorLabelOrder = [
-      templateData?.labels?.doctor?.practice,
-      templateData?.labels?.doctor?.title,
-      templateData?.labels?.doctor?.gender,
-      templateData?.labels?.doctor?.name,
-      templateData?.labels?.doctor?.streetAndNumber,
-      templateData?.labels?.doctor?.postalCode,
-      templateData?.labels?.doctor?.city,
-      templateData?.dateLabel,
-    ].filter((value): value is string => Boolean(value));
-    expect(doctorRows.rows.map((row) => row[0])).toEqual(
-      expectedDoctorLabelOrder,
-    );
+    expect(doctorRows.rows.map((row) => row[0])).toEqual([
+      'Praxis',
+      'Titel',
+      'Anrede',
+      'Name',
+      'Straße und Hausnummer',
+      'PLZ',
+      'Ort',
+      'Datum',
+    ]);
 
     const dateRow = doctorRows.rows.find((row) => row[0] === 'Datum');
     expect(dateRow?.[1]).toBeTruthy();
