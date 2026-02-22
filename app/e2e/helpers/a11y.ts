@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, type Page } from '@playwright/test';
 
-const GATED_IMPACTS = new Set(['serious', 'critical']);
+const GATED_IMPACTS = new Set(['moderate', 'serious', 'critical']);
 
 type A11yScanOptions = {
   include?: string[];
@@ -14,7 +14,7 @@ const formatViolationMessage = (
   violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations'],
 ) =>
   [
-    `A11y baseline failed on "${routeLabel}" with serious/critical violations:`,
+    `A11y baseline failed on "${routeLabel}" with moderate/serious/critical violations:`,
     ...violations.map((violation) => {
       const nodeTargets = violation.nodes
         .flatMap((node) => node.target)

@@ -2,17 +2,15 @@ import type { FieldTemplateProps } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
 import { isRecord } from './utils';
 import { InfoBox } from '../components/InfoBox';
-import { getInfoBoxesForField } from '../formpacks/doctorLetterInfoBox';
+import { getInfoBoxesForField } from '../formpacks/formpackInfoBox';
 import type { InfoBoxConfig } from '../formpacks/types';
+import { OFFLABEL_ANTRAG_FORMPACK_ID } from '../formpacks/ids';
 
-type DoctorLetterFieldTemplateProps = Omit<
-  FieldTemplateProps,
-  'fieldPathId'
-> & {
+type FormpackFieldTemplateProps = Omit<FieldTemplateProps, 'fieldPathId'> & {
   fieldPathId?: FieldTemplateProps['fieldPathId'];
 };
 
-type DoctorLetterFormContext = {
+type FieldTemplateFormContext = {
   t?: TFunction;
   formpackId?: string;
   infoBoxes?: InfoBoxConfig[];
@@ -24,9 +22,9 @@ const isTranslator = (value: unknown): value is TFunction =>
 
 const defaultTranslator = ((key: string) => key) as TFunction;
 
-const getDoctorLetterFormContext = (
+const getFieldTemplateFormContext = (
   formContext: unknown,
-): DoctorLetterFormContext => {
+): FieldTemplateFormContext => {
   if (!isRecord(formContext)) {
     return {};
   }
@@ -45,12 +43,10 @@ const getDoctorLetterFormContext = (
 };
 
 /**
- * Custom field template for doctor-letter formpack that supports InfoBox rendering.
+ * Custom field template for formpacks that supports InfoBox rendering.
  * InfoBoxes are rendered directly under their anchored field when enabled.
  */
-export function DoctorLetterFieldTemplate(
-  props: DoctorLetterFieldTemplateProps,
-) {
+export function FormpackFieldTemplate(props: FormpackFieldTemplateProps) {
   const {
     id,
     classNames,
@@ -73,7 +69,7 @@ export function DoctorLetterFieldTemplate(
     return null;
   }
 
-  const formContext = getDoctorLetterFormContext(registry.formContext);
+  const formContext = getFieldTemplateFormContext(registry.formContext);
   const infoBoxes = formContext.infoBoxes ?? [];
   const formData = formContext.formData ?? {};
   const t = formContext.t ?? defaultTranslator;
@@ -104,6 +100,27 @@ export function DoctorLetterFieldTemplate(
     infoBoxes,
     formData,
   );
+  const isOfflabelRequestContainer =
+    formContext.formpackId === OFFLABEL_ANTRAG_FORMPACK_ID &&
+    fieldAnchor === 'request';
+  const flowStatusInfoBoxes = applicableInfoBoxes.filter((infoBox) =>
+    infoBox.id.startsWith('offlabel-flow-status-'),
+  );
+  const regularInfoBoxes = applicableInfoBoxes.filter(
+    (infoBox) => !infoBox.id.startsWith('offlabel-flow-status-'),
+  );
+
+  const renderInfoBox = (infoBox: InfoBoxConfig, className = '') => (
+    <InfoBox
+      key={infoBox.id}
+      message={t(infoBox.i18nKey, {
+        ns: namespace,
+        defaultValue: infoBox.i18nKey,
+      })}
+      format={infoBox.format ?? 'text'}
+      className={className}
+    />
+  );
 
   return (
     <div className={classNames} style={style}>
@@ -117,16 +134,11 @@ export function DoctorLetterFieldTemplate(
       {children}
       {errors}
       {help}
-      {applicableInfoBoxes.map((infoBox) => (
-        <InfoBox
-          key={infoBox.id}
-          message={t(infoBox.i18nKey, {
-            ns: namespace,
-            defaultValue: infoBox.i18nKey,
-          })}
-          format={infoBox.format ?? 'text'}
-        />
-      ))}
+      {regularInfoBoxes.map((infoBox) => renderInfoBox(infoBox))}
+      {isOfflabelRequestContainer &&
+        flowStatusInfoBoxes.map((infoBox) =>
+          renderInfoBox(infoBox, 'info-box--offlabel-flow-status'),
+        )}
       {isDecisionQuestion && (
         <div className="formpack-decision-divider" aria-hidden="true" />
       )}

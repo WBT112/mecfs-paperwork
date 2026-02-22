@@ -145,7 +145,7 @@ describe('validate-formpacks: extra branches', () => {
       locales: ['de', 'en'],
       titleKey: PACK_TITLE,
       descriptionKey: PACK_DESC,
-      exports: ['json'],
+      exports: ['docx'],
       docx: { templates: { a4: '/abs/a4.docx' }, mapping: '..\\mapping.json' },
     };
     await fs.mkdir(base, { recursive: true });
@@ -165,7 +165,7 @@ describe('validate-formpacks: extra branches', () => {
       // expects message about missing exports
       expect(
         pack.some((e) =>
-          e.error.message.includes('Manifest exports must include'),
+          e.error.message.includes('Manifest exports must include "json".'),
         ),
       ).toBe(true);
     } finally {

@@ -66,7 +66,9 @@ export const updateRecord = async (
   },
 ): Promise<RecordEntry | null> => {
   const db = await openStorage();
-  const existing = await db.get('records', id);
+  const tx = db.transaction('records', 'readwrite');
+  const store = tx.objectStore('records');
+  const existing = await store.get(id);
 
   if (!existing) {
     return null;
@@ -80,7 +82,8 @@ export const updateRecord = async (
     updatedAt: new Date().toISOString(),
   };
 
-  await db.put('records', updated);
+  await store.put(updated);
+  await tx.done;
   return updated;
 };
 

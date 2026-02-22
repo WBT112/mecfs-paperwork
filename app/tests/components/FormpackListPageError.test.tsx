@@ -1,39 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import './formpackListPage.mockSetup';
 import FormpackListPage from '../../src/pages/FormpackListPage';
 import { TestRouter } from '../setup/testRouter';
 import { listFormpacks } from '../../src/formpacks/loader';
 
 vi.mock('../../src/formpacks/loader', () => ({
   listFormpacks: vi.fn(),
-}));
-
-vi.mock('../../src/i18n/formpack', () => ({
-  loadFormpackI18n: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('../../src/formpacks/visibility', () => ({
-  filterVisibleFormpacks: vi.fn((data: unknown): unknown[] =>
-    Array.isArray(data) ? data : [],
-  ),
-}));
-
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: { language: 'de' },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: () => undefined,
-  },
-}));
-
-vi.mock('../../src/i18n/useLocale', () => ({
-  useLocale: () => ({
-    locale: 'de',
-  }),
 }));
 
 describe('FormpackListPage Error State', () => {

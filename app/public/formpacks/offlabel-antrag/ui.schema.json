@@ -1,0 +1,275 @@
+{
+  "ui:order": [
+    "meta",
+    "patient",
+    "doctor",
+    "insurer",
+    "request",
+    "severity",
+    "attachmentsFreeText"
+  ],
+  "patient": {
+    "ui:title": "offlabel-antrag.section.patient.title",
+    "ui:order": [
+      "firstName",
+      "lastName",
+      "birthDate",
+      "streetAndNumber",
+      "postalCode",
+      "city",
+      "insuranceNumber"
+    ],
+    "firstName": {
+      "ui:title": "offlabel-antrag.patient.firstName.label",
+      "ui:help": "offlabel-antrag.patient.firstName.help"
+    },
+    "lastName": {
+      "ui:title": "offlabel-antrag.patient.lastName.label",
+      "ui:help": "offlabel-antrag.patient.lastName.help"
+    },
+    "birthDate": {
+      "ui:title": "offlabel-antrag.patient.birthDate.label",
+      "ui:help": "offlabel-antrag.patient.birthDate.help"
+    },
+    "streetAndNumber": {
+      "ui:title": "offlabel-antrag.patient.streetAndNumber.label",
+      "ui:help": "offlabel-antrag.patient.streetAndNumber.help"
+    },
+    "postalCode": {
+      "ui:title": "offlabel-antrag.patient.postalCode.label",
+      "ui:help": "offlabel-antrag.patient.postalCode.help"
+    },
+    "city": {
+      "ui:title": "offlabel-antrag.patient.city.label",
+      "ui:help": "offlabel-antrag.patient.city.help"
+    },
+    "insuranceNumber": {
+      "ui:title": "offlabel-antrag.patient.insuranceNumber.label",
+      "ui:help": "offlabel-antrag.patient.insuranceNumber.help"
+    }
+  },
+  "doctor": {
+    "ui:title": "offlabel-antrag.section.doctor.title",
+    "ui:order": [
+      "practice",
+      "title",
+      "gender",
+      "name",
+      "streetAndNumber",
+      "postalCode",
+      "city"
+    ],
+    "practice": {
+      "ui:title": "offlabel-antrag.doctor.practice.label",
+      "ui:help": "offlabel-antrag.doctor.practice.help"
+    },
+    "title": {
+      "ui:title": "offlabel-antrag.doctor.title.label",
+      "ui:help": "offlabel-antrag.doctor.title.help"
+    },
+    "gender": {
+      "ui:title": "offlabel-antrag.doctor.gender.label",
+      "ui:help": "offlabel-antrag.doctor.gender.help"
+    },
+    "name": {
+      "ui:title": "offlabel-antrag.doctor.name.label",
+      "ui:help": "offlabel-antrag.doctor.name.help"
+    },
+    "streetAndNumber": {
+      "ui:title": "offlabel-antrag.doctor.streetAndNumber.label",
+      "ui:help": "offlabel-antrag.doctor.streetAndNumber.help"
+    },
+    "postalCode": {
+      "ui:title": "offlabel-antrag.doctor.postalCode.label",
+      "ui:help": "offlabel-antrag.doctor.postalCode.help"
+    },
+    "city": {
+      "ui:title": "offlabel-antrag.doctor.city.label",
+      "ui:help": "offlabel-antrag.doctor.city.help"
+    }
+  },
+  "insurer": {
+    "ui:title": "offlabel-antrag.section.insurer.title",
+    "ui:order": [
+      "name",
+      "department",
+      "streetAndNumber",
+      "postalCode",
+      "city"
+    ],
+    "name": {
+      "ui:title": "offlabel-antrag.insurer.name.label",
+      "ui:help": "offlabel-antrag.insurer.name.help"
+    },
+    "department": {
+      "ui:title": "offlabel-antrag.insurer.department.label",
+      "ui:help": "offlabel-antrag.insurer.department.help"
+    },
+    "streetAndNumber": {
+      "ui:title": "offlabel-antrag.insurer.streetAndNumber.label",
+      "ui:help": "offlabel-antrag.insurer.streetAndNumber.help"
+    },
+    "postalCode": {
+      "ui:title": "offlabel-antrag.insurer.postalCode.label",
+      "ui:help": "offlabel-antrag.insurer.postalCode.help"
+    },
+    "city": {
+      "ui:title": "offlabel-antrag.insurer.city.label",
+      "ui:help": "offlabel-antrag.insurer.city.help"
+    }
+  },
+  "request": {
+    "ui:title": "offlabel-antrag.section.request.title",
+    "ui:description": "offlabel-antrag.section.request.description",
+    "ui:order": [
+      "drug",
+      "selectedIndicationKey",
+      "otherDrugName",
+      "otherIndication",
+      "otherTreatmentGoal",
+      "otherDose",
+      "otherDuration",
+      "otherMonitoring",
+      "indicationFullyMetOrDoctorConfirms",
+      "applySection2Abs1a",
+      "standardOfCareTriedFreeText"
+    ],
+    "drug": {
+      "ui:title": "offlabel-antrag.request.drug.label",
+      "ui:help": "offlabel-antrag.request.drug.help",
+      "ui:enumNames": [
+        "offlabel-antrag.request.drug.option.agomelatin",
+        "offlabel-antrag.request.drug.option.ivabradine",
+        "offlabel-antrag.request.drug.option.vortioxetine",
+        "offlabel-antrag.request.drug.option.other"
+      ]
+    },
+    "selectedIndicationKey": {
+      "ui:title": "offlabel-antrag.request.selectedIndicationKey.label",
+      "ui:help": "offlabel-antrag.request.selectedIndicationKey.help"
+    },
+    "otherDrugName": {
+      "ui:title": "offlabel-antrag.request.otherDrugName.label",
+      "ui:help": "offlabel-antrag.request.otherDrugName.help"
+    },
+    "otherIndication": {
+      "ui:title": "offlabel-antrag.request.otherIndication.label",
+      "ui:help": "offlabel-antrag.request.otherIndication.help"
+    },
+    "otherTreatmentGoal": {
+      "ui:title": "offlabel-antrag.request.otherTreatmentGoal.label",
+      "ui:help": "offlabel-antrag.request.otherTreatmentGoal.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 4
+      }
+    },
+    "otherDose": {
+      "ui:title": "offlabel-antrag.request.otherDose.label",
+      "ui:help": "offlabel-antrag.request.otherDose.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 3
+      }
+    },
+    "otherDuration": {
+      "ui:title": "offlabel-antrag.request.otherDuration.label",
+      "ui:help": "offlabel-antrag.request.otherDuration.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 3
+      }
+    },
+    "otherMonitoring": {
+      "ui:title": "offlabel-antrag.request.otherMonitoring.label",
+      "ui:help": "offlabel-antrag.request.otherMonitoring.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 4
+      }
+    },
+    "indicationFullyMetOrDoctorConfirms": {
+      "ui:title": "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.label",
+      "ui:widget": "radio",
+      "ui:enumNames": [
+        "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.option.yes",
+        "offlabel-antrag.request.indicationFullyMetOrDoctorConfirms.option.no"
+      ]
+    },
+    "applySection2Abs1a": {
+      "ui:title": "offlabel-antrag.request.applySection2Abs1a.label"
+    },
+    "standardOfCareTriedFreeText": {
+      "ui:title": "offlabel-antrag.request.standardOfCareTriedFreeText.label",
+      "ui:help": "offlabel-antrag.request.standardOfCareTriedFreeText.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 8
+      }
+    }
+  },
+  "severity": {
+    "ui:title": "offlabel-antrag.section.severity.title",
+    "ui:description": "offlabel-antrag.section.severity.description",
+    "ui:order": [
+      "bellScore",
+      "gdb",
+      "merkzeichen",
+      "pflegegrad",
+      "workStatus"
+    ],
+    "bellScore": {
+      "ui:title": "offlabel-antrag.severity.bellScore.label",
+      "ui:help": "offlabel-antrag.severity.bellScore.help",
+      "ui:enumNames": [
+        "offlabel-antrag.severity.bellScore.option.0",
+        "offlabel-antrag.severity.bellScore.option.10",
+        "offlabel-antrag.severity.bellScore.option.20",
+        "offlabel-antrag.severity.bellScore.option.30",
+        "offlabel-antrag.severity.bellScore.option.40",
+        "offlabel-antrag.severity.bellScore.option.50",
+        "offlabel-antrag.severity.bellScore.option.60",
+        "offlabel-antrag.severity.bellScore.option.70",
+        "offlabel-antrag.severity.bellScore.option.80",
+        "offlabel-antrag.severity.bellScore.option.90",
+        "offlabel-antrag.severity.bellScore.option.100"
+      ]
+    },
+    "gdb": {
+      "ui:title": "offlabel-antrag.severity.gdb.label",
+      "ui:help": "offlabel-antrag.severity.gdb.help"
+    },
+    "merkzeichen": {
+      "ui:title": "offlabel-antrag.severity.merkzeichen.label",
+      "ui:help": "offlabel-antrag.severity.merkzeichen.help",
+      "ui:widget": "checkboxes"
+    },
+    "pflegegrad": {
+      "ui:title": "offlabel-antrag.severity.pflegegrad.label",
+      "ui:help": "offlabel-antrag.severity.pflegegrad.help"
+    },
+    "workStatus": {
+      "ui:title": "offlabel-antrag.severity.workStatus.label",
+      "ui:help": "offlabel-antrag.severity.workStatus.help",
+      "ui:enumNames": [
+        "offlabel-antrag.severity.workStatus.option.au",
+        "offlabel-antrag.severity.workStatus.option.emRente",
+        "offlabel-antrag.severity.workStatus.option.teilzeit"
+      ]
+    }
+  },
+  "attachmentsFreeText": {
+    "ui:title": "offlabel-antrag.section.attachments.title",
+    "ui:help": "offlabel-antrag.attachmentsFreeText.help",
+    "ui:widget": "textarea",
+    "ui:options": {
+      "rows": 6
+    }
+  },
+  "meta": {
+    "ui:widget": "hidden",
+    "introAccepted": {
+      "ui:widget": "hidden"
+    }
+  }
+}

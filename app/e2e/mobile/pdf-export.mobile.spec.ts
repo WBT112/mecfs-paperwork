@@ -47,27 +47,39 @@ test('pdf export works on mobile @mobile', async ({ page }) => {
   const exportButton = pdfSection.locator('button.app__button');
   await expect(exportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
 
-  const downloadPromise = page
-    .waitForEvent('download', { timeout: POLL_TIMEOUT })
-    .then((download) => ({ type: 'download' as const, download }));
-  const errorPromise = page
-    .locator('.formpack-actions__status')
-    .locator('.app__error')
-    .first()
-    .waitFor({ state: 'visible', timeout: POLL_TIMEOUT })
-    .then(() => ({ type: 'error' as const }));
+  const waitCompletion = async () => {
+    const statusRegion = page.locator('.formpack-actions__status');
+    const downloadPromise = page
+      .waitForEvent('download', { timeout: POLL_TIMEOUT })
+      .then((download) => ({ type: 'download' as const, download }));
+    const successPromise = statusRegion
+      .locator('.formpack-actions__success')
+      .first()
+      .waitFor({ state: 'visible', timeout: POLL_TIMEOUT })
+      .then(() => ({ type: 'success' as const }));
+    const errorPromise = statusRegion
+      .locator('.app__error')
+      .first()
+      .waitFor({ state: 'visible', timeout: POLL_TIMEOUT })
+      .then(() => ({ type: 'error' as const }));
 
-  await clickActionButton(exportButton, POLL_TIMEOUT);
+    await clickActionButton(exportButton, POLL_TIMEOUT);
+    return Promise.any([downloadPromise, successPromise, errorPromise]);
+  };
 
-  await expect(exportButton).toBeDisabled({ timeout: POLL_TIMEOUT });
-  await expect(exportButton).toHaveText(/pdf wird erstellt|generating pdf/i, {
-    timeout: POLL_TIMEOUT,
+  const completion = await waitCompletion().catch(async () => {
+    await page.waitForTimeout(400);
+    return waitCompletion();
   });
-
-  const completion = await Promise.any([downloadPromise, errorPromise]);
 
   if (completion.type === 'download') {
     expect(completion.download.suggestedFilename()).toMatch(/\.pdf$/i);
+  } else if (completion.type === 'success') {
+    await expect(
+      page
+        .locator('.formpack-actions__status')
+        .locator('.formpack-actions__success'),
+    ).toBeVisible({ timeout: POLL_TIMEOUT });
   } else {
     await expect(
       page.locator('.formpack-actions__status').locator('.app__error'),

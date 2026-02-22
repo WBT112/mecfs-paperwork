@@ -126,11 +126,42 @@ describe('redact', () => {
       expect(result.contact).toBe(REDACTED);
     });
 
-    it('preserves arrays and non-sensitive primitives', () => {
+    it('preserves arrays of safe primitives', () => {
       const input = { languages: ['de', 'en'], count: 3 };
       const result = redactObject(input);
       expect(result.languages).toEqual(['de', 'en']);
       expect(result.count).toBe(3);
+    });
+
+    it('redacts sensitive keys inside arrays of objects', () => {
+      const input = {
+        items: [
+          { patient: 'John Doe', status: 'active' },
+          { diagnosis: 'ME/CFS', id: 42 },
+        ],
+      };
+      const result = redactObject(input);
+      const items = result.items as Record<string, unknown>[];
+      expect(items[0].patient).toBe(REDACTED);
+      expect(items[0].status).toBe('active');
+      expect(items[1].diagnosis).toBe(REDACTED);
+      expect(items[1].id).toBe(42);
+    });
+
+    it('redacts forbidden patterns in string array elements', () => {
+      const input = { contacts: [TEST_EMAIL, 'safe-string'] };
+      const result = redactObject(input);
+      expect(result.contacts).toEqual([REDACTED, 'safe-string']);
+    });
+
+    it('redacts nested arrays recursively', () => {
+      const input = {
+        matrix: [[{ name: 'secret' }], [{ version: '1.0' }]],
+      };
+      const result = redactObject(input);
+      const matrix = result.matrix as Record<string, unknown>[][];
+      expect(matrix[0][0].name).toBe(REDACTED);
+      expect(matrix[1][0].version).toBe('1.0');
     });
 
     it('does not leak any forbidden keys through nested structures', () => {

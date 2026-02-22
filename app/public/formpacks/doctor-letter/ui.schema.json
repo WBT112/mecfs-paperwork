@@ -6,7 +6,7 @@
   ],
   "patient": {
     "ui:title": "doctor-letter.section.patient.title",
-    "ui:order": ["firstName", "lastName", "streetAndNumber", "postalCode", "city"],
+    "ui:order": ["firstName", "lastName", "birthDate", "streetAndNumber", "postalCode", "city"],
     "firstName": {
       "ui:title": "doctor-letter.patient.firstName.label",
       "ui:help": "doctor-letter.patient.firstName.help"
@@ -14,6 +14,10 @@
     "lastName": {
       "ui:title": "doctor-letter.patient.lastName.label",
       "ui:help": "doctor-letter.patient.lastName.help"
+    },
+    "birthDate": {
+      "ui:title": "doctor-letter.patient.birthDate.label",
+      "ui:help": "doctor-letter.patient.birthDate.help"
     },
     "streetAndNumber": {
       "ui:title": "doctor-letter.patient.streetAndNumber.label",

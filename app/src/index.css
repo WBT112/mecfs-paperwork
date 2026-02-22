@@ -635,6 +635,36 @@ body {
   text-decoration: underline;
 }
 
+.formpack-list__search {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  background-color: var(--color-input-bg);
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.formpack-list__search:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.formpack-list__category-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.formpack-list__empty {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
 .formpack-detail {
   display: grid;
   gap: 2rem;
@@ -773,6 +803,33 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
+  background-color: var(--color-info-bg, #e3f2fd);
+  border: 1px solid var(--color-info-border, #2196f3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--color-info-text, #0d47a1);
+  max-width: 80ch;
+}
+
+.info-box--offlabel-flow-status {
+  --color-info-bg: #e8f5e9;
+  --color-info-border: #2e7d32;
+  --color-info-text: #1b4332;
+  --color-info-link: #1b4332;
+  --color-info-link-hover: #102a20;
+  margin: 0.75rem 0 0;
+  border-left-width: 4px;
+  font-size: 0.95rem;
+}
+
+:root[data-theme='dark'] .info-box--offlabel-flow-status {
+  --color-info-bg: #1b3024;
+  --color-info-border: #4ade80;
+  --color-info-text: #d1fae5;
+  --color-info-link: #ecfdf5;
+  --color-info-link-hover: #bbf7d0;
 }
 
 .info-box__icon {
@@ -949,6 +1006,10 @@ body {
   padding: 1rem;
   border-radius: 12px;
   border: 1px solid var(--color-border);
+  inline-size: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-inline-size: 0;
 }
 
 .formpack-form--doctor-letter fieldset#root {
@@ -1031,6 +1092,8 @@ body {
   padding: 0 0.25rem;
   font-weight: 600;
   font-size: 1rem;
+  max-width: 100%;
+  white-space: normal;
 }
 
 .formpack-form .field-description,
@@ -1091,6 +1154,116 @@ body {
   text-align: center;
 }
 
+.formpack-intro__reopen {
+  margin-bottom: 1rem;
+}
+
+.profile-quickfill {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--color-surface);
+}
+
+.profile-quickfill__save {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.profile-quickfill__success {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.profile-quickfill__error {
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.formpack-intro-gate {
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1rem;
+  display: grid;
+  gap: 1rem;
+  background: var(--color-surface);
+}
+
+.formpack-intro-gate h4 {
+  margin: 0;
+}
+
+.formpack-intro-gate__content {
+  max-height: 60vh;
+  overflow-y: auto;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  padding: 1rem;
+  background: var(--color-surface-subtle);
+}
+
+.formpack-intro-gate__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.formpack-intro-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 20;
+}
+
+.formpack-intro-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  border: 0;
+}
+
+.formpack-intro-modal__content {
+  position: relative;
+  width: min(800px, 100%);
+  max-height: 85vh;
+  overflow: hidden;
+  background: var(--color-surface);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.formpack-intro-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.formpack-intro-modal__header h4 {
+  margin: 0;
+}
+
+.formpack-intro-modal__body {
+  overflow-y: auto;
+  padding: 1rem;
+}
+
 .formpack-docx-export {
   display: grid;
   grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
@@ -1098,6 +1271,10 @@ body {
   align-items: start;
   min-width: 0;
   width: 100%;
+}
+
+.formpack-docx-export--single-template {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .formpack-docx-export__template {
@@ -1115,6 +1292,22 @@ body {
   align-items: stretch;
   justify-content: stretch;
   width: 100%;
+}
+
+.formpack-docx-export__buttons--single-action {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.formpack-docx-export__buttons--offlabel {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.formpack-docx-export__button--primary {
+  font-weight: 700;
+}
+
+.formpack-docx-export__buttons--offlabel .formpack-pdf-export .app__button {
+  font-weight: 500;
 }
 
 .formpack-docx-export__label {
@@ -1161,10 +1354,6 @@ body {
 
 .formpack-docx-export__buttons > * {
   width: 100%;
-}
-.formpack-pdf-export__note {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
 }
 
 .formpack-actions__status {
@@ -1347,12 +1536,6 @@ body {
   font-size: 1rem;
 }
 
-.formpack-document-preview__section h5 {
-  margin: 0.75rem 0 0.35rem;
-  font-size: 0.9rem;
-  color: var(--color-text-tertiary);
-}
-
 .formpack-document-preview__section p {
   margin: 0 0 0.5rem;
 }
@@ -1395,12 +1578,21 @@ body {
   background: var(--color-surface);
 }
 
-.formpack-document-preview__note {
-  margin-top: 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border-left: 3px solid var(--color-note-border);
-  background: var(--color-note-bg);
-  border-radius: 8px;
+.formpack-document-preview__tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.formpack-document-preview__tabs .app__button[aria-selected='true'] {
+  outline: 2px solid var(--color-border-accent);
+}
+
+.formpack-document-preview__page-break {
+  border-top: 1px dashed var(--color-border-subtle);
+  padding-top: 0.6rem;
+  color: var(--color-text-subtle);
 }
 
 /* Inline radio buttons for doctor-letter decision tree */

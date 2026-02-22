@@ -3,8 +3,28 @@ name: SBOM
 on:
   push:
     branches: [main]
+    paths:
+      - "Dockerfile"
+      - "app/**"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "tools/sbom-summary.mjs"
+      - "tools/grype-summary.mjs"
+      - ".github/workflows/sbom.yml"
   pull_request:
+    paths:
+      - "Dockerfile"
+      - "app/**"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "tools/sbom-summary.mjs"
+      - "tools/grype-summary.mjs"
+      - ".github/workflows/sbom.yml"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -19,7 +39,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
 
@@ -119,7 +139,7 @@ jobs:
         run: cat sbom-summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Grype scan (workspace SBOM)
-        uses: anchore/scan-action@v6
+        uses: anchore/scan-action@v7
         with:
           sbom: sbom.workspace.cdx.json
           output-format: json

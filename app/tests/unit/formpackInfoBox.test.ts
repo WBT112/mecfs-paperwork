@@ -3,7 +3,7 @@ import {
   shouldShowInfoBox,
   getVisibleInfoBoxes,
   type InfoBoxConfig,
-} from '../../src/formpacks/doctorLetterInfoBox';
+} from '../../src/formpacks/formpackInfoBox';
 
 const TEST_ANCHOR = 'decision.q1';
 const TEST_I18N_KEY = 'test.key';
@@ -12,7 +12,7 @@ const BOX1_ID = 'box1';
 const DECISION_PATH_Q1 = 'decision.q1';
 const DECISION_PATH_Q2 = 'decision.q2';
 
-describe('doctorLetterInfoBox', () => {
+describe('formpackInfoBox', () => {
   describe('shouldShowInfoBox', () => {
     it('returns true when enabled and no showIf conditions', () => {
       const config: InfoBoxConfig = {

@@ -1,8 +1,24 @@
 /// <reference types="node" />
 import { defineConfig, devices } from '@playwright/test';
+import { availableParallelism } from 'node:os';
 
 const isCI = Boolean(process.env.CI);
 const requiresDevServiceWorker = process.env.VITE_ENABLE_DEV_SW === 'true';
+const parsePositiveInt = (value: string | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+const defaultLocalWorkers = Math.max(
+  2,
+  Math.min(10, Math.floor(availableParallelism() * 0.75)),
+);
+const configuredWorkers = parsePositiveInt(
+  process.env.PW_WORKERS ?? process.env.PLAYWRIGHT_WORKERS,
+);
+const resolvedWorkers = configuredWorkers ?? (isCI ? 2 : defaultLocalWorkers);
 // NOTE: WebKit on Windows can inherit a broken system proxy (WPAD), so we
 // force an explicit proxy config with localhost bypass to keep local E2E stable.
 const localProxyBypass = '127.0.0.1,localhost,::1';
@@ -18,7 +34,7 @@ export default defineConfig({
   fullyParallel: true,
   timeout: isCI ? 60_000 : 30_000,
   expect: { timeout: isCI ? 15_000 : 10_000 },
-  workers: isCI ? 2 : undefined,
+  workers: resolvedWorkers,
 
   // Terminal output + HTML report folder
   reporter: [
@@ -29,7 +45,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://127.0.0.1:5173',
     trace: 'on-first-retry',
-    screenshot: { mode: 'on', fullPage: true }, // always capture a screenshot after each test
+    // Reduce per-test I/O overhead while still collecting screenshots for failures.
+    screenshot: { mode: 'only-on-failure', fullPage: true },
   },
 
   webServer: {

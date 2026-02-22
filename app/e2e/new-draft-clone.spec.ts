@@ -163,7 +163,7 @@ const openDraftsSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
     await expect(nameInput).toBeVisible();
@@ -239,7 +239,7 @@ const waitForNamePersisted = async (page: Page, expectedName: string) => {
         const activeId = await getActiveRecordId(page);
         if (!activeId) return '';
         const record = await readRecordById(page, activeId);
-        return record?.data?.person?.name ?? '';
+        return record?.data?.person?.firstName ?? '';
       },
       { timeout: 15_000, intervals: [250, 500, 1000] },
     )
@@ -278,7 +278,7 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   // Required behavior: user must click “New draft” to start
   await clickNewDraftIfNeeded(page);
 
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   await expect(nameInput).toBeVisible();
 
   // 1) Enter data in Draft A and wait for autosave
@@ -318,8 +318,8 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   const recordAAfterClone = await readRecordById(page, draftAId as string);
   const recordBAfterClone = await readRecordById(page, draftBId as string);
 
-  expect(recordAAfterClone?.data?.person?.name ?? '').toBe('Alice Clone');
-  expect(recordBAfterClone?.data?.person?.name ?? '').toBe('Alice Clone');
+  expect(recordAAfterClone?.data?.person?.firstName ?? '').toBe('Alice Clone');
+  expect(recordBAfterClone?.data?.person?.firstName ?? '').toBe('Alice Clone');
 
   // 4) Edit Draft B and verify Draft A remains unchanged
   await expect(nameInput).toHaveValue('Alice Clone');
@@ -329,8 +329,10 @@ test('new draft clones data and old draft remains preserved (first clone + subse
   const recordAAfterEditB = await readRecordById(page, draftAId as string);
   const recordBAfterEditB = await readRecordById(page, draftBId as string);
 
-  expect(recordAAfterEditB?.data?.person?.name ?? '').toBe('Alice Clone');
-  expect(recordBAfterEditB?.data?.person?.name ?? '').toBe('Bob In Draft B');
+  expect(recordAAfterEditB?.data?.person?.firstName ?? '').toBe('Alice Clone');
+  expect(recordBAfterEditB?.data?.person?.firstName ?? '').toBe(
+    'Bob In Draft B',
+  );
 
   // 5) Switch to Draft A via UI and verify the form shows Draft A data
   await loadNonActiveDraftViaUI(page);

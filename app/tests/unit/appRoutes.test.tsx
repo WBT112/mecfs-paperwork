@@ -43,8 +43,28 @@ describe('AppRoutes', () => {
     expect(await screen.findByText('Formpack List')).toBeInTheDocument();
   });
 
-  it('renders legal routes when lazy loaded', async () => {
+  it('redirects root path to /formpacks', async () => {
+    await renderAppRoutes('/');
+    expect(await screen.findByText('Formpack List')).toBeInTheDocument();
+  });
+
+  it('renders the formpack detail route when lazy loaded', async () => {
+    await renderAppRoutes('/formpacks/doctor-letter');
+    expect(await screen.findByText('Formpack Detail')).toBeInTheDocument();
+  });
+
+  it('renders the imprint route when lazy loaded', async () => {
+    await renderAppRoutes('/imprint');
+    expect(await screen.findByText('Imprint')).toBeInTheDocument();
+  });
+
+  it('renders the privacy route when lazy loaded', async () => {
     await renderAppRoutes('/privacy');
     expect(await screen.findByText('Privacy')).toBeInTheDocument();
+  });
+
+  it('renders the help route when lazy loaded', async () => {
+    await renderAppRoutes('/help');
+    expect(await screen.findByText('Help')).toBeInTheDocument();
   });
 });

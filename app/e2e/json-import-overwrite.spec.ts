@@ -53,7 +53,7 @@ const openImportSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
     await expect(nameInput).toBeVisible();
@@ -105,7 +105,7 @@ for (const locale of locales) {
       await switchLocale(page, locale);
       await clickNewDraftIfNeeded(page);
 
-      const nameInput = page.locator('#root_person_name');
+      const nameInput = page.locator('#root_person_firstName');
       await fillTextInputStable(page, nameInput, 'Record Alpha', 20_000);
       await page.locator('#root_diagnoses_meCfs').check();
 

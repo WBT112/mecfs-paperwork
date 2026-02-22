@@ -1,6 +1,6 @@
 {
   "doctor-letter.title": "Letter generator for new ICD-10 codes",
-  "doctor-letter.description": "Create a letter for your doctor with the updates on ICD-10-GM 2026 coding for ME/CFS. All inputs are processed locally on your device and are optional.",
+  "doctor-letter.description": "Create a letter for your doctor with updates on ICD-10-GM 2026 coding for ME/CFS.",
   "doctor-letter.common.yes": "Yes",
   "doctor-letter.common.no": "No",
   "doctor-letter.section.patient.title": "Patient",
@@ -10,6 +10,8 @@
   "doctor-letter.patient.firstName.help": "Patient's first name",
   "doctor-letter.patient.lastName.label": "Last name",
   "doctor-letter.patient.lastName.help": "Patient's last name",
+  "doctor-letter.patient.birthDate.label": "Date of birth",
+  "doctor-letter.patient.birthDate.help": "Optional date of birth",
   "doctor-letter.patient.streetAndNumber.label": "Street and house number",
   "doctor-letter.patient.streetAndNumber.help": "Patient's street and house number",
   "doctor-letter.patient.postalCode.label": "Postal code",

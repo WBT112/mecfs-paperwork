@@ -15,6 +15,9 @@ import {
 } from '../../../src/storage/snapshots';
 import { openStorage } from '../../../src/storage/db';
 
+const RECORD_ID = 'record-1';
+const SNAPSHOT_ID = 'snapshot-123';
+
 vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
 }));
@@ -22,8 +25,10 @@ vi.mock('../../../src/storage/db', () => ({
 describe('snapshots storage', () => {
   type MockSnapshotIndex = {
     getAllKeys: Mock;
+    getAll: Mock;
   };
   type MockSnapshotStore = {
+    add: Mock;
     index: Mock;
     delete: Mock;
   };
@@ -46,9 +51,11 @@ describe('snapshots storage', () => {
 
   beforeEach(() => {
     snapshotIndex = {
-      getAllKeys: vi.fn(),
+      getAllKeys: vi.fn().mockResolvedValue([]),
+      getAll: vi.fn().mockResolvedValue([]),
     };
     snapshotStore = {
+      add: vi.fn(),
       index: vi.fn(() => snapshotIndex),
       delete: vi.fn(),
     };
@@ -77,41 +84,41 @@ describe('snapshots storage', () => {
     const now = new Date('2025-01-02T10:00:00.000Z');
     vi.useFakeTimers();
     vi.setSystemTime(now);
-    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'snapshot-123') });
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => SNAPSHOT_ID) });
 
-    const snapshot = await createSnapshot(
-      'record-1',
-      { field: 'value' },
-      'Auto',
-    );
+    snapshotIndex.getAllKeys.mockResolvedValue([SNAPSHOT_ID]);
+
+    const resultPromise = createSnapshot(RECORD_ID, { field: 'value' }, 'Auto');
+    resolveDone?.();
+    const snapshot = await resultPromise;
 
     expect(snapshot).toEqual({
-      id: 'snapshot-123',
-      recordId: 'record-1',
+      id: SNAPSHOT_ID,
+      recordId: RECORD_ID,
       label: 'Auto',
       data: { field: 'value' },
       createdAt: now.toISOString(),
     });
-    expect(db.add).toHaveBeenCalledWith('snapshots', snapshot);
+    expect(snapshotStore.add).toHaveBeenCalledWith(snapshot);
   });
 
   it('lists snapshots sorted by newest first', async () => {
     const snapshots = [
       {
         id: 'one',
-        recordId: 'record-1',
+        recordId: RECORD_ID,
         data: {},
         createdAt: '2024-01-01T00:00:00.000Z',
       },
       {
         id: 'two',
-        recordId: 'record-1',
+        recordId: RECORD_ID,
         data: {},
         createdAt: '2024-01-03T00:00:00.000Z',
       },
       {
         id: 'three',
-        recordId: 'record-1',
+        recordId: RECORD_ID,
         data: {},
         createdAt: '2024-01-02T00:00:00.000Z',
       },
@@ -119,12 +126,12 @@ describe('snapshots storage', () => {
 
     db.getAllFromIndex?.mockResolvedValue(snapshots);
 
-    const result = await listSnapshots('record-1');
+    const result = await listSnapshots(RECORD_ID);
 
     expect(db.getAllFromIndex).toHaveBeenCalledWith(
       'snapshots',
       'by_recordId',
-      'record-1',
+      RECORD_ID,
     );
     expect(result.map((entry) => entry.id)).toEqual(['two', 'three', 'one']);
   });
@@ -139,7 +146,7 @@ describe('snapshots storage', () => {
   });
 
   it('clears snapshots for the record and waits for the transaction', async () => {
-    const recordId = 'record-1';
+    const recordId = RECORD_ID;
     snapshotIndex.getAllKeys.mockResolvedValue(['snapshot-1', 'snapshot-2']);
 
     let resolved = false;

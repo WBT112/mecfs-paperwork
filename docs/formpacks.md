@@ -298,7 +298,7 @@ Loads formpack assets (manifest, schema, UI schema, i18n) from the public direct
 Static registry of available formpacks.
 
 **Key exports:**
-- `FORMPACK_IDS` - Array of formpack IDs (e.g., `['doctor-letter', 'notfallpass']`)
+- `FORMPACK_IDS` - Array of formpack IDs (e.g., `['doctor-letter', 'notfallpass', 'offlabel-antrag']`)
 - `FormpackId` - TypeScript type for valid formpack IDs
 
 **Used by:** UI catalog, routing, validation.
@@ -430,6 +430,18 @@ Determines if a formpack should be visible in the UI based on its `visibility` f
 **Testing:**
 - 22 unit tests for `decisionEngine.ts` (100% coverage)
 - 12 integration tests for `buildDocumentModel` (doctor-letter path)
+
+### `offlabel-antrag`
+**Purpose:** Workflow-based off-label reimbursement request with multi-part exports.
+
+**Data model / flow highlights:**
+- Medication-driven content for standard medications via registry data.
+- `other` path for direct § 2 Abs. 1a SGB V argumentation with user-entered medication data.
+- Multi-part output (Part 1 insurer letter, Part 2 physician cover letter, Part 3 physician statement template).
+
+**Templates and exports:**
+- `a4.docx` combined export.
+- PDF export via dedicated React-PDF template registration.
 
 ## Adding formpack-specific logic
 

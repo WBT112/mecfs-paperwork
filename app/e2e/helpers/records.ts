@@ -27,7 +27,8 @@ const normalizePollOptions = (options?: PollOptions) => {
 
 export type StoredRecordData = {
   person?: {
-    name?: string;
+    firstName?: string;
+    lastName?: string;
     birthDate?: string;
     [key: string]: unknown;
   };

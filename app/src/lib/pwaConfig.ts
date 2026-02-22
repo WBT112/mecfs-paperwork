@@ -159,7 +159,7 @@ export const createPwaConfig = (
     : PRECACHE_GLOB_PATTERNS;
 
   return {
-    registerType: 'prompt',
+    registerType: 'autoUpdate',
     devOptions: {
       enabled: isDev && enableDevSw,
       navigateFallbackAllowlist: [
@@ -178,7 +178,7 @@ export const createPwaConfig = (
 
       cleanupOutdatedCaches: true,
       clientsClaim: true,
-      skipWaiting: false,
+      skipWaiting: true,
 
       runtimeCaching: isDev ? DEV_RUNTIME_CACHING : RUNTIME_CACHING,
     },

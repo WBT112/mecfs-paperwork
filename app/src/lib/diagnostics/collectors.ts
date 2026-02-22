@@ -1,4 +1,5 @@
 import { APP_VERSION, BUILD_DATE_ISO } from '../version';
+import { toError } from '../errors';
 import type {
   CacheInfo,
   DiagnosticsBundle,
@@ -14,9 +15,6 @@ type NavigatorWithUserAgentData = Navigator & {
     platform?: string;
   };
 };
-
-const toError = (reason: unknown, fallbackMessage: string): Error =>
-  reason instanceof Error ? reason : new Error(fallbackMessage);
 
 const collectPlatform = (): string => {
   const platform = (navigator as NavigatorWithUserAgentData).userAgentData

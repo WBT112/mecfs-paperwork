@@ -163,7 +163,7 @@ const openDraftsSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
     await expect(nameInput).toBeVisible();
@@ -214,7 +214,7 @@ const waitForNamePersisted = async (
     .poll(
       async () => {
         const record = await readRecordById(page, recordId);
-        return record?.data?.person?.name ?? '';
+        return record?.data?.person?.firstName ?? '';
       },
       { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
     )
@@ -240,7 +240,7 @@ test('autosave persists and reload does not create extra records', async ({
   await clickNewDraftIfNeeded(page);
   const recordId = await waitForActiveRecordId(page);
 
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   await expect(nameInput).toBeVisible();
 
   // Edit form
@@ -256,7 +256,7 @@ test('autosave persists and reload does not create extra records', async ({
   // Reload and verify no new record was created and value is restored
   await page.reload();
 
-  const nameInputAfter = page.locator('#root_person_name');
+  const nameInputAfter = page.locator('#root_person_firstName');
   await expect(nameInputAfter).toBeVisible();
   await expect(nameInputAfter).toHaveValue('Test User');
 

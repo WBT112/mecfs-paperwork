@@ -50,6 +50,25 @@ describe('PdfExportButton', () => {
     runtimeRenderSpy.mockReset();
   });
 
+  const renderAndGetRequestKey = async (
+    buildPayload: () => Promise<PdfExportPayload>,
+  ) => {
+    render(
+      <PdfExportButton
+        buildPayload={buildPayload}
+        label={exportLabel}
+        loadingLabel={loadingLabel}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: exportLabel }));
+    await waitFor(() => expect(runtimeRenderSpy).toHaveBeenCalled());
+    const props = runtimeRenderSpy.mock.calls[0][0] as {
+      requestKey?: string;
+    };
+    return props.requestKey;
+  };
+
   it('builds a payload and completes the export flow', async () => {
     const buildPayload = vi.fn().mockResolvedValue({
       document: <div />,
@@ -186,21 +205,8 @@ describe('PdfExportButton', () => {
     });
     setGlobalCrypto({ getRandomValues } as unknown as Crypto);
 
-    render(
-      <PdfExportButton
-        buildPayload={buildPayload}
-        label={exportLabel}
-        loadingLabel={loadingLabel}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: exportLabel }));
-
-    await waitFor(() => expect(runtimeRenderSpy).toHaveBeenCalled());
-    const props = runtimeRenderSpy.mock.calls[0][0] as {
-      requestKey?: string;
-    };
-    expect(props.requestKey).toMatch(/^[0-9a-f]{32}$/i);
+    const requestKey = await renderAndGetRequestKey(buildPayload);
+    expect(requestKey).toMatch(/^[0-9a-f]{32}$/i);
 
     setGlobalCrypto(originalCrypto);
   });
@@ -224,20 +230,8 @@ describe('PdfExportButton', () => {
       configurable: true,
     });
 
-    render(
-      <PdfExportButton
-        buildPayload={buildPayload}
-        label={exportLabel}
-        loadingLabel={loadingLabel}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: exportLabel }));
-    await waitFor(() => expect(runtimeRenderSpy).toHaveBeenCalled());
-    const props = runtimeRenderSpy.mock.calls[0][0] as {
-      requestKey?: string;
-    };
-    expect(props.requestKey).toBe('12345');
+    const requestKey = await renderAndGetRequestKey(buildPayload);
+    expect(requestKey).toBe('12345');
 
     setGlobalCrypto(originalCrypto);
     Object.defineProperty(globalThis, 'requestAnimationFrame', {

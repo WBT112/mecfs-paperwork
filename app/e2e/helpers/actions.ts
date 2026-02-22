@@ -19,6 +19,7 @@ export const clickActionButton = async (
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
+      await button.scrollIntoViewIfNeeded({ timeout: perAttemptTimeout });
       await button.click({ timeout: perAttemptTimeout });
       return;
     } catch (error) {
@@ -28,10 +29,14 @@ export const clickActionButton = async (
     }
   }
 
-  await button.focus();
   try {
-    await button.press('Enter', { timeout: perAttemptTimeout });
-    return;
+    const handle = await button.elementHandle({ timeout: perAttemptTimeout });
+    if (handle) {
+      await handle.evaluate((element) => {
+        (element as HTMLElement).click();
+      });
+      return;
+    }
   } catch (error) {
     lastError = error;
   }

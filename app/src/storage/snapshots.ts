@@ -1,11 +1,15 @@
 import { openStorage } from './db';
 import type { SnapshotEntry } from './types';
 
+/** Maximum number of snapshots retained per record. */
+const MAX_SNAPSHOTS_PER_RECORD = 50;
+
 const sortByCreatedAtDesc = (snapshots: SnapshotEntry[]): SnapshotEntry[] =>
   [...snapshots].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
 /**
  * Creates a snapshot for the provided record.
+ * Automatically removes the oldest snapshots when the per-record limit is exceeded.
  */
 export const createSnapshot = async (
   recordId: string,
@@ -22,7 +26,20 @@ export const createSnapshot = async (
     createdAt: now,
   };
 
-  await db.add('snapshots', snapshot);
+  const tx = db.transaction('snapshots', 'readwrite');
+  const store = tx.objectStore('snapshots');
+  await store.add(snapshot);
+
+  // Enforce per-record retention limit
+  const allKeys = await store.index('by_recordId').getAllKeys(recordId);
+  if (allKeys.length > MAX_SNAPSHOTS_PER_RECORD) {
+    const allSnapshots = await store.index('by_recordId').getAll(recordId);
+    const sorted = sortByCreatedAtDesc(allSnapshots);
+    const toDelete = sorted.slice(MAX_SNAPSHOTS_PER_RECORD);
+    await Promise.all(toDelete.map((s) => store.delete(s.id)));
+  }
+
+  await tx.done;
   return snapshot;
 };
 
