@@ -268,6 +268,22 @@ describe('formpack loader fetches', () => {
     expect(manifest.id).toBe(DOCTOR_LETTER_ID);
   });
 
+  it('reuses the cached manifest for repeated requests', async () => {
+    const fetchMock = buildFetchMock({
+      [MANIFEST_PATH_DOCTOR]: {
+        ok: true,
+        json: async () => manifestFor(DOCTOR_LETTER_ID),
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const first = await loadFormpackManifest(DOCTOR_LETTER_ID);
+    const second = await loadFormpackManifest(DOCTOR_LETTER_ID);
+
+    expect(first).toEqual(second);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('surfaces network failures for manifest requests', async () => {
     const fetchMock = buildFetchMock({
       [MANIFEST_PATH_DOCTOR]: {

@@ -360,9 +360,7 @@ const buildPart2Paragraphs = (
     listItemBlankLines: true,
   }).filter((paragraph) => paragraph !== PART2_TITLE);
 
-  const liabilityHeadingIndex = flattened.findIndex(
-    (paragraph) => paragraph === PART2_LIABILITY_HEADING,
-  );
+  const liabilityHeadingIndex = flattened.indexOf(PART2_LIABILITY_HEADING);
   if (liabilityHeadingIndex < 0) {
     return { body: flattened, liabilityParagraphs: [] };
   }

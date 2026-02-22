@@ -147,9 +147,11 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
       '#formpack-document-preview-content .formpack-document-preview',
     );
     await expect(preview).toBeVisible();
-    await expect(preview).toContainText(/Punkt 7:/i);
+    await expect(preview).toContainText(/Hilfsweise stelle ich/i);
     await expect(preview).toContainText(/§ 2 Abs\. 1a SGB V/i);
-    await expect(preview).toContainText(/Punkt 10:/i);
+    await expect(preview).toContainText(
+      /Selbst wenn eine formelle Zulassungsreife/i,
+    );
   });
 
   test('other path (en + light) uses direct §2 wording on mobile @mobile', async ({
@@ -176,12 +178,15 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
       '#formpack-document-preview-content .formpack-document-preview',
     );
     await expect(preview).toBeVisible();
-    await expect(preview).toContainText(/Punkt 7:/i);
     await expect(preview).toContainText(
-      /Punkt 7: Ich beantrage eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Ich beantrage eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
     );
-    await expect(preview).toContainText(/Punkt 9:/i);
-    await expect(preview).not.toContainText(/Punkt 10:/i);
+    await expect(preview).toContainText(
+      /Geplant ist eine Behandlung wie folgt:/i,
+    );
+    await expect(preview).not.toContainText(
+      /Selbst wenn eine formelle Zulassungsreife/i,
+    );
   });
 
   test('multi-indication medications use the selected indication on mobile @mobile', async ({
@@ -230,12 +235,18 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await openPart1Preview(page);
     await expect(preview).toBeVisible();
     await expect(preview).toContainText(otherOnlyText);
-    await expect(preview).toContainText(/Punkt 9:/i);
+    await expect(preview).toContainText(
+      /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
+    );
 
     await selectDrugByLabelText(page, 'Ivabradin');
 
     await expect(preview).not.toContainText(otherOnlyText);
-    await expect(preview).not.toContainText(/Punkt 9:/i);
-    await expect(preview).toContainText(/Punkt 10:/i);
+    await expect(preview).not.toContainText(
+      /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
+    );
+    await expect(preview).toContainText(
+      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+    );
   });
 });

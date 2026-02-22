@@ -183,6 +183,8 @@ export default [
       'react-hooks/exhaustive-deps': 'error',
       'unicorn/prefer-global-this': 'error',
       'unicorn/prefer-includes': 'error',
+      'unicorn/prefer-at': 'error',
+      'unicorn/prefer-array-index-of': 'error',
       'unicorn/no-array-callback-reference': 'error',
       'unicorn/prefer-single-call': 'error',
       'unicorn/prefer-optional-catch-binding': 'error',

@@ -17,6 +17,7 @@ import { openStorage } from '../../../src/storage/db';
 
 const RECORD_ID = 'record-1';
 const SNAPSHOT_ID = 'snapshot-123';
+const FIXED_NOW_ISO = '2025-01-02T10:00:00.000Z';
 
 vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
@@ -81,7 +82,7 @@ describe('snapshots storage', () => {
   });
 
   it('creates a snapshot with generated metadata', async () => {
-    const now = new Date('2025-01-02T10:00:00.000Z');
+    const now = new Date(FIXED_NOW_ISO);
     vi.useFakeTimers();
     vi.setSystemTime(now);
     vi.stubGlobal('crypto', { randomUUID: vi.fn(() => SNAPSHOT_ID) });
@@ -100,6 +101,31 @@ describe('snapshots storage', () => {
       createdAt: now.toISOString(),
     });
     expect(snapshotStore.add).toHaveBeenCalledWith(snapshot);
+  });
+
+  it('deletes oldest snapshots when the retention limit is exceeded', async () => {
+    const now = new Date(FIXED_NOW_ISO);
+    vi.useFakeTimers();
+    vi.setSystemTime(now);
+    vi.stubGlobal('crypto', { randomUUID: vi.fn(() => SNAPSHOT_ID) });
+
+    const existingSnapshots = Array.from({ length: 51 }, (_, index) => ({
+      id: `snapshot-${index}`,
+      recordId: RECORD_ID,
+      data: {},
+      createdAt: new Date(now.getTime() - index * 1_000).toISOString(),
+    }));
+    snapshotIndex.getAllKeys.mockResolvedValue(
+      existingSnapshots.map((snapshot) => snapshot.id),
+    );
+    snapshotIndex.getAll.mockResolvedValue(existingSnapshots);
+
+    const resultPromise = createSnapshot(RECORD_ID, { field: 'value' }, 'Auto');
+    resolveDone?.();
+    await resultPromise;
+
+    expect(snapshotStore.delete).toHaveBeenCalledTimes(1);
+    expect(snapshotStore.delete).toHaveBeenCalledWith('snapshot-50');
   });
 
   it('lists snapshots sorted by newest first', async () => {
@@ -143,6 +169,21 @@ describe('snapshots storage', () => {
 
     expect(db.get).toHaveBeenCalledWith('snapshots', 'missing');
     expect(result).toBeNull();
+  });
+
+  it('returns the snapshot when found by id', async () => {
+    const snapshot = {
+      id: SNAPSHOT_ID,
+      recordId: RECORD_ID,
+      data: { field: 'value' },
+      createdAt: FIXED_NOW_ISO,
+    };
+    db.get?.mockResolvedValue(snapshot);
+
+    const result = await getSnapshot(SNAPSHOT_ID);
+
+    expect(db.get).toHaveBeenCalledWith('snapshots', SNAPSHOT_ID);
+    expect(result).toEqual(snapshot);
   });
 
   it('clears snapshots for the record and waits for the transaction', async () => {

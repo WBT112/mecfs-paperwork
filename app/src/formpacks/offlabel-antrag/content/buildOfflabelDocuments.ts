@@ -81,7 +81,11 @@ const joinGermanWithUnd = (values: string[]): string => {
   if (values.length === 2) {
     return `${values[0]} und ${values[1]}`;
   }
-  return `${values.slice(0, -1).join(', ')} und ${values[values.length - 1]}`;
+  const lastValue = values.at(-1);
+  if (lastValue === undefined) {
+    return '';
+  }
+  return `${values.slice(0, -1).join(', ')} und ${lastValue}`;
 };
 
 const resolveDoctorLiabilityTarget = (doctorGenderValue: unknown): string => {

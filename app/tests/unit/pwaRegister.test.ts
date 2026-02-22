@@ -6,6 +6,8 @@ type RegisterSwOptions = {
 };
 
 type UpdateSwHandler = (reloadPage?: boolean) => Promise<void>;
+const isVoidCallback = (value: TimerHandler): value is () => void =>
+  typeof value === 'function';
 
 const registerSW = vi.hoisted(() =>
   vi.fn(
@@ -82,5 +84,130 @@ describe('registerServiceWorker', () => {
     expect(updateSW).toHaveBeenCalledWith(true);
 
     unsubscribe();
+  });
+
+  it('starts update polling once and triggers checks on interval and visibility change', async () => {
+    vi.resetModules();
+    registerSW.mockReset();
+
+    const updateRegistration = vi.fn(async () => undefined);
+    const getRegistration = vi.fn(async () => ({
+      update: updateRegistration,
+    }));
+    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
+      configurable: true,
+      value: { getRegistration },
+    });
+
+    let scheduledCallback: (() => void) | undefined;
+    vi.spyOn(globalThis, 'setInterval').mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (isVoidCallback(callback)) {
+        scheduledCallback = () => {
+          callback();
+        };
+      }
+      return 1 as unknown as ReturnType<typeof globalThis.setInterval>;
+    }) as unknown as typeof globalThis.setInterval);
+
+    let visibilityHandler: EventListener | undefined;
+    vi.spyOn(globalThis, 'addEventListener').mockImplementation(((
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+    ) => {
+      if (type === 'visibilitychange' && typeof listener === 'function') {
+        visibilityHandler = listener;
+      }
+    }) as unknown as typeof globalThis.addEventListener);
+
+    const module = await import('../../src/pwa/register');
+    module.registerServiceWorker({ DEV: false });
+    module.registerServiceWorker({ DEV: false });
+
+    await Promise.resolve();
+    expect(getRegistration).toHaveBeenCalledTimes(1);
+    expect(globalThis.setInterval).toHaveBeenCalledTimes(1);
+    expect(visibilityHandler).toBeDefined();
+
+    if (!scheduledCallback) {
+      throw new Error('Expected polling callback to be registered.');
+    }
+    scheduledCallback();
+    await Promise.resolve();
+    expect(getRegistration).toHaveBeenCalledTimes(2);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+    if (!visibilityHandler) {
+      throw new Error('Expected visibility handler to be registered.');
+    }
+    visibilityHandler(new Event('visibilitychange'));
+    await Promise.resolve();
+    expect(getRegistration).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps startup resilient when registration update checks fail', async () => {
+    vi.resetModules();
+    registerSW.mockReset();
+
+    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
+      configurable: true,
+      value: {
+        getRegistration: vi.fn(async () => {
+          throw new Error('update failed');
+        }),
+      },
+    });
+    vi.spyOn(globalThis, 'setInterval').mockImplementation(
+      (() =>
+        1 as unknown as ReturnType<
+          typeof globalThis.setInterval
+        >) as unknown as typeof globalThis.setInterval,
+    );
+
+    const module = await import('../../src/pwa/register');
+    expect(() => module.registerServiceWorker({ DEV: false })).not.toThrow();
+    await Promise.resolve();
+  });
+
+  it('skips scheduled checks when service worker support disappears', async () => {
+    vi.resetModules();
+    registerSW.mockReset();
+
+    const getRegistration = vi.fn(async () => ({
+      update: vi.fn(async () => undefined),
+    }));
+    Object.defineProperty(globalThis.navigator, 'serviceWorker', {
+      configurable: true,
+      value: { getRegistration },
+    });
+
+    let scheduledCallback: (() => void) | undefined;
+    vi.spyOn(globalThis, 'setInterval').mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (isVoidCallback(callback)) {
+        scheduledCallback = () => {
+          callback();
+        };
+      }
+      return 1 as unknown as ReturnType<typeof globalThis.setInterval>;
+    }) as unknown as typeof globalThis.setInterval);
+
+    const module = await import('../../src/pwa/register');
+    module.registerServiceWorker({ DEV: false });
+    await Promise.resolve();
+    expect(getRegistration).toHaveBeenCalledTimes(1);
+
+    delete (globalThis.navigator as { serviceWorker?: unknown }).serviceWorker;
+    if (!scheduledCallback) {
+      throw new Error('Expected polling callback to be registered.');
+    }
+    scheduledCallback();
+    await Promise.resolve();
+    expect(getRegistration).toHaveBeenCalledTimes(1);
   });
 });

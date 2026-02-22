@@ -253,6 +253,31 @@ describe('buildOfflabelDocuments', () => {
     );
   });
 
+  it('combines multiple objective severity indicators into one line', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+      },
+      severity: {
+        gdb: '80',
+        merkzeichen: ['G', 'aG'],
+        pflegegrad: '3',
+      },
+    });
+
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
+
+    const combinedSeverityLine = part1ListItems.find((line) =>
+      line.startsWith('Als weitere objektive Schwereindikatoren'),
+    );
+    expect(combinedSeverityLine).toBeDefined();
+    expect(combinedSeverityLine).toContain('ein Grad der Behinderung von 80');
+    expect(combinedSeverityLine).toContain('die Merkzeichen G, aG');
+    expect(combinedSeverityLine).toContain('Pflegegrad 3');
+  });
+
   it('renders expanded work-status severity wording without bell-score duplication', () => {
     const docs = buildOfflabelDocuments({
       request: {
