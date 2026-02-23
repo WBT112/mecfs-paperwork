@@ -129,6 +129,6 @@ Do not block feature work on this unless the issue explicitly targets security t
   - Run npm run format before opening PRs if format:check fails.
 
 ## 9) Data model constraints (MVP)
-- Storage: IndexedDB with `records` + `revisions` (snapshots). Keep migrations explicit.
+- Storage: IndexedDB (`mecfs-paperwork`, v3) with four stores: `records`, `snapshots`, `formpackMeta`, `profiles`. Keep migrations explicit (bump `DB_VERSION` in `app/src/storage/db.ts`).
 - Export: primary DOCX (A4 + Wallet as separate downloads), plus JSON backup/import.
 - i18n: DE + EN from the start; locale stored per record and kept in exports.
