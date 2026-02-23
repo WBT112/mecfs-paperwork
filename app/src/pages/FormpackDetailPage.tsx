@@ -1293,12 +1293,19 @@ export default function FormpackDetailPage() {
         : null,
     [schema, translatedUiSchema],
   );
+  // ⚡ Perf: Extract the narrow slices of formData that actually affect schema
+  // and UI visibility. Using the full formData as a useMemo dependency would
+  // trigger expensive structuredClone on every keystroke, even when the user
+  // edits unrelated text fields.
+  const selectedDrug = getPathValue(formData, 'request.drug');
+  const decisionData = formData.decision;
+
   const formSchema = useMemo(() => {
     if (!schema || formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
       return schema;
     }
     return buildOfflabelFormSchema(schema, formData, showDevMedicationOptions);
-  }, [formData, formpackId, schema]);
+  }, [selectedDrug, formpackId, schema]); // eslint-disable-line react-hooks/exhaustive-deps -- formData read narrowed to selectedDrug
 
   // Apply conditional visibility for doctor-letter decision tree
   const conditionalUiSchema = useMemo(() => {
@@ -1347,7 +1354,7 @@ export default function FormpackDetailPage() {
     }
 
     return clonedUiSchema;
-  }, [normalizedUiSchema, formpackId, formData, locale]);
+  }, [normalizedUiSchema, formpackId, decisionData, selectedDrug, locale]); // eslint-disable-line react-hooks/exhaustive-deps -- formData read narrowed to decisionData + selectedDrug
 
   const dateFormatter = useMemo(
     () =>
