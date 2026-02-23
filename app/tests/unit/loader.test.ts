@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { parseManifest, FormpackLoaderError } from '../../src/formpacks/loader';
 import type { FormpackManifestPayload } from '../../src/formpacks/types';

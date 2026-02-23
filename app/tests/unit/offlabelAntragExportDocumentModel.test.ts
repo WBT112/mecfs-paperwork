@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it, vi } from 'vitest';
 import deTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/de.json';
 import enTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/en.json';

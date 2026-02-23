@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { describe, expect, it, beforeAll, afterEach, vi } from 'vitest';
 import {
   buildI18nContext,
   setNested,
@@ -6,7 +6,7 @@ import {
 import i18n from '../../../src/i18n';
 
 describe('buildI18nContext', () => {
-  beforeEach(async () => {
+  beforeAll(async () => {
     await i18n.init();
   });
 

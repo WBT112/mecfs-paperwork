@@ -46,7 +46,7 @@ const acceptOfflabelIntroGate = async (page: Page) => {
   });
 };
 
-test.describe('a11y baseline', () => {
+test.describe('a11y baseline @chromium-only', () => {
   test('home route has no moderate/serious/critical violations', async ({
     page,
     browserName,

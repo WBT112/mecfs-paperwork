@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import schemaJson from '../../public/formpacks/offlabel-antrag/schema.json';
 import uiSchemaJson from '../../public/formpacks/offlabel-antrag/ui.schema.json';

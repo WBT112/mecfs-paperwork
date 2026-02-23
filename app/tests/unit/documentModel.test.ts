@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, vi } from 'vitest';
 import deTranslationsJson from '../../public/formpacks/notfallpass/i18n/de.json';
 import enTranslationsJson from '../../public/formpacks/notfallpass/i18n/en.json';

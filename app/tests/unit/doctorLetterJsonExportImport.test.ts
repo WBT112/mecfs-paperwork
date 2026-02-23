@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect, test } from 'vitest';
 import { buildJsonExportPayload } from '../../src/export/json';
 import { validateJsonImport } from '../../src/import/json';

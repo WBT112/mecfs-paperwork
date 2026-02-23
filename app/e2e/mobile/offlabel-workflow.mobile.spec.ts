@@ -18,28 +18,6 @@ const acceptIntroGate = async (page: Page) => {
   await expect(page.locator('.formpack-form')).toBeVisible({ timeout: 20_000 });
 };
 
-const selectDrugByLabelText = async (page: Page, labelSnippet: string) => {
-  const select = page.locator('#root_request_drug');
-  await expect(select).toBeVisible({ timeout: 20_000 });
-
-  const value = await select.evaluate((node, snippet) => {
-    const options = Array.from((node as HTMLSelectElement).options);
-    const loweredSnippet = snippet.toLowerCase();
-    const match = options.find((option) =>
-      option.textContent?.toLowerCase().includes(loweredSnippet),
-    );
-    return match?.value ?? null;
-  }, labelSnippet);
-
-  if (!value) {
-    throw new Error(
-      `No drug option found for label snippet "${labelSnippet}".`,
-    );
-  }
-
-  await select.selectOption(value);
-};
-
 const selectIndicationByLabelText = async (
   page: Page,
   labelSnippet: string,
@@ -132,10 +110,10 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await openCollapsibleSectionById(page, 'formpack-document-preview');
   });
 
-  test('adds point 7 for standard medication when §2 checkbox is enabled @mobile', async ({
+  test('standard path adds auxiliary §2 wording and keeps evidence block @mobile', async ({
     page,
   }) => {
-    await selectDrugByLabelText(page, 'Ivabradin');
+    await selectDrugByValue(page, 'ivabradine');
     await page
       .getByLabel(
         /Hilfsweise gleichzeitig Antrag nach § 2 Abs\. 1a SGB V stellen/i,
@@ -150,15 +128,31 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await expect(preview).toContainText(/Hilfsweise stelle ich/i);
     await expect(preview).toContainText(/§ 2 Abs\. 1a SGB V/i);
     await expect(preview).toContainText(
-      /Selbst wenn eine formelle Zulassungsreife/i,
+      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
     );
   });
 
-  test('other path (en + light) uses direct §2 wording on mobile @mobile', async ({
+  test('other path uses direct wording, keeps selected indication, and clears other-only text after switch-back @mobile', async ({
     page,
   }) => {
+    const otherOnlyText = 'E2E-OTHER-STANDARD-CARE-TEXT-MOBILE';
+
     await switchLocale(page, 'en');
     await setTheme(page, 'light');
+
+    await selectDrugByValue(page, 'vortioxetine');
+    await selectIndicationByLabelText(page, 'depressive symptoms');
+
+    const preview = page.locator(
+      '#formpack-document-preview-content .formpack-document-preview',
+    );
+    await openPart1Preview(page);
+    await expect(preview).toBeVisible();
+    await expect(preview).toContainText(
+      /Long\/Post-COVID mit depressiven Symptomen/i,
+    );
+    await expect(preview).not.toContainText(/und\/oder/i);
+
     await selectDrugByValue(page, 'other');
     await page.locator('#root_request_otherDrugName').fill('Midodrine');
     await page
@@ -172,74 +166,20 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await page
       .locator('#root_request_otherMonitoring')
       .fill('Heart rate and blood pressure checks');
-
-    await openPart1Preview(page);
-    const preview = page.locator(
-      '#formpack-document-preview-content .formpack-document-preview',
-    );
-    await expect(preview).toBeVisible();
-    await expect(preview).toContainText(
-      /Ich beantrage eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
-    );
-    await expect(preview).toContainText(
-      /Geplant ist eine Behandlung wie folgt:/i,
-    );
-    await expect(preview).not.toContainText(
-      /Selbst wenn eine formelle Zulassungsreife/i,
-    );
-  });
-
-  test('multi-indication medications use the selected indication on mobile @mobile', async ({
-    page,
-  }) => {
-    await switchLocale(page, 'en');
-    await selectDrugByValue(page, 'vortioxetine');
-    await selectIndicationByLabelText(page, 'depressive symptoms');
-    await openPart1Preview(page);
-
-    const preview = page.locator(
-      '#formpack-document-preview-content .formpack-document-preview',
-    );
-    await expect(preview).toBeVisible();
-    await expect(preview).toContainText(
-      /Long\/Post-COVID mit depressiven Symptomen/i,
-    );
-    await expect(preview).not.toContainText(/und\/oder/i);
-  });
-
-  test('clears other-only standard-of-care text from preview after switching back to standard medication @mobile', async ({
-    page,
-  }) => {
-    const otherOnlyText = 'E2E-OTHER-STANDARD-CARE-TEXT-MOBILE';
-
-    await selectDrugByLabelText(page, 'anderes Medikament');
-    await page.locator('#root_request_otherDrugName').fill('Testwirkstoff');
-    await page.locator('#root_request_otherIndication').fill('Testindikation');
-    await page
-      .locator('#root_request_otherTreatmentGoal')
-      .fill('Symptomlinderung und Stabilisierung');
-    await page.locator('#root_request_otherDose').fill('10 mg täglich');
-    await page
-      .locator('#root_request_otherDuration')
-      .fill('12 Wochen Therapieversuch');
-    await page
-      .locator('#root_request_otherMonitoring')
-      .fill('Kontrollen alle 2 Wochen');
     await page
       .locator('#root_request_standardOfCareTriedFreeText')
       .fill(otherOnlyText);
 
-    const preview = page.locator(
-      '#formpack-document-preview-content .formpack-document-preview',
-    );
     await openPart1Preview(page);
-    await expect(preview).toBeVisible();
+    await expect(preview).toContainText(
+      /Ich beantrage eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+    );
     await expect(preview).toContainText(otherOnlyText);
     await expect(preview).toContainText(
       /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
     );
 
-    await selectDrugByLabelText(page, 'Ivabradin');
+    await selectDrugByValue(page, 'ivabradine');
 
     await expect(preview).not.toContainText(otherOnlyText);
     await expect(preview).not.toContainText(

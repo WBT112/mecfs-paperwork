@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import type { UiSchema } from '@rjsf/utils';
 import { applyOfflabelVisibility } from '../../src/formpacks/offlabel-antrag/uiVisibility';

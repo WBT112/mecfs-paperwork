@@ -47,6 +47,102 @@ const waitForActiveRecordId = async (
   return activeId;
 };
 
+const getDefaultProfileData = async (page: Page) => {
+  return page.evaluate(async (dbName) => {
+    const db = await new Promise<IDBDatabase | null>((resolve) => {
+      let aborted = false;
+      const request = indexedDB.open(dbName);
+      request.onupgradeneeded = () => {
+        aborted = true;
+        request.transaction?.abort();
+      };
+      request.onsuccess = () => {
+        const database = request.result;
+        if (aborted) {
+          database.close();
+          resolve(null);
+          return;
+        }
+        resolve(database);
+      };
+      request.onerror = () => resolve(null);
+      request.onblocked = () => resolve(null);
+    });
+
+    if (!db) {
+      return null;
+    }
+
+    try {
+      if (!db.objectStoreNames.contains('profiles')) {
+        return null;
+      }
+
+      const entry = await new Promise<Record<string, unknown> | null>(
+        (resolve, reject) => {
+          const tx = db.transaction('profiles', 'readonly');
+          const store = tx.objectStore('profiles');
+          const getRequest = store.get('default');
+          getRequest.onsuccess = () => {
+            const value = getRequest.result;
+            resolve(
+              typeof value === 'object' &&
+                value !== null &&
+                !Array.isArray(value)
+                ? (value as Record<string, unknown>)
+                : null,
+            );
+          };
+          getRequest.onerror = () => reject(getRequest.error);
+        },
+      );
+
+      if (!entry) {
+        return null;
+      }
+
+      const data = entry.data;
+      if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+        return null;
+      }
+
+      return data as Record<string, unknown>;
+    } finally {
+      db.close();
+    }
+  }, DB_NAME);
+};
+
+const waitForSavedProfile = async (page: Page) => {
+  await expect
+    .poll(
+      async () => {
+        const profileData = await getDefaultProfileData(page);
+        const patientCategory = profileData?.patient;
+        const doctorCategory = profileData?.doctor;
+
+        const patient =
+          typeof patientCategory === 'object' &&
+          patientCategory !== null &&
+          !Array.isArray(patientCategory)
+            ? (patientCategory as Record<string, unknown>)
+            : null;
+        const doctor =
+          typeof doctorCategory === 'object' &&
+          doctorCategory !== null &&
+          !Array.isArray(doctorCategory)
+            ? (doctorCategory as Record<string, unknown>)
+            : null;
+
+        return (
+          patient?.firstName === PATIENT_FIRST && doctor?.name === DOCTOR_NAME
+        );
+      },
+      { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
+    )
+    .toBe(true);
+};
+
 test.describe('saved profile across formpacks', () => {
   test('saves details in doctor-letter and applies them in notfallpass', async ({
     page,
@@ -88,8 +184,7 @@ test.describe('saved profile across formpacks', () => {
       PATIENT_FIRST,
     );
 
-    // Wait for profile save to complete (give autosave + profile save time)
-    await page.waitForTimeout(2000);
+    await waitForSavedProfile(page);
 
     // --- Step 2: Open notfallpass (keep DB so profile data persists) ---
     await openFormpackWithRetry(
@@ -157,7 +252,7 @@ test.describe('saved profile across formpacks', () => {
       DOCTOR_NAME,
     );
 
-    await page.waitForTimeout(2000);
+    await waitForSavedProfile(page);
 
     // --- Step 2: Open notfallpass (keep DB so profile data persists) ---
     await openFormpackWithRetry(

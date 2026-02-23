@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeAll, describe, expect, it } from 'vitest';
 import i18n from '../../src/i18n';
 import { buildDocumentModel } from '../../src/formpacks/documentModel';

@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import manifest from '../../public/formpacks/offlabel-antrag/manifest.json';
 import { shouldShowInfoBox } from '../../src/formpacks/formpackInfoBox';

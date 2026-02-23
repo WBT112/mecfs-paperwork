@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mapDocumentDataToTemplate } from '../../src/export/docx';
 import type { DocumentModel } from '../../src/formpacks/documentModel';

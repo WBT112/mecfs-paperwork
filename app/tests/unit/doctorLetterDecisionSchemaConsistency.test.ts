@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import schemaJson from '../../public/formpacks/doctor-letter/schema.json';
 import {
