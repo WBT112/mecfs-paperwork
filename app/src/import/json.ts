@@ -54,9 +54,21 @@ export type ImportValidationResult =
 
 type OptionalRjsfSchema = RJSFSchema | boolean | undefined;
 
+/** Maximum accepted import size (10 MB). */
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+
+/** Maximum nesting depth for recursive schema operations. */
+const MAX_SCHEMA_DEPTH = 50;
+
 const parseJson = (
   value: string,
 ): { payload: unknown } | { error: 'invalid_json'; message: string } => {
+  if (value.length > MAX_IMPORT_BYTES) {
+    return {
+      error: 'invalid_json',
+      message: 'The file exceeds the 10 MB size limit.',
+    };
+  }
   const normalized = value.replace(/^\uFEFF/, '').trimStart();
   if (!normalized) {
     return { error: 'invalid_json', message: 'The file is empty.' };
@@ -134,7 +146,11 @@ const validateSchema = (schema: RJSFSchema, data: unknown): boolean => {
 
 // Create a lenient version of schema for import validation
 // Removes 'required' and 'minLength' constraints to allow partial data import
-const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
+const makeLenientSchema = (schema: RJSFSchema, depth = 0): RJSFSchema => {
+  if (depth > MAX_SCHEMA_DEPTH) {
+    return schema;
+  }
+
   const lenient = { ...schema };
 
   // Remove top-level 'required' constraint
@@ -151,7 +167,10 @@ const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
 
         // Recursively handle nested objects
         if (propCopy.type === 'object') {
-          properties[key] = makeLenientSchema(propCopy as RJSFSchema);
+          properties[key] = makeLenientSchema(
+            propCopy as RJSFSchema,
+            depth + 1,
+          );
         } else {
           properties[key] = propCopy;
         }
@@ -193,8 +212,9 @@ const resolveSchemaDefaultValue = (schema: OptionalRjsfSchema): unknown => {
 const removeReadOnlyFields = (
   schema: RJSFSchema,
   data: Record<string, unknown>,
+  depth = 0,
 ): Record<string, unknown> => {
-  if (!schema.properties) {
+  if (depth > MAX_SCHEMA_DEPTH || !schema.properties) {
     return data;
   }
 
@@ -215,8 +235,82 @@ const removeReadOnlyFields = (
 
     // Recursively handle nested objects
     if (propertySchema.type === 'object' && isRecord(normalized[key])) {
-      normalized[key] = removeReadOnlyFields(propertySchema, normalized[key]);
+      normalized[key] = removeReadOnlyFields(
+        propertySchema,
+        normalized[key],
+        depth + 1,
+      );
     }
+  }
+
+  return normalized;
+};
+
+const getFirstItemSchema = (
+  schema: OptionalRjsfSchema,
+): OptionalRjsfSchema | undefined => {
+  if (!schema || typeof schema !== 'object') {
+    return undefined;
+  }
+  if (Array.isArray(schema.items)) {
+    return schema.items[0] as OptionalRjsfSchema;
+  }
+  return schema.items as OptionalRjsfSchema;
+};
+
+// Remove unknown fields when schema disallows additional properties.
+// This keeps imports compatible with older exports after schema evolution.
+const removeUnknownSchemaFields = (
+  schema: OptionalRjsfSchema,
+  data: unknown,
+  depth = 0,
+): unknown => {
+  if (depth > MAX_SCHEMA_DEPTH) {
+    return data;
+  }
+
+  if (!schema || typeof schema !== 'object') {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    const itemSchema = getFirstItemSchema(schema);
+    if (!itemSchema) {
+      return data;
+    }
+    return data.map((item) =>
+      removeUnknownSchemaFields(itemSchema, item, depth + 1),
+    );
+  }
+
+  if (!isRecord(data)) {
+    return data;
+  }
+
+  if (!schema.properties) {
+    return data;
+  }
+
+  const properties = schema.properties as Record<string, unknown>;
+  const allowsAdditionalProperties = schema.additionalProperties === true;
+  const normalized: Record<string, unknown> = allowsAdditionalProperties
+    ? { ...data }
+    : {};
+
+  for (const [key, value] of Object.entries(data)) {
+    const propertySchema = properties[key] as OptionalRjsfSchema;
+    if (!propertySchema || typeof propertySchema !== 'object') {
+      if (allowsAdditionalProperties) {
+        normalized[key] = value;
+      }
+      continue;
+    }
+
+    normalized[key] = removeUnknownSchemaFields(
+      propertySchema,
+      value,
+      depth + 1,
+    );
   }
 
   return normalized;
@@ -256,6 +350,7 @@ const addRequiredDefaults = (
 const applyNestedDefaults = (
   schema: RJSFSchema,
   normalized: Record<string, unknown>,
+  depth: number,
 ): void => {
   if (!schema.properties) {
     return;
@@ -272,7 +367,11 @@ const applyNestedDefaults = (
       propertySchema.type === 'object' &&
       isRecord(normalized[key])
     ) {
-      normalized[key] = applySchemaDefaults(propertySchema, normalized[key]);
+      normalized[key] = applySchemaDefaults(
+        propertySchema,
+        normalized[key],
+        depth + 1,
+      );
     }
   }
 };
@@ -280,8 +379,9 @@ const applyNestedDefaults = (
 const applySchemaDefaults = (
   schema: RJSFSchema,
   data: Record<string, unknown>,
+  depth = 0,
 ): Record<string, unknown> => {
-  if (!schema.properties) {
+  if (depth > MAX_SCHEMA_DEPTH || !schema.properties) {
     return data;
   }
 
@@ -291,7 +391,7 @@ const applySchemaDefaults = (
   addRequiredDefaults(schema, normalized);
 
   // Recursively apply defaults to nested objects
-  applyNestedDefaults(schema, normalized);
+  applyNestedDefaults(schema, normalized, depth);
 
   return normalized;
 };
@@ -450,7 +550,14 @@ const normalizeExportPayload = (
 
   // Remove readOnly fields before validation (they're auto-generated, not user input)
   const withoutReadOnly = removeReadOnlyFields(schema, recordDataResult.value);
-  const normalizedData = applySchemaDefaults(schema, withoutReadOnly);
+  const withoutUnknownFields = removeUnknownSchemaFields(
+    schema,
+    withoutReadOnly,
+  );
+  const normalizedData = applySchemaDefaults(
+    schema,
+    isRecord(withoutUnknownFields) ? withoutUnknownFields : withoutReadOnly,
+  );
 
   // Use lenient schema for import validation (allows partial/incomplete data)
   const lenientSchema = makeLenientSchema(schema);

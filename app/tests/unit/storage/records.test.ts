@@ -105,15 +105,26 @@ describe('listRecords', () => {
 });
 
 describe('updateRecord', () => {
-  const mockDb = {
-    get: vi.fn(),
-    put: vi.fn(),
-  };
+  let mockStore: { get: Mock; put: Mock };
+  let mockTx: { objectStore: Mock; done: Promise<void> };
+  let resolveDone: (() => void) | undefined;
+  let mockDb: { transaction: Mock };
 
   beforeEach(() => {
+    mockStore = {
+      get: vi.fn(),
+      put: vi.fn(),
+    };
+    mockTx = {
+      objectStore: vi.fn(() => mockStore),
+      done: new Promise<void>((resolve) => {
+        resolveDone = resolve;
+      }),
+    };
+    mockDb = {
+      transaction: vi.fn(() => mockTx),
+    };
     vi.mocked(openStorage).mockResolvedValue(mockDb as any);
-    mockDb.get.mockClear();
-    mockDb.put.mockClear();
   });
 
   it('should update the record and timestamps', async () => {
@@ -125,28 +136,31 @@ describe('updateRecord', () => {
       createdAt: INITIAL_TIMESTAMP,
       updatedAt: INITIAL_TIMESTAMP,
     };
-    mockDb.get.mockResolvedValue(existingRecord);
+    mockStore.get.mockResolvedValue(existingRecord);
 
     const updates = {
       data: { a: 2 },
       title: 'New Title',
       locale: 'de' as const,
     };
-    const result = await updateRecord('1', updates);
+    const resultPromise = updateRecord('1', updates);
+    resolveDone?.();
+    const result = await resultPromise;
 
     expect(result?.data).toEqual(updates.data);
     expect(result?.title).toBe(updates.title);
     expect(result?.locale).toBe(updates.locale);
     expect(result?.createdAt).toBe(existingRecord.createdAt);
     expect(result?.updatedAt).not.toBe(existingRecord.updatedAt);
-    expect(mockDb.put).toHaveBeenCalledWith('records', result);
+    expect(mockStore.put).toHaveBeenCalledWith(result);
+    expect(mockDb.transaction).toHaveBeenCalledWith('records', 'readwrite');
   });
 
   it('should return null if the record is not found', async () => {
-    mockDb.get.mockResolvedValue(undefined);
+    mockStore.get.mockResolvedValue(undefined);
     const result = await updateRecord('1', {});
     expect(result).toBeNull();
-    expect(mockDb.put).not.toHaveBeenCalled();
+    expect(mockStore.put).not.toHaveBeenCalled();
   });
 });
 

@@ -41,6 +41,33 @@ export interface InfoBoxConfig {
 
 export interface FormpackUiConfig {
   infoBoxes?: InfoBoxConfig[];
+  introGate?: {
+    enabled: boolean;
+    acceptedFieldPath: string;
+    titleKey: string;
+    bodyKey: string;
+    checkboxLabelKey: string;
+    startButtonLabelKey: string;
+    reopenButtonLabelKey: string;
+  };
+}
+
+export type FormpackCategory = 'insurer' | 'doctor' | 'general' | 'other';
+
+export const FORMPACK_CATEGORIES = [
+  'insurer',
+  'doctor',
+  'general',
+  'other',
+] as const;
+
+export const isFormpackCategory = (value: unknown): value is FormpackCategory =>
+  typeof value === 'string' &&
+  (FORMPACK_CATEGORIES as readonly string[]).includes(value);
+
+export interface FormpackMeta {
+  category?: FormpackCategory;
+  keywords?: string[];
 }
 
 export interface FormpackManifest {
@@ -54,6 +81,7 @@ export interface FormpackManifest {
   visibility: FormpackVisibility;
   docx?: FormpackDocxManifest;
   ui?: FormpackUiConfig;
+  meta?: FormpackMeta;
 }
 
 /**
@@ -70,4 +98,5 @@ export interface FormpackManifestPayload {
   visibility?: unknown;
   docx?: unknown;
   ui?: unknown;
+  meta?: unknown;
 }

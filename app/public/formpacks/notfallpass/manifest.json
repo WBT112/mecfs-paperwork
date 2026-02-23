@@ -7,6 +7,10 @@
   "descriptionKey": "notfallpass.description",
   "exports": ["docx", "json"],
   "visibility": "dev",
+  "meta": {
+    "category": "general",
+    "keywords": ["notfall", "pass", "notfallpass", "wallet", "daten"]
+  },
   "docx": {
     "templates": {
       "a4": "templates/a4.docx",

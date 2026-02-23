@@ -1,4 +1,5 @@
 import type { InfoBoxConfig } from './types';
+import { getPathValue } from '../lib/pathAccess';
 
 export type { InfoBoxConfig } from './types';
 
@@ -20,7 +21,7 @@ export function shouldShowInfoBox(
 
   // Evaluate all showIf conditions (all must be true)
   return infoBox.showIf.every((condition) => {
-    const value = getNestedValue(formData, condition.path);
+    const value = getPathValue(formData, condition.path);
 
     switch (condition.op) {
       case 'eq':
@@ -31,27 +32,6 @@ export function shouldShowInfoBox(
         return false;
     }
   });
-}
-
-/**
- * Gets a nested value from an object using a path like "decision.q1"
- */
-function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-  const keys = path.split('.');
-  let current: unknown = obj;
-
-  for (const key of keys) {
-    if (current === null || current === undefined) {
-      return undefined;
-    }
-    if (typeof current === 'object' && !Array.isArray(current)) {
-      current = (current as Record<string, unknown>)[key];
-    } else {
-      return undefined;
-    }
-  }
-
-  return current;
 }
 
 /**

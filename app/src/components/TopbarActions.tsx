@@ -1,4 +1,11 @@
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { emptyStringToNull } from '../lib/utils';
@@ -55,6 +62,7 @@ const tryNativeShare = async (
 export default memo(function TopbarActions() {
   const { t, i18n } = useTranslation();
   const { pathname } = useLocation();
+  const shareDialogTitleId = useId();
   const [shareFallback, setShareFallback] = useState<ShareFallbackState | null>(
     null,
   );
@@ -148,9 +156,14 @@ export default memo(function TopbarActions() {
         {t('shareAction')}
       </button>
       {shareFallback && (
-        <dialog className="app__share-fallback" open aria-modal="true">
+        <dialog
+          className="app__share-fallback"
+          open
+          aria-modal="true"
+          aria-labelledby={shareDialogTitleId}
+        >
           <div className="app__share-fallback-header">
-            <strong>
+            <strong id={shareDialogTitleId}>
               {shareFallback.copied
                 ? t('shareCopiedLabel')
                 : t('shareFallbackTitle')}

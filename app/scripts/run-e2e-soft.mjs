@@ -69,6 +69,7 @@ function runPlaywright({ project, outputDir, extraArgs = [] }) {
 
 async function main() {
   process.env.VITE_ENABLE_DEV_SW = 'true';
+  const softFailArgs = ['--max-failures', '1'];
   // Chromium is gating
   const chromiumCode = await runPlaywright({
     project: 'chromium',
@@ -86,6 +87,7 @@ async function main() {
   const firefoxCode = await runPlaywright({
     project: 'firefox',
     outputDir: 'test-results/firefox',
+    extraArgs: softFailArgs,
   });
   if (firefoxCode !== 0) {
     console.warn(`[e2e-soft] firefox failed (soft-fail): exit ${firefoxCode}`);
@@ -94,6 +96,7 @@ async function main() {
   const webkitCode = await runPlaywright({
     project: 'webkit',
     outputDir: 'test-results/webkit',
+    extraArgs: softFailArgs,
   });
   if (webkitCode !== 0) {
     console.warn(`[e2e-soft] webkit failed (soft-fail): exit ${webkitCode}`);
@@ -102,6 +105,7 @@ async function main() {
   const webkitMobileCode = await runPlaywright({
     project: 'webkit-mobile',
     outputDir: 'test-results/webkit-mobile',
+    extraArgs: softFailArgs,
   });
   if (webkitMobileCode !== 0) {
     console.warn(

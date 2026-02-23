@@ -104,7 +104,7 @@ const waitForNamePersisted = async (page: Page, expected: string) => {
         const activeId = await getActiveRecordId(page);
         if (!activeId) return '';
         const record = await readRecordById(page, activeId);
-        return record?.data?.person?.name ?? '';
+        return record?.data?.person?.firstName ?? '';
       },
       { timeout: AUTOSAVE_TIMEOUT_MS, intervals: POLL_INTERVALS },
     )
@@ -127,7 +127,7 @@ const openDraftsSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
     await expect(nameInput).toBeVisible();
@@ -171,7 +171,7 @@ test.describe('reset form', () => {
 
     await clickNewDraftIfNeeded(page);
 
-    const nameInput = page.locator('#root_person_name');
+    const nameInput = page.locator('#root_person_firstName');
     await waitForActiveRecordId(page);
     await fillTextInputStable(page, nameInput, 'Test Person', POLL_TIMEOUT);
     await waitForNamePersisted(page, 'Test Person');

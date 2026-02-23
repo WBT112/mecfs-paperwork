@@ -175,16 +175,16 @@ describe('createPwaConfig', () => {
     });
   });
 
-  it('keeps passive service worker update behavior', () => {
+  it('uses active service worker update behavior', () => {
     const config = createPwaConfig();
-    expect(config.registerType).toBe('prompt');
+    expect(config.registerType).toBe('autoUpdate');
 
     const workbox = config.workbox;
     expect(workbox).toBeDefined();
     if (!workbox) {
       throw new Error(WORKBOX_REQUIRED_ERROR);
     }
-    expect(workbox.skipWaiting).toBe(false);
+    expect(workbox.skipWaiting).toBe(true);
     expect(workbox.clientsClaim).toBe(true);
   });
 
