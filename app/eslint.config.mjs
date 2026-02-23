@@ -157,6 +157,10 @@ export default [
   {
     files: ['src/**/*.{tsx,jsx}'],
     ...jsxA11y.flatConfigs.recommended,
+    rules: {
+      ...(jsxA11y.flatConfigs.recommended.rules ?? {}),
+      'jsx-a11y/label-has-associated-control': 'error',
+    },
   },
 
   {
