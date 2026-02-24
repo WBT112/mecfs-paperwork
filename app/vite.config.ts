@@ -257,7 +257,7 @@ const createConfig = (mode: string): AppConfig => ({
       thresholds: {
         // Global coverage thresholds (CI enforced)
         lines: 85,
-        branches: 75,
+        branches: 85,
         functions: 80,
         statements: 85,
       },

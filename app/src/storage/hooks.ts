@@ -335,6 +335,15 @@ export const useAutosaveRecord = (
   const onError = options?.onError;
   const lastSavedRef = useRef<string | null>(null);
   const lastRecordIdRef = useRef<string | null>(null);
+  const latestRecordIdRef = useRef<string | null>(recordId);
+  const latestFormDataRef = useRef<Record<string, unknown>>(formData);
+  const latestLocaleRef = useRef<SupportedLocale>(locale);
+
+  useEffect(() => {
+    latestRecordIdRef.current = recordId;
+    latestFormDataRef.current = formData;
+    latestLocaleRef.current = locale;
+  }, [recordId, formData, locale]);
 
   useEffect(() => {
     if (!recordId) {
@@ -366,6 +375,38 @@ export const useAutosaveRecord = (
     lastSavedRef.current = JSON.stringify(nextData);
   }, []);
 
+  const persistPendingChanges = useCallback(
+    async (notifyCallbacks: boolean) => {
+      const currentRecordId = latestRecordIdRef.current;
+      if (!currentRecordId) {
+        return;
+      }
+
+      const currentFormData = latestFormDataRef.current;
+      const serializedData = JSON.stringify(currentFormData);
+      if (lastSavedRef.current === serializedData) {
+        return;
+      }
+
+      try {
+        const record = await updateRecordEntry(currentRecordId, {
+          data: currentFormData,
+          locale: latestLocaleRef.current,
+        });
+
+        if (record && notifyCallbacks && onSaved) {
+          onSaved(record);
+        }
+        lastSavedRef.current = serializedData;
+      } catch (error: unknown) {
+        if (notifyCallbacks && onError) {
+          onError(getStorageErrorCode(error));
+        }
+      }
+    },
+    [onError, onSaved],
+  );
+
   useEffect(() => {
     if (!recordId) {
       return;
@@ -377,31 +418,24 @@ export const useAutosaveRecord = (
     }
 
     const timeout = globalThis.setTimeout(() => {
-      if (lastSavedRef.current === nextSerialized) {
-        return;
-      }
-
-      updateRecordEntry(recordId, {
-        data: formData,
-        locale,
-      })
-        .then((record) => {
-          if (record && onSaved) {
-            onSaved(record);
-          }
-          lastSavedRef.current = nextSerialized;
-        })
-        .catch((error: unknown) => {
-          if (onError) {
-            onError(getStorageErrorCode(error));
-          }
-        });
+      persistPendingChanges(true).catch(() => undefined);
     }, delay);
 
     return () => {
       globalThis.clearTimeout(timeout);
     };
-  }, [recordId, formData, locale, delay, onSaved, onError]);
+  }, [recordId, formData, delay, persistPendingChanges]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      persistPendingChanges(false).catch(() => undefined);
+    };
+
+    globalThis.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      globalThis.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [persistPendingChanges]);
 
   return { markAsSaved };
 };

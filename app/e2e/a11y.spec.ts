@@ -180,11 +180,13 @@ test.describe('a11y baseline @chromium-only', () => {
     await acceptOfflabelIntroGate(page);
 
     await expect
-      .poll(() =>
-        page.evaluate(() => {
-          const active = document.activeElement as HTMLElement | null;
-          return Boolean(active?.closest('.formpack-form'));
-        }),
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const active = document.activeElement as HTMLElement | null;
+            return Boolean(active?.closest('.formpack-form'));
+          }),
+        { timeout: POLL_TIMEOUT, intervals: [250, 500, 1_000] },
       )
       .toBe(true);
   });

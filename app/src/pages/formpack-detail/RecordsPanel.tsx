@@ -13,7 +13,7 @@ type RecordsPanelLabels = {
   recordsEmpty: string;
 };
 
-type RecordsPanelProps = {
+type RecordsPanelProps = Readonly<{
   labels: RecordsPanelLabels;
   records: RecordEntry[];
   activeRecordId: string | null;
@@ -24,7 +24,7 @@ type RecordsPanelProps = {
   onCreateRecord: () => void;
   onLoadRecord: (recordId: string) => void;
   onDeleteRecord: (record: RecordEntry) => void;
-};
+}>;
 
 export default function RecordsPanel({
   labels,

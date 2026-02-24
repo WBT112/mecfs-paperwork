@@ -15,11 +15,11 @@ type DevMetadataLabels = {
   docxMapping: string;
 };
 
-type DevMetadataPanelProps = {
+type DevMetadataPanelProps = Readonly<{
   show: boolean;
   manifest: FormpackManifest;
   labels: DevMetadataLabels;
-};
+}>;
 
 export default function DevMetadataPanel({
   show,

@@ -16,7 +16,7 @@ type ImportPanelLabels = {
   action: string;
 };
 
-type ImportPanelProps = {
+type ImportPanelProps = Readonly<{
   labels: ImportPanelLabels;
   importInputRef: RefObject<HTMLInputElement | null>;
   importFileName: string | null;
@@ -32,7 +32,7 @@ type ImportPanelProps = {
   onIncludeRevisionsChange: (checked: boolean) => void;
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onImport: () => void;
-};
+}>;
 
 export default function ImportPanel({
   labels,

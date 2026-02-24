@@ -108,6 +108,7 @@
   "formpackFormReset": "Reset form",
   "profileSaveCheckbox": "Save master data for future forms",
   "profileApplyButton": "Apply master data",
+  "profileApplyDummyButton": "Apply dummy data",
   "profileApplySuccess": "Master data applied.",
   "profileApplyNoData": "No master data found.",
   "profileApplyError": "Could not load master data.",

@@ -198,7 +198,9 @@ test.describe('saved profile across formpacks', () => {
     });
 
     // The Apply button should be enabled (profile has data)
-    const applyButton = page.locator('.profile-quickfill .app__button');
+    const applyButton = page.getByRole('button', {
+      name: /Stammdaten übernehmen|Apply master data/,
+    });
     await expect(applyButton).toBeVisible({ timeout: POLL_TIMEOUT });
     await expect(applyButton).toBeEnabled({ timeout: POLL_TIMEOUT });
 
@@ -269,7 +271,9 @@ test.describe('saved profile across formpacks', () => {
     await expect(doctorField).toBeVisible({ timeout: POLL_TIMEOUT });
     await doctorField.fill(existingDoctorName);
 
-    const applyButton = page.locator('.profile-quickfill .app__button');
+    const applyButton = page.getByRole('button', {
+      name: /Stammdaten übernehmen|Apply master data/,
+    });
     await expect(applyButton).toBeEnabled({ timeout: POLL_TIMEOUT });
     await clickActionButton(applyButton);
 

@@ -909,6 +909,9 @@ describe('FormpackDetailPage', () => {
     expect(
       screen.queryByText('formpackFormPreviewHeading'),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'profileApplyDummyButton' }),
+    ).not.toBeInTheDocument();
   });
 
   it('renders document preview above the tools group', async () => {
@@ -1115,10 +1118,12 @@ describe('FormpackDetailPage', () => {
     expect(
       screen.getByRole('button', { name: INTRO_REOPEN_KEY }),
     ).toBeInTheDocument();
-    await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
-      ).toHaveFocus(),
+    await waitFor(
+      () =>
+        expect(
+          screen.getByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
+        ).toHaveFocus(),
+      { timeout: 4_000 },
     );
   });
 
@@ -1200,6 +1205,20 @@ describe('FormpackDetailPage', () => {
 
     confirmSpy.mockRestore();
     setItemSpy.mockRestore();
+  });
+
+  it('shows dummy-fill action in dev mode', async () => {
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(
+      await screen.findByRole('button', { name: 'profileApplyDummyButton' }),
+    ).toBeInTheDocument();
   });
 
   it('prompts for deleting saved profile data when disabling profile save', async () => {

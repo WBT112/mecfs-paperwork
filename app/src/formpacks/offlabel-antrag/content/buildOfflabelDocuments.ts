@@ -144,7 +144,7 @@ const POINT_8_STANDARD =
 const POINT_10_EVIDENCE_NOTE =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit; ich bitte um eine vollständige sozialmedizinische Würdigung einschließlich ggf. ergänzender Literaturrecherche im Einzelfall.';
 
-const POINT_10_NO_2A = `Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben. Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen, insbesondere aufgrund unterschiedlicher Ursachen und Komorbiditäten. Das trifft auch auf Patientinnen und Patienten mit Long-/Post-COVID zu. ${POINT_10_EVIDENCE_NOTE}`;
+const POINT_10_NO_2A = `Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben. Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen, insbesondere aufgrund unterschiedlicher Ursachen und Komorbiditäten. Das trifft auch auf Patientinnen und Patienten mit Long-/Post-COVID, ME/CFS und anderen verwandten Diagnosen zu. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_YES_2A = `Diese Erkenntnisse sind auf meinen Einzelfall übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_SECTION_2A_BRIDGE = `Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde, bestehen jedenfalls veröffentlichte Erkenntnisse, die eine zuverlässige Nutzen-Risiko-Abwägung ermöglichen; hilfsweise wird daher die Leistung nach § 2 Abs. 1a SGB V begehrt.`;
 const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
@@ -250,18 +250,28 @@ const resolvePreviewMedicationFacts = (
 
 const buildTreatmentPlanItems = (
   facts: PreviewMedicationFacts,
-  opts: { diagnosisMode?: 'indication' | 'comparableSymptoms' } = {},
+  opts: {
+    diagnosisMode?: 'indication' | 'comparableSymptoms';
+    includeDiagnosisItem?: boolean;
+  } = {},
 ): string[] => {
   const diagnosisMode = opts.diagnosisMode ?? 'indication';
+  const includeDiagnosisItem = opts.includeDiagnosisItem ?? true;
 
-  return [
+  const diagnosisItem =
     diagnosisMode === 'comparableSymptoms'
       ? `Klinische Symptomatik (vergleichbar mit ${facts.diagnosisDative})`
-      : `Indikation: ${facts.diagnosisNominative}`,
+      : `Indikation: ${facts.diagnosisNominative}`;
+  const items = [
     `Behandlungsziel: ${facts.targetSymptoms}`,
     `Dosierung/Dauer: ${facts.doseAndDuration}`,
     `Überwachung/Abbruch: ${facts.monitoringAndStop}`,
   ];
+  if (includeDiagnosisItem) {
+    items.unshift(diagnosisItem);
+  }
+
+  return items;
 };
 
 const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
@@ -457,6 +467,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
         kind: 'list',
         items: buildTreatmentPlanItems(facts, {
           diagnosisMode: point2aNo ? 'comparableSymptoms' : 'indication',
+          includeDiagnosisItem: !point2aNo,
         }),
       },
       {
@@ -598,10 +609,14 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
         kind: 'paragraph',
         text: `Patient: ${patientName}, geb. ${resolvedBirthDate}; Versichertennr.: ${resolvedInsuranceNumber}`,
       },
-      {
-        kind: 'paragraph',
-        text: `Diagnose: ${facts.diagnosisNominative}`,
-      },
+      ...(!point2aNo
+        ? ([
+            {
+              kind: 'paragraph' as const,
+              text: `Diagnose: ${facts.diagnosisNominative}`,
+            },
+          ] satisfies OfflabelRenderedDocument['blocks'])
+        : []),
       {
         kind: 'paragraph',
         text: 'Der Patient leidet an einer schwerwiegenden, die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung.',
@@ -635,9 +650,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
         kind: 'list',
         items: [
           `Behandlungsziel: ${facts.targetSymptoms}`,
-          point2aNo
-            ? `Klinische Symptomatik (vergleichbar mit ${facts.diagnosisDative})`
-            : `Indikation: ${facts.diagnosisNominative}`,
+          ...(point2aNo ? [] : [`Indikation: ${facts.diagnosisNominative}`]),
           `Dosierung/Dauer: ${facts.doseAndDuration}`,
           `Monitoring/Abbruchkriterien: ${facts.monitoringAndStop}`,
           `Erwarteter Nutzen / Therapieziel im Einzelfall: ${facts.targetSymptoms}`,

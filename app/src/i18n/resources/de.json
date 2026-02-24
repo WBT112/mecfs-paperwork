@@ -108,6 +108,7 @@
   "formpackFormReset": "Formular zurücksetzen",
   "profileSaveCheckbox": "Stammdaten für zukünftige Formulare speichern",
   "profileApplyButton": "Stammdaten übernehmen",
+  "profileApplyDummyButton": "Dummydaten einsetzen",
   "profileApplySuccess": "Stammdaten übernommen.",
   "profileApplyNoData": "Keine Stammdaten vorhanden.",
   "profileApplyError": "Stammdaten konnten nicht geladen werden.",

@@ -1,10 +1,10 @@
 import { Link } from 'react-router-dom';
 
-type FormpackDetailHeaderProps = {
+type FormpackDetailHeaderProps = Readonly<{
   title: string;
   description: string;
   backToListLabel: string;
-};
+}>;
 
 export default function FormpackDetailHeader({
   title,

@@ -38,6 +38,7 @@ import { FormpackFieldTemplate } from '../lib/rjsfFormpackFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/preview';
 import { getFirstItem, isRecord } from '../lib/utils';
+import { buildRandomDummyPatch } from '../lib/devDummyFill';
 import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
@@ -201,6 +202,8 @@ const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const FORM_PRIMARY_FOCUS_SELECTOR =
   '.formpack-form input:not([type="hidden"]):not([disabled]), .formpack-form select:not([disabled]), .formpack-form textarea:not([disabled]), .formpack-form button:not([disabled]), .formpack-form [tabindex]:not([tabindex="-1"])';
 const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
+const FOCUS_RETRY_DELAY_MS = 50;
+const FOCUS_RETRY_ATTEMPTS = 30;
 
 const OFFLABEL_FOCUS_SELECTOR_BY_TARGET: Record<OfflabelFocusTarget, string> = {
   'request.otherDrugName':
@@ -255,6 +258,24 @@ const toStringArray = (value: unknown): string[] =>
 const hasSameStringArray = (left: string[], right: string[]): boolean =>
   left.length === right.length &&
   left.every((entry, index) => entry === right[index]);
+
+const mergeDummyPatch = (base: unknown, patch: unknown): unknown => {
+  if (patch === undefined) {
+    return base;
+  }
+  if (Array.isArray(patch)) {
+    return patch;
+  }
+  if (!isRecord(base) || !isRecord(patch)) {
+    return patch;
+  }
+
+  const next: Record<string, unknown> = { ...base };
+  for (const [key, patchValue] of Object.entries(patch)) {
+    next[key] = mergeDummyPatch(base[key], patchValue);
+  }
+  return next;
+};
 
 const normalizeOfflabelRequest = (
   request: Record<string, unknown>,
@@ -1369,6 +1390,20 @@ export default function FormpackDetailPage() {
     return clonedUiSchema;
   }, [normalizedUiSchema, formpackId, decisionData, selectedDrug, locale]); // eslint-disable-line react-hooks/exhaustive-deps -- formData read narrowed to decisionData + selectedDrug
 
+  const handleApplyDummyData = useCallback(() => {
+    if (!isDevUiEnabled || !formSchema || !conditionalUiSchema) {
+      return;
+    }
+
+    const patch = buildRandomDummyPatch(formSchema, conditionalUiSchema);
+    const merged = mergeDummyPatch(formData, patch);
+    const nextData = isRecord(merged) ? merged : formData;
+
+    setProfileStatus(null);
+    setFormData(nextData);
+    markAsSaved(nextData);
+  }, [conditionalUiSchema, formData, formSchema, markAsSaved]);
+
   const dateFormatter = useMemo(
     () =>
       new Intl.DateTimeFormat(activeLanguage, {
@@ -2074,9 +2109,9 @@ export default function FormpackDetailPage() {
         return;
       }
 
-      if (attempts < 6) {
+      if (attempts < FOCUS_RETRY_ATTEMPTS) {
         attempts += 1;
-        globalThis.setTimeout(tryFocus, 50);
+        globalThis.setTimeout(tryFocus, FOCUS_RETRY_DELAY_MS);
         return;
       }
 
@@ -2116,9 +2151,9 @@ export default function FormpackDetailPage() {
         return;
       }
 
-      if (attempts < 6) {
+      if (attempts < FOCUS_RETRY_ATTEMPTS) {
         attempts += 1;
-        globalThis.setTimeout(tryFocus, 50);
+        globalThis.setTimeout(tryFocus, FOCUS_RETRY_DELAY_MS);
         return;
       }
 
@@ -2159,9 +2194,9 @@ export default function FormpackDetailPage() {
         return;
       }
 
-      if (attempts < 6) {
+      if (attempts < FOCUS_RETRY_ATTEMPTS) {
         attempts += 1;
-        globalThis.setTimeout(tryFocus, 50);
+        globalThis.setTimeout(tryFocus, FOCUS_RETRY_DELAY_MS);
         return;
       }
 
@@ -2696,6 +2731,15 @@ export default function FormpackDetailPage() {
           >
             {t('profileApplyButton')}
           </button>
+          {showDevSections && (
+            <button
+              type="button"
+              className="app__button"
+              onClick={handleApplyDummyData}
+            >
+              {t('profileApplyDummyButton')}
+            </button>
+          )}
           {profileStatus && (
             <span
               className={

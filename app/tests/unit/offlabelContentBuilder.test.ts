@@ -54,7 +54,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).not.toContain(EVIDENCE_NOT_SUFFICIENT_TEXT);
     expect(part1Text).toContain(EVIDENCE_SUFFICIENT_TEXT);
     expect(part1Text).not.toMatch(/Punkt \d+:/);
-    expect(part1ListItems).toContain(
+    expect(part1ListItems).not.toContain(
       `Klinische Symptomatik (vergleichbar mit ${IVABRADIN_DIAGNOSIS_DATIVE_TEXT})`,
     );
     expect(part1ListItems).not.toContain(
@@ -118,6 +118,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part3Text).toContain(
       `Die klinische Symptomatik ist mit ${IVABRADIN_DIAGNOSIS_DATIVE_TEXT} vergleichbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
     );
+    expect(part3Text).not.toContain(`Diagnose: ${IVABRADIN_DIAGNOSIS_TEXT}`);
   });
 
   it('uses the patient name in part-1 closing line', () => {

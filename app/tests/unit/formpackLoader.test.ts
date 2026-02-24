@@ -23,6 +23,8 @@ const MANIFEST_PATH_NOTFALLPASS = `/formpacks/${NOTFALLPASS_ID}/manifest.json`;
 const MANIFEST_PATH_OFFLABEL = `/formpacks/${OFFLABEL_ANTRAG_ID}/manifest.json`;
 const SCHEMA_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/schema.json`;
 const UI_SCHEMA_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/ui.schema.json`;
+const UNKNOWN_FORMPACK_ID = 'unknown-formpack';
+const UNKNOWN_FORMPACK_MESSAGE = 'The requested formpack id is not registered.';
 
 describe('parseManifest', () => {
   const validPayload: FormpackManifestPayload = {
@@ -267,6 +269,32 @@ describe('formpack loader fetches', () => {
 
     const manifest = await loadFormpackManifest(DOCTOR_LETTER_ID);
     expect(manifest.id).toBe(DOCTOR_LETTER_ID);
+  });
+
+  it('rejects unknown formpack ids before fetching resources', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    await expect(
+      loadFormpackManifest(UNKNOWN_FORMPACK_ID),
+    ).rejects.toMatchObject({
+      code: 'not_found',
+      message: UNKNOWN_FORMPACK_MESSAGE,
+    });
+    await expect(loadFormpackSchema(UNKNOWN_FORMPACK_ID)).rejects.toMatchObject(
+      {
+        code: 'schema_not_found',
+        message: UNKNOWN_FORMPACK_MESSAGE,
+      },
+    );
+    await expect(
+      loadFormpackUiSchema(UNKNOWN_FORMPACK_ID),
+    ).rejects.toMatchObject({
+      code: 'ui_schema_not_found',
+      message: UNKNOWN_FORMPACK_MESSAGE,
+    });
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('reuses the cached manifest for repeated requests', async () => {

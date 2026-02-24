@@ -34,6 +34,15 @@ const formatPhone = (value: string | null | undefined): string => {
 };
 
 globalThis.addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
+  const messageOrigin = event.origin;
+  if (
+    messageOrigin &&
+    messageOrigin !== 'null' &&
+    messageOrigin !== globalThis.location.origin
+  ) {
+    return;
+  }
+
   const {
     id,
     template,

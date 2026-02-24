@@ -589,4 +589,46 @@ describe('useAutosaveRecord', () => {
       'unavailable',
     );
   });
+
+  it('flushes pending autosave immediately on beforeunload', async () => {
+    const savedRecord = createRecord({ id: AUTOSAVE_RECORD_ID });
+    vi.mocked(updateRecordEntry).mockResolvedValue(savedRecord);
+
+    const { rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'initial' },
+      baselineData: { field: 'initial' },
+    });
+
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: { field: 'initial' },
+    });
+
+    await act(async () => {
+      globalThis.dispatchEvent(new Event('beforeunload'));
+      await Promise.resolve();
+    });
+
+    expect(updateRecordEntry).toHaveBeenCalledWith(AUTOSAVE_RECORD_ID, {
+      data: { field: 'changed' },
+      locale: 'de',
+    });
+  });
+
+  it('does not flush on beforeunload when data is already saved', async () => {
+    renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'saved' },
+      baselineData: { field: 'saved' },
+    });
+
+    await act(async () => {
+      globalThis.dispatchEvent(new Event('beforeunload'));
+      await Promise.resolve();
+    });
+
+    expect(updateRecordEntry).not.toHaveBeenCalled();
+  });
 });

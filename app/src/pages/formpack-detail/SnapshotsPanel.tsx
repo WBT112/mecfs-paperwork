@@ -13,7 +13,7 @@ type SnapshotsPanelLabels = {
   snapshotsClearAll: string;
 };
 
-type SnapshotsPanelProps = {
+type SnapshotsPanelProps = Readonly<{
   labels: SnapshotsPanelLabels;
   snapshots: SnapshotEntry[];
   activeRecordExists: boolean;
@@ -23,7 +23,7 @@ type SnapshotsPanelProps = {
   onCreateSnapshot: () => void;
   onClearSnapshots: () => void;
   onRestoreSnapshot: (snapshotId: string) => void;
-};
+}>;
 
 export default function SnapshotsPanel({
   labels,
@@ -42,9 +42,7 @@ export default function SnapshotsPanel({
       title={labels.title}
       className="formpack-detail__section"
     >
-      {!activeRecordExists ? (
-        <p className="formpack-snapshots__empty">{labels.snapshotsNoRecord}</p>
-      ) : (
+      {activeRecordExists ? (
         <>
           <div className="formpack-snapshots__actions">
             <button
@@ -104,6 +102,8 @@ export default function SnapshotsPanel({
             </p>
           )}
         </>
+      ) : (
+        <p className="formpack-snapshots__empty">{labels.snapshotsNoRecord}</p>
       )}
     </CollapsibleSection>
   );

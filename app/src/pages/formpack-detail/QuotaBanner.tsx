@@ -1,10 +1,10 @@
-type QuotaBannerProps = {
+type QuotaBannerProps = Readonly<{
   status: 'warning' | 'error';
   warningText: string;
   errorText: string;
   dismissLabel: string;
   onDismiss: () => void;
-};
+}>;
 
 export default function QuotaBanner({
   status,

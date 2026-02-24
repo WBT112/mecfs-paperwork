@@ -537,6 +537,77 @@ describe('FormpackDetailPage', () => {
     vi.clearAllMocks();
   });
 
+  it('applies random dummy data and persists updates on repeated clicks', async () => {
+    formpackState.schema = {
+      type: 'object',
+      properties: {
+        visibleText: { type: 'string' },
+        visibleChoice: {
+          type: 'string',
+          enum: ['yes', 'no'],
+        },
+        hiddenText: { type: 'string' },
+        readonlyText: { type: 'string', readOnly: true },
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+    };
+    formpackState.uiSchema = {
+      visibleChoice: { 'ui:widget': 'radio' },
+      hiddenText: { 'ui:widget': 'hidden' },
+      readonlyText: { 'ui:readonly': true },
+    };
+
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
+
+    try {
+      render(
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </TestRouter>,
+      );
+
+      const dummyButton = await screen.findByRole('button', {
+        name: 'profileApplyDummyButton',
+      });
+
+      storageState.markAsSaved.mockClear();
+      await userEvent.click(dummyButton);
+
+      await waitFor(() => expect(storageState.markAsSaved).toHaveBeenCalled());
+      const firstPayload = storageState.markAsSaved.mock.calls.at(-1)?.[0] as
+        | Record<string, unknown>
+        | undefined;
+      expect(firstPayload).toBeDefined();
+      expect(firstPayload?.visibleChoice).toBe('yes');
+      expect(firstPayload?.hiddenText).toBeUndefined();
+      expect(firstPayload?.readonlyText).toBeUndefined();
+      expect(Array.isArray(firstPayload?.tags)).toBe(true);
+      expect((firstPayload?.tags as unknown[]).length).toBe(1);
+
+      randomSpy.mockReturnValue(0.99);
+      await userEvent.click(dummyButton);
+
+      await waitFor(() =>
+        expect(storageState.markAsSaved.mock.calls.length).toBeGreaterThan(1),
+      );
+      const secondPayload = storageState.markAsSaved.mock.calls.at(-1)?.[0] as
+        | Record<string, unknown>
+        | undefined;
+      expect(secondPayload).toBeDefined();
+      expect(secondPayload?.visibleChoice).toBe('');
+      expect(Array.isArray(secondPayload?.tags)).toBe(true);
+      expect((secondPayload?.tags as unknown[]).length).toBe(3);
+      expect(secondPayload).not.toEqual(firstPayload);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
+
   it('shows a storage error when import processing throws', async () => {
     importState.validateJsonImport.mockImplementation(() => {
       throw new Error('boom');
