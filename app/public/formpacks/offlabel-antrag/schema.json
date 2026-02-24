@@ -107,6 +107,7 @@
             "agomelatin",
             "ivabradine",
             "vortioxetine",
+            "ldn",
             "aripiprazole",
             "other"
           ]
@@ -119,6 +120,8 @@
             "ivabradine.pots_long_post_covid",
             "vortioxetine.long_post_covid_cognitive",
             "vortioxetine.long_post_covid_depressive",
+            "ldn.mecfs_fatigue",
+            "ldn.long_post_covid_fatigue",
             "aripiprazole.mecfs_fatigue_pem",
             "aripiprazole.long_post_covid_fatigue_pem"
           ]

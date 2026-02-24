@@ -2,6 +2,7 @@ export const OFFLABEL_MEDICATION_KEYS = [
   'agomelatin',
   'ivabradine',
   'vortioxetine',
+  'ldn',
   'aripiprazole',
   'other',
 ] as const;
@@ -77,6 +78,7 @@ const PRIOR_MEASURES_DEFAULT: Record<MedicationLocale, string> = {
   en: 'Prior symptom-oriented measures have been exhausted, were insufficient, or were not tolerated.',
 };
 
+const MECFS_FATIGUE_DE = 'postinfektiöse ME/CFS mit Fatigue';
 const AGOMELATIN_MECFS_FATIGUE_EN = 'post-infectious ME/CFS with fatigue';
 const AGOMELATIN_LONG_POST_COVID_FATIGUE_DE = 'Long-/Post-COVID mit Fatigue';
 const AGOMELATIN_LONG_POST_COVID_FATIGUE_EN = 'long/post-COVID with fatigue';
@@ -85,6 +87,14 @@ const VORTIOXETINE_COGNITIVE_DE =
 const VORTIOXETINE_COGNITIVE_EN = 'long/post-COVID with cognitive impairment';
 const VORTIOXETINE_DEPRESSIVE_DE = 'Long/Post-COVID mit depressiven Symptomen';
 const VORTIOXETINE_DEPRESSIVE_EN = 'long/post-COVID with depressive symptoms';
+const LDN_MECFS_DE = MECFS_FATIGUE_DE;
+const LDN_MECFS_EN = 'post-infectious ME/CFS with fatigue';
+const LDN_LONG_POST_COVID_DE = 'Long/Post-COVID mit Fatigue (PCC/PCFS)';
+const LDN_LONG_POST_COVID_EN = 'long/post-COVID with fatigue (PCC/PCFS)';
+const LDN_TARGET_SYMPTOMS_DE =
+  'Verbesserung von Fatigue, Belastbarkeit und gesundheitsbezogener Lebensqualität (HRQoL)';
+const LDN_TARGET_SYMPTOMS_EN =
+  'improvement of fatigue, functional capacity, and health-related quality of life (HRQoL)';
 const ARIPIPRAZOLE_MECFS_DE = 'postinfektiöse ME/CFS mit Fatigue und PEM';
 const ARIPIPRAZOLE_MECFS_EN = 'post-infectious ME/CFS with fatigue and PEM';
 const ARIPIPRAZOLE_LONG_POST_COVID_DE = 'Long/Post-COVID mit Fatigue und PEM';
@@ -146,8 +156,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     indications: [
       createIndication('agomelatin.mecfs_fatigue', {
         de: {
-          label: 'postinfektiöse ME/CFS mit Fatigue',
-          diagnosisNominative: 'postinfektiöse ME/CFS mit Fatigue',
+          label: MECFS_FATIGUE_DE,
+          diagnosisNominative: MECFS_FATIGUE_DE,
           diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue',
           point2ConfirmationSentence:
             'Die Diagnose Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/chronischem Fatigue-Syndrom (ME/CFS) ist gesichert (siehe Befunde).',
@@ -302,6 +312,67 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       en: [
         '5-20 mg once daily; start with 5 mg and adjust dose after 2 weeks; continue for at least 6 months after symptom remission',
         'discontinue in serotonin syndrome, hyponatremic encephalopathy, neuroleptic malignant syndrome, or intolerable adverse events.',
+        PRIOR_MEASURES_DEFAULT.en,
+      ],
+    },
+  },
+  {
+    key: 'ldn',
+    displayNameDe: 'Low-Dose Naltrexon (LDN)',
+    displayNameEn: 'Low-Dose Naltrexone (LDN)',
+    infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.ldn',
+    expertSourceDate: '24.02.2026',
+    expertSourceTextOverride: {
+      de: 'Long-COVID/PCC: O’Kelly B et al. Safety and efficacy of low dose naltrexone in a long covid cohort (Brain Behav Immun Health. 2022;24:100485. DOI: 10.1016/j.bbih.2022.100485); ME/CFS: Bonilla HF et al. Low-dose naltrexone in myalgic encephalomyelitis/chronic fatigue syndrome (Fatigue. 2019. DOI: 10.1080/21641846.2019.1692770); laufende randomisierte Studie bei Post-COVID-Fatigue: NCT05430152.',
+      en: 'Long-COVID/PCC: O’Kelly B et al. Safety and efficacy of low dose naltrexone in a long covid cohort (Brain Behav Immun Health. 2022;24:100485. DOI: 10.1016/j.bbih.2022.100485); ME/CFS: Bonilla HF et al. Low-dose naltrexone in myalgic encephalomyelitis/chronic fatigue syndrome (Fatigue. 2019. DOI: 10.1080/21641846.2019.1692770); ongoing randomized post-COVID fatigue trial: NCT05430152.',
+    },
+    indications: [
+      createIndication('ldn.mecfs_fatigue', {
+        de: {
+          label: LDN_MECFS_DE,
+          diagnosisNominative: LDN_MECFS_DE,
+          diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue',
+          point2ConfirmationSentence:
+            'Die Diagnose postinfektiöse ME/CFS mit Fatigue ist gesichert (siehe Befunde).',
+          targetSymptoms: LDN_TARGET_SYMPTOMS_DE,
+        },
+        en: {
+          label: LDN_MECFS_EN,
+          diagnosisNominative: LDN_MECFS_EN,
+          diagnosisDative: LDN_MECFS_EN,
+          point2ConfirmationSentence:
+            'The diagnosis of post-infectious ME/CFS with fatigue is established (see findings).',
+          targetSymptoms: LDN_TARGET_SYMPTOMS_EN,
+        },
+      }),
+      createIndication('ldn.long_post_covid_fatigue', {
+        de: {
+          label: LDN_LONG_POST_COVID_DE,
+          diagnosisNominative: LDN_LONG_POST_COVID_DE,
+          diagnosisDative: LDN_LONG_POST_COVID_DE,
+          point2ConfirmationSentence:
+            'Die Diagnose Long/Post-COVID mit Fatigue ist gesichert (siehe Befunde).',
+          targetSymptoms: LDN_TARGET_SYMPTOMS_DE,
+        },
+        en: {
+          label: LDN_LONG_POST_COVID_EN,
+          diagnosisNominative: LDN_LONG_POST_COVID_EN,
+          diagnosisDative: LDN_LONG_POST_COVID_EN,
+          point2ConfirmationSentence:
+            'The diagnosis of long/post-COVID with fatigue is established (see findings).',
+          targetSymptoms: LDN_TARGET_SYMPTOMS_EN,
+        },
+      }),
+    ],
+    autoFacts: {
+      de: [
+        'Start 1,0 mg 1x täglich; stufenweise Titration (z. B. +0,5-1,0 mg pro 1-2 Wochen) bis 4,5 mg/Tag oder maximal verträgliche Dosis; Therapieversuch 12-16 Wochen',
+        'Engmaschiges Monitoring von Schlafstörungen/lebhaften Träumen, Übelkeit, Kopfschmerz, gastrointestinalen Beschwerden sowie Leberwerten bei Risikoprofil; keine gleichzeitige Opioid-Einnahme; Abbruch bei klinisch relevanter Verschlechterung, nicht tolerierbaren Nebenwirkungen oder ausbleibendem Nutzen nach 12-16 Wochen',
+        PRIOR_MEASURES_DEFAULT.de,
+      ],
+      en: [
+        'start at 1.0 mg once daily; stepwise titration (e.g. +0.5-1.0 mg every 1-2 weeks) up to 4.5 mg/day or maximally tolerated dose; treatment trial for 12-16 weeks',
+        'close monitoring for insomnia/vivid dreams, nausea, headache, gastrointestinal adverse effects, and liver parameters in at-risk patients; no concomitant opioid use; discontinue with clinically relevant worsening, intolerable adverse effects, or lack of meaningful benefit after 12-16 weeks',
         PRIOR_MEASURES_DEFAULT.en,
       ],
     },

@@ -22,33 +22,29 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ### Added
 
-- **offlabel-antrag Formpack:** Off-label application letter generator with medication-specific indication selection, severity scoring, and legal references.
-- **offlabel-antrag PDF export:** Client-side PDF generation with DOCX-parity content, gender-specific liability wording, and modular severity text.
-- **offlabel-antrag DOCX export:** Structured multi-part letter with bullet indentation, attachments, and fallback liability text for legacy mappings.
-- **Intro gate:** Configurable pre-form consent gate for formpacks (used by offlabel-antrag).
-- **InfoBox system:** Conditional contextual help boxes anchored to form fields, with `showIf` conditions and markdown support.
-- **Profile opt-out:** Confirm and optionally delete saved master data when opting out of profile storage.
-- **Diagnostics bundle:** Support bundle export (download and clipboard) for troubleshooting.
-- **Storage health dashboard:** Visual storage health display on the Help page.
-- **SW/PWA status display:** Service worker registration and update status on the Help page.
-- **Reset all local data:** Danger zone action to clear all IndexedDB stores and localStorage.
+- **offlabel-antrag formpack:** New insurer-focused off-label request flow with medication-specific indication paths, severity capture, and legal framing.
+- **offlabel-antrag exports:** New DOCX and PDF exports with aligned multi-part output for insurer request, medical statement, and physician letter.
+- **Conditional guidance system:** Field-anchored InfoBoxes with `showIf` logic and markdown support for context-sensitive assistance.
+- **Configurable intro gate:** Reusable pre-form consent gate for formpacks.
+- **Local diagnostics tooling:** Diagnostics bundle export (download + clipboard), storage health view, and service-worker status in Help.
+- **Local data controls:** “Reset all local data” action plus profile opt-out flow with optional profile deletion.
 
 ### Changed
 
-- Accessibility gate tightened to moderate+ violations with expanded route coverage.
-- PDF heading fonts unified across all formpacks.
-- Formpack field template and InfoBox utilities renamed from doctor-letter-specific to generic formpack scope.
-- PDF template simplified by removing fragile label-based KV-table lookups in favor of direct templateData access.
+- **offlabel-antrag maturity:** Medication paths and indication-dependent wording stabilized; formpack version set to `1.0.0`.
+- **Formpack framework naming:** Field template and InfoBox utilities generalized from doctor-letter-specific naming to formpack-wide scope.
+- **PDF rendering consistency:** Heading fonts aligned across formpacks and template value mapping simplified to direct `templateData` access.
+- **Accessibility checks:** Gate tightened to moderate-or-higher findings with broader route coverage.
 
 ### Fixed
 
-- DOCX bullet indentation and list wrapping for Word rendering.
-- Preview text consistency for edge-case medication paths.
-- Empty part-1 attachments section hidden when no attachments are present.
+- DOCX bullet indentation and list wrapping behavior for reliable Word rendering.
+- Preview text consistency in edge-case medication/indication combinations.
+- Empty attachments block in part 1 is hidden when no attachments are present.
 
 ### Security
 
-- Security review and hardening (server headers, CSP, threat model updates).
+- Security hardening pass (server headers, CSP, and threat-model updates).
 
 ## [0.5.0] - 2026-02-09
 
@@ -96,7 +92,8 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 <!--
 Link references (optional):
-[Unreleased]: https://github.com/WBT112/mecfs-paperwork/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/WBT112/mecfs-paperwork/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/WBT112/mecfs-paperwork/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/WBT112/mecfs-paperwork/compare/v0.1.0...v0.5.0
 [0.1.0]: https://github.com/WBT112/mecfs-paperwork/releases/tag/v0.1.0
 -->

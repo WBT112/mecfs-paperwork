@@ -4,31 +4,54 @@ import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
 import { openFormpackWithRetry } from './helpers/formpack';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
-import { openCollapsibleSectionById } from './helpers/sections';
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 20_000;
 
+const ensureSectionActionButton = async (
+  page: Page,
+  sectionId: string,
+  actionSelector: string,
+  timeoutMs = POLL_TIMEOUT,
+) => {
+  const toggle = page.locator(`#${sectionId}-toggle`);
+  const button = page.locator(actionSelector).first();
+  const startedAt = Date.now();
+  let attempt = 0;
+
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await button.isVisible().catch(() => false)) {
+      return button;
+    }
+    await expect(toggle).toBeVisible({
+      timeout: Math.min(5_000, timeoutMs - (Date.now() - startedAt)),
+    });
+    await clickActionButton(toggle);
+    attempt += 1;
+    await page.waitForTimeout(100 * attempt);
+  }
+
+  await expect(button).toBeVisible({ timeout: 1_000 });
+  return button;
+};
+
 const ensureActiveRecord = async (page: Page) => {
   const form = page.locator('.formpack-form');
-  if (await form.isVisible()) {
+  try {
+    await expect(form).toBeVisible({ timeout: Math.floor(POLL_TIMEOUT / 2) });
     return;
+  } catch {
+    // Fall through to creating a draft explicitly when the form is not ready yet.
   }
 
-  await openCollapsibleSectionById(page, 'formpack-records');
-
-  const newDraftButton = page.getByRole('button', {
-    name: /new draft|neuer entwurf/i,
-  });
-  if (await newDraftButton.count()) {
-    await clickActionButton(newDraftButton.first(), POLL_TIMEOUT);
-  } else {
-    await clickActionButton(
-      page.locator('.formpack-records__actions .app__button').first(),
-      POLL_TIMEOUT,
-    );
-  }
+  const newDraftButton = await ensureSectionActionButton(
+    page,
+    'formpack-records',
+    '.formpack-records__actions .app__button:visible',
+    POLL_TIMEOUT,
+  );
+  await clickActionButton(newDraftButton, POLL_TIMEOUT);
 
   await expect(form).toBeVisible({ timeout: POLL_TIMEOUT });
 };

@@ -60,6 +60,7 @@ const selectDrugByValue = async (page: Page, value: string) => {
       ivabradine: ['ivabradine', 'ivabradin'],
       vortioxetine: ['vortioxetine', 'vortioxetin'],
       agomelatin: ['agomelatin', 'agomelatine'],
+      ldn: ['ldn', 'low-dose naltrexon', 'low-dose naltrexone'],
       other: ['other', 'anderes medikament', 'other medication'],
     };
     const candidates = aliasMap[normalized] ?? [normalized];

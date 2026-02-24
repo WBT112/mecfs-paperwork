@@ -147,6 +147,7 @@ describe('applyOfflabelVisibility', () => {
       'Agomelatin',
       'Ivabradin',
       'Vortioxetin',
+      'Low-Dose Naltrexon (LDN)',
       'Aripiprazol (LDA)',
       'anderes Medikament',
     ]);
@@ -154,6 +155,7 @@ describe('applyOfflabelVisibility', () => {
       { value: 'agomelatin', label: 'Agomelatin' },
       { value: 'ivabradine', label: 'Ivabradin' },
       { value: 'vortioxetine', label: 'Vortioxetin' },
+      { value: 'ldn', label: 'Low-Dose Naltrexon (LDN)' },
       { value: 'aripiprazole', label: 'Aripiprazol (LDA)' },
       {
         value: 'other',

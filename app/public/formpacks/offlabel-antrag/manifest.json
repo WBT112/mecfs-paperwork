@@ -1,6 +1,6 @@
 {
   "id": "offlabel-antrag",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "defaultLocale": "de",
   "locales": [
     "de",
@@ -80,6 +80,20 @@
             "path": "request.drug",
             "op": "eq",
             "value": "vortioxetine"
+          }
+        ]
+      },
+      {
+        "id": "drug-ldn",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.ldn",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "ldn"
           }
         ]
       },

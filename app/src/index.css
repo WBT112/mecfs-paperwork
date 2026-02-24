@@ -962,6 +962,11 @@ body {
   gap: 1rem;
 }
 
+.formpack-form > * {
+  min-width: 0;
+  min-inline-size: 0;
+}
+
 .formpack-form *,
 .formpack-form *::before,
 .formpack-form *::after {
@@ -979,11 +984,18 @@ body {
 .formpack-form select {
   width: 100%;
   max-width: 100%;
+  min-width: 0;
+  min-inline-size: 0;
   padding: 0.5rem 0.6rem;
   border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   background-color: var(--color-input-bg);
   color: var(--color-text);
+}
+
+.formpack-form select {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .formpack-form textarea.formpack-textarea--auto {
