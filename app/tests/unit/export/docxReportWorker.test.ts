@@ -95,6 +95,47 @@ describe('docxReportWorker', () => {
     );
   });
 
+  it('passes formatter and translation helpers into template context', async () => {
+    const rendered = new Uint8Array([10, 11, 12]);
+    createReportMock.mockImplementation(async (options) => {
+      const candidate = (options as Record<string, unknown>)
+        .additionalJsContext;
+      expect(candidate).toBeTypeOf('object');
+      expect(candidate).not.toBeNull();
+
+      const ctx = candidate as {
+        t: (key: string) => string;
+        formatDate: (value: string | null | undefined) => string;
+        formatPhone: (value: string | null | undefined) => string;
+      };
+
+      expect(ctx.t('hello')).toBe('Hallo');
+      expect(ctx.t('missing')).toBe('missing');
+      expect(ctx.formatPhone(' 0123 456 ')).toBe('0123 456');
+      expect(ctx.formatPhone(undefined)).toBe('');
+      expect(ctx.formatDate(undefined)).toBe('');
+      expect(ctx.formatDate('not-a-date')).toBe('not-a-date');
+
+      const formattedDate = ctx.formatDate('2026-02-24');
+      expect(formattedDate.length).toBeGreaterThan(0);
+      return rendered;
+    });
+    await import('../../../src/export/docxReportWorker');
+
+    expect(messageHandler).not.toBeNull();
+    messageHandler?.({
+      origin: globalThis.location.origin,
+      data: buildRequest(),
+    } as MessageEvent<WorkerRequest>);
+    await flushPromises();
+
+    expect(createReportMock).toHaveBeenCalledTimes(1);
+    expect(globalThis.postMessage).toHaveBeenCalledWith(
+      { id: 1, result: rendered },
+      { transfer: [rendered.buffer] },
+    );
+  });
+
   it('accepts empty-origin messages used by dedicated workers', async () => {
     const rendered = new Uint8Array([7, 8, 9]);
     createReportMock.mockResolvedValue(rendered);
@@ -129,6 +170,24 @@ describe('docxReportWorker', () => {
     expect(globalThis.postMessage).toHaveBeenCalledWith({
       id: 1,
       error: 'render failed',
+    });
+  });
+
+  it('stringifies non-Error rejections before posting worker errors', async () => {
+    createReportMock.mockRejectedValue('render failed as string');
+    await import('../../../src/export/docxReportWorker');
+
+    expect(messageHandler).not.toBeNull();
+    messageHandler?.({
+      origin: globalThis.location.origin,
+      data: buildRequest(),
+    } as MessageEvent<WorkerRequest>);
+    await flushPromises();
+
+    expect(createReportMock).toHaveBeenCalledTimes(1);
+    expect(globalThis.postMessage).toHaveBeenCalledWith({
+      id: 1,
+      error: 'render failed as string',
     });
   });
 });

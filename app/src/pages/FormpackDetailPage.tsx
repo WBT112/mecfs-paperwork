@@ -1200,8 +1200,7 @@ export default function FormpackDetailPage() {
         const signature = await deriveFormpackRevisionSignature(manifest);
         const existing = await getFormpackMeta(manifest.id);
         if (
-          existing &&
-          existing.versionOrHash === signature.versionOrHash &&
+          existing?.versionOrHash === signature.versionOrHash &&
           existing.hash === signature.hash &&
           (existing.version ?? null) === (signature.version ?? null)
         ) {

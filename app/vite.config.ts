@@ -253,13 +253,16 @@ const createConfig = (mode: string): AppConfig => ({
         'src/lib/diagnostics/types.ts',
         // Re-export barrels with no logic
         'src/lib/diagnostics/index.ts',
+        // Type-only file with no runtime code
+        'src/pages/formpack-detail/types.ts',
       ],
       thresholds: {
         // Global coverage thresholds (CI enforced)
-        lines: 85,
-        branches: 85,
-        functions: 80,
-        statements: 85,
+        // Locked near current baseline to prevent regressions.
+        lines: 93.1,
+        branches: 85.8,
+        functions: 94.1,
+        statements: 92.7,
       },
     },
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
