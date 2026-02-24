@@ -619,11 +619,13 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
           ] satisfies OfflabelRenderedDocument['blocks'])),
       {
         kind: 'paragraph',
-        text: 'Der Patient leidet an einer schwerwiegenden, die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung.',
+        text: 'Die versicherte Person leidet an einer schwerwiegenden, die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung.',
       },
       {
         kind: 'paragraph',
-        text: `Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von ${facts.displayName} zur Behandlung der Indikation ${facts.diagnosisNominative} sinnvoll, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.`,
+        text: point2aNo
+          ? `Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von ${facts.displayName} zur symptomorientierten Behandlung der vorliegenden klinischen Symptomatik medizinisch nachvollziehbar, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.`
+          : `Begründung der Off-Label-Verordnung: Aus ärztlicher Sicht ist der Einsatz von ${facts.displayName} zur Behandlung der Indikation ${facts.diagnosisNominative} sinnvoll, da eine schwerwiegende Erkrankung vorliegt, keine Standardtherapie verfügbar ist und eine spürbare positive Einwirkung auf die Symptomlast plausibel ist.`,
       },
       ...(standardCareItems.length > 0
         ? ([

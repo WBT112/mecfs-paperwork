@@ -228,6 +228,12 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.part3.paragraphs.join('\n')).toContain(
       'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vergleichbar;',
     );
+    expect(model.part3.paragraphs.join('\n')).toContain(
+      'zur symptomorientierten Behandlung der vorliegenden klinischen Symptomatik medizinisch nachvollziehbar',
+    );
+    expect(model.part3.paragraphs.join('\n')).not.toContain(
+      'zur Behandlung der Indikation postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
+    );
     expect(model.part3.paragraphs.join('\n')).not.toContain(
       'Diagnose: postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
     );

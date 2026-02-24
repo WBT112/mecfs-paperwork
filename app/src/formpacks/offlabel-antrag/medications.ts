@@ -137,7 +137,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: 'postinfektiöse ME/CFS mit Fatigue',
           diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue',
           point2ConfirmationSentence:
-            'Die Diagnose Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/chronischem Fatigue-Syndrom (ME/CFS) ist gesichert (siehe Befunde)',
+            'Die Diagnose Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/chronischem Fatigue-Syndrom (ME/CFS) ist gesichert (siehe Befunde).',
           targetSymptoms:
             'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
         },
@@ -157,7 +157,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
           diagnosisDative: AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
           point2ConfirmationSentence:
-            'Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde)',
+            'Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde).',
           targetSymptoms:
             'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
         },
@@ -201,7 +201,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisDative:
             'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
           point2ConfirmationSentence:
-            'Die Diagnose COVID-19-assoziiertes PoTS ist gesichert (siehe Befunde)',
+            'Die Diagnose COVID-19-assoziiertes PoTS ist gesichert (siehe Befunde).',
           targetSymptoms:
             'Senkung der Herzfrequenz und Verbesserung der gesundheitsbezogenen Lebensqualität (HRQoL)',
         },
@@ -245,7 +245,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_COGNITIVE_DE,
           diagnosisDative: VORTIOXETINE_COGNITIVE_DE,
           point2ConfirmationSentence:
-            'Die Diagnose kognitive Beeinträchtigungen im Rahmen von Long/Post-COVID ist gesichert',
+            'Die Diagnose kognitive Beeinträchtigungen im Rahmen von Long/Post-COVID ist gesichert.',
           targetSymptoms:
             'Verbesserung von Kognition sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
         },
@@ -265,7 +265,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_DEPRESSIVE_DE,
           diagnosisDative: VORTIOXETINE_DEPRESSIVE_DE,
           point2ConfirmationSentence:
-            'Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
+            'Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert.',
           targetSymptoms:
             'Verbesserung depressiver Symptomatik sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
         },

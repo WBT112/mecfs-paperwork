@@ -118,6 +118,12 @@ describe('buildOfflabelDocuments', () => {
     expect(part3Text).toContain(
       `Die klinische Symptomatik ist mit ${IVABRADIN_DIAGNOSIS_DATIVE_TEXT} vergleichbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
     );
+    expect(part3Text).toContain(
+      'zur symptomorientierten Behandlung der vorliegenden klinischen Symptomatik medizinisch nachvollziehbar',
+    );
+    expect(part3Text).not.toContain(
+      `zur Behandlung der Indikation ${IVABRADIN_DIAGNOSIS_TEXT}`,
+    );
     expect(part3Text).not.toContain(`Diagnose: ${IVABRADIN_DIAGNOSIS_TEXT}`);
   });
 
@@ -535,7 +541,7 @@ describe('buildOfflabelDocuments', () => {
       'zur Behandlung von Long-/Post-COVID mit Fatigue',
     );
     expect(part1ListItems).toContain(
-      'Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde)',
+      'Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde).',
     );
     expect(part1ListItems).toContain(
       'Indikation: Long-/Post-COVID mit Fatigue',
@@ -577,7 +583,7 @@ describe('buildOfflabelDocuments', () => {
       'zur Behandlung von Long/Post-COVID mit depressiven Symptomen',
     );
     expect(part1ListItems).toContain(
-      'Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
+      'Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert.',
     );
     expect(part3Text).toContain(
       'Diagnose: Long/Post-COVID mit depressiven Symptomen',
