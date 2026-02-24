@@ -99,6 +99,7 @@ export type OffLabelAntragDocumentModel = {
     otherDose: string;
     otherDuration: string;
     otherMonitoring: string;
+    otherEvidenceReference: string;
   };
   attachmentsFreeText: string;
   attachments: {
@@ -142,6 +143,7 @@ const REQUEST_DEFAULT_FIELDS = [
   'otherDose',
   'otherDuration',
   'otherMonitoring',
+  'otherEvidenceReference',
 ] as const;
 
 const DEFAULT_PART3_SUBJECT_KEY = 'offlabel-antrag.export.part3.subject';

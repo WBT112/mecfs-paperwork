@@ -16,6 +16,7 @@ const EVIDENCE_SUFFICIENT_TEXT =
   'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen';
 const EVIDENCE_NOT_SUFFICIENT_TEXT =
   'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild';
+const OTHER_EVIDENCE_REFERENCE_TEXT = 'Musterstudie 2024, doi:10.1000/example';
 const DIRECT_SECTION_2A_REQUEST_TEXT =
   'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.';
 const HILFSANTRAG_INTRO_TEXT =
@@ -152,6 +153,7 @@ describe('buildOfflabelDocuments', () => {
       request: {
         drug: 'other',
         otherIndication: 'Seltene XYZ-Indikation',
+        otherEvidenceReference: OTHER_EVIDENCE_REFERENCE_TEXT,
         standardOfCareTriedFreeText:
           '- Betablocker (nicht verträglich)\n• Kompressionstherapie ohne ausreichenden Effekt',
       },
@@ -185,6 +187,9 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(THERAPY_SAFETY_TEXT);
     expect(part1Text).toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain(EVIDENCE_NOTE_TEXT);
+    expect(part1Text).toContain(
+      `wissenschaftliche Erkenntnisse: ${OTHER_EVIDENCE_REFERENCE_TEXT}`,
+    );
     expect(part1Text).toContain(
       'Zusätzlich wurden folgende Therapieversuche unternommen:',
     );

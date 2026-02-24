@@ -75,6 +75,7 @@ export const applyOfflabelVisibility = (
   applyFieldVisibility('otherDose', !isOtherDrug, 'textarea');
   applyFieldVisibility('otherDuration', !isOtherDrug, 'textarea');
   applyFieldVisibility('otherMonitoring', !isOtherDrug, 'textarea');
+  applyFieldVisibility('otherEvidenceReference', !isOtherDrug, 'textarea');
   applyFieldVisibility('standardOfCareTriedFreeText', !isOtherDrug, 'textarea');
 
   const selectedDrugNode = isRecord(requestUiSchema.drug)

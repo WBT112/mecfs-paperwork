@@ -1070,7 +1070,7 @@ describe('FormpackDetailPage', () => {
     expect(await screen.findByText('Heading 1')).toBeInTheDocument();
     expect(screen.getByText('Paragraph 1')).toBeInTheDocument();
     expect(screen.getByText(attachmentItem)).toBeInTheDocument();
-    expect(screen.getByText('— Page break —')).toBeInTheDocument();
+    expect(screen.queryByText('— Page break —')).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('tab', { name: secondTabTitle }));
     expect(screen.getByText('Heading 2')).toBeInTheDocument();

@@ -257,6 +257,7 @@ describe('formpacks/documentModel', () => {
       otherDose: '—',
       otherDuration: '—',
       otherMonitoring: '—',
+      otherEvidenceReference: '—',
     });
     expect(result.attachmentsFreeText).toBe(
       '- Arztbrief vom 2026-01-10 \n• Befundbericht\nLaborwerte',

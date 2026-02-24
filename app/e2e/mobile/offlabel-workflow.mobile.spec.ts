@@ -93,7 +93,7 @@ const setTheme = async (page: Page, theme: 'dark' | 'light') => {
 
 const openPart1Preview = async (page: Page) => {
   await openCollapsibleSectionById(page, 'formpack-document-preview');
-  await page.getByRole('tab', { name: /part 1/i }).click();
+  await page.getByRole('tab', { name: /(teil|part)\s*1/i }).click();
 };
 
 test.describe('offlabel workflow preview regressions @mobile', () => {
@@ -166,6 +166,9 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await page
       .locator('#root_request_otherMonitoring')
       .fill('Heart rate and blood pressure checks');
+    await page
+      .locator('#root_request_otherEvidenceReference')
+      .fill('Sample study 2024, doi:10.1000/example');
     await page
       .locator('#root_request_standardOfCareTriedFreeText')
       .fill(otherOnlyText);

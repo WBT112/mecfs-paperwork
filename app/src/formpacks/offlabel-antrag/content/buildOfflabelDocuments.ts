@@ -352,6 +352,9 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   const point7Text =
     drugKey === 'other' ? POINT_7_NOTSTAND_DIRECT : POINT_7_NOTSTAND;
   const standardCareText = getText(request.standardOfCareTriedFreeText);
+  const otherEvidenceReferenceText =
+    getText(request.otherEvidenceReference) ||
+    '[bitte Verweis auf Studie/wissenschaftliche Erkenntnisse ergänzen]';
   const standardCareItems =
     drugKey === 'other' ? parseMultilineItems(standardCareText) : [];
   const facts = resolvePreviewMedicationFacts(request, drug);
@@ -437,7 +440,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     blocks.push(
       {
         kind: 'paragraph',
-        text: `Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risiko-Nutzen-Bewertung (siehe Arztbefund). ${POINT_10_EVIDENCE_NOTE}`,
+        text: `Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risiko-Nutzen-Bewertung (siehe Arztbefund; wissenschaftliche Erkenntnisse: ${otherEvidenceReferenceText}). ${POINT_10_EVIDENCE_NOTE}`,
       },
       {
         kind: 'paragraph',
@@ -492,7 +495,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     },
   );
 
-  return { id: 'part1', title: 'Part 1', blocks };
+  return { id: 'part1', title: 'Teil 1', blocks };
 };
 
 const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
@@ -521,7 +524,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
 
   return {
     id: 'part2',
-    title: 'Part 2',
+    title: 'Teil 2',
     blocks: [
       { kind: 'heading', text: PART2_TITLE },
       {
@@ -599,7 +602,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
 
   return {
     id: 'part3',
-    title: 'Part 3',
+    title: 'Teil 3',
     blocks: [
       {
         kind: 'heading',

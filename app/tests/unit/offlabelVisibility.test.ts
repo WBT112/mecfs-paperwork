@@ -15,6 +15,7 @@ const buildUiSchema = (): UiSchema => ({
     otherDose: { 'ui:widget': 'textarea' },
     otherDuration: { 'ui:widget': 'textarea' },
     otherMonitoring: { 'ui:widget': 'textarea' },
+    otherEvidenceReference: { 'ui:widget': 'textarea' },
     standardOfCareTriedFreeText: { 'ui:widget': 'textarea' },
   },
 });
@@ -73,6 +74,9 @@ describe('applyOfflabelVisibility', () => {
     ).toBe('hidden');
     expect(
       (request.otherMonitoring as Record<string, unknown>)['ui:widget'],
+    ).toBe('hidden');
+    expect(
+      (request.otherEvidenceReference as Record<string, unknown>)['ui:widget'],
     ).toBe('hidden');
     expect(
       (request.standardOfCareTriedFreeText as Record<string, unknown>)[
@@ -143,12 +147,14 @@ describe('applyOfflabelVisibility', () => {
       'Agomelatin',
       'Ivabradin',
       'Vortioxetin',
+      'Aripiprazol (LDA)',
       'anderes Medikament',
     ]);
     expect(enumOptions).toEqual([
       { value: 'agomelatin', label: 'Agomelatin' },
       { value: 'ivabradine', label: 'Ivabradin' },
       { value: 'vortioxetine', label: 'Vortioxetin' },
+      { value: 'aripiprazole', label: 'Aripiprazol (LDA)' },
       {
         value: 'other',
         label: 'anderes Medikament',
@@ -183,6 +189,9 @@ describe('applyOfflabelVisibility', () => {
     ).toBe('textarea');
     expect(
       (request.otherMonitoring as Record<string, unknown>)['ui:widget'],
+    ).toBe('textarea');
+    expect(
+      (request.otherEvidenceReference as Record<string, unknown>)['ui:widget'],
     ).toBe('textarea');
     expect(
       (request.standardOfCareTriedFreeText as Record<string, unknown>)[

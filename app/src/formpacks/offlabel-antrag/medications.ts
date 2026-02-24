@@ -2,6 +2,7 @@ export const OFFLABEL_MEDICATION_KEYS = [
   'agomelatin',
   'ivabradine',
   'vortioxetine',
+  'aripiprazole',
   'other',
 ] as const;
 
@@ -63,6 +64,7 @@ type StandardMedicationInput = {
   visibility?: MedicationVisibility;
   infoBoxI18nKey: string;
   expertSourceDate: string;
+  expertSourceTextOverride?: Record<MedicationLocale, string>;
   indications: MedicationIndication[];
   autoFacts: {
     de: MedicationAutoFactsTuple;
@@ -83,6 +85,10 @@ const VORTIOXETINE_COGNITIVE_DE =
 const VORTIOXETINE_COGNITIVE_EN = 'long/post-COVID with cognitive impairment';
 const VORTIOXETINE_DEPRESSIVE_DE = 'Long/Post-COVID mit depressiven Symptomen';
 const VORTIOXETINE_DEPRESSIVE_EN = 'long/post-COVID with depressive symptoms';
+const ARIPIPRAZOLE_MECFS_DE = 'postinfektiöse ME/CFS mit Fatigue und PEM';
+const ARIPIPRAZOLE_MECFS_EN = 'post-infectious ME/CFS with fatigue and PEM';
+const ARIPIPRAZOLE_LONG_POST_COVID_DE = 'Long/Post-COVID mit Fatigue und PEM';
+const ARIPIPRAZOLE_LONG_POST_COVID_EN = 'long/post-COVID with fatigue and PEM';
 
 const createIndication = (
   key: string,
@@ -110,6 +116,13 @@ const buildExpertTexts = (
     expertAttachmentText: `Assessment: ${displayName} – Expert Group Long COVID Off-Label-Use at BfArM (status ${dateIso})`,
   };
 };
+
+const buildExpertTextsFromOverride = (
+  sourceText: string,
+): Pick<MedicationAutoFacts, 'expertSourceText' | 'expertAttachmentText'> => ({
+  expertSourceText: sourceText,
+  expertAttachmentText: sourceText,
+});
 
 const buildAutoFacts = (
   tuple: MedicationAutoFactsTuple,
@@ -293,12 +306,83 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       ],
     },
   },
+  {
+    key: 'aripiprazole',
+    displayNameDe: 'Aripiprazol (LDA)',
+    displayNameEn: 'Aripiprazole (LDA)',
+    infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.aripiprazole',
+    expertSourceDate: '24.02.2026',
+    expertSourceTextOverride: {
+      de: 'Crosby LD et al. Off label use of Aripiprazole in ME/CFS (J Transl Med. 2021;19:50. DOI: 10.1186/s12967-021-02721-9) sowie Cui J et al. Low-Dose Aripiprazole in Long COVID (Open Forum Infect Dis. 2026;13(Suppl 1):ofaf695.1788. DOI: 10.1093/ofid/ofaf695.1788).',
+      en: 'Crosby LD et al. Off label use of Aripiprazole in ME/CFS (J Transl Med. 2021;19:50. DOI: 10.1186/s12967-021-02721-9) and Cui J et al. Low-Dose Aripiprazole in Long COVID (Open Forum Infect Dis. 2026;13(Suppl 1):ofaf695.1788. DOI: 10.1093/ofid/ofaf695.1788).',
+    },
+    indications: [
+      createIndication('aripiprazole.mecfs_fatigue_pem', {
+        de: {
+          label: ARIPIPRAZOLE_MECFS_DE,
+          diagnosisNominative: ARIPIPRAZOLE_MECFS_DE,
+          diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue und PEM',
+          point2ConfirmationSentence:
+            'Die Diagnose postinfektiöse ME/CFS mit Fatigue und PEM ist gesichert (siehe Befunde).',
+          targetSymptoms:
+            'Verbesserung von Fatigue, PEM-Frequenz, kognitiver Symptomatik und funktionellem Status (HRQoL)',
+        },
+        en: {
+          label: ARIPIPRAZOLE_MECFS_EN,
+          diagnosisNominative: ARIPIPRAZOLE_MECFS_EN,
+          diagnosisDative: ARIPIPRAZOLE_MECFS_EN,
+          point2ConfirmationSentence:
+            'The diagnosis of post-infectious ME/CFS with fatigue and PEM is established (see findings).',
+          targetSymptoms:
+            'improvement of fatigue, PEM frequency, cognitive symptoms, and functional status (HRQoL)',
+        },
+      }),
+      createIndication('aripiprazole.long_post_covid_fatigue_pem', {
+        de: {
+          label: ARIPIPRAZOLE_LONG_POST_COVID_DE,
+          diagnosisNominative: ARIPIPRAZOLE_LONG_POST_COVID_DE,
+          diagnosisDative: ARIPIPRAZOLE_LONG_POST_COVID_DE,
+          point2ConfirmationSentence:
+            'Die Diagnose Long/Post-COVID mit Fatigue und PEM ist gesichert (siehe Befunde).',
+          targetSymptoms:
+            'Verbesserung von Fatigue, PEM-Frequenz, kognitiver Symptomatik und funktionellem Status (HRQoL)',
+        },
+        en: {
+          label: ARIPIPRAZOLE_LONG_POST_COVID_EN,
+          diagnosisNominative: ARIPIPRAZOLE_LONG_POST_COVID_EN,
+          diagnosisDative: ARIPIPRAZOLE_LONG_POST_COVID_EN,
+          point2ConfirmationSentence:
+            'The diagnosis of long/post-COVID with fatigue and PEM is established (see findings).',
+          targetSymptoms:
+            'improvement of fatigue, PEM frequency, cognitive symptoms, and functional status (HRQoL)',
+        },
+      }),
+    ],
+    autoFacts: {
+      de: [
+        'Start 0,1-0,25 mg 1x täglich; langsame Titration in 0,25-mg-Schritten bis max. 2 mg/Tag; Nutzen-Risiko-Re-Evaluation nach 6-12 Wochen',
+        'Engmaschiges Monitoring von Unruhe/Akathisie, Insomnie, orthostatischer Verträglichkeit, Tagesmüdigkeit und Gewicht; Abbruch bei klinisch relevanter Verschlechterung, ausgeprägter Agitation/Akathisie oder fehlendem Nutzen nach 6-12 Wochen',
+        PRIOR_MEASURES_DEFAULT.de,
+      ],
+      en: [
+        'start at 0.1-0.25 mg once daily; slow titration in 0.25 mg steps up to max. 2 mg/day; re-evaluate benefit-risk after 6-12 weeks',
+        'close monitoring of agitation/akathisia, insomnia, orthostatic tolerance, daytime somnolence, and weight; discontinue with clinically relevant worsening, marked agitation/akathisia, or no meaningful benefit after 6-12 weeks',
+        PRIOR_MEASURES_DEFAULT.en,
+      ],
+    },
+  },
 ] as const;
 
 const createStandardMedicationProfile = (
   input: StandardMedicationInput,
 ): MedicationProfile => {
   const [deAutoFacts, enAutoFacts] = [input.autoFacts.de, input.autoFacts.en];
+  const deExpertTexts = input.expertSourceTextOverride?.de
+    ? buildExpertTextsFromOverride(input.expertSourceTextOverride.de)
+    : buildExpertTexts('de', input.displayNameDe, input.expertSourceDate);
+  const enExpertTexts = input.expertSourceTextOverride?.en
+    ? buildExpertTextsFromOverride(input.expertSourceTextOverride.en)
+    : buildExpertTexts('en', input.displayNameEn, input.expertSourceDate);
 
   return {
     key: input.key,
@@ -313,11 +397,11 @@ const createStandardMedicationProfile = (
     autoFacts: {
       de: {
         ...buildAutoFacts(deAutoFacts),
-        ...buildExpertTexts('de', input.displayNameDe, input.expertSourceDate),
+        ...deExpertTexts,
       },
       en: {
         ...buildAutoFacts(enAutoFacts),
-        ...buildExpertTexts('en', input.displayNameEn, input.expertSourceDate),
+        ...enExpertTexts,
       },
     },
   };

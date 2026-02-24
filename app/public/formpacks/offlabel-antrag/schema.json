@@ -107,6 +107,7 @@
             "agomelatin",
             "ivabradine",
             "vortioxetine",
+            "aripiprazole",
             "other"
           ]
         },
@@ -117,7 +118,9 @@
             "agomelatin.long_post_covid_fatigue",
             "ivabradine.pots_long_post_covid",
             "vortioxetine.long_post_covid_cognitive",
-            "vortioxetine.long_post_covid_depressive"
+            "vortioxetine.long_post_covid_depressive",
+            "aripiprazole.mecfs_fatigue_pem",
+            "aripiprazole.long_post_covid_fatigue_pem"
           ]
         },
         "indicationFullyMetOrDoctorConfirms": {
@@ -146,6 +149,9 @@
           "type": "string"
         },
         "otherMonitoring": {
+          "type": "string"
+        },
+        "otherEvidenceReference": {
           "type": "string"
         },
         "standardOfCareTriedFreeText": {
@@ -251,6 +257,7 @@
               "otherDose",
               "otherDuration",
               "otherMonitoring",
+              "otherEvidenceReference",
               "standardOfCareTriedFreeText"
             ],
             "properties": {
@@ -275,6 +282,10 @@
                 "minLength": 1
               },
               "otherMonitoring": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherEvidenceReference": {
                 "type": "string",
                 "minLength": 1
               },

@@ -117,7 +117,7 @@ const setTheme = async (page: Page, theme: 'dark' | 'light') => {
 
 const openPart1Preview = async (page: Page) => {
   await openCollapsibleSectionById(page, 'formpack-document-preview');
-  await page.getByRole('tab', { name: /part 1/i }).click();
+  await page.getByRole('tab', { name: /(teil|part)\s*1/i }).click();
 };
 
 test.describe('offlabel workflow preview regressions', () => {
@@ -182,7 +182,7 @@ test.describe('offlabel workflow preview regressions', () => {
       )
       .check();
 
-    await page.getByRole('tab', { name: /part 1/i }).click();
+    await page.getByRole('tab', { name: /(teil|part)\s*1/i }).click();
     const preview = page.locator(
       '#formpack-document-preview-content .formpack-document-preview',
     );
@@ -278,6 +278,9 @@ test.describe('offlabel workflow preview regressions', () => {
     await page
       .locator('#root_request_otherMonitoring')
       .fill('Puls und Blutdruck');
+    await page
+      .locator('#root_request_otherEvidenceReference')
+      .fill('Musterstudie 2024, doi:10.1000/example');
 
     await openPart1Preview(page);
     const preview = page.locator(
@@ -317,13 +320,16 @@ test.describe('offlabel workflow preview regressions', () => {
       .locator('#root_request_otherMonitoring')
       .fill('Kontrollen alle 2 Wochen');
     await page
+      .locator('#root_request_otherEvidenceReference')
+      .fill('Musterstudie 2024, doi:10.1000/example');
+    await page
       .locator('#root_request_standardOfCareTriedFreeText')
       .fill(otherOnlyText);
 
     const preview = page.locator(
       '#formpack-document-preview-content .formpack-document-preview',
     );
-    await page.getByRole('tab', { name: /part 1/i }).click();
+    await page.getByRole('tab', { name: /(teil|part)\s*1/i }).click();
     await expect(preview).toBeVisible();
     await expect(preview).toContainText(otherOnlyText);
     await expect(preview).toContainText(

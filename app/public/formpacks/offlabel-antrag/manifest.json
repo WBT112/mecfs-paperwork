@@ -1,6 +1,6 @@
 {
   "id": "offlabel-antrag",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "defaultLocale": "de",
   "locales": [
     "de",
@@ -80,6 +80,20 @@
             "path": "request.drug",
             "op": "eq",
             "value": "vortioxetine"
+          }
+        ]
+      },
+      {
+        "id": "drug-aripiprazole",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.aripiprazole",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "aripiprazole"
           }
         ]
       },

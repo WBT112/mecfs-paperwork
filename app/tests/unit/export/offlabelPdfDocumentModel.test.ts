@@ -115,6 +115,7 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
           otherDose: '2,5 mg morgens',
           otherDuration: '12 Wochen',
           otherMonitoring: 'Puls und Blutdruck',
+          otherEvidenceReference: 'Musterstudie 2024, doi:10.1000/example',
           standardOfCareTriedFreeText: 'Kompressionstherapie',
         },
       },
@@ -128,6 +129,9 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
     );
     expect(otherPart1Text).toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
+    expect(otherPart1Text).toContain(
+      'wissenschaftliche Erkenntnisse: Musterstudie 2024, doi:10.1000/example',
     );
     expect(otherPart1Text).not.toContain(
       'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',

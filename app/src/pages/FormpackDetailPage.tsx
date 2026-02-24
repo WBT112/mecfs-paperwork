@@ -549,11 +549,7 @@ const renderOfflabelPreviewBlock = (
     );
   }
 
-  return (
-    <p key={blockKey} className="formpack-document-preview__page-break">
-      — Page break —
-    </p>
-  );
+  return null;
 };
 
 const renderOfflabelPreviewDocument = (

@@ -100,6 +100,7 @@ describe('offlabel-antrag letter builder', () => {
           otherDose: '2,5 mg',
           otherDuration: '12 Wochen',
           otherMonitoring: 'Puls/BP',
+          otherEvidenceReference: 'Musterstudie 2024, doi:10.1000/example',
           standardOfCareTriedFreeText: 'Kompressionstherapie',
         },
       },
@@ -112,6 +113,9 @@ describe('offlabel-antrag letter builder', () => {
     );
     expect(bundle.part1.paragraphs.join(' | ')).toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
+    );
+    expect(bundle.part1.paragraphs.join(' | ')).toContain(
+      'wissenschaftliche Erkenntnisse: Musterstudie 2024, doi:10.1000/example',
     );
     expect(bundle.part1.paragraphs.join(' | ')).not.toContain(
       EVIDENCE_SUFFICIENT_TEXT,

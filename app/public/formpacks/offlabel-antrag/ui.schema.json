@@ -130,6 +130,7 @@
       "otherDose",
       "otherDuration",
       "otherMonitoring",
+      "otherEvidenceReference",
       "indicationFullyMetOrDoctorConfirms",
       "applySection2Abs1a",
       "standardOfCareTriedFreeText"
@@ -141,6 +142,7 @@
         "offlabel-antrag.request.drug.option.agomelatin",
         "offlabel-antrag.request.drug.option.ivabradine",
         "offlabel-antrag.request.drug.option.vortioxetine",
+        "offlabel-antrag.request.drug.option.aripiprazole",
         "offlabel-antrag.request.drug.option.other"
       ]
     },
@@ -183,6 +185,14 @@
     "otherMonitoring": {
       "ui:title": "offlabel-antrag.request.otherMonitoring.label",
       "ui:help": "offlabel-antrag.request.otherMonitoring.help",
+      "ui:widget": "textarea",
+      "ui:options": {
+        "rows": 4
+      }
+    },
+    "otherEvidenceReference": {
+      "ui:title": "offlabel-antrag.request.otherEvidenceReference.label",
+      "ui:help": "offlabel-antrag.request.otherEvidenceReference.help",
       "ui:widget": "textarea",
       "ui:options": {
         "rows": 4

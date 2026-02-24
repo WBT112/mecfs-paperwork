@@ -34,6 +34,7 @@ export type OfflabelAntragExportDefaults = {
     otherDose: string;
     otherDuration: string;
     otherMonitoring: string;
+    otherEvidenceReference: string;
   };
   attachmentsFreeText: string;
 };
@@ -81,6 +82,7 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
       otherDose: DEFAULT_PLACEHOLDER_TEXT,
       otherDuration: DEFAULT_PLACEHOLDER_TEXT,
       otherMonitoring: DEFAULT_PLACEHOLDER_TEXT,
+      otherEvidenceReference: DEFAULT_PLACEHOLDER_TEXT,
     },
     attachmentsFreeText: DEFAULT_PLACEHOLDER_TEXT,
   },
@@ -118,6 +120,7 @@ const OFFLABEL_ANTRAG_EXPORT_DEFAULTS: Record<
       otherDose: DEFAULT_PLACEHOLDER_TEXT,
       otherDuration: DEFAULT_PLACEHOLDER_TEXT,
       otherMonitoring: DEFAULT_PLACEHOLDER_TEXT,
+      otherEvidenceReference: DEFAULT_PLACEHOLDER_TEXT,
     },
     attachmentsFreeText: DEFAULT_PLACEHOLDER_TEXT,
   },
