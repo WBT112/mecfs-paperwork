@@ -1201,15 +1201,20 @@ export default function FormpackDetailPage() {
 
     const ensureFormpackMeta = async () => {
       try {
+        const signature = await deriveFormpackRevisionSignature(manifest);
         const existing = await getFormpackMeta(manifest.id);
-        if (existing) {
+        if (
+          existing &&
+          existing.versionOrHash === signature.versionOrHash &&
+          existing.hash === signature.hash &&
+          (existing.version ?? null) === (signature.version ?? null)
+        ) {
           if (isActive) {
             setFormpackMeta(existing);
           }
           return;
         }
 
-        const signature = await deriveFormpackRevisionSignature(manifest);
         const stored = await upsertFormpackMeta({
           id: manifest.id,
           versionOrHash: signature.versionOrHash,

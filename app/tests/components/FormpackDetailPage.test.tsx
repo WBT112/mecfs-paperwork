@@ -1560,6 +1560,45 @@ describe('FormpackDetailPage', () => {
     expect(await screen.findByText('storageError')).toBeInTheDocument();
   });
 
+  it('refreshes stale formpack metadata when manifest revision changed', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      version: '1.1.0',
+    };
+    formpackMetaState.getFormpackMeta.mockResolvedValue({
+      id: record.formpackId,
+      versionOrHash: '1.0.0',
+      version: '1.0.0',
+      hash: 'stale-hash',
+      updatedAt: '2026-02-24T09:03:00.000Z',
+    });
+    formpackMetaState.upsertFormpackMeta.mockResolvedValue({
+      id: record.formpackId,
+      versionOrHash: '1.1.0',
+      version: '1.1.0',
+      hash: 'fresh-hash',
+      updatedAt: '2026-02-24T09:10:00.000Z',
+    });
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await waitFor(() =>
+      expect(formpackMetaState.upsertFormpackMeta).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: record.formpackId,
+          versionOrHash: '1.1.0',
+          version: '1.1.0',
+        }),
+      ),
+    );
+  });
+
   it('hides DOCX controls when export is not available', async () => {
     formpackState.manifest = {
       ...formpackState.manifest,
