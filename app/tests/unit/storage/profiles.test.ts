@@ -144,6 +144,106 @@ describe('profiles storage', () => {
       expect(result.data.patient?.firstName).toBeUndefined();
       expect(result.data.patient?.lastName).toBe('Valid');
     });
+
+    it('overwrites existing non-empty values with new non-empty values', async () => {
+      const { upsertProfile } = await import('../../../src/storage/profiles');
+
+      const existing: ProfileEntry = {
+        id: PROFILE_ID,
+        data: {
+          patient: { firstName: 'Alt', lastName: 'Altmann' },
+        },
+        createdAt: FIXED_TIMESTAMP,
+        updatedAt: FIXED_TIMESTAMP,
+      };
+      mockDb.get.mockResolvedValue(existing);
+      mockDb.put.mockResolvedValue(undefined);
+
+      const partial: ProfileData = {
+        patient: { firstName: 'Neu', lastName: 'Neumann' },
+      };
+
+      const result = await upsertProfile(PROFILE_ID, partial);
+
+      expect(result.data.patient?.firstName).toBe('Neu');
+      expect(result.data.patient?.lastName).toBe('Neumann');
+    });
+
+    it('merges all three categories simultaneously', async () => {
+      const { upsertProfile } = await import('../../../src/storage/profiles');
+
+      const existing: ProfileEntry = {
+        id: PROFILE_ID,
+        data: {
+          patient: { firstName: 'Max' },
+          doctor: { name: 'Dr. Alt' },
+          insurer: { name: 'TK' },
+        },
+        createdAt: FIXED_TIMESTAMP,
+        updatedAt: FIXED_TIMESTAMP,
+      };
+      mockDb.get.mockResolvedValue(existing);
+      mockDb.put.mockResolvedValue(undefined);
+
+      const partial: ProfileData = {
+        patient: { lastName: 'Mustermann' },
+        doctor: { practice: 'Praxis Neu' },
+        insurer: { city: 'Berlin' },
+      };
+
+      const result = await upsertProfile(PROFILE_ID, partial);
+
+      expect(result.data.patient?.firstName).toBe('Max');
+      expect(result.data.patient?.lastName).toBe('Mustermann');
+      expect(result.data.doctor?.name).toBe('Dr. Alt');
+      expect(result.data.doctor?.practice).toBe('Praxis Neu');
+      expect(result.data.insurer?.name).toBe('TK');
+      expect(result.data.insurer?.city).toBe('Berlin');
+    });
+
+    it('handles partial with all-whitespace category gracefully', async () => {
+      const { upsertProfile } = await import('../../../src/storage/profiles');
+
+      const existing: ProfileEntry = {
+        id: PROFILE_ID,
+        data: {
+          patient: { firstName: 'Max' },
+        },
+        createdAt: FIXED_TIMESTAMP,
+        updatedAt: FIXED_TIMESTAMP,
+      };
+      mockDb.get.mockResolvedValue(existing);
+      mockDb.put.mockResolvedValue(undefined);
+
+      const partial: ProfileData = {
+        patient: { firstName: '  ', lastName: '  ' },
+      };
+
+      const result = await upsertProfile(PROFILE_ID, partial);
+
+      expect(result.data.patient?.firstName).toBe('Max');
+      expect(result.data.patient?.lastName).toBeUndefined();
+    });
+
+    it('handles empty partial without modifying existing data', async () => {
+      const { upsertProfile } = await import('../../../src/storage/profiles');
+
+      const existing: ProfileEntry = {
+        id: PROFILE_ID,
+        data: {
+          patient: { firstName: 'Max', lastName: 'Mustermann' },
+        },
+        createdAt: FIXED_TIMESTAMP,
+        updatedAt: FIXED_TIMESTAMP,
+      };
+      mockDb.get.mockResolvedValue(existing);
+      mockDb.put.mockResolvedValue(undefined);
+
+      const result = await upsertProfile(PROFILE_ID, {});
+
+      expect(result.data.patient?.firstName).toBe('Max');
+      expect(result.data.patient?.lastName).toBe('Mustermann');
+    });
   });
 
   describe('deleteProfile', () => {

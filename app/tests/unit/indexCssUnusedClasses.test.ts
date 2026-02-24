@@ -20,6 +20,8 @@ const runtimeGeneratedAllowlist = new Set([
   'btn',
   'field-radio-group',
   'form-group',
+  'formpack-detail__quota-banner--warning',
+  'formpack-detail__quota-banner--error',
 ]);
 
 const collectFiles = (directory: string): string[] => {

@@ -263,6 +263,7 @@ export default function HelpPage() {
           <section
             className="help-page__storage-health"
             aria-label={t('storageHealthTitle')}
+            aria-busy={healthLoading}
             data-testid="storage-health"
           >
             <h4>{t('storageHealthTitle')}</h4>

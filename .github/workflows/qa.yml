@@ -108,6 +108,10 @@ jobs:
         working-directory: app
         run: npm run build
 
+      - name: Check bundle size
+        working-directory: app
+        run: npm run check:bundle-size
+
   qa:
     name: qa
     runs-on: ubuntu-latest

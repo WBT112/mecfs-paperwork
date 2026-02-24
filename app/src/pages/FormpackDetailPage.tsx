@@ -100,6 +100,7 @@ import {
   extractProfileData,
   applyProfileData,
 } from '../lib/profile/profileMapping';
+import { useStorageHealth } from '../lib/diagnostics/useStorageHealth';
 import CollapsibleSection from '../components/CollapsibleSection';
 import FormpackIntroGate from '../components/FormpackIntroGate';
 import FormpackIntroModal from '../components/FormpackIntroModal';
@@ -935,6 +936,10 @@ export default function FormpackDetailPage() {
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
   );
+  const { health: storageHealth } = useStorageHealth();
+  const [dismissedQuotaStatus, setDismissedQuotaStatus] = useState<
+    'warning' | 'error' | null
+  >(null);
   const [formpackMeta, setFormpackMeta] = useState<FormpackMetaEntry | null>(
     null,
   );
@@ -942,6 +947,7 @@ export default function FormpackDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
   const [pendingIntroFocus, setPendingIntroFocus] = useState(false);
+  const [pendingFormFocus, setPendingFormFocus] = useState(false);
   const [pendingOfflabelFocusTarget, setPendingOfflabelFocusTarget] =
     useState<OfflabelFocusTarget | null>(null);
   const [profileSaveEnabled, setProfileSaveEnabled] = useState(() => {
@@ -1710,6 +1716,7 @@ export default function FormpackDetailPage() {
     if (updated) {
       markAsSaved(updated.data);
     }
+    setPendingFormFocus(true);
   }, [activeRecord, locale, markAsSaved, updateActiveRecord]);
 
   const handleCreateRecord = useCallback(async () => {
@@ -1736,6 +1743,7 @@ export default function FormpackDetailPage() {
     markAsSaved(record.data);
     setFormData(record.data);
     persistActiveRecordId(record.id);
+    setPendingFormFocus(true);
   }, [
     activeRecord,
     createRecord,
@@ -1756,6 +1764,7 @@ export default function FormpackDetailPage() {
         markAsSaved(record.data);
         setFormData(record.data);
         persistActiveRecordId(record.id);
+        setPendingFormFocus(true);
       }
     },
     [loadRecord, markAsSaved, persistActiveRecordId],
@@ -1807,6 +1816,7 @@ export default function FormpackDetailPage() {
       if (updated) {
         markAsSaved(snapshot.data);
       }
+      setPendingFormFocus(true);
     },
     [activeRecord, loadSnapshot, markAsSaved, updateActiveRecord],
   );
@@ -2075,6 +2085,45 @@ export default function FormpackDetailPage() {
       cancelled = true;
     };
   }, [isIntroGateVisible, pendingIntroFocus]);
+
+  useEffect(() => {
+    if (!pendingFormFocus || isIntroGateVisible) {
+      return;
+    }
+
+    let cancelled = false;
+    let attempts = 0;
+
+    const tryFocus = () => {
+      if (cancelled) {
+        return;
+      }
+
+      const root = formContentRef.current;
+      const target = root?.querySelector<HTMLElement>(
+        FORM_PRIMARY_FOCUS_SELECTOR,
+      );
+      if (target) {
+        target.focus();
+        setPendingFormFocus(false);
+        return;
+      }
+
+      if (attempts < 6) {
+        attempts += 1;
+        globalThis.setTimeout(tryFocus, 50);
+        return;
+      }
+
+      root?.querySelector<HTMLElement>(FORM_FALLBACK_FOCUS_SELECTOR)?.focus();
+      setPendingFormFocus(false);
+    };
+
+    globalThis.setTimeout(tryFocus, 0);
+    return () => {
+      cancelled = true;
+    };
+  }, [isIntroGateVisible, pendingFormFocus]);
 
   useEffect(() => {
     if (
@@ -2490,7 +2539,10 @@ export default function FormpackDetailPage() {
               +
             </button>
           </div>
-          <ul className="formpack-records__list">
+          <ul
+            className="formpack-records__list"
+            aria-label={t('formpackRecordsListLabel')}
+          >
             {records.map((record) => {
               const isActive = activeRecord?.id === record.id;
               return (
@@ -2583,12 +2635,12 @@ export default function FormpackDetailPage() {
     );
 
   const renderImportStatus = () => (
-    <>
+    <div aria-live="polite" aria-label={t('formpackImportStatusLabel')}>
       {importError && <p className="app__error">{importError}</p>}
       {importSuccess && (
         <p className="formpack-import__success">{importSuccess}</p>
       )}
-    </>
+    </div>
   );
 
   const getImportButtonLabel = () =>
@@ -2858,7 +2910,10 @@ export default function FormpackDetailPage() {
   const renderSnapshotsList = () => {
     if (snapshots.length) {
       return (
-        <ul className="formpack-snapshots__list">
+        <ul
+          className="formpack-snapshots__list"
+          aria-label={t('formpackSnapshotsListLabel')}
+        >
           {snapshots.map((snapshot) => (
             <li key={snapshot.id} className="formpack-snapshots__item">
               <div>
@@ -2942,10 +2997,12 @@ export default function FormpackDetailPage() {
             {offlabelPreviewDocuments.map((doc) => (
               <button
                 key={doc.id}
+                id={`offlabel-tab-${doc.id}`}
                 role="tab"
                 type="button"
                 className="app__button"
                 aria-selected={selectedOfflabelPreviewId === doc.id}
+                aria-controls={`offlabel-tabpanel-${doc.id}`}
                 onClick={() => setSelectedOfflabelPreviewId(doc.id)}
               >
                 {doc.title}
@@ -2954,7 +3011,16 @@ export default function FormpackDetailPage() {
           </div>
           {offlabelPreviewDocuments
             .filter((doc) => doc.id === selectedOfflabelPreviewId)
-            .map((doc) => renderOfflabelPreviewDocument(doc))}
+            .map((doc) => (
+              <div
+                key={doc.id}
+                id={`offlabel-tabpanel-${doc.id}`}
+                role="tabpanel"
+                aria-labelledby={`offlabel-tab-${doc.id}`}
+              >
+                {renderOfflabelPreviewDocument(doc)}
+              </div>
+            ))}
         </div>
       );
     }
@@ -2970,6 +3036,9 @@ export default function FormpackDetailPage() {
     );
   };
 
+  const currentQuotaStatus =
+    storageHealth.status === 'ok' ? null : storageHealth.status;
+
   return (
     <section className="app__card">
       <div className="app__card-header">
@@ -2981,6 +3050,26 @@ export default function FormpackDetailPage() {
           {t('formpackBackToList')}
         </Link>
       </div>
+      {currentQuotaStatus && dismissedQuotaStatus !== currentQuotaStatus && (
+        <div
+          className={`formpack-detail__quota-banner formpack-detail__quota-banner--${currentQuotaStatus}`}
+          role="alert"
+        >
+          <p>
+            {currentQuotaStatus === 'error'
+              ? t('storageQuotaError')
+              : t('storageQuotaWarning')}
+          </p>
+          <button
+            type="button"
+            className="app__button"
+            onClick={() => setDismissedQuotaStatus(currentQuotaStatus)}
+            aria-label={t('storageQuotaDismiss')}
+          >
+            {t('storageQuotaDismiss')}
+          </button>
+        </div>
+      )}
       <div
         className="formpack-detail"
         onClickCapture={handleActionClickCapture}

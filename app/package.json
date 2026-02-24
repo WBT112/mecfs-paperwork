@@ -33,6 +33,7 @@
     "test:unit": "vitest --run",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage",
+    "check:bundle-size": "node scripts/check-bundle-size.mjs",
     "cleanup:css:report": "node scripts/report-unused-css.mjs",
     "cleanup:knip:report": "node scripts/report-knip.mjs",
     "cleanup:dupes:report": "node scripts/report-jscpd.mjs",

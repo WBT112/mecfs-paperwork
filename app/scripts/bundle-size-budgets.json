@@ -1,0 +1,19 @@
+{
+  "jsTotalBudget": 3200000,
+  "cssTotalBudget": 40000,
+  "appChunkHardLimit": 153600,
+  "jsChunkBudgets": {
+    "vendor-react-pdf-pdfkit": 500000,
+    "vendor-react": 430000,
+    "vendor-react-pdf-fontkit": 420000,
+    "vendor-react-pdf-renderer": 350000,
+    "vendor-rjsf": 340000,
+    "vendor-docx": 250000,
+    "vendor-react-pdf-image": 180000,
+    "vendor-react-pdf-layout": 170000,
+    "vendor-react-pdf-yoga": 150000,
+    "FormpackDetailPage": 150000,
+    "index": 70000,
+    "HelpPage": 30000
+  }
+}

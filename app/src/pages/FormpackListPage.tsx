@@ -207,6 +207,7 @@ export default function FormpackListPage() {
           type="search"
           className="formpack-list__search"
           placeholder={t('formpackSearchPlaceholder')}
+          aria-label={t('formpackSearchAriaLabel')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />

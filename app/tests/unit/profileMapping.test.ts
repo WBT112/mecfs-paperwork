@@ -328,6 +328,133 @@ describe('applyProfileData', () => {
     expect((formData.patient as AnyRecord).lastName).toBeUndefined();
     expect((result.patient as AnyRecord).lastName).toBe('Added');
   });
+
+  it('returns unchanged form data when profile is empty', () => {
+    const formData = {
+      patient: { firstName: 'Max', lastName: 'Mustermann' },
+      doctor: { name: DOCTOR_NAME },
+    };
+
+    const result = applyProfileData(DOCTOR_LETTER, formData, {});
+
+    expect((result.patient as AnyRecord).firstName).toBe('Max');
+    expect((result.patient as AnyRecord).lastName).toBe('Mustermann');
+    expect((result.doctor as AnyRecord).name).toBe(DOCTOR_NAME);
+  });
+
+  it('returns unchanged form data when profile categories are undefined', () => {
+    const formData = {
+      patient: { firstName: 'Max' },
+    };
+
+    const result = applyProfileData(DOCTOR_LETTER, formData, {
+      patient: undefined,
+      doctor: undefined,
+    });
+
+    expect((result.patient as AnyRecord).firstName).toBe('Max');
+  });
+
+  it('skips non-string profile values at runtime', () => {
+    const formData = { patient: {} };
+    const profile = {
+      patient: { firstName: 123, lastName: 'Valid' } as unknown as Record<
+        string,
+        string | undefined
+      >,
+    };
+
+    const result = applyProfileData(DOCTOR_LETTER, formData, profile);
+
+    expect((result.patient as AnyRecord).firstName).toBeUndefined();
+    expect((result.patient as AnyRecord).lastName).toBe('Valid');
+  });
+
+  it('handles form data with non-object section at runtime', () => {
+    const formData = { patient: 'not-an-object' } as unknown as Record<
+      string,
+      unknown
+    >;
+    const profile = {
+      patient: { firstName: 'Max' },
+    };
+
+    const result = applyProfileData(DOCTOR_LETTER, formData, profile);
+
+    expect((result.patient as AnyRecord).firstName).toBe('Max');
+  });
+
+  it('fills all offlabel categories from a complete profile', () => {
+    const formData = { patient: {}, doctor: {}, insurer: {} };
+    const profile = {
+      patient: {
+        firstName: 'Max',
+        lastName: 'Mustermann',
+        birthDate: BIRTH_DATE,
+        streetAndNumber: STREET_PATIENT,
+        postalCode: '12345',
+        city: 'Berlin',
+        insuranceNumber: 'A123',
+      },
+      doctor: {
+        name: DOCTOR_NAME,
+        title: 'Dr.',
+        gender: 'Herr',
+        practice: PRACTICE_NAME,
+        streetAndNumber: STREET_DOCTOR,
+        postalCode: '54321',
+        city: 'München',
+      },
+      insurer: {
+        name: 'AOK',
+        department: 'Leistung',
+        streetAndNumber: 'Kassenstr. 1',
+        postalCode: '11111',
+        city: 'Hamburg',
+      },
+    };
+
+    const result = applyProfileData(OFFLABEL, formData, profile);
+
+    expect((result.patient as AnyRecord).insuranceNumber).toBe('A123');
+    expect((result.doctor as AnyRecord).practice).toBe(PRACTICE_NAME);
+    expect((result.insurer as AnyRecord).department).toBe('Leistung');
+  });
+});
+
+describe('extractProfileData edge cases', () => {
+  it('skips non-string field values at runtime', () => {
+    const formData = {
+      patient: { firstName: 123, lastName: true, city: 'Berlin' },
+    };
+
+    const result = extractProfileData(
+      DOCTOR_LETTER,
+      formData as unknown as Record<string, unknown>,
+    );
+
+    expect(result.patient).toEqual({ city: 'Berlin' });
+  });
+
+  it('returns undefined for notfallpass with empty person and doctor', () => {
+    const result = extractProfileData(NOTFALLPASS, {
+      person: {},
+      doctor: {},
+    });
+
+    expect(result.patient).toBeUndefined();
+    expect(result.doctor).toBeUndefined();
+  });
+
+  it('extracts partial notfallpass data when only some fields present', () => {
+    const result = extractProfileData(NOTFALLPASS, {
+      person: { firstName: 'Max' },
+      doctor: { phone: '030-12345' },
+    });
+
+    expect(result.patient).toEqual({ firstName: 'Max' });
+    expect(result.doctor).toEqual({ phone: '030-12345' });
+  });
 });
 
 describe('hasUsableProfileData', () => {

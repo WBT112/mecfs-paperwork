@@ -1018,6 +1018,98 @@ export const createDocxReport = async (
   });
 };
 
+let docxWorker: Worker | null = null;
+let workerRequestId = 0;
+let workerFailed = false;
+type DocxWorkerResponse =
+  | { id: number; result: Uint8Array }
+  | { id: number; error: string };
+type PendingWorkerRequest = {
+  resolve: (result: Uint8Array) => void;
+  reject: (error: Error) => void;
+};
+const pendingWorkerRequests = new Map<number, PendingWorkerRequest>();
+
+const rejectPendingWorkerRequests = (message: string): void => {
+  const pending = [...pendingWorkerRequests.values()];
+  pendingWorkerRequests.clear();
+  for (const request of pending) {
+    request.reject(new Error(message));
+  }
+};
+
+const getDocxWorker = (): Worker | null => {
+  if (workerFailed) return null;
+  if (docxWorker) return docxWorker;
+  try {
+    docxWorker = new Worker(new URL('./docxReportWorker.ts', import.meta.url), {
+      type: 'module',
+    });
+    docxWorker.addEventListener(
+      'message',
+      (event: MessageEvent<DocxWorkerResponse>) => {
+        const request = pendingWorkerRequests.get(event.data.id);
+        if (!request) return;
+        pendingWorkerRequests.delete(event.data.id);
+        if ('error' in event.data) {
+          request.reject(new Error(event.data.error));
+          return;
+        }
+        request.resolve(new Uint8Array(event.data.result));
+      },
+    );
+    docxWorker.addEventListener('error', () => {
+      workerFailed = true;
+      rejectPendingWorkerRequests('DOCX worker failed.');
+      docxWorker = null;
+    });
+    docxWorker.addEventListener('messageerror', () => {
+      workerFailed = true;
+      rejectPendingWorkerRequests(
+        'DOCX worker message could not be deserialized.',
+      );
+      docxWorker = null;
+    });
+    return docxWorker;
+  } catch {
+    workerFailed = true;
+    rejectPendingWorkerRequests('DOCX worker could not be created.');
+    return null;
+  }
+};
+
+const createDocxReportInWorker = (
+  template: Uint8Array,
+  data: DocxTemplateContext,
+  tContext: Record<string, unknown>,
+  locale: string,
+  failFast: boolean,
+): Promise<Uint8Array> => {
+  const worker = getDocxWorker();
+  if (!worker) return Promise.reject(new Error('Worker unavailable'));
+
+  return new Promise((resolve, reject) => {
+    const id = ++workerRequestId;
+    pendingWorkerRequests.set(id, { resolve, reject });
+    try {
+      worker.postMessage({
+        id,
+        template,
+        data,
+        cmdDelimiter: DOCX_CMD_DELIMITER,
+        literalXmlDelimiter: DOCX_LITERAL_DELIMITER,
+        processLineBreaks: true,
+        failFast,
+        tContext,
+        locale,
+      });
+    } catch (error) {
+      pendingWorkerRequests.delete(id);
+      reject(error instanceof Error ? error : new Error(String(error)));
+    }
+  });
+};
+
 /**
  * Downloads a DOCX report blob.
  */
@@ -1092,14 +1184,26 @@ export const exportDocx = async ({
     record.data,
   );
   const contextWithExportDate = ensureExportedAtIso(normalizedContext);
+  const tContext = isRecord(contextWithExportDate.t)
+    ? contextWithExportDate.t
+    : {};
 
-  const report = await createDocxReport(
-    template,
-    contextWithExportDate,
-    buildDocxAdditionalContext(formpackId, locale, {
-      t: isRecord(contextWithExportDate.t) ? contextWithExportDate.t : {},
-    }),
-  );
+  let report: Uint8Array;
+  try {
+    report = await createDocxReportInWorker(
+      template,
+      contextWithExportDate,
+      tContext,
+      locale,
+      true,
+    );
+  } catch {
+    report = await createDocxReport(
+      template,
+      contextWithExportDate,
+      buildDocxAdditionalContext(formpackId, locale, { t: tContext }),
+    );
+  }
 
   return new Blob([new Uint8Array(report)], { type: DOCX_MIME });
 };
