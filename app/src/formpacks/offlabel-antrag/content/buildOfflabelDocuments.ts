@@ -609,14 +609,14 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
         kind: 'paragraph',
         text: `Patient: ${patientName}, geb. ${resolvedBirthDate}; Versichertennr.: ${resolvedInsuranceNumber}`,
       },
-      ...(!point2aNo
-        ? ([
+      ...(point2aNo
+        ? []
+        : ([
             {
               kind: 'paragraph' as const,
               text: `Diagnose: ${facts.diagnosisNominative}`,
             },
-          ] satisfies OfflabelRenderedDocument['blocks'])
-        : []),
+          ] satisfies OfflabelRenderedDocument['blocks'])),
       {
         kind: 'paragraph',
         text: 'Der Patient leidet an einer schwerwiegenden, die Lebensqualität auf Dauer nachhaltig beeinträchtigenden Erkrankung.',

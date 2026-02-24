@@ -33,13 +33,11 @@ const formatPhone = (value: string | null | undefined): string => {
   return String(value).trim();
 };
 
+const isAllowedMessageOrigin = (origin: string, appOrigin: string): boolean =>
+  origin === 'null' || origin === appOrigin;
+
 globalThis.addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
-  const messageOrigin = event.origin;
-  if (
-    messageOrigin &&
-    messageOrigin !== 'null' &&
-    messageOrigin !== globalThis.location.origin
-  ) {
+  if (!isAllowedMessageOrigin(event.origin, globalThis.location.origin)) {
     return;
   }
 
