@@ -101,9 +101,16 @@ import {
   applyProfileData,
 } from '../lib/profile/profileMapping';
 import { useStorageHealth } from '../lib/diagnostics/useStorageHealth';
-import CollapsibleSection from '../components/CollapsibleSection';
 import FormpackIntroGate from '../components/FormpackIntroGate';
 import FormpackIntroModal from '../components/FormpackIntroModal';
+import FormpackDetailHeader from './formpack-detail/FormpackDetailHeader';
+import QuotaBanner from './formpack-detail/QuotaBanner';
+import DevMetadataPanel from './formpack-detail/DevMetadataPanel';
+import RecordsPanel from './formpack-detail/RecordsPanel';
+import ImportPanel from './formpack-detail/ImportPanel';
+import SnapshotsPanel from './formpack-detail/SnapshotsPanel';
+import FormContentSection from './formpack-detail/FormContentSection';
+import DocumentPreviewPanel from './formpack-detail/DocumentPreviewPanel';
 import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
@@ -2492,164 +2499,11 @@ export default function FormpackDetailPage() {
 
   // RATIONALE: Hide dev-only UI in production to reduce exposed metadata and UI surface.
   const showDevSections = isDevUiEnabled;
+  const formatRecordUpdatedAt = (timestamp: string) =>
+    t('formpackRecordUpdatedAt', { timestamp: formatTimestamp(timestamp) });
 
-  const renderFormpackDocxDetails = () => {
-    if (!manifest.docx) {
-      return null;
-    }
-
-    return (
-      <div className="formpack-detail__section">
-        <h3>{t('formpackDocxHeading')}</h3>
-        <dl>
-          <div>
-            <dt>{t('formpackDocxTemplateA4')}</dt>
-            <dd>{manifest.docx.templates.a4}</dd>
-          </div>
-          <div>
-            <dt>{t('formpackDocxTemplateWallet')}</dt>
-            <dd>
-              {manifest.docx.templates.wallet
-                ? manifest.docx.templates.wallet
-                : t('formpackDocxTemplateWalletUnavailable')}
-            </dd>
-          </div>
-          <div>
-            <dt>{t('formpackDocxMapping')}</dt>
-            <dd>{manifest.docx.mapping}</dd>
-          </div>
-        </dl>
-      </div>
-    );
-  };
-
-  const renderRecordsList = () => {
-    if (records.length) {
-      return (
-        <>
-          <div className="formpack-records__actions">
-            <button
-              type="button"
-              className="app__button app__icon-button"
-              onClick={handleCreateRecord}
-              disabled={storageError === 'unavailable'}
-              aria-label={t('formpackRecordNew')}
-              title={t('formpackRecordNew')}
-            >
-              +
-            </button>
-          </div>
-          <ul
-            className="formpack-records__list"
-            aria-label={t('formpackRecordsListLabel')}
-          >
-            {records.map((record) => {
-              const isActive = activeRecord?.id === record.id;
-              return (
-                <li
-                  key={record.id}
-                  className={`formpack-records__item${
-                    isActive ? ' formpack-records__item--active' : ''
-                  }`}
-                >
-                  <div>
-                    <p className="formpack-records__title">
-                      {record.title ?? t('formpackRecordUntitled')}
-                    </p>
-                    <p className="formpack-records__meta">
-                      {t('formpackRecordUpdatedAt', {
-                        timestamp: formatTimestamp(record.updatedAt),
-                      })}
-                    </p>
-                  </div>
-                  <div className="formpack-records__item-actions">
-                    <button
-                      type="button"
-                      className="app__button"
-                      onClick={() => handleLoadRecord(record.id)}
-                      disabled={storageError === 'unavailable'}
-                    >
-                      {t('formpackRecordLoad')}
-                    </button>
-                    {!isActive && (
-                      <button
-                        type="button"
-                        className="app__button app__icon-button"
-                        onClick={() => handleDeleteRecord(record)}
-                        disabled={storageError === 'unavailable'}
-                        aria-label={t('formpackRecordDelete')}
-                        title={t('formpackRecordDelete')}
-                      >
-                        🗑
-                      </button>
-                    )}
-                    {isActive && (
-                      <span className="formpack-records__badge">
-                        {t('formpackRecordActive')}
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </>
-      );
-    }
-
-    const emptyMessage = isRecordsLoading
-      ? t('formpackRecordsLoading')
-      : t('formpackRecordsEmpty');
-
-    return (
-      <div>
-        <p className="formpack-records__empty">{emptyMessage}</p>
-        <div className="formpack-records__actions">
-          <button
-            type="button"
-            className="app__button app__icon-button"
-            onClick={handleCreateRecord}
-            disabled={storageError === 'unavailable'}
-            aria-label={t('formpackRecordNew')}
-            title={t('formpackRecordNew')}
-          >
-            +
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderImportFileName = () =>
-    importFileName ? (
-      <p className="formpack-import__file-name">
-        {t('formpackImportFileName', { name: importFileName })}
-      </p>
-    ) : null;
-
-  const renderImportOverwriteHint = () =>
-    activeRecord ? null : (
-      <p className="formpack-import__note">
-        {t('formpackImportModeOverwriteHint')}
-      </p>
-    );
-
-  const renderImportStatus = () => (
-    <div aria-live="polite" aria-label={t('formpackImportStatusLabel')}>
-      {importError && <p className="app__error">{importError}</p>}
-      {importSuccess && (
-        <p className="formpack-import__success">{importSuccess}</p>
-      )}
-    </div>
-  );
-
-  const getImportButtonLabel = () =>
-    isImporting ? t('formpackImportInProgress') : t('formpackImportAction');
-
-  const renderStorageErrorMessage = () =>
-    storageErrorMessage ? (
-      <p className="app__error">{storageErrorMessage}</p>
-    ) : null;
+  const formatSnapshotCreatedAt = (timestamp: string) =>
+    t('formpackSnapshotCreatedAt', { timestamp: formatTimestamp(timestamp) });
 
   const renderPdfExportControls = () => {
     const pdfSupported = manifest.exports.includes('pdf');
@@ -2907,85 +2761,6 @@ export default function FormpackDetailPage() {
     );
   };
 
-  const renderSnapshotsList = () => {
-    if (snapshots.length) {
-      return (
-        <ul
-          className="formpack-snapshots__list"
-          aria-label={t('formpackSnapshotsListLabel')}
-        >
-          {snapshots.map((snapshot) => (
-            <li key={snapshot.id} className="formpack-snapshots__item">
-              <div>
-                <p className="formpack-snapshots__title">
-                  {snapshot.label ?? t('formpackSnapshotUntitled')}
-                </p>
-                <p className="formpack-snapshots__meta">
-                  {t('formpackSnapshotCreatedAt', {
-                    timestamp: formatTimestamp(snapshot.createdAt),
-                  })}
-                </p>
-              </div>
-              <div className="formpack-snapshots__item-actions">
-                <button
-                  type="button"
-                  className="app__button"
-                  onClick={() => handleRestoreSnapshot(snapshot.id)}
-                  disabled={storageError === 'unavailable'}
-                >
-                  {t('formpackSnapshotRestore')}
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      );
-    }
-
-    const emptyMessage = isSnapshotsLoading
-      ? t('formpackSnapshotsLoading')
-      : t('formpackSnapshotsEmpty');
-    return <p className="formpack-snapshots__empty">{emptyMessage}</p>;
-  };
-
-  const renderSnapshotsContent = () => {
-    if (!activeRecord) {
-      return (
-        <p className="formpack-snapshots__empty">
-          {t('formpackSnapshotsNoRecord')}
-        </p>
-      );
-    }
-
-    return (
-      <>
-        <div className="formpack-snapshots__actions">
-          <button
-            type="button"
-            className="app__button app__icon-button"
-            onClick={handleCreateSnapshot}
-            disabled={storageError === 'unavailable'}
-            aria-label={t('formpackSnapshotCreate')}
-            title={t('formpackSnapshotCreate')}
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className="app__button app__icon-button"
-            onClick={handleClearSnapshots}
-            disabled={storageError === 'unavailable' || snapshots.length === 0}
-            aria-label={t('formpackSnapshotsClearAll')}
-            title={t('formpackSnapshotsClearAll')}
-          >
-            🗑
-          </button>
-        </div>
-        {renderSnapshotsList()}
-      </>
-    );
-  };
-
   const getJsonPreviewContent = () =>
     Object.keys(formData).length ? jsonPreview : t('formpackFormPreviewEmpty');
 
@@ -3041,189 +2816,135 @@ export default function FormpackDetailPage() {
 
   return (
     <section className="app__card">
-      <div className="app__card-header">
-        <div>
-          <h2>{title}</h2>
-          <p className="app__subtitle">{description}</p>
-        </div>
-        <Link className="app__link" to="/formpacks">
-          {t('formpackBackToList')}
-        </Link>
-      </div>
+      <FormpackDetailHeader
+        title={title}
+        description={description}
+        backToListLabel={t('formpackBackToList')}
+      />
       {currentQuotaStatus && dismissedQuotaStatus !== currentQuotaStatus && (
-        <div
-          className={`formpack-detail__quota-banner formpack-detail__quota-banner--${currentQuotaStatus}`}
-          role="alert"
-        >
-          <p>
-            {currentQuotaStatus === 'error'
-              ? t('storageQuotaError')
-              : t('storageQuotaWarning')}
-          </p>
-          <button
-            type="button"
-            className="app__button"
-            onClick={() => setDismissedQuotaStatus(currentQuotaStatus)}
-            aria-label={t('storageQuotaDismiss')}
-          >
-            {t('storageQuotaDismiss')}
-          </button>
-        </div>
+        <QuotaBanner
+          status={currentQuotaStatus}
+          warningText={t('storageQuotaWarning')}
+          errorText={t('storageQuotaError')}
+          dismissLabel={t('storageQuotaDismiss')}
+          onDismiss={() => setDismissedQuotaStatus(currentQuotaStatus)}
+        />
       )}
       <div
         className="formpack-detail"
         onClickCapture={handleActionClickCapture}
       >
         <div className="formpack-detail__assets">
-          {showDevSections && (
-            <>
-              <div className="formpack-detail__section">
-                <h3>{t('formpackDetailsHeading')}</h3>
-                <dl>
-                  <div>
-                    <dt>{t('formpackId')}</dt>
-                    <dd>{manifest.id}</dd>
-                  </div>
-                  <div>
-                    <dt>{t('formpackVersion')}</dt>
-                    <dd>{manifest.version}</dd>
-                  </div>
-                  <div>
-                    <dt>{t('formpackDefaultLocale')}</dt>
-                    <dd>{manifest.defaultLocale}</dd>
-                  </div>
-                  <div>
-                    <dt>{t('formpackLocales')}</dt>
-                    <dd>{manifest.locales.join(', ')}</dd>
-                  </div>
-                </dl>
-              </div>
-              <div className="formpack-detail__section">
-                <h3>{t('formpackExportsHeading')}</h3>
-                <dl>
-                  <div>
-                    <dt>{t('formpackExports')}</dt>
-                    <dd>{manifest.exports.join(', ')}</dd>
-                  </div>
-                </dl>
-              </div>
-              {renderFormpackDocxDetails()}
-            </>
-          )}
+          <DevMetadataPanel
+            show={showDevSections}
+            manifest={manifest}
+            labels={{
+              detailsHeading: t('formpackDetailsHeading'),
+              idLabel: t('formpackId'),
+              versionLabel: t('formpackVersion'),
+              defaultLocaleLabel: t('formpackDefaultLocale'),
+              localesLabel: t('formpackLocales'),
+              exportsHeading: t('formpackExportsHeading'),
+              exportsLabel: t('formpackExports'),
+              docxHeading: t('formpackDocxHeading'),
+              docxTemplateA4: t('formpackDocxTemplateA4'),
+              docxTemplateWallet: t('formpackDocxTemplateWallet'),
+              docxTemplateWalletUnavailable: t(
+                'formpackDocxTemplateWalletUnavailable',
+              ),
+              docxMapping: t('formpackDocxMapping'),
+            }}
+          />
         </div>
         <div className="formpack-detail__form">
-          <div className="formpack-detail__section">
-            <h3>{t('formpackFormHeading')}</h3>
+          <FormContentSection title={t('formpackFormHeading')}>
             {renderFormContent()}
-          </div>
-          {!isIntroGateVisible && (
-            <CollapsibleSection
-              id="formpack-document-preview"
-              title={t('formpackDocumentPreviewHeading')}
-              className="formpack-detail__section"
-            >
-              {renderDocumentPreviewContent()}
-            </CollapsibleSection>
-          )}
+          </FormContentSection>
+          <DocumentPreviewPanel
+            title={t('formpackDocumentPreviewHeading')}
+            isIntroGateVisible={isIntroGateVisible}
+          >
+            {renderDocumentPreviewContent()}
+          </DocumentPreviewPanel>
           <div className="formpack-detail__section formpack-detail__tools-section">
             <div className="formpack-detail__tools-panel">
               <h3 className="formpack-detail__tools-title">
                 {t('formpackToolsHeading')}
               </h3>
               <div className="formpack-detail__tools">
-                <CollapsibleSection
-                  id="formpack-records"
-                  title={t('formpackRecordsHeading')}
-                  className="formpack-detail__section"
-                >
-                  {renderStorageErrorMessage()}
-                  {renderRecordsList()}
-                </CollapsibleSection>
-                <CollapsibleSection
-                  id="formpack-import"
-                  title={t('formpackImportHeading')}
-                  className="formpack-detail__section"
-                >
-                  <p
-                    className="formpack-import__hint"
-                    id="formpack-import-hint"
-                  >
-                    {t('formpackImportHint')}
-                  </p>
-                  <div className="formpack-import__field">
-                    <label htmlFor="formpack-import-file">
-                      {t('formpackImportLabel')}
-                    </label>
-                    <input
-                      ref={importInputRef}
-                      id="formpack-import-file"
-                      className="formpack-import__file"
-                      type="file"
-                      accept="application/json,.json"
-                      onChange={handleImportFileChange}
-                      aria-describedby="formpack-import-hint"
-                    />
-                    {renderImportFileName()}
-                  </div>
-                  <fieldset className="formpack-import__options">
-                    <legend>{t('formpackImportModeLabel')}</legend>
-                    <label className="formpack-import__option">
-                      <input
-                        type="radio"
-                        name="import-mode"
-                        value="new"
-                        checked={importMode === 'new'}
-                        onChange={() => setImportMode('new')}
-                      />
-                      {t('formpackImportModeNew')}
-                    </label>
-                    <label className="formpack-import__option">
-                      <input
-                        type="radio"
-                        name="import-mode"
-                        value="overwrite"
-                        checked={importMode === 'overwrite'}
-                        onChange={() => setImportMode('overwrite')}
-                        disabled={!activeRecord}
-                      />
-                      {t('formpackImportModeOverwrite')}
-                    </label>
-                    {renderImportOverwriteHint()}
-                  </fieldset>
-                  <label className="formpack-import__option">
-                    <input
-                      type="checkbox"
-                      checked={importIncludeRevisions}
-                      onChange={(event) =>
-                        setImportIncludeRevisions(event.target.checked)
-                      }
-                    />
-                    {t('formpackImportIncludeRevisions')}
-                  </label>
-                  {renderImportStatus()}
-                  <div className="formpack-import__actions">
-                    <button
-                      type="button"
-                      className="app__button"
-                      onClick={handleImport}
-                      data-action="json-import"
-                      disabled={
-                        !importJson.trim() ||
-                        storageError === 'unavailable' ||
-                        isImporting
-                      }
-                    >
-                      {getImportButtonLabel()}
-                    </button>
-                  </div>
-                </CollapsibleSection>
-                <CollapsibleSection
-                  id="formpack-snapshots"
-                  title={t('formpackSnapshotsHeading')}
-                  className="formpack-detail__section"
-                >
-                  {renderSnapshotsContent()}
-                </CollapsibleSection>
+                <RecordsPanel
+                  labels={{
+                    title: t('formpackRecordsHeading'),
+                    recordNew: t('formpackRecordNew'),
+                    recordsListLabel: t('formpackRecordsListLabel'),
+                    recordUntitled: t('formpackRecordUntitled'),
+                    recordLoad: t('formpackRecordLoad'),
+                    recordDelete: t('formpackRecordDelete'),
+                    recordActive: t('formpackRecordActive'),
+                    recordsLoading: t('formpackRecordsLoading'),
+                    recordsEmpty: t('formpackRecordsEmpty'),
+                  }}
+                  records={records}
+                  activeRecordId={activeRecord?.id ?? null}
+                  isRecordsLoading={isRecordsLoading}
+                  storageUnavailable={storageError === 'unavailable'}
+                  storageErrorMessage={storageErrorMessage}
+                  formatUpdatedAt={formatRecordUpdatedAt}
+                  onCreateRecord={handleCreateRecord}
+                  onLoadRecord={handleLoadRecord}
+                  onDeleteRecord={handleDeleteRecord}
+                />
+                <ImportPanel
+                  labels={{
+                    title: t('formpackImportHeading'),
+                    hint: t('formpackImportHint'),
+                    fileLabel: t('formpackImportLabel'),
+                    fileName: (name) => t('formpackImportFileName', { name }),
+                    modeLabel: t('formpackImportModeLabel'),
+                    modeNew: t('formpackImportModeNew'),
+                    modeOverwrite: t('formpackImportModeOverwrite'),
+                    modeOverwriteHint: t('formpackImportModeOverwriteHint'),
+                    includeRevisions: t('formpackImportIncludeRevisions'),
+                    statusLabel: t('formpackImportStatusLabel'),
+                    inProgress: t('formpackImportInProgress'),
+                    action: t('formpackImportAction'),
+                  }}
+                  importInputRef={importInputRef}
+                  importFileName={importFileName}
+                  importMode={importMode}
+                  importIncludeRevisions={importIncludeRevisions}
+                  importError={importError}
+                  importSuccess={importSuccess}
+                  importJson={importJson}
+                  isImporting={isImporting}
+                  activeRecordExists={Boolean(activeRecord)}
+                  storageUnavailable={storageError === 'unavailable'}
+                  onImportModeChange={setImportMode}
+                  onIncludeRevisionsChange={setImportIncludeRevisions}
+                  onFileChange={handleImportFileChange}
+                  onImport={handleImport}
+                />
+                <SnapshotsPanel
+                  labels={{
+                    title: t('formpackSnapshotsHeading'),
+                    snapshotsListLabel: t('formpackSnapshotsListLabel'),
+                    snapshotUntitled: t('formpackSnapshotUntitled'),
+                    snapshotRestore: t('formpackSnapshotRestore'),
+                    snapshotsLoading: t('formpackSnapshotsLoading'),
+                    snapshotsEmpty: t('formpackSnapshotsEmpty'),
+                    snapshotsNoRecord: t('formpackSnapshotsNoRecord'),
+                    snapshotCreate: t('formpackSnapshotCreate'),
+                    snapshotsClearAll: t('formpackSnapshotsClearAll'),
+                  }}
+                  snapshots={snapshots}
+                  activeRecordExists={Boolean(activeRecord)}
+                  isSnapshotsLoading={isSnapshotsLoading}
+                  storageUnavailable={storageError === 'unavailable'}
+                  formatCreatedAt={formatSnapshotCreatedAt}
+                  onCreateSnapshot={handleCreateSnapshot}
+                  onClearSnapshots={handleClearSnapshots}
+                  onRestoreSnapshot={handleRestoreSnapshot}
+                />
               </div>
             </div>
           </div>

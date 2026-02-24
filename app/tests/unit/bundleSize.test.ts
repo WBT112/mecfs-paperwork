@@ -50,12 +50,21 @@ describe.skipIf(!hasBuild)('bundle size budgets', () => {
     expect(total).toBeLessThanOrEqual(CSS_TOTAL_BUDGET);
   });
 
-  it('no single app chunk exceeds 150 kB', () => {
-    const appChunks = jsAssets.filter((a) => !a.chunk.startsWith('vendor-'));
-    for (const chunk of appChunks) {
+  it('all budgeted app chunks stay under their limits', () => {
+    const budgetedAppChunks = Object.entries(JS_CHUNK_BUDGETS).filter(
+      ([chunkName]) => !chunkName.startsWith('vendor-'),
+    );
+
+    for (const [chunkName, budget] of budgetedAppChunks) {
+      const chunk = jsAssets.find((asset) => asset.chunk === chunkName);
+      expect(chunk, `missing chunk: ${chunkName}`).toBeDefined();
       expect(
-        chunk.size,
-        `${chunk.chunk} is ${(chunk.size / 1024).toFixed(1)} kB`,
+        chunk!.size,
+        `${chunkName} is ${(chunk!.size / 1024).toFixed(1)} kB`,
+      ).toBeLessThanOrEqual(budget);
+      expect(
+        chunk!.size,
+        `${chunkName} exceeds default app hard limit`,
       ).toBeLessThanOrEqual(APP_CHUNK_HARD_LIMIT);
     }
   });
