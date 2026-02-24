@@ -34,7 +34,7 @@ const formatPhone = (value: string | null | undefined): string => {
 };
 
 const isAllowedMessageOrigin = (origin: string, appOrigin: string): boolean =>
-  origin === 'null' || origin === appOrigin;
+  origin === '' || origin === 'null' || origin === appOrigin;
 
 globalThis.addEventListener('message', (event: MessageEvent<WorkerRequest>) => {
   if (!isAllowedMessageOrigin(event.origin, globalThis.location.origin)) {

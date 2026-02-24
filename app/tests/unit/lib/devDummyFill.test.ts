@@ -3,6 +3,30 @@ import { buildRandomDummyPatch } from '../../../src/lib/devDummyFill';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 describe('buildRandomDummyPatch', () => {
+  const collectFieldValues = (
+    fieldName: string,
+    fieldSchema: RJSFSchema,
+  ): Set<string> => {
+    const values = new Set<string>();
+
+    for (let index = 0; index < 10; index += 1) {
+      const rngValue = (index + 0.01) / 10;
+      const patch = buildRandomDummyPatch(
+        {
+          type: 'object',
+          properties: {
+            [fieldName]: fieldSchema,
+          },
+        } as RJSFSchema,
+        {} as UiSchema,
+        { rng: () => rngValue },
+      );
+      values.add(String(patch[fieldName]));
+    }
+
+    return values;
+  };
+
   it('returns an empty patch when schema is null', () => {
     expect(buildRandomDummyPatch(null, null)).toEqual({});
   });
@@ -235,5 +259,20 @@ describe('buildRandomDummyPatch', () => {
 
     expect(patch.brokenA).toEqual([]);
     expect(patch.brokenB).toEqual([]);
+  });
+
+  it('uses dedicated 10-value pools for common identity fields', () => {
+    const firstNameValues = collectFieldValues('firstName', { type: 'string' });
+    const lastNameValues = collectFieldValues('lastName', { type: 'string' });
+    const postalCodeValues = collectFieldValues('postalCode', {
+      type: 'string',
+    });
+
+    expect(firstNameValues.size).toBe(10);
+    expect(lastNameValues.size).toBe(10);
+    expect(postalCodeValues.size).toBe(10);
+    expect([...postalCodeValues].every((entry) => /^\d{5}$/.test(entry))).toBe(
+      true,
+    );
   });
 });

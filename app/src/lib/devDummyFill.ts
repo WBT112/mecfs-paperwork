@@ -1,17 +1,173 @@
 import { isRecord } from './utils';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
-const DEFAULT_TEXT_VALUES = [
-  'Max',
-  'Muster',
+const FIRST_NAME_VALUES = [
+  'Anna',
+  'Lukas',
+  'Mira',
+  'Jonas',
+  'Lea',
+  'Noah',
+  'Sofia',
+  'Emil',
+  'Clara',
+  'Felix',
+];
+
+const LAST_NAME_VALUES = [
+  'Schneider',
+  'Meyer',
+  'Wagner',
+  'Becker',
+  'Hoffmann',
+  'Schulz',
+  'Fischer',
+  'Keller',
+  'Braun',
+  'Hartmann',
+];
+
+const STREET_VALUES = [
+  'Lindenstrasse 12',
+  'Musterweg 4',
+  'Bahnhofstrasse 29',
+  'Gartenallee 8',
+  'Sonnenweg 15',
+  'Parkstrasse 3',
+  'Birkenweg 22',
+  'Hauptstrasse 41',
+  'Schulstrasse 7',
+  'Uferweg 18',
+];
+
+const POSTAL_CODE_VALUES = [
+  '10115',
+  '20095',
+  '30159',
+  '40213',
+  '50667',
+  '60311',
+  '70173',
+  '80331',
+  '90402',
+  '01067',
+];
+
+const CITY_VALUES = [
   'Berlin',
   'Hamburg',
-  'Musterstrasse 12',
-  '12345',
-  'Praxis am Park',
-  '01234 567890',
-  'Testwert',
-  'Beispiel',
+  'Hannover',
+  'Duesseldorf',
+  'Koeln',
+  'Frankfurt am Main',
+  'Stuttgart',
+  'Muenchen',
+  'Nuernberg',
+  'Dresden',
+];
+
+const PHONE_VALUES = [
+  '+49 30 1234567',
+  '+49 40 2345678',
+  '+49 511 3456789',
+  '+49 211 4567890',
+  '+49 221 5678901',
+  '+49 69 6789012',
+  '+49 711 7890123',
+  '+49 89 8901234',
+  '+49 911 9012345',
+  '+49 351 9123456',
+];
+
+const EMAIL_VALUES = [
+  'anna.schneider@example.org',
+  'lukas.meyer@example.org',
+  'mira.wagner@example.org',
+  'jonas.becker@example.org',
+  'lea.hoffmann@example.org',
+  'noah.schulz@example.org',
+  'sofia.fischer@example.org',
+  'emil.keller@example.org',
+  'clara.braun@example.org',
+  'felix.hartmann@example.org',
+];
+
+const INSURANCE_NUMBER_VALUES = [
+  'A123456789',
+  'B234567891',
+  'C345678912',
+  'D456789123',
+  'E567891234',
+  'F678912345',
+  'G789123456',
+  'H891234567',
+  'I912345678',
+  'K123498765',
+];
+
+const PRACTICE_VALUES = [
+  'Hausarztpraxis am Markt',
+  'Praxisgemeinschaft Nord',
+  'Internistische Praxis Mitte',
+  'MVZ Sonnenhof',
+  'Praxis Dr. Weber',
+  'Gemeinschaftspraxis Sued',
+  'Praxis am Stadtpark',
+  'Facharztzentrum Rhein',
+  'Medizinisches Zentrum Ost',
+  'Praxis am Hafen',
+];
+
+const INSURER_VALUES = [
+  'Beispiel Krankenkasse',
+  'MusterKasse Nord',
+  'GesundPlus Kasse',
+  'Regionale Krankenkasse Mitte',
+  'AktivKasse Rhein',
+  'BuergerKasse West',
+  'SicherGesund Kasse',
+  'VersorgungsKasse Sued',
+  'PrimaKasse Ost',
+  'KompaktKasse',
+];
+
+const MEDICATION_VALUES = [
+  'Ivabradin',
+  'Midodrin',
+  'Fludrocortison',
+  'Bisoprolol',
+  'Metoprolol',
+  'Propranolol',
+  'Pyridostigmin',
+  'Desmopressin',
+  'Naltrexon niedrig dosiert',
+  'Amitriptylin niedrig dosiert',
+];
+
+const NOTE_VALUES = [
+  'Belastungsintoleranz mit PEM seit mehreren Monaten.',
+  'Orthostatische Beschwerden mit deutlicher Alltagseinschraenkung.',
+  'Symptome verschlechtern sich nach geringer Aktivitaet.',
+  'Mehrere Standardmassnahmen wurden bereits ausgeschopft.',
+  'Schlaf ist nicht erholsam trotz konsequenter Schlafhygiene.',
+  'Kognitive Belastung fuehrt zu schneller Erschoepfung.',
+  'Der aktuelle Schweregrad ist im Verlauf dokumentiert.',
+  'Eine symptomorientierte Therapie ist medizinisch begruendet.',
+  'Nebenwirkungsrisiken wurden mit der Praxis besprochen.',
+  'Die Behandlung soll engmaschig kontrolliert werden.',
+];
+
+const DEFAULT_TEXT_VALUES = [
+  'Beispielwert A',
+  'Beispielwert B',
+  'Beispielwert C',
+  'Beispielwert D',
+  'Beispielwert E',
+  'Beispielwert F',
+  'Beispielwert G',
+  'Beispielwert H',
+  'Beispielwert I',
+  'Beispielwert J',
 ];
 
 const DEFAULT_DATE_VALUES = [
@@ -111,10 +267,100 @@ const resolveArrayItemUiSchema = (uiSchema: unknown): unknown => {
   return items;
 };
 
+const toNormalizedPath = (path: readonly string[]): string =>
+  path
+    .filter((segment) => !/^\d+$/.test(segment))
+    .join('.')
+    .toLowerCase();
+
+const resolveTextPool = (path: readonly string[]): readonly string[] => {
+  const normalizedPath = toNormalizedPath(path);
+
+  if (normalizedPath.endsWith('firstname')) {
+    return FIRST_NAME_VALUES;
+  }
+  if (
+    normalizedPath.endsWith('lastname') ||
+    normalizedPath.endsWith('birthname') ||
+    normalizedPath.endsWith('surname') ||
+    normalizedPath.endsWith('familyname')
+  ) {
+    return LAST_NAME_VALUES;
+  }
+  if (
+    normalizedPath.endsWith('streetandnumber') ||
+    normalizedPath.endsWith('street')
+  ) {
+    return STREET_VALUES;
+  }
+  if (
+    normalizedPath.endsWith('postalcode') ||
+    normalizedPath.endsWith('zipcode') ||
+    normalizedPath.endsWith('plz')
+  ) {
+    return POSTAL_CODE_VALUES;
+  }
+  if (normalizedPath.endsWith('city') || normalizedPath.endsWith('town')) {
+    return CITY_VALUES;
+  }
+  if (
+    normalizedPath.endsWith('phone') ||
+    normalizedPath.endsWith('telephone') ||
+    normalizedPath.endsWith('mobile') ||
+    normalizedPath.endsWith('tel')
+  ) {
+    return PHONE_VALUES;
+  }
+  if (normalizedPath.endsWith('email') || normalizedPath.endsWith('mail')) {
+    return EMAIL_VALUES;
+  }
+  if (
+    normalizedPath.endsWith('insurancenumber') ||
+    normalizedPath.endsWith('insuranceid') ||
+    normalizedPath.endsWith('policynumber')
+  ) {
+    return INSURANCE_NUMBER_VALUES;
+  }
+  if (
+    normalizedPath.endsWith('practice') ||
+    normalizedPath.endsWith('clinic')
+  ) {
+    return PRACTICE_VALUES;
+  }
+  if (
+    normalizedPath.endsWith('insurer.name') ||
+    normalizedPath.endsWith('healthinsurance.name')
+  ) {
+    return INSURER_VALUES;
+  }
+  if (
+    normalizedPath.includes('drug') ||
+    normalizedPath.includes('medication') ||
+    normalizedPath.includes('wirkstoff')
+  ) {
+    return MEDICATION_VALUES;
+  }
+  if (
+    normalizedPath.includes('note') ||
+    normalizedPath.includes('comment') ||
+    normalizedPath.includes('reason') ||
+    normalizedPath.includes('symptom') ||
+    normalizedPath.includes('details')
+  ) {
+    return NOTE_VALUES;
+  }
+  if (normalizedPath.endsWith('name')) {
+    return LAST_NAME_VALUES;
+  }
+
+  return DEFAULT_TEXT_VALUES;
+};
+
 const buildObjectValue = (
   schema: RJSFSchema,
   uiSchema: unknown,
   options: DummyFillRuntimeOptions,
+  path: readonly string[],
 ): Record<string, unknown> | undefined => {
   if (!isRecord(schema.properties)) {
     return undefined;
@@ -126,10 +372,12 @@ const buildObjectValue = (
       continue;
     }
     const childUiSchema = isRecord(uiSchema) ? uiSchema[key] : undefined;
+    const childPath = [...path, key];
     const childValue = buildValue(
       childSchemaNode as RJSFSchema,
       childUiSchema,
       options,
+      childPath,
     );
     if (childValue !== undefined) {
       result[key] = childValue;
@@ -143,6 +391,7 @@ const buildArrayValue = (
   schema: RJSFSchema,
   uiSchema: unknown,
   options: DummyFillRuntimeOptions,
+  path: readonly string[],
 ): unknown[] => {
   const itemSchema = resolveArrayItemSchema(schema);
   if (!itemSchema) {
@@ -155,7 +404,10 @@ const buildArrayValue = (
   const values: unknown[] = [];
 
   for (let index = 0; index < itemCount; index += 1) {
-    const item = buildValue(itemSchema, itemUiSchema, options);
+    const item = buildValue(itemSchema, itemUiSchema, options, [
+      ...path,
+      String(index),
+    ]);
     if (item !== undefined) {
       values.push(item);
     }
@@ -167,11 +419,15 @@ const buildArrayValue = (
 const buildStringValue = (
   schema: RJSFSchema,
   options: DummyFillRuntimeOptions,
+  path: readonly string[],
 ): string => {
   if (schema.format === 'date') {
     return pickRandom(DEFAULT_DATE_VALUES, options.rng);
   }
-  return pickRandom(DEFAULT_TEXT_VALUES, options.rng);
+  if (schema.format === 'email') {
+    return pickRandom(EMAIL_VALUES, options.rng);
+  }
+  return pickRandom(resolveTextPool(path), options.rng);
 };
 
 const withOptionalEmptyEnum = (
@@ -187,6 +443,7 @@ const buildValue = (
   schema: RJSFSchema,
   uiSchema: unknown,
   options: DummyFillRuntimeOptions,
+  path: readonly string[],
 ): unknown => {
   if (
     isUiHidden(uiSchema) ||
@@ -203,9 +460,9 @@ const buildValue = (
   const type = getSchemaType(schema);
   switch (type) {
     case 'object':
-      return buildObjectValue(schema, uiSchema, options);
+      return buildObjectValue(schema, uiSchema, options, path);
     case 'array':
-      return buildArrayValue(schema, uiSchema, options);
+      return buildArrayValue(schema, uiSchema, options, path);
     case 'boolean':
       return options.rng() < 0.5;
     case 'integer':
@@ -213,7 +470,7 @@ const buildValue = (
     case 'number':
       return pickRandom(DEFAULT_NUMBER_VALUES, options.rng);
     case 'string':
-      return buildStringValue(schema, options);
+      return buildStringValue(schema, options, path);
     default:
       return undefined;
   }
@@ -228,6 +485,6 @@ export const buildRandomDummyPatch = (
     return {};
   }
 
-  const value = buildValue(schema, uiSchema, toRuntimeOptions(options));
+  const value = buildValue(schema, uiSchema, toRuntimeOptions(options), []);
   return isRecord(value) ? value : {};
 };

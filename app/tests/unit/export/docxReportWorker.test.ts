@@ -95,6 +95,25 @@ describe('docxReportWorker', () => {
     );
   });
 
+  it('accepts empty-origin messages used by dedicated workers', async () => {
+    const rendered = new Uint8Array([7, 8, 9]);
+    createReportMock.mockResolvedValue(rendered);
+    await import('../../../src/export/docxReportWorker');
+
+    expect(messageHandler).not.toBeNull();
+    messageHandler?.({
+      origin: '',
+      data: buildRequest(),
+    } as MessageEvent<WorkerRequest>);
+    await flushPromises();
+
+    expect(createReportMock).toHaveBeenCalledTimes(1);
+    expect(globalThis.postMessage).toHaveBeenCalledWith(
+      { id: 1, result: rendered },
+      { transfer: [rendered.buffer] },
+    );
+  });
+
   it('posts worker errors for allowed same-origin messages', async () => {
     createReportMock.mockRejectedValue(new Error('render failed'));
     await import('../../../src/export/docxReportWorker');
