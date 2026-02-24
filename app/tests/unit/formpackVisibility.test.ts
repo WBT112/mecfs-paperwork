@@ -30,7 +30,11 @@ describe('formpack visibility', () => {
   });
 
   it('disables dev UI in production', () => {
-    expect(getDevUiEnabled(false)).toBe(false);
+    expect(getDevUiEnabled(false, undefined)).toBe(false);
+  });
+
+  it('enables dev UI in production when dev formpacks override is true', () => {
+    expect(getDevUiEnabled(false, 'true')).toBe(true);
   });
 
   it('hides dev packs when showDevFormpacks is false', () => {
