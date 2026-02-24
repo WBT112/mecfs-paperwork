@@ -1,6 +1,6 @@
 {
   "id": "notfallpass",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "defaultLocale": "de",
   "locales": ["de", "en"],
   "titleKey": "notfallpass.title",
@@ -9,12 +9,11 @@
   "visibility": "dev",
   "meta": {
     "category": "general",
-    "keywords": ["notfall", "pass", "notfallpass", "wallet", "daten"]
+    "keywords": ["notfall", "pass", "notfallpass", "daten"]
   },
   "docx": {
     "templates": {
-      "a4": "templates/a4.docx",
-      "wallet": "templates/wallet.docx"
+      "a4": "templates/a4.docx"
     },
     "mapping": "docx/mapping.json"
   }

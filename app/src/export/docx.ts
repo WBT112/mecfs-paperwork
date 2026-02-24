@@ -13,6 +13,7 @@ import {
   hasDoctorLetterDecisionAnswers,
 } from './doctorLetterDefaults';
 import { getOfflabelAntragExportDefaults } from './offlabelAntragDefaults';
+import { getNotfallpassExportDefaults } from './notfallpassDefaults';
 import {
   loadFormpackManifest,
   loadFormpackSchema,
@@ -101,6 +102,7 @@ const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
 const DOCX_LITERAL_DELIMITER = '§§DOCX_XML§§';
+const DOCTOR_NAME_PATH = 'doctor.name';
 // Session cache keeps DOCX assets available when the app is offline.
 const docxMappingCache = new Map<string, DocxMapping>();
 const docxTemplateCache = new Map<string, Uint8Array>();
@@ -445,6 +447,7 @@ export const applyDocxExportDefaults = (
   const normalized = cloneTemplateContext(context);
   if (
     formpackId !== DOCTOR_LETTER_FORMPACK_ID &&
+    formpackId !== NOTFALLPASS_FORMPACK_ID &&
     formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID
   ) {
     return normalized;
@@ -458,7 +461,7 @@ export const applyDocxExportDefaults = (
       ['patient.streetAndNumber', defaults.patient.streetAndNumber],
       ['patient.postalCode', defaults.patient.postalCode],
       ['patient.city', defaults.patient.city],
-      ['doctor.name', defaults.doctor.name],
+      [DOCTOR_NAME_PATH, defaults.doctor.name],
       ['doctor.streetAndNumber', defaults.doctor.streetAndNumber],
       ['doctor.postalCode', defaults.doctor.postalCode],
       ['doctor.city', defaults.doctor.city],
@@ -478,6 +481,19 @@ export const applyDocxExportDefaults = (
     }
   }
 
+  if (formpackId === NOTFALLPASS_FORMPACK_ID) {
+    const defaults = getNotfallpassExportDefaults(locale);
+    applyDefaultsForPaths(normalized, [
+      ['person.name', defaults.person.name],
+      ['person.birthDate', defaults.person.birthDate],
+      ['diagnoses.formatted', defaults.diagnoses.formatted],
+      ['symptoms', defaults.symptoms],
+      ['allergies', defaults.allergies],
+      [DOCTOR_NAME_PATH, defaults.doctor.name],
+      ['doctor.phone', defaults.doctor.phone],
+    ]);
+  }
+
   if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
     const defaults = getOfflabelAntragExportDefaults(locale);
     applyDefaultsForPaths(normalized, [
@@ -489,7 +505,7 @@ export const applyDocxExportDefaults = (
       ['patient.postalCode', defaults.patient.postalCode],
       ['patient.city', defaults.patient.city],
       ['doctor.practice', defaults.doctor.practice],
-      ['doctor.name', defaults.doctor.name],
+      [DOCTOR_NAME_PATH, defaults.doctor.name],
       ['doctor.streetAndNumber', defaults.doctor.streetAndNumber],
       ['doctor.postalCode', defaults.doctor.postalCode],
       ['doctor.city', defaults.doctor.city],

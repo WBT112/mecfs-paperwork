@@ -190,6 +190,20 @@
             "value": "other"
           }
         ]
+      },
+      {
+        "id": "standard-of-care-other-note",
+        "anchor": "request.standardOfCareTriedFreeText",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.standardOfCareOther",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "other"
+          }
+        ]
       }
     ]
   }
