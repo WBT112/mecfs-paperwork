@@ -357,7 +357,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: LDN_MECFS_DE,
           diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue',
           point2ConfirmationSentence:
-            'Die Diagnose postinfektiöse ME/CFS mit Fatigue ist gesichert (siehe Befunde).',
+            'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
           targetSymptoms: LDN_TARGET_SYMPTOMS_DE,
         },
         en: {
@@ -365,7 +365,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: LDN_MECFS_EN,
           diagnosisDative: LDN_MECFS_EN,
           point2ConfirmationSentence:
-            'The diagnosis of post-infectious ME/CFS with fatigue is established (see findings).',
+            'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue is documented as a core symptom.',
           targetSymptoms: LDN_TARGET_SYMPTOMS_EN,
         },
       }),
@@ -375,7 +375,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: LDN_LONG_POST_COVID_DE,
           diagnosisDative: LDN_LONG_POST_COVID_DE,
           point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID mit Fatigue ist gesichert (siehe Befunde).',
+            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
           targetSymptoms: LDN_TARGET_SYMPTOMS_DE,
         },
         en: {
@@ -383,7 +383,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: LDN_LONG_POST_COVID_EN,
           diagnosisDative: LDN_LONG_POST_COVID_EN,
           point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID with fatigue is established (see findings).',
+            'The diagnosis of long/post-COVID is established (see findings). Fatigue is documented as a core symptom.',
           targetSymptoms: LDN_TARGET_SYMPTOMS_EN,
         },
       }),
@@ -418,7 +418,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: ARIPIPRAZOLE_MECFS_DE,
           diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue und PEM',
           point2ConfirmationSentence:
-            'Die Diagnose postinfektiöse ME/CFS mit Fatigue und PEM ist gesichert (siehe Befunde).',
+            'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue und PEM sind dokumentiert.',
           targetSymptoms:
             'Verbesserung von Fatigue, PEM-Frequenz, kognitiver Symptomatik und funktionellem Status (HRQoL)',
         },
@@ -427,7 +427,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: ARIPIPRAZOLE_MECFS_EN,
           diagnosisDative: ARIPIPRAZOLE_MECFS_EN,
           point2ConfirmationSentence:
-            'The diagnosis of post-infectious ME/CFS with fatigue and PEM is established (see findings).',
+            'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue and PEM are documented.',
           targetSymptoms:
             'improvement of fatigue, PEM frequency, cognitive symptoms, and functional status (HRQoL)',
         },
@@ -438,7 +438,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: ARIPIPRAZOLE_LONG_POST_COVID_DE,
           diagnosisDative: ARIPIPRAZOLE_LONG_POST_COVID_DE,
           point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID mit Fatigue und PEM ist gesichert (siehe Befunde).',
+            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Fatigue und PEM sind dokumentiert.',
           targetSymptoms:
             'Verbesserung von Fatigue, PEM-Frequenz, kognitiver Symptomatik und funktionellem Status (HRQoL)',
         },
@@ -447,7 +447,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: ARIPIPRAZOLE_LONG_POST_COVID_EN,
           diagnosisDative: ARIPIPRAZOLE_LONG_POST_COVID_EN,
           point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID with fatigue and PEM is established (see findings).',
+            'The diagnosis of long/post-COVID is established (see findings). Fatigue and PEM are documented.',
           targetSymptoms:
             'improvement of fatigue, PEM frequency, cognitive symptoms, and functional status (HRQoL)',
         },

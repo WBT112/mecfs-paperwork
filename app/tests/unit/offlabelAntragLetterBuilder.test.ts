@@ -11,7 +11,7 @@ const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
 const FIXED_EXPORTED_AT = new Date('2026-02-10T12:00:00.000Z');
 const EVIDENCE_SUFFICIENT_TEXT =
-  'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen';
+  'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.';
 
 const interpolate = (
   template: string,

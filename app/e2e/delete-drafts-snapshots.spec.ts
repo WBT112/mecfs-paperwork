@@ -121,9 +121,13 @@ test('deletes a non-active draft and removes its snapshots', async ({
 
   await openCollapsibleSectionById(page, 'formpack-records');
   await expect
-    .poll(async () => page.locator('.formpack-records__actions .app__button').count(), {
-      timeout: 15_000,
-    })
+    .poll(
+      async () =>
+        page.locator('.formpack-records__actions .app__button').count(),
+      {
+        timeout: 15_000,
+      },
+    )
     .toBeGreaterThan(0);
   await clickActionButton(
     page.locator('.formpack-records__actions .app__button').first(),

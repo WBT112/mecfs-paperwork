@@ -112,7 +112,7 @@ const resolveDoctorSalutation = (doctor: Record<string, unknown>): string => {
 const LSG_REFERENCE_TEXT =
   'Beschluss des LSG Niedersachsen-Bremen vom 14.10.2022 (L 4 KR 373/22 B ER)';
 
-const POINT_HILFSANTRAG_INTRO = `Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V. Dies gilt insbesondere für den Fall, dass eine zulassungsreife Datenlage im engeren Sinne verneint wird.`;
+const POINT_HILFSANTRAG_INTRO = `Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V. Dies gilt insbesondere für den Fall, dass die Evidenzlage im engeren Sinne anders bewertet wird.`;
 
 const POINT_7_NOTSTAND = `Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.
 
@@ -150,9 +150,9 @@ const POINT_8_STANDARD =
 const POINT_10_EVIDENCE_NOTE =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit; ich bitte um eine vollständige sozialmedizinische Würdigung einschließlich ggf. ergänzender Literaturrecherche im Einzelfall.';
 const POINT_10_STANDARD_EVIDENCE_INTRO =
-  'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen.';
+  'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.';
 const POINT_10_SECTION_2A_EVIDENCE_INTRO =
-  'Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können oder jedenfalls eine zuverlässige, wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung für einen befristeten, ärztlich überwachten Therapieversuch zulassen.';
+  'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.';
 const POINT_2_NO_DIAGNOSIS_CORE =
   'Die zugrunde liegende Erkrankung ist diagnostisch gesichert und ärztlich dokumentiert.';
 const POINT_2_NO_EVIDENCE_BRIDGE =
@@ -160,7 +160,7 @@ const POINT_2_NO_EVIDENCE_BRIDGE =
 
 const POINT_10_NO_2A = `Auf dieser Grundlage sind die herangezogenen Erkenntnisse für meinen Einzelfall im Rahmen einer wissenschaftlich nachvollziehbaren Nutzen-Risiko-Abwägung übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_YES_2A = `Diese Erkenntnisse sind auf meinen Einzelfall übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
-const POINT_10_SECTION_2A_BRIDGE = `Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde, bestehen jedenfalls veröffentlichte Erkenntnisse, die eine zuverlässige Nutzen-Risiko-Abwägung ermöglichen; hilfsweise wird daher die Leistung nach § 2 Abs. 1a SGB V begehrt.`;
+const POINT_10_SECTION_2A_BRIDGE = `Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde, bestehen jedenfalls veröffentlichte Erkenntnisse, die eine zuverlässige Nutzen-Risiko-Abwägung ermöglichen.`;
 const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
   '100':
     'ich feste Belastungsobergrenzen einhalte, nach Terminen konsequente Ruhefenster plane und Belastungsspitzen vermeide, um Rückfälle zu verhindern.',
@@ -294,7 +294,7 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   if (bellScore) {
     const activityExamples = BELL_SCORE_ACTIVITY_EXAMPLES[bellScore];
     lines.push(
-      `Der Bell-Score ist eine zentrale Kennzahl für den funktionellen Schweregrad der Erkrankung ME/CFS. Mein aktueller Bell-Score beträgt ${bellScore} und dokumentiert mein aktuelles Funktionsniveau.`,
+      `Mein aktueller Bell-Score beträgt ${bellScore} und dokumentiert mein aktuelles Funktionsniveau.`,
       activityExamples
         ? `Meine soziale, gesellschaftliche und berufliche Teilhabe ist krankheitsbedingt grundsätzlich und dauerhaft eingeschränkt. Im Alltag zeigt sich dies unter anderem daran, dass ${activityExamples}`
         : 'Meine soziale, gesellschaftliche und berufliche Teilhabe ist krankheitsbedingt grundsätzlich und dauerhaft eingeschränkt.',
@@ -547,7 +547,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     { kind: 'list', items: buildSeverityLines(severity) },
     {
       kind: 'paragraph',
-      text: 'Die Schwere meiner Erkrankung erfüllt insofern die Definition des §33 AM-RL und der Urteile des BSG.',
+      text: 'Die Schwere meiner Erkrankung ist durch die vorstehenden Angaben und Unterlagen nachvollziehbar dokumentiert.',
     },
   ];
 
@@ -803,7 +803,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
         ? ([
             {
               kind: 'paragraph' as const,
-              text: `Die klinische Symptomatik ist mit ${facts.diagnosisDative} vergleichbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
+              text: `Die klinische Symptomatik ist mit ${facts.diagnosisDative} vergleichbar; die ärztliche Einordnung der Symptomatik und Zuordnung zur Indikationsbezeichnung wird fortgeführt.`,
             },
           ] satisfies OfflabelRenderedDocument['blocks'])
         : []),

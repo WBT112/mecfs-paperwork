@@ -8,6 +8,17 @@ import {
 } from '../../src/formpacks/offlabel-antrag/medications';
 
 describe('offlabel medication source consistency', () => {
+  const getIndicationOrThrow = (
+    medicationKey: keyof typeof MEDICATIONS,
+    indicationKey: string,
+  ) => {
+    const indication = MEDICATIONS[medicationKey].indications.find(
+      (entry) => entry.key === indicationKey,
+    );
+    expect(indication).toBeDefined();
+    return indication!;
+  };
+
   it('uses official BfArM titles for agomelatin, ivabradine, and vortioxetine', () => {
     const agomelatinSource =
       MEDICATIONS.agomelatin.autoFacts?.de.expertSourceText;
@@ -62,6 +73,50 @@ describe('offlabel medication source consistency', () => {
         }
       }
     }
+  });
+
+  it('uses diagnosis-gate wording with underlying diagnosis + documented symptoms for LDN/LDA', () => {
+    const ldnMecfs = getIndicationOrThrow('ldn', 'ldn.mecfs_fatigue');
+    const ldnLongPostCovid = getIndicationOrThrow(
+      'ldn',
+      'ldn.long_post_covid_fatigue',
+    );
+    const ldaMecfs = getIndicationOrThrow(
+      'aripiprazole',
+      'aripiprazole.mecfs_fatigue_pem',
+    );
+    const ldaLongPostCovid = getIndicationOrThrow(
+      'aripiprazole',
+      'aripiprazole.long_post_covid_fatigue_pem',
+    );
+
+    expect(ldnMecfs.texts.de.point2ConfirmationSentence).toBe(
+      'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
+    );
+    expect(ldnMecfs.texts.en.point2ConfirmationSentence).toBe(
+      'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue is documented as a core symptom.',
+    );
+
+    expect(ldnLongPostCovid.texts.de.point2ConfirmationSentence).toBe(
+      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
+    );
+    expect(ldnLongPostCovid.texts.en.point2ConfirmationSentence).toBe(
+      'The diagnosis of long/post-COVID is established (see findings). Fatigue is documented as a core symptom.',
+    );
+
+    expect(ldaMecfs.texts.de.point2ConfirmationSentence).toBe(
+      'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue und PEM sind dokumentiert.',
+    );
+    expect(ldaMecfs.texts.en.point2ConfirmationSentence).toBe(
+      'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue and PEM are documented.',
+    );
+
+    expect(ldaLongPostCovid.texts.de.point2ConfirmationSentence).toBe(
+      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Fatigue und PEM sind dokumentiert.',
+    );
+    expect(ldaLongPostCovid.texts.en.point2ConfirmationSentence).toBe(
+      'The diagnosis of long/post-COVID is established (see findings). Fatigue and PEM are documented.',
+    );
   });
 
   it('keeps medication key constants and registry keys in sync', () => {

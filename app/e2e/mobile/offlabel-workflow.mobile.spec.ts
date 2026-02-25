@@ -129,7 +129,7 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await expect(preview).toContainText(/Hilfsweise stelle ich/i);
     await expect(preview).toContainText(/§ 2 Abs\. 1a SGB V/i);
     await expect(preview).toContainText(
-      /Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können/i,
+      /Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können/i,
     );
   });
 
@@ -192,7 +192,7 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
       /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
     );
     await expect(preview).toContainText(
-      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+      /Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können/i,
     );
   });
 });

@@ -13,7 +13,7 @@ const CASE_TRANSFER_YES_TEXT =
 const EVIDENCE_NOTE_TEXT =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit;';
 const EVIDENCE_SUFFICIENT_TEXT =
-  'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen';
+  'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.';
 const EVIDENCE_NOT_SUFFICIENT_TEXT =
   'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild';
 const OTHER_EVIDENCE_REFERENCE_TEXT = 'Musterstudie 2024, doi:10.1000/example';
@@ -25,7 +25,11 @@ const HILFSANTRAG_INTRO_TEXT =
   'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V.';
 const POINT_10_BRIDGE_TEXT =
   'Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde';
+const DUPLICATE_SECTION_2A_BRIDGE_CLAUSE =
+  'hilfsweise wird daher die Leistung nach § 2 Abs. 1a SGB V begehrt';
 const SECTION_2A_EVIDENCE_INTRO_TEXT =
+  'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.';
+const LEGACY_SECTION_2A_EVIDENCE_INTRO_TEXT =
   'Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können oder jedenfalls eine zuverlässige, wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung für einen befristeten, ärztlich überwachten Therapieversuch zulassen.';
 const DIAGNOSIS_SECURED_NO_TEXT =
   'Die zugrunde liegende Erkrankung ist diagnostisch gesichert und ärztlich dokumentiert.';
@@ -109,6 +113,10 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(
       'Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht.',
     );
+    expect(part1Text).toContain(
+      'Die Schwere meiner Erkrankung ist durch die vorstehenden Angaben und Unterlagen nachvollziehbar dokumentiert.',
+    );
+    expect(part1Text).not.toContain('§33 AM-RL');
     expect(part1Text).toContain(CLOSING_GREETING_TEXT);
 
     const part2Text = docs[1].blocks
@@ -127,7 +135,7 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
     expect(part3Text).toContain(
-      `Die klinische Symptomatik ist mit ${IVABRADIN_DIAGNOSIS_DATIVE_TEXT} vergleichbar; die abschließende diagnostische Einordnung wird ärztlich weitergeführt.`,
+      `Die klinische Symptomatik ist mit ${IVABRADIN_DIAGNOSIS_DATIVE_TEXT} vergleichbar; die ärztliche Einordnung der Symptomatik und Zuordnung zur Indikationsbezeichnung wird fortgeführt.`,
     );
     expect(part3Text).toContain(
       'zur symptomorientierten Behandlung der vorliegenden klinischen Symptomatik medizinisch nachvollziehbar',
@@ -280,7 +288,9 @@ describe('buildOfflabelDocuments', () => {
       line.includes('Mein aktueller Bell-Score beträgt 30'),
     );
     expect(bellLine).toBeDefined();
-    expect(bellLine).toContain('Der Bell-Score ist eine zentrale Kennzahl');
+    expect(bellLine).toBe(
+      'Mein aktueller Bell-Score beträgt 30 und dokumentiert mein aktuelles Funktionsniveau.',
+    );
     const participationLine = part1ListItems.find((line) =>
       line.startsWith(
         'Meine soziale, gesellschaftliche und berufliche Teilhabe',
@@ -497,9 +507,10 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(HILFSANTRAG_INTRO_TEXT);
     expect(part1Text).toContain(HILFSWEISE_SECTION_2A_REQUEST_TEXT);
     expect(part1Text).toContain(SECTION_2A_EVIDENCE_INTRO_TEXT);
-    expect(part1Text).not.toContain(EVIDENCE_SUFFICIENT_TEXT);
+    expect(part1Text).not.toContain(LEGACY_SECTION_2A_EVIDENCE_INTRO_TEXT);
     expect(part1Text).toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain(POINT_10_BRIDGE_TEXT);
+    expect(part1Text).not.toContain(DUPLICATE_SECTION_2A_BRIDGE_CLAUSE);
     expect(part1Text).toContain(THERAPY_SAFETY_TEXT);
     expect(part1Text.split(THERAPY_SAFETY_TEXT)).toHaveLength(2);
   });
