@@ -175,6 +175,9 @@ const withFallback = (
   return trimmed.length > 0 ? trimmed : fallback;
 };
 
+const getBool = (value: unknown): boolean =>
+  value === true || value === 'true' || value === 1 || value === '1';
+
 const withDefaultStringField = (
   record: Record<string, unknown> | null,
   field: string,
@@ -433,9 +436,11 @@ const buildKkSignatures = (): OffLabelSignatureBlock[] => [];
 const buildSourceItems = ({
   t,
   expertSource,
+  includeCaseLawSource,
 }: {
   t: I18nT;
   expertSource: string | null;
+  includeCaseLawSource: boolean;
 }): string[] => {
   const sources: string[] = [];
 
@@ -443,13 +448,15 @@ const buildSourceItems = ({
     sources.push(expertSource);
   }
 
-  sources.push(
-    tr(
-      t,
-      'offlabel-antrag.export.sources.caseLaw',
-      'LSG Niedersachsen-Bremen: Beschluss vom 14.10.2022, L 4 KR 373/22 B ER (ME/CFS; § 2 Abs. 1a SGB V; fehlende Standardtherapie).',
-    ),
-  );
+  if (includeCaseLawSource) {
+    sources.push(
+      tr(
+        t,
+        'offlabel-antrag.export.sources.caseLaw',
+        'LSG Niedersachsen-Bremen: Beschluss vom 14.10.2022, L 4 KR 373/22 B ER (ME/CFS; § 2 Abs. 1a SGB V; fehlende Standardtherapie).',
+      ),
+    );
+  }
 
   return sources;
 };
@@ -507,6 +514,9 @@ export const buildOffLabelAntragDocumentModel = (
 
   const rawDrug = getStringValue(requestRecord?.drug);
   const builtInProfile = isBuiltInMedicationProfile(rawDrug);
+  const isDirectSection2Path = builtInProfile === null;
+  const isFallbackSection2Path = getBool(requestRecord?.applySection2Abs1a);
+  const includeCaseLawSource = isDirectSection2Path || isFallbackSection2Path;
 
   const patient = {
     ...resolveStringFields(patientRecord, defaults.patient, [
@@ -667,6 +677,7 @@ export const buildOffLabelAntragDocumentModel = (
   const sources = buildSourceItems({
     t,
     expertSource: medicationFacts.expertSource,
+    includeCaseLawSource,
   });
 
   const exportBundle: OffLabelExportBundle = {

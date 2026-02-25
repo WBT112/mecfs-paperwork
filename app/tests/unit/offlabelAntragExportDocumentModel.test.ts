@@ -19,6 +19,8 @@ const DIRECT_SECTION_2A_REQUEST_TEXT =
   'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.';
 const HILFSWEISE_SECTION_2A_REQUEST_TEXT =
   'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.';
+const IVABRADINE_EXPERT_SOURCE_LABEL = 'Bewertung Ivabradin';
+const CASE_LAW_SOURCE_LABEL = 'LSG Niedersachsen-Bremen';
 
 const interpolate = (
   template: string,
@@ -65,12 +67,30 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
     expect(part1).not.toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
     expect(part1).not.toMatch(/Punkt \d+:/);
-    expect(part1).toContain('Bewertung Ivabradin');
+    expect(part1).toContain(IVABRADINE_EXPERT_SOURCE_LABEL);
 
-    expect(model.sources).toHaveLength(2);
-    expect(model.sources[0]).toContain('Bewertung Ivabradin');
+    expect(model.sources).toHaveLength(1);
+    expect(model.sources[0]).toContain(IVABRADINE_EXPERT_SOURCE_LABEL);
+    expect(model.sources.join('\n')).not.toContain(CASE_LAW_SOURCE_LABEL);
     expect(model.kk.attachments).toEqual([]);
     expect(model.kk.attachmentsHeading).toBe('');
+  });
+
+  it('includes the LSG source for standard medication when fallback §2 is enabled', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'ivabradine',
+          applySection2Abs1a: true,
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.sources).toHaveLength(2);
+    expect(model.sources[0]).toContain(IVABRADINE_EXPERT_SOURCE_LABEL);
+    expect(model.sources[1]).toContain(CASE_LAW_SOURCE_LABEL);
   });
 
   it('projects selected indication into DOCX paragraphs for multi-indication medications', () => {
@@ -185,9 +205,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     const part1 = model.kk.paragraphs.join('\n');
 
     expect(part1).toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
-    expect(part1).not.toContain(
-      HILFSWEISE_SECTION_2A_REQUEST_TEXT,
-    );
+    expect(part1).not.toContain(HILFSWEISE_SECTION_2A_REQUEST_TEXT);
     expect(part1).toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
     );
@@ -200,7 +218,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part1).not.toMatch(/Punkt \d+:/);
 
     expect(model.sources).toHaveLength(1);
-    expect(model.sources[0]).toContain('LSG Niedersachsen-Bremen');
+    expect(model.sources[0]).toContain(CASE_LAW_SOURCE_LABEL);
     expect(model.kk.attachments).toEqual([]);
   });
 
@@ -227,9 +245,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part1).not.toContain(
       'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V.',
     );
-    expect(part1).not.toContain(
-      HILFSWEISE_SECTION_2A_REQUEST_TEXT,
-    );
+    expect(part1).not.toContain(HILFSWEISE_SECTION_2A_REQUEST_TEXT);
 
     expect(part2).toContain(
       'für eine Off-Label-Verordnung von Midodrin mit der Indikation Orthostatische Intoleranz',

@@ -691,10 +691,10 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       {
         kind: 'list',
         items: [
-          'Ziel der Behandlung (z. B. Verbesserung von Fatigue, Belastbarkeit und Lebensqualität),',
+          'Ziel der Behandlung und die individuell vereinbarten Therapieziele,',
           'den unsicheren Evidenzgrad und dass ein Behandlungserfolg nicht garantiert werden kann,',
-          'mögliche Nebenwirkungen (z. B. Schlafstörungen/lebhafte Träume, Übelkeit, Kopfschmerzen, gastrointestinale Beschwerden),',
-          'Kontraindikationen/Wechselwirkungen, insbesondere: keine gleichzeitige Opioid-Einnahme,',
+          'mögliche Nebenwirkungen sowie deren individuelle Relevanz,',
+          'relevante Kontraindikationen und Wechselwirkungen unter Berücksichtigung meiner Begleitmedikation,',
           'geplantes Monitoring und Abbruchkriterien (z. B. nicht tolerierbare Nebenwirkungen, klinisch relevante Verschlechterung, fehlender Nutzen nach definierter Dauer),',
           'alternative Maßnahmen der symptomorientierten Behandlung und Nicht-Behandlung.',
         ],
