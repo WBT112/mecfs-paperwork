@@ -92,7 +92,7 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
       'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen',
     );
     expect(standardPart1Text).not.toContain(
-      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
     );
     expect(standardPart1Text).not.toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
@@ -125,7 +125,7 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
 
     const otherPart1Text = otherModel.kk.paragraphs.join('\n');
     expect(otherPart1Text).toContain(
-      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
     );
     expect(otherPart1Text).toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',

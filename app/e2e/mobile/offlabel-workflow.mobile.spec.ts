@@ -129,7 +129,7 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await expect(preview).toContainText(/Hilfsweise stelle ich/i);
     await expect(preview).toContainText(/§ 2 Abs\. 1a SGB V/i);
     await expect(preview).toContainText(
-      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+      /Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können/i,
     );
   });
 
@@ -176,7 +176,7 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
 
     await openPart1Preview(page);
     await expect(preview).toContainText(
-      /Ich beantrage eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Ich beantrage Leistungen nach § 2 Abs\. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung\./i,
     );
     await expect(preview).toContainText(otherOnlyText);
     await expect(preview).toContainText(

@@ -88,17 +88,6 @@ const joinGermanWithUnd = (values: string[]): string => {
   return `${values.slice(0, -1).join(', ')} und ${lastValue}`;
 };
 
-const resolveDoctorLiabilityTarget = (doctorGenderValue: unknown): string => {
-  const normalizedGender = getText(doctorGenderValue).toLowerCase();
-  if (normalizedGender === 'frau') {
-    return 'meiner Ärztin';
-  }
-  if (normalizedGender === 'herr') {
-    return 'meinem Arzt';
-  }
-  return 'meiner Ärztin/meinem Arzt';
-};
-
 const resolveDoctorSalutation = (doctor: Record<string, unknown>): string => {
   const gender = getText(doctor.gender).toLowerCase();
   const rawTitle = getText(doctor.title);
@@ -125,14 +114,14 @@ const LSG_REFERENCE_TEXT =
 
 const POINT_HILFSANTRAG_INTRO = `Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V. Dies gilt insbesondere für den Fall, dass eine zulassungsreife Datenlage im engeren Sinne verneint wird.`;
 
-const POINT_7_NOTSTAND = `Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V. Es handelt sich um eine lebensbedrohliche oder regelmäßig tödlich verlaufende Erkrankung. Die Voraussetzungen des § 2 Abs. 1a SGB V sind in meinem Fall erfüllt. Bezüglich der Wertung von ME/CFS als eben solche Erkrankung verweise ich auf den ${LSG_REFERENCE_TEXT}. Die Schwere der Erkrankung folgt bei ME/CFS als Systemerkrankung aus der Breite der Betroffenheit mehrerer lebensfunktionaler Bereiche wie körperlicher Mobilität, Verrichtungen des täglichen Lebens und Einschränkung der Leistungsfähigkeit im sozialen Umgang. Diese Lebensbereiche sind bei mir stark betroffen. Bei ME/CFS handelt es sich um eine chronische Erkrankung bisher ungeklärter Ätiologie. Chronische Erkrankungen sind per Definition nicht heilbar; viele chronische Erkrankungen haben einen progredienten Verlauf. Das bedeutet, der Gesundheitszustand verschlechtert sich im Zeitverlauf. Dies ist auch bei meiner Erkrankung der Fall. Es ist mit einer weiteren Verschlechterung zu rechnen. Im Vergleich mit anderen Betroffenen ist meine Situation bereits jetzt kritisch und durch Verlust von Selbstständigkeit sowie Pflegebedürftigkeit geprägt. Damit ist eine wertungsmäßig vergleichbar schwere Erkrankung bereits jetzt bei mir gegeben. Aus meiner Sicht ergibt sich die Vergleichbarkeit zur unmittelbaren Lebensbedrohlichkeit auch daraus, dass ME/CFS als Systemerkrankung progredient und häufig schubförmig verläuft und insoweit mit anderen chronischen Erkrankungen wie Multipler Sklerose vergleichbar ist. Zeitpunkt und Schwere des nächsten Schubes sind nicht exakt vorhersehbar; eine exakte Zeitangabe ist zur Erfüllung der Wertungsgleichheit nicht erforderlich. Weitere erhebliche Verschlechterungen können jederzeit eintreten, auch innerhalb der nächsten Monate, und ihre Eintrittswahrscheinlichkeit ist hoch. Damit ist insgesamt die Voraussetzung einer wertungsmäßig vergleichbaren Schwere der Erkrankung im Sinne von § 2 Abs. 1a SGB V bei mir erfüllt.`;
+const POINT_7_NOTSTAND = `Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung. Bezüglich der Wertung von ME/CFS als eben solche Erkrankung verweise ich auf den ${LSG_REFERENCE_TEXT}. Die Schwere der Erkrankung folgt bei ME/CFS als Systemerkrankung aus der Breite der Betroffenheit mehrerer lebensfunktionaler Bereiche wie körperlicher Mobilität, Verrichtungen des täglichen Lebens und Einschränkung der Leistungsfähigkeit im sozialen Umgang. Diese Lebensbereiche sind bei mir stark betroffen. Bei ME/CFS handelt es sich um eine chronische Erkrankung bisher ungeklärter Ätiologie. Chronische Erkrankungen sind per Definition nicht heilbar; viele chronische Erkrankungen haben einen progredienten Verlauf. Das bedeutet, der Gesundheitszustand verschlechtert sich im Zeitverlauf. Dies ist auch bei meiner Erkrankung der Fall. Es ist mit einer weiteren Verschlechterung zu rechnen. Im Vergleich mit anderen Betroffenen ist meine Situation bereits jetzt kritisch und durch Verlust von Selbstständigkeit sowie Pflegebedürftigkeit geprägt. Damit ist eine wertungsmäßig vergleichbar schwere Erkrankung bereits jetzt bei mir gegeben. Aus meiner Sicht ergibt sich die Vergleichbarkeit zur unmittelbaren Lebensbedrohlichkeit auch daraus, dass ME/CFS als Systemerkrankung progredient und häufig schubförmig verläuft und insoweit mit anderen chronischen Erkrankungen wie Multipler Sklerose vergleichbar ist. Zeitpunkt und Schwere des nächsten Schubes sind nicht exakt vorhersehbar; eine exakte Zeitangabe ist zur Erfüllung der Wertungsgleichheit nicht erforderlich. Weitere erhebliche Verschlechterungen können jederzeit eintreten, auch innerhalb der nächsten Monate, und ihre Eintrittswahrscheinlichkeit ist hoch. Damit ist insgesamt die Voraussetzung einer wertungsmäßig vergleichbaren Schwere der Erkrankung im Sinne von § 2 Abs. 1a SGB V bei mir erfüllt.`;
 const POINT_7_NOTSTAND_DIRECT = POINT_7_NOTSTAND.replace(
-  'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
-  'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+  'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
+  'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
 );
 
 const THERAPY_SAFETY_STATEMENT =
-  'Die beantragte Therapie erfolgt im Rahmen einer sorgfältigen individuellen Nutzen-Risiko-Abwägung, ärztlich überwacht und zeitlich befristet. Eine regelmäßige, engmaschige Verlaufskontrolle ist vorgesehen. Bei fehlender Wirksamkeit oder relevanten Nebenwirkungen wird die Behandlung unverzüglich beendet. Die Therapie dient der Verhinderung einer weiteren Verschlechterung sowie der Erzielung einer spürbaren positiven Einwirkung auf den Krankheitsverlauf.';
+  'Nach ärztlicher Einschätzung ist im Rahmen eines befristeten Therapieversuchs ein vertretbares Nutzen-Risiko-Verhältnis anzunehmen; bei fehlender Wirksamkeit oder Nebenwirkungen erfolgt Abbruch.';
 
 const PART2_TITLE = 'Teil 2 – Schreiben an die behandelnde Praxis';
 const PART2_LIABILITY_HEADING =
@@ -143,6 +132,10 @@ const POINT_8_STANDARD =
 
 const POINT_10_EVIDENCE_NOTE =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit; ich bitte um eine vollständige sozialmedizinische Würdigung einschließlich ggf. ergänzender Literaturrecherche im Einzelfall.';
+const POINT_10_STANDARD_EVIDENCE_INTRO =
+  'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen.';
+const POINT_10_SECTION_2A_EVIDENCE_INTRO =
+  'Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können oder jedenfalls eine zuverlässige, wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung für einen befristeten, ärztlich überwachten Therapieversuch zulassen.';
 
 const POINT_10_NO_2A = `Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben. Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen, insbesondere aufgrund unterschiedlicher Ursachen und Komorbiditäten. Das trifft auch auf Patientinnen und Patienten mit Long-/Post-COVID, ME/CFS und anderen verwandten Diagnosen zu. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_YES_2A = `Diese Erkenntnisse sind auf meinen Einzelfall übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
@@ -338,6 +331,34 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   return lines;
 };
 
+const resolvePart1Point2Text = (params: {
+  drugKey: MedicationKey;
+  otherDiagnosis: string;
+  point2aNo: boolean;
+  facts: PreviewMedicationFacts;
+}): string => {
+  const { drugKey, otherDiagnosis, point2aNo, facts } = params;
+  if (drugKey === 'other') {
+    return otherDiagnosis
+      ? `Die Diagnose ${otherDiagnosis} ist gesichert`
+      : 'Die Diagnose ist gesichert';
+  }
+  return point2aNo
+    ? 'Die Diagnose ist gesichert.'
+    : facts.point2ConfirmationSentence;
+};
+
+const resolvePart1OpeningRequestText = (params: {
+  drugKey: MedicationKey;
+  point2aNo: boolean;
+  facts: PreviewMedicationFacts;
+}): string => {
+  const { drugKey, point2aNo, facts } = params;
+  return drugKey !== 'other' && point2aNo
+    ? `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur symptomorientierten Behandlung bei einer klinischen Symptomatik, die mit ${facts.diagnosisDative} vergleichbar ist.`
+    : `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisDative}.`;
+};
+
 const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   const request = getRecord(formData.request);
   const severity = getRecord(formData.severity);
@@ -363,20 +384,17 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       .filter(Boolean)
       .join(' ') || '__________';
   const otherDiagnosis = getText(request.otherIndication);
-  const point2Text = (() => {
-    if (drugKey === 'other') {
-      return otherDiagnosis
-        ? `Die Diagnose ${otherDiagnosis} ist gesichert`
-        : 'Die Diagnose ist gesichert';
-    }
-    return point2aNo
-      ? 'Die Diagnose ist gesichert.'
-      : facts.point2ConfirmationSentence;
-  })();
-  const openingRequestText =
-    drugKey !== 'other' && point2aNo
-      ? `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur symptomorientierten Behandlung bei einer klinischen Symptomatik, die mit ${facts.diagnosisDative} vergleichbar ist.`
-      : `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisDative}.`;
+  const point2Text = resolvePart1Point2Text({
+    drugKey,
+    otherDiagnosis,
+    point2aNo,
+    facts,
+  });
+  const openingRequestText = resolvePart1OpeningRequestText({
+    drugKey,
+    point2aNo,
+    facts,
+  });
 
   const point4Text =
     'Es gibt bisher keine Regelung für das Arzneimittel in dem beantragten Anwendungsgebiet in der AM-RL Anlage VI.';
@@ -460,7 +478,10 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     const point10BridgeText = applySection2Abs1a
       ? ` ${POINT_10_SECTION_2A_BRIDGE}`
       : '';
-    const point10BaseText = `Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen. Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt:`;
+    const point10EvidenceIntro = applySection2Abs1a
+      ? POINT_10_SECTION_2A_EVIDENCE_INTRO
+      : POINT_10_STANDARD_EVIDENCE_INTRO;
+    const point10BaseText = `${point10EvidenceIntro} Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt:`;
     blocks.push(
       {
         kind: 'paragraph',
@@ -513,7 +534,10 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
     [getText(patient.firstName), getText(patient.lastName)]
       .filter(Boolean)
       .join(' ') || '__________';
-  const liabilityTarget = resolveDoctorLiabilityTarget(doctor.gender);
+  const patientBirthDate = formatBirthDate(getText(patient.birthDate));
+  const liabilityDoctorLine = [getText(doctor.practice), getText(doctor.name)]
+    .filter(Boolean)
+    .join(', ');
   const salutation = resolveDoctorSalutation(doctor);
   const addressLines = joinLines([
     getText(doctor.name),
@@ -572,7 +596,86 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Ich erkläre hiermit, dass ich ausführlich über die Risiken und möglichen Nebenwirkungen der Behandlung mit einem nicht für meine Indikation zugelassenen Medikament ${drug} („Off-Label-Use“) informiert wurde und ausreichend Gelegenheit hatte, Fragen zu stellen. Ich fühle mich ausreichend aufgeklärt und stimme einer Behandlung zu. Außerdem verzichte ich auf die aufgrund der Behandlung mit dem Medikament entstehenden Haftungsansprüche gegenüber ${liabilityTarget}.`,
+        text: `Aufklärung und Einwilligung zum Off-Label-Use: ${drug}`,
+      },
+      {
+        kind: 'paragraph',
+        text: `Patient*in: ${patientName}, geb. ${patientBirthDate || '__________'}`,
+      },
+      {
+        kind: 'paragraph',
+        text: `Behandelnde Praxis/Ärzt*in: ${liabilityDoctorLine || '___________________________'}`,
+      },
+      {
+        kind: 'paragraph',
+        text: 'Datum: _______________________',
+      },
+      {
+        kind: 'paragraph',
+        text: '1. Hintergrund',
+      },
+      {
+        kind: 'paragraph',
+        text: `Mir wurde erläutert, dass ${drug} für die bei mir beabsichtigte Anwendung nicht zugelassen ist (Off-Label-Use). Der Einsatz erfolgt als individueller, zeitlich befristeter Therapieversuch.`,
+      },
+      {
+        kind: 'paragraph',
+        text: '2. Aufklärung über Nutzen, Risiken und Alternativen',
+      },
+      {
+        kind: 'paragraph',
+        text: 'Ich wurde verständlich informiert über:',
+      },
+      {
+        kind: 'list',
+        items: [
+          'Ziel der Behandlung (z. B. Verbesserung von Fatigue, Belastbarkeit und Lebensqualität),',
+          'den unsicheren Evidenzgrad und dass ein Behandlungserfolg nicht garantiert werden kann,',
+          'mögliche Nebenwirkungen (z. B. Schlafstörungen/lebhafte Träume, Übelkeit, Kopfschmerzen, gastrointestinale Beschwerden),',
+          'Kontraindikationen/Wechselwirkungen, insbesondere: keine gleichzeitige Opioid-Einnahme,',
+          'geplantes Monitoring und Abbruchkriterien (z. B. nicht tolerierbare Nebenwirkungen, klinisch relevante Verschlechterung, fehlender Nutzen nach definierter Dauer),',
+          'alternative Maßnahmen der symptomorientierten Behandlung und Nicht-Behandlung.',
+        ],
+      },
+      {
+        kind: 'paragraph',
+        text: 'Ich hatte ausreichend Gelegenheit, Fragen zu stellen. Meine Fragen wurden beantwortet.',
+      },
+      {
+        kind: 'paragraph',
+        text: '3. Einwilligung',
+      },
+      {
+        kind: 'paragraph',
+        text: `Ich erkläre, dass ich die Aufklärung verstanden habe und in den Off-Label-Einsatz von ${drug} einwillige. Mir ist bekannt, dass ich meine Einwilligung jederzeit ohne Angabe von Gründen widerrufen kann.`,
+      },
+      {
+        kind: 'paragraph',
+        text: '4. Hinweise zur Anwendung (falls vereinbart)',
+      },
+      {
+        kind: 'paragraph',
+        text: 'Geplante Dosierung/Titration (falls relevant): ______________________________________',
+      },
+      {
+        kind: 'paragraph',
+        text: 'Geplanter Zeitraum des Therapieversuchs: ________________________________________',
+      },
+      {
+        kind: 'paragraph',
+        text: 'Geplante Kontrollen/Monitoring: ________________________________________________',
+      },
+      {
+        kind: 'paragraph',
+        text: 'Ort/Datum: _______________________',
+      },
+      {
+        kind: 'paragraph',
+        text: 'Unterschrift Patient*in: _______________________________',
+      },
+      {
+        kind: 'paragraph',
+        text: 'Unterschrift Ärzt*in (Bestätigung der Aufklärung): _______________________________',
       },
       { kind: 'pageBreak' },
     ],

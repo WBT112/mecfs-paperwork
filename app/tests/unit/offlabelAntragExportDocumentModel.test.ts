@@ -58,7 +58,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
     );
     expect(part1).not.toContain(
-      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
     );
     expect(part1).not.toMatch(/Punkt \d+:/);
     expect(part1).toContain('Bewertung Ivabradin');
@@ -181,10 +181,10 @@ describe('buildOffLabelAntragDocumentModel', () => {
     const part1 = model.kk.paragraphs.join('\n');
 
     expect(part1).toContain(
-      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
     );
     expect(part1).not.toContain(
-      'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
     );
     expect(part1).toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
@@ -409,7 +409,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part2Text).not.toContain(PART2_LIABILITY_HEADING);
     expect(model.arzt.liabilityHeading).toBe(PART2_LIABILITY_HEADING);
     expect(model.arzt.liabilityParagraphs?.join('\n')).toContain(
-      'Ich erkläre hiermit, dass ich ausführlich über die Risiken',
+      'Aufklärung und Einwilligung zum Off-Label-Use',
     );
     expect(model.arzt.liabilityDateLine).toMatch(/\d{1,2}\.\d{1,2}\.\d{4}/);
     expect(model.arzt.liabilitySignerName).toBe('Max Mustermann');

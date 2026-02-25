@@ -109,7 +109,7 @@ describe('offlabel-antrag letter builder', () => {
     ).exportBundle;
 
     expect(bundle.part1.paragraphs.join(' | ')).toContain(
-      'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
     );
     expect(bundle.part1.paragraphs.join(' | ')).toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
@@ -201,7 +201,7 @@ describe('offlabel-antrag letter builder', () => {
       'Haftungsausschluss (vom Patienten zu unterzeichnen)',
     );
     expect(letter.liabilityParagraphs?.[0]).toContain(
-      'Ich erkläre hiermit, dass ich ausführlich über die Risiken',
+      'Aufklärung und Einwilligung zum Off-Label-Use',
     );
     expect(letter.paragraphs).toContain('Mit freundlichen Grüßen');
     expect(letter.paragraphs).toContain('Mara Example');

@@ -190,10 +190,10 @@ test.describe('offlabel workflow preview regressions', () => {
     await expect(preview).toBeVisible();
     await expect(preview).toContainText(/§ 2 Abs\. 1a SGB V/i);
     await expect(preview).toContainText(
-      /Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Hilfsweise beantrage ich Leistungen nach § 2 Abs\. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung\./i,
     );
     await expect(preview).toContainText(
-      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+      /Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können/i,
     );
   });
 
@@ -211,7 +211,7 @@ test.describe('offlabel workflow preview regressions', () => {
       /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
     );
     await expect(preview).not.toContainText(
-      /Ich beantrage (hilfsweise )?eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Ich beantrage (hilfsweise )?Leistungen nach § 2 Abs\. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung\./i,
     );
     await expect(preview).not.toContainText(
       /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
@@ -255,10 +255,10 @@ test.describe('offlabel workflow preview regressions', () => {
       /Hilfsweise stelle ich.*§ 2 Abs\. 1a SGB V/i,
     );
     await expect(preview).toContainText(
-      /Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Hilfsweise beantrage ich Leistungen nach § 2 Abs\. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung\./i,
     );
     await expect(preview).toContainText(
-      /Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen/i,
+      /Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können/i,
     );
   });
 
@@ -289,10 +289,10 @@ test.describe('offlabel workflow preview regressions', () => {
     );
     await expect(preview).toBeVisible();
     await expect(preview).toContainText(
-      /Ich beantrage eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Ich beantrage Leistungen nach § 2 Abs\. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung\./i,
     );
     await expect(preview).not.toContainText(
-      /Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs\. 1a SGB V\./i,
+      /Hilfsweise beantrage ich Leistungen nach § 2 Abs\. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung\./i,
     );
     await expect(preview).toContainText(
       /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,

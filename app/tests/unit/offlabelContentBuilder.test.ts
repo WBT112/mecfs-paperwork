@@ -18,13 +18,15 @@ const EVIDENCE_NOT_SUFFICIENT_TEXT =
   'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild';
 const OTHER_EVIDENCE_REFERENCE_TEXT = 'Musterstudie 2024, doi:10.1000/example';
 const DIRECT_SECTION_2A_REQUEST_TEXT =
-  'Ich beantrage eine Genehmigung nach § 2 Abs. 1a SGB V.';
+  'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.';
 const HILFSANTRAG_INTRO_TEXT =
   'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V.';
 const POINT_10_BRIDGE_TEXT =
   'Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde';
+const SECTION_2A_EVIDENCE_INTRO_TEXT =
+  'Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können oder jedenfalls eine zuverlässige, wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung für einen befristeten, ärztlich überwachten Therapieversuch zulassen.';
 const THERAPY_SAFETY_TEXT =
-  'Die beantragte Therapie erfolgt im Rahmen einer sorgfältigen individuellen Nutzen-Risiko-Abwägung, ärztlich überwacht und zeitlich befristet.';
+  'Nach ärztlicher Einschätzung ist im Rahmen eines befristeten Therapieversuchs ein vertretbares Nutzen-Risiko-Verhältnis anzunehmen; bei fehlender Wirksamkeit oder Nebenwirkungen erfolgt Abbruch.';
 const CLOSING_GREETING_TEXT = 'Mit freundlichen Grüßen';
 
 describe('buildOfflabelDocuments', () => {
@@ -179,7 +181,7 @@ describe('buildOfflabelDocuments', () => {
     );
     expect(part1Text).toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
     expect(part1Text).not.toContain(
-      'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
     );
     expect(part1Text).toContain(EVIDENCE_NOT_SUFFICIENT_TEXT);
     expect(part1Text).not.toContain(EVIDENCE_SUFFICIENT_TEXT);
@@ -360,10 +362,15 @@ describe('buildOfflabelDocuments', () => {
       'Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen. Vielen Dank für Ihre Unterstützung.',
     );
     expect(part2Text).toContain(
-      'nicht für meine Indikation zugelassenen Medikament Midodrin („Off-Label-Use“)',
+      'Aufklärung und Einwilligung zum Off-Label-Use: Midodrin',
     );
+    expect(part2Text).toContain('1. Hintergrund');
     expect(part2Text).toContain(
-      'Haftungsansprüche gegenüber meiner Ärztin/meinem Arzt.',
+      '2. Aufklärung über Nutzen, Risiken und Alternativen',
+    );
+    expect(part2Text).toContain('3. Einwilligung');
+    expect(part2Text).toContain(
+      'Mir wurde erläutert, dass Midodrin für die bei mir beabsichtigte Anwendung nicht zugelassen ist (Off-Label-Use).',
     );
     expect(part2Headings).toContain(
       'Haftungsausschluss (vom Patienten zu unterzeichnen)',
@@ -383,7 +390,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part2Text).toContain('Max Mustermann');
   });
 
-  it('uses a gender-specific liability phrase for female doctors in part 2', () => {
+  it('keeps female salutation and renders the updated consent text in part 2', () => {
     const docs = buildOfflabelDocuments({
       doctor: {
         gender: 'Frau',
@@ -400,10 +407,12 @@ describe('buildOfflabelDocuments', () => {
       .join('\n');
 
     expect(part2Text).toContain('Sehr geehrte Frau Muster,');
-    expect(part2Text).toContain('Haftungsansprüche gegenüber meiner Ärztin.');
+    expect(part2Text).toContain(
+      'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin',
+    );
   });
 
-  it('uses a gender-specific liability phrase for male doctors in part 2', () => {
+  it('keeps male salutation and renders the updated consent text in part 2', () => {
     const docs = buildOfflabelDocuments({
       doctor: {
         gender: 'Herr',
@@ -420,7 +429,9 @@ describe('buildOfflabelDocuments', () => {
       .join('\n');
 
     expect(part2Text).toContain('Sehr geehrter Herr Muster,');
-    expect(part2Text).toContain('Haftungsansprüche gegenüber meinem Arzt.');
+    expect(part2Text).toContain(
+      'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin',
+    );
   });
 
   it('adds §2 wording for standard medication when checkbox is enabled', () => {
@@ -438,8 +449,10 @@ describe('buildOfflabelDocuments', () => {
 
     expect(part1Text).toContain(HILFSANTRAG_INTRO_TEXT);
     expect(part1Text).toContain(
-      'Ich beantrage hilfsweise eine Genehmigung nach § 2 Abs. 1a SGB V.',
+      'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
     );
+    expect(part1Text).toContain(SECTION_2A_EVIDENCE_INTRO_TEXT);
+    expect(part1Text).not.toContain(EVIDENCE_SUFFICIENT_TEXT);
     expect(part1Text).toContain(SECTION_2A_TEXT);
     expect(part1Text).toContain(POINT_10_BRIDGE_TEXT);
     expect(part1Text).toContain(THERAPY_SAFETY_TEXT);
