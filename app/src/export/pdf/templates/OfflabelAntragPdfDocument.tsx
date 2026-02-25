@@ -216,13 +216,6 @@ const renderLiabilityPage = ({ data }: { data: LetterLike }) => {
     <Page size="A4" style={styles.page}>
       <Text style={styles.subject}>{data.liabilityHeading}</Text>
       {renderParagraphs(data.liabilityParagraphs, 'liability')}
-      <Text style={styles.spacerParagraph}> </Text>
-      <Text style={styles.paragraph}>Datum: {data.liabilityDateLine}</Text>
-      <Text style={styles.paragraph}>
-        Name Patient/in: {data.liabilitySignerName}
-      </Text>
-      <Text style={styles.spacerParagraph}> </Text>
-      <Text style={styles.paragraph}>Unterschrift: ____________________</Text>
     </Page>
   );
 };

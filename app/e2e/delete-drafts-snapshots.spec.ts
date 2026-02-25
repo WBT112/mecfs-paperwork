@@ -64,7 +64,7 @@ const ensureActiveRecordId = async (page: Page) => {
     const newDraftButton = await ensureSectionActionButton(
       page,
       'formpack-records',
-      '.formpack-records__actions .app__button:visible',
+      '.formpack-records__actions .app__button',
     );
     await clickActionButton(newDraftButton);
     return waitForActiveRecordId(page, 20_000);
@@ -120,8 +120,13 @@ test('deletes a non-active draft and removes its snapshots', async ({
   await expect(page.locator('.formpack-snapshots__item')).toHaveCount(1);
 
   await openCollapsibleSectionById(page, 'formpack-records');
+  await expect
+    .poll(async () => page.locator('.formpack-records__actions .app__button').count(), {
+      timeout: 15_000,
+    })
+    .toBeGreaterThan(0);
   await clickActionButton(
-    page.locator('.formpack-records__actions .app__button:visible').first(),
+    page.locator('.formpack-records__actions .app__button').first(),
   );
 
   let newRecordId: string | null = null;

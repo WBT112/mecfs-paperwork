@@ -40,7 +40,7 @@ jobs:
         working-directory: app
         env:
           HUSKY: "0"
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --fund=false
 
       - name: Unit tests + coverage (lcov)
         working-directory: app

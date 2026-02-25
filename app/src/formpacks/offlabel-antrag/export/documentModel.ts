@@ -150,7 +150,9 @@ const DEFAULT_PART3_SUBJECT_KEY = 'offlabel-antrag.export.part3.subject';
 const DEFAULT_PART3_SUBJECT =
   'Ärztliche Stellungnahme / Befundbericht zum Off-Label-Use';
 const PART2_TITLE = 'Teil 2 – Schreiben an die behandelnde Praxis';
-const PART2_LIABILITY_HEADING =
+const PART2_LIABILITY_HEADING_PREFIX =
+  'Aufklärung und Einwilligung zum Off-Label-Use:';
+const PART2_LIABILITY_LEGACY_HEADING =
   'Haftungsausschluss (vom Patienten zu unterzeichnen)';
 const GREETING_LINES = new Set(['Mit freundlichen Grüßen', 'Kind regards']);
 
@@ -343,9 +345,13 @@ const trimSurroundingBlankLines = (paragraphs: string[]): string[] => {
 
 const buildPart2Paragraphs = (
   part: OfflabelRenderedDocument | null,
-): { body: string[]; liabilityParagraphs: string[] } => {
+): {
+  body: string[];
+  liabilityHeading: string;
+  liabilityParagraphs: string[];
+} => {
   if (!part) {
-    return { body: [], liabilityParagraphs: [] };
+    return { body: [], liabilityHeading: '', liabilityParagraphs: [] };
   }
 
   const bodyBlocks = part.blocks.filter(
@@ -365,13 +371,18 @@ const buildPart2Paragraphs = (
     listItemBlankLines: true,
   }).filter((paragraph) => paragraph !== PART2_TITLE);
 
-  const liabilityHeadingIndex = flattened.indexOf(PART2_LIABILITY_HEADING);
+  const liabilityHeadingIndex = flattened.findIndex(
+    (paragraph) =>
+      paragraph.startsWith(PART2_LIABILITY_HEADING_PREFIX) ||
+      paragraph === PART2_LIABILITY_LEGACY_HEADING,
+  );
   if (liabilityHeadingIndex < 0) {
-    return { body: flattened, liabilityParagraphs: [] };
+    return { body: flattened, liabilityHeading: '', liabilityParagraphs: [] };
   }
 
   return {
     body: trimSurroundingBlankLines(flattened.slice(0, liabilityHeadingIndex)),
+    liabilityHeading: flattened[liabilityHeadingIndex],
     liabilityParagraphs: trimSurroundingBlankLines(
       flattened.slice(liabilityHeadingIndex + 1),
     ),
@@ -647,17 +658,14 @@ export const buildOffLabelAntragDocumentModel = (
         : 'Begleitschreiben zum Off-Label-Antrag - Bitte um Unterstützung',
     ),
     paragraphs: arztParagraphs,
-    liabilityHeading:
-      previewPart2Content.liabilityParagraphs.length > 0
-        ? PART2_LIABILITY_HEADING
-        : '',
+    liabilityHeading: previewPart2Content.liabilityHeading,
     liabilityParagraphs: previewPart2Content.liabilityParagraphs,
-    liabilityDateLine:
-      previewPart2Content.liabilityParagraphs.length > 0
-        ? getDateOnly(locale, exportedAt)
-        : '',
-    liabilitySignerName:
-      previewPart2Content.liabilityParagraphs.length > 0 ? patientName : '',
+    liabilityDateLine: previewPart2Content.liabilityHeading
+      ? getDateOnly(locale, exportedAt)
+      : '',
+    liabilitySignerName: previewPart2Content.liabilityHeading
+      ? patientName
+      : '',
     attachments: [],
     signatureBlocks: [],
   });

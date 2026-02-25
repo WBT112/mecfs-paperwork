@@ -152,7 +152,9 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await expect(preview).toContainText(
       /Long\/Post-COVID mit depressiven Symptomen/i,
     );
-    await expect(preview).not.toContainText(/und\/oder/i);
+    await expect(preview).toContainText(
+      /Die Diagnose Long\/Post-COVID ist gesichert \(siehe Befunde\)\. Kognitive Beeinträchtigungen und\/oder depressive Symptome sind dokumentiert\./i,
+    );
 
     await selectDrugByValue(page, 'other');
     await page.locator('#root_request_otherDrugName').fill('Midodrine');

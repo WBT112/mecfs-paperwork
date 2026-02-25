@@ -143,8 +143,6 @@ const THERAPY_SAFETY_STATEMENT =
   'Nach ärztlicher Einschätzung ist im Rahmen eines befristeten Therapieversuchs ein vertretbares Nutzen-Risiko-Verhältnis anzunehmen; bei fehlender Wirksamkeit oder Nebenwirkungen erfolgt Abbruch.';
 
 const PART2_TITLE = 'Teil 2 – Schreiben an die behandelnde Praxis';
-const PART2_LIABILITY_HEADING =
-  'Haftungsausschluss (vom Patienten zu unterzeichnen)';
 
 const POINT_8_STANDARD =
   'Für die Versorgung meiner Erkrankung stehen keine Standardtherapien des GKV-Leistungskatalogs zur Verfügung. In der wissenschaftlichen Literatur werden derzeit vor allem symptombezogene Behandlungsansätze diskutiert. Die einschlägige AWMF-Leitlinie „Müdigkeit“ stellt ausdrücklich fest, dass für die kausale Behandlung von ME/CFS bislang keine Medikamente zugelassen sind, und verweist auf die britische NICE-Leitlinie. Diese fokussiert neben Energiemanagement insbesondere die Linderung von Symptomen, um den Krankheitsverlauf möglichst günstig zu beeinflussen und eine Verschlechterung zu vermeiden. Eine positive Empfehlung für eine medikamentöse Standardtherapie enthält die Leitlinie nicht. Vor diesem Hintergrund ist der beantragte Off-Label-Einsatz als medizinisch nachvollziehbarer und geeigneter Behandlungsversuch anzusehen. Eine der medizinischen Standardtherapie entsprechende Alternative ist nicht verfügbar.';
@@ -158,7 +156,7 @@ const POINT_10_SECTION_2A_EVIDENCE_INTRO =
 const POINT_2_NO_DIAGNOSIS_CORE =
   'Die zugrunde liegende Erkrankung ist diagnostisch gesichert und ärztlich dokumentiert.';
 const POINT_2_NO_EVIDENCE_BRIDGE =
-  'Die in der Literatur/Studien verwendete Indikationsbezeichnung ist mit der gesicherten Diagnose nicht vollständig deckungsgleich. Dies betrifft ausschließlich die Übertragbarkeit der Evidenz und deren Würdigung im Rahmen der Nutzen-Risiko-Abwägung, nicht die diagnostische Absicherung im Einzelfall. Die behandlungsrelevante Symptomatik (z. B. Fatigue/Belastungsintoleranz/PEM) ist in den herangezogenen Studienpopulationen in wesentlichen Merkmalen vergleichbar.';
+  'Die in der Literatur/Studien verwendete Indikationsbezeichnung ist mit der gesicherten Diagnose nicht vollständig deckungsgleich. Dies betrifft ausschließlich die Übertragbarkeit der Evidenz und deren Würdigung im Rahmen der Nutzen-Risiko-Abwägung, nicht die diagnostische Absicherung im Einzelfall. Die behandlungsrelevante Symptomatik ist in den herangezogenen Studienpopulationen in wesentlichen Merkmalen vergleichbar.';
 
 const POINT_10_NO_2A = `Auf dieser Grundlage sind die herangezogenen Erkenntnisse für meinen Einzelfall im Rahmen einer wissenschaftlich nachvollziehbaren Nutzen-Risiko-Abwägung übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_YES_2A = `Diese Erkenntnisse sind auf meinen Einzelfall übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
@@ -654,10 +652,6 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'heading',
-        text: PART2_LIABILITY_HEADING,
-      },
-      {
-        kind: 'paragraph',
         text: `Aufklärung und Einwilligung zum Off-Label-Use: ${drug}`,
       },
       {

@@ -74,16 +74,12 @@ describe('offlabel DOCX liability fallback', () => {
     expect(part2Paragraphs).toContain(
       'Ich erkläre hiermit, dass ich aufgeklärt wurde.',
     );
-    expect(part2Paragraphs).toContain('Datum: 21.02.2026');
-    expect(part2Paragraphs).toContain('Name Patient/in: Max Mustermann');
-    const signerIndex = part2Paragraphs.indexOf(
+    expect(part2Paragraphs.join('\n')).not.toContain(
       'Name Patient/in: Max Mustermann',
     );
-    const signatureIndex = part2Paragraphs.indexOf(
+    expect(part2Paragraphs.join('\n')).not.toContain(
       'Unterschrift: ____________________',
     );
-    expect(signerIndex).toBeGreaterThan(-1);
-    expect(signatureIndex).toBe(signerIndex + 2);
-    expect(part2Paragraphs[signerIndex + 1]).toBe('');
+    expect(part2Paragraphs.join('\n')).not.toContain('Datum: 21.02.2026');
   });
 });

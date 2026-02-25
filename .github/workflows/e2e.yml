@@ -45,7 +45,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: app
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --fund=false
 
       - name: Install Playwright browsers
         working-directory: app

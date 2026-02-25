@@ -200,11 +200,9 @@ describe('offlabel-antrag letter builder', () => {
       ),
     ).toBe(false);
     expect(letter.liabilityHeading).toBe(
-      'Haftungsausschluss (vom Patienten zu unterzeichnen)',
+      'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin',
     );
-    expect(letter.liabilityParagraphs?.[0]).toContain(
-      'Aufklärung und Einwilligung zum Off-Label-Use',
-    );
+    expect(letter.liabilityParagraphs?.[0]).toContain('Patient*in:');
     expect(letter.paragraphs).toContain('Mit freundlichen Grüßen');
     expect(letter.paragraphs).toContain('Mara Example');
     expect(letter.attachments).toEqual([]);

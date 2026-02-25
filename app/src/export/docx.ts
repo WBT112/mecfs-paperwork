@@ -394,19 +394,6 @@ const appendOfflabelLiabilityFallbackToPart2 = (
   const liabilityHeading = getPathValue(documentData, 'arzt.liabilityHeading');
   const liabilityHeadingText =
     typeof liabilityHeading === 'string' ? liabilityHeading.trim() : '';
-  const liabilityDateLine = getPathValue(
-    documentData,
-    'arzt.liabilityDateLine',
-  );
-  const liabilityDateLineText =
-    typeof liabilityDateLine === 'string' ? liabilityDateLine.trim() : '';
-  const liabilitySignerName = getPathValue(
-    documentData,
-    'arzt.liabilitySignerName',
-  );
-  const liabilitySignerNameText =
-    typeof liabilitySignerName === 'string' ? liabilitySignerName.trim() : '';
-
   const mergedPart2Paragraphs = [...part2Paragraphs];
   if (mergedPart2Paragraphs.length > 0 && mergedPart2Paragraphs.at(-1) !== '') {
     mergedPart2Paragraphs.push('');
@@ -415,19 +402,6 @@ const appendOfflabelLiabilityFallbackToPart2 = (
     mergedPart2Paragraphs.push(liabilityHeadingText, '');
   }
   mergedPart2Paragraphs.push(...liabilityParagraphs);
-  if (liabilityDateLineText.length > 0 || liabilitySignerNameText.length > 0) {
-    mergedPart2Paragraphs.push('');
-  }
-  if (liabilityDateLineText.length > 0) {
-    mergedPart2Paragraphs.push(`Datum: ${liabilityDateLineText}`);
-  }
-  if (liabilitySignerNameText.length > 0) {
-    mergedPart2Paragraphs.push(
-      `Name Patient/in: ${liabilitySignerNameText}`,
-      '',
-      'Unterschrift: ____________________',
-    );
-  }
 
   const clonedDocumentData = cloneTemplateValue(documentData) as DocumentModel;
   setPathValueMutableSafe(

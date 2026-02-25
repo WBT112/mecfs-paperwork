@@ -37,17 +37,14 @@ describe('offlabel-antrag A4 DOCX template', () => {
     expect(xml).toContain('{{FOR p3 IN part3.paragraphs}}');
   });
 
-  it('renders part-2 liability heading in bold and with signer metadata', async () => {
+  it('renders part-2 liability heading in bold without duplicated signer block', async () => {
     const xml = await loadOfflabelTemplateXml();
 
     expect(xml).toContain('{{arzt.liabilityHeading}}');
     expect(xml).toContain('<w:rPr><w:b/><w:bCs/></w:rPr>');
-    expect(xml).toContain('Datum: {{arzt.liabilityDateLine}}');
-    expect(xml).toContain('Name Patient/in: {{arzt.liabilitySignerName}}');
-    expect(xml).toContain('Unterschrift: ____________________');
-    expect(xml).toMatch(
-      /Name Patient\/in: \{\{arzt\.liabilitySignerName\}\}<\/w:t><\/w:r><\/w:p>\s*<w:p><w:r><w:t xml:space="preserve"> <\/w:t><\/w:r><\/w:p>\s*<w:p><w:r><w:t>Unterschrift: ____________________/,
-    );
+    expect(xml).not.toContain('Datum: {{arzt.liabilityDateLine}}');
+    expect(xml).not.toContain('Name Patient/in: {{arzt.liabilitySignerName}}');
+    expect(xml).not.toContain('Unterschrift: ____________________');
   });
 
   it('renders part 2, part 3 and sources without optional wrappers', async () => {

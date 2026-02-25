@@ -35,7 +35,7 @@ jobs:
         working-directory: app
         run: |
           set -euo pipefail
-          npm ci --loglevel=warn 2>&1 | tee npm-install.log
+          npm ci --prefer-offline --fund=false --loglevel=warn 2>&1 | tee npm-install.log
 
       - name: Capture npm audit
         working-directory: app

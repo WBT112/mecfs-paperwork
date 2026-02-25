@@ -36,6 +36,10 @@ const CASE_TRANSFER_NO_TEXT =
 const THERAPY_SAFETY_TEXT =
   'Nach ärztlicher Einschätzung ist im Rahmen eines befristeten Therapieversuchs ein vertretbares Nutzen-Risiko-Verhältnis anzunehmen; bei fehlender Wirksamkeit oder Nebenwirkungen erfolgt Abbruch.';
 const CLOSING_GREETING_TEXT = 'Mit freundlichen Grüßen';
+const CONSENT_HEADING_MIDODRIN =
+  'Aufklärung und Einwilligung zum Off-Label-Use: Midodrin';
+const CONSENT_HEADING_IVABRADIN =
+  'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin';
 
 describe('buildOfflabelDocuments', () => {
   it('builds three parts and includes evidence text for known medication', () => {
@@ -407,9 +411,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part2Text).toContain(
       'Gern können Sie den von mir formulierten Vorschlag verwenden oder anpassen. Vielen Dank für Ihre Unterstützung.',
     );
-    expect(part2Text).toContain(
-      'Aufklärung und Einwilligung zum Off-Label-Use: Midodrin',
-    );
+    expect(part2Headings).toContain(CONSENT_HEADING_MIDODRIN);
     expect(part2Text).toContain('1. Hintergrund');
     expect(part2Text).toContain(
       '2. Aufklärung über Nutzen, Risiken und Alternativen',
@@ -418,17 +420,14 @@ describe('buildOfflabelDocuments', () => {
     expect(part2Text).toContain(
       'Mir wurde erläutert, dass Midodrin für die bei mir beabsichtigte Anwendung nicht zugelassen ist (Off-Label-Use).',
     );
-    expect(part2Headings).toContain(
-      'Haftungsausschluss (vom Patienten zu unterzeichnen)',
-    );
+    expect(part2Headings).toContain(CONSENT_HEADING_MIDODRIN);
     const greetingBlockIndex = docs[1].blocks.findIndex(
       (block) =>
         block.kind === 'paragraph' && block.text === CLOSING_GREETING_TEXT,
     );
     const liabilityHeadingIndex = docs[1].blocks.findIndex(
       (block) =>
-        block.kind === 'heading' &&
-        block.text === 'Haftungsausschluss (vom Patienten zu unterzeichnen)',
+        block.kind === 'heading' && block.text === CONSENT_HEADING_MIDODRIN,
     );
     expect(greetingBlockIndex).toBeGreaterThan(-1);
     expect(liabilityHeadingIndex).toBeGreaterThan(greetingBlockIndex);
@@ -451,11 +450,12 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part2Headings = docs[1].blocks
+      .filter((block) => block.kind === 'heading')
+      .map((block) => block.text);
 
     expect(part2Text).toContain('Sehr geehrte Frau Muster,');
-    expect(part2Text).toContain(
-      'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin',
-    );
+    expect(part2Headings).toContain(CONSENT_HEADING_IVABRADIN);
   });
 
   it('keeps male salutation and renders the updated consent text in part 2', () => {
@@ -473,11 +473,12 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
+    const part2Headings = docs[1].blocks
+      .filter((block) => block.kind === 'heading')
+      .map((block) => block.text);
 
     expect(part2Text).toContain('Sehr geehrter Herr Muster,');
-    expect(part2Text).toContain(
-      'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin',
-    );
+    expect(part2Headings).toContain(CONSENT_HEADING_IVABRADIN);
   });
 
   it('adds §2 wording for standard medication when checkbox is enabled', () => {

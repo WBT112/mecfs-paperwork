@@ -233,7 +233,7 @@ test.describe('offlabel workflow preview regressions', () => {
       /zur Behandlung von Long-\/Post-COVID mit Fatigue/i,
     );
     await expect(preview).toContainText(
-      /Die Diagnose Fatigue bei Long-\/Post-COVID ist gesichert/i,
+      /Die Diagnose Long-\/Post-COVID ist gesichert \(siehe Befunde\)\. Fatigue ist als Leitsymptom dokumentiert\./i,
     );
     await expect(preview).not.toContainText(/und\/oder/i);
   });
