@@ -252,8 +252,8 @@ const resolvePreviewMedicationFacts = (
     diagnosisNominative: otherIndication || '[bitte Indikation ergänzen]',
     diagnosisDative: otherIndication || '[bitte Indikation ergänzen]',
     point2ConfirmationSentence: otherIndication
-      ? `Die Diagnose ${otherIndication} ist gesichert`
-      : 'Die Diagnose ist gesichert',
+      ? `Die Diagnose ${otherIndication} ist gesichert.`
+      : 'Die Diagnose ist gesichert.',
     targetSymptoms: otherTreatmentGoal || '[bitte Behandlungsziel ergänzen]',
     doseAndDuration:
       combineDoseAndDuration(otherDose, otherDuration) ||
@@ -363,8 +363,8 @@ const resolvePart1Point2Text = (params: {
   const { drugKey, otherDiagnosis, point2aNo, facts } = params;
   if (drugKey === 'other') {
     return otherDiagnosis
-      ? `Die Diagnose ${otherDiagnosis} ist gesichert`
-      : 'Die Diagnose ist gesichert';
+      ? `Die Diagnose ${otherDiagnosis} ist gesichert.`
+      : 'Die Diagnose ist gesichert.';
   }
   return point2aNo
     ? POINT_2_NO_DIAGNOSIS_CORE
@@ -822,7 +822,7 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
           `Dosierung/Dauer: ${facts.doseAndDuration}`,
           `Monitoring/Abbruchkriterien: ${facts.monitoringAndStop}`,
           `Erwarteter Nutzen / Therapieziel im Einzelfall: ${facts.targetSymptoms}`,
-          'Insgesamt ist von einem positiven Risiko-Nutzen Verhältnis auszugehen.',
+          'Insgesamt ist von einem positiven Nutzen-Risiko-Verhältnis auszugehen.',
           'Informationen für die Krankenkasse:',
           'BSNR: __________',
           'LANR: __________',

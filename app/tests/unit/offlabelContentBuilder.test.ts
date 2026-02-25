@@ -179,7 +179,7 @@ describe('buildOfflabelDocuments', () => {
       ),
     ).toBe(true);
     expect(part1ListItems).toContain(
-      'Die Diagnose Seltene XYZ-Indikation ist gesichert',
+      'Die Diagnose Seltene XYZ-Indikation ist gesichert.',
     );
     expect(part1Text).toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
     expect(part1Text).not.toContain(
