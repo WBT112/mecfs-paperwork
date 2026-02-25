@@ -89,8 +89,8 @@ const VORTIOXETINE_DEPRESSIVE_DE = 'Long/Post-COVID mit depressiven Symptomen';
 const VORTIOXETINE_DEPRESSIVE_EN = 'long/post-COVID with depressive symptoms';
 const LDN_MECFS_DE = MECFS_FATIGUE_DE;
 const LDN_MECFS_EN = 'post-infectious ME/CFS with fatigue';
-const LDN_LONG_POST_COVID_DE = 'Long/Post-COVID mit Fatigue (PCC/PCFS)';
-const LDN_LONG_POST_COVID_EN = 'long/post-COVID with fatigue (PCC/PCFS)';
+const LDN_LONG_POST_COVID_DE = 'Long/Post-COVID mit Fatigue';
+const LDN_LONG_POST_COVID_EN = 'long/post-COVID with fatigue';
 const LDN_TARGET_SYMPTOMS_DE =
   'Verbesserung von Fatigue, Belastbarkeit und gesundheitsbezogener Lebensqualität (HRQoL)';
 const LDN_TARGET_SYMPTOMS_EN =
@@ -99,6 +99,18 @@ const ARIPIPRAZOLE_MECFS_DE = 'postinfektiöse ME/CFS mit Fatigue und PEM';
 const ARIPIPRAZOLE_MECFS_EN = 'post-infectious ME/CFS with fatigue and PEM';
 const ARIPIPRAZOLE_LONG_POST_COVID_DE = 'Long/Post-COVID mit Fatigue und PEM';
 const ARIPIPRAZOLE_LONG_POST_COVID_EN = 'long/post-COVID with fatigue and PEM';
+const AGOMELATIN_BFARM_TITLE_DE =
+  'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Agomelatin zur Behandlung der Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/Chronischem Fatigue-Syndrom (ME/CFS) und bei Long/Post-COVID (Stand 02.12.2025).';
+const AGOMELATIN_BFARM_TITLE_EN =
+  'Assessment by the Long COVID Off-Label-Use Expert Group under Section 35c para. 1 SGB V on the use of agomelatine for the treatment of fatigue in post-infectious myalgic encephalomyelitis/chronic fatigue syndrome (ME/CFS) and in long/post-COVID (status 2025-12-02).';
+const IVABRADINE_BFARM_TITLE_DE =
+  'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Ivabradin bei Patientinnen und Patienten mit COVID-19-assoziiertem Posturalem orthostatischem Tachykardiesyndrom (PoTS), die eine Therapie mit Betablockern nicht tolerieren oder für diese nicht geeignet sind (Stand 15.10.2025).';
+const IVABRADINE_BFARM_TITLE_EN =
+  'Assessment by the Long COVID Off-Label-Use Expert Group under Section 35c para. 1 SGB V on the use of ivabradine in patients with COVID-19-associated postural orthostatic tachycardia syndrome (PoTS) who do not tolerate beta-blocker therapy or are not suitable for it (status 2025-10-15).';
+const VORTIOXETINE_BFARM_TITLE_DE =
+  'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Vortioxetin bei kognitiven Beeinträchtigungen und/oder depressiven Symptomen im Rahmen von Long/Post-COVID (Stand 15.10.2025).';
+const VORTIOXETINE_BFARM_TITLE_EN =
+  'Assessment by the Long COVID Off-Label-Use Expert Group under Section 35c para. 1 SGB V on the use of vortioxetine for cognitive impairment and/or depressive symptoms in long/post-COVID (status 2025-10-15).';
 
 const createIndication = (
   key: string,
@@ -153,6 +165,10 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     displayNameEn: 'Agomelatine',
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.agomelatine',
     expertSourceDate: '02.12.2025',
+    expertSourceTextOverride: {
+      de: AGOMELATIN_BFARM_TITLE_DE,
+      en: AGOMELATIN_BFARM_TITLE_EN,
+    },
     indications: [
       createIndication('agomelatin.mecfs_fatigue', {
         de: {
@@ -160,7 +176,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: MECFS_FATIGUE_DE,
           diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue',
           point2ConfirmationSentence:
-            'Die Diagnose Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/chronischem Fatigue-Syndrom (ME/CFS) ist gesichert (siehe Befunde).',
+            'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
           targetSymptoms:
             'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
         },
@@ -169,7 +185,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: AGOMELATIN_MECFS_FATIGUE_EN,
           diagnosisDative: AGOMELATIN_MECFS_FATIGUE_EN,
           point2ConfirmationSentence:
-            'The diagnosis of fatigue in post-infectious myalgic encephalomyelitis/chronic fatigue syndrome (ME/CFS) is established (see findings).',
+            'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue is documented as a leading symptom.',
           targetSymptoms:
             'improvement of fatigue and health-related quality of life (HRQoL)',
         },
@@ -180,7 +196,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
           diagnosisDative: AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
           point2ConfirmationSentence:
-            'Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde).',
+            'Die Diagnose Long-/Post-COVID ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
           targetSymptoms:
             'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
         },
@@ -189,7 +205,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: AGOMELATIN_LONG_POST_COVID_FATIGUE_EN,
           diagnosisDative: AGOMELATIN_LONG_POST_COVID_FATIGUE_EN,
           point2ConfirmationSentence:
-            'The diagnosis of fatigue in long/post-COVID is established (see findings).',
+            'The diagnosis of long/post-COVID is established (see findings). Fatigue is documented as a leading symptom.',
           targetSymptoms:
             'improvement of fatigue and health-related quality of life (HRQoL)',
         },
@@ -214,6 +230,10 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     displayNameEn: 'Ivabradine',
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.ivabradine',
     expertSourceDate: '15.10.2025',
+    expertSourceTextOverride: {
+      de: IVABRADINE_BFARM_TITLE_DE,
+      en: IVABRADINE_BFARM_TITLE_EN,
+    },
     indications: [
       createIndication('ivabradine.pots_long_post_covid', {
         de: {
@@ -261,6 +281,10 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     displayNameEn: 'Vortioxetine',
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.vortioxetine',
     expertSourceDate: '15.10.2025',
+    expertSourceTextOverride: {
+      de: VORTIOXETINE_BFARM_TITLE_DE,
+      en: VORTIOXETINE_BFARM_TITLE_EN,
+    },
     indications: [
       createIndication('vortioxetine.long_post_covid_cognitive', {
         de: {
@@ -268,7 +292,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_COGNITIVE_DE,
           diagnosisDative: VORTIOXETINE_COGNITIVE_DE,
           point2ConfirmationSentence:
-            'Die Diagnose kognitive Beeinträchtigungen im Rahmen von Long/Post-COVID ist gesichert.',
+            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen und/oder depressive Symptome sind dokumentiert.',
           targetSymptoms:
             'Verbesserung von Kognition sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
         },
@@ -277,7 +301,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_COGNITIVE_EN,
           diagnosisDative: VORTIOXETINE_COGNITIVE_EN,
           point2ConfirmationSentence:
-            'The diagnosis of cognitive impairment in long/post-COVID is established.',
+            'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment and/or depressive symptoms are documented.',
           targetSymptoms:
             'improvement of cognition and health-related quality of life (HRQoL)',
         },
@@ -288,7 +312,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_DEPRESSIVE_DE,
           diagnosisDative: VORTIOXETINE_DEPRESSIVE_DE,
           point2ConfirmationSentence:
-            'Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert.',
+            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen und/oder depressive Symptome sind dokumentiert.',
           targetSymptoms:
             'Verbesserung depressiver Symptomatik sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
         },
@@ -297,7 +321,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_DEPRESSIVE_EN,
           diagnosisDative: VORTIOXETINE_DEPRESSIVE_EN,
           point2ConfirmationSentence:
-            'The diagnosis of depressive symptoms in long/post-COVID is established.',
+            'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment and/or depressive symptoms are documented.',
           targetSymptoms:
             'improvement of depressive symptoms and health-related quality of life (HRQoL)',
         },

@@ -19,7 +19,7 @@ const buildTemplateData = (
   createdAtIso: CREATED_AT_ISO,
   sourcesHeading: 'Quellen',
   sources: [
-    'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).',
+    'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Ivabradin bei Patientinnen und Patienten mit COVID-19-assoziiertem Posturalem orthostatischem Tachykardiesyndrom (PoTS), die eine Therapie mit Betablockern nicht tolerieren oder für diese nicht geeignet sind (Stand 15.10.2025).',
   ],
   exportBundle: {
     exportedAtIso: CREATED_AT_ISO,

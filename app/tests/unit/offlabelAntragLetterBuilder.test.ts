@@ -85,7 +85,9 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.paragraphs.join(' | ')).toContain(
       EVIDENCE_SUFFICIENT_TEXT,
     );
-    expect(model.sources[0]).toContain('Bewertung Vortioxetin');
+    expect(model.sources[0]).toContain(
+      'zur Anwendung von Vortioxetin bei kognitiven Beeinträchtigungen und/oder depressiven Symptomen',
+    );
     expect(bundle.part1.attachments).toEqual([]);
   });
 

@@ -7,7 +7,7 @@ const IVABRADIN_DIAGNOSIS_DATIVE_TEXT =
   'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit';
 const SECTION_2A_TEXT = '§ 2 Abs. 1a SGB V';
 const IVABRADINE_EXPERT_SOURCE =
-  'Bewertung Ivabradin – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand 15.10.2025).';
+  'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Ivabradin';
 const CASE_TRANSFER_YES_TEXT =
   'Diese Erkenntnisse sind auf meinen Einzelfall übertragbar.';
 const EVIDENCE_NOTE_TEXT =
@@ -603,7 +603,7 @@ describe('buildOfflabelDocuments', () => {
       'zur Behandlung von Long-/Post-COVID mit Fatigue',
     );
     expect(part1ListItems).toContain(
-      'Die Diagnose Fatigue bei Long-/Post-COVID ist gesichert (siehe Befunde).',
+      'Die Diagnose Long-/Post-COVID ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
     );
     expect(part1ListItems).toContain(
       'Indikation: Long-/Post-COVID mit Fatigue',
@@ -645,7 +645,7 @@ describe('buildOfflabelDocuments', () => {
       'zur Behandlung von Long/Post-COVID mit depressiven Symptomen',
     );
     expect(part1ListItems).toContain(
-      'Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert.',
+      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen und/oder depressive Symptome sind dokumentiert.',
     );
     expect(part3Text).toContain(
       'Diagnose: Long/Post-COVID mit depressiven Symptomen',

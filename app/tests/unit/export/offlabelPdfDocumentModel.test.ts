@@ -155,10 +155,14 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
     };
 
     expect(templateData.sourcesHeading).toBe('Quellen');
-    expect(templateData.sources.join(' ')).toContain('Bewertung Agomelatin');
-    expect(templateData.sources.join(' ')).not.toContain('Bewertung Ivabradin');
+    expect(templateData.sources.join(' ')).toContain(
+      'zur Anwendung von Agomelatin zur Behandlung der Fatigue',
+    );
     expect(templateData.sources.join(' ')).not.toContain(
-      'Bewertung Vortioxetin',
+      'zur Anwendung von Ivabradin',
+    );
+    expect(templateData.sources.join(' ')).not.toContain(
+      'zur Anwendung von Vortioxetin',
     );
   });
 

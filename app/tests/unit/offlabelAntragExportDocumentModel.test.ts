@@ -19,7 +19,8 @@ const DIRECT_SECTION_2A_REQUEST_TEXT =
   'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.';
 const HILFSWEISE_SECTION_2A_REQUEST_TEXT =
   'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.';
-const IVABRADINE_EXPERT_SOURCE_LABEL = 'Bewertung Ivabradin';
+const IVABRADINE_EXPERT_SOURCE_LABEL =
+  'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Ivabradin';
 const CASE_LAW_SOURCE_LABEL = 'LSG Niedersachsen-Bremen';
 
 const interpolate = (
@@ -113,7 +114,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'zur Behandlung von Long/Post-COVID mit depressiven Symptomen',
     );
     expect(part1).toContain(
-      'Die Diagnose depressive Symptome im Rahmen von Long/Post-COVID ist gesichert',
+      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen und/oder depressive Symptome sind dokumentiert.',
     );
     expect(part1).toContain(
       'Indikation: Long/Post-COVID mit depressiven Symptomen',
@@ -133,7 +134,6 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part3).toContain(
       'zur Behandlung der Indikation Long/Post-COVID mit depressiven Symptomen',
     );
-    expect(part1).not.toContain('und/oder');
     expect(part2).not.toContain('und/oder');
     expect(part3).not.toContain('und/oder');
   });
