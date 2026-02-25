@@ -155,8 +155,12 @@ const POINT_10_STANDARD_EVIDENCE_INTRO =
   'Es gibt Erkenntnisse, die einer zulassungsreifen Datenlage entsprechen, die eine zuverlässige und wissenschaftlich überprüfbare Aussage zulassen.';
 const POINT_10_SECTION_2A_EVIDENCE_INTRO =
   'Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können oder jedenfalls eine zuverlässige, wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung für einen befristeten, ärztlich überwachten Therapieversuch zulassen.';
+const POINT_2_NO_DIAGNOSIS_CORE =
+  'Die zugrunde liegende Erkrankung ist diagnostisch gesichert und ärztlich dokumentiert.';
+const POINT_2_NO_EVIDENCE_BRIDGE =
+  'Die in der Literatur/Studien verwendete Indikationsbezeichnung ist mit der gesicherten Diagnose nicht vollständig deckungsgleich. Dies betrifft ausschließlich die Übertragbarkeit der Evidenz und deren Würdigung im Rahmen der Nutzen-Risiko-Abwägung, nicht die diagnostische Absicherung im Einzelfall. Die behandlungsrelevante Symptomatik (z. B. Fatigue/Belastungsintoleranz/PEM) ist in den herangezogenen Studienpopulationen in wesentlichen Merkmalen vergleichbar.';
 
-const POINT_10_NO_2A = `Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen. Ich weise darauf hin, dass erst seit kurzem einheitliche und differenzierte Diagnoseschlüssel existieren und sich im ärztlichen Bereich noch etablieren müssen. Eine korrekte Verschlüsselung von Diagnosen ist und war damit nicht immer gegeben. Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen, insbesondere aufgrund unterschiedlicher Ursachen und Komorbiditäten. Das trifft auch auf Patientinnen und Patienten mit Long-/Post-COVID, ME/CFS und anderen verwandten Diagnosen zu. ${POINT_10_EVIDENCE_NOTE}`;
+const POINT_10_NO_2A = `Auf dieser Grundlage sind die herangezogenen Erkenntnisse für meinen Einzelfall im Rahmen einer wissenschaftlich nachvollziehbaren Nutzen-Risiko-Abwägung übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_YES_2A = `Diese Erkenntnisse sind auf meinen Einzelfall übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_SECTION_2A_BRIDGE = `Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde, bestehen jedenfalls veröffentlichte Erkenntnisse, die eine zuverlässige Nutzen-Risiko-Abwägung ermöglichen; hilfsweise wird daher die Leistung nach § 2 Abs. 1a SGB V begehrt.`;
 const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
@@ -363,7 +367,7 @@ const resolvePart1Point2Text = (params: {
       : 'Die Diagnose ist gesichert';
   }
   return point2aNo
-    ? 'Die Diagnose ist gesichert.'
+    ? POINT_2_NO_DIAGNOSIS_CORE
     : facts.point2ConfirmationSentence;
 };
 
@@ -376,6 +380,100 @@ const resolvePart1OpeningRequestText = (params: {
   return drugKey !== 'other' && point2aNo
     ? `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur symptomorientierten Behandlung bei einer klinischen Symptomatik, die mit ${facts.diagnosisDative} vergleichbar ist.`
     : `hiermit beantrage ich die Kostenübernahme für das Medikament ${facts.displayName} im Rahmen des Off-Label-Use zur Behandlung von ${facts.diagnosisDative}.`;
+};
+
+const buildPart1OptionalHilfsantragIntroBlocks = (
+  applySection2Abs1a: boolean,
+): OfflabelRenderedDocument['blocks'] =>
+  applySection2Abs1a
+    ? [{ kind: 'paragraph', text: POINT_HILFSANTRAG_INTRO }]
+    : [];
+
+const buildPart1NoDiagnosisBridgeBlocks = (
+  point2aNo: boolean,
+  drugKey: MedicationKey,
+): OfflabelRenderedDocument['blocks'] =>
+  point2aNo && drugKey !== 'other'
+    ? [{ kind: 'paragraph', text: POINT_2_NO_EVIDENCE_BRIDGE }]
+    : [];
+
+const buildPart1Point7Blocks = (
+  includePoint7: boolean,
+  point7Text: string,
+): OfflabelRenderedDocument['blocks'] =>
+  includePoint7 ? [{ kind: 'paragraph', text: point7Text }] : [];
+
+const buildPart1StandardCareBlocks = (
+  standardCareItems: string[],
+): OfflabelRenderedDocument['blocks'] =>
+  standardCareItems.length > 0
+    ? [
+        {
+          kind: 'paragraph',
+          text: 'Zusätzlich wurden folgende Therapieversuche unternommen:',
+        },
+        { kind: 'list', items: standardCareItems },
+      ]
+    : [];
+
+const buildPart1EvidenceAndTreatmentBlocks = (params: {
+  drugKey: MedicationKey;
+  facts: PreviewMedicationFacts;
+  point2aNo: boolean;
+  applySection2Abs1a: boolean;
+  otherEvidenceReferenceText: string;
+}): OfflabelRenderedDocument['blocks'] => {
+  const {
+    drugKey,
+    facts,
+    point2aNo,
+    applySection2Abs1a,
+    otherEvidenceReferenceText,
+  } = params;
+  if (drugKey === 'other') {
+    return [
+      {
+        kind: 'paragraph',
+        text: `Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risiko-Nutzen-Bewertung (siehe Arztbefund; wissenschaftliche Erkenntnisse: ${otherEvidenceReferenceText}). ${POINT_10_EVIDENCE_NOTE}`,
+      },
+      {
+        kind: 'paragraph',
+        text: 'Geplant ist eine Behandlung wie folgt:',
+      },
+      { kind: 'list', items: buildTreatmentPlanItems(facts) },
+      {
+        kind: 'paragraph',
+        text: THERAPY_SAFETY_STATEMENT,
+      },
+    ];
+  }
+
+  const point10Sources = [facts.expertSourceText].filter(Boolean);
+  const point10CaseTransferText = point2aNo ? POINT_10_NO_2A : POINT_10_YES_2A;
+  const point10BridgeText = applySection2Abs1a
+    ? ` ${POINT_10_SECTION_2A_BRIDGE}`
+    : '';
+  const point10EvidenceIntro = applySection2Abs1a
+    ? POINT_10_SECTION_2A_EVIDENCE_INTRO
+    : POINT_10_STANDARD_EVIDENCE_INTRO;
+  const point10BaseText = `${point10EvidenceIntro} Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt:`;
+  return [
+    {
+      kind: 'paragraph',
+      text: point10BaseText,
+    },
+    {
+      kind: 'list',
+      items: buildTreatmentPlanItems(facts, {
+        diagnosisMode: point2aNo ? 'comparableSymptoms' : 'indication',
+        includeDiagnosisItem: !point2aNo,
+      }),
+    },
+    {
+      kind: 'paragraph',
+      text: THERAPY_SAFETY_STATEMENT,
+    },
+  ];
 };
 
 const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
@@ -435,19 +533,13 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
       kind: 'paragraph',
       text: openingRequestText,
     },
-    ...(applySection2Abs1a
-      ? ([
-          {
-            kind: 'paragraph' as const,
-            text: POINT_HILFSANTRAG_INTRO,
-          },
-        ] satisfies OfflabelRenderedDocument['blocks'])
-      : []),
+    ...buildPart1OptionalHilfsantragIntroBlocks(applySection2Abs1a),
     {
       kind: 'paragraph',
       text: 'Zur Prüfung meines Antrags habe ich die maßgeblichen Punkte nachfolgend strukturiert dargestellt:',
     },
     { kind: 'list', items: point1To5Items },
+    ...buildPart1NoDiagnosisBridgeBlocks(point2aNo, drugKey),
     {
       kind: 'paragraph',
       text: 'Es handelt sich um eine lebensbedrohliche und die Lebensqualität auf Dauer nachhaltig beeinträchtigende Erkrankung. (Hvidberg MF, Brinth LS, Olesen AV, Petersen KD, Ehlers L. The Health-Related Quality of Life for Patients with Myalgic Encephalomyelitis / Chronic Fatigue Syndrome (ME/CFS). PLOS ONE. 2015;10(7):e0132421. doi:10.1371/journal.pone.0132421. PMID: 26147503; PMCID: PMC4492975). Meine Erkrankung hebt sich durch ihre Schwere vom Durchschnitt der Erkrankungen deutlich ab, was sich auch in meiner persönlichen Situation zeigt:',
@@ -459,68 +551,17 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     },
   ];
 
-  if (includePoint7) {
-    blocks.push({ kind: 'paragraph', text: point7Text });
-  }
-
-  blocks.push({ kind: 'paragraph', text: POINT_8_STANDARD });
-  if (standardCareItems.length > 0) {
-    blocks.push(
-      {
-        kind: 'paragraph',
-        text: 'Zusätzlich wurden folgende Therapieversuche unternommen:',
-      },
-      { kind: 'list', items: standardCareItems },
-    );
-  }
-  if (drugKey === 'other') {
-    blocks.push(
-      {
-        kind: 'paragraph',
-        text: `Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild sowie eine positive Risiko-Nutzen-Bewertung (siehe Arztbefund; wissenschaftliche Erkenntnisse: ${otherEvidenceReferenceText}). ${POINT_10_EVIDENCE_NOTE}`,
-      },
-      {
-        kind: 'paragraph',
-        text: 'Geplant ist eine Behandlung wie folgt:',
-      },
-      { kind: 'list', items: buildTreatmentPlanItems(facts) },
-      {
-        kind: 'paragraph',
-        text: THERAPY_SAFETY_STATEMENT,
-      },
-    );
-  } else {
-    const point10Sources = [facts.expertSourceText].filter(Boolean);
-    const point10CaseTransferText = point2aNo
-      ? POINT_10_NO_2A
-      : POINT_10_YES_2A;
-    const point10BridgeText = applySection2Abs1a
-      ? ` ${POINT_10_SECTION_2A_BRIDGE}`
-      : '';
-    const point10EvidenceIntro = applySection2Abs1a
-      ? POINT_10_SECTION_2A_EVIDENCE_INTRO
-      : POINT_10_STANDARD_EVIDENCE_INTRO;
-    const point10BaseText = `${point10EvidenceIntro} Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt:`;
-    blocks.push(
-      {
-        kind: 'paragraph',
-        text: point10BaseText,
-      },
-      {
-        kind: 'list',
-        items: buildTreatmentPlanItems(facts, {
-          diagnosisMode: point2aNo ? 'comparableSymptoms' : 'indication',
-          includeDiagnosisItem: !point2aNo,
-        }),
-      },
-      {
-        kind: 'paragraph',
-        text: THERAPY_SAFETY_STATEMENT,
-      },
-    );
-  }
-
   blocks.push(
+    ...buildPart1Point7Blocks(includePoint7, point7Text),
+    { kind: 'paragraph', text: POINT_8_STANDARD },
+    ...buildPart1StandardCareBlocks(standardCareItems),
+    ...buildPart1EvidenceAndTreatmentBlocks({
+      drugKey,
+      facts,
+      point2aNo,
+      applySection2Abs1a,
+      otherEvidenceReferenceText,
+    }),
     {
       kind: 'paragraph',
       text: 'Ich bitte um eine zeitnahe Entscheidung. Für Rückfragen stehe ich gerne zur Verfügung.',

@@ -25,6 +25,12 @@ const POINT_10_BRIDGE_TEXT =
   'Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde';
 const SECTION_2A_EVIDENCE_INTRO_TEXT =
   'Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können oder jedenfalls eine zuverlässige, wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung für einen befristeten, ärztlich überwachten Therapieversuch zulassen.';
+const DIAGNOSIS_SECURED_NO_TEXT =
+  'Die zugrunde liegende Erkrankung ist diagnostisch gesichert und ärztlich dokumentiert.';
+const DIAGNOSIS_EVIDENCE_BRIDGE_TEXT =
+  'Die in der Literatur/Studien verwendete Indikationsbezeichnung ist mit der gesicherten Diagnose nicht vollständig deckungsgleich.';
+const CASE_TRANSFER_NO_TEXT =
+  'Auf dieser Grundlage sind die herangezogenen Erkenntnisse für meinen Einzelfall im Rahmen einer wissenschaftlich nachvollziehbaren Nutzen-Risiko-Abwägung übertragbar.';
 const THERAPY_SAFETY_TEXT =
   'Nach ärztlicher Einschätzung ist im Rahmen eines befristeten Therapieversuchs ein vertretbares Nutzen-Risiko-Verhältnis anzunehmen; bei fehlender Wirksamkeit oder Nebenwirkungen erfolgt Abbruch.';
 const CLOSING_GREETING_TEXT = 'Mit freundlichen Grüßen';
@@ -52,7 +58,9 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'list')
       .flatMap((block) => block.items);
 
-    expect(part1ListItems).toContain('Die Diagnose ist gesichert.');
+    expect(
+      part1ListItems.some((item) => item.includes(DIAGNOSIS_SECURED_NO_TEXT)),
+    ).toBe(true);
     expect(part1Text).not.toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
     expect(part1Text).not.toContain(EVIDENCE_NOT_SUFFICIENT_TEXT);
     expect(part1Text).toContain(EVIDENCE_SUFFICIENT_TEXT);
@@ -70,21 +78,15 @@ describe('buildOfflabelDocuments', () => {
     ).toBe(true);
     expect(part1Text).not.toContain('Medizinischer Dienst Bund');
     expect(part1Text).toContain(IVABRADINE_EXPERT_SOURCE);
-    expect(part1Text).toContain(
-      'Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen',
-    );
-    expect(part1Text).toContain(
-      'Zudem wird auf die große Heterogenität der Patientenkollektive in den jeweiligen Studien hingewiesen',
-    );
+    expect(part1Text).toContain(DIAGNOSIS_EVIDENCE_BRIDGE_TEXT);
+    expect(part1Text).toContain(CASE_TRANSFER_NO_TEXT);
     expect(part1Text).toContain(EVIDENCE_NOTE_TEXT);
     expect(part1Text).not.toContain(
       'Übertragbarkeit auf den Einzelfall (Gleiche Erkrankung/Gleiche Anwendung).',
     );
     expect(part1Text).not.toContain(CASE_TRANSFER_YES_TEXT);
     const noPathSourceIndex = part1Text.indexOf(IVABRADINE_EXPERT_SOURCE);
-    const noPathTransferIndex = part1Text.indexOf(
-      'Die Erkenntnisse lassen sich auf meinen Einzelfall übertragen',
-    );
+    const noPathTransferIndex = part1Text.indexOf(CASE_TRANSFER_NO_TEXT);
     expect(noPathSourceIndex).toBeGreaterThan(-1);
     expect(noPathTransferIndex).toBeGreaterThan(noPathSourceIndex);
     expect(part1Text).not.toContain(SECTION_2A_TEXT);

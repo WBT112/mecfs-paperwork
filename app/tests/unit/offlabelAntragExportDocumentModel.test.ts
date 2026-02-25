@@ -13,6 +13,8 @@ const TEST_INSURER_NAME = 'Musterkasse';
 const TEST_INSURER_DEPARTMENT = 'Leistungsabteilung';
 const PART2_LIABILITY_HEADING =
   'Haftungsausschluss (vom Patienten zu unterzeichnen)';
+const DIAGNOSIS_SECURED_NO_TEXT =
+  'Die zugrunde liegende Erkrankung ist diagnostisch gesichert und ärztlich dokumentiert.';
 
 const interpolate = (
   template: string,
@@ -214,9 +216,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       { exportedAt: FIXED_EXPORTED_AT },
     );
 
-    expect(model.kk.paragraphs.join('\n')).toContain(
-      'Die Diagnose ist gesichert.',
-    );
+    expect(model.kk.paragraphs.join('\n')).toContain(DIAGNOSIS_SECURED_NO_TEXT);
     expect(model.kk.paragraphs.join('\n')).toContain(
       'zur symptomorientierten Behandlung bei einer klinischen Symptomatik',
     );
