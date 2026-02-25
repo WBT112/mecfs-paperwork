@@ -15,6 +15,10 @@ const PART2_LIABILITY_HEADING =
   'Haftungsausschluss (vom Patienten zu unterzeichnen)';
 const DIAGNOSIS_SECURED_NO_TEXT =
   'Die zugrunde liegende Erkrankung ist diagnostisch gesichert und ärztlich dokumentiert.';
+const DIRECT_SECTION_2A_REQUEST_TEXT =
+  'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.';
+const HILFSWEISE_SECTION_2A_REQUEST_TEXT =
+  'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.';
 
 const interpolate = (
   template: string,
@@ -59,9 +63,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part1).not.toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
     );
-    expect(part1).not.toContain(
-      'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
-    );
+    expect(part1).not.toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
     expect(part1).not.toMatch(/Punkt \d+:/);
     expect(part1).toContain('Bewertung Ivabradin');
 
@@ -182,11 +184,9 @@ describe('buildOffLabelAntragDocumentModel', () => {
 
     const part1 = model.kk.paragraphs.join('\n');
 
-    expect(part1).toContain(
-      'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
-    );
+    expect(part1).toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
     expect(part1).not.toContain(
-      'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
+      HILFSWEISE_SECTION_2A_REQUEST_TEXT,
     );
     expect(part1).toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
@@ -202,6 +202,47 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(model.sources).toHaveLength(1);
     expect(model.sources[0]).toContain('LSG Niedersachsen-Bremen');
     expect(model.kk.attachments).toEqual([]);
+  });
+
+  it('ignores stale hidden switches for other medication in exported paragraphs', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'other',
+          otherDrugName: 'Midodrin',
+          otherIndication: 'Orthostatische Intoleranz',
+          applySection2Abs1a: true,
+          indicationFullyMetOrDoctorConfirms: 'no',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const part1 = model.kk.paragraphs.join('\n');
+    const part2 = model.arzt.paragraphs.join('\n');
+    const part3 = model.part3.paragraphs.join('\n');
+
+    expect(part1).toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
+    expect(part1).not.toContain(
+      'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V.',
+    );
+    expect(part1).not.toContain(
+      HILFSWEISE_SECTION_2A_REQUEST_TEXT,
+    );
+
+    expect(part2).toContain(
+      'für eine Off-Label-Verordnung von Midodrin mit der Indikation Orthostatische Intoleranz',
+    );
+    expect(part2).not.toContain('Die klinische Symptomatik ist mit');
+
+    expect(part3).toContain('Diagnose: Orthostatische Intoleranz');
+    expect(part3).toContain(
+      'zur Behandlung der Indikation Orthostatische Intoleranz',
+    );
+    expect(part3).not.toContain(
+      'Die klinische Symptomatik ist mit Orthostatische Intoleranz vergleichbar;',
+    );
   });
 
   it('applies 2a=no conditional text from preview in part 1 and part 3', () => {

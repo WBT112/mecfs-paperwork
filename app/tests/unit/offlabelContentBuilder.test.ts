@@ -19,6 +19,8 @@ const EVIDENCE_NOT_SUFFICIENT_TEXT =
 const OTHER_EVIDENCE_REFERENCE_TEXT = 'Musterstudie 2024, doi:10.1000/example';
 const DIRECT_SECTION_2A_REQUEST_TEXT =
   'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.';
+const HILFSWEISE_SECTION_2A_REQUEST_TEXT =
+  'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.';
 const HILFSANTRAG_INTRO_TEXT =
   'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V.';
 const POINT_10_BRIDGE_TEXT =
@@ -210,6 +212,48 @@ describe('buildOfflabelDocuments', () => {
       .join('\n');
     expect(part3Text).toContain(
       'Zusätzlich wurden folgende Therapieversuche unternommen:',
+    );
+  });
+
+  it('ignores hidden stale flags when switching to other medication', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'other',
+        otherDrugName: 'Midodrin',
+        otherIndication: 'Orthostatische Intoleranz',
+        applySection2Abs1a: true,
+        indicationFullyMetOrDoctorConfirms: 'no',
+      },
+    });
+
+    const part1Text = docs[0].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+    const part3Text = docs[2].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part1Text).toContain(DIRECT_SECTION_2A_REQUEST_TEXT);
+    expect(part1Text).not.toContain(HILFSANTRAG_INTRO_TEXT);
+    expect(part1Text).not.toContain(HILFSWEISE_SECTION_2A_REQUEST_TEXT);
+
+    expect(part2Text).toContain(
+      'für eine Off-Label-Verordnung von Midodrin mit der Indikation Orthostatische Intoleranz',
+    );
+    expect(part2Text).not.toContain('Die klinische Symptomatik ist mit');
+
+    expect(part3Text).toContain('Diagnose: Orthostatische Intoleranz');
+    expect(part3Text).toContain(
+      'zur Behandlung der Indikation Orthostatische Intoleranz',
+    );
+    expect(part3Text).not.toContain(
+      'Die klinische Symptomatik ist mit Orthostatische Intoleranz vergleichbar;',
     );
   });
 
@@ -450,9 +494,7 @@ describe('buildOfflabelDocuments', () => {
       .join('\n');
 
     expect(part1Text).toContain(HILFSANTRAG_INTRO_TEXT);
-    expect(part1Text).toContain(
-      'Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
-    );
+    expect(part1Text).toContain(HILFSWEISE_SECTION_2A_REQUEST_TEXT);
     expect(part1Text).toContain(SECTION_2A_EVIDENCE_INTRO_TEXT);
     expect(part1Text).not.toContain(EVIDENCE_SUFFICIENT_TEXT);
     expect(part1Text).toContain(SECTION_2A_TEXT);

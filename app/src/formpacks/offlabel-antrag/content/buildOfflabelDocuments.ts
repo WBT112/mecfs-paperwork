@@ -118,7 +118,7 @@ const POINT_7_NOTSTAND = `Hilfsweise beantrage ich Leistungen nach § 2 Abs. 1a 
 
 § 2 Abs. 1a SGB V erfasst neben lebensbedrohlichen oder regelmäßig tödlichen Erkrankungen auch Erkrankungen, die wertungsmäßig eine vergleichbare Schwere erreichen. Bei Myalgischer Enzephalomyelitis/Chronischem Fatigue-Syndrom (ME/CFS) handelt es sich um eine schwerwiegende, systemische Erkrankung. In schweren und sehr schweren Verläufen kann es zu gravierenden und anhaltenden Einschränkungen zentraler Lebensbereiche, insbesondere Mobilität, Selbstversorgung und Teilhabe, kommen.
 
-Für die Anwendung des § 2 Abs. 1a SGB V ist nach der höchstrichterlichen Rechtsprechung zudem eine notstandsähnliche Extremsituation kennzeichnend, d. h. eine individuelle Notstandslage mit gegenwärtiger Gefahr für ein individuelles Rechtsgut und ein erheblicher Zeitdruck für einen bestehenden akuten Behandlungsbedarf. Bei schwerer ME/CFS ergibt sich ein solcher Zeitdruck krankheitsspezifisch aus der Belastungsintoleranz mit post-exertioneller Malaise (PEM): Bereits geringe körperliche, kognitive oder emotionale Belastungen können eine zeitverzögerte (Stunden bis Tage) und zur Auslöserbelastung unverhältnismäßige Verschlechterung auslösen. Diese Episoden können über Tage, Wochen oder länger anhalten und werden in der Versorgungspraxis als „Crash/Schub“ beschrieben.
+Für die Anwendung des § 2 Abs. 1a SGB V ist nach der höchstrichterlichen Rechtsprechung zudem eine notstandsähnliche Extremsituation kennzeichnend, d. h. eine individuelle Notstandslage mit gegenwärtiger Gefahr für ein individuelles Rechtsgut und ein erheblicher Zeitdruck für einen bestehenden akuten Behandlungsbedarf. Bei ME/CFS ergibt sich ein solcher Zeitdruck krankheitsspezifisch aus der Belastungsintoleranz mit post-exertioneller Malaise (PEM): Bereits geringe körperliche, kognitive oder emotionale Belastungen können eine zeitverzögerte (Stunden bis Tage) und zur Auslöserbelastung unverhältnismäßige Verschlechterung auslösen. Diese Episoden können über Tage, Wochen oder länger anhalten und werden in der Versorgungspraxis als „Crash/Schub“ beschrieben.
 
 Der zeitkritische Charakter folgt daraus, dass PEM-Episoden kurzfristig einen erheblichen Funktionsabfall bewirken können und zugleich das Risiko einer Folgekaskade erhöhen: Verlängerte Erholungsphasen reduzieren die Möglichkeiten zur Mobilität, Selbstversorgung und Teilhabe; gleichzeitig steigt bei fehlender zeitnaher Stabilisierung das Risiko weiterer Belastungsüberschreitungen und erneuter PEM-Episoden. Medizinisch vorrangig ist daher die Vermeidung weiterer PEM-Episoden sowie eine frühzeitige Stabilisierung, um zusätzlichen Funktionsverlust abzuwenden.
 
@@ -131,7 +131,7 @@ const POINT_7_NOTSTAND_DIRECT = `Ich beantrage Leistungen nach § 2 Abs. 1a SGB 
 
 § 2 Abs. 1a SGB V erfasst neben lebensbedrohlichen oder regelmäßig tödlichen Erkrankungen auch Erkrankungen, die wertungsmäßig eine vergleichbare Schwere erreichen. Bei Myalgischer Enzephalomyelitis/Chronischem Fatigue-Syndrom (ME/CFS) handelt es sich um eine schwerwiegende, systemische Erkrankung. In schweren und sehr schweren Verläufen kann es zu gravierenden und anhaltenden Einschränkungen zentraler Lebensbereiche, insbesondere Mobilität, Selbstversorgung und Teilhabe, kommen.
 
-Für die Anwendung des § 2 Abs. 1a SGB V ist nach der höchstrichterlichen Rechtsprechung zudem eine notstandsähnliche Extremsituation kennzeichnend, d. h. eine individuelle Notstandslage mit gegenwärtiger Gefahr für ein individuelles Rechtsgut und ein erheblicher Zeitdruck für einen bestehenden akuten Behandlungsbedarf. Bei schwerer ME/CFS ergibt sich ein solcher Zeitdruck krankheitsspezifisch aus der Belastungsintoleranz mit post-exertioneller Malaise (PEM): Bereits geringe körperliche, kognitive oder emotionale Belastungen können eine zeitverzögerte (Stunden bis Tage) und zur Auslöserbelastung unverhältnismäßige Verschlechterung auslösen. Diese Episoden können über Tage, Wochen oder länger anhalten und werden in der Versorgungspraxis als „Crash/Schub“ beschrieben.
+Für die Anwendung des § 2 Abs. 1a SGB V ist nach der höchstrichterlichen Rechtsprechung zudem eine notstandsähnliche Extremsituation kennzeichnend, d. h. eine individuelle Notstandslage mit gegenwärtiger Gefahr für ein individuelles Rechtsgut und ein erheblicher Zeitdruck für einen bestehenden akuten Behandlungsbedarf. Bei ME/CFS ergibt sich ein solcher Zeitdruck krankheitsspezifisch aus der Belastungsintoleranz mit post-exertioneller Malaise (PEM): Bereits geringe körperliche, kognitive oder emotionale Belastungen können eine zeitverzögerte (Stunden bis Tage) und zur Auslöserbelastung unverhältnismäßige Verschlechterung auslösen. Diese Episoden können über Tage, Wochen oder länger anhalten und werden in der Versorgungspraxis als „Crash/Schub“ beschrieben.
 
 Der zeitkritische Charakter folgt daraus, dass PEM-Episoden kurzfristig einen erheblichen Funktionsabfall bewirken können und zugleich das Risiko einer Folgekaskade erhöhen: Verlängerte Erholungsphasen reduzieren die Möglichkeiten zur Mobilität, Selbstversorgung und Teilhabe; gleichzeitig steigt bei fehlender zeitnaher Stabilisierung das Risiko weiterer Belastungsüberschreitungen und erneuter PEM-Episoden. Medizinisch vorrangig ist daher die Vermeidung weiterer PEM-Episoden sowie eine frühzeitige Stabilisierung, um zusätzlichen Funktionsverlust abzuwenden.
 
@@ -483,9 +483,11 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
   const { key: drugKey, profile: drug } = resolveMedicationProfileOrThrow(
     request.drug,
   );
-  const point2aNo =
+  const point2aNoSelected =
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
-  const applySection2Abs1a = getBool(request.applySection2Abs1a);
+  const applySection2Abs1aSelected = getBool(request.applySection2Abs1a);
+  const point2aNo = drugKey !== 'other' && point2aNoSelected;
+  const applySection2Abs1a = drugKey !== 'other' && applySection2Abs1aSelected;
   const includePoint7 = drugKey === 'other' || applySection2Abs1a;
   const point7Text =
     drugKey === 'other' ? POINT_7_NOTSTAND_DIRECT : POINT_7_NOTSTAND;
@@ -583,11 +585,11 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
   const doctor = getRecord(formData.doctor);
   const patient = getRecord(formData.patient);
   const request = getRecord(formData.request);
-  const { profile: drugProfile } = resolveMedicationProfileOrThrow(
-    request.drug,
-  );
-  const point2aNo =
+  const { key: drugKey, profile: drugProfile } =
+    resolveMedicationProfileOrThrow(request.drug);
+  const point2aNoSelected =
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
+  const point2aNo = drugKey !== 'other' && point2aNoSelected;
   const facts = resolvePreviewMedicationFacts(request, drugProfile);
   const drug = facts.displayName;
   const patientName =
@@ -745,10 +747,11 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
 const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
   const request = getRecord(formData.request);
   const patient = getRecord(formData.patient);
-  const point2aNo =
+  const point2aNoSelected =
     getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
   const { key: drugKey, profile: drugProfile } =
     resolveMedicationProfileOrThrow(request.drug);
+  const point2aNo = drugKey !== 'other' && point2aNoSelected;
   const facts = resolvePreviewMedicationFacts(request, drugProfile);
   const standardCareItems =
     drugKey === 'other'
