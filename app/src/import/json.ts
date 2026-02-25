@@ -144,39 +144,100 @@ const validateSchema = (schema: RJSFSchema, data: unknown): boolean => {
   return validate(data);
 };
 
-// Create a lenient version of schema for import validation
-// Removes 'required' and 'minLength' constraints to allow partial data import
+const makeLenientSubschema = (
+  schema: OptionalRjsfSchema,
+  depth: number,
+): OptionalRjsfSchema => {
+  if (!schema || typeof schema !== 'object') {
+    return schema;
+  }
+  return makeLenientSchema(schema, depth + 1);
+};
+
+const makeLenientSubschemaArray = (
+  schemas: unknown,
+  depth: number,
+): unknown => {
+  if (!Array.isArray(schemas)) {
+    return schemas;
+  }
+  return schemas.map((entry) =>
+    makeLenientSubschema(entry as OptionalRjsfSchema, depth),
+  );
+};
+
+// Create a lenient version of schema for import validation.
+// Removes strict presence/length constraints recursively so older or partial
+// exports stay importable after schema evolution.
 const makeLenientSchema = (schema: RJSFSchema, depth = 0): RJSFSchema => {
   if (depth > MAX_SCHEMA_DEPTH) {
     return schema;
   }
 
-  const lenient = { ...schema };
+  const lenient: RJSFSchema = { ...schema };
 
-  // Remove top-level 'required' constraint
   delete lenient.required;
+  delete lenient.minLength;
+  delete lenient.minItems;
+  delete lenient.minProperties;
 
-  // Remove 'minLength' from string properties
-  if (lenient.properties) {
-    const properties = { ...lenient.properties };
+  if (lenient.properties && typeof lenient.properties === 'object') {
+    const properties = { ...lenient.properties } as Record<string, unknown>;
     for (const key of Object.keys(properties)) {
-      const prop = properties[key];
-      if (prop && typeof prop === 'object' && !Array.isArray(prop)) {
-        const propCopy = { ...prop };
-        delete propCopy.minLength;
-
-        // Recursively handle nested objects
-        if (propCopy.type === 'object') {
-          properties[key] = makeLenientSchema(
-            propCopy as RJSFSchema,
-            depth + 1,
-          );
-        } else {
-          properties[key] = propCopy;
-        }
-      }
+      properties[key] = makeLenientSubschema(
+        properties[key] as OptionalRjsfSchema,
+        depth,
+      );
     }
-    lenient.properties = properties;
+    lenient.properties = properties as NonNullable<RJSFSchema['properties']>;
+  }
+
+  if (Array.isArray(lenient.items)) {
+    lenient.items = lenient.items.map((entry) =>
+      makeLenientSubschema(entry as OptionalRjsfSchema, depth),
+    ) as unknown as RJSFSchema['items'];
+  } else {
+    lenient.items = makeLenientSubschema(
+      lenient.items as OptionalRjsfSchema,
+      depth,
+    ) as RJSFSchema['items'];
+  }
+
+  lenient.additionalProperties = makeLenientSubschema(
+    lenient.additionalProperties as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['additionalProperties'];
+  lenient.not = makeLenientSubschema(
+    lenient.not as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['not'];
+  lenient.if = makeLenientSubschema(
+    lenient.if as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['if'];
+  lenient.then = makeLenientSubschema(
+    lenient.then as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['then'];
+  lenient.else = makeLenientSubschema(
+    lenient.else as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['else'];
+  lenient.allOf = makeLenientSubschemaArray(lenient.allOf, depth) as
+    | RJSFSchema['allOf']
+    | undefined;
+  lenient.anyOf = makeLenientSubschemaArray(lenient.anyOf, depth) as
+    | RJSFSchema['anyOf']
+    | undefined;
+  lenient.oneOf = makeLenientSubschemaArray(lenient.oneOf, depth) as
+    | RJSFSchema['oneOf']
+    | undefined;
+  if (lenient.$defs && typeof lenient.$defs === 'object') {
+    const defs = { ...lenient.$defs } as Record<string, unknown>;
+    for (const key of Object.keys(defs)) {
+      defs[key] = makeLenientSubschema(defs[key] as OptionalRjsfSchema, depth);
+    }
+    lenient.$defs = defs as NonNullable<RJSFSchema['$defs']>;
   }
 
   return lenient;

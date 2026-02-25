@@ -212,6 +212,48 @@ test.describe('offlabel export flows', () => {
     await context.setOffline(false);
   });
 
+  test('json import accepts a current-version partial "other" draft without schema mismatch', async ({
+    page,
+  }) => {
+    await selectDrugByValue(page, 'other');
+
+    const exportButton = page
+      .getByRole('button', {
+        name: /Entwurf exportieren \(JSON\)|Export draft \(JSON\)/i,
+      })
+      .first();
+    await expect(exportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
+
+    const statusRoot = page.locator('.formpack-form__actions');
+    const completion = await triggerExportAndWaitCompletion(
+      page,
+      exportButton,
+      statusRoot,
+    );
+    expect(completion.type).toBe('download');
+    if (completion.type !== 'download') {
+      throw new Error('JSON export did not produce a downloadable file.');
+    }
+
+    const filePath = await completion.download.path();
+    expect(filePath).not.toBeNull();
+
+    await openCollapsibleSectionById(page, 'formpack-import');
+    await page
+      .locator('#formpack-import-file')
+      .setInputFiles(filePath as string);
+
+    const importButton = page.locator('.formpack-import__actions .app__button');
+    await expect(importButton).toBeEnabled({ timeout: POLL_TIMEOUT });
+    await clickActionButton(importButton.first(), POLL_TIMEOUT);
+
+    const importPanel = page.locator('#formpack-import-content');
+    await expect(importPanel.locator('.formpack-import__success')).toBeVisible({
+      timeout: POLL_TIMEOUT,
+    });
+    await expect(importPanel.locator('.app__error')).toHaveCount(0);
+  });
+
   test('docx export works online and offline', async ({
     page,
     context,

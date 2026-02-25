@@ -428,6 +428,82 @@ describe('validateJsonImport', () => {
     });
   });
 
+  it('accepts partial payloads when conditional requirements are defined via allOf/if/then', () => {
+    const conditionalSchema = {
+      type: 'object',
+      properties: {
+        request: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            drug: {
+              type: 'string',
+              enum: ['ivabradine', 'other'],
+            },
+            otherEvidenceReference: {
+              type: 'string',
+            },
+          },
+        },
+      },
+      additionalProperties: false,
+      allOf: [
+        {
+          if: {
+            properties: {
+              request: {
+                type: 'object',
+                properties: {
+                  drug: { const: 'other' },
+                },
+              },
+            },
+          },
+          then: {
+            properties: {
+              request: {
+                type: 'object',
+                required: ['otherEvidenceReference'],
+                properties: {
+                  otherEvidenceReference: {
+                    type: 'string',
+                    minLength: 1,
+                  },
+                },
+              },
+            },
+          },
+        },
+      ],
+    } as const satisfies RJSFSchema;
+
+    const partialImportJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: {
+          request: {
+            drug: 'other',
+          },
+        },
+      },
+    });
+
+    const result = validateJsonImport(
+      partialImportJson,
+      conditionalSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload).toBeDefined();
+    expect(result.payload?.record.data).toEqual({
+      request: {
+        drug: 'other',
+      },
+    });
+  });
+
   it('accepts legacy top-level data/locale payload and keeps formpack version', () => {
     const legacyJson = JSON.stringify({
       formpack: { id: PRIMARY_FORMPACK_ID, version: '2.4.0' },
