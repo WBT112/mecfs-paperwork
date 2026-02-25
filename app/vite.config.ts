@@ -98,9 +98,6 @@ const configuredVitestWorkers = parsePositiveInt(
 );
 const vitestMaxWorkers =
   configuredVitestWorkers ?? (isCI ? 2 : defaultLocalVitestWorkers);
-const vitestMinWorkers = isCI
-  ? 1
-  : Math.max(1, Math.floor(vitestMaxWorkers / 2));
 
 const createConfig = (mode: string): AppConfig => ({
   define: {
@@ -240,11 +237,9 @@ const createConfig = (mode: string): AppConfig => ({
     environment: 'jsdom',
     setupFiles: './tests/setup/setup.ts',
     maxWorkers: vitestMaxWorkers,
-    minWorkers: vitestMinWorkers,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      all: true,
       include: ['src/**/*.{ts,tsx,mjs}'],
       exclude: [
         'src/**/*.d.ts',
