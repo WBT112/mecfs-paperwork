@@ -7,7 +7,7 @@ import {
   vi,
   type Mock,
 } from 'vitest';
-import { importRecordWithSnapshots } from '../../../src/storage/import';
+import { importRecordWithSnapshots } from '../../../src/storage/importRecord';
 import { openStorage } from '../../../src/storage/db';
 
 const TEST_FORMPACK_ID = 'test-formpack';

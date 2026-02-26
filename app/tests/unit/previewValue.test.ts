@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { hasPreviewValue } from '../../src/lib/preview';
+import { hasPreviewValue } from '../../src/lib/previewValue';
 
 describe('hasPreviewValue', () => {
   it('returns false for nullish values', () => {

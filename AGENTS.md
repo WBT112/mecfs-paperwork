@@ -95,6 +95,9 @@ If any step fails: fix it before finishing.
 - **English only** for code and test comments.
 - **Explain decisions, not mechanics:** Comments should capture rationale, constraints, and non-obvious behavior. Avoid “what the code does” narration.
 - **Privacy-first:** Comments must never contain real patient/health data or identifiable personal information. Use synthetic examples only.
+- **TSDoc requirement for public APIs:** exported functions, exported classes, exported hooks, and exported type aliases/interfaces in `app/src/**` should include TSDoc blocks (`/** ... */`).
+- **Required minimum tags for public APIs:** `@param` (for each parameter), `@returns` (when returning non-void), and `@throws` when throwing domain-relevant errors.
+- **Use `@remarks` for constraints/invariants:** especially for privacy/security, offline-first assumptions, schema compatibility, and migration behavior.
 - **Use structured prefixes where relevant:**
   - `RATIONALE:` design decision / trade-off
   - `NOTE:` non-obvious behavior / edge case
@@ -103,6 +106,7 @@ If any step fails: fix it before finishing.
 - **Minimize surface area:** Prefer a single short header comment (file/function) over many inline comments.
 - **Tests:** Only comment when mocking or setup is tricky, or when explaining a regression scenario. No flaky patterns (no sleeps/time-based assertions).
 - **Review gate:** If a comment is added, reviewers should be able to answer: “Does this reduce future misunderstanding or prevent a known class of mistakes?” If not, remove it.
+- **Lint gate:** TSDoc syntax must pass ESLint (`tsdoc/syntax`). Invalid TSDoc blocks fail CI.
 
 ## 6) Tooling expectations (baseline)
 - Linting: ESLint with TypeScript support.

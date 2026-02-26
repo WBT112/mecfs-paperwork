@@ -238,6 +238,10 @@ const assertKnownFormpackId = (
   );
 };
 
+/**
+ * Parses and validates a manifest payload into a strongly-typed runtime manifest.
+ * Throws `FormpackLoaderError` for all contract violations.
+ */
 export const parseManifest = (
   payload: FormpackManifestPayload,
   formpackId: string,

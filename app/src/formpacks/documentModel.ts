@@ -7,7 +7,7 @@ import {
   DOCTOR_LETTER_FORMPACK_ID,
   NOTFALLPASS_FORMPACK_ID,
   OFFLABEL_ANTRAG_FORMPACK_ID,
-} from './ids';
+} from './formpackIds';
 import {
   formatBirthDate,
   getArrayValue,
@@ -348,6 +348,7 @@ const FORMPACK_MODEL_BUILDERS: Partial<Record<string, ModelBuilder>> = {
 
 /**
  * Builds a document projection for exports using formpack i18n content.
+ * Falls back to the generic base projection when a formpack has no dedicated builder.
  */
 export const buildDocumentModel = (
   formpackId: string | null,

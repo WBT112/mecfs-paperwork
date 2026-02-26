@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getRepoUrl, DEFAULT_REPO_URL } from '../../../src/lib/repo';
+import { getRepoUrl, DEFAULT_REPO_URL } from '../../../src/lib/repoUrl';
 
 describe('getRepoUrl', () => {
   it('returns the default repo URL when the environment variable is not set', () => {

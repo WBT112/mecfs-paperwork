@@ -65,6 +65,9 @@ const resolveStatus = (
   };
 };
 
+/**
+ * Collects local storage diagnostics used by the Help/Diagnostics UI.
+ */
 export const checkStorageHealth = async (): Promise<StorageHealthInfo> => {
   const idbAvailable = checkIndexedDbAvailable();
   const storageEstimate = await getStorageEstimate();

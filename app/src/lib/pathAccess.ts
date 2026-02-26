@@ -117,6 +117,10 @@ function assignPathValue(
   return false;
 }
 
+/**
+ * Reads a value via dot-path traversal on objects/arrays.
+ * Returns `undefined` for invalid paths or incompatible structures.
+ */
 export const getPathValue = (source: unknown, path: string): unknown => {
   const segments = getPathSegments(path);
   if (segments.length === 0) {
@@ -137,6 +141,9 @@ export const getPathValue = (source: unknown, path: string): unknown => {
   }, source);
 };
 
+/**
+ * Mutates a target object by dot-path while blocking prototype-pollution segments.
+ */
 export const setPathValueMutableSafe = (
   target: Record<string, unknown>,
   path: string,
@@ -149,6 +156,9 @@ export const setPathValueMutableSafe = (
   assignPathValue(target, segments, 0, value);
 };
 
+/**
+ * Immutable variant of `setPathValueMutableSafe`.
+ */
 export const setPathValueImmutable = (
   source: Record<string, unknown>,
   path: string,

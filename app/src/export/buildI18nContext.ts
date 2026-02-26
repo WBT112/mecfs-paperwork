@@ -4,8 +4,9 @@ import { isRecord } from '../lib/utils';
 
 /**
  * Sets a nested value on an object based on a dotted key path.
- * Example: setNested(t, "notfallpass.section.person.title", "Person") =>
- *   t.notfallpass.section.person.title = "Person"
+ * Example:
+ * `setNested(t, "notfallpass.section.person.title", "Person")`
+ * writes the value at `t.notfallpass.section.person.title`.
  */
 export const setNested = (
   target: Record<string, unknown>,
@@ -57,9 +58,10 @@ const getNested = (
 
 export type I18nTemplateContext = {
   /**
-   * A nested translation object that can be used in docx-templates like:
-   *   {{t.notfallpass.title}}
-   *   {{t.notfallpass.section.person.title}}
+   * A nested translation object for docx-templates.
+   *
+   * Use paths such as `t.notfallpass.title` or
+   * `t.notfallpass.section.person.title` in template expressions.
    */
   t: Record<string, unknown>;
 };

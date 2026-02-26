@@ -8,10 +8,10 @@ import {
   downloadDiagnosticsBundle,
   copyDiagnosticsToClipboard,
   resetAllLocalData,
+  useStorageHealth,
 } from '../lib/diagnostics';
-import { useStorageHealth } from '../lib/diagnostics/useStorageHealth';
 import type { StorageHealthStatus } from '../lib/diagnostics';
-import type { ServiceWorkerInfo } from '../lib/diagnostics/types';
+import type { ServiceWorkerInfo } from '../lib/diagnostics';
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;

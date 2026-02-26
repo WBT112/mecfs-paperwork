@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Footer from '../../src/components/Footer';
 import { getSponsorUrl } from '../../src/lib/funding';
-import { DEFAULT_REPO_URL } from '../../src/lib/repo';
+import { DEFAULT_REPO_URL } from '../../src/lib/repoUrl';
 import { TestRouter } from '../setup/testRouter';
 
 const translations: Record<string, string> = {

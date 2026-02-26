@@ -28,7 +28,7 @@ import {
   preloadDocxAssets,
   type DocxTemplateId,
 } from '../export/docxLazy';
-import type { PdfExportControlsProps } from '../export/pdf/PdfExportControls';
+import type { PdfExportControlsProps } from '../export/pdf';
 import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
   formpackTemplates,
@@ -36,7 +36,7 @@ import {
 } from '../lib/rjsfTemplates';
 import { FormpackFieldTemplate } from '../lib/rjsfFormpackFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
-import { hasPreviewValue } from '../lib/preview';
+import { hasPreviewValue } from '../lib/previewValue';
 import { getFirstItem, isRecord } from '../lib/utils';
 import { buildRandomDummyPatch } from '../lib/devDummyFill';
 import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
@@ -44,15 +44,18 @@ import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
 import {
   FormpackLoaderError,
+  FORMPACKS_UPDATED_EVENT,
+  deriveFormpackRevisionSignature,
+  isDevUiEnabled,
+  isFormpackVisible,
   loadFormpackManifest,
   loadFormpackSchema,
   loadFormpackUiSchema,
-} from '../formpacks/loader';
-import { FORMPACKS_UPDATED_EVENT } from '../formpacks/backgroundRefresh';
-import { deriveFormpackRevisionSignature } from '../formpacks/metadata';
-import { isDevUiEnabled, isFormpackVisible } from '../formpacks/visibility';
-import type { FormpackManifest, InfoBoxConfig } from '../formpacks/types';
-import { resolveDecisionTree } from '../formpacks/decisionEngine';
+  resolveDecisionTree,
+  type FormpackId,
+  type FormpackManifest,
+  type InfoBoxConfig,
+} from '../formpacks';
 import {
   isCompletedCase0Path,
   normalizeDecisionAnswers,
@@ -61,12 +64,12 @@ import {
   DOCTOR_LETTER_FORMPACK_ID,
   NOTFALLPASS_FORMPACK_ID,
   OFFLABEL_ANTRAG_FORMPACK_ID,
-} from '../formpacks/ids';
+} from '../formpacks';
 import {
   getFieldVisibility,
   clearHiddenFields,
   type DecisionData,
-} from '../formpacks/doctorLetterVisibility';
+} from '../formpacks';
 import {
   buildOfflabelDocuments,
   type OfflabelRenderedDocument,
@@ -82,36 +85,37 @@ import {
 } from '../formpacks/offlabel-antrag/focusTarget';
 import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
 import {
+  type FormpackMetaEntry,
+  type RecordEntry,
   type StorageErrorCode,
+  deleteProfile,
+  getFormpackMeta,
+  getProfile,
+  hasUsableProfileData,
+  importRecordWithSnapshots,
+  upsertFormpackMeta,
+  upsertProfile,
   useAutosaveRecord,
   useRecords,
   useSnapshots,
-} from '../storage/hooks';
-import { getFormpackMeta, upsertFormpackMeta } from '../storage/formpackMeta';
-import { importRecordWithSnapshots } from '../storage/import';
-import {
-  deleteProfile,
-  getProfile,
-  hasUsableProfileData,
-  upsertProfile,
-} from '../storage/profiles';
-import type { FormpackMetaEntry, RecordEntry } from '../storage/types';
-import type { FormpackId } from '../formpacks/registry';
+} from '../storage';
 import {
   extractProfileData,
   applyProfileData,
 } from '../lib/profile/profileMapping';
-import { useStorageHealth } from '../lib/diagnostics/useStorageHealth';
+import { useStorageHealth } from '../lib/diagnostics';
 import FormpackIntroGate from '../components/FormpackIntroGate';
 import FormpackIntroModal from '../components/FormpackIntroModal';
-import FormpackDetailHeader from './formpack-detail/FormpackDetailHeader';
-import QuotaBanner from './formpack-detail/QuotaBanner';
-import DevMetadataPanel from './formpack-detail/DevMetadataPanel';
-import RecordsPanel from './formpack-detail/RecordsPanel';
-import ImportPanel from './formpack-detail/ImportPanel';
-import SnapshotsPanel from './formpack-detail/SnapshotsPanel';
-import FormContentSection from './formpack-detail/FormContentSection';
-import DocumentPreviewPanel from './formpack-detail/DocumentPreviewPanel';
+import {
+  DevMetadataPanel,
+  DocumentPreviewPanel,
+  FormContentSection,
+  FormpackDetailHeader,
+  ImportPanel,
+  QuotaBanner,
+  RecordsPanel,
+  SnapshotsPanel,
+} from './formpack-detail';
 import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';

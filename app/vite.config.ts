@@ -249,7 +249,7 @@ const createConfig = (mode: string): AppConfig => ({
         // Re-export barrels with no logic
         'src/lib/diagnostics/index.ts',
         // Type-only file with no runtime code
-        'src/pages/formpack-detail/types.ts',
+        'src/pages/formpack-detail/sectionTypes.ts',
       ],
       thresholds: {
         // Global coverage thresholds (CI enforced)

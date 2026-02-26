@@ -1,4 +1,4 @@
-import type { SectionWithChildrenProps } from './types';
+import type { SectionWithChildrenProps } from './sectionTypes';
 
 export default function FormContentSection({
   title,

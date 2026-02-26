@@ -648,13 +648,15 @@ const normalizeExportPayload = (
 };
 
 /**
- * Migration stub for future JSON export format changes.
+ * Migration hook for JSON export format evolution.
+ * Keep this pure so imports remain deterministic and testable.
  */
 export const migrateExport = (payload: JsonImportPayload): JsonImportPayload =>
   payload;
 
 /**
  * Parses and validates JSON import payloads for a formpack.
+ * SECURITY: returns structured error codes and avoids exposing raw payload data.
  */
 export const validateJsonImport = (
   rawJson: string,

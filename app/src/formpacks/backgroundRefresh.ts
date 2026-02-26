@@ -127,6 +127,10 @@ const refreshSingleFormpack = async (formpackId: string): Promise<boolean> => {
 
 let activeRefreshRun: Promise<FormpackRefreshResult> | null = null;
 
+/**
+ * Executes a single best-effort refresh cycle across all registered formpacks.
+ * Returns changed ids and never leaves stale in-memory refresh state behind.
+ */
 export const runFormpackBackgroundRefresh =
   async (): Promise<FormpackRefreshResult> => {
     if (activeRefreshRun) {
@@ -194,6 +198,10 @@ const runSafely = async (onUpdated?: (formpackIds: string[]) => void) => {
   }
 };
 
+/**
+ * Starts periodic background refresh and returns a stop function.
+ * Intended to run once at app startup.
+ */
 export const startFormpackBackgroundRefresh = (
   options: FormpackRefreshOptions = {},
 ): (() => void) => {

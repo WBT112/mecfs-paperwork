@@ -17,16 +17,6 @@ vi.mock('../../src/lib/version', () => ({
 
 const mockDownloadDiagnosticsBundle = vi.fn();
 const mockCopyDiagnosticsToClipboard = vi.fn();
-
-vi.mock('../../src/lib/diagnostics', () => ({
-  downloadDiagnosticsBundle: (...args: unknown[]) =>
-    mockDownloadDiagnosticsBundle(...args) as Promise<void>,
-  copyDiagnosticsToClipboard: (...args: unknown[]) =>
-    mockCopyDiagnosticsToClipboard(...args) as Promise<boolean>,
-  resetAllLocalData: (...args: unknown[]) =>
-    mockResetAllLocalData(...args) as Promise<void>,
-}));
-
 const mockResetAllLocalData = vi.fn();
 
 const mockRefreshHealth = vi.fn();
@@ -54,7 +44,13 @@ let mockHealthState: {
   refresh: mockRefreshHealth,
 };
 
-vi.mock('../../src/lib/diagnostics/useStorageHealth', () => ({
+vi.mock('../../src/lib/diagnostics', () => ({
+  downloadDiagnosticsBundle: (...args: unknown[]) =>
+    mockDownloadDiagnosticsBundle(...args) as Promise<void>,
+  copyDiagnosticsToClipboard: (...args: unknown[]) =>
+    mockCopyDiagnosticsToClipboard(...args) as Promise<boolean>,
+  resetAllLocalData: (...args: unknown[]) =>
+    mockResetAllLocalData(...args) as Promise<void>,
   useStorageHealth: () => mockHealthState,
 }));
 

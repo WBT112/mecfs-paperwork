@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ReactElement } from 'react';
 import type { DocumentModel } from '../../../src/export/pdf/types';
-import { getPdfExportConfig } from '../../../src/export/pdf/registry';
+import { getPdfExportConfig } from '../../../src/export/pdf/pdfExportRegistry';
 
 describe('getPdfExportConfig', () => {
   it('returns null for unknown formpacks', async () => {

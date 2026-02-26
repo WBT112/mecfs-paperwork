@@ -295,7 +295,7 @@ vi.mock('../../src/import/json', () => ({
   validateJsonImport: importState.validateJsonImport,
 }));
 
-vi.mock('../../src/storage/import', () => ({
+vi.mock('../../src/storage/importRecord', () => ({
   importRecordWithSnapshots: storageImportState.importRecordWithSnapshots,
 }));
 

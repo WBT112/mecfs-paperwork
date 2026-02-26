@@ -4,7 +4,7 @@ import { isRecord } from './utils';
 import { InfoBox } from '../components/InfoBox';
 import { getInfoBoxesForField } from '../formpacks/formpackInfoBox';
 import type { InfoBoxConfig } from '../formpacks/types';
-import { OFFLABEL_ANTRAG_FORMPACK_ID } from '../formpacks/ids';
+import { OFFLABEL_ANTRAG_FORMPACK_ID } from '../formpacks/formpackIds';
 
 type FormpackFieldTemplateProps = Omit<FieldTemplateProps, 'fieldPathId'> & {
   fieldPathId?: FieldTemplateProps['fieldPathId'];

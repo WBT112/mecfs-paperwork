@@ -29,6 +29,15 @@ npm run formpack:validate
 npm run build
 ```
 
+## TSDoc rules (public API)
+- Use TSDoc (`/** ... */`) for exported functions, exported hooks, exported classes, and exported public types in `app/src/**`.
+- Include at least:
+	- `@param` for each parameter
+	- `@returns` for non-void return values
+	- `@throws` when domain-relevant errors can be raised
+- Use `@remarks` for important invariants (privacy, offline assumptions, schema compatibility, migrations).
+- TSDoc syntax is linted via ESLint (`tsdoc/syntax`) and must pass in CI.
+
 If E2E tests fail due to missing browsers:
 ```bash
 npx playwright install

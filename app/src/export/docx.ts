@@ -1,6 +1,6 @@
 /**
- * @file Contains the core logic for exporting data to DOCX format.
- * It handles DOCX template loading, data mapping, and report generation.
+ * Contains the core logic for exporting data to DOCX format.
+ * Handles DOCX template loading, data mapping, and report generation.
  */
 
 import { createReport } from 'docx-templates/lib/browser.js';
@@ -37,7 +37,7 @@ import {
   DOCTOR_LETTER_FORMPACK_ID,
   NOTFALLPASS_FORMPACK_ID,
   OFFLABEL_ANTRAG_FORMPACK_ID,
-} from '../formpacks/ids';
+} from '../formpacks/formpackIds';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 export type DocxTemplateId = 'a4' | 'wallet';
@@ -412,6 +412,10 @@ const appendOfflabelLiabilityFallbackToPart2 = (
   return clonedDocumentData;
 };
 
+/**
+ * Applies locale-specific fallback text for fields that must not remain empty in exports.
+ * Invariant: user-provided values always win; defaults only fill missing or blank fields.
+ */
 export const applyDocxExportDefaults = (
   context: DocxTemplateContext,
   formpackId: string,
@@ -501,6 +505,9 @@ export const applyDocxExportDefaults = (
   return normalized;
 };
 
+/**
+ * Guarantees a stable `exportedAtIso` value in the template context.
+ */
 export const ensureExportedAtIso = (
   context: DocxTemplateContext,
   exportedAt: Date = new Date(),

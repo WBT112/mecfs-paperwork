@@ -6,7 +6,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FieldTemplateProps, RJSFSchema } from '@rjsf/utils';
 import { FormpackFieldTemplate } from '../../src/lib/rjsfFormpackFieldTemplate';
-import { OFFLABEL_ANTRAG_FORMPACK_ID } from '../../src/formpacks/ids';
+import { OFFLABEL_ANTRAG_FORMPACK_ID } from '../../src/formpacks/formpackIds';
 import type { InfoBoxConfig } from '../../src/formpacks/types';
 
 // Mock InfoBox component
