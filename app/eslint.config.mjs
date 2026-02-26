@@ -142,10 +142,7 @@ export default [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      'no-duplicate-imports': [
-        'error',
-        { allowSeparateTypeImports: true },
-      ],
+      'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
 
       ...reactHooks.configs.recommended.rules,
 
@@ -205,12 +202,14 @@ export default [
       'unicorn/prefer-at': 'error',
       'unicorn/prefer-code-point': 'error',
       'unicorn/prefer-array-index-of': 'error',
+      'unicorn/prefer-string-replace-all': 'error',
       'unicorn/no-array-callback-reference': 'error',
       'unicorn/no-thenable': 'error',
       'unicorn/no-typeof-undefined': 'error',
       'unicorn/no-negated-condition': 'error',
       'unicorn/prefer-single-call': 'error',
       'unicorn/prefer-optional-catch-binding': 'error',
+      'prefer-object-has-own': 'error',
       'no-restricted-syntax': [
         'error',
         {

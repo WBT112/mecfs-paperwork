@@ -266,6 +266,79 @@ const hasLetterLayout = (formpackId: string | null): boolean =>
   formpackId === DOCTOR_LETTER_FORMPACK_ID ||
   formpackId === OFFLABEL_ANTRAG_FORMPACK_ID;
 
+const resolveImportErrorMessage = (
+  error: { code: string; message?: string },
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string => {
+  switch (error.code) {
+    case 'invalid_json':
+      return error.message
+        ? t('importInvalidJsonWithDetails', { message: error.message })
+        : t('importInvalidJson');
+    case 'unknown_formpack':
+      return t('importUnknownFormpack');
+    case 'schema_mismatch':
+      return t('importSchemaMismatch');
+    case 'formpack_mismatch':
+      return t('importFormpackMismatch');
+    case 'invalid_revisions':
+      return t('importInvalidRevisions');
+    case 'unsupported_locale':
+      return t('importUnsupportedLocale');
+    default:
+      return t('importInvalidPayload');
+  }
+};
+
+const resolveJsonEncryptionErrorMessage = (
+  error: unknown,
+  mode: 'export' | 'import',
+  t: (key: string) => string,
+): string => {
+  if (isJsonEncryptionRuntimeError(error)) {
+    if (error.code === 'crypto_unsupported') {
+      return t('jsonEncryptionUnsupported');
+    }
+    if (error.code === 'decrypt_failed') {
+      return t('importPasswordInvalid');
+    }
+    return t('importEncryptedPayloadInvalid');
+  }
+
+  return mode === 'export'
+    ? t('formpackJsonExportError')
+    : t('importInvalidJson');
+};
+
+const resolveActionSourceElement = (
+  target: EventTarget | null,
+): HTMLElement | null => {
+  if (target instanceof HTMLElement) {
+    return target;
+  }
+  if (target instanceof Node) {
+    const parentElement = target.parentElement;
+    return parentElement instanceof HTMLElement ? parentElement : null;
+  }
+  return null;
+};
+
+const getActionButtonDataAction = (
+  target: EventTarget | null,
+): string | null => {
+  const element = resolveActionSourceElement(target);
+  if (!element) {
+    return null;
+  }
+
+  const actionButton = element.closest('button.app__button');
+  if (!(actionButton instanceof HTMLButtonElement)) {
+    return null;
+  }
+
+  return actionButton.dataset.action ?? '';
+};
+
 const showDevMedicationOptions = isFormpackVisible({ visibility: 'dev' });
 
 // Helper: Apply field visibility rules to decision tree UI schema
@@ -977,6 +1050,46 @@ function renderPreviewArray(
   );
 }
 
+export const __formpackDetailTestUtils = {
+  applyFieldVisibility,
+  buildDecisionPreviewContext,
+  buildErrorMessage,
+  buildFieldPath,
+  buildOfflabelFormSchema,
+  buildPreviewEntry,
+  buildPreviewRow,
+  getDecisionParagraphsForEntry,
+  getDecisionVisibleKeys,
+  getItemSchema,
+  getItemUiSchema,
+  getLabel,
+  getOfflabelPreviewBlockKey,
+  getOrderedKeys,
+  getUiSchemaNode,
+  hasDecisionCaseText,
+  hasLetterLayout,
+  hasSameStringArray,
+  isDecisionCaseParagraphsPath,
+  isDecisionCaseTextPath,
+  isJsonEncryptionRuntimeError,
+  loadFormpackAssets,
+  mergeDummyPatch,
+  normalizeOfflabelRequest,
+  resolveImportErrorMessage,
+  resolveJsonEncryptionErrorMessage,
+  normalizeParagraphs,
+  getActionButtonDataAction,
+  renderOfflabelPreviewBlock,
+  renderOfflabelPreviewDocument,
+  renderParagraphs,
+  renderPreviewArray,
+  renderPreviewObject,
+  resolveDecisionCaseTextValue,
+  shouldHideCase0Result,
+  toStringArray,
+  tryParseEncryptedEnvelope,
+};
+
 /**
  * Shows formpack metadata with translations loaded for the active locale.
  */
@@ -1507,49 +1620,6 @@ export default function FormpackDetailPage() {
   const storageBlocked =
     storageError === 'unavailable' || storageError === 'locked';
 
-  const buildImportErrorMessage = useCallback(
-    (error: { code: string; message?: string }) => {
-      switch (error.code) {
-        case 'invalid_json':
-          return error.message
-            ? t('importInvalidJsonWithDetails', { message: error.message })
-            : t('importInvalidJson');
-        case 'unknown_formpack':
-          return t('importUnknownFormpack');
-        case 'schema_mismatch':
-          return t('importSchemaMismatch');
-        case 'formpack_mismatch':
-          return t('importFormpackMismatch');
-        case 'invalid_revisions':
-          return t('importInvalidRevisions');
-        case 'unsupported_locale':
-          return t('importUnsupportedLocale');
-        default:
-          return t('importInvalidPayload');
-      }
-    },
-    [t],
-  );
-
-  const buildJsonEncryptionErrorMessage = useCallback(
-    (error: unknown, mode: 'export' | 'import') => {
-      if (isJsonEncryptionRuntimeError(error)) {
-        if (error.code === 'crypto_unsupported') {
-          return t('jsonEncryptionUnsupported');
-        }
-        if (error.code === 'decrypt_failed') {
-          return t('importPasswordInvalid');
-        }
-        return t('importEncryptedPayloadInvalid');
-      }
-
-      return mode === 'export'
-        ? t('formpackJsonExportError')
-        : t('importInvalidJson');
-    },
-    [t],
-  );
-
   useEffect(() => {
     if (!activeRecord && importMode === 'overwrite') {
       setImportMode('new');
@@ -2077,7 +2147,7 @@ export default function FormpackDetailPage() {
       );
 
       if (result.error) {
-        setImportError(buildImportErrorMessage(result.error));
+        setImportError(resolveImportErrorMessage(result.error, t));
         return;
       }
 
@@ -2110,7 +2180,7 @@ export default function FormpackDetailPage() {
       }
     } catch (error) {
       if (isJsonEncryptionRuntimeError(error)) {
-        setImportError(buildJsonEncryptionErrorMessage(error, 'import'));
+        setImportError(resolveJsonEncryptionErrorMessage(error, 'import', t));
         return;
       }
 
@@ -2119,8 +2189,6 @@ export default function FormpackDetailPage() {
       setIsImporting(false);
     }
   }, [
-    buildJsonEncryptionErrorMessage,
-    buildImportErrorMessage,
     importIncludeRevisions,
     importJson,
     importMode,
@@ -2499,11 +2567,10 @@ export default function FormpackDetailPage() {
       );
       downloadJsonExport(encryptedPayload, filename);
     } catch (error) {
-      setJsonExportError(buildJsonEncryptionErrorMessage(error, 'export'));
+      setJsonExportError(resolveJsonEncryptionErrorMessage(error, 'export', t));
     }
   }, [
     activeRecord,
-    buildJsonEncryptionErrorMessage,
     encryptJsonExport,
     formData,
     jsonExportPassword,
@@ -2599,17 +2666,10 @@ export default function FormpackDetailPage() {
 
   const handleActionClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) {
+      const action = getActionButtonDataAction(event.target);
+      if (action === null) {
         return;
       }
-
-      const actionButton = target.closest('button.app__button');
-      if (!(actionButton instanceof HTMLButtonElement)) {
-        return;
-      }
-
-      const { action } = actionButton.dataset;
       if (action === 'docx-export') {
         clearJsonExportError();
         clearImportSuccess();

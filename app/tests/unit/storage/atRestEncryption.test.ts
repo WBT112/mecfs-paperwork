@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearStorageEncryptionKeyCookie,
   decodeStoredData,
@@ -10,6 +10,10 @@ import {
 describe('storage at-rest encryption', () => {
   beforeEach(() => {
     clearStorageEncryptionKeyCookie();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('encrypts and decrypts payloads with the cookie-backed key', async () => {
@@ -91,6 +95,70 @@ describe('storage at-rest encryption', () => {
       );
     } finally {
       vi.stubGlobal('crypto', originalCrypto);
+    }
+  });
+
+  it('uses the Buffer fallback when btoa/atob are unavailable', async () => {
+    vi.stubGlobal('btoa', undefined);
+    vi.stubGlobal('atob', undefined);
+
+    const encrypted = await encryptStorageData({ fallback: 'buffer' });
+    const decoded = await decodeStoredData(encrypted);
+
+    expect(decoded.data).toEqual({ fallback: 'buffer' });
+    expect(decoded.shouldReencrypt).toBe(false);
+  });
+
+  it('throws missing_key when cookies cannot be persisted in non-document environments', async () => {
+    vi.stubGlobal('document', undefined);
+
+    await expect(encryptStorageData({ test: true })).rejects.toMatchObject({
+      code: 'missing_key',
+    });
+  });
+
+  it('throws when neither btoa nor Buffer is available for encoding', async () => {
+    const originalBtoa = globalThis.btoa;
+    const originalBuffer = globalThis.Buffer;
+    vi.stubGlobal('btoa', undefined);
+    Object.defineProperty(globalThis, 'Buffer', {
+      value: undefined,
+      configurable: true,
+    });
+
+    try {
+      await expect(encryptStorageData({ a: 1 })).rejects.toThrow(
+        'Base64 encoding is not supported in this environment.',
+      );
+    } finally {
+      Object.defineProperty(globalThis, 'Buffer', {
+        value: originalBuffer,
+        configurable: true,
+      });
+      vi.stubGlobal('btoa', originalBtoa);
+    }
+  });
+
+  it('maps unsupported decoding environments to missing_key when cookie parsing is impossible', async () => {
+    const encrypted = await encryptStorageData({ secret: 'value' });
+    const originalAtob = globalThis.atob;
+    const originalBuffer = globalThis.Buffer;
+    vi.stubGlobal('atob', undefined);
+    Object.defineProperty(globalThis, 'Buffer', {
+      value: undefined,
+      configurable: true,
+    });
+
+    try {
+      await expect(decodeStoredData(encrypted)).rejects.toMatchObject({
+        code: 'missing_key',
+      });
+    } finally {
+      Object.defineProperty(globalThis, 'Buffer', {
+        value: originalBuffer,
+        configurable: true,
+      });
+      vi.stubGlobal('atob', originalAtob);
     }
   });
 

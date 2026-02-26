@@ -82,6 +82,29 @@ const getEncryptionDataStatus = (status: EncryptionStatus): string => {
   }
 };
 
+const getServiceWorkerStateLabel = (
+  info: ServiceWorkerInfo,
+  t: (key: string) => string,
+): string => {
+  if (!info.registered) {
+    return t('swStatusNotRegistered');
+  }
+
+  const labels: Record<string, string> = {
+    activated: t('swStatusStateActivated'),
+    activating: t('swStatusStateActivating'),
+    installed: t('swStatusStateInstalled'),
+    installing: t('swStatusStateInstalling'),
+    redundant: t('swStatusStateRedundant'),
+  };
+
+  if (!info.state) {
+    return t('swStatusRegistered');
+  }
+
+  return labels[info.state] ?? info.state;
+};
+
 export default function HelpPage() {
   const { t, i18n } = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -220,9 +243,7 @@ export default function HelpPage() {
     } as const
   )[encryptionAtRest.keyCookieContext];
 
-  const swStateLabel = swInfo.registered
-    ? (swInfo.state ?? t('swStatusRegistered'))
-    : t('swStatusNotRegistered');
+  const swStateLabel = getServiceWorkerStateLabel(swInfo, t);
 
   const versionCopyLabel = copied
     ? t('versionInfoCopied')

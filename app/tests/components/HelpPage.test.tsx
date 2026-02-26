@@ -74,6 +74,7 @@ const TID_STORAGE_HEALTH_ENCRYPTION = 'storage-health-encryption';
 const TID_STORAGE_HEALTH_KEY_COOKIE = 'storage-health-key-cookie';
 const TID_STORAGE_HEALTH_COOKIE_SECURITY = 'storage-health-cookie-security';
 const TID_RESET_ALL_DATA = 'reset-all-data';
+const TID_SW_STATUS_STATE = 'sw-status-state';
 const ATTR_DATA_STATUS = 'data-status';
 
 describe('HelpPage', () => {
@@ -106,6 +107,10 @@ describe('HelpPage', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
       value: undefined,
     });
@@ -282,6 +287,47 @@ describe('HelpPage', () => {
       await waitFor(() => {
         expect(button).not.toBeDisabled();
       });
+    });
+  });
+
+  describe('service worker status display', () => {
+    it('maps known worker states to localized labels', async () => {
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          getRegistration: vi.fn().mockResolvedValue({
+            scope: '/app/',
+            active: { state: 'activated' },
+            waiting: null,
+            installing: null,
+          }),
+        },
+      });
+
+      render(<HelpPage />);
+
+      const stateEl = await screen.findByTestId(TID_SW_STATUS_STATE);
+      expect(stateEl).toHaveTextContent('swStatusStateActivated');
+      expect(stateEl).not.toHaveTextContent('activated');
+    });
+
+    it('falls back to raw state for unknown worker states', async () => {
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          getRegistration: vi.fn().mockResolvedValue({
+            scope: '/app/',
+            active: { state: 'custom-state' },
+            waiting: null,
+            installing: null,
+          }),
+        },
+      });
+
+      render(<HelpPage />);
+
+      const stateEl = await screen.findByTestId(TID_SW_STATUS_STATE);
+      expect(stateEl).toHaveTextContent('custom-state');
     });
   });
 

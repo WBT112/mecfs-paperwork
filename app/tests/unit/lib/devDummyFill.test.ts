@@ -275,4 +275,76 @@ describe('buildRandomDummyPatch', () => {
       true,
     );
   });
+
+  it('covers field-specific pools for contact and medication-like paths', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        street: { type: 'string' },
+        city: { type: 'string' },
+        phone: { type: 'string' },
+        email: { type: 'string' },
+        insuranceNumber: { type: 'string' },
+        practice: { type: 'string' },
+        insurer: {
+          type: 'object',
+          properties: {
+            name: { type: 'string' },
+          },
+        },
+        medicationName: { type: 'string' },
+        symptomDetails: { type: 'string' },
+        fallbackName: { type: 'string' },
+      },
+    } as RJSFSchema;
+
+    const patch = buildRandomDummyPatch(schema, {} as UiSchema, {
+      rng: () => 0.2,
+    });
+
+    expect(typeof patch.street).toBe('string');
+    expect(typeof patch.city).toBe('string');
+    expect(typeof patch.phone).toBe('string');
+    expect(typeof patch.email).toBe('string');
+    expect(typeof patch.insuranceNumber).toBe('string');
+    expect(typeof patch.practice).toBe('string');
+    expect((patch.insurer as Record<string, unknown>).name).toEqual(
+      expect.any(String),
+    );
+    expect(typeof patch.medicationName).toBe('string');
+    expect(typeof patch.symptomDetails).toBe('string');
+    expect(typeof patch.fallbackName).toBe('string');
+  });
+
+  it('generates format=email values from the dedicated email pool', () => {
+    const patch = buildRandomDummyPatch(
+      {
+        type: 'object',
+        properties: {
+          contactEmail: { type: 'string', format: 'email' },
+        },
+      } as RJSFSchema,
+      {} as UiSchema,
+      { rng: () => 0.4 },
+    );
+
+    expect(String(patch.contactEmail)).toContain('@');
+  });
+
+  it('ignores invalid object-property schema entries and unknown schema types', () => {
+    const patch = buildRandomDummyPatch(
+      {
+        type: 'object',
+        properties: {
+          invalidNode: 'string' as unknown as RJSFSchema,
+          nestedObject: { type: 'object' },
+          unknownType: { type: ['null'] },
+        },
+      } as RJSFSchema,
+      {} as UiSchema,
+      { rng: () => 0.25 },
+    );
+
+    expect(patch).toEqual({});
+  });
 });

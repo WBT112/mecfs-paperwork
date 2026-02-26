@@ -13,6 +13,10 @@ import {
   getSnapshot,
   listSnapshots,
 } from '../../../src/storage/snapshots';
+import {
+  decodeStoredData,
+  encryptStorageData,
+} from '../../../src/storage/atRestEncryption';
 import { openStorage } from '../../../src/storage/db';
 
 const RECORD_ID = 'record-1';
@@ -24,7 +28,10 @@ vi.mock('../../../src/storage/db', () => ({
 }));
 
 vi.mock('../../../src/storage/atRestEncryption', () => ({
-  encryptStorageData: vi.fn(async (data: Record<string, unknown>) => data),
+  encryptStorageData: vi.fn(
+    async (data: Record<string, unknown>) =>
+      data as unknown as Awaited<ReturnType<typeof encryptStorageData>>,
+  ),
   decodeStoredData: vi.fn(async (value: unknown) => ({
     data: value as Record<string, unknown>,
     shouldReencrypt: false,
@@ -49,6 +56,7 @@ describe('snapshots storage', () => {
     add?: Mock;
     get?: Mock;
     getAllFromIndex?: Mock;
+    put: Mock;
     transaction?: Mock;
   };
 
@@ -78,9 +86,20 @@ describe('snapshots storage', () => {
       add: vi.fn(),
       get: vi.fn(),
       getAllFromIndex: vi.fn(),
+      put: vi.fn(),
       transaction: vi.fn(() => transaction),
     };
     vi.mocked(openStorage).mockResolvedValue(db as any);
+    vi.mocked(decodeStoredData).mockReset();
+    vi.mocked(decodeStoredData).mockImplementation(async (value: unknown) => ({
+      data: value as Record<string, unknown>,
+      shouldReencrypt: false,
+    }));
+    vi.mocked(encryptStorageData).mockReset();
+    vi.mocked(encryptStorageData).mockImplementation(
+      async (data: Record<string, unknown>) =>
+        data as unknown as Awaited<ReturnType<typeof encryptStorageData>>,
+    );
   });
 
   afterEach(() => {
@@ -170,6 +189,37 @@ describe('snapshots storage', () => {
     expect(result.map((entry) => entry.id)).toEqual(['two', 'three', 'one']);
   });
 
+  it('re-encrypts migrated snapshots in list mode and swallows background errors', async () => {
+    const snapshots = [
+      {
+        id: 'one',
+        recordId: RECORD_ID,
+        data: { legacy: true },
+        createdAt: '2024-01-01T00:00:00.000Z',
+      },
+    ];
+
+    db.getAllFromIndex?.mockResolvedValue(snapshots);
+    vi.mocked(decodeStoredData).mockResolvedValueOnce({
+      data: { migrated: true },
+      shouldReencrypt: true,
+    });
+    db.put.mockRejectedValueOnce(new Error('ignore background write'));
+
+    const result = await listSnapshots(RECORD_ID);
+
+    expect(result).toEqual([
+      {
+        ...snapshots[0],
+        data: { migrated: true },
+      },
+    ]);
+    expect(db.put).toHaveBeenCalledWith('snapshots', {
+      ...snapshots[0],
+      data: { migrated: true },
+    });
+  });
+
   it('returns null when a snapshot is missing', async () => {
     db.get?.mockResolvedValue(undefined);
 
@@ -192,6 +242,32 @@ describe('snapshots storage', () => {
 
     expect(db.get).toHaveBeenCalledWith('snapshots', SNAPSHOT_ID);
     expect(result).toEqual(snapshot);
+  });
+
+  it('re-encrypts migrated snapshot payloads when loading by id', async () => {
+    const snapshot = {
+      id: SNAPSHOT_ID,
+      recordId: RECORD_ID,
+      data: { legacy: true },
+      createdAt: FIXED_NOW_ISO,
+    };
+    db.get?.mockResolvedValue(snapshot);
+    vi.mocked(decodeStoredData).mockResolvedValueOnce({
+      data: { migrated: true },
+      shouldReencrypt: true,
+    });
+    db.put.mockRejectedValueOnce(new Error('ignore background write'));
+
+    const result = await getSnapshot(SNAPSHOT_ID);
+
+    expect(result).toEqual({
+      ...snapshot,
+      data: { migrated: true },
+    });
+    expect(db.put).toHaveBeenCalledWith('snapshots', {
+      ...snapshot,
+      data: { migrated: true },
+    });
   });
 
   it('clears snapshots for the record and waits for the transaction', async () => {

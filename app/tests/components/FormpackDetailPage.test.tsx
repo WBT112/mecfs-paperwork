@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -159,6 +160,10 @@ const offlabelPreviewState = vi.hoisted(() => ({
     >(),
 }));
 
+const offlabelFocusState = vi.hoisted(() => ({
+  resolveOfflabelFocusTarget: vi.fn(),
+}));
+
 const pdfExportControlsState = vi.hoisted(() => ({
   props: null as {
     onSuccess?: () => void;
@@ -186,6 +191,19 @@ const profileMappingState = vi.hoisted(() => ({
       profileData: Record<string, unknown>,
     ) => ({ ...formData, ...profileData }),
   ),
+}));
+
+const autosaveState = vi.hoisted(() => ({
+  triggerOnSaved: false,
+  onSaved: null as ((record: RecordEntry) => void) | null,
+  onError: null as ((error: unknown) => void) | null,
+}));
+
+const diagnosticsState = vi.hoisted(() => ({
+  health: {
+    status: 'ok',
+  } as { status: 'ok' | 'warning' | 'error' },
+  resetAllLocalData: vi.fn().mockResolvedValue(undefined),
 }));
 
 const ARIA_EXPANDED = 'aria-expanded';
@@ -234,6 +252,7 @@ const IMPORT_ACTION_LABEL = 'formpackImportAction';
 const IMPORT_SUCCESS_LABEL = 'importSuccess';
 const STORAGE_UNAVAILABLE_LABEL = 'storageUnavailable';
 const STORAGE_LOCKED_LABEL = 'storageLocked';
+const PROFILE_SAVE_STORAGE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const PDF_EXPORT_CONTROLS_LABEL = 'pdf-export-controls';
 const PDF_SUCCESS_BUTTON_LABEL = 'pdf-success';
 const PDF_ERROR_BUTTON_LABEL = 'pdf-error';
@@ -310,10 +329,15 @@ vi.mock('@rjsf/core', () => ({
     children,
     formData,
     onChange,
+    onSubmit,
   }: {
     children?: React.ReactNode;
     formData?: Record<string, unknown>;
     onChange?: (event: { formData: Record<string, unknown> }) => void;
+    onSubmit?: (
+      event: { formData: Record<string, unknown> },
+      submitEvent: { preventDefault: () => void },
+    ) => void;
   }) => (
     <div>
       <div data-testid="form-data">{JSON.stringify(formData)}</div>
@@ -323,6 +347,35 @@ vi.mock('@rjsf/core', () => ({
       >
         trigger-change
       </button>
+      <button
+        type="button"
+        onClick={() =>
+          onChange?.({
+            formData: {
+              request: {
+                drug: 'other',
+                selectedIndicationKey: 'legacy-indication',
+              },
+            },
+          })
+        }
+      >
+        trigger-offlabel-change
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onSubmit?.(
+            { formData: { submitted: true } },
+            { preventDefault: () => undefined },
+          )
+        }
+      >
+        trigger-submit
+      </button>
+      <input id="root_request_selectedIndicationKey" />
+      <input id="root_request_otherDrugName" />
+      <input id="root_request_indicationFullyMetOrDoctorConfirms_0" />
       {children}
     </div>
   ),
@@ -423,6 +476,17 @@ vi.mock(
   }),
 );
 
+vi.mock('../../src/formpacks/offlabel-antrag/focusTarget', () => ({
+  resolveOfflabelFocusTarget: offlabelFocusState.resolveOfflabelFocusTarget,
+}));
+
+vi.mock('../../src/lib/diagnostics', () => ({
+  useStorageHealth: () => ({
+    health: diagnosticsState.health,
+  }),
+  resetAllLocalData: diagnosticsState.resetAllLocalData,
+}));
+
 vi.mock('../../src/storage/hooks', () => ({
   useRecords: () => ({
     records: storageState.records,
@@ -446,9 +510,22 @@ vi.mock('../../src/storage/hooks', () => ({
     clearSnapshots: storageState.clearSnapshots,
     refresh: storageState.refreshSnapshots,
   }),
-  useAutosaveRecord: () => ({
-    markAsSaved: storageState.markAsSaved,
-  }),
+  useAutosaveRecord: (
+    _recordId: string | null,
+    _formData: Record<string, unknown>,
+    _locale: 'de' | 'en',
+    _activeData: Record<string, unknown> | null,
+    options?: {
+      onSaved?: (record: RecordEntry) => void;
+      onError?: (error: unknown) => void;
+    },
+  ) => {
+    autosaveState.onSaved = options?.onSaved ?? null;
+    autosaveState.onError = options?.onError ?? null;
+    return {
+      markAsSaved: storageState.markAsSaved,
+    };
+  },
 }));
 
 const mockT = (key: string, options?: { ns?: string }) => {
@@ -513,6 +590,8 @@ describe('FormpackDetailPage', () => {
     jsonExportState.downloadJsonExport.mockReset();
     offlabelPreviewState.buildDocuments.mockReset();
     offlabelPreviewState.buildDocuments.mockReturnValue([]);
+    offlabelFocusState.resolveOfflabelFocusTarget.mockReset();
+    offlabelFocusState.resolveOfflabelFocusTarget.mockReturnValue(null);
     pdfExportControlsState.props = null;
     profileState.getProfile.mockReset();
     profileState.upsertProfile.mockReset();
@@ -520,6 +599,12 @@ describe('FormpackDetailPage', () => {
     profileState.hasUsableProfileData.mockClear();
     profileMappingState.extractProfileData.mockClear();
     profileMappingState.applyProfileData.mockClear();
+    autosaveState.triggerOnSaved = false;
+    autosaveState.onSaved = null;
+    autosaveState.onError = null;
+    diagnosticsState.health.status = 'ok';
+    diagnosticsState.resetAllLocalData.mockReset();
+    diagnosticsState.resetAllLocalData.mockResolvedValue(undefined);
     visibilityState.isDevUiEnabled = true;
     formpackState.manifest = {
       id: record.formpackId,
@@ -1191,18 +1276,12 @@ describe('FormpackDetailPage', () => {
     });
 
     await userEvent.click(checkbox);
-    expect(setItemSpy).toHaveBeenCalledWith(
-      'mecfs-paperwork.profile.saveEnabled',
-      'false',
-    );
+    expect(setItemSpy).toHaveBeenCalledWith(PROFILE_SAVE_STORAGE_KEY, 'false');
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(profileState.deleteProfile).not.toHaveBeenCalled();
 
     await userEvent.click(checkbox);
-    expect(setItemSpy).toHaveBeenCalledWith(
-      'mecfs-paperwork.profile.saveEnabled',
-      'true',
-    );
+    expect(setItemSpy).toHaveBeenCalledWith(PROFILE_SAVE_STORAGE_KEY, 'true');
 
     confirmSpy.mockRestore();
     setItemSpy.mockRestore();
@@ -1577,6 +1656,258 @@ describe('FormpackDetailPage', () => {
     expect(
       await screen.findByRole('button', { name: 'resetAllButton' }),
     ).toBeInTheDocument();
+  });
+
+  it('executes full storage reset when recovery is confirmed', async () => {
+    storageState.recordsError = 'locked';
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    try {
+      render(
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </TestRouter>,
+      );
+
+      await openSection(sectionLabels.records);
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'resetAllButton' }),
+      );
+
+      await waitFor(() =>
+        expect(diagnosticsState.resetAllLocalData).toHaveBeenCalledTimes(1),
+      );
+      expect(confirmSpy).toHaveBeenCalledWith('resetAllConfirm');
+    } finally {
+      confirmSpy.mockRestore();
+    }
+  });
+
+  it('does not reset storage when recovery confirmation is denied', async () => {
+    storageState.recordsError = 'locked';
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    try {
+      render(
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </TestRouter>,
+      );
+
+      await openSection(sectionLabels.records);
+      await userEvent.click(
+        await screen.findByRole('button', { name: 'resetAllButton' }),
+      );
+
+      expect(diagnosticsState.resetAllLocalData).not.toHaveBeenCalled();
+    } finally {
+      confirmSpy.mockRestore();
+    }
+  });
+
+  it('continues rendering when localStorage access throws', async () => {
+    const getItemSpy = vi
+      .spyOn(Storage.prototype, 'getItem')
+      .mockImplementation(() => {
+        throw new Error('blocked');
+      });
+
+    try {
+      render(
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </TestRouter>,
+      );
+
+      expect(
+        await screen.findByText('formpackFormHeading'),
+      ).toBeInTheDocument();
+    } finally {
+      getItemSpy.mockRestore();
+    }
+  });
+
+  it('applies autosave onSaved callback and persists profile snippets', async () => {
+    profileState.upsertProfile.mockResolvedValue({
+      data: { firstName: 'Ada' },
+    });
+    window.localStorage.setItem(PROFILE_SAVE_STORAGE_KEY, 'true');
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await screen.findByText('formpackFormHeading');
+
+    await act(async () => {
+      autosaveState.onSaved?.({
+        ...storageState.record,
+        data: { firstName: 'Ada' },
+      });
+    });
+
+    await waitFor(() =>
+      expect(profileState.upsertProfile).toHaveBeenCalledWith(
+        'default',
+        expect.any(Object),
+      ),
+    );
+  });
+
+  it('submits form data via onSubmit handler', async () => {
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(await screen.findByText('trigger-submit'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        JSON.stringify({ submitted: true }),
+      ),
+    );
+  });
+
+  it('normalizes offlabel request changes and focuses the configured target', async () => {
+    const offlabelRoute = '/formpacks/offlabel-antrag';
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: 'offlabel-antrag',
+      titleKey: 'offlabelTitle',
+      descriptionKey: 'offlabelDescription',
+      exports: ['docx'],
+    } as FormpackManifest;
+    formpackState.schema = {
+      type: 'object',
+      properties: {
+        request: {
+          type: 'object',
+          properties: {
+            drug: { type: 'string', enum: ['other'] },
+            selectedIndicationKey: {
+              type: 'string',
+              enum: ['legacy-indication'],
+            },
+          },
+        },
+      },
+    } as RJSFSchema;
+    formpackState.uiSchema = {
+      request: {
+        drug: {},
+        selectedIndicationKey: {},
+      },
+    } as UiSchema;
+    offlabelFocusState.resolveOfflabelFocusTarget.mockReturnValue(
+      'request.selectedIndicationKey',
+    );
+
+    render(
+      <TestRouter initialEntries={[offlabelRoute]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(await screen.findByText('trigger-offlabel-change'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        JSON.stringify({ request: { drug: 'other' } }),
+      ),
+    );
+    await waitFor(() =>
+      expect(document.activeElement?.id).toBe(
+        'root_request_selectedIndicationKey',
+      ),
+    );
+  });
+
+  it('refreshes formpack metadata when update events include the current id', async () => {
+    formpackMetaState.getFormpackMeta
+      .mockResolvedValueOnce({
+        id: record.formpackId,
+        versionOrHash: '1.0.0',
+        version: '1.0.0',
+        hash: 'abc',
+        updatedAt: '2026-02-24T09:03:00.000Z',
+      })
+      .mockResolvedValueOnce({
+        id: record.formpackId,
+        versionOrHash: '1.0.0',
+        version: '1.0.0',
+        hash: 'abc',
+        updatedAt: '2026-02-24T10:03:00.000Z',
+      });
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await screen.findByText('formpackFormHeading');
+
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent('formpacks:updated', {
+          detail: { formpackIds: [record.formpackId] },
+        }),
+      );
+    });
+
+    await waitFor(() =>
+      expect(formpackMetaState.getFormpackMeta).toHaveBeenCalledTimes(2),
+    );
+  });
+
+  it('dismisses the quota banner in warning state', async () => {
+    diagnosticsState.health.status = 'warning';
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(await screen.findByText('storageQuotaWarning')).toBeInTheDocument();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'storageQuotaDismiss' }),
+    );
+    await waitFor(() =>
+      expect(screen.queryByText('storageQuotaWarning')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('shows missing-id error when route parameter is absent', async () => {
+    render(
+      <TestRouter initialEntries={['/formpacks']}>
+        <Routes>
+          <Route path="/formpacks" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(await screen.findByText('formpackMissingId')).toBeInTheDocument();
   });
 
   it('refreshes stale formpack metadata when manifest revision changed', async () => {
