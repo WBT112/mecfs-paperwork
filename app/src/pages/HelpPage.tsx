@@ -13,6 +13,8 @@ import {
   useStorageHealth,
 } from '../lib/diagnostics';
 
+type EncryptionStatus = 'encrypted' | 'not_encrypted' | 'unknown';
+
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -66,6 +68,17 @@ const fetchSwInfo = async (): Promise<ServiceWorkerInfo> => {
     };
   } catch {
     return { supported: true, registered: false };
+  }
+};
+
+const getEncryptionDataStatus = (status: EncryptionStatus): string => {
+  switch (status) {
+    case 'encrypted':
+      return 'available';
+    case 'not_encrypted':
+      return 'warning';
+    default:
+      return 'unknown';
   }
 };
 
@@ -193,6 +206,8 @@ export default function HelpPage() {
     } as const
   )[encryptionAtRest.status];
 
+  const encryptionDataStatus = getEncryptionDataStatus(encryptionAtRest.status);
+
   const keyCookieLabel = encryptionAtRest.keyCookiePresent
     ? t('storageHealthCookiePresent')
     : t('storageHealthCookieMissing');
@@ -316,7 +331,7 @@ export default function HelpPage() {
                     <dt>{t('storageHealthEncryption')}</dt>
                     <dd
                       data-testid="storage-health-encryption"
-                      data-status={encryptionAtRest.status}
+                      data-status={encryptionDataStatus}
                     >
                       {encryptionStatusLabel}
                     </dd>

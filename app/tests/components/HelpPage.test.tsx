@@ -424,7 +424,7 @@ describe('HelpPage', () => {
       const encryptionEl = await screen.findByTestId(
         TID_STORAGE_HEALTH_ENCRYPTION,
       );
-      expect(encryptionEl).toHaveAttribute(ATTR_DATA_STATUS, 'encrypted');
+      expect(encryptionEl).toHaveAttribute(ATTR_DATA_STATUS, 'available');
       expect(encryptionEl).toHaveTextContent(
         'storageHealthEncryptionEncrypted',
       );
