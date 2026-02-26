@@ -177,6 +177,7 @@ Typischer Ablauf:
 - Prüfe vor dem Teilen eines DOCX/PDF/JSON, ob Inhalte enthalten sind, die du nicht weitergeben möchtest.
 - Es werden nach dem Laden der Seite keine weiteren Daten zwischen deinem Gerät und dem Server ausgetauscht (außer zur Prüfung auf Formpack-Updates).
 - Entwürfe, Snapshots und gespeicherte Stammdaten werden lokal vor der IndexedDB-Ablage verschlüsselt. Der benötigte Schlüssel liegt als technischer Cookie im Browserprofil.
+- Bei verschlüsselten JSON-Exporten wird das Kennwort ausschließlich lokal zur Ver- und Entschlüsselung verwendet und nicht übertragen oder gespeichert. Ohne Kennwort ist ein späterer Import nicht möglich.
 - Lokale Daten löschen: Wenn du alle lokal gespeicherten Daten (Entwürfe, Snapshots, lokale Exporte) auf diesem Gerät entfernen möchtest, nutze die Option "Alle lokalen Daten löschen" (zu finden in den Einstellungen bzw. am Ende der Hilfeseite). Diese Aktion entfernt alle lokalen Daten nur auf diesem Gerät und ist dauerhaft; sie kann nicht rückgängig gemacht werden.
 - Wenn du nur einzelne Entwürfe oder Snapshots löschen willst, verwende die jeweilige Löschfunktion in der Entwurfs-/Snapshot-Ansicht.
 - Alternativ kannst du gespeicherte Browserdaten über die Einstellungen deines Browsers (Verlauf/Browserdaten löschen) entfernen.

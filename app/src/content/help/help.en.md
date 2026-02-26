@@ -172,6 +172,7 @@ Typical Workflow:
 - Before sharing a DOCX/PDF/JSON, check if it contains content you do not want to pass on.
 - No further data is exchanged between your device and the server after the page has loaded (except for checking for formpack updates).
 - Drafts, snapshots, and saved profile data are encrypted locally before being stored in IndexedDB. The required key is stored as a technical cookie in your browser profile.
+- For encrypted JSON exports, the password is used locally only for encryption/decryption and is never transmitted or stored. Without the password, a later import is not possible.
 - Local data deletion: If you want to remove all locally stored data (drafts, snapshots, local exports) on this device, use the "Delete all local data" option (available in the settings or at the bottom of the help page). This action removes all local data only on this device and is permanent; it cannot be undone.
 - If you only want to delete individual drafts or snapshots, use the respective delete function in the draft/snapshot view.
 - Alternatively, you can clear stored browser data via your browser settings (history / clear browsing data), which will also remove local storage and other saved site data.
