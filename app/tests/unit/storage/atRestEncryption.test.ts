@@ -66,9 +66,10 @@ describe('storage at-rest encryption', () => {
 
   it('throws decrypt_failed when ciphertext is tampered', async () => {
     const encrypted = await encryptStorageData({ secret: 'value' });
+    const replacementChar = encrypted.ciphertext[0] === 'A' ? 'B' : 'A';
     const tampered = {
       ...encrypted,
-      ciphertext: encrypted.ciphertext.slice(0, -1) + 'A',
+      ciphertext: replacementChar + encrypted.ciphertext.slice(1),
     };
 
     await expect(decodeStoredData(tampered)).rejects.toMatchObject({
