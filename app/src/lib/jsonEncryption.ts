@@ -1,71 +1,18 @@
+import {
+  fromBase64Url,
+  hasCryptoSupport,
+  randomBytes,
+  textDecoder,
+  textEncoder,
+  toBase64Url,
+} from './cryptoCommon';
+
 const ENCRYPTION_KIND = 'mecfs-paperwork-json-encrypted';
 const ENCRYPTION_VERSION = 1;
 const PBKDF2_ITERATIONS = 310_000;
 const SALT_BYTES = 16;
 const IV_BYTES = 12;
 const AES_GCM_TAG_LENGTH = 128;
-
-const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
-
-const toBase64Url = (bytes: Uint8Array): string => {
-  if (typeof btoa === 'function') {
-    let binary = '';
-    for (const byte of bytes) {
-      binary += String.fromCodePoint(byte);
-    }
-    return btoa(binary)
-      .replaceAll('+', '-')
-      .replaceAll('/', '_')
-      .replaceAll('=', '');
-  }
-
-  const globalBuffer = (globalThis as { Buffer?: typeof Buffer }).Buffer;
-  if (globalBuffer) {
-    return globalBuffer
-      .from(bytes)
-      .toString('base64')
-      .replaceAll('+', '-')
-      .replaceAll('/', '_')
-      .replaceAll('=', '');
-  }
-
-  throw new Error('Base64 encoding is not supported in this environment.');
-};
-
-const fromBase64Url = (value: string): Uint8Array => {
-  const base64 = value
-    .replaceAll('-', '+')
-    .replaceAll('_', '/')
-    .padEnd(Math.ceil(value.length / 4) * 4, '=');
-
-  if (typeof atob === 'function') {
-    const binary = atob(base64);
-    return Uint8Array.from(binary, (char) => char.codePointAt(0) ?? 0);
-  }
-
-  const globalBuffer = (globalThis as { Buffer?: typeof Buffer }).Buffer;
-  if (globalBuffer) {
-    return new Uint8Array(globalBuffer.from(base64, 'base64'));
-  }
-
-  throw new Error('Base64 decoding is not supported in this environment.');
-};
-
-const hasCryptoSupport = (): boolean => {
-  const cryptoApi = (globalThis as { crypto?: Partial<Crypto> }).crypto;
-  return Boolean(
-    cryptoApi &&
-    typeof cryptoApi.getRandomValues === 'function' &&
-    cryptoApi.subtle !== undefined,
-  );
-};
-
-const randomBytes = (length: number): Uint8Array => {
-  const bytes = new Uint8Array(length);
-  globalThis.crypto.getRandomValues(bytes);
-  return bytes;
-};
 
 const deriveAesGcmKey = async (
   password: string,

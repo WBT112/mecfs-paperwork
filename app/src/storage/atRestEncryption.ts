@@ -1,3 +1,12 @@
+import {
+  fromBase64Url,
+  hasCryptoSupport,
+  randomBytes,
+  textDecoder,
+  textEncoder,
+  toBase64Url,
+} from '../lib/cryptoCommon';
+
 const STORAGE_ENCRYPTION_KIND = 'mecfs-paperwork-idb-encrypted';
 const STORAGE_ENCRYPTION_VERSION = 1;
 const STORAGE_ENCRYPTION_COOKIE_NAME = 'mecfs-paperwork.storage-key';
@@ -6,64 +15,8 @@ const STORAGE_KEY_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 const AES_GCM_TAG_LENGTH = 128;
 const AES_GCM_IV_BYTES = 12;
 
-const textEncoder = new TextEncoder();
-const textDecoder = new TextDecoder();
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
-
-const toBase64Url = (bytes: Uint8Array): string => {
-  if (typeof btoa === 'function') {
-    let binary = '';
-    for (const byte of bytes) {
-      binary += String.fromCodePoint(byte);
-    }
-    return btoa(binary)
-      .replaceAll('+', '-')
-      .replaceAll('/', '_')
-      .replaceAll('=', '');
-  }
-
-  const globalBuffer = (globalThis as { Buffer?: typeof Buffer }).Buffer;
-  if (globalBuffer) {
-    return globalBuffer
-      .from(bytes)
-      .toString('base64')
-      .replaceAll('+', '-')
-      .replaceAll('/', '_')
-      .replaceAll('=', '');
-  }
-
-  throw new Error('Base64 encoding is not supported in this environment.');
-};
-
-const fromBase64Url = (value: string): Uint8Array => {
-  const base64 = value
-    .replaceAll('-', '+')
-    .replaceAll('_', '/')
-    .padEnd(Math.ceil(value.length / 4) * 4, '=');
-
-  if (typeof atob === 'function') {
-    const binary = atob(base64);
-    return Uint8Array.from(binary, (char) => char.codePointAt(0) ?? 0);
-  }
-
-  const globalBuffer = (globalThis as { Buffer?: typeof Buffer }).Buffer;
-  if (globalBuffer) {
-    return new Uint8Array(globalBuffer.from(base64, 'base64'));
-  }
-
-  throw new Error('Base64 decoding is not supported in this environment.');
-};
-
-const hasCryptoSupport = (): boolean => {
-  const cryptoApi = (globalThis as { crypto?: Partial<Crypto> }).crypto;
-  return Boolean(
-    cryptoApi &&
-    typeof cryptoApi.getRandomValues === 'function' &&
-    cryptoApi.subtle !== undefined,
-  );
-};
 
 const getCookieValue = (name: string): string | null => {
   if (typeof document === 'undefined') {
@@ -88,12 +41,6 @@ const setCookie = (name: string, value: string, maxAge: number) => {
   const location = (globalThis as { location?: Location }).location;
   const secure = location?.protocol === 'https:' ? '; Secure' : '';
   document.cookie = `${name}=${value}; Max-Age=${maxAge}; Path=/; SameSite=Strict${secure}`;
-};
-
-const randomBytes = (length: number): Uint8Array => {
-  const bytes = new Uint8Array(length);
-  globalThis.crypto.getRandomValues(bytes);
-  return bytes;
 };
 
 const importAesKey = async (
