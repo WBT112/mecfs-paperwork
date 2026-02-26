@@ -142,6 +142,10 @@ export default [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      'no-duplicate-imports': [
+        'error',
+        { allowSeparateTypeImports: true },
+      ],
 
       ...reactHooks.configs.recommended.rules,
 
@@ -199,8 +203,12 @@ export default [
       'unicorn/prefer-global-this': 'error',
       'unicorn/prefer-includes': 'error',
       'unicorn/prefer-at': 'error',
+      'unicorn/prefer-code-point': 'error',
       'unicorn/prefer-array-index-of': 'error',
       'unicorn/no-array-callback-reference': 'error',
+      'unicorn/no-thenable': 'error',
+      'unicorn/no-typeof-undefined': 'error',
+      'unicorn/no-negated-condition': 'error',
       'unicorn/prefer-single-call': 'error',
       'unicorn/prefer-optional-catch-binding': 'error',
       'no-restricted-syntax': [
@@ -242,6 +250,7 @@ export default [
       '@typescript-eslint/no-unnecessary-type-arguments': 'error',
       '@typescript-eslint/no-unnecessary-type-constraint': 'error',
       '@typescript-eslint/no-unnecessary-type-parameters': 'error',
+      '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/prefer-promise-reject-errors': 'error',
       '@typescript-eslint/no-deprecated': 'error',
@@ -278,6 +287,16 @@ export default [
     },
     rules: {
       'sonarjs/no-nested-functions': ['error', { threshold: 4 }],
+    },
+  },
+
+  {
+    files: ['tests/**/*.{ts,tsx}'],
+    plugins: {
+      sonarjs,
+    },
+    rules: {
+      'sonarjs/assertions-in-tests': 'error',
     },
   },
 ];

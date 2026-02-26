@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { UiSchema } from '@rjsf/utils';
-import type { RJSFSchema } from '@rjsf/utils';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import { resolveDisplayValue } from '../../../src/lib/displayValueResolver';
 
 describe('resolveDisplayValue', () => {

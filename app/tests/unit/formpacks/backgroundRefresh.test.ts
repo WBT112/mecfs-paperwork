@@ -31,8 +31,8 @@ vi.mock('../../../src/formpacks/metadata', () => ({
   deriveFormpackRevisionSignature,
 }));
 
-import { runFormpackBackgroundRefresh } from '../../../src/formpacks/backgroundRefresh';
 import {
+  runFormpackBackgroundRefresh,
   FORMPACKS_UPDATED_EVENT,
   startFormpackBackgroundRefresh,
 } from '../../../src/formpacks/backgroundRefresh';
