@@ -67,6 +67,15 @@ test.describe('diagnostics bundle', () => {
     const idbStatus = page.getByTestId('storage-health-idb');
     await expect(idbStatus).toBeVisible();
 
+    const encryptionStatus = page.getByTestId('storage-health-encryption');
+    await expect(encryptionStatus).toBeVisible();
+
+    const keyCookieStatus = page.getByTestId('storage-health-key-cookie');
+    await expect(keyCookieStatus).toBeVisible();
+
+    const cookieSecurity = page.getByTestId('storage-health-cookie-security');
+    await expect(cookieSecurity).toBeVisible();
+
     const statusElement = page.getByTestId('storage-health-status');
     await expect(statusElement).toBeVisible();
   });

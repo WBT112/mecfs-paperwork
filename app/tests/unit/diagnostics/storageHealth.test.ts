@@ -19,6 +19,69 @@ describe('checkStorageHealth', () => {
     expect(result.indexedDbAvailable).toBe(true);
     expect(result.storageEstimate.supported).toBe(true);
     expect(result.status).toBe('ok');
+    expect(result.encryptionAtRest).toBeDefined();
+  });
+
+  it('detects encrypted payload envelopes in records store', async () => {
+    const encryptedPayload = {
+      kind: 'mecfs-paperwork-idb-encrypted',
+      version: 1,
+      cipher: 'AES-GCM',
+      iv: 'iv',
+      ciphertext: 'ciphertext',
+    };
+
+    const cursorRequest = {
+      result: { value: { data: encryptedPayload } },
+      onsuccess: null as null | (() => void),
+      onerror: null as null | (() => void),
+    };
+
+    const db = {
+      objectStoreNames: {
+        contains: (storeName: string) => storeName === 'records',
+      },
+      transaction: () => ({
+        objectStore: () => ({
+          openCursor: () => {
+            queueMicrotask(() => {
+              cursorRequest.onsuccess?.();
+            });
+            return cursorRequest;
+          },
+        }),
+      }),
+      close: vi.fn(),
+    };
+
+    const openRequest = {
+      result: db,
+      transaction: undefined,
+      onupgradeneeded: null as null | (() => void),
+      onsuccess: null as null | (() => void),
+      onerror: null as null | (() => void),
+      onblocked: null as null | (() => void),
+    };
+
+    vi.stubGlobal('indexedDB', {
+      databases: vi.fn().mockResolvedValue([{ name: 'mecfs-paperwork' }]),
+      open: vi.fn(() => {
+        queueMicrotask(() => {
+          openRequest.onsuccess?.();
+        });
+        return openRequest;
+      }),
+    });
+
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      storage: {
+        estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 100000 }),
+      },
+    });
+
+    const result = await checkStorageHealth();
+    expect(result.encryptionAtRest?.status).toBe('encrypted');
   });
 
   it('returns error when IndexedDB is not available', async () => {

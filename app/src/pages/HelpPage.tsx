@@ -176,6 +176,35 @@ export default function HelpPage() {
 
   const idbDataStatus = health.indexedDbAvailable ? 'available' : 'unavailable';
 
+  const encryptionAtRest =
+    health.encryptionAtRest ??
+    ({
+      status: 'unknown',
+      keyCookiePresent: false,
+      keyCookieContext: 'unknown',
+      secureFlagVerifiable: false,
+    } as const);
+
+  const encryptionStatusLabel = (
+    {
+      encrypted: t('storageHealthEncryptionEncrypted'),
+      not_encrypted: t('storageHealthEncryptionNotEncrypted'),
+      unknown: t('storageHealthEncryptionUnknown'),
+    } as const
+  )[encryptionAtRest.status];
+
+  const keyCookieLabel = encryptionAtRest.keyCookiePresent
+    ? t('storageHealthCookiePresent')
+    : t('storageHealthCookieMissing');
+
+  const keyCookieContextLabel = (
+    {
+      https: t('storageHealthCookieSecurityHttps'),
+      'non-https': t('storageHealthCookieSecurityNonHttps'),
+      unknown: t('storageHealthCookieSecurityUnknown'),
+    } as const
+  )[encryptionAtRest.keyCookieContext];
+
   const swStateLabel = swInfo.registered
     ? (swInfo.state ?? t('swStatusRegistered'))
     : t('swStatusNotRegistered');
@@ -281,6 +310,37 @@ export default function HelpPage() {
                       data-status={idbDataStatus}
                     >
                       {idbStatusLabel}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t('storageHealthEncryption')}</dt>
+                    <dd
+                      data-testid="storage-health-encryption"
+                      data-status={encryptionAtRest.status}
+                    >
+                      {encryptionStatusLabel}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t('storageHealthKeyCookie')}</dt>
+                    <dd
+                      data-testid="storage-health-key-cookie"
+                      data-status={
+                        encryptionAtRest.keyCookiePresent
+                          ? 'available'
+                          : 'unavailable'
+                      }
+                    >
+                      {keyCookieLabel}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t('storageHealthCookieSecurity')}</dt>
+                    <dd
+                      data-testid="storage-health-cookie-security"
+                      data-status={encryptionAtRest.keyCookieContext}
+                    >
+                      {keyCookieContextLabel}
                     </dd>
                   </div>
                   <div>

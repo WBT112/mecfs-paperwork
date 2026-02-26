@@ -24,6 +24,12 @@ let mockHealthState: {
   health: {
     indexedDbAvailable: boolean;
     storageEstimate: { supported: boolean; usage?: number; quota?: number };
+    encryptionAtRest?: {
+      status: 'encrypted' | 'not_encrypted' | 'unknown';
+      keyCookiePresent: boolean;
+      keyCookieContext: 'https' | 'non-https' | 'unknown';
+      secureFlagVerifiable: false;
+    };
     status: 'ok' | 'warning' | 'error';
     message: string;
   };
@@ -36,6 +42,12 @@ let mockHealthState: {
       supported: true,
       usage: 5000,
       quota: 100000,
+    },
+    encryptionAtRest: {
+      status: 'encrypted',
+      keyCookiePresent: true,
+      keyCookieContext: 'https',
+      secureFlagVerifiable: false,
     },
     status: 'ok',
     message: 'Storage is available and working normally.',
@@ -58,6 +70,9 @@ const TID_DIAGNOSTICS_DOWNLOAD = 'diagnostics-download';
 const TID_DIAGNOSTICS_COPY = 'diagnostics-copy';
 const TID_STORAGE_HEALTH_STATUS = 'storage-health-status';
 const TID_STORAGE_HEALTH_QUOTA = 'storage-health-quota';
+const TID_STORAGE_HEALTH_ENCRYPTION = 'storage-health-encryption';
+const TID_STORAGE_HEALTH_KEY_COOKIE = 'storage-health-key-cookie';
+const TID_STORAGE_HEALTH_COOKIE_SECURITY = 'storage-health-cookie-security';
 const TID_RESET_ALL_DATA = 'reset-all-data';
 const ATTR_DATA_STATUS = 'data-status';
 
@@ -73,6 +88,12 @@ describe('HelpPage', () => {
           supported: true,
           usage: 5000,
           quota: 100000,
+        },
+        encryptionAtRest: {
+          status: 'encrypted' as const,
+          keyCookiePresent: true,
+          keyCookieContext: 'https' as const,
+          secureFlagVerifiable: false,
         },
         status: 'ok' as const,
         message: 'Storage is available and working normally.',
@@ -395,6 +416,50 @@ describe('HelpPage', () => {
       fireEvent.click(refreshButton);
 
       expect(mockRefreshHealth).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows encryption and key-cookie diagnostics', async () => {
+      render(<HelpPage />);
+
+      const encryptionEl = await screen.findByTestId(
+        TID_STORAGE_HEALTH_ENCRYPTION,
+      );
+      expect(encryptionEl).toHaveAttribute(ATTR_DATA_STATUS, 'encrypted');
+      expect(encryptionEl).toHaveTextContent(
+        'storageHealthEncryptionEncrypted',
+      );
+
+      const keyCookieEl = await screen.findByTestId(
+        TID_STORAGE_HEALTH_KEY_COOKIE,
+      );
+      expect(keyCookieEl).toHaveAttribute(ATTR_DATA_STATUS, 'available');
+      expect(keyCookieEl).toHaveTextContent('storageHealthCookiePresent');
+
+      const cookieSecurityEl = await screen.findByTestId(
+        TID_STORAGE_HEALTH_COOKIE_SECURITY,
+      );
+      expect(cookieSecurityEl).toHaveAttribute(ATTR_DATA_STATUS, 'https');
+      expect(cookieSecurityEl).toHaveTextContent(
+        'storageHealthCookieSecurityHttps',
+      );
+    });
+
+    it('shows unknown encryption status when diagnostics are unavailable', async () => {
+      mockHealthState = {
+        ...mockHealthState,
+        health: {
+          ...mockHealthState.health,
+          encryptionAtRest: undefined,
+        },
+      };
+
+      render(<HelpPage />);
+
+      const encryptionEl = await screen.findByTestId(
+        TID_STORAGE_HEALTH_ENCRYPTION,
+      );
+      expect(encryptionEl).toHaveAttribute(ATTR_DATA_STATUS, 'unknown');
+      expect(encryptionEl).toHaveTextContent('storageHealthEncryptionUnknown');
     });
   });
 
