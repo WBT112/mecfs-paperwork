@@ -14,6 +14,14 @@ vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(() => Promise.resolve(mockDb)),
 }));
 
+vi.mock('../../../src/storage/atRestEncryption', () => ({
+  encryptStorageData: vi.fn(async (data: Record<string, unknown>) => data),
+  decodeStoredData: vi.fn(async (value: unknown) => ({
+    data: value as Record<string, unknown>,
+    shouldReencrypt: false,
+  })),
+}));
+
 describe('profiles storage', () => {
   beforeEach(() => {
     mockDb.get.mockReset();

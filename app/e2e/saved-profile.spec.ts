@@ -49,6 +49,43 @@ const waitForActiveRecordId = async (
 
 const getDefaultProfileData = async (page: Page) => {
   return page.evaluate(async (dbName) => {
+    const STORAGE_ENCRYPTION_KIND = 'mecfs-paperwork-idb-encrypted';
+    const STORAGE_KEY_COOKIE_NAME = 'mecfs-paperwork.storage-key';
+
+    const isRecord = (value: unknown): value is Record<string, unknown> =>
+      typeof value === 'object' && value !== null && !Array.isArray(value);
+
+    const isEncryptedPayload = (
+      value: unknown,
+    ): value is { iv: string; ciphertext: string } => {
+      return (
+        isRecord(value) &&
+        value.kind === STORAGE_ENCRYPTION_KIND &&
+        typeof value.iv === 'string' &&
+        typeof value.ciphertext === 'string'
+      );
+    };
+
+    const fromBase64Url = (value: string): Uint8Array => {
+      const base64 = value
+        .replaceAll('-', '+')
+        .replaceAll('_', '/')
+        .padEnd(Math.ceil(value.length / 4) * 4, '=');
+      const binary = atob(base64);
+      return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    };
+
+    const getCookieValue = (name: string): string | null => {
+      const cookies = document.cookie ? document.cookie.split('; ') : [];
+      const prefix = `${name}=`;
+      for (const cookie of cookies) {
+        if (cookie.startsWith(prefix)) {
+          return cookie.slice(prefix.length);
+        }
+      }
+      return null;
+    };
+
     const db = await new Promise<IDBDatabase | null>((resolve) => {
       let aborted = false;
       const request = indexedDB.open(dbName);
@@ -102,8 +139,38 @@ const getDefaultProfileData = async (page: Page) => {
       }
 
       const data = entry.data;
-      if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+      if (!isRecord(data)) {
         return null;
+      }
+
+      if (isEncryptedPayload(data)) {
+        const keyCookie = getCookieValue(STORAGE_KEY_COOKIE_NAME);
+        if (!keyCookie) {
+          return null;
+        }
+
+        try {
+          const key = await crypto.subtle.importKey(
+            'raw',
+            fromBase64Url(keyCookie),
+            { name: 'AES-GCM' },
+            false,
+            ['decrypt'],
+          );
+          const plainBuffer = await crypto.subtle.decrypt(
+            {
+              name: 'AES-GCM',
+              iv: fromBase64Url(data.iv),
+              tagLength: 128,
+            },
+            key,
+            fromBase64Url(data.ciphertext),
+          );
+          const parsed = JSON.parse(new TextDecoder().decode(plainBuffer));
+          return isRecord(parsed) ? (parsed as Record<string, unknown>) : null;
+        } catch {
+          return null;
+        }
       }
 
       return data as Record<string, unknown>;

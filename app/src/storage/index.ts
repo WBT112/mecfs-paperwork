@@ -1,3 +1,7 @@
+export {
+  StorageLockedError,
+  clearStorageEncryptionKeyCookie,
+} from './atRestEncryption';
 export { StorageUnavailableError } from './db';
 export * from './formpackMeta';
 export * from './hooks';

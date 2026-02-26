@@ -17,6 +17,10 @@ vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
 }));
 
+vi.mock('../../../src/storage/atRestEncryption', () => ({
+  encryptStorageData: vi.fn(async (data: Record<string, unknown>) => data),
+}));
+
 describe('importRecordWithSnapshots', () => {
   type MockRecordStore = {
     get: Mock;

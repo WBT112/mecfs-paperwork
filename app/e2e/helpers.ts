@@ -34,6 +34,15 @@ export const deleteDatabase = async (page: Page, dbName: string) => {
       async ({ name, timeoutMs }) => {
         localStorage.clear();
         sessionStorage.clear();
+        const cookieNames = document.cookie
+          ? document.cookie
+              .split('; ')
+              .map((entry) => entry.split('=')[0])
+              .filter((entry) => entry.length > 0)
+          : [];
+        for (const cookieName of cookieNames) {
+          document.cookie = `${cookieName}=; Max-Age=0; Path=/; SameSite=Strict`;
+        }
 
         return await new Promise<{ ok: boolean; reason?: string }>(
           (resolve) => {

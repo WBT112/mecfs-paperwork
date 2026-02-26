@@ -159,6 +159,12 @@ Typical Workflow:
 - Try it again in a "Private Window" (Note: data might not be saved there).
 - If that doesn't help: contact us via the feedback button.
 
+**"Local data cannot be decrypted."**
+
+- This usually happens when browser cookies were deleted while encrypted drafts still exist in IndexedDB.
+- In that case, recovery inside the app is not possible.
+- Use "Delete all local data" to fully reset local storage.
+
 ---
 
 ## 8) Privacy & Secure Working Method

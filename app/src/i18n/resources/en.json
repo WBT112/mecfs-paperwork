@@ -177,6 +177,7 @@
   "importStorageError": "Import could not be saved. Please try again.",
   "importSuccess": "Import complete.",
   "storageUnavailable": "Local storage is not available in this browser.",
+  "storageLocked": "Local data cannot be decrypted. Please reset all local data and start again.",
   "storageError": "Could not access local storage. Please try again.",
   "updateFormpacksAvailable": "Formpacks were updated in the background.",
   "updateAppAvailablePassive": "A new app version is available. It will apply after restarting the app.",

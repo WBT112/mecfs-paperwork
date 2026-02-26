@@ -1,4 +1,5 @@
 import { toError } from '../errors';
+import { clearStorageEncryptionKeyCookie } from '../../storage/atRestEncryption';
 
 const DB_NAME = 'mecfs-paperwork';
 
@@ -39,6 +40,9 @@ export const resetAllLocalData = async (): Promise<void> => {
   // 4. Clear localStorage
   globalThis.localStorage.clear();
 
-  // 5. Reload the page to reinitialize cleanly
+  // 5. Clear storage encryption key cookie
+  clearStorageEncryptionKeyCookie();
+
+  // 6. Reload the page to reinitialize cleanly
   globalThis.location.reload();
 };

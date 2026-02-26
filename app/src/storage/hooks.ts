@@ -5,6 +5,7 @@ import {
   useState,
   type SetStateAction,
 } from 'react';
+import { StorageLockedError } from './atRestEncryption';
 import type { SupportedLocale } from '../i18n/locale';
 import { StorageUnavailableError } from './db';
 import {
@@ -22,10 +23,19 @@ import {
 } from './snapshots';
 import type { RecordEntry, SnapshotEntry } from './types';
 
-export type StorageErrorCode = 'unavailable' | 'operation';
+export type StorageErrorCode = 'unavailable' | 'locked' | 'operation';
 
-const getStorageErrorCode = (error: unknown): StorageErrorCode =>
-  error instanceof StorageUnavailableError ? 'unavailable' : 'operation';
+const getStorageErrorCode = (error: unknown): StorageErrorCode => {
+  if (error instanceof StorageUnavailableError) {
+    return 'unavailable';
+  }
+
+  if (error instanceof StorageLockedError) {
+    return 'locked';
+  }
+
+  return 'operation';
+};
 
 const upsertRecord = (
   records: RecordEntry[],

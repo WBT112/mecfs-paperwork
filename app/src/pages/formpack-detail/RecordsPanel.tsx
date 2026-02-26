@@ -20,7 +20,9 @@ type RecordsPanelProps = Readonly<{
   isRecordsLoading: boolean;
   storageUnavailable: boolean;
   storageErrorMessage: string | null;
+  storageRecoveryActionLabel?: string;
   formatUpdatedAt: (timestamp: string) => string;
+  onStorageRecoveryAction?: () => void;
   onCreateRecord: () => void;
   onLoadRecord: (recordId: string) => void;
   onDeleteRecord: (record: RecordEntry) => void;
@@ -33,7 +35,9 @@ export default function RecordsPanel({
   isRecordsLoading,
   storageUnavailable,
   storageErrorMessage,
+  storageRecoveryActionLabel,
   formatUpdatedAt,
+  onStorageRecoveryAction,
   onCreateRecord,
   onLoadRecord,
   onDeleteRecord,
@@ -46,6 +50,17 @@ export default function RecordsPanel({
     >
       {storageErrorMessage && (
         <p className="app__error">{storageErrorMessage}</p>
+      )}
+      {storageRecoveryActionLabel && onStorageRecoveryAction && (
+        <div className="formpack-records__actions">
+          <button
+            type="button"
+            className="app__button"
+            onClick={onStorageRecoveryAction}
+          >
+            {storageRecoveryActionLabel}
+          </button>
+        </div>
       )}
       {records.length ? (
         <>

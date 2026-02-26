@@ -86,6 +86,16 @@ describe('resetAllLocalData', () => {
     expect(mockReload).toHaveBeenCalledOnce();
   });
 
+  it('clears the storage encryption key cookie', async () => {
+    vi.stubGlobal('indexedDB', undefined);
+    vi.stubGlobal('navigator', {});
+    document.cookie = 'mecfs-paperwork.storage-key=secret';
+
+    await resetAllLocalData();
+
+    expect(document.cookie).not.toContain('mecfs-paperwork.storage-key=');
+  });
+
   it('handles missing APIs gracefully', async () => {
     vi.stubGlobal('indexedDB', undefined);
     vi.stubGlobal('navigator', {});

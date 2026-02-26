@@ -233,6 +233,7 @@ const DOCX_TEMPLATE_WALLET_OPTION = 'formpackDocxTemplateWalletOption';
 const IMPORT_ACTION_LABEL = 'formpackImportAction';
 const IMPORT_SUCCESS_LABEL = 'importSuccess';
 const STORAGE_UNAVAILABLE_LABEL = 'storageUnavailable';
+const STORAGE_LOCKED_LABEL = 'storageLocked';
 const PDF_EXPORT_CONTROLS_LABEL = 'pdf-export-controls';
 const PDF_SUCCESS_BUTTON_LABEL = 'pdf-success';
 const PDF_ERROR_BUTTON_LABEL = 'pdf-error';
@@ -1558,6 +1559,24 @@ describe('FormpackDetailPage', () => {
     );
 
     expect(await screen.findByText('storageError')).toBeInTheDocument();
+  });
+
+  it('shows storage locked message and reset action', async () => {
+    storageState.recordsError = 'locked';
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(await screen.findByText(STORAGE_LOCKED_LABEL)).toBeInTheDocument();
+    await openSection(sectionLabels.records);
+    expect(
+      await screen.findByRole('button', { name: 'resetAllButton' }),
+    ).toBeInTheDocument();
   });
 
   it('refreshes stale formpack metadata when manifest revision changed', async () => {

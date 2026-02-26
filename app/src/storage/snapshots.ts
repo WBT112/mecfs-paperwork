@@ -1,3 +1,4 @@
+import { decodeStoredData, encryptStorageData } from './atRestEncryption';
 import { openStorage } from './db';
 import type { SnapshotEntry } from './types';
 
@@ -28,7 +29,10 @@ export const createSnapshot = async (
 
   const tx = db.transaction('snapshots', 'readwrite');
   const store = tx.objectStore('snapshots');
-  await store.add(snapshot);
+  await store.add({
+    ...snapshot,
+    data: await encryptStorageData(snapshot.data),
+  });
 
   // Enforce per-record retention limit
   const allKeys = await store.index('by_recordId').getAllKeys(recordId);
@@ -50,11 +54,30 @@ export const listSnapshots = async (
   recordId: string,
 ): Promise<SnapshotEntry[]> => {
   const db = await openStorage();
-  const snapshots = await db.getAllFromIndex(
+  const persistedSnapshots = await db.getAllFromIndex(
     'snapshots',
     'by_recordId',
     recordId,
   );
+
+  const snapshots = await Promise.all(
+    persistedSnapshots.map(async (entry) => {
+      const { data, shouldReencrypt } = await decodeStoredData(entry.data);
+      if (shouldReencrypt) {
+        const migrated = {
+          ...entry,
+          data: await encryptStorageData(data),
+        };
+        db.put('snapshots', migrated).catch(() => undefined);
+      }
+
+      return {
+        ...entry,
+        data,
+      };
+    }),
+  );
+
   return sortByCreatedAtDesc(snapshots);
 };
 
@@ -65,8 +88,24 @@ export const getSnapshot = async (
   snapshotId: string,
 ): Promise<SnapshotEntry | null> => {
   const db = await openStorage();
-  const snapshot = await db.get('snapshots', snapshotId);
-  return snapshot ?? null;
+  const persisted = await db.get('snapshots', snapshotId);
+  if (!persisted) {
+    return null;
+  }
+
+  const { data, shouldReencrypt } = await decodeStoredData(persisted.data);
+  if (shouldReencrypt) {
+    const migrated = {
+      ...persisted,
+      data: await encryptStorageData(data),
+    };
+    db.put('snapshots', migrated).catch(() => undefined);
+  }
+
+  return {
+    ...persisted,
+    data,
+  };
 };
 
 /**

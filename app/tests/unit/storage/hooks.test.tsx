@@ -14,6 +14,7 @@ import {
   listRecords,
   updateRecord as updateRecordEntry,
 } from '../../../src/storage/records';
+import { StorageLockedError } from '../../../src/storage/atRestEncryption';
 import { StorageUnavailableError } from '../../../src/storage/db';
 import {
   createSnapshot as createSnapshotEntry,
@@ -149,6 +150,23 @@ describe('storage hooks', () => {
 
     expect(result).toBeNull();
     expect(getLatest()?.errorCode).toBe('unavailable');
+  });
+
+  it('maps StorageLockedError to locked on createRecord', async () => {
+    vi.mocked(createRecordEntry).mockRejectedValue(
+      new StorageLockedError('missing_key', 'locked'),
+    );
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let result: RecordEntry | null | undefined;
+    await act(async () => {
+      result = await getLatest()?.createRecord('de', {}, 't');
+    });
+
+    expect(result).toBeNull();
+    expect(getLatest()?.errorCode).toBe('locked');
   });
 
   it('loads a record and sets it active; returns null when not found', async () => {
@@ -667,6 +685,13 @@ describe('useAutosaveRecord', () => {
     await expectAutosaveErrorCode(
       new StorageUnavailableError('no idb'),
       'unavailable',
+    );
+  });
+
+  it('calls onError with locked for StorageLockedError', async () => {
+    await expectAutosaveErrorCode(
+      new StorageLockedError('missing_key', 'locked'),
+      'locked',
     );
   });
 

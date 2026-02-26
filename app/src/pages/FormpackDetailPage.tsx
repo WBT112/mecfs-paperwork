@@ -104,7 +104,7 @@ import {
   extractProfileData,
   applyProfileData,
 } from '../lib/profile/profileMapping';
-import { useStorageHealth } from '../lib/diagnostics';
+import { resetAllLocalData, useStorageHealth } from '../lib/diagnostics';
 import FormpackIntroGate from '../components/FormpackIntroGate';
 import FormpackIntroModal from '../components/FormpackIntroModal';
 import {
@@ -1489,10 +1489,27 @@ export default function FormpackDetailPage() {
     if (!storageError) {
       return null;
     }
+
+    if (storageError === 'locked') {
+      return t('storageLocked');
+    }
+
     return storageError === 'unavailable'
       ? t('storageUnavailable')
       : t('storageError');
   }, [storageError, t]);
+
+  const handleResetAllStorageData = useCallback(async () => {
+    const confirmed = globalThis.confirm(t('resetAllConfirm'));
+    if (!confirmed) {
+      return;
+    }
+
+    await resetAllLocalData();
+  }, [t]);
+
+  const storageBlocked =
+    storageError === 'unavailable' || storageError === 'locked';
 
   const buildImportErrorMessage = useCallback(
     (error: { code: string; message?: string }) => {
@@ -1656,7 +1673,7 @@ export default function FormpackDetailPage() {
         return;
       }
 
-      if (!manifest || storageError === 'unavailable') {
+      if (!manifest || storageBlocked) {
         setActiveRecord(null);
         return;
       }
@@ -1676,7 +1693,7 @@ export default function FormpackDetailPage() {
       manifest,
       persistActiveRecordId,
       setActiveRecord,
-      storageError,
+      storageBlocked,
       t,
       title,
     ],
@@ -2722,7 +2739,7 @@ export default function FormpackDetailPage() {
 
   const renderPdfExportControls = () => {
     const pdfSupported = manifest.exports.includes('pdf');
-    const disabled = storageError === 'unavailable';
+    const disabled = storageBlocked;
     const resolvedFormpackId = manifest.id;
 
     if (!pdfSupported) {
@@ -2811,7 +2828,7 @@ export default function FormpackDetailPage() {
             className={docxButtonClassName}
             onClick={handleExportDocx}
             data-action="docx-export"
-            disabled={storageError === 'unavailable' || isDocxExporting}
+            disabled={storageBlocked || isDocxExporting}
           >
             {isDocxExporting
               ? t('formpackDocxExportInProgress')
@@ -2875,7 +2892,7 @@ export default function FormpackDetailPage() {
           type="button"
           className="app__button"
           onClick={handleExportJson}
-          disabled={storageError === 'unavailable'}
+          disabled={storageBlocked}
         >
           {t('formpackRecordExportJson')}
         </button>
@@ -3167,9 +3184,17 @@ export default function FormpackDetailPage() {
                   records={records}
                   activeRecordId={activeRecord?.id ?? null}
                   isRecordsLoading={isRecordsLoading}
-                  storageUnavailable={storageError === 'unavailable'}
+                  storageUnavailable={storageBlocked}
                   storageErrorMessage={storageErrorMessage}
+                  storageRecoveryActionLabel={
+                    storageError === 'locked' ? t('resetAllButton') : undefined
+                  }
                   formatUpdatedAt={formatRecordUpdatedAt}
+                  onStorageRecoveryAction={
+                    storageError === 'locked'
+                      ? handleResetAllStorageData
+                      : undefined
+                  }
                   onCreateRecord={handleCreateRecord}
                   onLoadRecord={handleLoadRecord}
                   onDeleteRecord={handleDeleteRecord}
@@ -3203,7 +3228,7 @@ export default function FormpackDetailPage() {
                   importJson={importJson}
                   isImporting={isImporting}
                   activeRecordExists={Boolean(activeRecord)}
-                  storageUnavailable={storageError === 'unavailable'}
+                  storageUnavailable={storageBlocked}
                   onImportModeChange={setImportMode}
                   onIncludeRevisionsChange={setImportIncludeRevisions}
                   onImportPasswordChange={setImportPassword}
@@ -3225,7 +3250,7 @@ export default function FormpackDetailPage() {
                   snapshots={snapshots}
                   activeRecordExists={Boolean(activeRecord)}
                   isSnapshotsLoading={isSnapshotsLoading}
-                  storageUnavailable={storageError === 'unavailable'}
+                  storageUnavailable={storageBlocked}
                   formatCreatedAt={formatSnapshotCreatedAt}
                   onCreateSnapshot={handleCreateSnapshot}
                   onClearSnapshots={handleClearSnapshots}

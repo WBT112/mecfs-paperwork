@@ -1,4 +1,5 @@
 import type { SupportedLocale } from '../i18n/locale';
+import { encryptStorageData } from './atRestEncryption';
 import { openStorage } from './db';
 import type { RecordEntry, SnapshotEntry } from './types';
 
@@ -49,7 +50,10 @@ export const importRecordWithSnapshots = async (
       updatedAt: now,
     };
 
-    await recordStore.put(record);
+    await recordStore.put({
+      ...record,
+      data: await encryptStorageData(record.data),
+    });
   } else {
     record = {
       id: crypto.randomUUID(),
@@ -61,7 +65,10 @@ export const importRecordWithSnapshots = async (
       updatedAt: now,
     };
 
-    await recordStore.add(record);
+    await recordStore.add({
+      ...record,
+      data: await encryptStorageData(record.data),
+    });
   }
 
   if (options.revisions?.length) {
@@ -73,7 +80,10 @@ export const importRecordWithSnapshots = async (
         data: revision.data,
         createdAt: revision.createdAt ?? now,
       };
-      await snapshotStore.add(snapshot);
+      await snapshotStore.add({
+        ...snapshot,
+        data: await encryptStorageData(snapshot.data),
+      });
     }
   }
 

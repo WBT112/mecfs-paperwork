@@ -177,6 +177,7 @@
   "importStorageError": "Import konnte nicht gespeichert werden. Bitte erneut versuchen.",
   "importSuccess": "Import abgeschlossen.",
   "storageUnavailable": "Lokaler Speicher ist in diesem Browser nicht verfügbar.",
+  "storageLocked": "Lokale Daten können nicht entschlüsselt werden. Bitte lösche alle lokalen Daten und starte neu.",
   "storageError": "Auf den lokalen Speicher konnte nicht zugegriffen werden. Bitte versuche es erneut.",
   "updateFormpacksAvailable": "Formpacks wurden im Hintergrund aktualisiert.",
   "updateAppAvailablePassive": "Eine neue App-Version ist verfügbar. Sie wird nach dem Neustart der App aktiv.",

@@ -1,4 +1,5 @@
 import type { SupportedLocale } from '../i18n/locale';
+import { decodeStoredData, encryptStorageData } from './atRestEncryption';
 import { openStorage } from './db';
 import type { RecordEntry } from './types';
 
@@ -26,7 +27,10 @@ export const createRecord = async (
     updatedAt: now,
   };
 
-  await db.add('records', record);
+  await db.add('records', {
+    ...record,
+    data: await encryptStorageData(record.data),
+  });
   return record;
 };
 
@@ -37,11 +41,30 @@ export const listRecords = async (
   formpackId: string,
 ): Promise<RecordEntry[]> => {
   const db = await openStorage();
-  const records = await db.getAllFromIndex(
+  const persistedRecords = await db.getAllFromIndex(
     'records',
     'by_formpackId',
     formpackId,
   );
+
+  const records = await Promise.all(
+    persistedRecords.map(async (entry) => {
+      const { data, shouldReencrypt } = await decodeStoredData(entry.data);
+      if (shouldReencrypt) {
+        const migrated = {
+          ...entry,
+          data: await encryptStorageData(data),
+        };
+        db.put('records', migrated).catch(() => undefined);
+      }
+
+      return {
+        ...entry,
+        data,
+      };
+    }),
+  );
+
   return sortByUpdatedAtDesc(records);
 };
 
@@ -50,8 +73,25 @@ export const listRecords = async (
  */
 export const getRecord = async (id: string): Promise<RecordEntry | null> => {
   const db = await openStorage();
-  const record = await db.get('records', id);
-  return record ?? null;
+  const persisted = await db.get('records', id);
+  if (!persisted) {
+    return null;
+  }
+
+  const { data, shouldReencrypt } = await decodeStoredData(persisted.data);
+
+  if (shouldReencrypt) {
+    const migrated = {
+      ...persisted,
+      data: await encryptStorageData(data),
+    };
+    db.put('records', migrated).catch(() => undefined);
+  }
+
+  return {
+    ...persisted,
+    data,
+  };
 };
 
 /**
@@ -74,15 +114,20 @@ export const updateRecord = async (
     return null;
   }
 
+  const { data: existingData } = await decodeStoredData(existing.data);
+
   const updated: RecordEntry = {
     ...existing,
     ...updates,
-    data: updates.data ?? existing.data,
+    data: updates.data ?? existingData,
     locale: updates.locale ?? existing.locale,
     updatedAt: new Date().toISOString(),
   };
 
-  await store.put(updated);
+  await store.put({
+    ...updated,
+    data: await encryptStorageData(updated.data),
+  });
   await tx.done;
   return updated;
 };

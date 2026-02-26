@@ -5,6 +5,7 @@ import { deleteDatabase } from './helpers';
 const DB_NAME = 'mecfs-paperwork';
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
+const STORAGE_KEY_COOKIE_NAME = 'mecfs-paperwork.storage-key';
 
 const FORBIDDEN_MARKERS = [
   'patient',
@@ -202,6 +203,11 @@ test.describe('reset all local data', () => {
       ACTIVE_RECORD_KEY,
     );
     expect(activeRecordId).toBeNull();
+
+    const keyCookie = (await page.context().cookies()).find(
+      (cookie) => cookie.name === STORAGE_KEY_COOKIE_NAME,
+    );
+    expect(keyCookie).toBeUndefined();
   });
 
   test('reset is cancelled when user dismisses the confirm dialog', async ({

@@ -15,6 +15,14 @@ vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
 }));
 
+vi.mock('../../../src/storage/atRestEncryption', () => ({
+  encryptStorageData: vi.fn(async (data: Record<string, unknown>) => data),
+  decodeStoredData: vi.fn(async (value: unknown) => ({
+    data: value as Record<string, unknown>,
+    shouldReencrypt: false,
+  })),
+}));
+
 describe('createRecord', () => {
   const mockDb = {
     add: vi.fn(),

@@ -1,10 +1,27 @@
+import { decodeStoredData, encryptStorageData } from './atRestEncryption';
 import { openStorage } from './db';
 import type { ProfileData, ProfileEntry } from './types';
 
 export const getProfile = async (id: string): Promise<ProfileEntry | null> => {
   const db = await openStorage();
-  const entry = await db.get('profiles', id);
-  return entry ?? null;
+  const persisted = await db.get('profiles', id);
+  if (!persisted) {
+    return null;
+  }
+
+  const { data, shouldReencrypt } = await decodeStoredData(persisted.data);
+  if (shouldReencrypt) {
+    const migrated = {
+      ...persisted,
+      data: await encryptStorageData(data),
+    };
+    db.put('profiles', migrated as ProfileEntry).catch(() => undefined);
+  }
+
+  return {
+    ...persisted,
+    data: data as ProfileData,
+  };
 };
 
 export const deleteProfile = async (id: string): Promise<void> => {
@@ -42,7 +59,13 @@ export const upsertProfile = async (
   const existing = await db.get('profiles', id);
   const now = new Date().toISOString();
 
-  const merged = mergeProfileData(existing?.data ?? {}, partial);
+  let existingData: ProfileData = {};
+  if (existing) {
+    const decoded = await decodeStoredData(existing.data);
+    existingData = decoded.data as ProfileData;
+  }
+
+  const merged = mergeProfileData(existingData, partial);
 
   const entry: ProfileEntry = {
     id,
@@ -51,7 +74,10 @@ export const upsertProfile = async (
     updatedAt: now,
   };
 
-  await db.put('profiles', entry);
+  await db.put('profiles', {
+    ...entry,
+    data: await encryptStorageData(merged as Record<string, unknown>),
+  } as ProfileEntry);
   return entry;
 };
 

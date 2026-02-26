@@ -164,6 +164,12 @@ Typischer Ablauf:
 - Wenn das nicht hilft: kontaktier uns über den Feedback-Button.
 - Falls du damit leben kannst die Daten nochmal einzugeben, scroll nach unten und klicke auf "Alle lokalen Daten löschen"
 
+**„Lokale Daten können nicht entschlüsselt werden.“**
+
+- Das passiert meist, wenn Browser-Cookies gelöscht wurden, aber noch verschlüsselte Entwürfe in IndexedDB liegen.
+- In diesem Fall ist eine Wiederherstellung in der App nicht möglich.
+- Nutze „Alle lokalen Daten löschen“, um den lokalen Speicher vollständig zurückzusetzen.
+
 ---
 
 ## 8) Datenschutz & sichere Arbeitsweise
