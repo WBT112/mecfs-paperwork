@@ -42,6 +42,7 @@ import { buildRandomDummyPatch } from '../lib/devDummyFill';
 import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
+import type { JsonEncryptionEnvelope } from '../lib/jsonEncryption';
 import {
   FormpackLoaderError,
   FORMPACKS_UPDATED_EVENT,
@@ -203,11 +204,58 @@ const buildErrorMessage = (
 };
 
 const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
+const JSON_ENCRYPTION_KIND = 'mecfs-paperwork-json-encrypted';
 const FORM_PRIMARY_FOCUS_SELECTOR =
   '.formpack-form input:not([type="hidden"]):not([disabled]), .formpack-form select:not([disabled]), .formpack-form textarea:not([disabled]), .formpack-form button:not([disabled]), .formpack-form [tabindex]:not([tabindex="-1"])';
 const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
 const FOCUS_RETRY_DELAY_MS = 50;
 const FOCUS_RETRY_ATTEMPTS = 30;
+
+type JsonEncryptionRuntimeErrorCode =
+  | 'crypto_unsupported'
+  | 'invalid_envelope'
+  | 'decrypt_failed';
+
+const isJsonEncryptionRuntimeError = (
+  error: unknown,
+): error is { code: JsonEncryptionRuntimeErrorCode } => {
+  if (!isRecord(error)) {
+    return false;
+  }
+
+  const code = error.code;
+  return (
+    error.name === 'JsonEncryptionError' &&
+    typeof code === 'string' &&
+    (code === 'crypto_unsupported' ||
+      code === 'invalid_envelope' ||
+      code === 'decrypt_failed')
+  );
+};
+
+const tryParseEncryptedEnvelope = (
+  rawJson: string,
+): JsonEncryptionEnvelope | null => {
+  const normalized = rawJson.replace(/^\uFEFF/, '').trimStart();
+  if (!normalized) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(normalized) as unknown;
+    if (!isRecord(parsed)) {
+      return null;
+    }
+
+    return parsed.kind === JSON_ENCRYPTION_KIND
+      ? (parsed as JsonEncryptionEnvelope)
+      : null;
+  } catch {
+    return null;
+  }
+};
+
+const loadJsonEncryptionModule = async () => import('../lib/jsonEncryption');
 
 const OFFLABEL_FOCUS_SELECTOR_BY_TARGET: Record<OfflabelFocusTarget, string> = {
   'request.otherDrugName':
@@ -946,11 +994,18 @@ export default function FormpackDetailPage() {
   const [formData, setFormData] = useState<FormDataState>({});
   const [importJson, setImportJson] = useState('');
   const [importFileName, setImportFileName] = useState<string | null>(null);
+  const [importPassword, setImportPassword] = useState('');
+  const [isImportFileEncrypted, setIsImportFileEncrypted] = useState(false);
   const [importMode, setImportMode] = useState<'new' | 'overwrite'>('new');
   const [importIncludeRevisions, setImportIncludeRevisions] = useState(true);
   const [importError, setImportError] = useState<string | null>(null);
   const [importSuccess, setImportSuccess] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [encryptJsonExport, setEncryptJsonExport] = useState(false);
+  const [jsonExportPassword, setJsonExportPassword] = useState('');
+  const [jsonExportPasswordConfirm, setJsonExportPasswordConfirm] =
+    useState('');
+  const [jsonExportError, setJsonExportError] = useState<string | null>(null);
   const [docxTemplateId, setDocxTemplateId] = useState<DocxTemplateId>('a4');
   const [docxError, setDocxError] = useState<string | null>(null);
   const [docxSuccess, setDocxSuccess] = useState<string | null>(null);
@@ -1463,11 +1518,38 @@ export default function FormpackDetailPage() {
     [t],
   );
 
+  const buildJsonEncryptionErrorMessage = useCallback(
+    (error: unknown, mode: 'export' | 'import') => {
+      if (isJsonEncryptionRuntimeError(error)) {
+        if (error.code === 'crypto_unsupported') {
+          return t('jsonEncryptionUnsupported');
+        }
+        if (error.code === 'decrypt_failed') {
+          return t('importPasswordInvalid');
+        }
+        return t('importEncryptedPayloadInvalid');
+      }
+
+      return mode === 'export'
+        ? t('formpackJsonExportError')
+        : t('importInvalidJson');
+    },
+    [t],
+  );
+
   useEffect(() => {
     if (!activeRecord && importMode === 'overwrite') {
       setImportMode('new');
     }
   }, [activeRecord, importMode]);
+
+  useEffect(() => {
+    if (!encryptJsonExport) {
+      setJsonExportPassword('');
+      setJsonExportPasswordConfirm('');
+      setJsonExportError(null);
+    }
+  }, [encryptJsonExport]);
 
   const activeRecordStorageKey = useMemo(
     () => (formpackId ? `mecfs-paperwork.activeRecordId.${formpackId}` : null),
@@ -1958,7 +2040,28 @@ export default function FormpackDetailPage() {
     setIsImporting(true);
 
     try {
-      const result = validateJsonImport(importJson, schema, manifest.id);
+      let normalizedImportJson = importJson;
+      const encryptionEnvelope = tryParseEncryptedEnvelope(importJson);
+
+      if (encryptionEnvelope) {
+        if (!importPassword) {
+          setImportError(t('importPasswordRequired'));
+          return;
+        }
+
+        const { decryptJsonWithPassword } = await loadJsonEncryptionModule();
+
+        normalizedImportJson = await decryptJsonWithPassword(
+          encryptionEnvelope,
+          importPassword,
+        );
+      }
+
+      const result = validateJsonImport(
+        normalizedImportJson,
+        schema,
+        manifest.id,
+      );
 
       if (result.error) {
         setImportError(buildImportErrorMessage(result.error));
@@ -1987,20 +2090,29 @@ export default function FormpackDetailPage() {
       setImportSuccess(t('importSuccess'));
       setImportJson('');
       setImportFileName(null);
+      setImportPassword('');
+      setIsImportFileEncrypted(false);
       if (importInputRef.current) {
         importInputRef.current.value = '';
       }
-    } catch {
+    } catch (error) {
+      if (isJsonEncryptionRuntimeError(error)) {
+        setImportError(buildJsonEncryptionErrorMessage(error, 'import'));
+        return;
+      }
+
       setImportError(t('importStorageError'));
     } finally {
       setIsImporting(false);
     }
   }, [
+    buildJsonEncryptionErrorMessage,
     buildImportErrorMessage,
     importIncludeRevisions,
     importJson,
     importMode,
     importNewRecord,
+    importPassword,
     importOverwriteRecord,
     manifest,
     refreshSnapshots,
@@ -2018,6 +2130,8 @@ export default function FormpackDetailPage() {
       if (!file) {
         setImportJson('');
         setImportFileName(null);
+        setImportPassword('');
+        setIsImportFileEncrypted(false);
         return;
       }
 
@@ -2025,9 +2139,12 @@ export default function FormpackDetailPage() {
         const text = await file.text();
         setImportJson(text);
         setImportFileName(file.name);
+        setImportPassword('');
+        setIsImportFileEncrypted(Boolean(tryParseEncryptedEnvelope(text)));
       } catch {
         setImportJson('');
         setImportFileName(file.name);
+        setIsImportFileEncrypted(false);
         setImportError(t('importInvalidJson'));
       }
     },
@@ -2327,10 +2444,12 @@ export default function FormpackDetailPage() {
 
     return sections.length ? sections : null;
   }, [formData, formSchema, previewUiSchema, resolvePreviewValue]);
-  const handleExportJson = useCallback(() => {
+  const handleExportJson = useCallback(async () => {
     if (!manifest || !activeRecord) {
       return;
     }
+
+    setJsonExportError(null);
 
     const payload = buildJsonExportPayload({
       formpack: { id: manifest.id, version: manifest.version },
@@ -2341,8 +2460,46 @@ export default function FormpackDetailPage() {
       ...(schema ? { schema } : {}),
     });
     const filename = buildJsonExportFilename(payload);
-    downloadJsonExport(payload, filename);
-  }, [activeRecord, formData, locale, manifest, schema, snapshots]);
+
+    try {
+      if (!encryptJsonExport) {
+        downloadJsonExport(payload, filename);
+        return;
+      }
+
+      if (!jsonExportPassword) {
+        setJsonExportError(t('formpackJsonExportPasswordRequired'));
+        return;
+      }
+
+      if (jsonExportPassword !== jsonExportPasswordConfirm) {
+        setJsonExportError(t('formpackJsonExportPasswordMismatch'));
+        return;
+      }
+
+      const { encryptJsonWithPassword } = await loadJsonEncryptionModule();
+
+      const encryptedPayload = await encryptJsonWithPassword(
+        JSON.stringify(payload),
+        jsonExportPassword,
+      );
+      downloadJsonExport(encryptedPayload, filename);
+    } catch (error) {
+      setJsonExportError(buildJsonEncryptionErrorMessage(error, 'export'));
+    }
+  }, [
+    activeRecord,
+    buildJsonEncryptionErrorMessage,
+    encryptJsonExport,
+    formData,
+    jsonExportPassword,
+    jsonExportPasswordConfirm,
+    locale,
+    manifest,
+    schema,
+    snapshots,
+    t,
+  ]);
 
   const handleExportDocx = useCallback(async () => {
     const manifestExports = manifest?.exports;
@@ -2402,6 +2559,30 @@ export default function FormpackDetailPage() {
     setPdfSuccess(null);
   }, [t]);
 
+  const clearDocxSuccess = useCallback(() => {
+    if (docxSuccess) {
+      setDocxSuccess(null);
+    }
+  }, [docxSuccess]);
+
+  const clearImportSuccess = useCallback(() => {
+    if (importSuccess) {
+      setImportSuccess(null);
+    }
+  }, [importSuccess]);
+
+  const clearPdfSuccess = useCallback(() => {
+    if (pdfSuccess) {
+      setPdfSuccess(null);
+    }
+  }, [pdfSuccess]);
+
+  const clearJsonExportError = useCallback(() => {
+    if (jsonExportError) {
+      setJsonExportError(null);
+    }
+  }, [jsonExportError]);
+
   const handleActionClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
       const target = event.target;
@@ -2416,34 +2597,29 @@ export default function FormpackDetailPage() {
 
       const { action } = actionButton.dataset;
       if (action === 'docx-export') {
-        if (importSuccess) {
-          setImportSuccess(null);
-        }
-        if (pdfSuccess) {
-          setPdfSuccess(null);
-        }
+        clearJsonExportError();
+        clearImportSuccess();
+        clearPdfSuccess();
         return;
       }
       if (action === 'json-import') {
-        if (docxSuccess) {
-          setDocxSuccess(null);
-        }
-        if (pdfSuccess) {
-          setPdfSuccess(null);
-        }
+        clearJsonExportError();
+        clearDocxSuccess();
+        clearPdfSuccess();
         return;
       }
-      if (docxSuccess) {
-        setDocxSuccess(null);
-      }
-      if (pdfSuccess) {
-        setPdfSuccess(null);
-      }
-      if (importSuccess) {
-        setImportSuccess(null);
-      }
+
+      clearDocxSuccess();
+      clearJsonExportError();
+      clearPdfSuccess();
+      clearImportSuccess();
     },
-    [docxSuccess, importSuccess, pdfSuccess],
+    [
+      clearDocxSuccess,
+      clearImportSuccess,
+      clearJsonExportError,
+      clearPdfSuccess,
+    ],
   );
 
   useEffect(() => {
@@ -2647,20 +2823,73 @@ export default function FormpackDetailPage() {
     );
   };
 
-  const renderJsonExportButton = () =>
+  const renderJsonExportControls = () =>
     manifest.exports.includes('json') ? (
-      <button
-        type="button"
-        className="app__button"
-        onClick={handleExportJson}
-        disabled={storageError === 'unavailable'}
-      >
-        {t('formpackRecordExportJson')}
-      </button>
+      <div className="formpack-json-export">
+        <label className="formpack-json-export__toggle">
+          <input
+            type="checkbox"
+            checked={encryptJsonExport}
+            onChange={(event) => setEncryptJsonExport(event.target.checked)}
+          />
+          {t('formpackJsonExportEncryptionToggle')}
+        </label>
+        <p className="formpack-json-export__hint">
+          {t('formpackJsonExportEncryptionHint')}
+        </p>
+        {encryptJsonExport && (
+          <div className="formpack-json-export__passwords">
+            <label
+              className="formpack-json-export__field"
+              htmlFor="json-export-password"
+            >
+              {t('formpackJsonExportPasswordLabel')}
+              <input
+                id="json-export-password"
+                type="password"
+                className="formpack-json-export__input"
+                value={jsonExportPassword}
+                onChange={(event) => setJsonExportPassword(event.target.value)}
+                autoComplete="new-password"
+              />
+            </label>
+            <label
+              className="formpack-json-export__field"
+              htmlFor="json-export-password-confirm"
+            >
+              {t('formpackJsonExportPasswordConfirmLabel')}
+              <input
+                id="json-export-password-confirm"
+                type="password"
+                className="formpack-json-export__input"
+                value={jsonExportPasswordConfirm}
+                onChange={(event) =>
+                  setJsonExportPasswordConfirm(event.target.value)
+                }
+                autoComplete="new-password"
+              />
+            </label>
+          </div>
+        )}
+        <button
+          type="button"
+          className="app__button"
+          onClick={handleExportJson}
+          disabled={storageError === 'unavailable'}
+        >
+          {t('formpackRecordExportJson')}
+        </button>
+      </div>
     ) : null;
 
   const renderActionStatus = () => {
-    if (!docxError && !docxSuccess && !pdfError && !pdfSuccess) {
+    if (
+      !docxError &&
+      !docxSuccess &&
+      !pdfError &&
+      !pdfSuccess &&
+      !jsonExportError
+    ) {
       return null;
     }
 
@@ -2669,6 +2898,9 @@ export default function FormpackDetailPage() {
         {docxError && <span className="app__error">{docxError}</span>}
         {docxSuccess && (
           <span className="formpack-actions__success">{docxSuccess}</span>
+        )}
+        {jsonExportError && (
+          <span className="app__error">{jsonExportError}</span>
         )}
         {pdfError && <span className="app__error">{pdfError}</span>}
         {pdfSuccess && (
@@ -2790,7 +3022,7 @@ export default function FormpackDetailPage() {
                 >
                   {t('formpackFormReset')}
                 </button>
-                {renderJsonExportButton()}
+                {renderJsonExportControls()}
               </div>
               {renderActionStatus()}
             </div>
@@ -2948,6 +3180,9 @@ export default function FormpackDetailPage() {
                     hint: t('formpackImportHint'),
                     fileLabel: t('formpackImportLabel'),
                     fileName: (name) => t('formpackImportFileName', { name }),
+                    passwordLabel: t('formpackImportPasswordLabel'),
+                    passwordHint: t('formpackImportPasswordHint'),
+                    passwordEncryptedHint: t('formpackImportEncryptedHint'),
                     modeLabel: t('formpackImportModeLabel'),
                     modeNew: t('formpackImportModeNew'),
                     modeOverwrite: t('formpackImportModeOverwrite'),
@@ -2959,6 +3194,8 @@ export default function FormpackDetailPage() {
                   }}
                   importInputRef={importInputRef}
                   importFileName={importFileName}
+                  importPassword={importPassword}
+                  isImportFileEncrypted={isImportFileEncrypted}
                   importMode={importMode}
                   importIncludeRevisions={importIncludeRevisions}
                   importError={importError}
@@ -2969,6 +3206,7 @@ export default function FormpackDetailPage() {
                   storageUnavailable={storageError === 'unavailable'}
                   onImportModeChange={setImportMode}
                   onIncludeRevisionsChange={setImportIncludeRevisions}
+                  onImportPasswordChange={setImportPassword}
                   onFileChange={handleImportFileChange}
                   onImport={handleImport}
                 />

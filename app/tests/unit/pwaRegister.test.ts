@@ -86,6 +86,20 @@ describe('registerServiceWorker', () => {
     unsubscribe();
   });
 
+  it('keeps onNeedRefresh resilient when activating the waiting worker fails', async () => {
+    const updateSW = vi.fn(async () => {
+      throw new Error('activation failed');
+    });
+    registerSW.mockReturnValueOnce(updateSW);
+
+    registerServiceWorker({ DEV: false });
+
+    const options = registerSW.mock.calls[0]?.[0] as RegisterSwOptions;
+    expect(() => options.onNeedRefresh?.()).not.toThrow();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+
   it('starts update polling once and triggers checks on interval and visibility change', async () => {
     vi.resetModules();
     registerSW.mockReset();

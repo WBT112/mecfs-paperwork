@@ -124,6 +124,20 @@ describe('formpackInfoBox', () => {
       expect(shouldShowInfoBox(config, {})).toBe(false);
     });
 
+    it('returns false for unsupported operators', () => {
+      const config: InfoBoxConfig = {
+        id: TEST_BOX_ID,
+        anchor: TEST_ANCHOR,
+        enabled: true,
+        i18nKey: TEST_I18N_KEY,
+        showIf: [
+          { path: DECISION_PATH_Q1, op: 'invalid' as never, value: 'x' },
+        ],
+      };
+
+      expect(shouldShowInfoBox(config, { decision: { q1: 'x' } })).toBe(false);
+    });
+
     it('handles undefined form data', () => {
       const config: InfoBoxConfig = {
         id: TEST_BOX_ID,

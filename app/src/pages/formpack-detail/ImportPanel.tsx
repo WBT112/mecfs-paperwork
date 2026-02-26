@@ -6,6 +6,9 @@ type ImportPanelLabels = {
   hint: string;
   fileLabel: string;
   fileName: (name: string) => string;
+  passwordLabel: string;
+  passwordHint: string;
+  passwordEncryptedHint: string;
   modeLabel: string;
   modeNew: string;
   modeOverwrite: string;
@@ -20,6 +23,8 @@ type ImportPanelProps = Readonly<{
   labels: ImportPanelLabels;
   importInputRef: RefObject<HTMLInputElement | null>;
   importFileName: string | null;
+  importPassword: string;
+  isImportFileEncrypted: boolean;
   importMode: 'new' | 'overwrite';
   importIncludeRevisions: boolean;
   importError: string | null;
@@ -30,6 +35,7 @@ type ImportPanelProps = Readonly<{
   storageUnavailable: boolean;
   onImportModeChange: (mode: 'new' | 'overwrite') => void;
   onIncludeRevisionsChange: (checked: boolean) => void;
+  onImportPasswordChange: (password: string) => void;
   onFileChange: (event: ChangeEvent<HTMLInputElement>) => void;
   onImport: () => void;
 }>;
@@ -38,6 +44,8 @@ export default function ImportPanel({
   labels,
   importInputRef,
   importFileName,
+  importPassword,
+  isImportFileEncrypted,
   importMode,
   importIncludeRevisions,
   importError,
@@ -48,6 +56,7 @@ export default function ImportPanel({
   storageUnavailable,
   onImportModeChange,
   onIncludeRevisionsChange,
+  onImportPasswordChange,
   onFileChange,
   onImport,
 }: ImportPanelProps) {
@@ -76,6 +85,22 @@ export default function ImportPanel({
             {labels.fileName(importFileName)}
           </p>
         )}
+      </div>
+      <div className="formpack-import__field">
+        <label htmlFor="formpack-import-password">{labels.passwordLabel}</label>
+        <input
+          id="formpack-import-password"
+          className="formpack-import__file"
+          type="password"
+          autoComplete="current-password"
+          value={importPassword}
+          onChange={(event) => onImportPasswordChange(event.target.value)}
+        />
+        <p className="formpack-import__file-name">
+          {isImportFileEncrypted
+            ? labels.passwordEncryptedHint
+            : labels.passwordHint}
+        </p>
       </div>
       <fieldset className="formpack-import__options">
         <legend>{labels.modeLabel}</legend>

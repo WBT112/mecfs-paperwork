@@ -3,6 +3,14 @@ import { describe, expect, it } from 'vitest';
 import type { UiSchema } from '@rjsf/utils';
 import { applyOfflabelVisibility } from '../../src/formpacks/offlabel-antrag/uiVisibility';
 
+const asRecord = (value: unknown): Record<string, unknown> => {
+  if (typeof value === 'object' && value !== null) {
+    return value as Record<string, unknown>;
+  }
+
+  return {};
+};
+
 const buildUiSchema = (): UiSchema => ({
   request: {
     drug: {},
@@ -208,5 +216,63 @@ describe('applyOfflabelVisibility', () => {
     expect(
       (request.applySection2Abs1a as Record<string, unknown>)['ui:widget'],
     ).toBe('hidden');
+  });
+
+  it('normalizes non-record field nodes when request entries are malformed', () => {
+    const uiSchema: UiSchema = {
+      request: {
+        drug: 'invalid-node',
+        selectedIndicationKey: 123,
+        otherDrugName: 'invalid-node',
+      },
+    };
+
+    const result = applyOfflabelVisibility(uiSchema, {
+      request: { drug: 'other' },
+    });
+    const request = asRecord(result.request as unknown);
+    const drug = asRecord(request.drug);
+    const selectedIndicationKey = asRecord(request.selectedIndicationKey);
+    const selectedIndicationOptions = asRecord(
+      selectedIndicationKey['ui:options'],
+    );
+
+    expect(Array.isArray(drug['ui:enumNames'])).toBe(true);
+    expect(Array.isArray(selectedIndicationKey['ui:enumNames'])).toBe(true);
+    expect(Array.isArray(selectedIndicationOptions.enumOptions)).toBe(true);
+    expect(
+      (request.otherDrugName as Record<string, unknown>)['ui:widget'],
+    ).toBeUndefined();
+  });
+
+  it('merges existing ui:options for drug and indication selectors', () => {
+    const uiSchema: UiSchema = {
+      request: {
+        drug: {
+          'ui:options': { preserve: 'drug' },
+        },
+        selectedIndicationKey: {
+          'ui:options': { preserve: 'indication' },
+        },
+      },
+    };
+
+    const result = applyOfflabelVisibility(
+      uiSchema,
+      { request: { drug: 'agomelatin' } },
+      'de',
+    );
+    const request = asRecord(result.request as unknown);
+    const drug = asRecord(request.drug);
+    const selectedIndicationKey = asRecord(request.selectedIndicationKey);
+    const drugOptions = asRecord(drug['ui:options']);
+    const selectedIndicationOptions = asRecord(
+      selectedIndicationKey['ui:options'],
+    );
+
+    expect(drugOptions.preserve).toBe('drug');
+    expect(selectedIndicationOptions.preserve).toBe('indication');
+    expect(Array.isArray(drugOptions.enumOptions)).toBe(true);
+    expect(Array.isArray(selectedIndicationOptions.enumOptions)).toBe(true);
   });
 });

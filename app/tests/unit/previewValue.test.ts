@@ -35,4 +35,9 @@ describe('hasPreviewValue', () => {
     expect(hasPreviewValue({ empty: '' })).toBe(false);
     expect(hasPreviewValue({ nested: { value: 'ok' } })).toBe(true);
   });
+
+  it('returns false for unsupported value types', () => {
+    expect(hasPreviewValue(Symbol('preview'))).toBe(false);
+    expect(hasPreviewValue(() => 'value')).toBe(false);
+  });
 });

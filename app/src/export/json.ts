@@ -2,6 +2,7 @@ import appPackage from '../../package.json';
 import type { RJSFSchema } from '@rjsf/utils';
 import type { SupportedLocale } from '../i18n/locale';
 import type { FormpackManifest } from '../formpacks/types';
+import type { JsonEncryptionEnvelope } from '../lib/jsonEncryption';
 import type { RecordEntry, SnapshotEntry } from '../storage/types';
 import { isRecord } from '../lib/utils';
 
@@ -31,6 +32,8 @@ export type JsonExportPayload = {
   data: Record<string, unknown>;
   revisions?: JsonExportRevision[];
 };
+
+export type JsonDownloadPayload = JsonExportPayload | JsonEncryptionEnvelope;
 
 export type JsonExportOptions = {
   formpack: Pick<FormpackManifest, 'id' | 'version'>;
@@ -226,7 +229,7 @@ export const buildJsonExportFilename = (payload: JsonExportPayload): string => {
  * Trigger a download for the JSON export payload.
  */
 export const downloadJsonExport = (
-  payload: JsonExportPayload,
+  payload: JsonDownloadPayload,
   filename: string,
 ): void => {
   const blob = new Blob([JSON.stringify(payload, null, 2)], {

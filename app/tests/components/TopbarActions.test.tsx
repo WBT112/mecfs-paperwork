@@ -7,11 +7,12 @@ import { TestRouter } from '../setup/testRouter';
 const SHARE_LINK_LABEL = 'Share formpack link';
 const SHARE_FALLBACK_TITLE = 'Share this link';
 const TEST_FORMPACK_PATH = '/formpacks/alpha';
+const FEEDBACK_LINK_LABEL = 'Send feedback via email';
 
 const translations: Record<string, string> = {
   topbarActionsLabel: 'Top bar actions',
   feedbackAction: 'Feedback',
-  feedbackAriaLabel: 'Send feedback via email',
+  feedbackAriaLabel: FEEDBACK_LINK_LABEL,
   feedbackSubject: 'mecfs-paperwork feedback: {{context}}',
   feedbackIntro: 'Please do not include any patient or health data.',
   feedbackDebugLabel: 'Debug info',
@@ -61,6 +62,7 @@ const renderActions = (route: string) =>
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   Object.defineProperty(navigator, 'share', {
     value: undefined,
     configurable: true,
@@ -72,7 +74,7 @@ describe('TopbarActions', () => {
     renderActions(TEST_FORMPACK_PATH);
 
     const feedbackLink = screen.getByRole('link', {
-      name: 'Send feedback via email',
+      name: FEEDBACK_LINK_LABEL,
     });
     const href = feedbackLink.getAttribute('href');
     expect(href).toContain('mailto:info@mecfs-paperwork.de?');
@@ -173,5 +175,23 @@ describe('TopbarActions', () => {
     expect(screen.queryByText(SHARE_FALLBACK_TITLE)).not.toBeInTheDocument();
 
     selectSpy.mockRestore();
+  });
+
+  it('uses custom feedback email and commit from environment when provided', () => {
+    vi.stubEnv('VITE_FEEDBACK_EMAIL', 'support@example.org');
+    vi.stubEnv('VITE_APP_COMMIT', 'commit-sha');
+
+    renderActions(TEST_FORMPACK_PATH);
+
+    const feedbackLink = screen.getByRole('link', {
+      name: FEEDBACK_LINK_LABEL,
+    });
+    const href = feedbackLink.getAttribute('href') ?? '';
+
+    expect(href).toContain('mailto:support@example.org?');
+
+    const query = href.split('?')[1] ?? '';
+    const params = new URLSearchParams(query);
+    expect(params.get('body')).toContain('Commit: commit-sha');
   });
 });

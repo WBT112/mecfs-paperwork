@@ -219,6 +219,28 @@ const jsonExportState = vi.hoisted(() => ({
   downloadJsonExport: vi.fn(),
 }));
 
+const jsonEncryptionState = vi.hoisted(() => {
+  class MockJsonEncryptionError extends Error {
+    code: 'crypto_unsupported' | 'invalid_envelope' | 'decrypt_failed';
+
+    constructor(
+      code: 'crypto_unsupported' | 'invalid_envelope' | 'decrypt_failed',
+      message: string,
+    ) {
+      super(message);
+      this.name = 'JsonEncryptionError';
+      this.code = code;
+    }
+  }
+
+  return {
+    JsonEncryptionError: MockJsonEncryptionError,
+    encryptJsonWithPassword: vi.fn(),
+    decryptJsonWithPassword: vi.fn(),
+    tryParseJsonEncryptionEnvelope: vi.fn(),
+  };
+});
+
 const record = storageState.record;
 const mockUpdateActiveRecord = storageState.updateActiveRecord;
 const FORMPACK_ROUTE = `/formpacks/${FORMPACK_ID}`;
@@ -227,6 +249,9 @@ const IMPORT_ACTION_LABEL = 'formpackImportAction';
 const IMPORT_SUCCESS_LABEL = 'importSuccess';
 const PDF_EXPORT_CONTROLS_LABEL = 'pdf-export-controls';
 const PDF_SUCCESS_BUTTON_LABEL = 'pdf-success';
+const ENCRYPTED_EXPORT_KIND = 'mecfs-paperwork-json-encrypted';
+const ENCRYPTED_IMPORT_CONTENT = `{"kind":"${ENCRYPTED_EXPORT_KIND}"}`;
+const EXPORT_FILENAME = 'export.json';
 
 const mockFileText = (content: string) => {
   const descriptor = Object.getOwnPropertyDescriptor(File.prototype, 'text');
@@ -260,6 +285,8 @@ vi.mock('../../src/export/docxLazy', () => ({
 }));
 
 vi.mock('../../src/export/json', () => jsonExportState);
+
+vi.mock('../../src/lib/jsonEncryption', () => jsonEncryptionState);
 
 vi.mock('../../src/import/json', () => ({
   validateJsonImport: importState.validateJsonImport,
@@ -480,6 +507,10 @@ describe('FormpackDetailPage', () => {
     jsonExportState.buildJsonExportPayload.mockReset();
     jsonExportState.buildJsonExportFilename.mockReset();
     jsonExportState.downloadJsonExport.mockReset();
+    jsonEncryptionState.encryptJsonWithPassword.mockReset();
+    jsonEncryptionState.decryptJsonWithPassword.mockReset();
+    jsonEncryptionState.tryParseJsonEncryptionEnvelope.mockReset();
+    jsonEncryptionState.tryParseJsonEncryptionEnvelope.mockReturnValue(null);
     offlabelPreviewState.buildDocuments.mockReset();
     offlabelPreviewState.buildDocuments.mockReturnValue([]);
     pdfExportControlsState.props = null;
@@ -1401,7 +1432,7 @@ describe('FormpackDetailPage', () => {
       data: record.data,
     };
     jsonExportState.buildJsonExportPayload.mockReturnValue(payload);
-    jsonExportState.buildJsonExportFilename.mockReturnValue('export.json');
+    jsonExportState.buildJsonExportFilename.mockReturnValue(EXPORT_FILENAME);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1419,8 +1450,134 @@ describe('FormpackDetailPage', () => {
     );
     expect(jsonExportState.downloadJsonExport).toHaveBeenCalledWith(
       payload,
-      'export.json',
+      EXPORT_FILENAME,
     );
+  });
+
+  it('exports encrypted JSON backups when encryption is enabled', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: ['docx', 'json'],
+    };
+    const payload = {
+      app: { id: 'mecfs-paperwork', version: '0.0.0' },
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        id: record.id,
+        updatedAt: record.updatedAt,
+        locale: 'de',
+        data: record.data,
+      },
+      locale: 'de',
+      exportedAt: new Date().toISOString(),
+      data: record.data,
+    };
+    const encryptedPayload = {
+      kind: ENCRYPTED_EXPORT_KIND,
+      version: 1,
+      cipher: 'AES-GCM',
+      tagLength: 128,
+      kdf: 'PBKDF2',
+      hash: 'SHA-256',
+      iterations: 310000,
+      salt: 'salt',
+      iv: 'iv',
+      ciphertext: 'ciphertext',
+    };
+    jsonExportState.buildJsonExportPayload.mockReturnValue(payload);
+    jsonExportState.buildJsonExportFilename.mockReturnValue(EXPORT_FILENAME);
+    jsonEncryptionState.encryptJsonWithPassword.mockResolvedValue(
+      encryptedPayload,
+    );
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByLabelText('formpackJsonExportEncryptionToggle'),
+    );
+    await userEvent.type(
+      screen.getByLabelText('formpackJsonExportPasswordLabel'),
+      'secret',
+    );
+    await userEvent.type(
+      screen.getByLabelText('formpackJsonExportPasswordConfirmLabel'),
+      'secret',
+    );
+    await userEvent.click(screen.getByText('formpackRecordExportJson'));
+
+    await waitFor(() => {
+      expect(jsonEncryptionState.encryptJsonWithPassword).toHaveBeenCalledWith(
+        JSON.stringify(payload),
+        'secret',
+      );
+    });
+    await waitFor(() => {
+      expect(jsonExportState.downloadJsonExport).toHaveBeenCalledWith(
+        encryptedPayload,
+        EXPORT_FILENAME,
+      );
+    });
+  });
+
+  it('requires password before importing encrypted JSON files', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: ['docx', 'json'],
+    };
+
+    const envelope = {
+      kind: ENCRYPTED_EXPORT_KIND,
+      version: 1,
+      cipher: 'AES-GCM',
+      tagLength: 128,
+      kdf: 'PBKDF2',
+      hash: 'SHA-256',
+      iterations: 310000,
+      salt: 'salt',
+      iv: 'iv',
+      ciphertext: 'ciphertext',
+    };
+    jsonEncryptionState.tryParseJsonEncryptionEnvelope.mockImplementation(
+      (raw: string) => (raw.includes(ENCRYPTED_EXPORT_KIND) ? envelope : null),
+    );
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openImportSection();
+
+    const file = new File([ENCRYPTED_IMPORT_CONTENT], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+
+    const restoreFileText = mockFileText(ENCRYPTED_IMPORT_CONTENT);
+    fireEvent.change(screen.getByLabelText('formpackImportLabel'), {
+      target: { files: [file] },
+    });
+
+    expect(
+      await screen.findByText('formpackImportFileName'),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+
+    expect(
+      await screen.findByText('importPasswordRequired'),
+    ).toBeInTheDocument();
+    expect(importState.validateJsonImport).not.toHaveBeenCalled();
+
+    restoreFileText();
   });
 
   it('renders error content when formpack loading fails', async () => {

@@ -16,6 +16,7 @@ import {
 } from '../../../src/storage/records';
 import { StorageUnavailableError } from '../../../src/storage/db';
 import {
+  createSnapshot as createSnapshotEntry,
   clearSnapshots as clearSnapshotsEntry,
   getSnapshot,
   listSnapshots,
@@ -109,6 +110,7 @@ describe('storage hooks', () => {
     vi.mocked(listSnapshots).mockResolvedValue([]);
     vi.mocked(deleteRecordEntry).mockReset();
     vi.mocked(clearSnapshotsEntry).mockReset();
+    vi.mocked(createSnapshotEntry).mockReset();
     vi.mocked(createRecordEntry).mockReset();
     vi.mocked(getRecordEntry).mockReset();
     vi.mocked(updateRecordEntry).mockReset();
@@ -199,6 +201,15 @@ describe('storage hooks', () => {
       result = await getLatest()?.updateActiveRecord('missing', { title: 'x' });
     });
     expect(result).toBeNull();
+
+    vi.mocked(updateRecordEntry).mockRejectedValue(new Error('write failed'));
+    await act(async () => {
+      result = await getLatest()?.updateActiveRecord(original.id, {
+        title: 'Will fail',
+      });
+    });
+    expect(result).toBeNull();
+    expect(getLatest()?.errorCode).toBe('operation');
   });
 
   it('refresh merges active record when list is empty', async () => {
@@ -336,6 +347,62 @@ describe('storage hooks', () => {
     expect(getSnapshot).toHaveBeenCalledWith('snap-load');
   });
 
+  it('creates a snapshot and prepends it to local state', async () => {
+    const existingSnapshot = createSnapshot({ id: 'snap-existing' });
+    const createdSnapshot = createSnapshot({ id: 'snap-created' });
+    vi.mocked(listSnapshots).mockResolvedValue([existingSnapshot]);
+    vi.mocked(createSnapshotEntry).mockResolvedValue(createdSnapshot);
+
+    const { getLatest } = renderSnapshotsHook(SNAPSHOT_RECORD_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+    await waitFor(() =>
+      expect(getLatest()?.snapshots).toEqual([existingSnapshot]),
+    );
+
+    let created: SnapshotEntry | null | undefined;
+    await act(async () => {
+      created = await getLatest()?.createSnapshot({ field: 'next' }, 'New');
+    });
+
+    expect(created).toEqual(createdSnapshot);
+    expect(createSnapshotEntry).toHaveBeenCalledWith(
+      SNAPSHOT_RECORD_ID,
+      { field: 'next' },
+      'New',
+    );
+    expect(getLatest()?.snapshots).toEqual([createdSnapshot, existingSnapshot]);
+  });
+
+  it('returns null when creating snapshots without a record id', async () => {
+    const { getLatest } = renderSnapshotsHook(null);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let created: SnapshotEntry | null | undefined;
+    await act(async () => {
+      created = await getLatest()?.createSnapshot({ field: 'x' }, 'Ignored');
+    });
+
+    expect(created).toBeNull();
+    expect(createSnapshotEntry).not.toHaveBeenCalled();
+  });
+
+  it('sets unavailable error when snapshot creation fails due missing storage', async () => {
+    vi.mocked(createSnapshotEntry).mockRejectedValue(
+      new StorageUnavailableError('no idb'),
+    );
+
+    const { getLatest } = renderSnapshotsHook(SNAPSHOT_RECORD_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let created: SnapshotEntry | null | undefined;
+    await act(async () => {
+      created = await getLatest()?.createSnapshot({ field: 'x' }, 'Fail');
+    });
+
+    expect(created).toBeNull();
+    expect(getLatest()?.errorCode).toBe('unavailable');
+  });
+
   it('sets error when loadSnapshot fails', async () => {
     vi.mocked(getSnapshot).mockRejectedValue(new Error('read error'));
 
@@ -363,6 +430,19 @@ describe('storage hooks', () => {
     });
 
     expect(result).toBe(0);
+    expect(getLatest()?.errorCode).toBe('operation');
+  });
+
+  it('sets error when snapshot refresh fails', async () => {
+    vi.mocked(listSnapshots).mockRejectedValue(new Error('refresh failed'));
+
+    const { getLatest } = renderSnapshotsHook(SNAPSHOT_RECORD_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    await waitFor(() => {
+      expect(getLatest()?.isLoading).toBe(false);
+    });
+
     expect(getLatest()?.errorCode).toBe('operation');
   });
 });
@@ -622,6 +702,21 @@ describe('useAutosaveRecord', () => {
       recordId: AUTOSAVE_RECORD_ID,
       formData: { field: 'saved' },
       baselineData: { field: 'saved' },
+    });
+
+    await act(async () => {
+      globalThis.dispatchEvent(new Event('beforeunload'));
+      await Promise.resolve();
+    });
+
+    expect(updateRecordEntry).not.toHaveBeenCalled();
+  });
+
+  it('returns early on beforeunload when no record id is present', async () => {
+    renderAutosaveHook({
+      recordId: null,
+      formData: { field: 'changed' },
+      baselineData: null,
     });
 
     await act(async () => {

@@ -1,10 +1,12 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import './formpackListPage.mockSetup';
 import FormpackListPage from '../../src/pages/FormpackListPage';
 import { TestRouter } from '../setup/testRouter';
+import { listFormpacks } from '../../src/formpacks/loader';
+import type { FormpackManifest } from '../../src/formpacks/types';
 
 const TITLE_INSURER = 'Insurer Pack';
 const TITLE_DOCTOR = 'Doctor Pack';
@@ -71,6 +73,10 @@ const waitForLoaded = async () => {
 };
 
 describe('FormpackListPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('renders formpacks grouped by category', async () => {
     renderPage();
     await waitForLoaded();
@@ -172,5 +178,89 @@ describe('FormpackListPage', () => {
     expect(
       screen.getByPlaceholderText('formpackSearchPlaceholder'),
     ).toBeInTheDocument();
+  });
+
+  it('shows empty registry message and no search input when no formpacks exist', async () => {
+    vi.mocked(listFormpacks).mockResolvedValueOnce([]);
+
+    renderPage();
+    await waitForLoaded();
+
+    expect(screen.getByText('formpackListEmpty')).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText('formpackSearchPlaceholder'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('groups multiple formpacks in the same category', async () => {
+    vi.mocked(listFormpacks).mockResolvedValueOnce([
+      {
+        id: 'formpack-insurer-a',
+        version: '1.0.0',
+        defaultLocale: 'de',
+        locales: ['de'],
+        titleKey: 'Insurer Pack A',
+        descriptionKey: 'Insurer A description',
+        exports: ['json'],
+        visibility: 'public',
+        meta: { category: 'insurer', keywords: ['kasse'] },
+      },
+      {
+        id: 'formpack-insurer-b',
+        version: '1.0.0',
+        defaultLocale: 'de',
+        locales: ['de'],
+        titleKey: 'Insurer Pack B',
+        descriptionKey: 'Insurer B description',
+        exports: ['json'],
+        visibility: 'public',
+        meta: { category: 'insurer', keywords: ['antrag'] },
+      },
+    ]);
+
+    renderPage();
+    await waitForLoaded();
+
+    expect(screen.getByText('Insurer Pack A')).toBeInTheDocument();
+    expect(screen.getByText('Insurer Pack B')).toBeInTheDocument();
+    expect(screen.getByText('formpackCategoryInsurer')).toBeInTheDocument();
+  });
+
+  it('does not update state when loading resolves after unmount', async () => {
+    let resolveList: ((value: FormpackManifest[]) => void) | undefined;
+    vi.mocked(listFormpacks).mockReturnValueOnce(
+      new Promise<FormpackManifest[]>((resolve) => {
+        resolveList = resolve;
+      }),
+    );
+
+    const view = renderPage();
+    view.unmount();
+
+    await act(async () => {
+      resolveList?.([]);
+      await Promise.resolve();
+    });
+
+    expect(listFormpacks).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not update state when loading rejects after unmount', async () => {
+    let rejectList: ((reason?: unknown) => void) | undefined;
+    vi.mocked(listFormpacks).mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectList = reject;
+      }),
+    );
+
+    const view = renderPage();
+    view.unmount();
+
+    await act(async () => {
+      rejectList?.(new Error('late rejection'));
+      await Promise.resolve();
+    });
+
+    expect(listFormpacks).toHaveBeenCalledTimes(1);
   });
 });

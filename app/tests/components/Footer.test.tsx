@@ -2,8 +2,10 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Footer from '../../src/components/Footer';
 import { getSponsorUrl } from '../../src/lib/funding';
-import { DEFAULT_REPO_URL } from '../../src/lib/repoUrl';
+import { DEFAULT_REPO_URL, getRepoUrl } from '../../src/lib/repoUrl';
 import { TestRouter } from '../setup/testRouter';
+
+const SPONSOR_URL = 'https://example.com/sponsor';
 
 const translations: Record<string, string> = {
   footerNavLabel: 'Footer navigation',
@@ -31,6 +33,11 @@ vi.mock('../../src/lib/funding', () => ({
   getSponsorUrl: vi.fn(),
 }));
 
+vi.mock('../../src/lib/repoUrl', () => ({
+  DEFAULT_REPO_URL: 'https://github.com/example/project',
+  getRepoUrl: vi.fn(() => 'https://github.com/example/project'),
+}));
+
 vi.mock('../../src/lib/version', () => ({
   APP_VERSION: 'abc1234',
   BUILD_DATE_ISO: '2026-02-07T12:00:00.000Z',
@@ -39,9 +46,11 @@ vi.mock('../../src/lib/version', () => ({
 
 describe('Footer', () => {
   const mockedGetSponsorUrl = vi.mocked(getSponsorUrl);
+  const mockedGetRepoUrl = vi.mocked(getRepoUrl);
 
   it('renders imprint, privacy, sponsor, and GitHub links', () => {
-    mockedGetSponsorUrl.mockReturnValue('https://example.com/sponsor');
+    mockedGetSponsorUrl.mockReturnValue(SPONSOR_URL);
+    mockedGetRepoUrl.mockReturnValue(DEFAULT_REPO_URL);
     render(
       <TestRouter>
         <Footer />
@@ -61,7 +70,7 @@ describe('Footer', () => {
     );
 
     const sponsorLink = screen.getByRole('link', { name: 'Sponsor' });
-    expect(sponsorLink).toHaveAttribute('href', 'https://example.com/sponsor');
+    expect(sponsorLink).toHaveAttribute('href', SPONSOR_URL);
     expect(sponsorLink).toHaveAttribute('target', '_blank');
     expect(sponsorLink).toHaveAttribute('rel', 'noreferrer noopener');
 
@@ -74,6 +83,7 @@ describe('Footer', () => {
 
   it('hides the sponsor link when no funding URL is available', () => {
     mockedGetSponsorUrl.mockReturnValue(null);
+    mockedGetRepoUrl.mockReturnValue(DEFAULT_REPO_URL);
 
     render(
       <TestRouter>
@@ -82,5 +92,18 @@ describe('Footer', () => {
     );
 
     expect(screen.queryByRole('link', { name: 'Sponsor' })).toBeNull();
+  });
+
+  it('hides the GitHub link when no repository URL is available', () => {
+    mockedGetSponsorUrl.mockReturnValue(SPONSOR_URL);
+    mockedGetRepoUrl.mockReturnValue('');
+
+    render(
+      <TestRouter>
+        <Footer />
+      </TestRouter>,
+    );
+
+    expect(screen.queryByRole('link', { name: 'GitHub' })).toBeNull();
   });
 });

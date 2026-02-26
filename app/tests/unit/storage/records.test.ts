@@ -162,6 +162,26 @@ describe('updateRecord', () => {
     expect(result).toBeNull();
     expect(mockStore.put).not.toHaveBeenCalled();
   });
+
+  it('should keep existing data and locale when partial updates omit them', async () => {
+    const existingRecord = {
+      id: '1',
+      data: { a: 1 },
+      title: 'Old Title',
+      locale: 'en',
+      createdAt: INITIAL_TIMESTAMP,
+      updatedAt: INITIAL_TIMESTAMP,
+    };
+    mockStore.get.mockResolvedValue(existingRecord);
+
+    const resultPromise = updateRecord('1', { title: 'Renamed' });
+    resolveDone?.();
+    const result = await resultPromise;
+
+    expect(result?.title).toBe('Renamed');
+    expect(result?.data).toEqual(existingRecord.data);
+    expect(result?.locale).toBe(existingRecord.locale);
+  });
 });
 
 describe('deleteRecord', () => {

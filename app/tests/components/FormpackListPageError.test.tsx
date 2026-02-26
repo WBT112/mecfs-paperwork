@@ -36,4 +36,22 @@ describe('FormpackListPage Error State', () => {
     expect(await screen.findByText(errorMessage)).toBeInTheDocument();
     expect(screen.getByText('formpackListTitle')).toBeInTheDocument();
   });
+
+  it('uses translated fallback when loader rejects with a non-Error value', async () => {
+    vi.mocked(listFormpacks).mockRejectedValue('failed');
+
+    render(
+      <TestRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<FormpackListPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('formpackLoading')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('formpackListErrorFallback')).toBeInTheDocument();
+  });
 });

@@ -10,4 +10,8 @@ describe('formatPdfDate', () => {
   it('returns the input string when the date is invalid', () => {
     expect(formatPdfDate('not-a-date', 'en')).toBe('not-a-date');
   });
+
+  it('returns an empty string for invalid Date objects', () => {
+    expect(formatPdfDate(new Date('invalid-date'), 'en')).toBe('');
+  });
 });

@@ -1182,6 +1182,40 @@ body {
   align-items: stretch;
 }
 
+.formpack-json-export {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.formpack-json-export__toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.formpack-json-export__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-subtle);
+}
+
+.formpack-json-export__passwords {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.formpack-json-export__field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.formpack-json-export__input {
+  width: 100%;
+}
+
 /* Action bar buttons: consistent height and no label wrapping-induced layout jumps. */
 .formpack-form__actions .app__button {
   min-height: 44px;

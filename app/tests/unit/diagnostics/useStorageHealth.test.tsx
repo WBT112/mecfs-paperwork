@@ -126,6 +126,21 @@ describe('useStorageHealth', () => {
     // updating state on an unmounted component
   });
 
+  it('does not set error state when a rejected check resolves after unmount', async () => {
+    let rejectCheck: (error: unknown) => void;
+    mockCheckStorageHealth.mockReturnValue(
+      new Promise<StorageHealthInfo>((_, reject) => {
+        rejectCheck = reject;
+      }),
+    );
+
+    const { unmount } = renderHook(() => useStorageHealth());
+    unmount();
+
+    rejectCheck!(new Error('late failure'));
+    await Promise.resolve();
+  });
+
   it('exposes a refresh function that is stable between renders', async () => {
     const { result, rerender } = renderHook(() => useStorageHealth());
 
