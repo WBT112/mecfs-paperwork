@@ -504,6 +504,50 @@ describe('validateJsonImport', () => {
     });
   });
 
+  it('accepts enum drift for backward-compatible imports', () => {
+    const enumSchema = {
+      type: 'object',
+      properties: {
+        request: {
+          type: 'object',
+          properties: {
+            drug: {
+              type: 'string',
+              enum: ['ivabradine', 'other'],
+            },
+          },
+          additionalProperties: false,
+        },
+      },
+      additionalProperties: false,
+    } as const satisfies RJSFSchema;
+
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: {
+          request: {
+            drug: 'legacy-drug-value',
+          },
+        },
+      },
+    });
+
+    const result = validateJsonImport(
+      importJson,
+      enumSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.record.data).toEqual({
+      request: {
+        drug: 'legacy-drug-value',
+      },
+    });
+  });
+
   it('accepts legacy top-level data/locale payload and keeps formpack version', () => {
     const legacyJson = JSON.stringify({
       formpack: { id: PRIMARY_FORMPACK_ID, version: '2.4.0' },

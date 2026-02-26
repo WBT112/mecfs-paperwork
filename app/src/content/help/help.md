@@ -50,6 +50,8 @@ Mit dem JSON-Export sicherst du deine Eingaben als Datei.
 
 - Ideal als **Backup** (z. B. bevor du Gerät/Browser wechselst).
 - Nützlich, wenn du einen Fall später wieder importieren willst.
+- Optional kannst du den JSON-Export mit einem **Kennwort verschlüsseln**.
+- Wenn du verschlüsselst: Kennwort sicher aufbewahren. Ohne dieses Kennwort ist der Import nicht möglich.
 
 ### JSON importieren (Wiederherstellen/Übertragen)
 
@@ -57,6 +59,8 @@ Mit dem Import lädst du eine zuvor exportierte JSON-Datei wieder in die App.
 
 - Gut zum Umzug auf ein anderes Gerät oder wenn du aus einem Backup wiederherstellen willst.
 - Wenn es eine Option „Aktiven Entwurf überschreiben“ gibt: nutze sie nur bewusst, wenn du den aktuellen Stand wirklich ersetzen willst.
+- Für **verschlüsselte JSON-Dateien** musst du beim Import dasselbe Kennwort eingeben wie beim Export.
+- Falls „Daten passen nicht zum aktuellen Schema“ erscheint: prüfe, ob Datei und aktuelles Formpack zusammenpassen und ob die Datei vollständig ist.
 
 ---
 

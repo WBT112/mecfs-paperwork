@@ -177,9 +177,16 @@ const makeLenientSchema = (schema: RJSFSchema, depth = 0): RJSFSchema => {
   const lenient: RJSFSchema = { ...schema };
 
   delete lenient.required;
+  delete lenient.enum;
+  delete lenient.const;
+  delete lenient.format;
+  delete lenient.pattern;
   delete lenient.minLength;
+  delete lenient.maxLength;
   delete lenient.minItems;
+  delete lenient.maxItems;
   delete lenient.minProperties;
+  delete lenient.maxProperties;
 
   if (lenient.properties && typeof lenient.properties === 'object') {
     const properties = { ...lenient.properties } as Record<string, unknown>;
