@@ -46,13 +46,19 @@ import type { JsonEncryptionEnvelope } from '../lib/jsonEncryption';
 import {
   FormpackLoaderError,
   FORMPACKS_UPDATED_EVENT,
+  DOCTOR_LETTER_FORMPACK_ID,
+  NOTFALLPASS_FORMPACK_ID,
+  OFFLABEL_ANTRAG_FORMPACK_ID,
   deriveFormpackRevisionSignature,
+  getFieldVisibility,
+  clearHiddenFields,
   isDevUiEnabled,
   isFormpackVisible,
   loadFormpackManifest,
   loadFormpackSchema,
   loadFormpackUiSchema,
   resolveDecisionTree,
+  type DecisionData,
   type FormpackId,
   type FormpackManifest,
   type InfoBoxConfig,
@@ -61,16 +67,6 @@ import {
   isCompletedCase0Path,
   normalizeDecisionAnswers,
 } from '../formpacks/doctor-letter/decisionAnswers';
-import {
-  DOCTOR_LETTER_FORMPACK_ID,
-  NOTFALLPASS_FORMPACK_ID,
-  OFFLABEL_ANTRAG_FORMPACK_ID,
-} from '../formpacks';
-import {
-  getFieldVisibility,
-  clearHiddenFields,
-  type DecisionData,
-} from '../formpacks';
 import {
   buildOfflabelDocuments,
   type OfflabelRenderedDocument,
@@ -2152,11 +2148,12 @@ export default function FormpackDetailPage() {
         return;
       }
 
+      setImportPassword('');
+
       try {
         const text = await file.text();
         setImportJson(text);
         setImportFileName(file.name);
-        setImportPassword('');
         setIsImportFileEncrypted(Boolean(tryParseEncryptedEnvelope(text)));
       } catch {
         setImportJson('');

@@ -12,7 +12,7 @@ const toBase64Url = (bytes: Uint8Array): string => {
   if (typeof btoa === 'function') {
     let binary = '';
     for (const byte of bytes) {
-      binary += String.fromCharCode(byte);
+      binary += String.fromCodePoint(byte);
     }
     return btoa(binary)
       .replaceAll('+', '-')
@@ -41,7 +41,7 @@ const fromBase64Url = (value: string): Uint8Array => {
 
   if (typeof atob === 'function') {
     const binary = atob(base64);
-    return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return Uint8Array.from(binary, (char) => char.codePointAt(0) ?? 0);
   }
 
   const globalBuffer = (globalThis as { Buffer?: typeof Buffer }).Buffer;
@@ -53,11 +53,11 @@ const fromBase64Url = (value: string): Uint8Array => {
 };
 
 const hasCryptoSupport = (): boolean => {
-  const cryptoApi = (globalThis as { crypto?: Crypto }).crypto;
+  const cryptoApi = (globalThis as { crypto?: Partial<Crypto> }).crypto;
   return Boolean(
     cryptoApi &&
     typeof cryptoApi.getRandomValues === 'function' &&
-    typeof cryptoApi.subtle !== 'undefined',
+    cryptoApi.subtle !== undefined,
   );
 };
 

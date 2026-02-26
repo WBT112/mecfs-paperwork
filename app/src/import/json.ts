@@ -222,10 +222,16 @@ const makeLenientSchema = (schema: RJSFSchema, depth = 0): RJSFSchema => {
     lenient.if as OptionalRjsfSchema,
     depth,
   ) as RJSFSchema['if'];
-  lenient.then = makeLenientSubschema(
-    lenient.then as OptionalRjsfSchema,
+  const lenientRecord = lenient as Record<string, unknown>;
+  const thenSubschema = makeLenientSubschema(
+    lenientRecord['then'] as OptionalRjsfSchema,
     depth,
   ) as RJSFSchema['then'];
+  if (thenSubschema !== undefined) {
+    Reflect.set(lenientRecord, 'then', thenSubschema as unknown);
+  } else {
+    delete lenientRecord['then'];
+  }
   lenient.else = makeLenientSubschema(
     lenient.else as OptionalRjsfSchema,
     depth,

@@ -139,6 +139,7 @@ describe('useStorageHealth', () => {
 
     rejectCheck!(new Error('late failure'));
     await Promise.resolve();
+    expect(mockCheckStorageHealth).toHaveBeenCalled();
   });
 
   it('exposes a refresh function that is stable between renders', async () => {
