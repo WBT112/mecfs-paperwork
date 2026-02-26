@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { checkStorageHealth } from '../../../src/lib/diagnostics/storageHealth';
 
+const DB_NAME = 'mecfs-paperwork';
+
 describe('checkStorageHealth', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -64,7 +66,7 @@ describe('checkStorageHealth', () => {
     };
 
     vi.stubGlobal('indexedDB', {
-      databases: vi.fn().mockResolvedValue([{ name: 'mecfs-paperwork' }]),
+      databases: vi.fn().mockResolvedValue([{ name: DB_NAME }]),
       open: vi.fn(() => {
         queueMicrotask(() => {
           openRequest.onsuccess?.();
@@ -179,5 +181,146 @@ describe('checkStorageHealth', () => {
     const result = await checkStorageHealth();
     expect(result.storageEstimate.usage).toBe(5000);
     expect(result.storageEstimate.quota).toBe(50000);
+  });
+
+  it('returns unknown encryption status when listing databases fails', async () => {
+    const openSpy = vi.fn();
+    vi.stubGlobal('indexedDB', {
+      databases: vi.fn().mockRejectedValue(new Error('listing failed')),
+      open: openSpy,
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      storage: {
+        estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 100000 }),
+      },
+    });
+
+    const result = await checkStorageHealth();
+
+    expect(result.encryptionAtRest?.status).toBe('unknown');
+    expect(openSpy).not.toHaveBeenCalled();
+  });
+
+  it('aborts newly created databases during diagnostics and reports unknown encryption state', async () => {
+    const db = {
+      close: vi.fn(),
+    };
+    const abortSpy = vi.fn();
+    const openRequest = {
+      result: db,
+      transaction: { abort: abortSpy },
+      onupgradeneeded: null as null | (() => void),
+      onsuccess: null as null | (() => void),
+      onerror: null as null | (() => void),
+      onblocked: null as null | (() => void),
+    };
+
+    vi.stubGlobal('indexedDB', {
+      databases: vi.fn().mockResolvedValue([{ name: DB_NAME }]),
+      open: vi.fn(() => {
+        queueMicrotask(() => {
+          openRequest.onupgradeneeded?.();
+          openRequest.onsuccess?.();
+        });
+        return openRequest;
+      }),
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      storage: {
+        estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 100000 }),
+      },
+    });
+
+    const result = await checkStorageHealth();
+
+    expect(abortSpy).toHaveBeenCalledTimes(1);
+    expect(db.close).toHaveBeenCalledTimes(1);
+    expect(result.encryptionAtRest?.status).toBe('unknown');
+  });
+
+  it('returns unknown encryption status when opening IndexedDB is blocked', async () => {
+    const openRequest = {
+      result: null,
+      transaction: undefined,
+      onupgradeneeded: null as null | (() => void),
+      onsuccess: null as null | (() => void),
+      onerror: null as null | (() => void),
+      onblocked: null as null | (() => void),
+    };
+
+    vi.stubGlobal('indexedDB', {
+      databases: vi.fn().mockResolvedValue([{ name: DB_NAME }]),
+      open: vi.fn(() => {
+        queueMicrotask(() => {
+          openRequest.onblocked?.();
+        });
+        return openRequest;
+      }),
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      storage: {
+        estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 100000 }),
+      },
+    });
+
+    const result = await checkStorageHealth();
+
+    expect(result.encryptionAtRest?.status).toBe('unknown');
+  });
+
+  it('returns unknown encryption status when records store cannot be read', async () => {
+    const cursorRequest = {
+      result: null,
+      onsuccess: null as null | (() => void),
+      onerror: null as null | (() => void),
+    };
+    const db = {
+      objectStoreNames: {
+        contains: (storeName: string) => storeName === 'records',
+      },
+      transaction: () => ({
+        objectStore: () => ({
+          openCursor: () => {
+            queueMicrotask(() => {
+              cursorRequest.onerror?.();
+            });
+            return cursorRequest;
+          },
+        }),
+      }),
+      close: vi.fn(),
+    };
+    const openRequest = {
+      result: db,
+      transaction: undefined,
+      onupgradeneeded: null as null | (() => void),
+      onsuccess: null as null | (() => void),
+      onerror: null as null | (() => void),
+      onblocked: null as null | (() => void),
+    };
+
+    vi.stubGlobal('indexedDB', {
+      databases: vi.fn().mockResolvedValue([{ name: 'mecfs-paperwork' }]),
+      open: vi.fn(() => {
+        queueMicrotask(() => {
+          openRequest.onsuccess?.();
+        });
+        return openRequest;
+      }),
+    });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      storage: {
+        estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 100000 }),
+      },
+    });
+
+    const result = await checkStorageHealth();
+
+    expect(result.encryptionAtRest?.status).toBe('unknown');
+    expect(db.close).toHaveBeenCalledTimes(1);
   });
 });

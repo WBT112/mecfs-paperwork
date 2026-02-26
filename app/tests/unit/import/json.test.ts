@@ -668,4 +668,177 @@ describe('validateJsonImport', () => {
       Object.hasOwn(result.payload?.record.data ?? {}, 'requiredEnum'),
     ).toBe(false);
   });
+
+  it('rejects import files exceeding the maximum file size', () => {
+    const oversizedJson = ' '.repeat(10 * 1024 * 1024 + 1);
+
+    const result = validateJsonImport(
+      oversizedJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_json');
+    expect(result.error?.message).toContain('10 MB');
+  });
+
+  it('normalizes tuple arrays, schema defs, and mixed required defaults without schema mismatch', () => {
+    const normalizationSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        objectItems: {
+          type: 'array',
+          items: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              keep: { type: 'string' },
+            },
+          },
+        },
+        arrayWithoutItems: {
+          type: 'array',
+        },
+        withDefault: {
+          type: 'string',
+          default: 'fallback-value',
+        },
+        withBooleanSchema: true,
+        withNumber: {
+          type: 'number',
+        },
+        nestedNoProps: {
+          type: 'object',
+        },
+      },
+      required: [
+        'objectItems',
+        'withDefault',
+        'withBooleanSchema',
+        'withNumber',
+        'nestedNoProps',
+        123 as unknown as string,
+      ],
+      $defs: {
+        legacyNode: {
+          type: 'object',
+          required: ['x'],
+          properties: { x: { type: 'string' } },
+        },
+      },
+    } as const satisfies RJSFSchema;
+
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: {
+          objectItems: [{ keep: 'kept', legacy: 'removed' }],
+          arrayWithoutItems: [{ legacy: true }],
+          nestedNoProps: { stays: true },
+        },
+      },
+    });
+
+    const result = validateJsonImport(
+      importJson,
+      normalizationSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.record.data).toEqual({
+      objectItems: [{ keep: 'kept' }],
+      arrayWithoutItems: [{ legacy: true }],
+      withDefault: 'fallback-value',
+      nestedNoProps: { stays: true },
+    });
+    expect(
+      Object.hasOwn(result.payload?.record.data ?? {}, 'withBooleanSchema'),
+    ).toBe(false);
+    expect(Object.hasOwn(result.payload?.record.data ?? {}, 'withNumber')).toBe(
+      false,
+    );
+  });
+
+  it('throws for invalid tuple-style array schemas that use array-valued items', () => {
+    const invalidTupleSchema = {
+      type: 'object',
+      properties: {
+        tupleItems: {
+          type: 'array',
+          items: [{ type: 'string' }],
+        },
+      },
+    } as const satisfies RJSFSchema;
+
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: {
+          tupleItems: ['x'],
+        },
+      },
+    });
+
+    expect(() =>
+      validateJsonImport(importJson, invalidTupleSchema, PRIMARY_FORMPACK_ID),
+    ).toThrow('schema is invalid');
+  });
+
+  it('keeps deeply nested payloads importable when schema traversal hits depth guards', () => {
+    const buildDeepSchema = (depth: number): RJSFSchema => {
+      let current: RJSFSchema = {
+        type: 'object',
+        properties: {
+          value: { type: 'string' },
+        },
+        additionalProperties: false,
+      };
+
+      for (let level = 0; level < depth; level += 1) {
+        current = {
+          type: 'object',
+          properties: {
+            child: current,
+          },
+          additionalProperties: false,
+        };
+      }
+
+      return current;
+    };
+
+    const buildDeepData = (depth: number): Record<string, unknown> => {
+      let current: Record<string, unknown> = { value: 'leaf' };
+
+      for (let level = 0; level < depth; level += 1) {
+        current = { child: current };
+      }
+
+      return current;
+    };
+
+    const depth = 55;
+    const deepSchema = buildDeepSchema(depth);
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: buildDeepData(depth),
+      },
+    });
+
+    const result = validateJsonImport(
+      importJson,
+      deepSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.record.data).toEqual(buildDeepData(depth));
+  });
 });
