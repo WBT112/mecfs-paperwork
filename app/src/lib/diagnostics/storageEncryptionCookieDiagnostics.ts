@@ -40,10 +40,10 @@ export const getStorageEncryptionCookieDiagnostics =
     const keyCookiePresent =
       typeof keyCookie === 'string' && keyCookie.length > 0;
 
+    const location = (globalThis as { location?: Location }).location;
     let keyCookieContext: StorageKeyCookieContext = 'unknown';
-    if (typeof globalThis.location !== 'undefined') {
-      keyCookieContext =
-        globalThis.location.protocol === 'https:' ? 'https' : 'non-https';
+    if (location !== undefined) {
+      keyCookieContext = location.protocol === 'https:' ? 'https' : 'non-https';
     }
 
     return {
