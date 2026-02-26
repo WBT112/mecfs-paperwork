@@ -9,6 +9,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
 import { openFormpackWithRetry } from './helpers/formpack';
+import { fillTextInputStable } from './helpers/form';
 import { openCollapsibleSectionById } from './helpers/sections';
 
 const FORM_PACK_ID = 'offlabel-antrag';
@@ -16,6 +17,17 @@ const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 30_000;
 const OFFLABEL_INTRO_CHECKBOX_LABEL =
   /Ich habe verstanden|Habe verstanden, Nutzung auf eigenes Risiko|I understand, use at my own risk/i;
+const JSON_EXPORT_PASSWORD = 'secret-123';
+
+type RoundtripFormData = {
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  doctorName: string;
+  insurerName: string;
+  otherDrugName: string;
+  otherIndication: string;
+};
 
 type ExportCompletion =
   | { type: 'download'; download: Download }
@@ -136,6 +148,135 @@ const assertDownloadSize = async (download: Download, minimumSize: number) => {
   expect(fileStat.size).toBeGreaterThan(minimumSize);
 };
 
+const fillOfflabelRoundtripData = async (
+  page: Page,
+  data: RoundtripFormData,
+) => {
+  await selectDrugByValue(page, 'other');
+  await fillTextInputStable(page, '#root_patient_firstName', data.firstName);
+  await fillTextInputStable(page, '#root_patient_lastName', data.lastName);
+  await fillTextInputStable(page, '#root_patient_birthDate', data.birthDate);
+  await fillTextInputStable(page, '#root_doctor_name', data.doctorName);
+  await fillTextInputStable(page, '#root_insurer_name', data.insurerName);
+  await fillTextInputStable(
+    page,
+    '#root_request_otherDrugName',
+    data.otherDrugName,
+  );
+  await fillTextInputStable(
+    page,
+    '#root_request_otherIndication',
+    data.otherIndication,
+  );
+};
+
+const expectOfflabelRoundtripData = async (
+  page: Page,
+  data: RoundtripFormData,
+) => {
+  await expect(page.locator('#root_patient_firstName')).toHaveValue(
+    data.firstName,
+  );
+  await expect(page.locator('#root_patient_lastName')).toHaveValue(
+    data.lastName,
+  );
+  await expect(page.locator('#root_patient_birthDate')).toHaveValue(
+    data.birthDate,
+  );
+  await expect(page.locator('#root_doctor_name')).toHaveValue(data.doctorName);
+  await expect(page.locator('#root_insurer_name')).toHaveValue(
+    data.insurerName,
+  );
+  await expect(page.locator('#root_request_otherDrugName')).toHaveValue(
+    data.otherDrugName,
+  );
+  await expect(page.locator('#root_request_otherIndication')).toHaveValue(
+    data.otherIndication,
+  );
+};
+
+const exportJsonForRoundtrip = async (
+  page: Page,
+  encrypted: boolean,
+): Promise<string> => {
+  const exportToggle = page.locator(
+    '.formpack-json-export__toggle input[type="checkbox"]',
+  );
+  await expect(exportToggle).toBeVisible({ timeout: POLL_TIMEOUT });
+
+  if (encrypted) {
+    await exportToggle.check();
+    await fillTextInputStable(
+      page,
+      '#json-export-password',
+      JSON_EXPORT_PASSWORD,
+    );
+    await fillTextInputStable(
+      page,
+      '#json-export-password-confirm',
+      JSON_EXPORT_PASSWORD,
+    );
+  } else {
+    await exportToggle.uncheck();
+  }
+
+  const exportButton = page
+    .getByRole('button', {
+      name: /Entwurf exportieren \(JSON\)|Export draft \(JSON\)/i,
+    })
+    .first();
+  await expect(exportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
+
+  const statusRoot = page.locator('.formpack-form__actions');
+  const completion = await triggerExportAndWaitCompletion(
+    page,
+    exportButton,
+    statusRoot,
+  );
+
+  expect(completion.type).toBe('download');
+  if (completion.type !== 'download') {
+    throw new Error('JSON export did not produce a downloadable file.');
+  }
+
+  const filePath = await completion.download.path();
+  expect(filePath).not.toBeNull();
+  return filePath as string;
+};
+
+const importJsonOverwrite = async (
+  page: Page,
+  filePath: string,
+  password?: string,
+) => {
+  await openCollapsibleSectionById(page, 'formpack-import');
+  await page.locator('#formpack-import-file').setInputFiles(filePath);
+
+  const overwriteRadio = page.getByRole('radio', {
+    name: /overwrite|überschreiben/i,
+  });
+  await expect(overwriteRadio).toBeEnabled({ timeout: POLL_TIMEOUT });
+  await overwriteRadio.check();
+
+  if (password) {
+    await fillTextInputStable(page, '#formpack-import-password', password);
+  }
+
+  await page.evaluate(() => {
+    window.confirm = () => true;
+  });
+
+  const importButton = page.locator('.formpack-import__actions .app__button');
+  await expect(importButton).toBeEnabled({ timeout: POLL_TIMEOUT });
+  await clickActionButton(importButton.first(), POLL_TIMEOUT);
+
+  const importPanel = page.locator('#formpack-import-content');
+  await expect(importPanel.locator('.formpack-import__success')).toBeVisible({
+    timeout: POLL_TIMEOUT,
+  });
+  await expect(importPanel.locator('.app__error')).toHaveCount(0);
+};
+
 test.describe('offlabel export flows', () => {
   test.setTimeout(90_000);
 
@@ -252,6 +393,70 @@ test.describe('offlabel export flows', () => {
       timeout: POLL_TIMEOUT,
     });
     await expect(importPanel.locator('.app__error')).toHaveCount(0);
+  });
+
+  test('json roundtrip restores fresh unencrypted export with realistic form data', async ({
+    page,
+  }) => {
+    const originalData: RoundtripFormData = {
+      firstName: 'Alex',
+      lastName: 'Beispiel',
+      birthDate: '1990-04-12',
+      doctorName: 'Dr. Muster',
+      insurerName: 'AOK Nord',
+      otherDrugName: 'Naltrexon',
+      otherIndication: 'ME/CFS mit Fatigue',
+    };
+    const changedData: RoundtripFormData = {
+      firstName: 'Changed',
+      lastName: 'Person',
+      birthDate: '1982-11-03',
+      doctorName: 'Dr. Changed',
+      insurerName: 'TK',
+      otherDrugName: 'Ivabradin',
+      otherIndication: 'POTS',
+    };
+
+    await fillOfflabelRoundtripData(page, originalData);
+    const exportPath = await exportJsonForRoundtrip(page, false);
+
+    await fillOfflabelRoundtripData(page, changedData);
+    await expectOfflabelRoundtripData(page, changedData);
+
+    await importJsonOverwrite(page, exportPath);
+    await expectOfflabelRoundtripData(page, originalData);
+  });
+
+  test('json roundtrip restores fresh encrypted export with realistic form data', async ({
+    page,
+  }) => {
+    const originalData: RoundtripFormData = {
+      firstName: 'Mara',
+      lastName: 'Testfall',
+      birthDate: '1988-09-21',
+      doctorName: 'Dr. Demo',
+      insurerName: 'Barmer',
+      otherDrugName: 'Aripiprazol',
+      otherIndication: 'Long/Post-COVID',
+    };
+    const changedData: RoundtripFormData = {
+      firstName: 'Temp',
+      lastName: 'Value',
+      birthDate: '1995-01-14',
+      doctorName: 'Dr. Temp',
+      insurerName: 'DAK',
+      otherDrugName: 'Agomelatin',
+      otherIndication: 'Depressive Symptome',
+    };
+
+    await fillOfflabelRoundtripData(page, originalData);
+    const exportPath = await exportJsonForRoundtrip(page, true);
+
+    await fillOfflabelRoundtripData(page, changedData);
+    await expectOfflabelRoundtripData(page, changedData);
+
+    await importJsonOverwrite(page, exportPath, JSON_EXPORT_PASSWORD);
+    await expectOfflabelRoundtripData(page, originalData);
   });
 
   test('docx export works online and offline', async ({
