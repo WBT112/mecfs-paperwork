@@ -151,6 +151,7 @@ describe('main', () => {
 
     const { appBootEnd } = setupMainMocks();
     const originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    const originalSetTimeout = globalThis.setTimeout;
     Object.defineProperty(globalThis, 'requestAnimationFrame', {
       configurable: true,
       writable: true,
@@ -158,12 +159,15 @@ describe('main', () => {
     });
     const setTimeoutSpy = vi
       .spyOn(globalThis, 'setTimeout')
-      .mockImplementation(((handler: TimerHandler) => {
+      .mockImplementation((...args: Parameters<typeof setTimeout>) => {
+        const [handler] = args;
         if (isTimeoutCallback(handler)) {
           handler();
         }
-        return 0 as ReturnType<typeof setTimeout>;
-      }) as typeof setTimeout);
+        const timer = originalSetTimeout(() => undefined, 0);
+        clearTimeout(timer);
+        return timer;
+      });
 
     try {
       await import('../../src/main');
