@@ -723,11 +723,11 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: 'Unterschrift Patient*in: _______________________________',
+        text: 'Unterschrift Patient: _______________________________',
       },
       {
         kind: 'paragraph',
-        text: 'Unterschrift Ärzt*in (Bestätigung der Aufklärung): _______________________________',
+        text: 'Unterschrift Arzt/Ärztin: _______________________________',
       },
       { kind: 'pageBreak' },
     ],
