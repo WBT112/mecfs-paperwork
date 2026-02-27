@@ -49,13 +49,13 @@ const styles = StyleSheet.create({
     fontFamily: PDF_FONT_FAMILY_SANS,
     fontWeight: 700,
     fontSize: 11,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   paragraph: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   spacerParagraph: {
-    marginBottom: 6,
+    marginBottom: 2,
   },
   attachmentsBlock: {
     marginTop: 10,
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   bulletItem: {
-    marginBottom: 3,
+    marginBottom: 2,
     fontSize: 10,
     lineHeight: 1.3,
   },
@@ -105,6 +105,68 @@ const renderLineBlock = (lines: string[], keyPrefix: string) => {
       ))}
     </View>
   );
+};
+
+const looksLikePostalCityLine = (line: string): boolean =>
+  /^\d{4,5}\s+\S+/.test(line.trim());
+
+const looksLikeStreetLine = (line: string): boolean =>
+  /\d/.test(line) && !looksLikePostalCityLine(line);
+
+const buildCompactSenderLines = (senderLines: string[]): string[] => {
+  const lines = senderLines.map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 3) {
+    return lines;
+  }
+
+  const postalCityIndex = lines.findIndex((line) =>
+    looksLikePostalCityLine(line),
+  );
+  if (postalCityIndex < 0) {
+    return lines;
+  }
+
+  const streetIndex = lines.findIndex(
+    (line, index) => index < postalCityIndex && looksLikeStreetLine(line),
+  );
+  if (streetIndex < 0) {
+    return lines;
+  }
+
+  const nameIndex = lines.findIndex(
+    (_, index) => index !== streetIndex && index !== postalCityIndex,
+  );
+  if (nameIndex < 0) {
+    return lines;
+  }
+
+  const compactLine = `${lines[nameIndex]} – ${lines[streetIndex]} – ${lines[postalCityIndex]}`;
+  const remainingLines = lines.filter(
+    (_, index) =>
+      index !== nameIndex && index !== streetIndex && index !== postalCityIndex,
+  );
+
+  return [compactLine, ...remainingLines];
+};
+
+const formatDateValue = (rawDateLine: string, locale: string): string => {
+  const match = rawDateLine.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+  if (!match) {
+    return rawDateLine.trim();
+  }
+
+  const [, left, middle, year] = match;
+  if (locale.toLowerCase().startsWith('de')) {
+    return `${left.padStart(2, '0')}.${middle.padStart(2, '0')}.${year}`;
+  }
+
+  return `${left.padStart(2, '0')}/${middle.padStart(2, '0')}/${year}`;
+};
+
+const formatDateLine = (rawDateLine: string, locale: string): string => {
+  const label = locale.toLowerCase().startsWith('en') ? 'Date' : 'Datum';
+  const dateValue = formatDateValue(rawDateLine, locale);
+  return dateValue.length > 0 ? `${label}: ${dateValue}` : `${label}:`;
 };
 
 const renderParagraphs = (paragraphs: string[], keyPrefix: string) =>
@@ -164,14 +226,13 @@ const renderLetterPage = ({
   sourcesHeading?: string;
   sources?: string[];
 }) => {
-  const subjectLabel = locale.toLowerCase().startsWith('en')
-    ? 'Subject'
-    : 'Betreff';
+  const compactSenderLines = buildCompactSenderLines(data.senderLines);
+  const formattedDateLine = formatDateLine(data.dateLine, locale);
 
   return (
     <Page size="A4" style={styles.page}>
       <View style={styles.senderBlock}>
-        {toKeyedEntries(data.senderLines, 'sender').map((entry) => (
+        {toKeyedEntries(compactSenderLines, 'sender').map((entry) => (
           <Text key={entry.key} style={styles.senderLine}>
             {entry.value}
           </Text>
@@ -181,10 +242,8 @@ const renderLetterPage = ({
 
       {renderLineBlock(data.addresseeLines, 'addressee')}
 
-      <Text style={styles.dateLine}>{data.dateLine}</Text>
-      <Text style={styles.subject}>
-        {subjectLabel}: {data.subject}
-      </Text>
+      <Text style={styles.dateLine}>{formattedDateLine}</Text>
+      <Text style={styles.subject}>{data.subject}</Text>
 
       {renderParagraphs(data.paragraphs, 'paragraph')}
 
