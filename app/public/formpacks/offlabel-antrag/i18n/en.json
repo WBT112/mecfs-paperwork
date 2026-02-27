@@ -1,7 +1,7 @@
 {
   "offlabel-antrag.attachmentsFreeText.help": "One attachment per line, e.g. doctor letter, findings, lab results, disability notice, care notice.",
-  "offlabel-antrag.attachmentsAssistant.recommendedHeading": "Recommended attachments",
-  "offlabel-antrag.attachmentsAssistant.additionalLabel": "Additional attachments (free text)",
+  "offlabel-antrag.attachmentsAssistant.recommendedHeading": "Attachments",
+  "offlabel-antrag.attachmentsAssistant.additionalLabel": "Attachments (additional attachments can be added directly in this field)",
   "offlabel-antrag.attachmentsAssistant.item.medicalFindings": "Medical findings (indication, progression, previous treatment attempts)",
   "offlabel-antrag.attachmentsAssistant.item.physicianStatement": "Physician statement for the off-label application (strongly recommended; template is included)",
   "offlabel-antrag.attachmentsAssistant.item.careLevelNotice": "Care level notice (if available)",

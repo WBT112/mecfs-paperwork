@@ -1923,6 +1923,11 @@ describe('FormpackDetailPage', () => {
     );
 
     await screen.findByText('formpackFormHeading');
+    await waitFor(() =>
+      expect(formpackMetaState.getFormpackMeta).toHaveBeenCalled(),
+    );
+    const callsBeforeUpdate =
+      formpackMetaState.getFormpackMeta.mock.calls.length;
 
     await act(async () => {
       window.dispatchEvent(
@@ -1933,7 +1938,9 @@ describe('FormpackDetailPage', () => {
     });
 
     await waitFor(() =>
-      expect(formpackMetaState.getFormpackMeta).toHaveBeenCalledTimes(2),
+      expect(
+        formpackMetaState.getFormpackMeta.mock.calls.length,
+      ).toBeGreaterThan(callsBeforeUpdate),
     );
   });
 

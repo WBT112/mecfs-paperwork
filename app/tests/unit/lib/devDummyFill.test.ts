@@ -2,6 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { buildRandomDummyPatch } from '../../../src/lib/devDummyFill';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
+const RECOMMENDED_ATTACHMENT_LINES = new Set([
+  '- Arztbefunde',
+  '- Ärztliche Stellungnahme zum Off-Label-Antrag',
+  '- Pflegegrad-Bescheid',
+  '- GdB-Bescheid',
+  '- Rentenbescheid',
+  '- Medikamentenplan / Unverträglichkeiten',
+  '- Symptom-/Funktionsprotokoll',
+  '- Reha-/Klinikbericht',
+]);
+
 describe('buildRandomDummyPatch', () => {
   const collectFieldValues = (
     fieldName: string,
@@ -329,6 +340,33 @@ describe('buildRandomDummyPatch', () => {
     );
 
     expect(String(patch.contactEmail)).toContain('@');
+  });
+
+  it('fills attachmentsFreeText with 0-8 recommended checkbox lines and no free-text filler', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        attachmentsFreeText: { type: 'string' },
+      },
+    } as RJSFSchema;
+
+    const emptyPatch = buildRandomDummyPatch(schema, {} as UiSchema, {
+      rng: () => 0,
+    });
+    expect(emptyPatch.attachmentsFreeText).toBe('');
+
+    const fullPatch = buildRandomDummyPatch(schema, {} as UiSchema, {
+      rng: () => 0.99,
+    });
+    const lines = String(fullPatch.attachmentsFreeText)
+      .split('\n')
+      .filter((line) => line.length > 0);
+
+    expect(lines).toHaveLength(8);
+    expect(new Set(lines).size).toBe(8);
+    expect(lines.every((line) => RECOMMENDED_ATTACHMENT_LINES.has(line))).toBe(
+      true,
+    );
   });
 
   it('ignores invalid object-property schema entries and unknown schema types', () => {

@@ -184,6 +184,16 @@ const DEFAULT_DATE_VALUES = [
 ];
 
 const DEFAULT_NUMBER_VALUES = [1, 2, 3, 4, 5, 10, 20, 30, 40, 50];
+const ATTACHMENTS_ASSISTANT_DUMMY_VALUES = [
+  'Arztbefunde',
+  'Ärztliche Stellungnahme zum Off-Label-Antrag',
+  'Pflegegrad-Bescheid',
+  'GdB-Bescheid',
+  'Rentenbescheid',
+  'Medikamentenplan / Unverträglichkeiten',
+  'Symptom-/Funktionsprotokoll',
+  'Reha-/Klinikbericht',
+] as const;
 
 type DummyFillRuntimeOptions = {
   rng: () => number;
@@ -421,6 +431,31 @@ const buildStringValue = (
   options: DummyFillRuntimeOptions,
   path: readonly string[],
 ): string => {
+  const normalizedPath = toNormalizedPath(path);
+  if (normalizedPath.endsWith('attachmentsfreetext')) {
+    const selectedCount = getRandomIndex(
+      ATTACHMENTS_ASSISTANT_DUMMY_VALUES.length + 1,
+      options.rng,
+    );
+    if (selectedCount === 0) {
+      return '';
+    }
+
+    const shuffledValues = [...ATTACHMENTS_ASSISTANT_DUMMY_VALUES];
+    for (let index = shuffledValues.length - 1; index > 0; index -= 1) {
+      const swapIndex = getRandomIndex(index + 1, options.rng);
+      [shuffledValues[index], shuffledValues[swapIndex]] = [
+        shuffledValues[swapIndex],
+        shuffledValues[index],
+      ];
+    }
+
+    return shuffledValues
+      .slice(0, selectedCount)
+      .map((line) => `- ${line}`)
+      .join('\n');
+  }
+
   if (schema.format === 'date') {
     return pickRandom(DEFAULT_DATE_VALUES, options.rng);
   }

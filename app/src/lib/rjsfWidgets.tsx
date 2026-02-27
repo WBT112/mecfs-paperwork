@@ -351,10 +351,7 @@ export const AttachmentsAssistantWidget = ({
       <fieldset className="attachments-assistant__recommended">
         <legend>
           {t('offlabel-antrag.attachmentsAssistant.recommendedHeading', {
-            defaultValue:
-              locale === 'en'
-                ? 'Recommended attachments'
-                : 'Empfohlene Unterlagen',
+            defaultValue: locale === 'en' ? 'Attachments' : 'Anlagen',
           })}
         </legend>
         {ATTACHMENTS_ASSISTANT_ITEMS.map((item) => {
@@ -381,8 +378,8 @@ export const AttachmentsAssistantWidget = ({
         {t('offlabel-antrag.attachmentsAssistant.additionalLabel', {
           defaultValue:
             locale === 'en'
-              ? 'Additional attachments (free text)'
-              : 'Weitere Anlagen (Freitext)',
+              ? 'Attachments (additional attachments can be added directly in this field)'
+              : 'Anlagen (weitere Anlagen können direkt in diesem Feld ergänzt werden)',
         })}
       </label>
       <textarea

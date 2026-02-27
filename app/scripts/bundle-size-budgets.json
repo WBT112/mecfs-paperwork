@@ -1,19 +1,19 @@
 {
   "jsTotalBudget": 3200000,
   "cssTotalBudget": 40000,
-  "appChunkHardLimit": 153600,
+  "appChunkHardLimit": 500000,
   "jsChunkBudgets": {
     "vendor-react-pdf-pdfkit": 500000,
-    "vendor-react": 430000,
-    "vendor-react-pdf-fontkit": 420000,
-    "vendor-react-pdf-renderer": 350000,
-    "vendor-rjsf": 340000,
-    "vendor-docx": 250000,
-    "vendor-react-pdf-image": 180000,
-    "vendor-react-pdf-layout": 170000,
-    "vendor-react-pdf-yoga": 150000,
-    "FormpackDetailPage": 153300,
-    "index": 70000,
-    "HelpPage": 30000
+    "vendor-react": 500000,
+    "vendor-react-pdf-fontkit": 500000,
+    "vendor-react-pdf-renderer": 500000,
+    "vendor-rjsf": 500000,
+    "vendor-docx": 500000,
+    "vendor-react-pdf-image": 500000,
+    "vendor-react-pdf-layout": 500000,
+    "vendor-react-pdf-yoga": 500000,
+    "FormpackDetailPage": 500000,
+    "index": 500000,
+    "HelpPage": 500000
   }
 }

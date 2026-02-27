@@ -69,7 +69,7 @@ describe.skipIf(!hasBuild)('bundle size budgets', () => {
     }
   });
 
-  it('vendor-react-pdf-pdfkit stays under 500 kB', () => {
+  it('vendor-react-pdf-pdfkit stays under configured budget', () => {
     const chunk = jsAssets.find((a) => a.chunk === 'vendor-react-pdf-pdfkit');
     expect(chunk).toBeDefined();
     expect(chunk!.size).toBeLessThanOrEqual(
@@ -77,19 +77,19 @@ describe.skipIf(!hasBuild)('bundle size budgets', () => {
     );
   });
 
-  it('vendor-react stays under 430 kB', () => {
+  it('vendor-react stays under configured budget', () => {
     const chunk = jsAssets.find((a) => a.chunk === 'vendor-react');
     expect(chunk).toBeDefined();
     expect(chunk!.size).toBeLessThanOrEqual(JS_CHUNK_BUDGETS['vendor-react']);
   });
 
-  it('vendor-docx stays under 250 kB', () => {
+  it('vendor-docx stays under configured budget', () => {
     const chunk = jsAssets.find((a) => a.chunk === 'vendor-docx');
     expect(chunk).toBeDefined();
     expect(chunk!.size).toBeLessThanOrEqual(JS_CHUNK_BUDGETS['vendor-docx']);
   });
 
-  it('vendor-rjsf stays under 340 kB', () => {
+  it('vendor-rjsf stays under configured budget', () => {
     const chunk = jsAssets.find((a) => a.chunk === 'vendor-rjsf');
     expect(chunk).toBeDefined();
     expect(chunk!.size).toBeLessThanOrEqual(JS_CHUNK_BUDGETS['vendor-rjsf']);

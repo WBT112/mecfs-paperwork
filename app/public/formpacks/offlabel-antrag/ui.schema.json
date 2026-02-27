@@ -274,6 +274,7 @@
     "ui:help": "offlabel-antrag.attachmentsFreeText.help",
     "ui:widget": "attachmentsAssistant",
     "ui:options": {
+      "label": false,
       "rows": 6
     }
   },
