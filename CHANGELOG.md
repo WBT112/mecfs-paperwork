@@ -18,33 +18,47 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 -
 
-## [0.6.0] - 2026-02-22
+## [0.6.0] - 2026-02-27
 
 ### Added
 
-- **offlabel-antrag formpack:** New insurer-focused off-label request flow with medication-specific indication paths, severity capture, and legal framing.
-- **offlabel-antrag exports:** New DOCX and PDF exports with aligned multi-part output for insurer request, medical statement, and physician letter.
-- **Conditional guidance system:** Field-anchored InfoBoxes with `showIf` logic and markdown support for context-sensitive assistance.
-- **Configurable intro gate:** Reusable pre-form consent gate for formpacks.
-- **Local diagnostics tooling:** Diagnostics bundle export (download + clipboard), storage health view, and service-worker status in Help.
-- **Local data controls:** “Reset all local data” action plus profile opt-out flow with optional profile deletion.
+- **offlabel-antrag formpack:** New insurer-focused off-label request flow with medication-specific indication paths, severity capture, legal framing, and medication-specific evidence references.
+- **offlabel-antrag export suite:** New DOCX and PDF outputs with multi-part insurer/medical/physician sections, plus annex checklist and structured attachments assistant.
+- **Guided offlabel UX:** Intro gate, notes modal, final-text preview tabs, focus handling, and context-sensitive InfoBoxes (`showIf` + markdown).
+- **Encrypted local persistence:** Drafts, snapshots, and saved profile data are now encrypted before IndexedDB storage.
+- **Encrypted JSON export/import:** Optional password-protected JSON exports with local decrypt-on-import flow.
+- **Cross-formpack master data profile:** Save/apply patient/doctor/insurer fields across formpacks, with optional opt-out cleanup flow.
+- **Diagnostics expansion:** Local diagnostics bundle (download + clipboard), storage health details, encryption status, and service worker checks in Help.
+- **Performance instrumentation:** User Timing metrics for app boot, formpack load, and export actions.
+- **Local reset control:** “Reset all local data” action for full local cleanup and recovery from locked storage states.
 
 ### Changed
 
-- **offlabel-antrag maturity:** Medication paths and indication-dependent wording stabilized; formpack version set to `1.0.0`.
+- **offlabel-antrag maturity:** Workflow, legal phrasing (including §2 Abs. 1a branches), liability wording, and indication selection behavior were iterated and stabilized; formpack version set to `1.0.0`.
+- **Export consistency:** Offlabel DOCX/PDF layout, heading/date spacing, and checklist phrasing aligned for parity and readability.
+- **FormpackDetail architecture:** Detail page refactored into focused sections/panels (records, snapshots, import, preview), improving maintainability and testability.
 - **Formpack framework naming:** Field template and InfoBox utilities generalized from doctor-letter-specific naming to formpack-wide scope.
-- **PDF rendering consistency:** Heading fonts aligned across formpacks and template value mapping simplified to direct `templateData` access.
-- **Accessibility checks:** Gate tightened to moderate-or-higher findings with broader route coverage.
+- **Formpack updates beyond offlabel:** doctor-letter bumped to `1.1.0`; notfallpass schema/text and import behavior refreshed.
+- **Accessibility gate:** Axe checks tightened to moderate-or-higher findings with broader route coverage.
+- **Quality gate/tooling coverage:** QA workflow, soft E2E profile, bundle-size checks, and cleanup reports expanded.
 
 ### Fixed
 
-- DOCX bullet indentation and list wrapping behavior for reliable Word rendering.
-- Preview text consistency in edge-case medication/indication combinations.
-- Empty attachments block in part 1 is hidden when no attachments are present.
+- JSON import compatibility for schema drift and conditional-rule changes (including encrypted JSON and older/partial exports).
+- DOCX bullet indentation, list wrapping, and section spacing for reliable Word rendering.
+- Preview and export text consistency in edge-case medication/indication combinations.
+- Empty attachments block in offlabel part 1 is hidden when no attachments are present.
+- PDF checklist checkboxes now reliably mirror selected annexes.
+- DOCX worker path/export flow hardening for offline and CI scenarios.
+- Bundle-size guardrails now enforce a strict 500 KB app-chunk hard limit in tests.
 
 ### Security
 
-- Security hardening pass (server headers, CSP, and threat-model updates).
+- Content Security Policy and security headers hardened for static hosting.
+- IndexedDB at-rest encryption introduced with key-cookie handling and locked-state recovery path.
+- Password-based JSON encryption/decryption flow added for export/import.
+- Path write hardening added to block dangerous prototype-path segments.
+- Security documentation updated (privacy/help guidance, threat model, review log) and dependency/security updates integrated (including AJV/CVE-related updates and workflow security maintenance).
 
 ## [0.5.0] - 2026-02-09
 
