@@ -89,7 +89,7 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
 
     const standardPart1Text = standardModel.kk.paragraphs.join('\n');
     expect(standardPart1Text).toContain(
-      'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.',
+      'Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen und damit eine zuverlässige, wissenschaftlich überprüfbare Aussage zum Nutzen-Risiko-Profil erlauben.',
     );
     expect(standardPart1Text).not.toContain(
       'Ich beantrage Leistungen nach § 2 Abs. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung.',
@@ -134,7 +134,7 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
       'wissenschaftliche Erkenntnisse: Musterstudie 2024, doi:10.1000/example',
     );
     expect(otherPart1Text).not.toContain(
-      'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.',
+      'Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen und damit eine zuverlässige, wissenschaftlich überprüfbare Aussage zum Nutzen-Risiko-Profil erlauben.',
     );
   });
 

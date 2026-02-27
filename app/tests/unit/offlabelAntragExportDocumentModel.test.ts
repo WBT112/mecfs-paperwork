@@ -61,7 +61,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     const part1 = model.kk.paragraphs.join('\n');
 
     expect(part1).toContain(
-      'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.',
+      'Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen und damit eine zuverlässige, wissenschaftlich überprüfbare Aussage zum Nutzen-Risiko-Profil erlauben.',
     );
     expect(part1).not.toContain(
       'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild',
@@ -213,7 +213,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'wissenschaftliche Erkenntnisse: Musterstudie 2024, doi:10.1000/example',
     );
     expect(part1).not.toContain(
-      'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.',
+      'Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen und damit eine zuverlässige, wissenschaftlich überprüfbare Aussage zum Nutzen-Risiko-Profil erlauben.',
     );
     expect(part1).not.toMatch(/Punkt \d+:/);
 

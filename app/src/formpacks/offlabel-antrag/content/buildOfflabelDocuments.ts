@@ -150,9 +150,9 @@ const POINT_8_STANDARD =
 const POINT_10_EVIDENCE_NOTE =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit; ich bitte um eine vollständige sozialmedizinische Würdigung einschließlich ggf. ergänzender Literaturrecherche im Einzelfall.';
 const POINT_10_STANDARD_EVIDENCE_INTRO =
-  'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.';
+  'Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen und damit eine zuverlässige, wissenschaftlich überprüfbare Aussage zum Nutzen-Risiko-Profil erlauben.';
 const POINT_10_SECTION_2A_EVIDENCE_INTRO =
-  'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.';
+  'Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen und damit eine zuverlässige, wissenschaftlich überprüfbare Aussage zum Nutzen-Risiko-Profil erlauben; sollte eine Zulassungsreife im engeren Sinne abweichend bewertet werden, ermöglichen diese Erkenntnisse jedenfalls eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs.';
 const POINT_2_NO_DIAGNOSIS_CORE =
   'Die zugrunde liegende Erkrankung ist diagnostisch gesichert und ärztlich dokumentiert.';
 const POINT_2_NO_EVIDENCE_BRIDGE =
@@ -160,7 +160,6 @@ const POINT_2_NO_EVIDENCE_BRIDGE =
 
 const POINT_10_NO_2A = `Auf dieser Grundlage sind die herangezogenen Erkenntnisse für meinen Einzelfall im Rahmen einer wissenschaftlich nachvollziehbaren Nutzen-Risiko-Abwägung übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
 const POINT_10_YES_2A = `Diese Erkenntnisse sind auf meinen Einzelfall übertragbar. ${POINT_10_EVIDENCE_NOTE}`;
-const POINT_10_SECTION_2A_BRIDGE = `Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde, bestehen jedenfalls veröffentlichte Erkenntnisse, die eine zuverlässige Nutzen-Risiko-Abwägung ermöglichen.`;
 const BELL_SCORE_ACTIVITY_EXAMPLES: Record<string, string> = {
   '100':
     'ich feste Belastungsobergrenzen einhalte, nach Terminen konsequente Ruhefenster plane und Belastungsspitzen vermeide, um Rückfälle zu verhindern.',
@@ -448,13 +447,10 @@ const buildPart1EvidenceAndTreatmentBlocks = (params: {
 
   const point10Sources = [facts.expertSourceText].filter(Boolean);
   const point10CaseTransferText = point2aNo ? POINT_10_NO_2A : POINT_10_YES_2A;
-  const point10BridgeText = applySection2Abs1a
-    ? ` ${POINT_10_SECTION_2A_BRIDGE}`
-    : '';
   const point10EvidenceIntro = applySection2Abs1a
     ? POINT_10_SECTION_2A_EVIDENCE_INTRO
     : POINT_10_STANDARD_EVIDENCE_INTRO;
-  const point10BaseText = `${point10EvidenceIntro} Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText}${point10BridgeText} Geplant ist eine Behandlung wie folgt:`;
+  const point10BaseText = `${point10EvidenceIntro} Hierzu verweise ich auf: ${point10Sources.join(' ')} ${point10CaseTransferText} Geplant ist eine Behandlung wie folgt:`;
   return [
     {
       kind: 'paragraph',

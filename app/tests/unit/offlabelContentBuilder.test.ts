@@ -13,7 +13,7 @@ const CASE_TRANSFER_YES_TEXT =
 const EVIDENCE_NOTE_TEXT =
   'Die beigefügten Quellen sind eine Auswahl und erheben keinen Anspruch auf Vollständigkeit;';
 const EVIDENCE_SUFFICIENT_TEXT =
-  'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.';
+  'Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen und damit eine zuverlässige, wissenschaftlich überprüfbare Aussage zum Nutzen-Risiko-Profil erlauben.';
 const EVIDENCE_NOT_SUFFICIENT_TEXT =
   'Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild';
 const OTHER_EVIDENCE_REFERENCE_TEXT = 'Musterstudie 2024, doi:10.1000/example';
@@ -24,11 +24,11 @@ const HILFSWEISE_SECTION_2A_REQUEST_TEXT =
 const HILFSANTRAG_INTRO_TEXT =
   'Hilfsweise stelle ich – für den Fall, dass die Voraussetzungen des regulären Off-Label-Use nicht als erfüllt angesehen werden – zugleich Antrag auf Kostenübernahme gemäß § 2 Abs. 1a SGB V.';
 const POINT_10_BRIDGE_TEXT =
-  'Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde';
+  'Selbst wenn eine formelle Zulassungsreife im engeren Sinne verneint würde, bestehen jedenfalls veröffentlichte Erkenntnisse, die eine zuverlässige Nutzen-Risiko-Abwägung ermöglichen.';
 const DUPLICATE_SECTION_2A_BRIDGE_CLAUSE =
   'hilfsweise wird daher die Leistung nach § 2 Abs. 1a SGB V begehrt';
 const SECTION_2A_EVIDENCE_INTRO_TEXT =
-  'Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können und eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs erlauben.';
+  'Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen und damit eine zuverlässige, wissenschaftlich überprüfbare Aussage zum Nutzen-Risiko-Profil erlauben; sollte eine Zulassungsreife im engeren Sinne abweichend bewertet werden, ermöglichen diese Erkenntnisse jedenfalls eine wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung im Rahmen eines befristeten Therapieversuchs.';
 const LEGACY_SECTION_2A_EVIDENCE_INTRO_TEXT =
   'Es liegen Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – eine zulassungsreife Datenlage begründen können oder jedenfalls eine zuverlässige, wissenschaftlich nachvollziehbare Nutzen-Risiko-Abwägung für einen befristeten, ärztlich überwachten Therapieversuch zulassen.';
 const DIAGNOSIS_SECURED_NO_TEXT =
@@ -509,7 +509,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).toContain(SECTION_2A_EVIDENCE_INTRO_TEXT);
     expect(part1Text).not.toContain(LEGACY_SECTION_2A_EVIDENCE_INTRO_TEXT);
     expect(part1Text).toContain(SECTION_2A_TEXT);
-    expect(part1Text).toContain(POINT_10_BRIDGE_TEXT);
+    expect(part1Text).not.toContain(POINT_10_BRIDGE_TEXT);
     expect(part1Text).not.toContain(DUPLICATE_SECTION_2A_BRIDGE_CLAUSE);
     expect(part1Text).toContain(THERAPY_SAFETY_TEXT);
     expect(part1Text.split(THERAPY_SAFETY_TEXT)).toHaveLength(2);

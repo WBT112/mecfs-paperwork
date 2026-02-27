@@ -193,7 +193,7 @@ test.describe('offlabel workflow preview regressions', () => {
       /Hilfsweise beantrage ich Leistungen nach § 2 Abs\. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung\./i,
     );
     await expect(preview).toContainText(
-      /Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können/i,
+      /Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen/i,
     );
   });
 
@@ -208,7 +208,7 @@ test.describe('offlabel workflow preview regressions', () => {
     );
     await expect(preview).toBeVisible();
     await expect(preview).toContainText(
-      /Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können/i,
+      /Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen/i,
     );
     await expect(preview).not.toContainText(
       /Ich beantrage (hilfsweise )?Leistungen nach § 2 Abs\. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung\./i,
@@ -258,7 +258,7 @@ test.describe('offlabel workflow preview regressions', () => {
       /Hilfsweise beantrage ich Leistungen nach § 2 Abs\. 1a SGB V wegen einer wertungsmäßig vergleichbar schwerwiegenden Erkrankung\./i,
     );
     await expect(preview).toContainText(
-      /Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können/i,
+      /Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen/i,
     );
   });
 
@@ -298,7 +298,7 @@ test.describe('offlabel workflow preview regressions', () => {
       /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
     );
     await expect(preview).not.toContainText(
-      /Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können/i,
+      /Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen/i,
     );
   });
 
@@ -344,7 +344,7 @@ test.describe('offlabel workflow preview regressions', () => {
       /Es gibt indiziengestützte Hinweise auf den Behandlungserfolg in meinem Krankheitsbild/i,
     );
     await expect(preview).toContainText(
-      /Es liegen veröffentlichte Erkenntnisse vor, die – je nach sozialmedizinischer Einordnung – als hinreichend belastbar bewertet werden können/i,
+      /Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen/i,
     );
   });
 });
