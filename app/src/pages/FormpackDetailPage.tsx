@@ -638,6 +638,8 @@ const renderParagraphs = (
 };
 
 type OfflabelRenderedBlock = OfflabelRenderedDocument['blocks'][number];
+const OFFLABEL_PART2_CONSENT_HEADING_PREFIX =
+  'Aufklärung und Einwilligung zum Off-Label-Use:';
 
 const getOfflabelPreviewBlockKey = (
   documentId: string,
@@ -692,6 +694,29 @@ const renderOfflabelPreviewDocument = (
     )}
   </div>
 );
+
+const stripOfflabelPart2ConsentFromPreview = (
+  document: OfflabelRenderedDocument,
+): OfflabelRenderedDocument => {
+  if (document.id !== 'part2') {
+    return document;
+  }
+
+  const consentHeadingIndex = document.blocks.findIndex(
+    (block) =>
+      block.kind === 'heading' &&
+      block.text.startsWith(OFFLABEL_PART2_CONSENT_HEADING_PREFIX),
+  );
+
+  if (consentHeadingIndex < 0) {
+    return document;
+  }
+
+  return {
+    ...document,
+    blocks: document.blocks.slice(0, consentHeadingIndex),
+  };
+};
 
 const hasDecisionCaseText = (value: Record<string, unknown>): boolean =>
   typeof value.caseText === 'string' ||
@@ -2739,7 +2764,9 @@ export default function FormpackDetailPage() {
   const offlabelPreviewDocuments = useMemo(
     () =>
       formpackId === OFFLABEL_ANTRAG_FORMPACK_ID
-        ? buildOfflabelDocuments(formData, locale)
+        ? buildOfflabelDocuments(formData, locale).map((document) =>
+            stripOfflabelPart2ConsentFromPreview(document),
+          )
         : [],
     [formData, formpackId, locale],
   );

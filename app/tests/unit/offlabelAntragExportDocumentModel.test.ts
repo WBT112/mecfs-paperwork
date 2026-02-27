@@ -2,7 +2,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import deTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/de.json';
 import enTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/en.json';
-import { buildOffLabelAntragDocumentModel } from '../../src/formpacks/offlabel-antrag/export/documentModel';
+import {
+  buildOffLabelAntragDocumentModel,
+  parseOfflabelAttachments,
+} from '../../src/formpacks/offlabel-antrag/export/documentModel';
 
 const deTranslations = deTranslationsJson as Record<string, string>;
 const enTranslations = enTranslationsJson as Record<string, string>;
@@ -54,6 +57,14 @@ vi.mock('../../src/i18n', () => ({
 }));
 
 describe('buildOffLabelAntragDocumentModel', () => {
+  it('parses line-based attachment input with mixed bullet prefixes', () => {
+    expect(
+      parseOfflabelAttachments(
+        '- Arztbrief\n* Befundbericht\n• Laborwerte\n\n',
+      ),
+    ).toEqual(['Arztbrief', 'Befundbericht', 'Laborwerte']);
+  });
+
   it('uses preview-canonical standard path with evidence text and without §2-only wording', () => {
     const model = buildOffLabelAntragDocumentModel(
       {

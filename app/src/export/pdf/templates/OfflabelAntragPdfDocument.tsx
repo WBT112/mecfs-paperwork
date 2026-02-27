@@ -73,6 +73,25 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 1.3,
   },
+  checklistItemRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 2,
+  },
+  checklistCheckbox: {
+    width: 10,
+    height: 10,
+    borderWidth: 1,
+    borderColor: '#000000',
+    marginTop: 1,
+    marginRight: 6,
+    flexShrink: 0,
+  },
+  checklistItemText: {
+    flex: 1,
+    fontSize: 10,
+    lineHeight: 1.3,
+  },
   sourcesBlock: {
     marginTop: 14,
     paddingTop: 8,
@@ -260,10 +279,10 @@ const renderAttachments = (
 
 const renderChecklistItems = (items: string[], keyPrefix: string) =>
   toKeyedEntries(items, keyPrefix).map((entry) => (
-    <Text key={entry.key} style={styles.bulletItem}>
-      {'☐ '}
-      {entry.value}
-    </Text>
+    <View key={entry.key} style={styles.checklistItemRow}>
+      <View style={styles.checklistCheckbox} />
+      <Text style={styles.checklistItemText}>{entry.value}</Text>
+    </View>
   ));
 
 const renderChecklistPage = ({

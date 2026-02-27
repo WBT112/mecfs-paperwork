@@ -581,28 +581,18 @@ const buildPostExportChecklist = ({
     physicianSupportItems: [
       text(
         'offlabel-antrag.export.checklist.physician.item.sentToPractice',
-        'Arztanschreiben + Vorlage an die Praxis übergeben/gesendet',
-        'Cover letter + template handed over/sent to practice',
-      ),
-      text(
-        'offlabel-antrag.export.checklist.physician.item.requestedStatement',
-        'Ärztin/Arzt um Stellungnahme/Befundbericht gebeten',
-        'Asked physician for a statement/report summary',
+        'Praxis kontaktiert: Arztanschreiben + Vorlage übergeben/gesendet und um ärztliche Stellungnahme gebeten',
+        'Practice contacted: cover letter + template handed over/sent and physician statement requested',
       ),
       text(
         'offlabel-antrag.export.checklist.physician.item.alignedDeadline',
-        'Rückgabe/Frist mit der Praxis abgestimmt',
-        'Return/deadline aligned with practice',
-      ),
-      text(
-        'offlabel-antrag.export.checklist.physician.item.monitoringAligned',
-        'Monitoring/Abbruchkriterien wurden ärztlich bestätigt oder angepasst',
-        'Monitoring/stop criteria medically confirmed or adjusted',
+        'Abstimmung erledigt: Rückgabe/Frist vereinbart und offene Punkte geklärt (z. B. Dosierung, Monitoring, Abbruchkriterien)',
+        'Coordination completed: return/deadline agreed and open points clarified (e.g. dosage, monitoring, stop criteria)',
       ),
       text(
         'offlabel-antrag.export.checklist.physician.item.doctorConsentSigned',
-        'Aufklärung & Einwilligung: Ärztin/Arzt unterschreibt nach Aufklärung (sofern relevant)',
-        'Information & consent: physician signs after counselling (if relevant)',
+        'Finale Unterlagen aus der Praxis erhalten (Stellungnahme/Befundbericht; ggf. Einwilligung unterschrieben)',
+        'Final documents received from practice (statement/report summary; consent signed if applicable)',
       ),
     ],
     attachmentsHeading: text(

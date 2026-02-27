@@ -1163,6 +1163,65 @@ describe('FormpackDetailPage', () => {
     expect(screen.queryByText(attachmentItem)).not.toBeInTheDocument();
   });
 
+  it('hides offlabel consent section in part 2 preview', async () => {
+    const offlabelRecord = {
+      ...record,
+      formpackId: OFFLABEL_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [offlabelRecord];
+    storageState.activeRecord = offlabelRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: OFFLABEL_FORMPACK_ID,
+    };
+    offlabelPreviewState.buildDocuments.mockReturnValue([
+      {
+        id: 'part1',
+        title: 'Teil 1',
+        blocks: [{ kind: 'paragraph', text: 'Teil 1 Inhalt' }],
+      },
+      {
+        id: 'part2',
+        title: 'Teil 2',
+        blocks: [
+          { kind: 'paragraph', text: 'Visible part 2 content' },
+          {
+            kind: 'heading',
+            text: 'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin',
+          },
+          { kind: 'paragraph', text: 'Consent content must be hidden' },
+        ],
+      },
+      {
+        id: 'part3',
+        title: 'Teil 3',
+        blocks: [{ kind: 'paragraph', text: 'Teil 3 Inhalt' }],
+      },
+    ]);
+
+    render(
+      <TestRouter initialEntries={[`/formpacks/${OFFLABEL_FORMPACK_ID}`]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openSection(sectionLabels.documentPreview);
+    await userEvent.click(screen.getByRole('tab', { name: 'Teil 2' }));
+
+    expect(screen.getByText('Visible part 2 content')).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin',
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Consent content must be hidden'),
+    ).not.toBeInTheDocument();
+  });
+
   it('shows intro gate when required and unlocks form after confirmation', async () => {
     const introRecord = {
       ...record,

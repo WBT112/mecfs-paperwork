@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   AutoGrowTextareaWidget,
   AccessibleSelectWidget,
+  AttachmentsAssistantWidget,
 } from '../../src/lib/rjsfWidgets';
 import { adjustTextareaHeight } from '../../src/lib/textareaAutoGrow';
 
@@ -48,6 +49,26 @@ const buildSelectProps = (
   multiple: false,
   label: 'Test Select',
   placeholder: 'Select...',
+  onChange: vi.fn(),
+  onBlur: vi.fn(),
+  onFocus: vi.fn(),
+  registry: {} as WidgetProps['registry'],
+  ...overrides,
+});
+
+const buildAttachmentsAssistantProps = (
+  overrides: Partial<WidgetProps> = {},
+): WidgetProps => ({
+  id: 'attachmentsFreeText',
+  name: 'attachmentsFreeText',
+  schema: { type: 'string' } as RJSFSchema,
+  options: { rows: 6 },
+  value: '',
+  required: false,
+  disabled: false,
+  readonly: false,
+  label: 'Anlagen',
+  placeholder: '',
   onChange: vi.fn(),
   onBlur: vi.fn(),
   onFocus: vi.fn(),
@@ -287,5 +308,104 @@ describe('AccessibleSelectWidget', () => {
     render(<AccessibleSelectWidget {...buildSelectProps()} />);
     const select = screen.getByRole('combobox');
     expect(select).toHaveAttribute('name', 'testSelect');
+  });
+});
+
+describe('AttachmentsAssistantWidget', () => {
+  it('renders recommended attachments checkboxes and editable textarea', () => {
+    render(
+      <AttachmentsAssistantWidget {...buildAttachmentsAssistantProps()} />,
+    );
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes).toHaveLength(8);
+
+    const textarea = screen.getByRole('textbox');
+    expect(textarea).toBeInTheDocument();
+    expect(textarea).toHaveAttribute('rows', '6');
+  });
+
+  it('adds a recommended attachment line when a checkbox is selected', () => {
+    const onChange = vi.fn();
+
+    render(
+      <AttachmentsAssistantWidget
+        {...buildAttachmentsAssistantProps({ onChange })}
+      />,
+    );
+
+    const [firstCheckbox] = screen.getAllByRole('checkbox');
+    fireEvent.click(firstCheckbox);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.stringContaining('Arztbefunde'),
+    );
+  });
+
+  it('removes a recommended attachment line when its checkbox is deselected', () => {
+    const onChange = vi.fn();
+
+    render(
+      <AttachmentsAssistantWidget
+        {...buildAttachmentsAssistantProps({
+          value: '- Arztbefunde\n- Freier Anhang',
+          onChange,
+        })}
+      />,
+    );
+
+    const [firstCheckbox] = screen.getAllByRole('checkbox');
+    expect(firstCheckbox).toBeChecked();
+
+    fireEvent.click(firstCheckbox);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenLastCalledWith('- Freier Anhang');
+  });
+
+  it('derives checked state from bullet-prefixed and case-insensitive lines', () => {
+    render(
+      <AttachmentsAssistantWidget
+        {...buildAttachmentsAssistantProps({
+          value: '* arztbefunde\n• gdb-bescheid',
+        })}
+      />,
+    );
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes[0]).toBeChecked();
+    expect(checkboxes[3]).toBeChecked();
+  });
+
+  it('keeps free-text editing and forwards textarea events', () => {
+    const onChange = vi.fn();
+    const onBlur = vi.fn();
+    const onFocus = vi.fn();
+
+    render(
+      <AttachmentsAssistantWidget
+        {...buildAttachmentsAssistantProps({
+          onChange,
+          onBlur,
+          onFocus,
+        })}
+      />,
+    );
+
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'Eigene Anlage' } });
+    fireEvent.focus(textarea);
+    fireEvent.blur(textarea);
+
+    expect(onChange).toHaveBeenCalledWith('Eigene Anlage');
+    expect(onFocus).toHaveBeenCalledWith(
+      'attachmentsFreeText',
+      expect.any(String),
+    );
+    expect(onBlur).toHaveBeenCalledWith(
+      'attachmentsFreeText',
+      expect.any(String),
+    );
   });
 });

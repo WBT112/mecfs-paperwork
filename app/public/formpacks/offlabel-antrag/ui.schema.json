@@ -272,7 +272,7 @@
   "attachmentsFreeText": {
     "ui:title": "offlabel-antrag.section.attachments.title",
     "ui:help": "offlabel-antrag.attachmentsFreeText.help",
-    "ui:widget": "textarea",
+    "ui:widget": "attachmentsAssistant",
     "ui:options": {
       "rows": 6
     }
