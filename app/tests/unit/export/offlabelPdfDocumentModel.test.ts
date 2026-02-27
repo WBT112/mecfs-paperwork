@@ -64,6 +64,7 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
       'part2',
       'part3',
       'sources',
+      'checklist',
     ]);
   });
 
@@ -164,6 +165,7 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
     expect(templateData.sources.join(' ')).not.toContain(
       'zur Anwendung von Vortioxetin',
     );
+    expect(model.sections[4].id).toBe('checklist');
   });
 
   it('handles empty section primitives from the export model', () => {
@@ -212,6 +214,23 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
       },
       sourcesHeading: '',
       sources: [],
+      postExportChecklist: {
+        title: 'Checklist',
+        intro: 'Intro',
+        documentsHeading: 'Docs',
+        documentsItems: [],
+        signaturesHeading: 'Signatures',
+        signaturesItems: [],
+        physicianSupportHeading: 'Physician',
+        physicianSupportItems: [],
+        attachmentsHeading: 'Attachments',
+        attachmentsItems: [],
+        attachmentsChecklistItems: ['Attachments fallback'],
+        attachmentsFallbackItem: 'Attachments fallback',
+        shippingHeading: 'Shipping',
+        shippingItems: [],
+        note: 'Note',
+      },
     };
 
     const spy = vi
@@ -225,11 +244,13 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
     });
 
     expect(pdfModel.title).toBe('Off-label application (parts 1-3)');
-    expect(pdfModel.sections).toHaveLength(4);
+    expect(pdfModel.sections).toHaveLength(5);
     expect(pdfModel.sections[0].blocks).toEqual([]);
     expect(pdfModel.sections[1].blocks).toEqual([]);
     expect(pdfModel.sections[2].blocks).toEqual([]);
     expect(pdfModel.sections[3].blocks).toEqual([]);
+    expect(pdfModel.sections[4].id).toBe('checklist');
+    expect(pdfModel.sections[4].blocks.length).toBeGreaterThan(0);
 
     spy.mockRestore();
   });

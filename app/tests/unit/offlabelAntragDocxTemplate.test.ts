@@ -35,6 +35,15 @@ describe('offlabel-antrag A4 DOCX template', () => {
     expect(xml).toContain('{{FOR s3 IN part3.senderLines}}');
     expect(xml).toContain('{{FOR a3 IN part3.addresseeLines}}');
     expect(xml).toContain('{{FOR p3 IN part3.paragraphs}}');
+    expect(xml).toContain(
+      '{{FOR checklistDoc IN postExportChecklist.documentsItems}}',
+    );
+    expect(xml).toContain(
+      '{{FOR checklistAttachment IN postExportChecklist.attachmentsChecklistItems}}',
+    );
+    expect(xml).toContain(
+      '{{FOR checklistShipping IN postExportChecklist.shippingItems}}',
+    );
   });
 
   it('renders part-2 liability heading in bold without duplicated signer block', async () => {
@@ -62,5 +71,15 @@ describe('offlabel-antrag A4 DOCX template', () => {
     expect(xml).toContain('<w:br w:type="page"/>');
     expect(xml).not.toContain('{{part3.title}}');
     expect(xml).toContain('Betreff: {{part3.subject}}');
+    expect(xml).toContain('{{postExportChecklist.title}}');
+  });
+
+  it('renders checklist attachment loop from prepared attachment checklist items', async () => {
+    const xml = await loadOfflabelTemplateXml();
+
+    expect(xml).toContain(
+      '{{FOR checklistAttachment IN postExportChecklist.attachmentsChecklistItems}}',
+    );
+    expect(xml).toContain('{{INS $checklistAttachment}}');
   });
 });

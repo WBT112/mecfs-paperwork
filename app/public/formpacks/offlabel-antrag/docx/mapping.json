@@ -130,6 +130,42 @@
       "path": "sourcesHeading"
     },
     {
+      "var": "postExportChecklist.title",
+      "path": "postExportChecklist.title"
+    },
+    {
+      "var": "postExportChecklist.intro",
+      "path": "postExportChecklist.intro"
+    },
+    {
+      "var": "postExportChecklist.documentsHeading",
+      "path": "postExportChecklist.documentsHeading"
+    },
+    {
+      "var": "postExportChecklist.signaturesHeading",
+      "path": "postExportChecklist.signaturesHeading"
+    },
+    {
+      "var": "postExportChecklist.physicianSupportHeading",
+      "path": "postExportChecklist.physicianSupportHeading"
+    },
+    {
+      "var": "postExportChecklist.attachmentsHeading",
+      "path": "postExportChecklist.attachmentsHeading"
+    },
+    {
+      "var": "postExportChecklist.attachmentsFallbackItem",
+      "path": "postExportChecklist.attachmentsFallbackItem"
+    },
+    {
+      "var": "postExportChecklist.shippingHeading",
+      "path": "postExportChecklist.shippingHeading"
+    },
+    {
+      "var": "postExportChecklist.note",
+      "path": "postExportChecklist.note"
+    },
+    {
       "var": "exportedAtIso",
       "path": "exportedAtIso"
     }
@@ -194,6 +230,30 @@
     {
       "var": "sources",
       "path": "sources"
+    },
+    {
+      "var": "postExportChecklist.documentsItems",
+      "path": "postExportChecklist.documentsItems"
+    },
+    {
+      "var": "postExportChecklist.signaturesItems",
+      "path": "postExportChecklist.signaturesItems"
+    },
+    {
+      "var": "postExportChecklist.physicianSupportItems",
+      "path": "postExportChecklist.physicianSupportItems"
+    },
+    {
+      "var": "postExportChecklist.attachmentsItems",
+      "path": "postExportChecklist.attachmentsItems"
+    },
+    {
+      "var": "postExportChecklist.attachmentsChecklistItems",
+      "path": "postExportChecklist.attachmentsChecklistItems"
+    },
+    {
+      "var": "postExportChecklist.shippingItems",
+      "path": "postExportChecklist.shippingItems"
     }
   ],
   "i18n": {

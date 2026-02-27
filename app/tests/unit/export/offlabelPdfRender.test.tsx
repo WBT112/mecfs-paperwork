@@ -72,6 +72,25 @@ const buildTemplateData = (
       paragraphs: ['Diagnose: ...', 'Therapieplan: ...'],
     },
   },
+  postExportChecklist: {
+    title: 'Checkliste - Nächste Schritte nach dem Export',
+    intro:
+      'Diese Liste hilft euch, den Antrag vollständig vorzubereiten. Hakt ab, was erledigt ist.',
+    documentsHeading: '1) Dokumente prüfen',
+    documentsItems: ['Dokument A geprüft'],
+    signaturesHeading: '2) Unterschriften',
+    signaturesItems: ['Antrag unterschrieben'],
+    physicianSupportHeading: '3) Ärztliche Unterstützung',
+    physicianSupportItems: ['Praxis kontaktiert'],
+    attachmentsHeading: '4) Anlagen (aus euren Eingaben)',
+    attachmentsItems: ['Befundbericht'],
+    attachmentsChecklistItems: ['Befundbericht'],
+    attachmentsFallbackItem:
+      'Anlagenliste geprüft und ggf. ergänzt (z. B. Befunde, Bescheide, relevante Unterlagen)',
+    shippingHeading: '5) Versand & Archiv',
+    shippingItems: ['Antragssatz zusammengestellt'],
+    note: 'Hinweis: Bearbeitungsfristen können variieren.',
+  },
   ...overrides,
 });
 

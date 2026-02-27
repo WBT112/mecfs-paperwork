@@ -18,6 +18,7 @@ import {
   buildOffLabelAntragDocumentModel,
   type OffLabelExportBundle,
   type OffLabelLetterSection,
+  type OffLabelPostExportChecklist,
 } from './offlabel-antrag/export/documentModel';
 
 type DiagnosisFlags = {
@@ -96,6 +97,7 @@ export type DocumentModel = {
     title: string;
     paragraphs: string[];
   };
+  postExportChecklist?: OffLabelPostExportChecklist;
   sourcesHeading?: string;
   sources?: string[];
   exportedAtIso?: string;
@@ -323,6 +325,7 @@ const buildOfflabelAntragModel = (
     kk: projected.kk,
     arzt: projected.arzt,
     part3: projected.part3,
+    postExportChecklist: projected.postExportChecklist,
     sourcesHeading: projected.sourcesHeading,
     sources: projected.sources,
     exportedAtIso: projected.exportedAtIso,

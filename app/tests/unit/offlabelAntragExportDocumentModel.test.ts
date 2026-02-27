@@ -22,6 +22,11 @@ const HILFSWEISE_SECTION_2A_REQUEST_TEXT =
 const IVABRADINE_EXPERT_SOURCE_LABEL =
   'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Ivabradin';
 const CASE_LAW_SOURCE_LABEL = 'LSG Niedersachsen-Bremen';
+const EXPECTED_PARSED_ATTACHMENTS = [
+  'Arztbrief vom 2026-01-10',
+  'Befundbericht',
+  'Laborwerte',
+];
 const buildPart2Intro = (drug: string): string =>
   `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`;
 
@@ -394,17 +399,29 @@ describe('buildOffLabelAntragDocumentModel', () => {
       { exportedAt: FIXED_EXPORTED_AT },
     );
 
-    expect(model.attachments.items).toEqual([
-      'Arztbrief vom 2026-01-10',
-      'Befundbericht',
-      'Laborwerte',
-    ]);
-    expect(model.kk.attachments).toEqual([
-      'Arztbrief vom 2026-01-10',
-      'Befundbericht',
-      'Laborwerte',
-    ]);
+    expect(model.attachments.items).toEqual(EXPECTED_PARSED_ATTACHMENTS);
+    expect(model.kk.attachments).toEqual(EXPECTED_PARSED_ATTACHMENTS);
     expect(model.kk.attachmentsHeading).toBe('Anlagen');
+    expect(model.postExportChecklist.attachmentsItems).toEqual(
+      EXPECTED_PARSED_ATTACHMENTS,
+    );
+  });
+
+  it('uses checklist fallback text when no attachments are provided', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.postExportChecklist.attachmentsItems).toEqual([]);
+    expect(model.postExportChecklist.attachmentsFallbackItem).toContain(
+      'Anlagenliste geprüft und ggf. ergänzt',
+    );
   });
 
   it('applies formal closing spacing before signature and attachments', () => {

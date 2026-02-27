@@ -2,6 +2,7 @@ import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import type { DocumentModel } from '../types';
 import { ensurePdfFontsRegistered, PDF_FONT_FAMILY_SANS } from '../fonts';
 import type { OfflabelPdfTemplateData } from '../../../formpacks/offlabel-antrag/export/pdfDocumentModel';
+import type { OffLabelPostExportChecklist } from '../../../formpacks/offlabel-antrag/export/documentModel';
 
 type LetterLike = {
   senderLines: string[];
@@ -257,6 +258,75 @@ const renderAttachments = (
   );
 };
 
+const renderChecklistItems = (items: string[], keyPrefix: string) =>
+  toKeyedEntries(items, keyPrefix).map((entry) => (
+    <Text key={entry.key} style={styles.bulletItem}>
+      {'☐ '}
+      {entry.value}
+    </Text>
+  ));
+
+const renderChecklistPage = ({
+  checklist,
+}: {
+  checklist: OffLabelPostExportChecklist;
+}) => {
+  const attachmentItems =
+    checklist.attachmentsItems.length > 0
+      ? checklist.attachmentsItems
+      : [checklist.attachmentsFallbackItem];
+
+  return (
+    <Page size="A4" style={styles.page}>
+      <Text style={styles.subject}>{checklist.title}</Text>
+      <Text style={styles.paragraph}>{checklist.intro}</Text>
+
+      <View style={styles.attachmentsBlock} wrap={false}>
+        <Text style={styles.attachmentsHeading}>
+          {checklist.documentsHeading}
+        </Text>
+        {renderChecklistItems(checklist.documentsItems, 'checklist-documents')}
+      </View>
+
+      <View style={styles.attachmentsBlock} wrap={false}>
+        <Text style={styles.attachmentsHeading}>
+          {checklist.signaturesHeading}
+        </Text>
+        {renderChecklistItems(
+          checklist.signaturesItems,
+          'checklist-signatures',
+        )}
+      </View>
+
+      <View style={styles.attachmentsBlock} wrap={false}>
+        <Text style={styles.attachmentsHeading}>
+          {checklist.physicianSupportHeading}
+        </Text>
+        {renderChecklistItems(
+          checklist.physicianSupportItems,
+          'checklist-physician',
+        )}
+      </View>
+
+      <View style={styles.attachmentsBlock} wrap={false}>
+        <Text style={styles.attachmentsHeading}>
+          {checklist.attachmentsHeading}
+        </Text>
+        {renderChecklistItems(attachmentItems, 'checklist-attachments')}
+      </View>
+
+      <View style={styles.attachmentsBlock} wrap={false}>
+        <Text style={styles.attachmentsHeading}>
+          {checklist.shippingHeading}
+        </Text>
+        {renderChecklistItems(checklist.shippingItems, 'checklist-shipping')}
+      </View>
+
+      <Text style={styles.paragraph}>{checklist.note}</Text>
+    </Page>
+  );
+};
+
 const renderLetterPage = ({
   data,
   locale,
@@ -366,6 +436,7 @@ const OfflabelAntragPdfDocument = ({ model }: { model: DocumentModel }) => {
     attachments: [],
   };
   const part3 = templateData?.exportBundle.part3 ?? EMPTY_LETTER;
+  const checklist = templateData?.postExportChecklist;
 
   return (
     <Document>
@@ -385,6 +456,7 @@ const OfflabelAntragPdfDocument = ({ model }: { model: DocumentModel }) => {
         data: part3,
         locale,
       })}
+      {checklist ? renderChecklistPage({ checklist }) : null}
     </Document>
   );
 };

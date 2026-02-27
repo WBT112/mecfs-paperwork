@@ -8,6 +8,7 @@ import {
   buildOffLabelAntragDocumentModel,
   type OffLabelExportBundle,
   type OffLabelLetterSection,
+  type OffLabelPostExportChecklist,
 } from './documentModel';
 
 export type BuildOfflabelAntragPdfDocumentModelOptions = {
@@ -22,6 +23,7 @@ export type OfflabelPdfTemplateData = {
   exportBundle: OffLabelExportBundle;
   sourcesHeading: string;
   sources: string[];
+  postExportChecklist: OffLabelPostExportChecklist;
 };
 
 const toParagraphBlocks = (paragraphs: string[]): DocumentBlock[] =>
@@ -109,6 +111,54 @@ const buildSourcesSection = (
   };
 };
 
+const buildChecklistSection = (
+  checklist: OffLabelPostExportChecklist,
+  locale: SupportedLocale,
+): DocumentSection => {
+  const checkbox = '☐ ';
+  const blocks: DocumentBlock[] = [];
+
+  addParagraphBlock(blocks, checklist.title);
+  addParagraphBlock(blocks, checklist.intro);
+  addParagraphBlock(blocks, checklist.documentsHeading);
+  addBulletsBlock(
+    blocks,
+    checklist.documentsItems.map((item) => `${checkbox}${item}`),
+  );
+  addParagraphBlock(blocks, checklist.signaturesHeading);
+  addBulletsBlock(
+    blocks,
+    checklist.signaturesItems.map((item) => `${checkbox}${item}`),
+  );
+  addParagraphBlock(blocks, checklist.physicianSupportHeading);
+  addBulletsBlock(
+    blocks,
+    checklist.physicianSupportItems.map((item) => `${checkbox}${item}`),
+  );
+  addParagraphBlock(blocks, checklist.attachmentsHeading);
+  addBulletsBlock(
+    blocks,
+    checklist.attachmentsItems.length > 0
+      ? checklist.attachmentsItems.map((item) => `${checkbox}${item}`)
+      : [checklist.attachmentsFallbackItem],
+  );
+  addParagraphBlock(blocks, checklist.shippingHeading);
+  addBulletsBlock(
+    blocks,
+    checklist.shippingItems.map((item) => `${checkbox}${item}`),
+  );
+  addParagraphBlock(blocks, checklist.note);
+
+  return {
+    id: 'checklist',
+    heading:
+      locale === 'en'
+        ? 'Checklist - Next steps after export'
+        : 'Checkliste - Nächste Schritte nach dem Export',
+    blocks,
+  };
+};
+
 export const buildOfflabelAntragPdfDocumentModel = ({
   formData,
   locale,
@@ -124,6 +174,7 @@ export const buildOfflabelAntragPdfDocumentModel = ({
     exportBundle: model.exportBundle,
     sourcesHeading: model.sourcesHeading,
     sources: model.sources,
+    postExportChecklist: model.postExportChecklist,
   };
 
   return {
@@ -162,6 +213,7 @@ export const buildOfflabelAntragPdfDocumentModel = ({
         blocks: buildPart3Blocks(model.exportBundle.part3),
       },
       buildSourcesSection(model.sourcesHeading, model.sources),
+      buildChecklistSection(model.postExportChecklist, locale),
     ],
   };
 };

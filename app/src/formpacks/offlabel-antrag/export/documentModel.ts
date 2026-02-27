@@ -49,6 +49,24 @@ export type OffLabelPart3Section = {
   paragraphs: string[];
 };
 
+export type OffLabelPostExportChecklist = {
+  title: string;
+  intro: string;
+  documentsHeading: string;
+  documentsItems: string[];
+  signaturesHeading: string;
+  signaturesItems: string[];
+  physicianSupportHeading: string;
+  physicianSupportItems: string[];
+  attachmentsHeading: string;
+  attachmentsItems: string[];
+  attachmentsChecklistItems: string[];
+  attachmentsFallbackItem: string;
+  shippingHeading: string;
+  shippingItems: string[];
+  note: string;
+};
+
 type OffLabelExportPart3 = {
   title: string;
   senderLines: string[];
@@ -108,6 +126,7 @@ export type OffLabelAntragDocumentModel = {
   kk: OffLabelLetterSection;
   arzt: OffLabelLetterSection;
   part3: OffLabelPart3Section;
+  postExportChecklist: OffLabelPostExportChecklist;
   sourcesHeading: string;
   sources: string[];
   exportedAtIso: string;
@@ -472,6 +491,168 @@ const buildSourceItems = ({
   return sources;
 };
 
+const checklistText = (
+  t: I18nT,
+  locale: SupportedLocale,
+  key: string,
+  deDefault: string,
+  enDefault: string,
+): string => tr(t, key, locale === 'en' ? enDefault : deDefault);
+
+const buildPostExportChecklist = ({
+  t,
+  locale,
+  attachments,
+}: {
+  t: I18nT;
+  locale: SupportedLocale;
+  attachments: string[];
+}): OffLabelPostExportChecklist => {
+  const text = (key: string, deDefault: string, enDefault: string): string =>
+    checklistText(t, locale, key, deDefault, enDefault);
+  const attachmentsFallbackItem = text(
+    'offlabel-antrag.export.checklist.attachments.fallback',
+    'Anlagenliste geprüft und ggf. ergänzt (z. B. Befunde, Bescheide, relevante Unterlagen)',
+    'Attachments list reviewed and completed as needed (e.g. findings, notices, relevant documents)',
+  );
+  const attachmentsChecklistItems =
+    attachments.length > 0 ? attachments : [attachmentsFallbackItem];
+
+  return {
+    title: text(
+      'offlabel-antrag.export.checklist.title',
+      'Checkliste - Nächste Schritte nach dem Export',
+      'Checklist - Next steps after export',
+    ),
+    intro: text(
+      'offlabel-antrag.export.checklist.intro',
+      'Diese Liste hilft euch, den Antrag vollständig vorzubereiten. Hakt ab, was erledigt ist.',
+      'This list helps you prepare a complete application. Tick off what has been completed.',
+    ),
+    documentsHeading: text(
+      'offlabel-antrag.export.checklist.documents.heading',
+      '1) Dokumente prüfen',
+      '1) Review documents',
+    ),
+    documentsItems: [
+      text(
+        'offlabel-antrag.export.checklist.documents.item.application',
+        'Antrag an die Krankenkasse geprüft (Daten, Datum, Empfänger)',
+        'Application to the health insurer reviewed (data, date, recipient)',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.documents.item.coverLetter',
+        'Arztanschreiben geprüft',
+        'Cover letter to physician reviewed',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.documents.item.statementTemplate',
+        'Vorlage „Ärztliche Stellungnahme/Befundbericht“ geprüft',
+        'Template "Physician statement/report summary" reviewed',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.documents.item.consent',
+        'Aufklärung & Einwilligung geprüft (sofern relevant)',
+        'Information & consent form reviewed (if relevant)',
+      ),
+    ],
+    signaturesHeading: text(
+      'offlabel-antrag.export.checklist.signatures.heading',
+      '2) Unterschriften',
+      '2) Signatures',
+    ),
+    signaturesItems: [
+      text(
+        'offlabel-antrag.export.checklist.signatures.item.applicationSigned',
+        'Antrag unterschrieben',
+        'Application signed',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.signatures.item.patientConsentSigned',
+        'Aufklärung & Einwilligung: Patient unterschrieben (sofern relevant)',
+        'Information & consent: patient signed (if relevant)',
+      ),
+    ],
+    physicianSupportHeading: text(
+      'offlabel-antrag.export.checklist.physician.heading',
+      '3) Ärztliche Unterstützung',
+      '3) Physician support',
+    ),
+    physicianSupportItems: [
+      text(
+        'offlabel-antrag.export.checklist.physician.item.sentToPractice',
+        'Arztanschreiben + Vorlage an die Praxis übergeben/gesendet',
+        'Cover letter + template handed over/sent to practice',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.physician.item.requestedStatement',
+        'Ärztin/Arzt um Stellungnahme/Befundbericht gebeten',
+        'Asked physician for a statement/report summary',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.physician.item.alignedDeadline',
+        'Rückgabe/Frist mit der Praxis abgestimmt',
+        'Return/deadline aligned with practice',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.physician.item.monitoringAligned',
+        'Monitoring/Abbruchkriterien wurden ärztlich bestätigt oder angepasst',
+        'Monitoring/stop criteria medically confirmed or adjusted',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.physician.item.doctorConsentSigned',
+        'Aufklärung & Einwilligung: Ärztin/Arzt unterschreibt nach Aufklärung (sofern relevant)',
+        'Information & consent: physician signs after counselling (if relevant)',
+      ),
+    ],
+    attachmentsHeading: text(
+      'offlabel-antrag.export.checklist.attachments.heading',
+      '4) Anlagen (aus euren Eingaben)',
+      '4) Attachments (from your entries)',
+    ),
+    attachmentsItems: attachments,
+    attachmentsChecklistItems,
+    attachmentsFallbackItem,
+    shippingHeading: text(
+      'offlabel-antrag.export.checklist.shipping.heading',
+      '5) Versand & Archiv',
+      '5) Dispatch & archive',
+    ),
+    shippingItems: [
+      text(
+        'offlabel-antrag.export.checklist.shipping.item.fullSet',
+        'Vollständigen Antragssatz zusammengestellt (Antrag + Anlagen + ärztliche Stellungnahme)',
+        'Complete application package assembled (application + attachments + physician statement)',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.shipping.item.copy',
+        'Kopie/Scan für eigene Unterlagen erstellt',
+        'Copy/scan created for own records',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.shipping.item.dispatchPrepared',
+        'Versand vorbereitet (z. B. Einwurfeinschreiben oder Upload/Portal, falls verfügbar, Einschreiben mit Post App eingescannt bzw. Nummer notiert)',
+        'Dispatch prepared (e.g. tracked mail or upload/portal where available)',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.shipping.item.followUp',
+        'Wiedervorlage notiert (Nachfragen, Rückmeldung der Kasse)',
+        'Follow-up reminder noted (queries, insurer feedback)',
+      ),
+      text(
+        'offlabel-antrag.export.checklist.shipping.item.dates',
+        'Versand am: ____________________ Frist 3 Wochen: _____________________ Frist 5 Wochen: _____________________',
+        'Sent on: ____________________  3-week deadline: _____________________  5-week deadline: _____________________',
+      ),
+    ],
+    note: text(
+      'offlabel-antrag.export.checklist.note',
+      'Hinweis: Bearbeitungsfristen können variieren; achtet auf Rückfragen/Nachforderungen.',
+      'Note: Processing deadlines may vary; watch for follow-up questions or requests for additional documents.',
+    ),
+  };
+};
+
 const buildLetterSection = ({
   senderLines,
   addresseeLines,
@@ -687,6 +868,11 @@ export const buildOffLabelAntragDocumentModel = (
     expertSource: medicationFacts.expertSource,
     includeCaseLawSource,
   });
+  const postExportChecklist = buildPostExportChecklist({
+    t,
+    locale,
+    attachments: attachmentEntries,
+  });
 
   const exportBundle: OffLabelExportBundle = {
     exportedAtIso: exportedAt.toISOString(),
@@ -714,6 +900,7 @@ export const buildOffLabelAntragDocumentModel = (
     kk,
     arzt,
     part3,
+    postExportChecklist,
     sourcesHeading: tr(
       t,
       'offlabel-antrag.export.sourcesHeading',
