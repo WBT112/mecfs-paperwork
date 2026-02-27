@@ -1,6 +1,6 @@
 {
   "offlabel-antrag.attachmentsFreeText.help": "Eine Anlage pro Zeile, z. B. Arztbrief, Befundbericht, Laborwerte, Bescheid GdB, Bescheid Pflege.",
-  "offlabel-antrag.description": "Erstelle eine Vorlage für einen Antrag an die Krankenkasse zur Kostenerstattung einer Off-Label-Medikation, mit Begleitschreiben und Befundvorlage für den Arzt.",
+  "offlabel-antrag.description": "Erstelle Vorlagen für einen Antrag auf Kostenübernahme bei der Krankenkasse (Off-Label-Use) – inklusive Arztanschreiben und Vorlage für die ärztliche Stellungnahme.",
   "offlabel-antrag.doctor.city.help": "Ort der Praxis",
   "offlabel-antrag.doctor.city.label": "Ort",
   "offlabel-antrag.doctor.gender.help": "Anrede des Arztes (Feld offen lassen für: 'Sehr geehrte Damen und Herren')",
