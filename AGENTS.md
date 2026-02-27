@@ -56,7 +56,7 @@ For every change that touches `app/`:
 6. `npm run test:e2e` (NOTE: E2E tests take very long so only do them once after all coding work is done and all other quality gates pass (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)) 
 7. `npm run formpack:validate`
 8. `npm run build`
-9. minimum 80% Test coverage for new code
+9. minimum 92%+ Test coverage for new code
 10. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
 11. Ignoring files or silencing errors is not a solution. All quality gates must be met.
 
@@ -65,7 +65,7 @@ If any step fails: fix it before finishing.
 ## Tests (phased)
 - If `npm run test` exists, run it and fix failures before proposing a PR.
 - If no test runner is configured yet (no `test` script), state that explicitly in the PR description and do not invent a large test suite unless the issue asks for it.
-- Create Unit tests if possible (80% coverage is good and should be a target)
+- Create Unit tests if possible (92%+ coverage is good and should be a target)
 - Check if any existing tests need to be changed
 - Minimum test coverage expectations:
   - P0 bugfix: add at least one regression test (unit or integration) and run the relevant manual checklist.
@@ -82,7 +82,6 @@ If any step fails: fix it before finishing.
 - Prefer fast, deterministic tests. Avoid flaky E2E tests.
 
 ### E2E
-- Only add E2E tests when the issue explicitly requires it or when touching critical user flows.
 - Keep E2E coverage minimal (smoke tests) and stable.
 
 ## 4) Code style: readability first
@@ -119,10 +118,11 @@ When adding or updating tooling:
 - Ensure devs can run everything locally.
 
 ## 7) Static analysis (security) — planned and encouraged
-- Prefer enabling GitHub CodeQL scanning for JavaScript/TypeScript in CI (separate workflow).
-- Keep the initial query suite at default, then consider security-extended.
-
-Do not block feature work on this unless the issue explicitly targets security tooling.
+- We use static analysis tools to enforce security and privacy constraints. This includes:
+  - Custom ESLint rules to prevent logging user data or using raw IndexedDB API.
+  - TypeScript types to enforce data handling patterns (e.g., no real patient data).
+  - Regular audits of dependencies for security vulnerabilities.
+  - Do NOT change/disable these checks without a very strong justification and explicit approval. 
 
 ## 8) PR discipline
 - One issue per PR when feasible.
@@ -134,5 +134,5 @@ Do not block feature work on this unless the issue explicitly targets security t
 
 ## 9) Data model constraints (MVP)
 - Storage: IndexedDB (`mecfs-paperwork`, v3) with four stores: `records`, `snapshots`, `formpackMeta`, `profiles`. Keep migrations explicit (bump `DB_VERSION` in `app/src/storage/db.ts`).
-- Export: primary DOCX (A4 + Wallet as separate downloads), plus JSON backup/import.
+- Export: primary DOCX (A4 + Wallet as separate downloads), PDF, plus JSON export/import.
 - i18n: DE + EN from the start; locale stored per record and kept in exports.
