@@ -42,6 +42,37 @@ const collectBrowserInfo = (): DiagnosticsBundle['browser'] => ({
   onLine: navigator.onLine,
 });
 
+const USER_TIMING_PREFIX = 'mecfs.';
+const USER_TIMING_LIMIT = 200;
+
+const collectPerformanceInfo = (): DiagnosticsBundle['performance'] => {
+  const perf = globalThis.performance as Performance | undefined;
+  if (perf === undefined || typeof perf.getEntriesByType !== 'function') {
+    return { supported: false, measures: [] };
+  }
+
+  try {
+    const entries = perf.getEntriesByType('measure');
+    const measures = entries
+      .filter(
+        (entry) =>
+          entry.name.startsWith(USER_TIMING_PREFIX) &&
+          Number.isFinite(entry.duration) &&
+          Number.isFinite(entry.startTime),
+      )
+      .slice(-USER_TIMING_LIMIT)
+      .map((entry) => ({
+        name: entry.name,
+        durationMs: entry.duration,
+        startTimeMs: entry.startTime,
+      }));
+
+    return { supported: true, measures };
+  } catch {
+    return { supported: true, measures: [] };
+  }
+};
+
 const collectServiceWorkerInfo = async (): Promise<ServiceWorkerInfo> => {
   if (!('serviceWorker' in navigator)) {
     return { supported: false, registered: false };
@@ -210,6 +241,7 @@ const collectFormpackMeta = async (): Promise<FormpackMetaInfo[]> => {
 
 export const collectDiagnosticsBundle =
   async (): Promise<DiagnosticsBundle> => {
+    const performanceInfo = collectPerformanceInfo();
     const [serviceWorker, cachesList, indexedDb, storageHealth, formpacks] =
       await Promise.all([
         collectServiceWorkerInfo(),
@@ -228,6 +260,7 @@ export const collectDiagnosticsBundle =
       indexedDb,
       storageHealth,
       formpacks,
+      performance: performanceInfo,
       errors: getErrors(),
     };
   };

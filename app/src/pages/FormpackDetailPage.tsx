@@ -42,6 +42,10 @@ import { buildRandomDummyPatch } from '../lib/devDummyFill';
 import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
+import {
+  USER_TIMING_NAMES,
+  startUserTiming,
+} from '../lib/performance/userTiming';
 import type { JsonEncryptionEnvelope } from '../lib/jsonEncryption';
 import {
   FormpackLoaderError,
@@ -143,28 +147,34 @@ const loadFormpackAssets = async (
   locale: SupportedLocale,
   t: (key: string) => string,
 ): Promise<ManifestLoadResult> => {
-  const manifest = await loadFormpackManifest(formpackId);
-  if (!isFormpackVisible(manifest)) {
+  const timing = startUserTiming(USER_TIMING_NAMES.formpackLoadTotal);
+
+  try {
+    const manifest = await loadFormpackManifest(formpackId);
+    if (!isFormpackVisible(manifest)) {
+      return {
+        manifest: null,
+        schema: null,
+        uiSchema: null,
+        errorMessage: t('formpackNotFound'),
+      };
+    }
+
+    await loadFormpackI18n(formpackId, locale);
+    const [schemaData, uiSchemaData] = await Promise.all([
+      loadFormpackSchema(formpackId),
+      loadFormpackUiSchema(formpackId),
+    ]);
+
     return {
-      manifest: null,
-      schema: null,
-      uiSchema: null,
-      errorMessage: t('formpackNotFound'),
+      manifest,
+      schema: schemaData as RJSFSchema,
+      uiSchema: uiSchemaData as UiSchema,
+      errorMessage: null,
     };
+  } finally {
+    timing.end();
   }
-
-  await loadFormpackI18n(formpackId, locale);
-  const [schemaData, uiSchemaData] = await Promise.all([
-    loadFormpackSchema(formpackId),
-    loadFormpackUiSchema(formpackId),
-  ]);
-
-  return {
-    manifest,
-    schema: schemaData as RJSFSchema,
-    uiSchema: uiSchemaData as UiSchema,
-    errorMessage: null,
-  };
 };
 
 const FORMPACK_ERROR_KEYS: Partial<
@@ -2531,19 +2541,20 @@ export default function FormpackDetailPage() {
       return;
     }
 
+    const timing = startUserTiming(USER_TIMING_NAMES.exportJsonTotal);
     setJsonExportError(null);
 
-    const payload = buildJsonExportPayload({
-      formpack: { id: manifest.id, version: manifest.version },
-      record: activeRecord,
-      data: formData,
-      locale,
-      revisions: snapshots,
-      ...(schema ? { schema } : {}),
-    });
-    const filename = buildJsonExportFilename(payload);
-
     try {
+      const payload = buildJsonExportPayload({
+        formpack: { id: manifest.id, version: manifest.version },
+        record: activeRecord,
+        data: formData,
+        locale,
+        revisions: snapshots,
+        ...(schema ? { schema } : {}),
+      });
+      const filename = buildJsonExportFilename(payload);
+
       if (!encryptJsonExport) {
         downloadJsonExport(payload, filename);
         return;
@@ -2568,6 +2579,8 @@ export default function FormpackDetailPage() {
       downloadJsonExport(encryptedPayload, filename);
     } catch (error) {
       setJsonExportError(resolveJsonEncryptionErrorMessage(error, 'export', t));
+    } finally {
+      timing.end();
     }
   }, [
     activeRecord,
@@ -2593,6 +2606,7 @@ export default function FormpackDetailPage() {
       return;
     }
 
+    const timing = startUserTiming(USER_TIMING_NAMES.exportDocxTotal);
     setDocxError(null);
     setDocxSuccess(null);
     setIsDocxExporting(true);
@@ -2618,6 +2632,7 @@ export default function FormpackDetailPage() {
       setDocxError(t(errorKey));
     } finally {
       setIsDocxExporting(false);
+      timing.end();
     }
   }, [
     activeRecord,

@@ -8,6 +8,10 @@ import { applyTheme } from './theme/applyTheme';
 import { getInitialThemeMode } from './theme/theme';
 import { registerServiceWorker } from './pwa/register';
 import { installGlobalErrorListeners } from './lib/diagnostics';
+import {
+  USER_TIMING_NAMES,
+  startUserTiming,
+} from './lib/performance/userTiming';
 
 const rootElement = document.getElementById('root');
 
@@ -18,6 +22,7 @@ if (!rootElement) {
 applyTheme(getInitialThemeMode());
 registerServiceWorker();
 installGlobalErrorListeners();
+const appBootTiming = startUserTiming(USER_TIMING_NAMES.appBootTotal);
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
@@ -28,3 +33,13 @@ ReactDOM.createRoot(rootElement).render(
     </BrowserRouter>
   </React.StrictMode>,
 );
+
+if (typeof globalThis.requestAnimationFrame === 'function') {
+  globalThis.requestAnimationFrame(() => {
+    appBootTiming.end();
+  });
+} else {
+  globalThis.setTimeout(() => {
+    appBootTiming.end();
+  }, 0);
+}

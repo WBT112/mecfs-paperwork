@@ -42,6 +42,17 @@ export type FormpackMetaInfo = {
   versionOrHash: string;
 };
 
+export type PerformanceMeasureInfo = {
+  name: string;
+  durationMs: number;
+  startTimeMs: number;
+};
+
+export type PerformanceInfo = {
+  supported: boolean;
+  measures: PerformanceMeasureInfo[];
+};
+
 export type DiagnosticsBundle = {
   generatedAt: string;
   app: {
@@ -67,5 +78,6 @@ export type DiagnosticsBundle = {
   };
   storageHealth: StorageHealthInfo;
   formpacks: FormpackMetaInfo[];
+  performance: PerformanceInfo;
   errors: string[];
 };

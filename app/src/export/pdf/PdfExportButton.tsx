@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ComponentType, ReactElement } from 'react';
 import type { DocumentProps } from '@react-pdf/renderer';
+import {
+  USER_TIMING_NAMES,
+  startUserTiming,
+} from '../../lib/performance/userTiming';
 import { normalizePdfExportError } from './errors';
 import type { PdfExportRuntimeProps } from './PdfExportRuntime';
 
@@ -127,6 +131,9 @@ const PdfExportButton = ({
   const isMountedRef = useRef(true);
   const onErrorRef = useRef(onError);
   const exportTimeoutCancelRef = useRef<(() => void) | null>(null);
+  const exportTimingRef = useRef<ReturnType<typeof startUserTiming> | null>(
+    null,
+  );
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -146,20 +153,31 @@ const PdfExportButton = ({
     }
   }, []);
 
+  const stopExportTiming = useCallback(() => {
+    exportTimingRef.current?.end();
+    exportTimingRef.current = null;
+  }, []);
+
   useEffect(() => {
-    return () => clearExportTimeout();
-  }, [clearExportTimeout]);
+    return () => {
+      clearExportTimeout();
+      stopExportTiming();
+    };
+  }, [clearExportTimeout, stopExportTiming]);
 
   const handleRequestDone = useCallback(() => {
     clearExportTimeout();
+    stopExportTiming();
     setRequest(null);
-  }, [clearExportTimeout]);
+  }, [clearExportTimeout, stopExportTiming]);
 
   const handleClick = useCallback(async () => {
     if (disabled || isExporting) {
       return;
     }
 
+    stopExportTiming();
+    exportTimingRef.current = startUserTiming(USER_TIMING_NAMES.exportPdfTotal);
     clearExportTimeout();
     setIsBuilding(true);
     exportTimeoutCancelRef.current = startTimeout(REQUEST_TIMEOUT_MS, () => {
@@ -168,6 +186,7 @@ const PdfExportButton = ({
       }
       setIsBuilding(false);
       setRequest(null);
+      stopExportTiming();
       onErrorRef.current?.(
         normalizePdfExportError(
           createTimeoutError('PDF export timed out. Please try again.'),
@@ -205,6 +224,7 @@ const PdfExportButton = ({
         return;
       }
       clearExportTimeout();
+      stopExportTiming();
       onError?.(normalizePdfExportError(error));
     } finally {
       if (isMountedRef.current) {
@@ -218,6 +238,7 @@ const PdfExportButton = ({
     isExporting,
     onError,
     RuntimeComponent,
+    stopExportTiming,
   ]);
 
   const buttonLabel = isExporting ? loadingLabel : label;

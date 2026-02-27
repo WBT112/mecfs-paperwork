@@ -30,6 +30,10 @@ vi.mock('../../../src/lib/diagnostics/collectors', () => ({
       message: 'OK',
     },
     formpacks: [],
+    performance: {
+      supported: true,
+      measures: [],
+    },
     errors: [],
   }),
 }));

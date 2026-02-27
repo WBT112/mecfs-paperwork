@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { collectDiagnosticsBundle } from '../../../src/lib/diagnostics/collectors';
 
 // Mock the version module
@@ -197,6 +197,12 @@ describe('collectDiagnosticsBundle', () => {
         return request;
       }),
     });
+
+    vi.spyOn(globalThis.performance, 'getEntriesByType').mockReturnValue([]);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('returns a complete diagnostics bundle', async () => {
@@ -218,6 +224,8 @@ describe('collectDiagnosticsBundle', () => {
     expect(bundle.indexedDb).toBeDefined();
     expect(bundle.storageHealth).toBeDefined();
     expect(bundle.formpacks).toBeDefined();
+    expect(bundle.performance.supported).toBe(true);
+    expect(bundle.performance.measures).toEqual([]);
     expect(bundle.errors).toBeDefined();
   });
 
@@ -232,6 +240,48 @@ describe('collectDiagnosticsBundle', () => {
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.errors).toHaveLength(1);
     expect(bundle.errors[0]).toContain('Test error');
+  });
+
+  it('collects only mecfs.* performance measures and maps timing fields', async () => {
+    vi.spyOn(globalThis.performance, 'getEntriesByType').mockReturnValue([
+      {
+        name: 'mecfs.app.boot.total',
+        duration: 12.5,
+        startTime: 100,
+      } as PerformanceEntry,
+      {
+        name: 'third-party.measure',
+        duration: 9.9,
+        startTime: 80,
+      } as PerformanceEntry,
+      {
+        name: 'mecfs.export.json.total',
+        duration: 3.2,
+        startTime: 220,
+      } as PerformanceEntry,
+    ]);
+
+    const bundle = await collectDiagnosticsBundle();
+    expect(bundle.performance.supported).toBe(true);
+    expect(bundle.performance.measures).toEqual([
+      {
+        name: 'mecfs.app.boot.total',
+        durationMs: 12.5,
+        startTimeMs: 100,
+      },
+      {
+        name: 'mecfs.export.json.total',
+        durationMs: 3.2,
+        startTimeMs: 220,
+      },
+    ]);
+  });
+
+  it('returns unsupported performance info when Performance API is missing', async () => {
+    vi.stubGlobal('performance', undefined);
+
+    const bundle = await collectDiagnosticsBundle();
+    expect(bundle.performance).toEqual({ supported: false, measures: [] });
   });
 
   it('handles missing serviceWorker API', async () => {
@@ -651,6 +701,10 @@ describe('collectDiagnosticsBundle', () => {
 
     // Errors (from mock)
     expect(bundle.errors).toHaveLength(1);
+
+    // Performance
+    expect(bundle.performance.supported).toBe(true);
+    expect(bundle.performance.measures).toEqual([]);
 
     // Generated timestamp
     expect(new Date(bundle.generatedAt).getTime()).not.toBeNaN();
