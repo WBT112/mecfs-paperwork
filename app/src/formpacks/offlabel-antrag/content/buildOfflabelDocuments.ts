@@ -695,6 +695,18 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
+        text: 'Notizen/Hinweise/Fragen:',
+      },
+      {
+        kind: 'paragraph',
+        text: '_______________________________________________________________',
+      },
+      {
+        kind: 'paragraph',
+        text: '_______________________________________________________________',
+      },
+      {
+        kind: 'paragraph',
         text: '3. Einwilligung',
       },
       {

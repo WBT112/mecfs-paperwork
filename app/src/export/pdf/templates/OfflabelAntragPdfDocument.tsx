@@ -17,6 +17,8 @@ type LetterLike = {
   attachmentsHeading?: string;
 };
 
+const GREETING_LINES = new Set(['Mit freundlichen Grüßen', 'Kind regards']);
+
 const styles = StyleSheet.create({
   page: {
     paddingTop: 64,
@@ -186,6 +188,48 @@ const renderParagraphs = (paragraphs: string[], keyPrefix: string) =>
     );
   });
 
+const splitParagraphsForClosingBlock = (paragraphs: string[]) => {
+  const greetingIndex = paragraphs.findIndex((line) =>
+    GREETING_LINES.has(line.trim()),
+  );
+  if (greetingIndex < 0) {
+    return {
+      before: paragraphs,
+      closing: [] as string[],
+      after: [] as string[],
+    };
+  }
+
+  const signatureIndex = paragraphs.findIndex(
+    (line, index) => index > greetingIndex && line.trim().length > 0,
+  );
+  if (signatureIndex < 0) {
+    return {
+      before: paragraphs,
+      closing: [] as string[],
+      after: [] as string[],
+    };
+  }
+
+  return {
+    before: paragraphs.slice(0, greetingIndex),
+    closing: paragraphs.slice(greetingIndex, signatureIndex + 1),
+    after: paragraphs.slice(signatureIndex + 1),
+  };
+};
+
+const splitLiabilityParagraphsAtConsent = (paragraphs: string[]) => {
+  const consentIndex = paragraphs.findIndex((line) => /^3\.\s+/.test(line));
+  if (consentIndex < 0) {
+    return { before: paragraphs, fromConsent: [] as string[] };
+  }
+
+  return {
+    before: paragraphs.slice(0, consentIndex),
+    fromConsent: paragraphs.slice(consentIndex),
+  };
+};
+
 const renderAttachments = (
   heading: string | undefined,
   items: string[] | undefined,
@@ -228,6 +272,9 @@ const renderLetterPage = ({
 }) => {
   const compactSenderLines = buildCompactSenderLines(data.senderLines);
   const formattedDateLine = formatDateLine(data.dateLine, locale);
+  const { before, closing, after } = splitParagraphsForClosingBlock(
+    data.paragraphs,
+  );
 
   return (
     <Page size="A4" style={styles.page}>
@@ -245,7 +292,13 @@ const renderLetterPage = ({
       <Text style={styles.dateLine}>{formattedDateLine}</Text>
       <Text style={styles.subject}>{data.subject}</Text>
 
-      {renderParagraphs(data.paragraphs, 'paragraph')}
+      {renderParagraphs(before, 'paragraph-before')}
+      {closing.length > 0 ? (
+        <View wrap={false}>
+          {renderParagraphs(closing, 'paragraph-closing')}
+        </View>
+      ) : null}
+      {renderParagraphs(after, 'paragraph-after')}
 
       {renderAttachments(data.attachmentsHeading, data.attachments, locale)}
 
@@ -271,11 +324,22 @@ const renderLiabilityPage = ({ data }: { data: LetterLike }) => {
     return null;
   }
 
+  const { before, fromConsent } = splitLiabilityParagraphsAtConsent(
+    data.liabilityParagraphs,
+  );
+
   return (
-    <Page size="A4" style={styles.page}>
-      <Text style={styles.subject}>{data.liabilityHeading}</Text>
-      {renderParagraphs(data.liabilityParagraphs, 'liability')}
-    </Page>
+    <>
+      <Page size="A4" style={styles.page}>
+        <Text style={styles.subject}>{data.liabilityHeading}</Text>
+        {renderParagraphs(before, 'liability-before-consent')}
+      </Page>
+      {fromConsent.length > 0 ? (
+        <Page size="A4" style={styles.page}>
+          {renderParagraphs(fromConsent, 'liability-from-consent')}
+        </Page>
+      ) : null}
+    </>
   );
 };
 
