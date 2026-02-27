@@ -303,7 +303,7 @@ const renderLetterPage = ({
       {renderAttachments(data.attachmentsHeading, data.attachments, locale)}
 
       {includeSources && sources && sources.length > 0 ? (
-        <View style={styles.sourcesBlock}>
+        <View style={styles.sourcesBlock} wrap={false}>
           <Text style={styles.attachmentsHeading}>
             {sourcesHeading ||
               (locale.toLowerCase().startsWith('en') ? 'Sources' : 'Quellen')}
