@@ -151,7 +151,10 @@ export default [
 
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true },
+        {
+          allowConstantExport: true,
+          allowExportNames: ['__formpackDetailTestUtils'],
+        },
       ],
     },
   },
