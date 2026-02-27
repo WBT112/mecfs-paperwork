@@ -22,6 +22,8 @@ const HILFSWEISE_SECTION_2A_REQUEST_TEXT =
 const IVABRADINE_EXPERT_SOURCE_LABEL =
   'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Ivabradin';
 const CASE_LAW_SOURCE_LABEL = 'LSG Niedersachsen-Bremen';
+const buildPart2Intro = (drug: string): string =>
+  `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`;
 
 const interpolate = (
   template: string,
@@ -128,9 +130,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     expect(part3).toContain(
       'Diagnose: Long/Post-COVID mit depressiven Symptomen',
     );
-    expect(part2).toContain(
-      'für eine Off-Label-Verordnung von Vortioxetin mit der Indikation Long/Post-COVID mit depressiven Symptomen',
-    );
+    expect(part2).toContain(buildPart2Intro('Vortioxetin'));
     expect(part3).toContain(
       'zur Behandlung der Indikation Long/Post-COVID mit depressiven Symptomen',
     );
@@ -247,9 +247,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
     );
     expect(part1).not.toContain(HILFSWEISE_SECTION_2A_REQUEST_TEXT);
 
-    expect(part2).toContain(
-      'für eine Off-Label-Verordnung von Midodrin mit der Indikation Orthostatische Intoleranz',
-    );
+    expect(part2).toContain(buildPart2Intro('Midodrin'));
     expect(part2).not.toContain('Die klinische Symptomatik ist mit');
 
     expect(part3).toContain('Diagnose: Orthostatische Intoleranz');
@@ -281,10 +279,13 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'zur Behandlung von postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
     );
     expect(model.arzt.paragraphs.join('\n')).toContain(
-      'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vergleichbar.',
+      buildPart2Intro('Ivabradin'),
     );
     expect(model.arzt.paragraphs.join('\n')).not.toContain(
       'mit der Indikation postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
+    );
+    expect(model.arzt.paragraphs.join('\n')).not.toContain(
+      'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vergleichbar.',
     );
     expect(model.part3.paragraphs.join('\n')).toContain(
       'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vergleichbar;',

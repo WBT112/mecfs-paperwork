@@ -579,11 +579,9 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
   const doctor = getRecord(formData.doctor);
   const patient = getRecord(formData.patient);
   const request = getRecord(formData.request);
-  const { key: drugKey, profile: drugProfile } =
-    resolveMedicationProfileOrThrow(request.drug);
-  const point2aNoSelected =
-    getText(request.indicationFullyMetOrDoctorConfirms) === 'no';
-  const point2aNo = drugKey !== 'other' && point2aNoSelected;
+  const { profile: drugProfile } = resolveMedicationProfileOrThrow(
+    request.drug,
+  );
   const facts = resolvePreviewMedicationFacts(request, drugProfile);
   const drug = facts.displayName;
   const patientName =
@@ -617,13 +615,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: point2aNo
-          ? `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} vor. Die klinische Symptomatik ist mit ${facts.diagnosisDative} vergleichbar.`
-          : `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für eine Off-Label-Verordnung von ${drug} mit der Indikation ${facts.diagnosisNominative} vor.`,
-      },
-      {
-        kind: 'paragraph',
-        text: 'Ich bitte Sie um Unterstützung bei der medizinischen Einordnung und Begleitung des Antrags, insbesondere durch:',
+        text: `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`,
       },
       {
         kind: 'list',

@@ -44,6 +44,8 @@ const CONSENT_HEADING_MIDODRIN =
   'Aufklärung und Einwilligung zum Off-Label-Use: Midodrin';
 const CONSENT_HEADING_IVABRADIN =
   'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin';
+const buildPart2Intro = (drug: string): string =>
+  `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`;
 
 describe('buildOfflabelDocuments', () => {
   it('builds three parts and includes evidence text for known medication', () => {
@@ -123,12 +125,11 @@ describe('buildOfflabelDocuments', () => {
       .filter((block) => block.kind === 'paragraph')
       .map((block) => block.text)
       .join('\n');
-    expect(part2Text).toContain(
-      'Die klinische Symptomatik ist mit postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit vergleichbar.',
-    );
+    expect(part2Text).toContain(buildPart2Intro('Ivabradin'));
     expect(part2Text).not.toContain(
       'mit der Indikation postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
     );
+    expect(part2Text).not.toContain('Die klinische Symptomatik ist mit');
 
     const part3Text = docs[2].blocks
       .filter((block) => block.kind === 'paragraph')
@@ -255,9 +256,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).not.toContain(HILFSANTRAG_INTRO_TEXT);
     expect(part1Text).not.toContain(HILFSWEISE_SECTION_2A_REQUEST_TEXT);
 
-    expect(part2Text).toContain(
-      'für eine Off-Label-Verordnung von Midodrin mit der Indikation Orthostatische Intoleranz',
-    );
+    expect(part2Text).toContain(buildPart2Intro('Midodrin'));
     expect(part2Text).not.toContain('Die klinische Symptomatik ist mit');
 
     expect(part3Text).toContain('Diagnose: Orthostatische Intoleranz');
@@ -408,12 +407,7 @@ describe('buildOfflabelDocuments', () => {
         ),
       ),
     ).toBe(true);
-    expect(part2Text).toContain(
-      'für eine Off-Label-Verordnung von Midodrin mit der Indikation Orthostatische Intoleranz',
-    );
-    expect(part2Text).toContain(
-      'Ich bitte Sie um Unterstützung bei der medizinischen Einordnung und Begleitung des Antrags, insbesondere durch:',
-    );
+    expect(part2Text).toContain(buildPart2Intro('Midodrin'));
     expect(part2ListItems).toContain(
       'Die ärztliche Begleitung der Behandlung im Verlauf',
     );
@@ -621,9 +615,7 @@ describe('buildOfflabelDocuments', () => {
       'Indikation: Long-/Post-COVID mit Fatigue',
     );
     expect(part1Text).not.toContain('und/oder');
-    expect(part2Text).toContain(
-      'für eine Off-Label-Verordnung von Agomelatin mit der Indikation Long-/Post-COVID mit Fatigue',
-    );
+    expect(part2Text).toContain(buildPart2Intro('Agomelatin'));
     expect(part2Text).not.toContain('und/oder');
     expect(part3Text).toContain(
       'zur Behandlung der Indikation Long-/Post-COVID mit Fatigue',
