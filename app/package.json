@@ -35,6 +35,7 @@
     "test:unit": "vitest --run",
     "test:watch": "vitest",
     "test:coverage": "vitest --run --coverage",
+    "test:coverage:changed": "vitest --run --coverage --coverage.reporter=json-summary --coverage.reporter=text-summary && node scripts/check-changed-file-coverage.mjs",
     "check:bundle-size": "node scripts/check-bundle-size.mjs",
     "cleanup:css:report": "node scripts/report-unused-css.mjs",
     "cleanup:knip:report": "node scripts/report-knip.mjs",
