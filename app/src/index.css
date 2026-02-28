@@ -682,6 +682,18 @@ body {
   min-width: 0;
 }
 
+.formpack-detail__section {
+  min-width: 0;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
+.formpack-detail__section > * {
+  min-width: 0;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+
 .formpack-detail__section h3 {
   margin: 0 0 0.75rem;
 }
@@ -844,7 +856,6 @@ body {
   margin: 0.5rem 0;
   font-size: 0.9rem;
   color: var(--color-info-text, #0d47a1);
-  max-inline-size: 100%;
   max-width: 80ch;
 }
 
@@ -874,15 +885,6 @@ body {
 
 .info-box__content {
   min-width: 0;
-  max-inline-size: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.info-box__content :is(p, li, a, strong, em, span, code) {
-  max-inline-size: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
 .info-box__content a {
@@ -992,9 +994,6 @@ body {
   font-weight: 600;
   font-size: 0.95rem;
   line-height: 1.4;
-  max-inline-size: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
 .formpack-form input,
@@ -1161,16 +1160,6 @@ body {
   color: var(--color-text-muted);
   font-size: 0.9rem;
   line-height: 1.4;
-  max-inline-size: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.formpack-form .field-description :is(p, li, a, strong, em, span, code),
-.formpack-form .help-block :is(p, li, a, strong, em, span, code) {
-  max-inline-size: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
 }
 
 .formpack-form__actions {
