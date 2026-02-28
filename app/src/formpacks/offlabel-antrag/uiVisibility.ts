@@ -134,9 +134,7 @@ export const applyOfflabelVisibility = (
   };
   requestUiSchema.drug = selectedDrugNode;
 
-  const selectedIndicationNode = isRecord(requestUiSchema.selectedIndicationKey)
-    ? requestUiSchema.selectedIndicationKey
-    : {};
+  const selectedIndicationNode = requestUiSchema.selectedIndicationKey as UiNode;
   selectedIndicationNode['ui:enumNames'] = indicationOptions.map(
     ({ label }) => label,
   );
