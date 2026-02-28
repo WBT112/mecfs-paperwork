@@ -61,6 +61,7 @@ const selectDrugByValue = async (page: Page, value: string) => {
       vortioxetine: ['vortioxetine', 'vortioxetin'],
       agomelatin: ['agomelatin', 'agomelatine'],
       ldn: ['ldn', 'low-dose naltrexon', 'low-dose naltrexone'],
+      aripiprazole: ['aripiprazole', 'aripiprazol', 'lda'],
       other: ['other', 'anderes medikament', 'other medication'],
     };
     const candidates = aliasMap[normalized] ?? [normalized];
@@ -148,6 +149,25 @@ const setTheme = async (page: Page, theme: 'dark' | 'light') => {
 const openPart1Preview = async (page: Page) => {
   await openCollapsibleSectionById(page, 'formpack-document-preview');
   await page.getByRole('tab', { name: /(teil|part)\s*1/i }).click();
+};
+
+const expectNoHorizontalOverflow = async (page: Page) => {
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(() => {
+          const viewportWidth = document.documentElement.clientWidth;
+          const documentWidth = document.documentElement.scrollWidth;
+          const bodyWidth = document.body.scrollWidth;
+          return Math.max(documentWidth, bodyWidth) - viewportWidth;
+        }),
+      {
+        timeout: 5_000,
+        message:
+          'Expected no horizontal overflow on mobile after selecting long indication labels.',
+      },
+    )
+    .toBeLessThanOrEqual(0);
 };
 
 test.describe('offlabel workflow preview regressions @mobile', () => {
@@ -268,5 +288,14 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
 
     await selectDrugNoEntry(page);
     await expect(select).toHaveValue('');
+  });
+
+  test('keeps mobile form layout within viewport for long indication labels @mobile', async ({
+    page,
+  }) => {
+    await selectDrugByValue(page, 'aripiprazole');
+    await selectIndicationByLabelText(page, 'Fatigue und PEM');
+
+    await expectNoHorizontalOverflow(page);
   });
 });
