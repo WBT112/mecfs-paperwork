@@ -55,10 +55,20 @@ describe('resolveOfflabelFocusTarget', () => {
     );
   });
 
-  it('falls back to first visible medication for unknown drug values', () => {
+  it('returns null for unknown drug values', () => {
     const target = resolveOfflabelFocusTarget(
       { drug: 'unknown-value' },
       { drug: 'another-unknown-value' },
+      false,
+    );
+
+    expect(target).toBeNull();
+  });
+
+  it('returns null when medication is cleared to an empty value', () => {
+    const target = resolveOfflabelFocusTarget(
+      { drug: 'vortioxetine' },
+      { drug: '' },
       false,
     );
 

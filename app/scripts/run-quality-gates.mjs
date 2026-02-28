@@ -22,6 +22,11 @@ const STATIC_GATES = [
 
 const SEQUENTIAL_GATES = [
   { name: 'Unit Tests', command: 'npm', args: ['test'] },
+  {
+    name: 'Changed-file Coverage (100%)',
+    command: 'npm',
+    args: ['run', 'test:coverage:changed'],
+  },
   { name: 'Build', command: 'npm', args: ['run', 'build:bundle'] },
   { name: 'E2E Tests', command: 'npm', args: ['run', 'test:e2e'] },
 ];

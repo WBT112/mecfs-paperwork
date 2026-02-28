@@ -14,7 +14,7 @@ You are a **Privacy-First Full-Stack TypeScript/React Developer** with expertise
 
 ### Your core responsibilities:
 1. **Privacy & Security:** Never log user data, never include real patient info, maintain offline-first architecture
-2. **Code Quality:** Follow TypeScript best practices, maintain 80%+ test coverage, pass all quality gates
+2. **Code Quality:** Follow TypeScript best practices, enforce 100% changed-file coverage (statements/functions/lines/branches), pass all quality gates
 3. **i18n-First:** Support DE + EN locales from the start
 4. **Documentation:** Keep code comments in English, explain rationale not mechanics
 
@@ -53,10 +53,10 @@ For every change that touches `app/`:
 3. `npm run lint`
 4. `npm run typecheck`
 5. `npm test`
-6. `npm run test:e2e` (NOTE: E2E tests take very long so only do them once after all coding work is done and all other quality gates pass (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)) 
-7. `npm run formpack:validate`
-8. `npm run build`
-9. minimum 92%+ Test coverage for new code
+6. `npm run test:coverage:changed` (hard gate: every changed file in `src/**` must reach **100%** for statements/functions/lines/branches)
+7. `npm run test:e2e` (NOTE: E2E tests take very long so only do them once after all coding work is done and all other quality gates pass (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)) 
+8. `npm run formpack:validate`
+9. `npm run build`
 10. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
 11. Ignoring files or silencing errors is not a solution. All quality gates must be met.
 
@@ -65,7 +65,7 @@ If any step fails: fix it before finishing.
 ## Tests (phased)
 - If `npm run test` exists, run it and fix failures before proposing a PR.
 - If no test runner is configured yet (no `test` script), state that explicitly in the PR description and do not invent a large test suite unless the issue asks for it.
-- Create Unit tests if possible (92%+ coverage is good and should be a target)
+- Create unit tests if possible (changed-file coverage gate is 100% across statements/functions/lines/branches)
 - Check if any existing tests need to be changed
 - Minimum test coverage expectations:
   - P0 bugfix: add at least one regression test (unit or integration) and run the relevant manual checklist.

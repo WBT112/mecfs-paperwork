@@ -3,8 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const MIN_LINES_PCT = 92;
-const MIN_BRANCHES_PCT = 85;
+const REQUIRED_COVERAGE_PCT = 100;
+const REQUIRED_METRICS = ['statements', 'functions', 'lines', 'branches'];
 const COVERAGE_SUMMARY_PATH = path.resolve('coverage/coverage-summary.json');
 
 const normalizePath = (filePath) => filePath.replaceAll('\\', '/');
@@ -14,6 +14,31 @@ const runGit = (args) =>
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
+
+const toNormalizedSourcePath = (rawFilePath) => {
+  const filePath = normalizePath(rawFilePath.trim());
+  if (filePath.length === 0) {
+    return null;
+  }
+
+  const appRelativePath = filePath.startsWith('app/')
+    ? filePath.slice(4)
+    : filePath;
+  if (!appRelativePath.startsWith('src/')) {
+    return null;
+  }
+  if (!/\.(ts|tsx|mjs)$/u.test(appRelativePath)) {
+    return null;
+  }
+
+  return appRelativePath;
+};
+
+const extractSourceFiles = (output) =>
+  output
+    .split('\n')
+    .map((rawFile) => toNormalizedSourcePath(rawFile))
+    .filter((filePath) => typeof filePath === 'string');
 
 const canResolveRef = (ref) => {
   try {
@@ -46,24 +71,27 @@ const resolveBaseRef = () => {
 };
 
 const getChangedSourceFiles = (baseRef) => {
-  const output = runGit([
+  const changedFromBase = runGit([
     'diff',
     '--name-only',
     '--diff-filter=ACMR',
     `${baseRef}...HEAD`,
   ]);
+  const changedFromHead = runGit([
+    'diff',
+    '--name-only',
+    '--diff-filter=ACMR',
+    'HEAD',
+  ]);
+  const untrackedFiles = runGit(['ls-files', '--others', '--exclude-standard']);
 
-  return output
-    .split('\n')
-    .map((rawFile) => normalizePath(rawFile.trim()))
-    .filter((filePath) => filePath.length > 0)
-    .map((filePath) =>
-      filePath.startsWith('app/') ? filePath.slice(4) : filePath,
-    )
-    .filter(
-      (filePath) =>
-        filePath.startsWith('src/') && /\.(ts|tsx|mjs)$/u.test(filePath),
-    );
+  return [
+    ...new Set([
+      ...extractSourceFiles(changedFromBase),
+      ...extractSourceFiles(changedFromHead),
+      ...extractSourceFiles(untrackedFiles),
+    ]),
+  ];
 };
 
 const loadCoverageSummary = () => {
@@ -94,7 +122,7 @@ const reportPass = (filesChecked, baseRef) => {
     `✅ Changed-file coverage passed for ${filesChecked} file(s) against base ${baseRef}.`,
   );
   console.log(
-    `   Required minima: lines >= ${MIN_LINES_PCT}%, branches >= ${MIN_BRANCHES_PCT}%`,
+    `   Required minima: ${REQUIRED_METRICS.join(', ')} >= ${REQUIRED_COVERAGE_PCT}%`,
   );
 };
 
@@ -102,11 +130,11 @@ const reportFailures = (failures) => {
   console.error('❌ Changed-file coverage check failed:');
   failures.forEach((failure) => {
     console.error(
-      `   - ${failure.file}: lines ${failure.lines.toFixed(2)}%, branches ${failure.branches.toFixed(2)}%`,
+      `   - ${failure.file}: statements ${failure.statements.toFixed(2)}%, functions ${failure.functions.toFixed(2)}%, lines ${failure.lines.toFixed(2)}%, branches ${failure.branches.toFixed(2)}%`,
     );
   });
   console.error(
-    `   Required minima: lines >= ${MIN_LINES_PCT}%, branches >= ${MIN_BRANCHES_PCT}%`,
+    `   Required minima: ${REQUIRED_METRICS.join(', ')} >= ${REQUIRED_COVERAGE_PCT}%`,
   );
 };
 
@@ -128,6 +156,8 @@ const main = () => {
       if (!metrics) {
         return {
           file: filePath,
+          statements: 0,
+          functions: 0,
           lines: 0,
           branches: 0,
           missing: true,
@@ -136,6 +166,8 @@ const main = () => {
 
       return {
         file: filePath,
+        statements: Number(metrics.statements?.pct ?? 0),
+        functions: Number(metrics.functions?.pct ?? 0),
         lines: Number(metrics.lines?.pct ?? 0),
         branches: Number(metrics.branches?.pct ?? 0),
         missing: false,
@@ -144,8 +176,9 @@ const main = () => {
     .filter(
       (entry) =>
         entry.missing ||
-        entry.lines < MIN_LINES_PCT ||
-        entry.branches < MIN_BRANCHES_PCT,
+        REQUIRED_METRICS.some(
+          (metricName) => entry[metricName] < REQUIRED_COVERAGE_PCT,
+        ),
     );
 
   if (failures.length > 0) {

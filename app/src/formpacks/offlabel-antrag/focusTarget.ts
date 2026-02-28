@@ -14,13 +14,12 @@ const resolveNormalizedDrug = (
   showDevMedications: boolean,
 ) => {
   const visibleMedicationKeys = getVisibleMedicationKeys(showDevMedications);
-  const fallbackDrug = visibleMedicationKeys[0] ?? 'other';
   const requestedDrug = isMedicationKey(request.drug) ? request.drug : null;
 
   if (requestedDrug && visibleMedicationKeys.includes(requestedDrug)) {
     return requestedDrug;
   }
-  return fallbackDrug;
+  return null;
 };
 
 export const resolveOfflabelFocusTarget = (
@@ -37,6 +36,11 @@ export const resolveOfflabelFocusTarget = (
     showDevMedications,
   );
   const nextDrug = resolveNormalizedDrug(nextRequest, showDevMedications);
+
+  if (!nextDrug) {
+    return null;
+  }
+
   if (previousDrug === nextDrug) {
     return null;
   }
