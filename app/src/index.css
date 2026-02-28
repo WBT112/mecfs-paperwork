@@ -635,6 +635,11 @@ body {
   text-decoration: underline;
 }
 
+.formpack-list__resume-link,
+.formpack-list__resume-link:hover {
+  text-decoration: none;
+}
+
 .formpack-list__search {
   width: 100%;
   box-sizing: border-box;

@@ -1,5 +1,6 @@
 import type { FieldTemplateProps } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
+import { isValidElement, type ReactNode } from 'react';
 import { isRecord } from './utils';
 import { InfoBox } from '../components/InfoBox';
 import { getInfoBoxesForField } from '../formpacks/formpackInfoBox';
@@ -42,6 +43,39 @@ const getFieldTemplateFormContext = (
   };
 };
 
+const normalizeComparableText = (value: string): string =>
+  value.trim().replaceAll(/\s+/gu, ' ').toLocaleLowerCase();
+
+const flattenTextContent = (node: ReactNode): string => {
+  if (node === null || node === undefined || typeof node === 'boolean') {
+    return '';
+  }
+
+  if (typeof node === 'string' || typeof node === 'number') {
+    return String(node);
+  }
+
+  if (Array.isArray(node)) {
+    return node.map((entry) => flattenTextContent(entry)).join(' ');
+  }
+
+  if (isValidElement<{ children?: ReactNode }>(node)) {
+    return flattenTextContent(node.props.children);
+  }
+
+  return '';
+};
+
+const shouldHideDuplicateHelp = (
+  label: ReactNode,
+  help: ReactNode,
+): boolean => {
+  const labelText = normalizeComparableText(flattenTextContent(label));
+  const helpText = normalizeComparableText(flattenTextContent(help));
+
+  return labelText.length > 0 && helpText.length > 0 && labelText === helpText;
+};
+
 /**
  * Custom field template for formpacks that supports InfoBox rendering.
  * InfoBoxes are rendered directly under their anchored field when enabled.
@@ -82,6 +116,8 @@ export function FormpackFieldTemplate(props: FormpackFieldTemplateProps) {
       schemaType.some((type) => type === 'object' || type === 'array'));
   const shouldRenderLabel =
     Boolean(label) && displayLabel !== false && !isContainerType;
+  const shouldRenderHelp =
+    !shouldRenderLabel || !shouldHideDuplicateHelp(label, help);
 
   // Construct the field anchor from the field ID
   // RJSF IDs are like "root_decision_q1", we need "decision.q1"
@@ -133,7 +169,7 @@ export function FormpackFieldTemplate(props: FormpackFieldTemplateProps) {
       {description}
       {children}
       {errors}
-      {help}
+      {shouldRenderHelp ? help : null}
       {regularInfoBoxes.map((infoBox) => renderInfoBox(infoBox))}
       {isOfflabelRequestContainer &&
         flowStatusInfoBoxes.map((infoBox) =>

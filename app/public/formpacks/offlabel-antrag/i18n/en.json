@@ -112,7 +112,7 @@
   "offlabel-antrag.insurer.city.label": "City",
   "offlabel-antrag.insurer.department.help": "Department/contact person at insurer (leave blank if unknown)",
   "offlabel-antrag.insurer.department.label": "Department",
-  "offlabel-antrag.insurer.name.help": "Optional insurer addressee",
+  "offlabel-antrag.insurer.name.help": "Optional health insurer name",
   "offlabel-antrag.insurer.name.label": "Insurer name",
   "offlabel-antrag.insurer.postalCode.help": "Optional insurer postal code",
   "offlabel-antrag.insurer.postalCode.label": "Postal code",

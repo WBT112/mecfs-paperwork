@@ -50,6 +50,7 @@
   "formpackResumeLast": "Resume last draft",
   "formpackListEmpty": "No support offers are available yet.",
   "formpackSearchPlaceholder": "Search forms\u2026",
+  "formpackSelectEmptyOption": "[no entry]",
   "formpackSearchEmpty": "No results.",
   "formpackCategoryInsurer": "Health insurer",
   "formpackCategoryDoctor": "Doctor",

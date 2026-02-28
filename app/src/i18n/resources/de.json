@@ -50,6 +50,7 @@
   "formpackResumeLast": "Letzten Entwurf fortsetzen",
   "formpackListEmpty": "Es sind noch keine Hilfsangebote verfügbar.",
   "formpackSearchPlaceholder": "Hilfsangebote durchsuchen\u2026",
+  "formpackSelectEmptyOption": "[keine Angabe]",
   "formpackSearchEmpty": "Keine Ergebnisse.",
   "formpackCategoryInsurer": "Krankenkasse",
   "formpackCategoryDoctor": "Arzt",

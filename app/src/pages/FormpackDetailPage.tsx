@@ -1879,7 +1879,8 @@ export default function FormpackDetailPage() {
   // expensive Form component, which receives these callbacks as props.
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = useCallback(
     (event) => {
-      const nextData = event.formData as FormDataState;
+      const incomingData = event.formData as FormDataState;
+      let nextData: FormDataState = { ...incomingData };
 
       if (
         formpackId === OFFLABEL_ANTRAG_FORMPACK_ID &&
@@ -1892,7 +1893,10 @@ export default function FormpackDetailPage() {
           nextData.request,
           showDevMedicationOptions,
         );
-        nextData.request = normalizedRequest;
+        nextData = {
+          ...nextData,
+          request: normalizedRequest,
+        };
         const focusTarget = resolveOfflabelFocusTarget(
           previousRequest,
           normalizedRequest,
@@ -1918,7 +1922,10 @@ export default function FormpackDetailPage() {
           JSON.stringify(originalDecision) !== JSON.stringify(clearedDecision);
 
         if (hasChanges) {
-          nextData.decision = clearedDecision;
+          nextData = {
+            ...nextData,
+            decision: clearedDecision,
+          };
         }
       }
 
@@ -1976,7 +1983,7 @@ export default function FormpackDetailPage() {
   const handleFormSubmit: NonNullable<RjsfFormProps['onSubmit']> = useCallback(
     (event, submitEvent) => {
       submitEvent.preventDefault();
-      setFormData(event.formData as FormDataState);
+      setFormData({ ...(event.formData as FormDataState) });
     },
     [setFormData],
   );

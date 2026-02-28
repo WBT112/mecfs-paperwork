@@ -87,24 +87,24 @@ export default function ImportPanel({
             </p>
           )}
         </div>
-        <div className="formpack-import__field">
-          <label htmlFor="formpack-import-password">
-            {labels.passwordLabel}
-          </label>
-          <input
-            id="formpack-import-password"
-            className="formpack-import__file"
-            type="password"
-            autoComplete="current-password"
-            value={importPassword}
-            onChange={(event) => onImportPasswordChange(event.target.value)}
-          />
-          <p className="formpack-import__file-name">
-            {isImportFileEncrypted
-              ? labels.passwordEncryptedHint
-              : labels.passwordHint}
-          </p>
-        </div>
+        {isImportFileEncrypted && (
+          <div className="formpack-import__field">
+            <label htmlFor="formpack-import-password">
+              {labels.passwordLabel}
+            </label>
+            <input
+              id="formpack-import-password"
+              className="formpack-import__file"
+              type="password"
+              autoComplete="current-password"
+              value={importPassword}
+              onChange={(event) => onImportPasswordChange(event.target.value)}
+            />
+            <p className="formpack-import__file-name">
+              {labels.passwordEncryptedHint}
+            </p>
+          </div>
+        )}
         <fieldset className="formpack-import__options">
           <legend>{labels.modeLabel}</legend>
           <label className="formpack-import__option">

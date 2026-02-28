@@ -16,6 +16,8 @@ import { adjustTextareaHeight } from './textareaAutoGrow';
 
 const DEFAULT_ROWS = 6;
 const EMPTY_SELECT_VALUE = '';
+const DEFAULT_EMPTY_SELECT_LABEL = '[keine Angabe]';
+const EMPTY_SELECT_LABEL_I18N_KEY = 'formpackSelectEmptyOption';
 type SupportedAttachmentLocale = 'de' | 'en';
 type SelectWidgetOptions = {
   enumOptions?: Array<{ value: unknown; label: string }>;
@@ -173,6 +175,16 @@ const getSelectValue = (
 const stripMarkdownStrong = (value: string): string =>
   value.replace(/^\*\*\s*/u, '').replace(/\s*\*\*$/u, '');
 
+const resolveSelectPlaceholderLabel = (placeholder: unknown): string => {
+  if (typeof placeholder === 'string' && placeholder.trim().length > 0) {
+    return placeholder;
+  }
+
+  return i18n.t(EMPTY_SELECT_LABEL_I18N_KEY, {
+    defaultValue: DEFAULT_EMPTY_SELECT_LABEL,
+  });
+};
+
 export const AutoGrowTextareaWidget = ({
   id,
   value,
@@ -246,6 +258,7 @@ export const AccessibleSelectWidget = ({
     multiple,
   );
   const showPlaceholderOption = !multiple && schema.default === undefined;
+  const placeholderLabel = resolveSelectPlaceholderLabel(placeholder);
   const emptyValue = multiple ? [] : EMPTY_SELECT_VALUE;
 
   const handleBlur = useCallback(
@@ -295,7 +308,7 @@ export const AccessibleSelectWidget = ({
       onChange={handleChange}
       aria-describedby={ariaDescribedByIds(id)}
     >
-      {showPlaceholderOption && <option value="">{placeholder}</option>}
+      {showPlaceholderOption && <option value="">{placeholderLabel}</option>}
       {enumOptions?.map((option, index) => {
         const optionDisabled =
           Array.isArray(enumDisabled) && enumDisabled.includes(option.value);

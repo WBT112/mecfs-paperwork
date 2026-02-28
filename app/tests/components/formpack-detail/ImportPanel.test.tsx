@@ -5,6 +5,7 @@ import ImportPanel from '../../../src/pages/formpack-detail/ImportPanel';
 
 const IMPORT_SECTION_LABEL = 'Import';
 const IMPORT_ACTION_LABEL = 'Import now';
+const PASSWORD_REQUIRED_HINT = 'Password required';
 
 const createProps = () => ({
   labels: {
@@ -14,7 +15,7 @@ const createProps = () => ({
     fileName: (name: string) => `Selected: ${name}`,
     passwordLabel: 'Password',
     passwordHint: 'Password optional',
-    passwordEncryptedHint: 'Password required',
+    passwordEncryptedHint: PASSWORD_REQUIRED_HINT,
     modeLabel: 'Mode',
     modeNew: 'New',
     modeOverwrite: 'Overwrite',
@@ -44,6 +45,20 @@ const createProps = () => ({
 });
 
 describe('ImportPanel', () => {
+  it('hides password field when selected file is not encrypted', async () => {
+    const props = createProps();
+    props.isImportFileEncrypted = false;
+
+    render(<ImportPanel {...props} />);
+
+    await userEvent.click(
+      screen.getByRole('button', { name: IMPORT_SECTION_LABEL }),
+    );
+
+    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument();
+    expect(screen.queryByText(PASSWORD_REQUIRED_HINT)).not.toBeInTheDocument();
+  });
+
   it('shows encrypted password hint and calls password handler', async () => {
     const props = createProps();
     props.isImportFileEncrypted = true;
@@ -54,7 +69,7 @@ describe('ImportPanel', () => {
       screen.getByRole('button', { name: IMPORT_SECTION_LABEL }),
     );
 
-    expect(screen.getByText('Password required')).toBeInTheDocument();
+    expect(screen.getByText(PASSWORD_REQUIRED_HINT)).toBeInTheDocument();
 
     const passwordInput = screen.getByLabelText('Password');
     await userEvent.type(passwordInput, 'secret');

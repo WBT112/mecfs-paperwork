@@ -2,6 +2,9 @@ const TEST_INFOBOX_KEY = 'test.infobox.key';
 const FIELD_ID = 'root_decision_q1';
 const DECISION_Q1_ANCHOR = 'decision.q1';
 const DECISION_DIVIDER_SELECTOR = '.formpack-decision-divider';
+const LABEL_GEBURTSDATUM = 'Geburtsdatum';
+const LABEL_VORNAME = 'Vorname';
+const HELP_VORNAME_DETAIL = 'Vorname der antragstellenden Person';
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FieldTemplateProps, RJSFSchema } from '@rjsf/utils';
@@ -128,6 +131,26 @@ describe('FormpackFieldTemplate', () => {
     const props = createMockProps({
       help: <div data-testid="help">Help information</div>,
     });
+    const { getByTestId } = render(<FormpackFieldTemplate {...props} />);
+    expect(getByTestId('help')).toBeInTheDocument();
+  });
+
+  it('hides helper text when it matches the label', () => {
+    const props = createMockProps({
+      label: LABEL_GEBURTSDATUM,
+      help: <div data-testid="help">{LABEL_GEBURTSDATUM}</div>,
+    });
+
+    const { queryByTestId } = render(<FormpackFieldTemplate {...props} />);
+    expect(queryByTestId('help')).not.toBeInTheDocument();
+  });
+
+  it('keeps helper text when it differs from the label', () => {
+    const props = createMockProps({
+      label: LABEL_VORNAME,
+      help: <div data-testid="help">{HELP_VORNAME_DETAIL}</div>,
+    });
+
     const { getByTestId } = render(<FormpackFieldTemplate {...props} />);
     expect(getByTestId('help')).toBeInTheDocument();
   });

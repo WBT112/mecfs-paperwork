@@ -209,6 +209,15 @@ describe('AccessibleSelectWidget', () => {
     expect(options[0]).toHaveValue('');
   });
 
+  it('falls back to localized empty label when placeholder is empty', () => {
+    render(
+      <AccessibleSelectWidget {...buildSelectProps({ placeholder: '' })} />,
+    );
+    const options = screen.getAllByRole('option');
+    expect(options[0]).toHaveTextContent('[keine Angabe]');
+    expect(options[0]).toHaveValue('');
+  });
+
   it('hides placeholder when schema.default is defined', () => {
     render(
       <AccessibleSelectWidget

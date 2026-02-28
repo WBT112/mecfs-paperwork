@@ -230,7 +230,7 @@ export default function FormpackListPage() {
       {resumeFormpack && (
         <p>
           <Link
-            className="app__button"
+            className="app__button formpack-list__resume-link"
             to={`/formpacks/${resumeFormpack.manifest.id}`}
             aria-label={t('formpackOpenWithTitle', {
               title: resumeFormpack.title,

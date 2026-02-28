@@ -133,6 +133,12 @@ const importState = vi.hoisted(() => ({
 const visibilityState = vi.hoisted(() => ({
   isDevUiEnabled: true,
 }));
+const mutableRjsfFormDataState = vi.hoisted(() => ({
+  counter: 0,
+  data: {
+    field: 'value-0',
+  } as Record<string, unknown>,
+}));
 const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
 const INTRO_GATE_ACCEPTED_PATH = 'request.introAccepted';
 const INTRO_TITLE_KEY = 'intro.title';
@@ -350,6 +356,16 @@ vi.mock('@rjsf/core', () => ({
         onClick={() => onChange?.({ formData: { field: 'value' } })}
       >
         trigger-change
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          mutableRjsfFormDataState.counter += 1;
+          mutableRjsfFormDataState.data.field = `value-${mutableRjsfFormDataState.counter}`;
+          onChange?.({ formData: mutableRjsfFormDataState.data });
+        }}
+      >
+        trigger-mutable-change
       </button>
       <button
         type="button"
@@ -614,6 +630,10 @@ describe('FormpackDetailPage', () => {
     diagnosticsState.resetAllLocalData.mockReset();
     diagnosticsState.resetAllLocalData.mockResolvedValue(undefined);
     visibilityState.isDevUiEnabled = true;
+    mutableRjsfFormDataState.counter = 0;
+    mutableRjsfFormDataState.data = {
+      field: 'value-0',
+    };
     formpackState.manifest = {
       id: record.formpackId,
       version: '1.0.0',
@@ -1845,6 +1865,32 @@ describe('FormpackDetailPage', () => {
     await waitFor(() =>
       expect(screen.getByTestId('form-data')).toHaveTextContent(
         JSON.stringify({ submitted: true }),
+      ),
+    );
+  });
+
+  it('updates displayed form data when RJSF reuses the same formData reference', async () => {
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(await screen.findByText('trigger-mutable-change'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        JSON.stringify({ field: 'value-1' }),
+      ),
+    );
+
+    await userEvent.click(await screen.findByText('trigger-mutable-change'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        JSON.stringify({ field: 'value-2' }),
       ),
     );
   });
