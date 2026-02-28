@@ -163,6 +163,7 @@
   "formpackSnapshotCreatedAt": "Created {{timestamp}}",
   "formpackSnapshotLabel": "Snapshot {{timestamp}}",
   "importInvalidJson": "Invalid JSON. Please make sure the file is not corrupted and is in JSON format.",
+  "importInvalidJsonWithDetails": "Invalid JSON (details: {{message}}). Please make sure the file is not corrupted and is in JSON format.",
   "importUnknownFormpack": "Unknown formpack. The file may come from a newer app version. Please update the app and try again.",
   "importSchemaMismatch": "The data does not match the current schema. The file may have been created with a different version. Try creating a new draft and transferring the data manually.",
   "importInvalidPayload": "The import data is incomplete or invalid. Please check that you selected the correct export file.",

@@ -1,5 +1,6 @@
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import MarkdownRenderer from './Markdown/MarkdownRenderer';
+import { useAccessibleDialog } from './useAccessibleDialog';
 
 type FormpackIntroModalProps = {
   isOpen: boolean;
@@ -18,6 +19,15 @@ export default function FormpackIntroModal({
 }: Readonly<FormpackIntroModalProps>) {
   const headingId = useId();
   const bodyId = useId();
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useAccessibleDialog({
+    isOpen,
+    dialogRef,
+    initialFocusRef: closeButtonRef,
+    onClose,
+  });
 
   if (!isOpen) {
     return null;
@@ -32,15 +42,22 @@ export default function FormpackIntroModal({
         aria-label={closeLabel}
       />
       <dialog
+        ref={dialogRef}
         open
         className="formpack-intro-modal__content"
+        tabIndex={-1}
         aria-modal="true"
         aria-labelledby={headingId}
         aria-describedby={bodyId}
       >
         <div className="formpack-intro-modal__header">
           <h4 id={headingId}>{title}</h4>
-          <button type="button" className="app__button" onClick={onClose}>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            className="app__button"
+            onClick={onClose}
+          >
             {closeLabel}
           </button>
         </div>

@@ -65,9 +65,7 @@ test('shows an error for invalid JSON imports', async ({ page }, testInfo) => {
   await triggerImport(page, invalidJsonPath);
 
   const error = page.locator('.app__error');
-  await expect(error).toHaveText(
-    /Ungültiges JSON|Invalid JSON|importInvalidJsonWithDetails/i,
-  );
+  await expect(error).toHaveText(/Ungültiges JSON|Invalid JSON/i);
   await expect(page.locator('.formpack-import__success')).toHaveCount(0);
 });
 

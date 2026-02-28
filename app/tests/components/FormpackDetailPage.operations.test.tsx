@@ -1580,7 +1580,7 @@ describe('FormpackDetailPage', () => {
     restoreFileText();
   });
 
-  it('renders error content when formpack loading fails', async () => {
+  it('renders generic error content when formpack loading fails', async () => {
     vi.mocked(loadFormpackManifest).mockRejectedValueOnce(
       new Error('Load failed'),
     );
@@ -1593,7 +1593,7 @@ describe('FormpackDetailPage', () => {
       </TestRouter>,
     );
 
-    expect(await screen.findByText('Load failed')).toBeInTheDocument();
+    expect(await screen.findByText('formpackLoadError')).toBeInTheDocument();
     expect(screen.getByText('formpackBackToList')).toBeInTheDocument();
   });
 

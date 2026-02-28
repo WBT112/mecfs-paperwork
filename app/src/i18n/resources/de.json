@@ -163,6 +163,7 @@
   "formpackSnapshotCreatedAt": "Erstellt {{timestamp}}",
   "formpackSnapshotLabel": "Snapshot {{timestamp}}",
   "importInvalidJson": "Ungültiges JSON. Bitte stelle sicher, dass die Datei nicht beschädigt ist und im JSON-Format vorliegt.",
+  "importInvalidJsonWithDetails": "Ungültiges JSON (Details: {{message}}). Bitte stelle sicher, dass die Datei nicht beschädigt ist und im JSON-Format vorliegt.",
   "importUnknownFormpack": "Unbekanntes Formpack. Die Datei stammt möglicherweise aus einer neueren App-Version. Bitte aktualisiere die App und versuche es erneut.",
   "importSchemaMismatch": "Die Daten passen nicht zum aktuellen Schema. Möglicherweise wurde die Datei mit einer anderen Version erstellt. Versuche, einen neuen Entwurf anzulegen und die Daten manuell zu übertragen.",
   "importInvalidPayload": "Die Importdaten sind unvollständig oder ungültig. Bitte prüfe, ob du die richtige Exportdatei ausgewählt hast.",

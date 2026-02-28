@@ -177,6 +177,31 @@ describe('TopbarActions', () => {
     selectSpy.mockRestore();
   });
 
+  it('closes the share fallback with Escape and restores focus', async () => {
+    Object.defineProperty(navigator, 'share', {
+      value: undefined,
+      configurable: true,
+    });
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(
+      new Error('no clipboard'),
+    );
+
+    const user = userEvent.setup();
+    renderActions(TEST_FORMPACK_PATH);
+    const shareButton = screen.getByRole('button', { name: SHARE_LINK_LABEL });
+
+    await user.click(shareButton);
+    expect(screen.getByText(SHARE_FALLBACK_TITLE)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+    });
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByText(SHARE_FALLBACK_TITLE)).not.toBeInTheDocument();
+    expect(shareButton).toHaveFocus();
+  });
+
   it('uses custom feedback email and commit from environment when provided', () => {
     vi.stubEnv('VITE_FEEDBACK_EMAIL', 'support@example.org');
     vi.stubEnv('VITE_APP_COMMIT', 'commit-sha');

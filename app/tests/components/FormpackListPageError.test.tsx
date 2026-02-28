@@ -15,7 +15,7 @@ describe('FormpackListPage Error State', () => {
     vi.resetAllMocks();
   });
 
-  it('renders an error message when formpacks fail to load', async () => {
+  it('renders the translated fallback when formpacks fail to load', async () => {
     const errorMessage = 'Failed to load formpacks';
     vi.mocked(listFormpacks).mockRejectedValue(new Error(errorMessage));
 
@@ -32,8 +32,10 @@ describe('FormpackListPage Error State', () => {
       expect(screen.queryByText('formpackLoading')).not.toBeInTheDocument();
     });
 
-    // Check for error message
-    expect(await screen.findByText(errorMessage)).toBeInTheDocument();
+    // Check for fallback message
+    expect(
+      await screen.findByText('formpackListErrorFallback'),
+    ).toBeInTheDocument();
     expect(screen.getByText('formpackListTitle')).toBeInTheDocument();
   });
 

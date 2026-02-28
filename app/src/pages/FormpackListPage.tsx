@@ -119,15 +119,11 @@ export default function FormpackListPage() {
           return;
         }
         setManifests(filterVisibleFormpacks(data));
-      } catch (error) {
+      } catch {
         if (!isActive) {
           return;
         }
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : t('formpackListErrorFallback'),
-        );
+        setErrorMessage(t('formpackListErrorFallback'));
       } finally {
         if (isActive) {
           setIsLoading(false);

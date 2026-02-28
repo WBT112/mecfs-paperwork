@@ -528,7 +528,11 @@ vi.mock('../../src/storage/hooks', () => ({
   },
 }));
 
-const mockT = (key: string, options?: { ns?: string }) => {
+const mockT = (key: string, options?: { ns?: string; message?: string }) => {
+  if (key === 'importInvalidJsonWithDetails') {
+    return `invalid_json_details:${options?.message ?? ''}`;
+  }
+
   if (!options?.ns) {
     return key;
   }
@@ -2114,7 +2118,7 @@ describe('FormpackDetailPage', () => {
       await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
 
       expect(
-        await screen.findByText('importInvalidJsonWithDetails'),
+        await screen.findByText('invalid_json_details:bad json'),
       ).toBeInTheDocument();
       expect(
         storageImportState.importRecordWithSnapshots,

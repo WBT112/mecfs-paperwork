@@ -102,7 +102,7 @@ describe('formpack detail helpers', () => {
       'formpackSchemaInvalid',
     );
     expect(detail.buildErrorMessage(new Error('plain'), (key) => key)).toBe(
-      'plain',
+      'formpackLoadError',
     );
     expect(detail.buildErrorMessage(123, (key) => key)).toBe(
       'formpackLoadError',

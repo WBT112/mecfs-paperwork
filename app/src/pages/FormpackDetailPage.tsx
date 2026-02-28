@@ -180,6 +180,7 @@ const loadFormpackAssets = async (
 const FORMPACK_ERROR_KEYS: Partial<
   Record<FormpackLoaderError['code'], string>
 > = {
+  network: 'formpackLoadError',
   schema_not_found: 'formpackSchemaNotFound',
   schema_invalid: 'formpackSchemaInvalid',
   schema_unavailable: 'formpackSchemaUnavailable',
@@ -200,10 +201,6 @@ const buildErrorMessage = (
     if (key) {
       return t(key);
     }
-  }
-
-  if (error instanceof Error) {
-    return error.message;
   }
 
   return t('formpackLoadError');

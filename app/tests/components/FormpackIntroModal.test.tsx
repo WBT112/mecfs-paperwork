@@ -45,4 +45,20 @@ describe('FormpackIntroModal', () => {
     fireEvent.click(backdropButton);
     expect(onClose).toHaveBeenCalledTimes(2);
   });
+
+  it('closes when Escape is pressed', () => {
+    const onClose = vi.fn();
+    render(
+      <FormpackIntroModal
+        isOpen
+        title={MODAL_TITLE}
+        body="Inhalt"
+        closeLabel={CLOSE_LABEL}
+        onClose={onClose}
+      />,
+    );
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

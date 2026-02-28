@@ -4,6 +4,7 @@ import React, {
   useEffect,
   useId,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +12,7 @@ import { useLocation } from 'react-router-dom';
 import { emptyStringToNull } from '../lib/utils';
 import { buildMailtoHref, getShareUrl } from '../lib/topbarActions';
 import { APP_VERSION, formatBuildDate } from '../lib/version';
+import { useAccessibleDialog } from './useAccessibleDialog';
 
 const DEFAULT_FEEDBACK_EMAIL = 'info@mecfs-paperwork.de';
 
@@ -63,6 +65,8 @@ export default memo(function TopbarActions() {
   const { t, i18n } = useTranslation();
   const { pathname } = useLocation();
   const shareDialogTitleId = useId();
+  const shareDialogRef = useRef<HTMLDialogElement | null>(null);
+  const shareCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const [shareFallback, setShareFallback] = useState<ShareFallbackState | null>(
     null,
   );
@@ -128,6 +132,13 @@ export default memo(function TopbarActions() {
     setShareFallback(null);
   }, []);
 
+  useAccessibleDialog({
+    isOpen: shareFallback !== null,
+    dialogRef: shareDialogRef,
+    initialFocusRef: shareCloseButtonRef,
+    onClose: handleCloseFallback,
+  });
+
   const handleFocusInput = useCallback(
     (event: React.FocusEvent<HTMLInputElement>) => {
       event.target.select();
@@ -157,8 +168,10 @@ export default memo(function TopbarActions() {
       </button>
       {shareFallback && (
         <dialog
+          ref={shareDialogRef}
           className="app__share-fallback"
           open
+          tabIndex={-1}
           aria-modal="true"
           aria-labelledby={shareDialogTitleId}
         >
@@ -185,6 +198,7 @@ export default memo(function TopbarActions() {
           </label>
           <div className="app__share-fallback-actions">
             <button
+              ref={shareCloseButtonRef}
               type="button"
               className="app__button"
               onClick={handleCloseFallback}
