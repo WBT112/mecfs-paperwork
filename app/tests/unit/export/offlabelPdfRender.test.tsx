@@ -11,6 +11,12 @@ vi.mock('../../../src/export/pdf/fonts', () => ({
 }));
 
 const CREATED_AT_ISO = '2026-02-10T12:00:00.000Z';
+const DEFAULT_SENDER_LINES = [
+  'Max Mustermann',
+  'Musterstraße 1',
+  '12345 Musterstadt',
+] as const;
+const DEFAULT_DATE_LINE = 'Musterstadt, 10.02.2026';
 
 const buildTemplateData = (
   overrides: Partial<OfflabelPdfTemplateData> = {},
@@ -24,14 +30,14 @@ const buildTemplateData = (
   exportBundle: {
     exportedAtIso: CREATED_AT_ISO,
     part1: {
-      senderLines: ['Max Mustermann', 'Musterstraße 1', '12345 Musterstadt'],
+      senderLines: [...DEFAULT_SENDER_LINES],
       addresseeLines: [
         'Musterkasse',
         'Leistungsabteilung',
         'Kassenweg 3',
         '54321 Kassel',
       ],
-      dateLine: 'Musterstadt, 10.02.2026',
+      dateLine: DEFAULT_DATE_LINE,
       subject: 'Antrag auf Kostenübernahme',
       paragraphs: ['Punkt 1: ...', '', 'Punkt 2: ...'],
       attachmentsHeading: 'Anlagen',
@@ -39,14 +45,14 @@ const buildTemplateData = (
       signatureBlocks: [],
     },
     part2: {
-      senderLines: ['Max Mustermann', 'Musterstraße 1', '12345 Musterstadt'],
+      senderLines: [...DEFAULT_SENDER_LINES],
       addresseeLines: [
         'Praxis Nord',
         'Dr. Hausarzt',
         'Praxisweg 5',
         '22303 Hamburg',
       ],
-      dateLine: 'Musterstadt, 10.02.2026',
+      dateLine: DEFAULT_DATE_LINE,
       subject: 'Begleitschreiben zum Off-Label-Antrag - Bitte um Unterstützung',
       paragraphs: ['ich bereite einen Antrag ...'],
       attachmentsHeading: 'Anlagen',
@@ -185,6 +191,104 @@ describe('OfflabelAntragPdfDocument', () => {
           sections: [],
         }}
       />,
+    ).toBlob();
+
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('renders DE fallback headings and checklist attachment fallback entries', async () => {
+    const base = buildTemplateData();
+    const model = buildModel({
+      locale: 'de',
+      sourcesHeading: '',
+      sources: ['Quelle A'],
+      exportBundle: {
+        ...base.exportBundle,
+        part1: {
+          ...base.exportBundle.part1,
+          senderLines: ['Team Postfach', 'Bereich A', 'Hinweis ohne PLZ'],
+          dateLine: '31.02.2026',
+          attachmentsHeading: '',
+          attachments: ['Dokument A'],
+          paragraphs: ['Anrede ohne Grußformel'],
+        },
+      },
+      postExportChecklist: {
+        ...base.postExportChecklist,
+        attachmentsItems: [],
+      },
+    });
+
+    const blob = await pdf(
+      <OfflabelAntragPdfDocument model={model} />,
+    ).toBlob();
+
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('renders closing block fallback when greeting has no signature line', async () => {
+    const base = buildTemplateData();
+    const model = buildModel({
+      exportBundle: {
+        ...base.exportBundle,
+        part1: {
+          ...base.exportBundle.part1,
+          senderLines: ['Max Mustermann', '12345 Musterstadt', 'Hinweis'],
+          paragraphs: ['Einleitung', 'Mit freundlichen Grüßen', '   ', ''],
+        },
+      },
+    });
+
+    const blob = await pdf(
+      <OfflabelAntragPdfDocument model={model} />,
+    ).toBlob();
+
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('renders liability pages for section fallback and explicit consent heading', async () => {
+    const base = buildTemplateData();
+    const model = buildModel({
+      exportBundle: {
+        ...base.exportBundle,
+        part2: {
+          ...base.exportBundle.part2,
+          liabilityHeading: 'Einwilligungserklärung',
+          liabilityParagraphs: [
+            '1. Vorbemerkung',
+            '2. Hinweise',
+            '3) Abschnitt ohne Consent-Begriff',
+          ],
+        },
+      },
+    });
+
+    const blob = await pdf(
+      <OfflabelAntragPdfDocument model={model} />,
+    ).toBlob();
+
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('renders liability consent split when a consent section heading is present', async () => {
+    const base = buildTemplateData();
+    const model = buildModel({
+      exportBundle: {
+        ...base.exportBundle,
+        part2: {
+          ...base.exportBundle.part2,
+          liabilityHeading: 'Consent Form',
+          liabilityParagraphs: [
+            '1. Intro',
+            '3) Consent and data use',
+            'I agree to proceed.',
+          ],
+        },
+      },
+    });
+
+    const blob = await pdf(
+      <OfflabelAntragPdfDocument model={model} />,
     ).toBlob();
 
     expect(blob.size).toBeGreaterThan(0);
