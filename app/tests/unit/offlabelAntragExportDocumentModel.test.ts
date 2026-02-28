@@ -31,7 +31,7 @@ const EXPECTED_PARSED_ATTACHMENTS = [
   'Laborwerte',
 ];
 const buildPart2Intro = (drug: string): string =>
-  `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`;
+  `Ich bereite mit Hilfe einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`;
 
 const interpolate = (
   template: string,
@@ -132,7 +132,7 @@ describe('buildOffLabelAntragDocumentModel', () => {
       'zur Behandlung von Long/Post-COVID mit depressiven Symptomen',
     );
     expect(part1).toContain(
-      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen und/oder depressive Symptome sind dokumentiert.',
+      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Depressive Symptome sind dokumentiert.',
     );
     expect(part1).toContain(
       'Indikation: Long/Post-COVID mit depressiven Symptomen',

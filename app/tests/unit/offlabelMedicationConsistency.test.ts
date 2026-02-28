@@ -119,6 +119,30 @@ describe('offlabel medication source consistency', () => {
     );
   });
 
+  it('uses indication-specific diagnosis confirmation wording for vortioxetine', () => {
+    const vortioxetineCognitive = getIndicationOrThrow(
+      'vortioxetine',
+      'vortioxetine.long_post_covid_cognitive',
+    );
+    const vortioxetineDepressive = getIndicationOrThrow(
+      'vortioxetine',
+      'vortioxetine.long_post_covid_depressive',
+    );
+
+    expect(vortioxetineCognitive.texts.de.point2ConfirmationSentence).toBe(
+      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen sind dokumentiert.',
+    );
+    expect(vortioxetineDepressive.texts.de.point2ConfirmationSentence).toBe(
+      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Depressive Symptome sind dokumentiert.',
+    );
+    expect(vortioxetineCognitive.texts.en.point2ConfirmationSentence).toBe(
+      'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment is documented.',
+    );
+    expect(vortioxetineDepressive.texts.en.point2ConfirmationSentence).toBe(
+      'The diagnosis of long/post-COVID is established (see findings). Depressive symptoms are documented.',
+    );
+  });
+
   it('keeps medication key constants and registry keys in sync', () => {
     const registryKeys = Object.keys(MEDICATIONS).sort();
     const constantKeys = [...OFFLABEL_MEDICATION_KEYS].sort();

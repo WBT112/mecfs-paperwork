@@ -184,7 +184,7 @@ const WORK_STATUS_SEVERITY_LINES: Record<string, string> = {
   'EM-Rente':
     'Ich beziehe eine Erwerbsminderungsrente, weil meine krankheitsbedingte Leistungsminderung so ausgeprägt ist, dass die Anforderungen des allgemeinen Arbeitsmarktes nicht mehr erfüllbar sind.',
   'Teilzeit arbeitsfähig':
-    'Ich bin nur eingeschränkt teilzeit arbeitsfähig; selbst in reduziertem Umfang sind engmaschige Pausen, flexible Belastungssteuerung und krankheitsbedingte Ausfallzeiten erforderlich.',
+    'Ich bin nur eingeschränkt teilzeit arbeitsfähig; selbst in reduziertem Umfang sind engmaschige Pausen sowie flexible Belastungsanpassungen erfoderlich und es kommt verhäuft zu krankheitsbedingte Ausfallzeiten.',
 };
 
 const ALLOWED_MERKZEICHEN = new Set(['G', 'aG', 'H', 'B']);
@@ -287,6 +287,21 @@ const buildTreatmentPlanItems = (
   return items;
 };
 
+const buildSingleObjectiveIndicatorSentence = (indicator: {
+  text: string;
+  isPlural: boolean;
+}): string => {
+  if (indicator.isPlural) {
+    return `Als weiterer objektiver Schwereindikator sind bei mir ${indicator.text} dokumentiert.`;
+  }
+
+  if (indicator.text.startsWith('das Merkzeichen ')) {
+    return `Als weiterer objektiver Schwereindikator ist bei mir ${indicator.text} dokumentiert.`;
+  }
+
+  return `Als weiterer objektiver Schwereindikator liegt bei mir ${indicator.text} vor.`;
+};
+
 const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   const lines: string[] = [];
   const bellScore = getText(severity.bellScore);
@@ -301,7 +316,8 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   }
 
   const gdb = getText(severity.gdb);
-  const merkzeichen = parseMerkzeichen(severity.merkzeichen).join(', ');
+  const merkzeichenList = parseMerkzeichen(severity.merkzeichen);
+  const merkzeichen = merkzeichenList.join(', ');
   const pflegegrad = getText(severity.pflegegrad);
   const objectiveIndicators: Array<{ text: string; isPlural: boolean }> = [];
   if (gdb) {
@@ -310,11 +326,18 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
       isPlural: false,
     });
   }
-  if (merkzeichen) {
+  if (merkzeichenList.length === 1) {
+    objectiveIndicators.push({
+      text: `das Merkzeichen ${merkzeichenList[0]}`,
+      isPlural: false,
+    });
+  } else if (merkzeichenList.length > 1) {
     objectiveIndicators.push({
       text: `die Merkzeichen ${merkzeichen}`,
       isPlural: true,
     });
+  } else {
+    // No merkzeichen selected.
   }
   if (pflegegrad) {
     objectiveIndicators.push({
@@ -325,11 +348,7 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
 
   if (objectiveIndicators.length === 1) {
     const [singleIndicator] = objectiveIndicators;
-    lines.push(
-      singleIndicator.isPlural
-        ? `Als weiterer objektiver Schwereindikator sind bei mir ${singleIndicator.text} dokumentiert.`
-        : `Als weiterer objektiver Schwereindikator liegt bei mir ${singleIndicator.text} vor.`,
-    );
+    lines.push(buildSingleObjectiveIndicatorSentence(singleIndicator));
   } else if (objectiveIndicators.length > 1) {
     lines.push(
       `Als weitere objektive Schwereindikatoren liegen bei mir ${joinGermanWithUnd(
@@ -560,7 +579,7 @@ const buildPart1 = (formData: FormData): OfflabelRenderedDocument => {
     }),
     {
       kind: 'paragraph',
-      text: 'Ich bitte um eine zeitnahe Entscheidung. Für Rückfragen stehe ich gerne zur Verfügung.',
+      text: 'Ich bitte um eine zeitnahe Entscheidung. Diesen Antrag kann ich bereits jetzt nur mit Hilfe stellen.',
     },
     {
       kind: 'paragraph',
@@ -615,7 +634,7 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       },
       {
         kind: 'paragraph',
-        text: `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`,
+        text: `Ich bereite mit Hilfe einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`,
       },
       {
         kind: 'list',
@@ -673,12 +692,12 @@ const buildPart2 = (formData: FormData): OfflabelRenderedDocument => {
       {
         kind: 'list',
         items: [
-          'Ziel der Behandlung und die individuell vereinbarten Therapieziele,',
-          'den unsicheren Evidenzgrad und dass ein Behandlungserfolg nicht garantiert werden kann,',
-          'mögliche Nebenwirkungen sowie deren individuelle Relevanz,',
-          'relevante Kontraindikationen und Wechselwirkungen unter Berücksichtigung meiner Begleitmedikation,',
-          'geplantes Monitoring und Abbruchkriterien (z. B. nicht tolerierbare Nebenwirkungen, klinisch relevante Verschlechterung, fehlender Nutzen nach definierter Dauer),',
-          'alternative Maßnahmen der symptomorientierten Behandlung und Nicht-Behandlung.',
+          '- Ziel der Behandlung und die individuell vereinbarten Therapieziele,',
+          '- den unsicheren Evidenzgrad und dass ein Behandlungserfolg nicht garantiert werden kann,',
+          '- mögliche Nebenwirkungen sowie deren individuelle Relevanz,',
+          '- relevante Kontraindikationen und Wechselwirkungen unter Berücksichtigung meiner Begleitmedikation,',
+          '- geplantes Monitoring und Abbruchkriterien (z. B. nicht tolerierbare Nebenwirkungen, klinisch relevante Verschlechterung, fehlender Nutzen nach definierter Dauer),',
+          '- alternative Maßnahmen der symptomorientierten Behandlung und Nicht-Behandlung.',
         ],
       },
       {

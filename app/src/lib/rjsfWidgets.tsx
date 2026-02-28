@@ -170,6 +170,9 @@ const getSelectValue = (
         .map((option) => option.value)
     : event.target.value;
 
+const stripMarkdownStrong = (value: string): string =>
+  value.replace(/^\*\*\s*/u, '').replace(/\s*\*\*$/u, '');
+
 export const AutoGrowTextareaWidget = ({
   id,
   value,
@@ -334,6 +337,22 @@ export const AttachmentsAssistantWidget = ({
   );
   const t = i18n.getFixedT(locale, 'formpack:offlabel-antrag');
   const currentLines = getAttachmentLines(textValue);
+  const additionalLabel = t(
+    'offlabel-antrag.attachmentsAssistant.additionalLabel',
+    {
+      defaultValue:
+        locale === 'en'
+          ? 'Attachments (additional attachments can be added directly in this field)'
+          : 'Anlagen (weitere Anlagen können direkt in diesem Feld ergänzt werden)',
+    },
+  );
+  const [additionalLabelMain, additionalLabelHintRaw] = additionalLabel.split(
+    '\n',
+    2,
+  );
+  const additionalLabelHint = additionalLabelHintRaw
+    ? stripMarkdownStrong(additionalLabelHintRaw.trim())
+    : '';
 
   useLayoutEffect(() => {
     adjustTextareaHeight(textareaRef.current);
@@ -375,12 +394,13 @@ export const AttachmentsAssistantWidget = ({
         })}
       </fieldset>
       <label htmlFor={id}>
-        {t('offlabel-antrag.attachmentsAssistant.additionalLabel', {
-          defaultValue:
-            locale === 'en'
-              ? 'Attachments (additional attachments can be added directly in this field)'
-              : 'Anlagen (weitere Anlagen können direkt in diesem Feld ergänzt werden)',
-        })}
+        {additionalLabelMain}
+        {additionalLabelHint ? (
+          <>
+            <br />
+            <strong>{additionalLabelHint}</strong>
+          </>
+        ) : null}
       </label>
       <textarea
         id={id}

@@ -4,6 +4,8 @@ Diese Anwendung hilft dir, **Formulare und Schreiben strukturiert zu erstellen**
 Am Ende kannst du ein **DOCX-Dokument** (zur Weiterbearbeitung) oder eine **PDF-Datei** (zum direkten Versenden/Drucken) exportieren.
 
 > Datenschutz-Hinweis: Bitte gib **keine sensiblen Gesundheitsdaten** in öffentliche Bereiche (z. B. GitHub-Issues, Support-Mails, Screenshots) ein. Behandle Exporte sorgfältig.
+>
+> Sprach-Hinweis: Aus Gründen der besseren Lesbarkeit und wegen begrenzter Energie vieler Nutzer verzichten wir auf Genderzeichen. Gemeint sind selbstverständlich alle Menschen.
 
 ---
 

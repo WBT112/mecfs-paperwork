@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 
 const registerMock = vi.fn();
+const registerHyphenationCallbackMock = vi.fn();
 
 vi.mock('@react-pdf/renderer', () => ({
   Font: {
     register: registerMock,
+    registerHyphenationCallback: registerHyphenationCallbackMock,
   },
 }));
 
@@ -24,5 +26,6 @@ describe('pdf font registration', () => {
       2,
       expect.objectContaining({ family: module.PDF_FONT_FAMILY_SERIF }),
     );
+    expect(registerHyphenationCallbackMock).toHaveBeenCalledTimes(1);
   });
 });

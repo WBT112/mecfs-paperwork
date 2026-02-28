@@ -110,7 +110,7 @@
   "offlabel-antrag.export.checklist.note": "Note: Processing deadlines may vary; watch for follow-up questions or requests for additional documents.\n\nGood luck with the application.",
   "offlabel-antrag.insurer.city.help": "Optional insurer city",
   "offlabel-antrag.insurer.city.label": "City",
-  "offlabel-antrag.insurer.department.help": "Optional insurer department",
+  "offlabel-antrag.insurer.department.help": "Department/contact person at insurer (leave blank if unknown)",
   "offlabel-antrag.insurer.department.label": "Department",
   "offlabel-antrag.insurer.name.help": "Optional insurer addressee",
   "offlabel-antrag.insurer.name.label": "Insurer name",

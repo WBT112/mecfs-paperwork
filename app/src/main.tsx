@@ -13,6 +13,26 @@ import {
   startUserTiming,
 } from './lib/performance/userTiming';
 
+const LOCALE_STORAGE_KEY = 'mecfs-paperwork.locale';
+
+const applyInitialDocumentLocale = (): void => {
+  let locale = 'de';
+
+  try {
+    const storedLocale = globalThis.localStorage.getItem(LOCALE_STORAGE_KEY);
+    if (storedLocale === 'de' || storedLocale === 'en') {
+      locale = storedLocale;
+    }
+  } catch {
+    // Ignore storage access failures to keep startup resilient.
+  }
+
+  document.documentElement.lang = locale;
+  document.documentElement.dir = 'ltr';
+};
+
+applyInitialDocumentLocale();
+
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {

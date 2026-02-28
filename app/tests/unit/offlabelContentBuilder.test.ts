@@ -45,7 +45,7 @@ const CONSENT_HEADING_MIDODRIN =
 const CONSENT_HEADING_IVABRADIN =
   'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin';
 const buildPart2Intro = (drug: string): string =>
-  `Ich bereite einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`;
+  `Ich bereite mit Hilfe einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`;
 
 describe('buildOfflabelDocuments', () => {
   it('builds three parts and includes evidence text for known medication', () => {
@@ -323,6 +323,25 @@ describe('buildOfflabelDocuments', () => {
 
     expect(part1ListItems).toContain(
       'Als weiterer objektiver Schwereindikator sind bei mir die Merkzeichen G, aG, H, B dokumentiert.',
+    );
+  });
+
+  it('uses singular grammar for one merkzeichen entry', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+      },
+      severity: {
+        merkzeichen: ['aG'],
+      },
+    });
+
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
+
+    expect(part1ListItems).toContain(
+      'Als weiterer objektiver Schwereindikator ist bei mir das Merkzeichen aG dokumentiert.',
     );
   });
 
@@ -649,7 +668,7 @@ describe('buildOfflabelDocuments', () => {
       'zur Behandlung von Long/Post-COVID mit depressiven Symptomen',
     );
     expect(part1ListItems).toContain(
-      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen und/oder depressive Symptome sind dokumentiert.',
+      'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Depressive Symptome sind dokumentiert.',
     );
     expect(part3Text).toContain(
       'Diagnose: Long/Post-COVID mit depressiven Symptomen',

@@ -15,6 +15,8 @@ type MainImports = {
   browserRouter: ReturnType<typeof vi.fn>;
 };
 
+const LOCALE_STORAGE_KEY = 'mecfs-paperwork.locale';
+
 const setupMainMocks = (): MainImports => {
   const applyTheme = vi.fn();
   const registerServiceWorker = vi.fn();
@@ -61,6 +63,9 @@ const setupMainMocks = (): MainImports => {
 
 beforeEach(() => {
   document.body.innerHTML = '';
+  globalThis.localStorage.removeItem(LOCALE_STORAGE_KEY);
+  document.documentElement.lang = 'en';
+  document.documentElement.dir = 'ltr';
 });
 
 afterEach(() => {
@@ -112,6 +117,8 @@ describe('main', () => {
       expect(applyTheme).toHaveBeenCalledWith('dark');
       expect(registerServiceWorker).toHaveBeenCalled();
       expect(installGlobalErrorListeners).toHaveBeenCalled();
+      expect(document.documentElement.lang).toBe('de');
+      expect(document.documentElement.dir).toBe('ltr');
       expect(startUserTiming).toHaveBeenCalledWith('appBootTotal');
       expect(createRoot).toHaveBeenCalledWith(root);
       expect(render).toHaveBeenCalledTimes(1);
@@ -142,6 +149,19 @@ describe('main', () => {
         value: originalRequestAnimationFrame,
       });
     }
+  });
+
+  it('uses stored locale for initial document language', async () => {
+    const root = document.createElement('div');
+    root.id = 'root';
+    document.body.appendChild(root);
+    globalThis.localStorage.setItem(LOCALE_STORAGE_KEY, 'en');
+
+    setupMainMocks();
+    await import('../../src/main');
+
+    expect(document.documentElement.lang).toBe('en');
+    expect(document.documentElement.dir).toBe('ltr');
   });
 
   it('ends boot timing via setTimeout when requestAnimationFrame is unavailable', async () => {

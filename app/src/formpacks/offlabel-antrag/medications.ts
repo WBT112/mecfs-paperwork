@@ -292,7 +292,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_COGNITIVE_DE,
           diagnosisDative: VORTIOXETINE_COGNITIVE_DE,
           point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen und/oder depressive Symptome sind dokumentiert.',
+            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen sind dokumentiert.',
           targetSymptoms:
             'Verbesserung von Kognition sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
         },
@@ -301,7 +301,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_COGNITIVE_EN,
           diagnosisDative: VORTIOXETINE_COGNITIVE_EN,
           point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment and/or depressive symptoms are documented.',
+            'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment is documented.',
           targetSymptoms:
             'improvement of cognition and health-related quality of life (HRQoL)',
         },
@@ -312,7 +312,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_DEPRESSIVE_DE,
           diagnosisDative: VORTIOXETINE_DEPRESSIVE_DE,
           point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen und/oder depressive Symptome sind dokumentiert.',
+            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Depressive Symptome sind dokumentiert.',
           targetSymptoms:
             'Verbesserung depressiver Symptomatik sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
         },
@@ -321,7 +321,7 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
           diagnosisNominative: VORTIOXETINE_DEPRESSIVE_EN,
           diagnosisDative: VORTIOXETINE_DEPRESSIVE_EN,
           point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment and/or depressive symptoms are documented.',
+            'The diagnosis of long/post-COVID is established (see findings). Depressive symptoms are documented.',
           targetSymptoms:
             'improvement of depressive symptoms and health-related quality of life (HRQoL)',
         },

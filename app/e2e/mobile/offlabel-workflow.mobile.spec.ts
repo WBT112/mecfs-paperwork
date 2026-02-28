@@ -153,7 +153,7 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
       /Long\/Post-COVID mit depressiven Symptomen/i,
     );
     await expect(preview).toContainText(
-      /Die Diagnose Long\/Post-COVID ist gesichert \(siehe Befunde\)\. Kognitive Beeinträchtigungen und\/oder depressive Symptome sind dokumentiert\./i,
+      /Die Diagnose Long\/Post-COVID ist gesichert \(siehe Befunde\)\. Depressive Symptome sind dokumentiert\./i,
     );
 
     await selectDrugByValue(page, 'other');

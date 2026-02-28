@@ -62,7 +62,7 @@ describe('offlabel-antrag letter builder', () => {
 
     expect(
       bundle.part2.paragraphs.some((p) =>
-        p.includes('Ich bereite einen Antrag auf Kostenübernahme'),
+        p.includes('Ich bereite mit Hilfe einen Antrag auf Kostenübernahme'),
       ),
     ).toBe(true);
     expect(bundle.part2.attachments).toEqual([]);
@@ -186,7 +186,7 @@ describe('offlabel-antrag letter builder', () => {
     expect(letter.subject).toContain('Begleitschreiben');
     expect(
       letter.paragraphs.some((p) =>
-        p.includes('Ich bereite einen Antrag auf Kostenübernahme'),
+        p.includes('Ich bereite mit Hilfe einen Antrag auf Kostenübernahme'),
       ),
     ).toBe(true);
     expect(
