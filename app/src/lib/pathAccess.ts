@@ -46,9 +46,8 @@ const cloneRecord = (
 };
 
 const createContainerForSegment = (
-  segment: string | undefined,
-): Record<string, unknown> | unknown[] =>
-  isArraySegment(segment ?? '') ? [] : {};
+  segment: string,
+): Record<string, unknown> | unknown[] => (isArraySegment(segment) ? [] : {});
 
 const assignArraySegment = (
   cursor: unknown[],

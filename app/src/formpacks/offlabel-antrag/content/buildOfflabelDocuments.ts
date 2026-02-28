@@ -71,20 +71,11 @@ const parseMultilineItems = (value: string): string[] =>
     )
     .filter((line) => line.length > 0);
 
-const joinGermanWithUnd = (values: string[]): string => {
-  if (values.length === 0) {
-    return '';
-  }
-  if (values.length === 1) {
-    return values[0];
-  }
+const joinGermanWithUnd = (values: [string, string, ...string[]]): string => {
   if (values.length === 2) {
     return `${values[0]} und ${values[1]}`;
   }
-  const lastValue = values.at(-1);
-  if (lastValue === undefined) {
-    return '';
-  }
+  const lastValue = values.at(-1)!;
   return `${values.slice(0, -1).join(', ')} und ${lastValue}`;
 };
 
@@ -352,7 +343,11 @@ const buildSeverityLines = (severity: Record<string, unknown>): string[] => {
   } else if (objectiveIndicators.length > 1) {
     lines.push(
       `Als weitere objektive Schwereindikatoren liegen bei mir ${joinGermanWithUnd(
-        objectiveIndicators.map((indicator) => indicator.text),
+        objectiveIndicators.map((indicator) => indicator.text) as [
+          string,
+          string,
+          ...string[],
+        ],
       )} vor.`,
     );
   } else {
@@ -850,9 +845,8 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
 
 const buildFromExportModel = (
   formData: Record<string, unknown>,
-  locale: SupportedLocale,
 ): OfflabelRenderedDocument[] => {
-  const model = buildOffLabelAntragDocumentModel(formData, locale);
+  const model = buildOffLabelAntragDocumentModel(formData, 'en');
 
   return [
     {
@@ -861,10 +855,7 @@ const buildFromExportModel = (
       blocks: [
         {
           kind: 'heading',
-          text:
-            locale === 'en'
-              ? 'Part 1 – Application to the insurer'
-              : 'Teil 1 – Antrag an die Krankenkasse',
+          text: 'Part 1 – Application to the insurer',
         },
         ...model.kk.paragraphs.map((text) => ({
           kind: 'paragraph' as const,
@@ -878,37 +869,28 @@ const buildFromExportModel = (
       blocks: [
         {
           kind: 'heading',
-          text:
-            locale === 'en'
-              ? 'Part 2 – Cover letter to the treating practice'
-              : 'Teil 2 – Schreiben an die behandelnde Praxis',
+          text: 'Part 2 – Cover letter to the treating practice',
         },
         ...model.arzt.paragraphs.map((text) => ({
           kind: 'paragraph' as const,
           text,
         })),
-        ...(model.arzt.liabilityHeading &&
-        model.arzt.liabilityParagraphs &&
-        model.arzt.liabilityParagraphs.length > 0
-          ? ([
-              {
-                kind: 'heading' as const,
-                text: model.arzt.liabilityHeading,
-              },
-              ...model.arzt.liabilityParagraphs.map((text) => ({
-                kind: 'paragraph' as const,
-                text,
-              })),
-              {
-                kind: 'paragraph' as const,
-                text: `Date: ${model.arzt.liabilityDateLine ?? ''}`,
-              },
-              {
-                kind: 'paragraph' as const,
-                text: `Patient name: ${model.arzt.liabilitySignerName ?? ''}`,
-              },
-            ] satisfies OfflabelRenderedDocument['blocks'])
-          : []),
+        {
+          kind: 'heading' as const,
+          text: model.arzt.liabilityHeading!,
+        },
+        ...model.arzt.liabilityParagraphs!.map((text) => ({
+          kind: 'paragraph' as const,
+          text,
+        })),
+        {
+          kind: 'paragraph' as const,
+          text: `Date: ${model.arzt.liabilityDateLine}`,
+        },
+        {
+          kind: 'paragraph' as const,
+          text: `Patient name: ${model.arzt.liabilitySignerName}`,
+        },
       ],
     },
     {
@@ -930,7 +912,7 @@ export function buildOfflabelDocuments(
   locale: SupportedLocale = 'de',
 ): OfflabelRenderedDocument[] {
   if (locale === 'en') {
-    return buildFromExportModel(formData, locale);
+    return buildFromExportModel(formData);
   }
   return [buildPart1(formData), buildPart2(formData), buildPart3(formData)];
 }

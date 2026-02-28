@@ -240,4 +240,72 @@ describe('registerServiceWorker', () => {
     await Promise.resolve();
     expect(getRegistration).toHaveBeenCalledTimes(1);
   });
+
+  it('keeps polling callbacks resilient when navigator membership checks throw', async () => {
+    vi.resetModules();
+    registerSW.mockReset();
+
+    let serviceWorkerHasChecks = 0;
+    const navigatorProxy = new Proxy<Record<string, unknown>>(
+      {
+        serviceWorker: {
+          getRegistration: vi.fn(),
+        },
+      },
+      {
+        has: (_target, property) => {
+          if (property === 'serviceWorker') {
+            serviceWorkerHasChecks += 1;
+            if (serviceWorkerHasChecks === 1) {
+              return true;
+            }
+            throw new Error('navigator membership check failed');
+          }
+          return false;
+        },
+      },
+    );
+    vi.stubGlobal('navigator', navigatorProxy as unknown as Navigator);
+
+    let scheduledCallback: (() => void) | undefined;
+    vi.spyOn(globalThis, 'setInterval').mockImplementation(
+      (callback: TimerHandler) => {
+        if (isVoidCallback(callback)) {
+          scheduledCallback = () => {
+            callback();
+          };
+        }
+        return 1 as unknown as ReturnType<typeof globalThis.setInterval>;
+      },
+    );
+
+    let visibilityHandler: EventListener | undefined;
+    vi.spyOn(globalThis, 'addEventListener').mockImplementation(
+      (type: string, listener: EventListenerOrEventListenerObject) => {
+        if (type === 'visibilitychange' && typeof listener === 'function') {
+          visibilityHandler = listener;
+        }
+      },
+    );
+
+    const module = await import('../../src/pwa/register');
+
+    expect(() => module.registerServiceWorker({ DEV: false })).not.toThrow();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+
+    expect(scheduledCallback).toBeDefined();
+    scheduledCallback?.();
+
+    expect(visibilityHandler).toBeDefined();
+    visibilityHandler?.(new Event('visibilitychange'));
+
+    await Promise.resolve();
+    await Promise.resolve();
+  });
 });

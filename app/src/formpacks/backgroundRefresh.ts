@@ -183,19 +183,17 @@ export const runFormpackBackgroundRefresh =
   };
 
 const runSafely = async (onUpdated?: (formpackIds: string[]) => void) => {
-  try {
-    const result = await runFormpackBackgroundRefresh();
-    if (result.updatedIds.length > 0) {
-      onUpdated?.(result.updatedIds);
-      globalThis.dispatchEvent(
-        new CustomEvent(FORMPACKS_UPDATED_EVENT, {
-          detail: { formpackIds: result.updatedIds },
-        }),
-      );
-    }
-  } catch {
-    // NOTE: Refresh errors must never break app startup.
+  const result = await runFormpackBackgroundRefresh();
+  if (result.updatedIds.length === 0) {
+    return;
   }
+
+  onUpdated?.(result.updatedIds);
+  globalThis.dispatchEvent(
+    new CustomEvent(FORMPACKS_UPDATED_EVENT, {
+      detail: { formpackIds: result.updatedIds },
+    }),
+  );
 };
 
 /**
@@ -211,10 +209,6 @@ export const startFormpackBackgroundRefresh = (
   let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   const scheduleInitialRun = () => {
-    if (stopped) {
-      return;
-    }
-
     const scheduler = globalThis as unknown as IdleScheduler;
 
     if (typeof scheduler.requestIdleCallback === 'function') {

@@ -192,8 +192,7 @@ const withFallback = (
   if (typeof value !== 'string') {
     return fallback;
   }
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : fallback;
+  return value;
 };
 
 const getBool = (value: unknown): boolean =>
@@ -342,7 +341,7 @@ const buildPartParagraphs = (
 
   return flattenBlocksToParagraphs(part.blocks, {
     includeHeadings: false,
-    blankLineBetweenBlocks: options.blankLineBetweenBlocks ?? false,
+    blankLineBetweenBlocks: options.blankLineBetweenBlocks === true,
     compactAroundKinds: options.compactAroundKinds,
     listWrapAt: options.listWrapAt,
     listPrefix: options.listPrefix,
@@ -350,16 +349,22 @@ const buildPartParagraphs = (
   });
 };
 
+const appendTrailingBlankLine = (paragraphs: string[]): string[] => [
+  ...paragraphs,
+  '',
+];
+
 const trimSurroundingBlankLines = (paragraphs: string[]): string[] => {
-  let start = 0;
-  let end = paragraphs.length;
-  while (start < end && paragraphs[start] === '') {
-    start += 1;
-  }
-  while (end > start && paragraphs[end - 1] === '') {
-    end -= 1;
-  }
-  return paragraphs.slice(start, end);
+  const firstContentIndex = paragraphs.findIndex(
+    (paragraph) => paragraph !== '',
+  );
+  const lastContentIndex = paragraphs.findLastIndex(
+    (paragraph) => paragraph !== '',
+  );
+  return paragraphs.slice(
+    Math.max(firstContentIndex, 0),
+    Math.max(lastContentIndex + 1, 0),
+  );
 };
 
 const buildPart2Paragraphs = (
@@ -419,11 +424,7 @@ const enforceClosingLayout = (
     if (!opts.appendBlankBeforeAttachments) {
       return paragraphs;
     }
-    const withTrailingBlank = [...paragraphs];
-    if (withTrailingBlank.length === 0 || withTrailingBlank.at(-1) !== '') {
-      withTrailingBlank.push('');
-    }
-    return withTrailingBlank;
+    return appendTrailingBlankLine(paragraphs);
   }
 
   const signatureIndex = paragraphs.findIndex(
@@ -454,11 +455,7 @@ const enforceClosingLayout = (
     return result;
   }
 
-  const trailing = [...result];
-  if (trailing.length === 0 || trailing.at(-1) !== '') {
-    trailing.push('');
-  }
-  return trailing;
+  return appendTrailingBlankLine(result);
 };
 
 const buildKkSignatures = (): OffLabelSignatureBlock[] => [];

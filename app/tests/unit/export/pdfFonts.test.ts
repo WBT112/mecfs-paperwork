@@ -35,6 +35,24 @@ describe('pdf font registration', () => {
     expect(registerHyphenationCallbackMock).toHaveBeenCalledTimes(1);
   });
 
+  it('registers an identity hyphenation callback', async () => {
+    const module = await import('../../../src/export/pdf/fonts');
+
+    module.ensurePdfFontsRegistered();
+
+    expect(registerHyphenationCallbackMock).toHaveBeenCalledTimes(1);
+
+    const callbackCandidate = registerHyphenationCallbackMock.mock.calls.at(
+      0,
+    )?.[0] as unknown;
+    expect(typeof callbackCandidate).toBe('function');
+
+    if (typeof callbackCandidate === 'function') {
+      const callback = callbackCandidate as (word: string) => string[];
+      expect(callback('nachvollziehbar')).toEqual(['nachvollziehbar']);
+    }
+  });
+
   it('does not re-register hyphenation after a failed first font registration', async () => {
     registerMock.mockImplementationOnce(() => {
       throw new Error('register failed');

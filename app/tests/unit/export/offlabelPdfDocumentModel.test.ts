@@ -254,4 +254,62 @@ describe('buildOfflabelAntragPdfDocumentModel', () => {
 
     spy.mockRestore();
   });
+
+  it('renders attachment blocks when export model provides attachments', () => {
+    const base = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'de',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    const mockedModel = {
+      ...base,
+      kk: {
+        ...base.kk,
+        attachmentsHeading: 'Anlagen',
+        attachments: ['Anlage A'],
+      },
+      arzt: {
+        ...base.arzt,
+        attachmentsHeading: 'Anhänge',
+        attachments: ['Anlage B'],
+      },
+      postExportChecklist: {
+        ...base.postExportChecklist,
+        attachmentsItems: ['Beleg 1'],
+      },
+    };
+
+    const spy = vi
+      .spyOn(offlabelDocumentModelModule, 'buildOffLabelAntragDocumentModel')
+      .mockReturnValue(mockedModel);
+
+    const pdfModel = buildOfflabelAntragPdfDocumentModel({
+      formData: {},
+      locale: 'de',
+      exportedAt: FIXED_EXPORTED_AT,
+    });
+
+    expect(pdfModel.sections[0].blocks).toContainEqual({
+      type: 'paragraph',
+      text: 'Anlagen',
+    });
+    expect(pdfModel.sections[0].blocks).toContainEqual({
+      type: 'bullets',
+      items: ['Anlage A'],
+    });
+
+    const checklistBullets = pdfModel.sections[4].blocks.find(
+      (block) =>
+        block.type === 'bullets' &&
+        block.items.some((item) => item === '☐ Beleg 1'),
+    );
+    expect(checklistBullets).toBeDefined();
+
+    spy.mockRestore();
+  });
 });

@@ -78,7 +78,7 @@ const withTimeout = async <T,>(
   timeoutMs: number,
   message: string,
 ): Promise<T> => {
-  let cancelTimeout: () => void = () => undefined;
+  let cancelTimeout: (() => void) | undefined;
   const timeoutPromise = new Promise<T>((_, reject) => {
     cancelTimeout = startTimeout(timeoutMs, () =>
       reject(createTimeoutError(message)),
@@ -88,7 +88,7 @@ const withTimeout = async <T,>(
   try {
     return await Promise.race([promise, timeoutPromise]);
   } finally {
-    cancelTimeout();
+    cancelTimeout?.();
   }
 };
 
@@ -172,18 +172,11 @@ const PdfExportButton = ({
   }, [clearExportTimeout, stopExportTiming]);
 
   const handleClick = useCallback(async () => {
-    if (disabled || isExporting) {
-      return;
-    }
-
     stopExportTiming();
     exportTimingRef.current = startUserTiming(USER_TIMING_NAMES.exportPdfTotal);
     clearExportTimeout();
     setIsBuilding(true);
     exportTimeoutCancelRef.current = startTimeout(REQUEST_TIMEOUT_MS, () => {
-      if (!isMountedRef.current) {
-        return;
-      }
       setIsBuilding(false);
       setRequest(null);
       stopExportTiming();
@@ -234,8 +227,6 @@ const PdfExportButton = ({
   }, [
     buildPayload,
     clearExportTimeout,
-    disabled,
-    isExporting,
     onError,
     RuntimeComponent,
     stopExportTiming,

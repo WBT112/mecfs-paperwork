@@ -344,6 +344,19 @@ describe('rjsfTemplates', () => {
     expect(screen.queryByRole('button', { name: 'common.add' })).toBeNull();
   });
 
+  it('falls back to base array class when className is undefined', () => {
+    const registry = createRegistry({
+      formContext: { t: (key: string) => key },
+    });
+    const props = createArrayFieldProps(registry, {
+      className: undefined,
+    });
+
+    const { container } = render(<ArrayFieldTemplate {...props} />);
+
+    expect(container.querySelector('fieldset')).toHaveClass('formpack-array');
+  });
+
   it('renders array item title using parent ui:title and disables remove button', () => {
     const t = vi.fn(
       (key: string, options?: { item?: string; index?: number }) => {

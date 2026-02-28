@@ -129,29 +129,31 @@ export default function FormpackListPage() {
   useEffect(() => {
     let isActive = true;
 
-    const loadManifests = async () => {
+    const loadManifests = () => {
       setIsLoading(true);
       setErrorMessage(null);
 
-      try {
-        const data = await listFormpacks();
-        if (!isActive) {
-          return;
-        }
-        setManifests(filterVisibleFormpacks(data));
-      } catch {
-        if (!isActive) {
-          return;
-        }
-        setErrorMessage(t('formpackListErrorFallback'));
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
+      listFormpacks()
+        .then((data) => {
+          if (!isActive) {
+            return;
+          }
+          setManifests(filterVisibleFormpacks(data));
+        })
+        .catch(() => {
+          if (!isActive) {
+            return;
+          }
+          setErrorMessage(t('formpackListErrorFallback'));
+        })
+        .finally(() => {
+          if (isActive) {
+            setIsLoading(false);
+          }
+        });
     };
 
-    loadManifests().catch(() => undefined);
+    loadManifests();
 
     return () => {
       isActive = false;

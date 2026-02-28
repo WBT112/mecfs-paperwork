@@ -99,9 +99,7 @@ export const useRecords = (formpackId: string | null) => {
         if (current.formpackId !== formpackId) {
           return null;
         }
-        return mergedRecords.some((record) => record.id === current.id)
-          ? current
-          : null;
+        return current;
       });
     } catch (error) {
       setErrorCode(getStorageErrorCode(error));
@@ -113,7 +111,7 @@ export const useRecords = (formpackId: string | null) => {
 
   useEffect(() => {
     setHasLoaded(false);
-    refresh().catch(() => undefined);
+    refresh().catch(Promise.resolve);
   }, [refresh]);
 
   const createRecord = useCallback(
@@ -262,7 +260,7 @@ export const useSnapshots = (recordId: string | null) => {
   }, [recordId, setErrorCode, setSnapshots]);
 
   useEffect(() => {
-    refresh().catch(() => undefined);
+    refresh().catch(Promise.resolve);
   }, [refresh]);
 
   const createSnapshot = useCallback(
@@ -373,9 +371,7 @@ export const useAutosaveRecord = (
       return;
     }
 
-    if (lastRecordIdRef.current === recordId) {
-      lastSavedRef.current = JSON.stringify(baselineData);
-    }
+    lastSavedRef.current = JSON.stringify(baselineData);
   }, [recordId, baselineData]);
 
   /**
@@ -428,7 +424,7 @@ export const useAutosaveRecord = (
     }
 
     const timeout = globalThis.setTimeout(() => {
-      persistPendingChanges(true).catch(() => undefined);
+      persistPendingChanges(true).catch(Promise.resolve);
     }, delay);
 
     return () => {
@@ -438,7 +434,7 @@ export const useAutosaveRecord = (
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      persistPendingChanges(false).catch(() => undefined);
+      persistPendingChanges(false).catch(Promise.resolve);
     };
 
     globalThis.addEventListener('beforeunload', handleBeforeUnload);

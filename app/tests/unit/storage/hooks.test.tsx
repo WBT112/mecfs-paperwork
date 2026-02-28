@@ -336,6 +336,10 @@ describe('storage hooks', () => {
       getLatest()?.setActiveRecord(active);
     });
 
+    await waitFor(() => {
+      expect(getLatest()?.activeRecord?.id).toBe(active.id);
+    });
+
     await act(async () => {
       await getLatest()?.refresh();
     });
@@ -721,6 +725,30 @@ describe('useAutosaveRecord', () => {
       recordId: AUTOSAVE_RECORD_ID,
       formData: data,
       baselineData: data,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    expect(updateRecordEntry).not.toHaveBeenCalled();
+  });
+
+  it('updates autosave baseline when baselineData changes for the same record id', async () => {
+    vi.mocked(updateRecordEntry).mockResolvedValue(
+      createRecord({ id: AUTOSAVE_RECORD_ID }),
+    );
+
+    const { rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'latest' },
+      baselineData: { field: 'old' },
+    });
+
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'latest' },
+      baselineData: { field: 'latest' },
     });
 
     await act(async () => {

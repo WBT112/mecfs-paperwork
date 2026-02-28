@@ -155,6 +155,20 @@ describe('flattenBlocksToParagraphs', () => {
     ]);
   });
 
+  it('treats negative wrap values as disabled wrapping', () => {
+    const paragraphs = flattenBlocksToParagraphs(
+      [
+        {
+          kind: 'list',
+          items: ['Alpha Beta'],
+        },
+      ],
+      { listWrapAt: -1, listPrefix: '> ' },
+    );
+
+    expect(paragraphs).toEqual(['> Alpha Beta']);
+  });
+
   it('ignores unknown block kinds gracefully', () => {
     const paragraphs = flattenBlocksToParagraphs([
       { kind: 'paragraph', text: 'sichtbar' },

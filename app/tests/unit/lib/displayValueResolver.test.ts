@@ -400,6 +400,13 @@ describe('resolveDisplayValue', () => {
     expect(resolveDisplayValue(() => undefined)).toBe('');
   });
 
+  it('returns empty string when JSON.stringify throws', () => {
+    const circular: { self?: unknown } = {};
+    circular.self = circular;
+
+    expect(resolveDisplayValue(circular)).toBe('');
+  });
+
   describe('raw-value guard (regression prevention)', () => {
     it('never returns raw boolean true in export model', () => {
       // Without translation context, boolean should resolve to empty string

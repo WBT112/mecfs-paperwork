@@ -5,9 +5,11 @@ const DECISION_DIVIDER_SELECTOR = '.formpack-decision-divider';
 const LABEL_GEBURTSDATUM = 'Geburtsdatum';
 const LABEL_VORNAME = 'Vorname';
 const HELP_VORNAME_DETAIL = 'Vorname der antragstellenden Person';
+const PORTAL_LABEL = 'Portal Label';
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import type { FieldTemplateProps, RJSFSchema } from '@rjsf/utils';
+import { createPortal } from 'react-dom';
 import { FormpackFieldTemplate } from '../../src/lib/rjsfFormpackFieldTemplate';
 import { OFFLABEL_ANTRAG_FORMPACK_ID } from '../../src/formpacks/formpackIds';
 import type { InfoBoxConfig } from '../../src/formpacks/types';
@@ -97,6 +99,31 @@ describe('FormpackFieldTemplate', () => {
     expect(container.querySelector('label')).not.toBeInTheDocument();
   });
 
+  it('uses default translator and hides label for array container schema types', () => {
+    const props = createMockProps({
+      label: 'Container Label',
+      schema: {
+        type: ['array'],
+      } as unknown as DoctorLetterTemplateProps['schema'],
+      formContext: {
+        infoBoxes: [
+          {
+            id: 'q1-info',
+            anchor: DECISION_Q1_ANCHOR,
+            enabled: true,
+            i18nKey: TEST_INFOBOX_KEY,
+          },
+        ],
+      },
+    });
+
+    const { container, getByTestId } = render(
+      <FormpackFieldTemplate {...props} />,
+    );
+    expect(container.querySelector('label')).not.toBeInTheDocument();
+    expect(getByTestId('infobox').textContent).toBe(TEST_INFOBOX_KEY);
+  });
+
   it('renders required indicator when field is required', () => {
     const props = createMockProps({ label: 'Required Field', required: true });
     const { container } = render(<FormpackFieldTemplate {...props} />);
@@ -153,6 +180,30 @@ describe('FormpackFieldTemplate', () => {
 
     const { getByTestId } = render(<FormpackFieldTemplate {...props} />);
     expect(getByTestId('help')).toBeInTheDocument();
+  });
+
+  it('hides helper text for nested label arrays after normalization', () => {
+    const props = createMockProps({
+      label: (
+        <span>{['  Vor', false, ' name  '] as const}</span>
+      ) as unknown as DoctorLetterTemplateProps['label'],
+      help: <div data-testid="help">vor name</div>,
+    });
+
+    const { queryByTestId } = render(<FormpackFieldTemplate {...props} />);
+    expect(queryByTestId('help')).not.toBeInTheDocument();
+  });
+
+  it('keeps helper text when help is rendered through a portal node', () => {
+    const portalTarget = document.createElement('div');
+    const props = createMockProps({
+      label: PORTAL_LABEL,
+      help: createPortal(PORTAL_LABEL, portalTarget),
+    });
+
+    const { container } = render(<FormpackFieldTemplate {...props} />);
+    expect(container.querySelector('label')).toBeInTheDocument();
+    expect(portalTarget.textContent).toBe(PORTAL_LABEL);
   });
 
   it('applies custom classNames', () => {

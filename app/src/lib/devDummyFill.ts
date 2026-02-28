@@ -210,14 +210,16 @@ export type DummyFillOptions = {
 const toRuntimeOptions = (
   options: DummyFillOptions,
 ): DummyFillRuntimeOptions => {
-  const arrayMin =
-    Number.isInteger(options.arrayMin) && (options.arrayMin ?? 0) >= 1
-      ? (options.arrayMin as number)
-      : 1;
-  const arrayMaxCandidate =
-    Number.isInteger(options.arrayMax) && (options.arrayMax ?? 0) >= arrayMin
-      ? (options.arrayMax as number)
-      : 3;
+  const hasValidArrayMin =
+    typeof options.arrayMin === 'number' &&
+    Number.isInteger(options.arrayMin) &&
+    options.arrayMin >= 1;
+  const arrayMin = hasValidArrayMin ? (options.arrayMin as number) : 1;
+  const hasValidArrayMax =
+    typeof options.arrayMax === 'number' &&
+    Number.isInteger(options.arrayMax) &&
+    options.arrayMax >= arrayMin;
+  const arrayMaxCandidate = hasValidArrayMax ? (options.arrayMax as number) : 3;
 
   return {
     rng: options.rng ?? Math.random,

@@ -47,6 +47,12 @@ describe('splitFullName', () => {
       lastName: 'Mustermann',
     });
   });
+
+  it('returns empty lastName for empty input', () => {
+    expect(splitFullName('   ')).toEqual({
+      lastName: '',
+    });
+  });
 });
 
 describe('extractProfileData', () => {

@@ -159,9 +159,6 @@ const buildCompactSenderLines = (senderLines: string[]): string[] => {
   const nameIndex = lines.findIndex(
     (_, index) => index !== streetIndex && index !== postalCityIndex,
   );
-  if (nameIndex < 0) {
-    return lines;
-  }
 
   const compactLine = `${lines[nameIndex]} – ${lines[streetIndex]} – ${lines[postalCityIndex]}`;
   const remainingLines = lines.filter(
@@ -182,14 +179,6 @@ const parseDayMonthYearDate = (rawDateLine: string): Date | null => {
   const day = Number(dayRaw);
   const month = Number(monthRaw);
   const year = Number(yearRaw);
-
-  if (
-    !Number.isInteger(day) ||
-    !Number.isInteger(month) ||
-    !Number.isInteger(year)
-  ) {
-    return null;
-  }
 
   const date = new Date(year, month - 1, day);
   if (

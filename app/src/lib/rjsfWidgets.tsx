@@ -208,6 +208,29 @@ const resolveSelectWidgetValue = (
     optionsEmptyValue,
   ) as unknown;
 
+const useAutoGrowTextareaModel = (
+  rowsOption: unknown,
+  value: unknown,
+): {
+  textareaRef: RefObject<HTMLTextAreaElement | null>;
+  rows: number;
+  textValue: string;
+} => {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const rows = resolveWidgetRows(rowsOption);
+  const textValue = resolveStringValue(value);
+
+  useLayoutEffect(() => {
+    adjustTextareaHeight(textareaRef.current);
+  }, [textValue]);
+
+  return {
+    textareaRef,
+    rows,
+    textValue,
+  };
+};
+
 const AutoGrowTextarea = ({
   id,
   textareaRef,
@@ -283,13 +306,10 @@ export const AutoGrowTextareaWidget = ({
   onBlur,
   onFocus,
 }: WidgetProps) => {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const rows = resolveWidgetRows(options.rows);
-  const textValue = resolveStringValue(value);
-
-  useLayoutEffect(() => {
-    adjustTextareaHeight(textareaRef.current);
-  }, [textValue]);
+  const { textareaRef, rows, textValue } = useAutoGrowTextareaModel(
+    options.rows,
+    value,
+  );
 
   return (
     <AutoGrowTextarea
@@ -346,49 +366,31 @@ export const AccessibleSelectWidget = ({
     optionsEmptyValueLabel,
   );
   const emptyValue = multiple ? [] : EMPTY_SELECT_VALUE;
+  const resolveEventValue = useCallback(
+    (event: ChangeEvent<HTMLSelectElement> | FocusEvent<HTMLSelectElement>) =>
+      resolveSelectWidgetValue(event, multiple, enumOptions, optionsEmptyValue),
+    [multiple, enumOptions, optionsEmptyValue],
+  );
 
   const handleBlur = useCallback(
     (event: FocusEvent<HTMLSelectElement>) => {
-      onBlur(
-        id,
-        resolveSelectWidgetValue(
-          event,
-          multiple,
-          enumOptions,
-          optionsEmptyValue,
-        ),
-      );
+      onBlur(id, resolveEventValue(event));
     },
-    [id, multiple, onBlur, enumOptions, optionsEmptyValue],
+    [id, onBlur, resolveEventValue],
   );
 
   const handleFocus = useCallback(
     (event: FocusEvent<HTMLSelectElement>) => {
-      onFocus(
-        id,
-        resolveSelectWidgetValue(
-          event,
-          multiple,
-          enumOptions,
-          optionsEmptyValue,
-        ),
-      );
+      onFocus(id, resolveEventValue(event));
     },
-    [id, multiple, onFocus, enumOptions, optionsEmptyValue],
+    [id, onFocus, resolveEventValue],
   );
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
-      onChange(
-        resolveSelectWidgetValue(
-          event,
-          multiple,
-          enumOptions,
-          optionsEmptyValue,
-        ),
-      );
+      onChange(resolveEventValue(event));
     },
-    [multiple, onChange, enumOptions, optionsEmptyValue],
+    [onChange, resolveEventValue],
   );
 
   return (
@@ -436,9 +438,10 @@ export const AttachmentsAssistantWidget = ({
   onBlur,
   onFocus,
 }: WidgetProps) => {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const rows = resolveWidgetRows(options.rows);
-  const textValue = resolveStringValue(value);
+  const { textareaRef, rows, textValue } = useAutoGrowTextareaModel(
+    options.rows,
+    value,
+  );
   const locale = resolveAttachmentsAssistantLocale(
     i18n.resolvedLanguage ?? i18n.language,
   );
@@ -460,10 +463,6 @@ export const AttachmentsAssistantWidget = ({
   const additionalLabelHint = additionalLabelHintRaw
     ? stripMarkdownStrong(additionalLabelHintRaw.trim())
     : '';
-
-  useLayoutEffect(() => {
-    adjustTextareaHeight(textareaRef.current);
-  }, [textValue]);
 
   const handleToggle = (item: AttachmentsAssistantItem, isChecked: boolean) => {
     const nextLines = isChecked

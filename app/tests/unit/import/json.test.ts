@@ -17,6 +17,7 @@ vi.mock('../../../src/formpacks/registry', () => ({
 }));
 
 const { PRIMARY_FORMPACK_ID, SECONDARY_FORMPACK_ID } = formpackIds;
+const APP_ID = 'mecfs-paperwork';
 
 describe('normalizeExportRevisions', () => {
   it('returns an empty array for undefined input', () => {
@@ -94,6 +95,46 @@ describe('validateJsonImport', () => {
     );
     expect(result.error).toBe(null);
     expect(result.payload).toBeDefined();
+    expect(result.payload?.formpack.id).toBe(PRIMARY_FORMPACK_ID);
+  });
+
+  it('preserves app.version when app metadata is provided', () => {
+    const validJson = JSON.stringify({
+      app: { id: APP_ID, version: '0.6.0' },
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'en',
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      validJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.formpack.id).toBe(PRIMARY_FORMPACK_ID);
+  });
+
+  it('accepts app metadata without version', () => {
+    const validJson = JSON.stringify({
+      app: { id: APP_ID },
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'en',
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      validJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
     expect(result.payload?.formpack.id).toBe(PRIMARY_FORMPACK_ID);
   });
 
@@ -738,6 +779,7 @@ describe('validateJsonImport', () => {
           objectItems: [{ keep: 'kept', legacy: 'removed' }],
           arrayWithoutItems: [{ legacy: true }],
           nestedNoProps: { stays: true },
+          withBooleanSchema: 'legacy-value',
         },
       },
     });

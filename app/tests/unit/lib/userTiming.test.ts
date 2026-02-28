@@ -33,6 +33,24 @@ describe('startUserTiming', () => {
     }).not.toThrow();
   });
 
+  it('returns a no-op controller when performance.mark throws at start', () => {
+    const originalPerformance = globalThis.performance;
+    const mark = vi.fn(() => {
+      throw new Error('mark blocked');
+    });
+
+    vi.stubGlobal('performance', {
+      ...originalPerformance,
+      mark,
+      measure: vi.fn(),
+      clearMarks: vi.fn(),
+    } as Performance);
+
+    const timing = startUserTiming(USER_TIMING_NAMES.exportPdfTotal);
+
+    expect(() => timing.end()).not.toThrow();
+  });
+
   it('allows repeated end calls without throwing or duplicating the measure', () => {
     const metricName = USER_TIMING_NAMES.exportDocxTotal;
     globalThis.performance.clearMeasures(metricName);

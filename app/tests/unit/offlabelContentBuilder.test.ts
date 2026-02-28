@@ -370,6 +370,26 @@ describe('buildOfflabelDocuments', () => {
     expect(combinedSeverityLine).toContain('Pflegegrad 3');
   });
 
+  it('joins exactly two objective severity indicators with und', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+      },
+      severity: {
+        gdb: '60',
+        pflegegrad: '2',
+      },
+    });
+
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
+
+    expect(part1ListItems).toContain(
+      'Als weitere objektive Schwereindikatoren liegen bei mir ein Grad der Behinderung von 60 und Pflegegrad 2 vor.',
+    );
+  });
+
   it('renders expanded work-status severity wording without bell-score duplication', () => {
     const docs = buildOfflabelDocuments({
       request: {
@@ -390,6 +410,32 @@ describe('buildOfflabelDocuments', () => {
     expect(workStatusLine).toBeDefined();
     expect(workStatusLine).toContain('Erwerbstätigkeit');
     expect(workStatusLine).not.toContain('Bell-Score');
+  });
+
+  it('renders fallback severity lines for unknown bell score and work status', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'ivabradine',
+      },
+      severity: {
+        bellScore: '999',
+        workStatus: 'Sonderstatus',
+      },
+    });
+
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
+
+    expect(part1ListItems).toContain(
+      'Mein aktueller Bell-Score beträgt 999 und dokumentiert mein aktuelles Funktionsniveau.',
+    );
+    expect(part1ListItems).toContain(
+      'Meine soziale, gesellschaftliche und berufliche Teilhabe ist krankheitsbedingt grundsätzlich und dauerhaft eingeschränkt.',
+    );
+    expect(part1ListItems).toContain(
+      'Meine Erwerbsfähigkeit ist krankheitsbedingt deutlich eingeschränkt; aktuell ist mein Arbeitsstatus Sonderstatus.',
+    );
   });
 
   it('uses user-entered medication name for other in part 1 and part 2', () => {
@@ -458,6 +504,27 @@ describe('buildOfflabelDocuments', () => {
     expect(part2Text).toContain('Max Mustermann');
   });
 
+  it('combines other-dose and other-duration in treatment plan text', () => {
+    const docs = buildOfflabelDocuments({
+      request: {
+        drug: 'other',
+        otherDrugName: 'Musterwirkstoff',
+        otherIndication: 'Musterindikation',
+        otherTreatmentGoal: 'Stabilisierung',
+        otherDose: '10 mg täglich',
+        otherDuration: 'für 12 Wochen',
+      },
+    });
+
+    const part1ListItems = docs[0].blocks
+      .filter((block) => block.kind === 'list')
+      .flatMap((block) => block.items);
+
+    expect(part1ListItems).toContain(
+      'Dosierung/Dauer: 10 mg täglich; für 12 Wochen',
+    );
+  });
+
   it('keeps female salutation and renders the updated consent text in part 2', () => {
     const docs = buildOfflabelDocuments({
       doctor: {
@@ -502,6 +569,42 @@ describe('buildOfflabelDocuments', () => {
 
     expect(part2Text).toContain('Sehr geehrter Herr Muster,');
     expect(part2Headings).toContain(CONSENT_HEADING_IVABRADIN);
+  });
+
+  it('uses doctor fallback salutation when female name is missing', () => {
+    const docs = buildOfflabelDocuments({
+      doctor: {
+        gender: 'Frau',
+      },
+      request: {
+        drug: 'ivabradine',
+      },
+    });
+
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part2Text).toContain('Sehr geehrte Frau Doktor,');
+  });
+
+  it('uses doctor fallback salutation when male name is missing', () => {
+    const docs = buildOfflabelDocuments({
+      doctor: {
+        gender: 'Herr',
+      },
+      request: {
+        drug: 'ivabradine',
+      },
+    });
+
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part2Text).toContain('Sehr geehrter Herr Doktor,');
   });
 
   it('adds §2 wording for standard medication when checkbox is enabled', () => {
@@ -697,5 +800,24 @@ describe('buildOfflabelDocuments', () => {
     );
     expect(part1Text).toContain(EVIDENCE_SUFFICIENT_TEXT);
     expect(part1Text).not.toMatch(/Punkt \d+:/);
+  });
+
+  it('keeps liability footer block in locale en for unknown medication keys', () => {
+    const docs = buildOfflabelDocuments(
+      {
+        request: {
+          drug: 'unknown-drug',
+        },
+      },
+      'en',
+    );
+
+    const part2Text = docs[1].blocks
+      .filter((block) => block.kind === 'paragraph')
+      .map((block) => block.text)
+      .join('\n');
+
+    expect(part2Text).toContain('Date: ');
+    expect(part2Text).toContain('Patient name: ');
   });
 });

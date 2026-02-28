@@ -6,6 +6,7 @@ import './formpackListPage.mockSetup';
 import FormpackListPage from '../../src/pages/FormpackListPage';
 import { TestRouter } from '../setup/testRouter';
 import { listFormpacks } from '../../src/formpacks/loader';
+import { loadFormpackI18n } from '../../src/i18n/formpack';
 import type { FormpackManifest } from '../../src/formpacks/types';
 
 const TITLE_INSURER = 'Insurer Pack';
@@ -224,6 +225,20 @@ describe('FormpackListPage', () => {
     expect(screen.queryByText('formpackResumeLast')).not.toBeInTheDocument();
   });
 
+  it('hides the resume shortcut when localStorage access throws', async () => {
+    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem');
+    getItemSpy.mockImplementation(() => {
+      throw new Error('storage blocked');
+    });
+
+    renderPage();
+    await waitForLoaded();
+
+    expect(screen.queryByText('formpackResumeLast')).not.toBeInTheDocument();
+
+    getItemSpy.mockRestore();
+  });
+
   it('shows empty registry message and no search input when no formpacks exist', async () => {
     vi.mocked(listFormpacks).mockResolvedValueOnce([]);
 
@@ -306,5 +321,42 @@ describe('FormpackListPage', () => {
     });
 
     expect(listFormpacks).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps translation loading resilient when i18n preloading fails', async () => {
+    vi.mocked(loadFormpackI18n).mockRejectedValueOnce(
+      new Error('translation load failed'),
+    );
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.queryByText('formpackLoading')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('formpackListTitle')).toBeInTheDocument();
+  });
+
+  it('does not set i18n-ready state when translation loading resolves after unmount', async () => {
+    let resolveI18nLoad: (() => void) | undefined;
+    vi.mocked(loadFormpackI18n).mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveI18nLoad = resolve;
+        }),
+    );
+
+    const view = renderPage();
+    await waitFor(() => {
+      expect(listFormpacks).toHaveBeenCalledTimes(1);
+    });
+    view.unmount();
+
+    await act(async () => {
+      resolveI18nLoad?.();
+      await Promise.resolve();
+    });
+
+    expect(loadFormpackI18n).toHaveBeenCalled();
   });
 });

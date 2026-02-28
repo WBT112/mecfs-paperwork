@@ -263,6 +263,20 @@ describe('doctorLetterVisibility', () => {
       expect(cleaned.q8).toBeUndefined();
     });
 
+    it('keeps q8 when q1=no, q6=yes, and q7=yes', () => {
+      const decision: DecisionData = {
+        q1: 'no',
+        q6: 'yes',
+        q7: 'yes',
+        q8: 'EBV',
+        resolvedCaseText: RESULT_TEXT,
+      };
+
+      const cleaned = clearHiddenFields(decision);
+
+      expect(cleaned.q8).toBe('EBV');
+      expect(cleaned.q7).toBe('yes');
+    });
     it('preserves resolvedCaseText', () => {
       const decision: DecisionData = {
         q1: 'yes',

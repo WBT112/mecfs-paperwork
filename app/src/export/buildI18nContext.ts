@@ -39,7 +39,6 @@ const getNested = (
   target: Record<string, unknown>,
   dottedKey: string,
 ): Record<string, unknown> | undefined => {
-  if (!isRecord(target)) return undefined;
   const segments = dottedKey.split('.').filter(Boolean);
   if (!segments.length) return undefined;
 

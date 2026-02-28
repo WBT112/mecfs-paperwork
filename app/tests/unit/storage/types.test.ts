@@ -111,6 +111,7 @@ describe('storage type helpers', () => {
     expect(
       isFormpackMetaEntry({ ...baseFormpackMetaEntry, version: undefined }),
     ).toBe(true);
+    expect(isFormpackMetaEntry(null)).toBe(false);
     expect(isFormpackMetaEntry({ ...baseFormpackMetaEntry, hash: 123 })).toBe(
       false,
     );

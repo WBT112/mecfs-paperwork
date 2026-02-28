@@ -11,8 +11,9 @@ vi.mock('../../../src/export/pdf/fonts', () => ({
 }));
 
 const CREATED_AT_ISO = '2026-02-10T12:00:00.000Z';
+const DEFAULT_PATIENT_NAME = 'Max Mustermann';
 const DEFAULT_SENDER_LINES = [
-  'Max Mustermann',
+  DEFAULT_PATIENT_NAME,
   'Musterstraße 1',
   '12345 Musterstadt',
 ] as const;
@@ -233,8 +234,34 @@ describe('OfflabelAntragPdfDocument', () => {
         ...base.exportBundle,
         part1: {
           ...base.exportBundle.part1,
-          senderLines: ['Max Mustermann', '12345 Musterstadt', 'Hinweis'],
+          senderLines: [DEFAULT_PATIENT_NAME, '12345 Musterstadt', 'Hinweis'],
           paragraphs: ['Einleitung', 'Mit freundlichen Grüßen', '   ', ''],
+        },
+      },
+    });
+
+    const blob = await pdf(
+      <OfflabelAntragPdfDocument model={model} />,
+    ).toBlob();
+
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('renders closing block when greeting and signature are both present', async () => {
+    const base = buildTemplateData();
+    const model = buildModel({
+      exportBundle: {
+        ...base.exportBundle,
+        part1: {
+          ...base.exportBundle.part1,
+          paragraphs: [
+            'Einleitung',
+            'Mit freundlichen Grüßen',
+            '',
+            '',
+            DEFAULT_PATIENT_NAME,
+            'Anlagenhinweis',
+          ],
         },
       },
     });
@@ -257,8 +284,29 @@ describe('OfflabelAntragPdfDocument', () => {
           liabilityParagraphs: [
             '1. Vorbemerkung',
             '2. Hinweise',
-            '3) Abschnitt ohne Consent-Begriff',
+            '',
+            '3) Abschnitt ohne Stichwort',
           ],
+        },
+      },
+    });
+
+    const blob = await pdf(
+      <OfflabelAntragPdfDocument model={model} />,
+    ).toBlob();
+
+    expect(blob.size).toBeGreaterThan(0);
+  });
+
+  it('renders only one liability page when no consent marker or section-3 fallback exists', async () => {
+    const base = buildTemplateData();
+    const model = buildModel({
+      exportBundle: {
+        ...base.exportBundle,
+        part2: {
+          ...base.exportBundle.part2,
+          liabilityHeading: 'Einwilligungserklärung',
+          liabilityParagraphs: ['1. Vorbemerkung', '', '2. Hinweise'],
         },
       },
     });

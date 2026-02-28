@@ -34,9 +34,6 @@ const wrapLineByWords = (line: string, maxLength: number): string[] => {
   }
 
   const words = line.split(/\s+/).filter((word) => word.length > 0);
-  if (words.length === 0) {
-    return [line];
-  }
 
   const wrapped: string[] = [];
   let current = '';
@@ -61,7 +58,7 @@ const wrapLineByWords = (line: string, maxLength: number): string[] => {
     wrapped.push(current);
   }
 
-  return wrapped.length > 0 ? wrapped : [line];
+  return wrapped;
 };
 
 const mapListLine = (

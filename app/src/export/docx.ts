@@ -194,12 +194,12 @@ const parseDocxMapping = (payload: unknown): DocxMapping => {
 const buildDocxAdditionalContext = (
   formpackId: string,
   locale: SupportedLocale,
-  i18nContext?: { t: Record<string, unknown> },
+  i18nContext: { t: Record<string, unknown> },
 ): DocxAdditionalContext => {
   const t = i18n.getFixedT(locale, `formpack:${formpackId}`);
   const tFn = ((key: string) =>
     t(key, { defaultValue: key })) as DocxAdditionalContext['t'];
-  const tContext = i18nContext?.t ?? buildI18nContext(formpackId, locale).t;
+  const tContext = i18nContext.t;
   Object.assign(tFn, tContext);
 
   const formatDate = (value: string | null | undefined): string => {
@@ -230,9 +230,8 @@ const coerceDocxError = (error: unknown): Error | null => {
     return error;
   }
 
-  if (Array.isArray(error)) {
-    const first = error.find((entry) => entry instanceof Error);
-    return first ?? null;
+  if (Array.isArray(error) && error.length > 0) {
+    return coerceDocxError(error[0]);
   }
 
   if (isRecord(error) && typeof error.message === 'string') {
@@ -537,7 +536,7 @@ type TemplateValueResolver = (
 
 const normalizeFieldValue = (
   value: unknown,
-  resolveValue?: TemplateValueResolver,
+  resolveValue: TemplateValueResolver,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
   fieldPath?: string,
@@ -546,49 +545,32 @@ const normalizeFieldValue = (
     return '';
   }
 
-  if (resolveValue) {
-    return encodeDocxLineBreaks(
-      resolveValue(value, schemaNode, uiNode, fieldPath),
-    );
-  }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return encodeDocxLineBreaks(String(value));
-  }
-
-  return '';
+  return encodeDocxLineBreaks(
+    resolveValue(value, schemaNode, uiNode, fieldPath),
+  );
 };
 
 const normalizePrimitive = (
   entry: unknown,
-  resolveValue?: TemplateValueResolver,
+  resolveValue: TemplateValueResolver,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
   fieldPath?: string,
 ): string | null => {
-  if (entry === null || entry === undefined) {
-    return null;
-  }
   if (typeof entry === 'string') {
     return encodeDocxLineBreaks(entry);
   }
-  if (resolveValue) {
-    return encodeDocxLineBreaks(
-      resolveValue(entry, schemaNode, uiNode, fieldPath),
-    );
-  }
-  if (typeof entry === 'number' || typeof entry === 'boolean') {
-    return encodeDocxLineBreaks(String(entry));
-  }
-  return null;
+  return encodeDocxLineBreaks(
+    resolveValue(entry, schemaNode, uiNode, fieldPath),
+  );
 };
 
 const normalizeLoopRecord = (
   entry: Record<string, unknown>,
-  resolveValue?: TemplateValueResolver,
+  resolveValue: TemplateValueResolver,
+  fieldPath: string,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
-  fieldPath?: string,
 ): Record<string, unknown> => {
   const normalized: Record<string, unknown> = {};
   const schemaProps =
@@ -602,7 +584,7 @@ const normalizeLoopRecord = (
   Object.entries(entry)
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([key, value]) => {
-      const nextPath = fieldPath ? `${fieldPath}.${key}` : key;
+      const nextPath = `${fieldPath}.${key}`;
       normalized[key] = normalizeFieldValue(
         value,
         resolveValue,
@@ -616,10 +598,10 @@ const normalizeLoopRecord = (
 
 const normalizeLoopEntry = (
   entry: unknown,
-  resolveValue?: TemplateValueResolver,
+  resolveValue: TemplateValueResolver,
+  fieldPath: string,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
-  fieldPath?: string,
 ): unknown => {
   if (entry === null || entry === undefined) {
     return null;
@@ -629,9 +611,9 @@ const normalizeLoopEntry = (
     return normalizeLoopRecord(
       entry,
       resolveValue,
+      fieldPath,
       schemaNode,
       uiNode,
-      fieldPath,
     );
   }
 
@@ -866,10 +848,10 @@ export const mapDocumentDataToTemplate = async (
     cachedUiSchema ?? loadDocxUiSchema(formpackId),
   ]);
   if (!docxSchemaCache.has(formpackId)) {
-    docxSchemaCache.set(formpackId, schema ?? null);
+    docxSchemaCache.set(formpackId, schema);
   }
   if (!docxUiSchemaCache.has(formpackId)) {
-    docxUiSchemaCache.set(formpackId, uiSchema ?? null);
+    docxUiSchemaCache.set(formpackId, uiSchema);
   }
   const mappedDocumentData = appendOfflabelLiabilityFallbackToPart2(
     documentData,
@@ -923,9 +905,9 @@ export const mapDocumentDataToTemplate = async (
             normalizeLoopEntry(
               entry,
               resolveValue,
+              loop.path,
               itemSchema,
               itemUiSchema,
-              loop.path,
             ),
           )
           .filter((entry) => entry !== null && entry !== undefined)
@@ -1146,14 +1128,18 @@ export const exportDocx = async ({
   uiSchema,
 }: ExportDocxOptions): Promise<Blob> => {
   const manifest = manifestOverride ?? (await loadFormpackManifest(formpackId));
-  if (!manifest.docx) {
-    throw new Error('DOCX export assets are not configured for this formpack.');
-  }
+  const docxConfig =
+    manifest.docx ??
+    (() => {
+      throw new Error(
+        'DOCX export assets are not configured for this formpack.',
+      );
+    })();
 
   const templatePath =
     variant === 'wallet'
-      ? manifest.docx.templates.wallet
-      : manifest.docx.templates.a4;
+      ? docxConfig.templates.wallet
+      : docxConfig.templates.a4;
 
   if (!templatePath) {
     throw new Error(`DOCX template for ${variant} is not available.`);
@@ -1168,7 +1154,7 @@ export const exportDocx = async ({
   const [template, templateContext] = await Promise.all([
     loadDocxTemplate(formpackId, templatePath),
     mapDocumentDataToTemplate(formpackId, variant, documentModel, {
-      mappingPath: manifest.docx.mapping,
+      mappingPath: docxConfig.mapping,
       locale,
       schema,
       uiSchema,

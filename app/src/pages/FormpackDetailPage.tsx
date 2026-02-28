@@ -351,6 +351,9 @@ const getActionButtonDataAction = (
 };
 
 const showDevMedicationOptions = isFormpackVisible({ visibility: 'dev' });
+const ignoreAsyncError = (): void => {
+  // Intentionally ignore async follow-up errors to keep UI flows resilient.
+};
 
 // Helper: Apply field visibility rules to decision tree UI schema
 const applyFieldVisibility = (
@@ -666,11 +669,15 @@ const normalizeParagraphs = (value: unknown): string[] => {
     .filter(Boolean);
 };
 
-const isDecisionCaseTextPath = (fieldPath?: string): boolean =>
+const isDecisionCaseTextPath = (
+  fieldPath?: string,
+): fieldPath is 'decision.caseText' | 'decision.resolvedCaseText' =>
   fieldPath === 'decision.caseText' ||
   fieldPath === 'decision.resolvedCaseText';
 
-const isDecisionCaseParagraphsPath = (fieldPath?: string): boolean =>
+const isDecisionCaseParagraphsPath = (
+  fieldPath?: string,
+): fieldPath is 'decision.caseParagraphs' =>
   fieldPath === 'decision.caseParagraphs';
 
 const renderParagraphs = (
@@ -813,7 +820,7 @@ const resolveDecisionCaseTextValue = (
     return null;
   }
 
-  return renderParagraphs(paragraphs, childPath ?? 'paragraph');
+  return renderParagraphs(paragraphs, childPath);
 };
 
 const buildDecisionPreviewContext = (
@@ -921,7 +928,7 @@ const buildPreviewEntry = ({
       fieldPath,
       nestedKey,
     );
-    return section ? { type: 'nested', node: section } : null;
+    return { type: 'nested', node: section };
   }
 
   if (isRecord(entry)) {
@@ -934,7 +941,7 @@ const buildPreviewEntry = ({
       fieldPath,
       nestedKey,
     );
-    return section ? { type: 'nested', node: section } : null;
+    return { type: 'nested', node: section };
   }
 
   return {
@@ -975,7 +982,7 @@ const buildArrayItem = (
       fieldPath,
       nestedKey,
     );
-    return nested ? <li key={`nested-${index}`}>{nested}</li> : null;
+    return <li key={`nested-${index}`}>{nested}</li>;
   }
 
   if (isRecord(entry)) {
@@ -988,7 +995,7 @@ const buildArrayItem = (
       fieldPath,
       nestedKey,
     );
-    return nested ? <li key={`object-${index}`}>{nested}</li> : null;
+    return <li key={`object-${index}`}>{nested}</li>;
   }
 
   return (
@@ -1093,10 +1100,7 @@ function renderPreviewArray(
       return (
         <div className="formpack-document-preview__section" key={sectionKey}>
           {label ? <h4>{label}</h4> : null}
-          {renderParagraphs(
-            paragraphValues,
-            fieldPath ?? sectionKey ?? 'paragraphs',
-          )}
+          {renderParagraphs(paragraphValues, fieldPath)}
         </div>
       );
     }
@@ -1213,7 +1217,7 @@ export default function FormpackDetailPage() {
   const [pdfSuccess, setPdfSuccess] = useState<string | null>(null);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [formpackTranslationsVersion, setFormpackTranslationsVersion] =
+  const [_formpackTranslationsVersion, setFormpackTranslationsVersion] =
     useState(0);
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
@@ -1290,14 +1294,9 @@ export default function FormpackDetailPage() {
             formpackId as FormpackId,
             record.data,
           );
-          upsertProfile('default', partial).then(
-            (entry) => {
-              setProfileHasSavedData(hasUsableProfileData(entry.data));
-            },
-            () => {
-              // Silently ignore profile save errors.
-            },
-          );
+          upsertProfile('default', partial).then((entry) => {
+            setProfileHasSavedData(hasUsableProfileData(entry.data));
+          }, ignoreAsyncError);
         }
       },
       onError: setStorageError,
@@ -1341,14 +1340,9 @@ export default function FormpackDetailPage() {
             : false;
 
         if (shouldDeleteExisting) {
-          deleteProfile('default').then(
-            () => {
-              setProfileHasSavedData(false);
-            },
-            () => {
-              // Silently ignore profile delete errors.
-            },
-          );
+          deleteProfile('default').then(() => {
+            setProfileHasSavedData(false);
+          }, ignoreAsyncError);
         }
       }
     },
@@ -1356,9 +1350,6 @@ export default function FormpackDetailPage() {
   );
 
   const handleApplyProfile = useCallback(async () => {
-    if (!formpackId) {
-      return;
-    }
     setProfileStatus(null);
     try {
       const entry = await getProfile('default');
@@ -1428,7 +1419,7 @@ export default function FormpackDetailPage() {
     };
 
     if (id) {
-      loadManifest(id).catch(() => undefined);
+      loadManifest(id).catch(ignoreAsyncError);
     } else {
       resetFormpack();
       setFormData({});
@@ -1460,25 +1451,23 @@ export default function FormpackDetailPage() {
       try {
         const signature = await deriveFormpackRevisionSignature(manifest);
         const existing = await getFormpackMeta(manifest.id);
-        if (
-          existing?.versionOrHash === signature.versionOrHash &&
+        const hasMatchingMeta =
+          existing !== null &&
+          existing.versionOrHash === signature.versionOrHash &&
           existing.hash === signature.hash &&
-          (existing.version ?? null) === (signature.version ?? null)
-        ) {
-          if (isActive) {
-            setFormpackMeta(existing);
-          }
-          return;
-        }
+          (existing.version ?? null) === (signature.version ?? null);
 
-        const stored = await upsertFormpackMeta({
-          id: manifest.id,
-          versionOrHash: signature.versionOrHash,
-          version: signature.version,
-          hash: signature.hash,
-        });
+        const nextMeta = hasMatchingMeta
+          ? existing
+          : await upsertFormpackMeta({
+              id: manifest.id,
+              versionOrHash: signature.versionOrHash,
+              version: signature.version,
+              hash: signature.hash,
+            });
+
         if (isActive) {
-          setFormpackMeta(stored);
+          setFormpackMeta(nextMeta);
         }
       } catch {
         if (isActive) {
@@ -1487,7 +1476,7 @@ export default function FormpackDetailPage() {
       }
     };
 
-    ensureFormpackMeta().catch(() => undefined);
+    ensureFormpackMeta().catch(ignoreAsyncError);
 
     return () => {
       isActive = false;
@@ -1503,15 +1492,9 @@ export default function FormpackDetailPage() {
     const currentFormpackId = manifest.id;
 
     const refreshMeta = async () => {
-      try {
-        const next = await getFormpackMeta(currentFormpackId);
-        if (isActive) {
-          setFormpackMeta(next);
-        }
-      } catch {
-        if (isActive) {
-          setFormpackMeta(null);
-        }
+      const next = await getFormpackMeta(currentFormpackId);
+      if (isActive) {
+        setFormpackMeta(next);
       }
     };
 
@@ -1527,7 +1510,7 @@ export default function FormpackDetailPage() {
       }
 
       setShowFormpackUpdateNotice(true);
-      refreshMeta().catch(() => undefined);
+      refreshMeta().catch(ignoreAsyncError);
       setAssetRefreshVersion((value) => value + 1);
     };
 
@@ -1588,6 +1571,8 @@ export default function FormpackDetailPage() {
     }
   }, [activeRecord, markAsSaved]);
 
+  const effectiveStorageError = storageError ?? recordsError ?? snapshotsError;
+
   const namespace = useMemo(
     () => (manifest ? `formpack:${manifest.id}` : undefined),
     [manifest],
@@ -1597,13 +1582,10 @@ export default function FormpackDetailPage() {
     if (!uiSchema) {
       return null;
     }
-    if (formpackTranslationsVersion < 0) {
-      return null;
-    }
     const translate = ((key: string, options?: Record<string, unknown>) =>
       t(key, { ...options, lng: activeLanguage })) as typeof t;
     return translateUiSchema(uiSchema, translate, namespace);
-  }, [activeLanguage, formpackTranslationsVersion, namespace, t, uiSchema]);
+  }, [activeLanguage, namespace, t, uiSchema]);
   const normalizedUiSchema = useMemo(
     () =>
       schema && translatedUiSchema
@@ -1699,10 +1681,6 @@ export default function FormpackDetailPage() {
   ]);
 
   const handleApplyDummyData = useCallback(() => {
-    if (!isDevUiEnabled || !formSchema || !conditionalUiSchema) {
-      return;
-    }
-
     const patch = buildRandomDummyPatch(formSchema, conditionalUiSchema);
     const merged = mergeDummyPatch(formData, patch);
     const nextData = isRecord(merged) ? merged : formData;
@@ -1735,18 +1713,18 @@ export default function FormpackDetailPage() {
     return t('formpackSnapshotLabel', { timestamp });
   }, [formatTimestamp, t]);
   const storageErrorMessage = useMemo(() => {
-    if (!storageError) {
+    if (!effectiveStorageError) {
       return null;
     }
 
-    if (storageError === 'locked') {
+    if (effectiveStorageError === 'locked') {
       return t('storageLocked');
     }
 
-    return storageError === 'unavailable'
+    return effectiveStorageError === 'unavailable'
       ? t('storageUnavailable')
       : t('storageError');
-  }, [storageError, t]);
+  }, [effectiveStorageError, t]);
 
   const handleResetAllStorageData = useCallback(async () => {
     const confirmed = globalThis.confirm(t('resetAllConfirm'));
@@ -1758,7 +1736,8 @@ export default function FormpackDetailPage() {
   }, [t]);
 
   const storageBlocked =
-    storageError === 'unavailable' || storageError === 'locked';
+    effectiveStorageError === 'unavailable' ||
+    effectiveStorageError === 'locked';
 
   useEffect(() => {
     if (!activeRecord && importMode === 'overwrite') {
@@ -1781,33 +1760,17 @@ export default function FormpackDetailPage() {
 
   const readActiveRecordId = useCallback(() => {
     try {
-      return activeRecordStorageKey
-        ? globalThis.localStorage.getItem(activeRecordStorageKey)
-        : null;
+      return globalThis.localStorage.getItem(activeRecordStorageKey!);
     } catch {
       return null;
     }
   }, [activeRecordStorageKey]);
 
   const persistActiveRecordId = useCallback(
-    (recordId: string | null) => {
-      if (!activeRecordStorageKey || !formpackId) {
-        return;
-      }
-
+    (recordId: string) => {
       try {
-        if (recordId) {
-          globalThis.localStorage.setItem(activeRecordStorageKey, recordId);
-          globalThis.localStorage.setItem(LAST_ACTIVE_FORMPACK_KEY, formpackId);
-        } else {
-          globalThis.localStorage.removeItem(activeRecordStorageKey);
-          const lastActiveFormpackId = globalThis.localStorage.getItem(
-            LAST_ACTIVE_FORMPACK_KEY,
-          );
-          if (lastActiveFormpackId === formpackId) {
-            globalThis.localStorage.removeItem(LAST_ACTIVE_FORMPACK_KEY);
-          }
-        }
+        globalThis.localStorage.setItem(activeRecordStorageKey!, recordId);
+        globalThis.localStorage.setItem(LAST_ACTIVE_FORMPACK_KEY, formpackId!);
       } catch {
         // Ignore storage errors to keep the UI responsive.
       }
@@ -1868,33 +1831,41 @@ export default function FormpackDetailPage() {
 
   const restoreActiveRecord = useCallback(
     async (currentFormpackId: string, isActive: () => boolean) => {
-      const restoredRecord = await getLastActiveRecord(currentFormpackId);
-      if (isActive() && restoredRecord) {
-        setActiveRecord(restoredRecord);
-        persistActiveRecordId(restoredRecord.id);
-        return;
-      }
+      try {
+        const restoredRecord = await getLastActiveRecord(currentFormpackId);
+        if (!isActive()) {
+          return;
+        }
 
-      if (!isActive()) {
-        return;
-      }
+        if (restoredRecord) {
+          setActiveRecord(restoredRecord);
+          persistActiveRecordId(restoredRecord.id);
+          return;
+        }
 
-      const fallbackRecord = getFallbackRecord(currentFormpackId);
-      if (fallbackRecord) {
-        setActiveRecord(fallbackRecord);
-        persistActiveRecordId(fallbackRecord.id);
-        return;
-      }
+        const fallbackRecord = getFallbackRecord(currentFormpackId);
+        if (fallbackRecord) {
+          setActiveRecord(fallbackRecord);
+          persistActiveRecordId(fallbackRecord.id);
+          return;
+        }
 
-      if (!manifest || storageBlocked) {
+        if (!manifest || storageBlocked) {
+          setActiveRecord(null);
+          return;
+        }
+
+        const recordTitle = title || t('formpackRecordUntitled');
+        const record = await createRecord(locale, formData, recordTitle);
+        if (isActive() && record?.formpackId === currentFormpackId) {
+          setActiveRecord(record);
+          persistActiveRecordId(record.id);
+          return;
+        }
+
         setActiveRecord(null);
-        return;
-      }
-
-      const recordTitle = title || t('formpackRecordUntitled');
-      const record = await createRecord(locale, formData, recordTitle);
-      if (isActive() && record?.formpackId === currentFormpackId) {
-        persistActiveRecordId(record.id);
+      } catch {
+        // Keep active record restore best-effort.
       }
     },
     [
@@ -1932,7 +1903,7 @@ export default function FormpackDetailPage() {
     hasRestoredRecordRef.current = formpackId;
 
     restoreActiveRecord(currentFormpackId, () => isActive).catch(
-      () => undefined,
+      ignoreAsyncError,
     );
 
     return () => {
@@ -2067,14 +2038,10 @@ export default function FormpackDetailPage() {
   );
 
   const handleResetForm = useCallback(async () => {
-    if (!activeRecord) {
-      return;
-    }
-
     const clearedData: FormDataState = {};
     setFormData(clearedData);
 
-    const updated = await updateActiveRecord(activeRecord.id, {
+    const updated = await updateActiveRecord(activeRecord!.id, {
       data: clearedData,
       locale,
     });
@@ -2085,10 +2052,6 @@ export default function FormpackDetailPage() {
   }, [activeRecord, locale, markAsSaved, updateActiveRecord]);
 
   const handleCreateRecord = useCallback(async () => {
-    if (!manifest) {
-      return;
-    }
-
     const recordTitle = title || t('formpackRecordUntitled');
     if (activeRecord) {
       const baseRecord = await updateActiveRecord(activeRecord.id, {
@@ -2114,7 +2077,6 @@ export default function FormpackDetailPage() {
     createRecord,
     formData,
     locale,
-    manifest,
     markAsSaved,
     persistActiveRecordId,
     t,
@@ -2329,9 +2291,7 @@ export default function FormpackDetailPage() {
       setImportFileName(null);
       setImportPassword('');
       setIsImportFileEncrypted(false);
-      if (importInputRef.current) {
-        importInputRef.current.value = '';
-      }
+      importInputRef.current!.value = '';
     } catch (error) {
       if (isJsonEncryptionRuntimeError(error)) {
         setImportError(resolveJsonEncryptionErrorMessage(error, 'import', t));
@@ -2434,12 +2394,9 @@ export default function FormpackDetailPage() {
   );
 
   const handleAcceptIntroGate = useCallback(() => {
-    if (!introGateConfig) {
-      return;
-    }
     setPendingIntroFocus(true);
     setFormData((current) =>
-      setPathValueImmutable(current, introGateConfig.acceptedFieldPath, true),
+      setPathValueImmutable(current, introGateConfig!.acceptedFieldPath, true),
     );
   }, [introGateConfig]);
 
@@ -2520,16 +2477,11 @@ export default function FormpackDetailPage() {
         fieldPath,
         t: (key, options) => {
           if (key.startsWith('common.')) {
-            const appResult = t(key, { ...options, ns: 'app' });
-            if (appResult !== key) {
-              return appResult;
-            }
+            return t(key, { ...options, ns: 'app' });
           }
-          if (namespace) {
-            const packResult = t(key, { ...options, ns: namespace });
-            if (packResult !== key) {
-              return packResult;
-            }
+          const packResult = t(key, { ...options, ns: namespace });
+          if (packResult !== key) {
+            return packResult;
           }
           return t(key, options);
         },
@@ -2537,9 +2489,7 @@ export default function FormpackDetailPage() {
     [manifest?.id, namespace, t],
   );
   const documentPreview = useMemo(() => {
-    if (!isRecord(formData)) {
-      return null;
-    }
+    const previewData = formData;
 
     const schemaProps = isRecord(formSchema?.properties)
       ? (formSchema.properties as Record<string, RJSFSchema>)
@@ -2547,11 +2497,11 @@ export default function FormpackDetailPage() {
     const keys = getOrderedKeys(
       formSchema ?? undefined,
       previewUiSchema,
-      formData,
+      previewData,
     );
     const sections = keys
       .map<ReactNode>((key) => {
-        const entry = formData[key];
+        const entry = previewData[key];
         if (!hasPreviewValue(entry)) {
           return null;
         }
@@ -2593,11 +2543,7 @@ export default function FormpackDetailPage() {
             key={`root-${key}`}
           >
             <h4>{label}</h4>
-            {typeof resolvedValue === 'string' ? (
-              <p>{resolvedValue}</p>
-            ) : (
-              resolvedValue
-            )}
+            <p>{resolvedValue}</p>
           </div>
         );
       })
@@ -2608,21 +2554,22 @@ export default function FormpackDetailPage() {
     return sections.length ? sections : null;
   }, [formData, formSchema, previewUiSchema, resolvePreviewValue]);
   const handleExportJson = useCallback(async () => {
-    if (!manifest || !activeRecord) {
-      return;
-    }
-
+    const currentManifest = manifest as FormpackManifest;
+    const currentRecord = activeRecord as RecordEntry;
     const timing = startUserTiming(USER_TIMING_NAMES.exportJsonTotal);
     setJsonExportError(null);
 
     try {
       const payload = buildJsonExportPayload({
-        formpack: { id: manifest.id, version: manifest.version },
-        record: activeRecord,
+        formpack: {
+          id: currentManifest.id,
+          version: currentManifest.version,
+        },
+        record: currentRecord,
         data: formData,
         locale,
         revisions: snapshots,
-        ...(schema ? { schema } : {}),
+        schema: schema as RJSFSchema | undefined,
       });
       const filename = buildJsonExportFilename(payload);
 
@@ -2667,16 +2614,6 @@ export default function FormpackDetailPage() {
   ]);
 
   const handleExportDocx = useCallback(async () => {
-    const manifestExports = manifest?.exports;
-    if (
-      !manifest?.docx ||
-      !manifestExports?.includes('docx') ||
-      !formpackId ||
-      !activeRecord
-    ) {
-      return;
-    }
-
     const timing = startUserTiming(USER_TIMING_NAMES.exportDocxTotal);
     setDocxError(null);
     setDocxSuccess(null);
@@ -2684,16 +2621,16 @@ export default function FormpackDetailPage() {
 
     try {
       const report = await exportDocx({
-        formpackId,
-        recordId: activeRecord.id,
+        formpackId: formpackId as FormpackId,
+        recordId: activeRecord?.id as string,
         variant: docxTemplateId,
         locale,
         schema: formSchema,
         uiSchema: previewUiSchema,
-        manifest,
+        manifest: manifest as FormpackManifest,
       });
       const filename = await buildDocxExportFilename(
-        formpackId,
+        formpackId as FormpackId,
         docxTemplateId,
       );
       await downloadDocxExport(report, filename);
@@ -2744,11 +2681,7 @@ export default function FormpackDetailPage() {
     }
   }, [pdfSuccess]);
 
-  const clearJsonExportError = useCallback(() => {
-    if (jsonExportError) {
-      setJsonExportError(null);
-    }
-  }, [jsonExportError]);
+  const clearJsonExportError = useCallback(() => setJsonExportError(null), []);
 
   const handleActionClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
@@ -2796,7 +2729,7 @@ export default function FormpackDetailPage() {
       }
     };
 
-    loadValidator().catch(() => undefined);
+    loadValidator().catch(ignoreAsyncError);
 
     return () => {
       isActive = false;
@@ -2858,7 +2791,7 @@ export default function FormpackDetailPage() {
     );
   }
 
-  if (errorMessage) {
+  if (errorMessage || !manifest) {
     return (
       <section className="app__card">
         <h2>{t('formpackDetailTitle')}</h2>
@@ -2868,10 +2801,6 @@ export default function FormpackDetailPage() {
         </Link>
       </section>
     );
-  }
-
-  if (!manifest) {
-    return null;
   }
 
   // RATIONALE: Hide dev-only UI in production to reduce exposed metadata and UI surface.

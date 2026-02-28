@@ -120,25 +120,6 @@ const createIndication = (
   texts,
 });
 
-const buildExpertTexts = (
-  locale: MedicationLocale,
-  displayName: string,
-  standDate: string,
-): Pick<MedicationAutoFacts, 'expertSourceText' | 'expertAttachmentText'> => {
-  if (locale === 'de') {
-    return {
-      expertSourceText: `Bewertung ${displayName} – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand ${standDate}).`,
-      expertAttachmentText: `Bewertung: ${displayName} – Expertengruppe Long COVID Off-Label-Use beim BfArM (Stand ${standDate})`,
-    };
-  }
-
-  const dateIso = standDate.split('.').reverse().join('-');
-  return {
-    expertSourceText: `Assessment ${displayName.toLowerCase()} – Expert Group Long COVID Off-Label-Use at BfArM (status ${dateIso}).`,
-    expertAttachmentText: `Assessment: ${displayName} – Expert Group Long COVID Off-Label-Use at BfArM (status ${dateIso})`,
-  };
-};
-
 const buildExpertTextsFromOverride = (
   sourceText: string,
 ): Pick<MedicationAutoFacts, 'expertSourceText' | 'expertAttachmentText'> => ({
@@ -472,12 +453,12 @@ const createStandardMedicationProfile = (
   input: StandardMedicationInput,
 ): MedicationProfile => {
   const [deAutoFacts, enAutoFacts] = [input.autoFacts.de, input.autoFacts.en];
-  const deExpertTexts = input.expertSourceTextOverride?.de
-    ? buildExpertTextsFromOverride(input.expertSourceTextOverride.de)
-    : buildExpertTexts('de', input.displayNameDe, input.expertSourceDate);
-  const enExpertTexts = input.expertSourceTextOverride?.en
-    ? buildExpertTextsFromOverride(input.expertSourceTextOverride.en)
-    : buildExpertTexts('en', input.displayNameEn, input.expertSourceDate);
+  const deExpertTexts = buildExpertTextsFromOverride(
+    input.expertSourceTextOverride!.de,
+  );
+  const enExpertTexts = buildExpertTextsFromOverride(
+    input.expertSourceTextOverride!.en,
+  );
 
   return {
     key: input.key,

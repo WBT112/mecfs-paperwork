@@ -685,6 +685,52 @@ describe('formpacks/backgroundRefresh', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('swallows callback errors from timeout, interval and online refresh triggers', async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    installFetchMock();
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.0',
+      version: '1.0.0',
+      hash: 'old-hash',
+      updatedAt: UPDATED_AT,
+    });
+
+    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+
+    const eventListener = vi.fn();
+    globalThis.addEventListener(
+      FORMPACKS_UPDATED_EVENT,
+      eventListener as EventListener,
+    );
+
+    const stop = startFormpackBackgroundRefresh({
+      onUpdated: () => {
+        throw new Error('boom');
+      },
+      intervalMs: 10,
+    });
+
+    await vi.advanceTimersByTimeAsync(1_600);
+    await vi.advanceTimersByTimeAsync(20);
+    globalThis.dispatchEvent(new Event('online'));
+    await Promise.resolve();
+
+    expect(eventListener).not.toHaveBeenCalled();
+
+    stop();
+    globalThis.removeEventListener(
+      FORMPACKS_UPDATED_EVENT,
+      eventListener as EventListener,
+    );
+  });
+
   it('swallows callback errors from onUpdated during scheduled refresh', async () => {
     Object.defineProperty(navigator, 'onLine', {
       configurable: true,

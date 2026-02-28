@@ -117,6 +117,8 @@ describe('storage at-rest encryption', () => {
   });
 
   it('skips unrelated cookies when looking up the storage key', async () => {
+    document.cookie = 'session=abc123';
+
     const encrypted = await encryptStorageData({ test: 'scan' });
     const decoded = await decodeStoredData(encrypted);
 

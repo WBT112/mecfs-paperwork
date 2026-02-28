@@ -20,9 +20,14 @@ const getString = (
 export const splitFullName = (
   fullName: string,
 ): { firstName?: string; lastName: string } => {
-  const parts = fullName.trim().split(/\s+/);
+  const normalizedName = fullName.trim();
+  if (!normalizedName) {
+    return { lastName: '' };
+  }
+
+  const parts = normalizedName.split(/\s+/);
   if (parts.length <= 1) {
-    return { lastName: parts[0] ?? '' };
+    return { lastName: parts[0] };
   }
   return {
     firstName: parts.slice(0, -1).join(' '),

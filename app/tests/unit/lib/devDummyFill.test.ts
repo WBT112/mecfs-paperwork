@@ -271,6 +271,94 @@ describe('buildRandomDummyPatch', () => {
     expect(patch.brokenB).toEqual([]);
   });
 
+  it('omits fields whose schema has no resolvable type', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        unknownField: {},
+      },
+    } as RJSFSchema;
+
+    const patch = buildRandomDummyPatch(schema, {} as UiSchema, {
+      rng: () => 0.5,
+    });
+
+    expect(patch).toEqual({});
+  });
+
+  it('keeps arrays empty when item ui schema hides all generated entries', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        hiddenItems: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+    } as RJSFSchema;
+    const uiSchema = {
+      hiddenItems: {
+        items: { 'ui:widget': 'hidden' },
+      },
+    } as UiSchema;
+
+    const patch = buildRandomDummyPatch(schema, uiSchema, {
+      rng: () => 0.4,
+      arrayMin: 1,
+      arrayMax: 1,
+    });
+
+    expect(patch.hiddenItems).toEqual([]);
+  });
+
+  it('falls back for NaN array bounds and negative rng values', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+    } as RJSFSchema;
+
+    const patch = buildRandomDummyPatch(schema, {} as UiSchema, {
+      rng: () => Number.NaN,
+      arrayMin: Number.NaN,
+      arrayMax: Number.NaN,
+    });
+
+    expect(Array.isArray(patch.tags)).toBe(true);
+    expect((patch.tags as unknown[]).length).toBe(1);
+    expect(typeof (patch.tags as unknown[])[0]).toBe('string');
+  });
+
+  it('respects valid bounds and clamps max when it is below min', () => {
+    const schema = {
+      type: 'object',
+      properties: {
+        tags: {
+          type: 'array',
+          items: { type: 'string' },
+        },
+      },
+    } as RJSFSchema;
+
+    const validBoundsPatch = buildRandomDummyPatch(schema, {} as UiSchema, {
+      rng: () => 0.9,
+      arrayMin: 2,
+      arrayMax: 2,
+    });
+    const clampedBoundsPatch = buildRandomDummyPatch(schema, {} as UiSchema, {
+      rng: () => 0.9,
+      arrayMin: 2,
+      arrayMax: 1,
+    });
+
+    expect((validBoundsPatch.tags as unknown[]).length).toBe(2);
+    expect((clampedBoundsPatch.tags as unknown[]).length).toBe(3);
+  });
+
   it('uses dedicated 10-value pools for common identity fields', () => {
     const firstNameValues = collectFieldValues('firstName', { type: 'string' });
     const lastNameValues = collectFieldValues('lastName', { type: 'string' });

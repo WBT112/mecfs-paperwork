@@ -29,7 +29,7 @@ const collectPlatform = (): string => {
 const collectAppInfo = (): DiagnosticsBundle['app'] => ({
   version: APP_VERSION,
   buildDate: BUILD_DATE_ISO,
-  environment: (import.meta.env.MODE as string | undefined) ?? 'unknown',
+  environment: import.meta.env.MODE,
 });
 
 const collectBrowserInfo = (): DiagnosticsBundle['browser'] => ({

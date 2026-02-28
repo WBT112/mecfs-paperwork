@@ -259,6 +259,49 @@ describe('checkStorageHealth', () => {
     expect(result.encryptionAtRest?.status).toBe('unknown');
   });
 
+  it('returns unknown encryption status when reading records throws synchronously', async () => {
+    const db = {
+      objectStoreNames: {
+        contains: (storeName: string) => storeName === 'records',
+      },
+      transaction: () => {
+        throw new Error('transaction failed');
+      },
+      close: vi.fn(),
+    };
+
+    const openRequest = {
+      result: db,
+      transaction: undefined,
+      onupgradeneeded: null as null | (() => void),
+      onsuccess: null as null | (() => void),
+      onerror: null as null | (() => void),
+      onblocked: null as null | (() => void),
+    };
+
+    vi.stubGlobal('indexedDB', {
+      databases: vi.fn().mockResolvedValue([{ name: DB_NAME }]),
+      open: vi.fn(() => {
+        queueMicrotask(() => {
+          openRequest.onsuccess?.();
+        });
+        return openRequest;
+      }),
+    });
+
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      storage: {
+        estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 100000 }),
+      },
+    });
+
+    const result = await checkStorageHealth();
+
+    expect(result.encryptionAtRest?.status).toBe('unknown');
+    expect(db.close).toHaveBeenCalledTimes(1);
+  });
+
   it('returns unknown encryption status when opening IndexedDB is blocked', async () => {
     const openRequest = {
       result: null,

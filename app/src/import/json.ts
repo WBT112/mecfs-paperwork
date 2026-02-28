@@ -321,11 +321,8 @@ const removeReadOnlyFields = (
 };
 
 const getFirstItemSchema = (
-  schema: OptionalRjsfSchema,
+  schema: RJSFSchema,
 ): OptionalRjsfSchema | undefined => {
-  if (!schema || typeof schema !== 'object') {
-    return undefined;
-  }
   if (Array.isArray(schema.items)) {
     return schema.items[0] as OptionalRjsfSchema;
   }
@@ -335,7 +332,7 @@ const getFirstItemSchema = (
 // Remove unknown fields when schema disallows additional properties.
 // This keeps imports compatible with older exports after schema evolution.
 const removeUnknownSchemaFields = (
-  schema: OptionalRjsfSchema,
+  schema: RJSFSchema,
   data: unknown,
   depth = 0,
 ): unknown => {
@@ -343,13 +340,9 @@ const removeUnknownSchemaFields = (
     return data;
   }
 
-  if (!schema || typeof schema !== 'object') {
-    return data;
-  }
-
   if (Array.isArray(data)) {
     const itemSchema = getFirstItemSchema(schema);
-    if (!itemSchema) {
+    if (!itemSchema || typeof itemSchema !== 'object') {
       return data;
     }
     return data.map((item) =>
@@ -426,14 +419,10 @@ const applyNestedDefaults = (
   normalized: Record<string, unknown>,
   depth: number,
 ): void => {
-  if (!schema.properties) {
-    return;
-  }
+  const properties = schema.properties as Record<string, unknown>;
 
   for (const key of Object.keys(normalized)) {
-    const propertySchema = (schema.properties as Record<string, unknown>)[
-      key
-    ] as OptionalRjsfSchema;
+    const propertySchema = properties[key] as OptionalRjsfSchema;
 
     if (
       propertySchema &&
@@ -630,7 +619,7 @@ const normalizeExportPayload = (
   );
   const normalizedData = applySchemaDefaults(
     schema,
-    isRecord(withoutUnknownFields) ? withoutUnknownFields : withoutReadOnly,
+    withoutUnknownFields as Record<string, unknown>,
   );
 
   // Use lenient schema for import validation (allows partial/incomplete data)

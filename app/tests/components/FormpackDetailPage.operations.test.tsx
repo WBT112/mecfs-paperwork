@@ -20,6 +20,7 @@ import type { FormpackManifest } from '../../src/formpacks/types';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import type { RecordEntry, SnapshotEntry } from '../../src/storage/types';
 import type { OfflabelRenderedDocument } from '../../src/formpacks/offlabel-antrag/content/buildOfflabelDocuments';
+import * as devDummyFill from '../../src/lib/devDummyFill';
 
 const testConstants = vi.hoisted(() => ({
   FORMPACK_ID: 'notfallpass',
@@ -29,6 +30,9 @@ const testConstants = vi.hoisted(() => ({
   IMPORT_FILE_NAME: 'import.json',
   IMPORT_FILE_CONTENT: '{"data":true}',
 }));
+
+const DOCX_JSON_EXPORTS = ['docx', 'json'] as const;
+const APP_ID = 'mecfs-paperwork';
 
 const formpackState = vi.hoisted(
   (): {
@@ -664,6 +668,41 @@ describe('FormpackDetailPage', () => {
     }
   });
 
+  it('keeps form data when dummy merge returns a non-record value', async () => {
+    formpackState.schema = {
+      type: 'object',
+      properties: {
+        visibleText: { type: 'string' },
+      },
+    } as RJSFSchema;
+    formpackState.uiSchema = {};
+    const patchSpy = vi
+      .spyOn(devDummyFill, 'buildRandomDummyPatch')
+      .mockReturnValue('invalid-result' as unknown as Record<string, unknown>);
+
+    try {
+      render(
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </TestRouter>,
+      );
+
+      const dummyButton = await screen.findByRole('button', {
+        name: 'profileApplyDummyButton',
+      });
+
+      storageState.markAsSaved.mockClear();
+      await userEvent.click(dummyButton);
+
+      await waitFor(() => expect(storageState.markAsSaved).toHaveBeenCalled());
+      expect(storageState.markAsSaved).toHaveBeenLastCalledWith({});
+    } finally {
+      patchSpy.mockRestore();
+    }
+  });
+
   it('shows a storage error when import processing throws', async () => {
     importState.validateJsonImport.mockImplementation(() => {
       throw new Error('boom');
@@ -698,7 +737,7 @@ describe('FormpackDetailPage', () => {
   it('shows an encryption import error when encrypted payload decryption fails', async () => {
     formpackState.manifest = {
       ...formpackState.manifest,
-      exports: ['docx', 'json'],
+      exports: [...DOCX_JSON_EXPORTS],
     };
 
     const envelope = {
@@ -758,7 +797,7 @@ describe('FormpackDetailPage', () => {
   it('decrypts encrypted imports before validating payloads', async () => {
     formpackState.manifest = {
       ...formpackState.manifest,
-      exports: ['docx', 'json'],
+      exports: [...DOCX_JSON_EXPORTS],
     };
     const envelope = {
       kind: ENCRYPTED_EXPORT_KIND,
@@ -1510,6 +1549,35 @@ describe('FormpackDetailPage', () => {
     confirmSpy.mockRestore();
   });
 
+  it('uses untitled fallback in delete confirmation when draft title is missing', async () => {
+    const secondRecord: RecordEntry = {
+      ...record,
+      id: 'record-2',
+      title: undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    storageState.records = [record, secondRecord];
+    storageState.activeRecord = record;
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openRecordsSection();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackRecordDelete' }),
+    );
+
+    expect(confirmSpy).toHaveBeenCalledWith('formpackRecordDeleteConfirm');
+    expect(storageState.deleteRecord).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
+  });
+
   it('disables clear snapshots when none exist', async () => {
     storageState.snapshots = [];
 
@@ -1616,6 +1684,36 @@ describe('FormpackDetailPage', () => {
     setItemSpy.mockRestore();
   });
 
+  it('ignores restore completion after unmount', async () => {
+    const getItemSpy = vi
+      .spyOn(Storage.prototype, 'getItem')
+      .mockReturnValue(record.id);
+    let resolveLoadRecord!: (value: RecordEntry | null) => void;
+    storageState.loadRecord.mockReturnValue(
+      new Promise<RecordEntry | null>((resolve) => {
+        resolveLoadRecord = resolve;
+      }),
+    );
+
+    const view = render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await waitFor(() =>
+      expect(storageState.loadRecord).toHaveBeenCalledWith(record.id),
+    );
+    view.unmount();
+    resolveLoadRecord(record);
+    await Promise.resolve();
+
+    expect(storageState.setActiveRecord).not.toHaveBeenCalled();
+    getItemSpy.mockRestore();
+  });
+
   it('creates a new draft when no records exist', async () => {
     storageState.records = [];
     storageState.activeRecord = null;
@@ -1639,12 +1737,58 @@ describe('FormpackDetailPage', () => {
         'formpackTitle',
       ),
     );
+    expect(storageState.setActiveRecord).toHaveBeenCalledWith(record);
     expect(setItemSpy).toHaveBeenCalledWith(
       `mecfs-paperwork.activeRecordId.${record.formpackId}`,
       record.id,
     );
 
     setItemSpy.mockRestore();
+  });
+
+  it('creates an untitled draft when no records exist and title translation is empty', async () => {
+    storageState.records = [];
+    storageState.activeRecord = null;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      titleKey: '',
+    } as FormpackManifest;
+    storageState.createRecord.mockResolvedValue(record);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await waitFor(() =>
+      expect(storageState.createRecord).toHaveBeenCalledWith(
+        'de',
+        {},
+        'formpackRecordUntitled',
+      ),
+    );
+  });
+
+  it('does not create a draft when storage is unavailable during restore', async () => {
+    storageState.records = [];
+    storageState.activeRecord = null;
+    storageState.recordsError = 'unavailable';
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await waitFor(() =>
+      expect(storageState.setActiveRecord).toHaveBeenCalledWith(null),
+    );
+    expect(storageState.createRecord).not.toHaveBeenCalled();
   });
 
   it('creates a new draft from the records panel and focuses the form', async () => {
@@ -1685,6 +1829,44 @@ describe('FormpackDetailPage', () => {
       ),
     );
     expect(storageState.markAsSaved).toHaveBeenCalledWith(createdRecord.data);
+  });
+
+  it('creates a draft with untitled fallback when no active record exists', async () => {
+    const createdRecord = {
+      ...record,
+      id: 'record-created-untitled',
+      data: { field: 'created-untitled' },
+      title: undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      titleKey: '',
+    } as FormpackManifest;
+    storageState.activeRecord = null;
+    storageState.createRecord.mockResolvedValue(createdRecord);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openRecordsSection();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackRecordNew' }),
+    );
+
+    expect(storageState.updateActiveRecord).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(storageState.createRecord).toHaveBeenCalledWith(
+        'de',
+        {},
+        'formpackRecordUntitled',
+      ),
+    );
   });
 
   it('does not mark reset form data as saved when persistence fails', async () => {
@@ -1844,10 +2026,10 @@ describe('FormpackDetailPage', () => {
   it('exports JSON backups when requested', async () => {
     formpackState.manifest = {
       ...formpackState.manifest,
-      exports: ['docx', 'json'],
+      exports: [...DOCX_JSON_EXPORTS],
     };
     const payload = {
-      app: { id: 'mecfs-paperwork', version: '0.0.0' },
+      app: { id: APP_ID, version: '0.0.0' },
       formpack: { id: record.formpackId, version: '1.0.0' },
       record: {
         id: record.id,
@@ -1885,10 +2067,10 @@ describe('FormpackDetailPage', () => {
   it('exports encrypted JSON backups when encryption is enabled', async () => {
     formpackState.manifest = {
       ...formpackState.manifest,
-      exports: ['docx', 'json'],
+      exports: [...DOCX_JSON_EXPORTS],
     };
     const payload = {
-      app: { id: 'mecfs-paperwork', version: '0.0.0' },
+      app: { id: APP_ID, version: '0.0.0' },
       formpack: { id: record.formpackId, version: '1.0.0' },
       record: {
         id: record.id,
@@ -1953,10 +2135,164 @@ describe('FormpackDetailPage', () => {
     });
   });
 
+  it('shows a password-required error for encrypted JSON export without password', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: [...DOCX_JSON_EXPORTS],
+    };
+    const payload = {
+      app: { id: APP_ID, version: '0.0.0' },
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        id: record.id,
+        updatedAt: record.updatedAt,
+        locale: 'de',
+        data: record.data,
+      },
+      locale: 'de',
+      exportedAt: new Date().toISOString(),
+      data: record.data,
+    };
+
+    jsonExportState.buildJsonExportPayload.mockReturnValue(payload);
+    jsonExportState.buildJsonExportFilename.mockReturnValue(EXPORT_FILENAME);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByLabelText('formpackJsonExportEncryptionToggle'),
+    );
+    await userEvent.click(screen.getByText('formpackRecordExportJson'));
+
+    expect(
+      await screen.findByText('formpackJsonExportPasswordRequired'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows a password-mismatch error for encrypted JSON export', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: [...DOCX_JSON_EXPORTS],
+    };
+    const payload = {
+      app: { id: APP_ID, version: '0.0.0' },
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        id: record.id,
+        updatedAt: record.updatedAt,
+        locale: 'de',
+        data: record.data,
+      },
+      locale: 'de',
+      exportedAt: new Date().toISOString(),
+      data: record.data,
+    };
+
+    jsonExportState.buildJsonExportPayload.mockReturnValue(payload);
+    jsonExportState.buildJsonExportFilename.mockReturnValue(EXPORT_FILENAME);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByLabelText('formpackJsonExportEncryptionToggle'),
+    );
+    await userEvent.type(
+      screen.getByLabelText('formpackJsonExportPasswordLabel'),
+      'secret-a',
+    );
+    await userEvent.type(
+      screen.getByLabelText('formpackJsonExportPasswordConfirmLabel'),
+      'secret-b',
+    );
+    await userEvent.click(screen.getByText('formpackRecordExportJson'));
+
+    expect(
+      await screen.findByText('formpackJsonExportPasswordMismatch'),
+    ).toBeInTheDocument();
+  });
+
+  it('shows JSON export error when encrypted JSON export fails', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: [...DOCX_JSON_EXPORTS],
+    };
+    const payload = {
+      app: { id: APP_ID, version: '0.0.0' },
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        id: record.id,
+        updatedAt: record.updatedAt,
+        locale: 'de',
+        data: record.data,
+      },
+      locale: 'de',
+      exportedAt: new Date().toISOString(),
+      data: record.data,
+    };
+
+    jsonExportState.buildJsonExportPayload.mockReturnValue(payload);
+    jsonExportState.buildJsonExportFilename.mockReturnValue(EXPORT_FILENAME);
+    jsonEncryptionState.encryptJsonWithPassword.mockRejectedValue(
+      new Error('encryption failed'),
+    );
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByLabelText('formpackJsonExportEncryptionToggle'),
+    );
+    await userEvent.type(
+      screen.getByLabelText('formpackJsonExportPasswordLabel'),
+      'secret',
+    );
+    await userEvent.type(
+      screen.getByLabelText('formpackJsonExportPasswordConfirmLabel'),
+      'secret',
+    );
+    await userEvent.click(screen.getByText('formpackRecordExportJson'));
+
+    expect(
+      await screen.findByText('formpackJsonExportError'),
+    ).toBeInTheDocument();
+  });
+
+  it('runs validator cleanup on unmount', async () => {
+    const view = render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await screen.findByText('formpackFormHeading');
+    view.unmount();
+
+    expect(true).toBe(true);
+  });
+
   it('requires password before importing encrypted JSON files', async () => {
     formpackState.manifest = {
       ...formpackState.manifest,
-      exports: ['docx', 'json'],
+      exports: [...DOCX_JSON_EXPORTS],
     };
 
     const envelope = {

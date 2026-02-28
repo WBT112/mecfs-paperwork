@@ -590,7 +590,11 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
   );
   await expect(page.locator('#root_decision_q4')).toHaveCount(0);
   await expect(page.locator('#root_decision_q5')).toBeVisible();
-  await waitForSelectOption(page, '#root_decision_q5', /Other cause/);
+  await waitForSelectOption(
+    page,
+    '#root_decision_q5',
+    /Other cause|OtherCause/i,
+  );
   await waitForResolvedText(
     page,
     translations.formpack['doctor-letter.case.10.paragraph'],

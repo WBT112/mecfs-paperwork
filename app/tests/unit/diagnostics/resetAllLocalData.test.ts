@@ -123,4 +123,27 @@ describe('resetAllLocalData', () => {
 
     expect(mockReload).toHaveBeenCalledOnce();
   });
+
+  it('rejects when deleteDatabase reports an error', async () => {
+    const deleteError = new Error('delete failed');
+    const request = {
+      error: deleteError,
+      set onsuccess(_: () => void) {
+        /* noop */
+      },
+      set onerror(fn: () => void) {
+        fn();
+      },
+      set onblocked(_: () => void) {
+        /* noop */
+      },
+    };
+    const deleteDatabase = vi.fn().mockReturnValue(request);
+
+    vi.stubGlobal('indexedDB', { deleteDatabase });
+    vi.stubGlobal('navigator', {});
+
+    await expect(resetAllLocalData()).rejects.toBe(deleteError);
+    expect(mockReload).not.toHaveBeenCalled();
+  });
 });

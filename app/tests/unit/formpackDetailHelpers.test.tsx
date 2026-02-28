@@ -50,6 +50,7 @@ const TEST_MED_A = 'med-a';
 const TEST_INDICATION_A = 'indication-a';
 const TEST_INDICATION_B = 'indication-b';
 const TEST_NOT_BOOLEAN = 'not-boolean';
+const DECISION_CASE_PARAGRAPHS_PATH = 'decision.caseParagraphs';
 
 describe('formpack detail helpers', () => {
   beforeEach(() => {
@@ -504,7 +505,7 @@ describe('formpack detail helpers', () => {
           undefined,
           'Decision',
           undefined,
-          'decision.caseParagraphs',
+          DECISION_CASE_PARAGRAPHS_PATH,
           'decision',
         )}
       </>,
@@ -532,6 +533,93 @@ describe('formpack detail helpers', () => {
       <>{detail.renderPreviewArray(['alpha'], undefined, undefined)}</>,
     );
     expect(fallbackArrayMarkup).toContain('alpha');
+
+    expect(
+      detail.buildPreviewEntry({
+        entry: [],
+        key: 'empty-array',
+        childSchema: { type: 'array' } as RJSFSchema,
+        childUi: {} as UiSchema,
+        childLabel: 'Empty array',
+        resolveValue: (value) => String(value),
+        fieldPath: 'root.emptyArray',
+        sectionKey: 'root',
+      }),
+    ).toBeNull();
+
+    expect(
+      detail.buildPreviewEntry({
+        entry: {},
+        key: 'empty-object',
+        childSchema: { type: 'object', properties: {} } as RJSFSchema,
+        childUi: {} as UiSchema,
+        childLabel: 'Empty object',
+        resolveValue: (value) => String(value),
+        fieldPath: 'root.emptyObject',
+        sectionKey: 'root',
+      }),
+    ).toBeNull();
+
+    const nestedNullsMarkup = renderToStaticMarkup(
+      <>{detail.renderPreviewArray([[], {}], undefined, undefined)}</>,
+    );
+    expect(nestedNullsMarkup).toBe('');
+
+    const objectOnlyNestedMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewObject(
+          { nested: { value: 'x' } },
+          {
+            type: 'object',
+            properties: {
+              nested: {
+                type: 'object',
+                properties: {
+                  value: { type: 'string', title: 'Value' },
+                },
+              },
+            },
+          } as RJSFSchema,
+          {
+            nested: {
+              value: { 'ui:title': 'Value' },
+            },
+          } as UiSchema,
+        )}
+      </>,
+    );
+    expect(objectOnlyNestedMarkup).toContain('Value');
+
+    const paragraphArrayWithoutLabel = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewArray(
+          ['P1'],
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          DECISION_CASE_PARAGRAPHS_PATH,
+          'decision',
+        )}
+      </>,
+    );
+    expect(paragraphArrayWithoutLabel).toContain('P1');
+    expect(paragraphArrayWithoutLabel).not.toContain('<h4>');
+
+    const emptyParagraphArrayMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewArray(
+          [' ', null],
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          DECISION_CASE_PARAGRAPHS_PATH,
+          'decision',
+        )}
+      </>,
+    );
+    expect(emptyParagraphArrayMarkup).toBe('');
   });
 
   it('exposes static helpers for letter layout detection', () => {

@@ -469,6 +469,49 @@ describe('PdfExportButton', () => {
     }
   });
 
+  it('ignores stale requestAnimationFrame ticks after timeout cancellation', async () => {
+    const buildPayload = vi.fn().mockResolvedValue({
+      document: <div />,
+      filename: pdfFilename,
+    });
+
+    const originalRaf = globalThis.requestAnimationFrame;
+    const originalCancel = globalThis.cancelAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    const rafSpy = vi.fn((callback: FrameRequestCallback) => {
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    });
+    const cancelSpy = vi.fn();
+
+    globalThis.requestAnimationFrame = rafSpy;
+    globalThis.cancelAnimationFrame = cancelSpy;
+
+    try {
+      render(
+        <PdfExportButton
+          buildPayload={buildPayload}
+          label={exportLabel}
+          loadingLabel={loadingLabel}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: exportLabel }));
+      await waitFor(() => expect(runtimeRenderSpy).toHaveBeenCalled());
+
+      expect(rafCallbacks.length).toBeGreaterThan(0);
+      const firstTick = rafCallbacks[0];
+      const rafCallsBeforeTick = rafSpy.mock.calls.length;
+      firstTick(1);
+
+      expect(rafSpy.mock.calls.length).toBe(rafCallsBeforeTick);
+      expect(cancelSpy).toHaveBeenCalled();
+    } finally {
+      globalThis.requestAnimationFrame = originalRaf;
+      globalThis.cancelAnimationFrame = originalCancel;
+    }
+  });
+
   it('does not update request state when unmounted before payload resolution', async () => {
     let resolvePayload: ((payload: PdfExportPayload) => void) | null = null;
     const buildPayload = vi.fn(
