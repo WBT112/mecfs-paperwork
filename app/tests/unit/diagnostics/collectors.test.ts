@@ -229,6 +229,26 @@ describe('collectDiagnosticsBundle', () => {
     expect(bundle.errors).toBeDefined();
   });
 
+  it('falls back to unknown platform when userAgentData platform is blank', async () => {
+    vi.stubGlobal('navigator', {
+      userAgent: TEST_USER_AGENT,
+      userAgentData: { platform: '   ' },
+      language: 'de',
+      languages: ['de', 'en'],
+      cookieEnabled: true,
+      onLine: true,
+      serviceWorker: {
+        getRegistration: vi.fn().mockResolvedValue(undefined),
+      },
+      storage: {
+        estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 50000 }),
+      },
+    });
+
+    const bundle = await collectDiagnosticsBundle();
+    expect(bundle.browser.platform).toBe('unknown');
+  });
+
   it('collects cache info with entry counts', async () => {
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.caches).toHaveLength(1);
@@ -282,6 +302,17 @@ describe('collectDiagnosticsBundle', () => {
 
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.performance).toEqual({ supported: false, measures: [] });
+  });
+
+  it('returns empty measures when performance.getEntriesByType throws', async () => {
+    vi.spyOn(globalThis.performance, 'getEntriesByType').mockImplementation(
+      () => {
+        throw new Error('performance failed');
+      },
+    );
+
+    const bundle = await collectDiagnosticsBundle();
+    expect(bundle.performance).toEqual({ supported: true, measures: [] });
   });
 
   it('handles missing serviceWorker API', async () => {
@@ -386,6 +417,32 @@ describe('collectDiagnosticsBundle', () => {
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.serviceWorker.registered).toBe(true);
     expect(bundle.serviceWorker.state).toBe('installed');
+  });
+
+  it('falls back to installing worker state when active and waiting are null', async () => {
+    vi.stubGlobal('navigator', {
+      userAgent: TEST_USER_AGENT,
+      userAgentData: { platform: TEST_PLATFORM },
+      language: 'de',
+      languages: ['de', 'en'],
+      cookieEnabled: true,
+      onLine: true,
+      serviceWorker: {
+        getRegistration: vi.fn().mockResolvedValue({
+          scope: TEST_SW_SCOPE,
+          active: null,
+          waiting: null,
+          installing: { state: 'installing' },
+        }),
+      },
+      storage: {
+        estimate: vi.fn().mockResolvedValue({ usage: 1000, quota: 50000 }),
+      },
+    });
+
+    const bundle = await collectDiagnosticsBundle();
+    expect(bundle.serviceWorker.registered).toBe(true);
+    expect(bundle.serviceWorker.state).toBe('installing');
   });
 
   // ── Service Worker: getRegistration throwing ──
@@ -554,6 +611,47 @@ describe('collectDiagnosticsBundle', () => {
     expect(bundle.formpacks).toEqual([]);
   });
 
+  it('returns empty formpacks when formpackMeta getAll fails', async () => {
+    const db = {
+      objectStoreNames: {
+        contains: (name: string) => name === 'formpackMeta',
+      },
+      transaction: () => ({
+        objectStore: () => ({
+          count: () => {
+            const req = {
+              result: 0,
+              error: null as unknown,
+              onsuccess: null as (() => void) | null,
+              onerror: null as (() => void) | null,
+            };
+            setTimeout(() => req.onsuccess?.(), 0);
+            return req;
+          },
+          getAll: () => {
+            const req = {
+              result: [],
+              error: new Error('getAll failed'),
+              onsuccess: null as (() => void) | null,
+              onerror: null as (() => void) | null,
+            };
+            setTimeout(() => req.onerror?.(), 0);
+            return req;
+          },
+        }),
+      }),
+      close: vi.fn(),
+    };
+
+    vi.stubGlobal('indexedDB', {
+      databases: vi.fn().mockResolvedValue([{ name: DB_NAME }]),
+      open: vi.fn().mockImplementation(() => fakeOpenRequest(db)),
+    });
+
+    const bundle = await collectDiagnosticsBundle();
+    expect(bundle.formpacks).toEqual([]);
+  });
+
   // ── FormpackMeta: indexedDB undefined ──
 
   it('returns empty formpacks when indexedDB is undefined', async () => {
@@ -591,6 +689,13 @@ describe('collectDiagnosticsBundle', () => {
       keys: vi.fn().mockRejectedValue(new Error('keys failed')),
       open: vi.fn(),
     });
+
+    const bundle = await collectDiagnosticsBundle();
+    expect(bundle.caches).toEqual([]);
+  });
+
+  it('returns empty caches when caches feature is absent', async () => {
+    Reflect.deleteProperty(globalThis, 'caches');
 
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.caches).toEqual([]);

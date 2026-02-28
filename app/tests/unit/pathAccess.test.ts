@@ -6,6 +6,9 @@ import {
   setPathValueMutableSafe,
 } from '../../src/lib/pathAccess';
 
+const LIST_ITEM_NAME_PATH = 'list.0.name';
+const CREATED_VALUE = 'created';
+
 const ARRAY_VALUE_PATH = 'items.1.value';
 const NESTED_ARRAY_VALUE_PATH = 'nested.0.value';
 
@@ -84,9 +87,33 @@ describe('pathAccess', () => {
     it('creates intermediate containers for arrays and objects', () => {
       const target = { list: [] } as Record<string, unknown>;
 
-      setPathValueMutableSafe(target, 'list.0.name', 'created');
+      setPathValueMutableSafe(target, LIST_ITEM_NAME_PATH, CREATED_VALUE);
 
-      expect(getPathValue(target, 'list.0.name')).toBe('created');
+      expect(getPathValue(target, LIST_ITEM_NAME_PATH)).toBe(CREATED_VALUE);
+    });
+
+    it('writes directly to array leaf indexes', () => {
+      const target = { list: [] } as Record<string, unknown>;
+
+      setPathValueMutableSafe(target, 'list.0', 'first');
+
+      expect(getPathValue(target, 'list.0')).toBe('first');
+    });
+
+    it('creates array containers when the next path segment is numeric', () => {
+      const target = {} as Record<string, unknown>;
+
+      setPathValueMutableSafe(target, LIST_ITEM_NAME_PATH, CREATED_VALUE);
+
+      expect(getPathValue(target, LIST_ITEM_NAME_PATH)).toBe(CREATED_VALUE);
+    });
+
+    it('replaces non-object array entries with nested containers', () => {
+      const target = { list: [5] } as Record<string, unknown>;
+
+      setPathValueMutableSafe(target, 'list.0.value', 'created');
+
+      expect(getPathValue(target, 'list.0.value')).toBe('created');
     });
 
     it('ignores writes when path is empty or mismatched for arrays', () => {
@@ -107,6 +134,15 @@ describe('pathAccess', () => {
 
       expect(target).toEqual({});
       expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+    });
+
+    it('ignores writes when target is not a record at runtime', () => {
+      const target = 1;
+
+      // @ts-expect-error - runtime hardening for invalid caller input
+      setPathValueMutableSafe(target, 'a.b', 'ignored');
+
+      expect(target).toBe(1);
     });
   });
 });

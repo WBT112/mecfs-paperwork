@@ -6,6 +6,8 @@ import {
   tryParseJsonEncryptionEnvelope,
 } from '../../src/lib/jsonEncryption';
 
+const ENCRYPTED_JSON_KIND = 'mecfs-paperwork-json-encrypted';
+
 describe('jsonEncryption', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -22,7 +24,7 @@ describe('jsonEncryption', () => {
     const decrypted = await decryptJsonWithPassword(envelope, password);
 
     expect(decrypted).toBe(payload);
-    expect(envelope.kind).toBe('mecfs-paperwork-json-encrypted');
+    expect(envelope.kind).toBe(ENCRYPTED_JSON_KIND);
     expect(envelope.version).toBe(1);
     expect(envelope.cipher).toBe('AES-GCM');
   });
@@ -49,13 +51,14 @@ describe('jsonEncryption', () => {
   it('returns null for empty and invalid JSON envelope inputs', () => {
     expect(tryParseJsonEncryptionEnvelope('')).toBeNull();
     expect(tryParseJsonEncryptionEnvelope('{invalid json')).toBeNull();
+    expect(tryParseJsonEncryptionEnvelope('[]')).toBeNull();
   });
 
   it('throws invalid_envelope for malformed encrypted payloads', async () => {
     await expect(
       decryptJsonWithPassword(
         {
-          kind: 'mecfs-paperwork-json-encrypted',
+          kind: ENCRYPTED_JSON_KIND,
           version: 1,
           cipher: 'AES-GCM',
           tagLength: 128,
@@ -77,6 +80,31 @@ describe('jsonEncryption', () => {
 
     await expect(
       encryptJsonWithPassword('{"value":"test"}', 'secret'),
+    ).rejects.toMatchObject({ code: 'crypto_unsupported' });
+
+    vi.stubGlobal('crypto', originalCrypto);
+  });
+
+  it('throws crypto_unsupported when decrypting without crypto support', async () => {
+    const originalCrypto = globalThis.crypto;
+    vi.stubGlobal('crypto', undefined);
+
+    await expect(
+      decryptJsonWithPassword(
+        {
+          kind: ENCRYPTED_JSON_KIND,
+          version: 1,
+          cipher: 'AES-GCM',
+          tagLength: 128,
+          kdf: 'PBKDF2',
+          hash: 'SHA-256',
+          iterations: 1,
+          salt: 'a',
+          iv: 'b',
+          ciphertext: 'c',
+        },
+        'secret',
+      ),
     ).rejects.toMatchObject({ code: 'crypto_unsupported' });
 
     vi.stubGlobal('crypto', originalCrypto);

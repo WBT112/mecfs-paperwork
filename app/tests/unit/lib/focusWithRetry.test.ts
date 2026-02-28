@@ -77,4 +77,22 @@ describe('focusWithRetry', () => {
     expect(focusSpy).not.toHaveBeenCalled();
     expect(onResolved).not.toHaveBeenCalled();
   });
+
+  it('resolves after retries even when no fallback selector is provided', async () => {
+    vi.useFakeTimers();
+    const root = document.createElement('div');
+    const onResolved = vi.fn();
+
+    focusWithRetry({
+      getRoot: () => root,
+      selector: '.missing',
+      maxAttempts: 1,
+      retryDelayMs: 10,
+      onResolved,
+    });
+
+    await vi.runAllTimersAsync();
+
+    expect(onResolved).toHaveBeenCalledTimes(1);
+  });
 });

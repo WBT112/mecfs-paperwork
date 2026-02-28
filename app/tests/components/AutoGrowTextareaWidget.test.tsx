@@ -7,6 +7,7 @@ import {
   AccessibleSelectWidget,
   AttachmentsAssistantWidget,
 } from '../../src/lib/rjsfWidgets';
+import i18n from '../../src/i18n';
 import { adjustTextareaHeight } from '../../src/lib/textareaAutoGrow';
 
 const buildTextareaProps = (
@@ -323,6 +324,46 @@ describe('AccessibleSelectWidget', () => {
     expect(select).toHaveAttribute('multiple');
   });
 
+  it('emits selected values for multiple select change, blur, and focus', () => {
+    const onChange = vi.fn();
+    const onBlur = vi.fn();
+    const onFocus = vi.fn();
+
+    render(
+      <AccessibleSelectWidget
+        {...buildSelectProps({
+          multiple: true,
+          value: ['a'],
+          onChange,
+          onBlur,
+          onFocus,
+        })}
+      />,
+    );
+
+    const select = screen.getByRole<HTMLSelectElement>('listbox');
+    const options = screen.getAllByRole<HTMLOptionElement>('option');
+    options[0].selected = true;
+    options[2].selected = true;
+
+    fireEvent.change(select);
+    fireEvent.blur(select);
+    fireEvent.focus(select);
+
+    expect(onChange).toHaveBeenCalledWith(['a', 'c']);
+    expect(onBlur).toHaveBeenCalledWith('testSelect', expect.any(Array));
+    expect(onFocus).toHaveBeenCalledWith('testSelect', expect.any(Array));
+  });
+
+  it('falls back to empty select value when no enum option is selected', () => {
+    render(
+      <AccessibleSelectWidget {...buildSelectProps({ value: undefined })} />,
+    );
+
+    const select = screen.getByRole<HTMLSelectElement>('combobox');
+    expect(select.value).toBe('');
+  });
+
   it('uses htmlName when provided', () => {
     render(
       <AccessibleSelectWidget
@@ -436,5 +477,66 @@ describe('AttachmentsAssistantWidget', () => {
       'attachmentsFreeText',
       expect.any(String),
     );
+  });
+
+  it('uses language fallback locale and renders markdown hint text', () => {
+    vi.spyOn(i18n, 'resolvedLanguage', 'get').mockReturnValue(undefined);
+    vi.spyOn(i18n, 'language', 'get').mockReturnValue('en-US');
+    const getFixedTSpy = vi.spyOn(i18n, 'getFixedT').mockReturnValue(((
+      key: string,
+      options?: { defaultValue?: string },
+    ) => {
+      if (key === 'offlabel-antrag.attachmentsAssistant.additionalLabel') {
+        return 'Attachments\n**Hint Text**';
+      }
+      return options?.defaultValue ?? key;
+    }) as unknown as ReturnType<typeof i18n.getFixedT>);
+
+    render(
+      <AttachmentsAssistantWidget {...buildAttachmentsAssistantProps()} />,
+    );
+
+    expect(getFixedTSpy).toHaveBeenCalledWith('en', 'formpack:offlabel-antrag');
+    expect(screen.getAllByText('Attachments')).toHaveLength(2);
+    expect(screen.getByText('Hint Text')).toBeInTheDocument();
+  });
+
+  it('renders non-markdown hint text unchanged', () => {
+    vi.spyOn(i18n, 'getFixedT').mockReturnValue(((
+      key: string,
+      options?: { defaultValue?: string },
+    ) => {
+      if (key === 'offlabel-antrag.attachmentsAssistant.additionalLabel') {
+        return 'Anlagen\nHinweis ohne Markdown';
+      }
+      return options?.defaultValue ?? key;
+    }) as unknown as ReturnType<typeof i18n.getFixedT>);
+
+    render(
+      <AttachmentsAssistantWidget {...buildAttachmentsAssistantProps()} />,
+    );
+
+    expect(screen.getByText('Hinweis ohne Markdown')).toBeInTheDocument();
+  });
+
+  it('falls back to default locale when language sources are undefined', () => {
+    vi.spyOn(i18n, 'resolvedLanguage', 'get').mockReturnValue(undefined);
+    vi.spyOn(i18n, 'language', 'get').mockReturnValue(
+      undefined as unknown as string,
+    );
+    const getFixedTSpy = vi
+      .spyOn(i18n, 'getFixedT')
+      .mockReturnValue(
+        ((key: string, options?: { defaultValue?: string }) =>
+          options?.defaultValue ?? key) as unknown as ReturnType<
+          typeof i18n.getFixedT
+        >,
+      );
+
+    render(
+      <AttachmentsAssistantWidget {...buildAttachmentsAssistantProps()} />,
+    );
+
+    expect(getFixedTSpy).toHaveBeenCalledWith('de', 'formpack:offlabel-antrag');
   });
 });

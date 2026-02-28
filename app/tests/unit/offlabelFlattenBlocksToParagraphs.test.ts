@@ -122,4 +122,45 @@ describe('flattenBlocksToParagraphs', () => {
       'Dritter Punkt',
     ]);
   });
+
+  it('keeps short wrapped lines as a single list paragraph', () => {
+    const paragraphs = flattenBlocksToParagraphs(
+      [
+        {
+          kind: 'list',
+          items: ['kurz'],
+        },
+      ],
+      { listWrapAt: 10, listPrefix: '• ' },
+    );
+
+    expect(paragraphs).toEqual(['• kurz']);
+  });
+
+  it('wraps long single words into continuation lines', () => {
+    const paragraphs = flattenBlocksToParagraphs(
+      [
+        {
+          kind: 'list',
+          items: ['ultralangeswort ohneumbruch', 'mega'],
+        },
+      ],
+      { listWrapAt: 4, listPrefix: '* ' },
+    );
+
+    expect(paragraphs).toEqual([
+      '* ultralangeswort',
+      '\tohneumbruch',
+      '* mega',
+    ]);
+  });
+
+  it('ignores unknown block kinds gracefully', () => {
+    const paragraphs = flattenBlocksToParagraphs([
+      { kind: 'paragraph', text: 'sichtbar' },
+      { kind: 'unknown', text: 'ignored' } as never,
+    ]);
+
+    expect(paragraphs).toEqual(['sichtbar']);
+  });
 });

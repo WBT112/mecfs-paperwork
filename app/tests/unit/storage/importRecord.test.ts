@@ -130,6 +130,35 @@ describe('importRecordWithSnapshots', () => {
     );
   });
 
+  it('keeps existing title on overwrite when no title is provided', async () => {
+    const existingRecord = {
+      id: EXISTING_RECORD_ID,
+      formpackId: TEST_FORMPACK_ID,
+      title: 'Existing Title',
+      locale: 'en',
+      data: { a: 0 },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    recordStore.get.mockResolvedValue(existingRecord);
+
+    await importRecordWithSnapshots({
+      formpackId: TEST_FORMPACK_ID,
+      data: { a: 3 },
+      locale: 'en',
+      mode: 'overwrite',
+      recordId: EXISTING_RECORD_ID,
+    });
+
+    expect(recordStore.put).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: EXISTING_RECORD_ID,
+        title: 'Existing Title',
+        data: { a: 3 },
+      }),
+    );
+  });
+
   it('throws an error for overwrite mode if recordId is missing', async () => {
     const options = {
       formpackId: TEST_FORMPACK_ID,

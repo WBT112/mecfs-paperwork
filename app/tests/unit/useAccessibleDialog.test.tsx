@@ -206,6 +206,125 @@ describe('useAccessibleDialog', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
+  it('returns early when opened without a dialog element', () => {
+    const onClose = vi.fn();
+    render(<DialogHarness isOpen onClose={onClose} showDialog={false} />);
+
+    dispatchKey('Escape');
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('falls back to element.focus() when preventScroll focus is unsupported', async () => {
+    const onClose = vi.fn();
+    const { getByTestId } = render(<DialogHarness isOpen onClose={onClose} />);
+    const first = getByTestId('first') as HTMLButtonElement;
+
+    const focusSpy = vi
+      .spyOn(first, 'focus')
+      .mockImplementationOnce(() => {
+        throw new Error('focus options unsupported');
+      })
+      .mockImplementation(function (this: HTMLButtonElement) {
+        HTMLElement.prototype.focus.call(this);
+      });
+
+    await flushOpenTimer();
+
+    expect(first).toHaveFocus();
+    expect(focusSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('handles Tab when document.activeElement is not an HTMLElement', async () => {
+    const onClose = vi.fn();
+    render(<DialogHarness isOpen onClose={onClose} />);
+    await flushOpenTimer();
+
+    const originalDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'activeElement',
+    );
+    Object.defineProperty(document, 'activeElement', {
+      configurable: true,
+      get: () => document as unknown as Element,
+    });
+
+    try {
+      const tabEvent = dispatchKey('Tab');
+      expect(tabEvent.defaultPrevented).toBe(true);
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(document, 'activeElement', originalDescriptor);
+      } else {
+        Reflect.deleteProperty(document, 'activeElement');
+      }
+    }
+  });
+
+  it('does not prevent Tab when focus is inside dialog and no wrap condition is met', async () => {
+    const onClose = vi.fn();
+    const { getByTestId } = render(
+      <DialogHarness isOpen onClose={onClose} useInitialFocus />,
+    );
+
+    await flushOpenTimer();
+
+    const first = getByTestId('first');
+    first.focus();
+    const tabEvent = dispatchKey('Tab');
+
+    expect(tabEvent.defaultPrevented).toBe(false);
+  });
+
+  it('opens when activeElement is not an HTMLElement', async () => {
+    const onClose = vi.fn();
+    const originalDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      'activeElement',
+    );
+    Object.defineProperty(document, 'activeElement', {
+      configurable: true,
+      get: () => document as unknown as Element,
+    });
+
+    try {
+      render(<DialogHarness isOpen onClose={onClose} />);
+      await flushOpenTimer();
+
+      const escapeEvent = dispatchKey('Escape');
+      expect(escapeEvent.defaultPrevented).toBe(true);
+      expect(onClose).toHaveBeenCalledTimes(1);
+    } finally {
+      if (originalDescriptor) {
+        Object.defineProperty(document, 'activeElement', originalDescriptor);
+      } else {
+        Reflect.deleteProperty(document, 'activeElement');
+      }
+    }
+  });
+
+  it('uses first element when Array.at fallback is unavailable', async () => {
+    const onClose = vi.fn();
+    const atSpy = vi
+      .spyOn(Array.prototype, 'at')
+      .mockReturnValue(undefined as never);
+
+    try {
+      const { getByTestId } = render(
+        <DialogHarness isOpen onClose={onClose} />,
+      );
+      await flushOpenTimer();
+
+      const outside = getByTestId('outside');
+      outside.focus();
+      const shiftTabEvent = dispatchKey('Tab', true);
+
+      expect(shiftTabEvent.defaultPrevented).toBe(true);
+      expect(getByTestId('first')).toHaveFocus();
+    } finally {
+      atSpy.mockRestore();
+    }
+  });
+
   it('skips focus restoration when the original focused element was removed', async () => {
     const onClose = vi.fn();
     const { getByTestId, queryByTestId, rerender } = render(

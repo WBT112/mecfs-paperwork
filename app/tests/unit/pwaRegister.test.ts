@@ -169,6 +169,14 @@ describe('registerServiceWorker', () => {
     visibilityHandler(new Event('visibilitychange'));
     await Promise.resolve();
     expect(getRegistration).toHaveBeenCalledTimes(3);
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden',
+    });
+    visibilityHandler(new Event('visibilitychange'));
+    await Promise.resolve();
+    expect(getRegistration).toHaveBeenCalledTimes(3);
   });
 
   it('keeps startup resilient when registration update checks fail', async () => {

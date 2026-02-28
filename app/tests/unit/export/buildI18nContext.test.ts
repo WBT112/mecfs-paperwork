@@ -149,5 +149,16 @@ describe('buildI18nContext', () => {
       const result = buildI18nContext('test', 'en');
       expect(result).toEqual({ t: {} });
     });
+
+    it('keeps alias resolution stable for prefixes without path segments', () => {
+      vi.spyOn(i18n, 'getResourceBundle').mockReturnValue({
+        'test.export.title': 'Title',
+      });
+
+      const result = buildI18nContext('test', 'en', '.');
+
+      expect(result.t).toEqual({});
+      expect(result.t).not.toHaveProperty('__PACK_ID__');
+    });
   });
 });

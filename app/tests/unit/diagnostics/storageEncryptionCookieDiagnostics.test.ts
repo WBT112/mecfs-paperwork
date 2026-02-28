@@ -2,6 +2,30 @@ import { describe, expect, it, vi } from 'vitest';
 import { getStorageEncryptionCookieDiagnostics } from '../../../src/lib/diagnostics/storageEncryptionCookieDiagnostics';
 
 describe('getStorageEncryptionCookieDiagnostics', () => {
+  it('reports missing key-cookie when document is unavailable', () => {
+    const originalDocument = globalThis.document;
+    vi.stubGlobal('document', undefined);
+
+    try {
+      const diagnostics = getStorageEncryptionCookieDiagnostics();
+      expect(diagnostics.keyCookiePresent).toBe(false);
+    } finally {
+      vi.stubGlobal('document', originalDocument);
+    }
+  });
+
+  it('reports missing key-cookie when cookie string is empty', () => {
+    const originalDocument = globalThis.document;
+    vi.stubGlobal('document', { cookie: '' } as Document);
+
+    try {
+      const diagnostics = getStorageEncryptionCookieDiagnostics();
+      expect(diagnostics.keyCookiePresent).toBe(false);
+    } finally {
+      vi.stubGlobal('document', originalDocument);
+    }
+  });
+
   it('reports key-cookie presence when cookie exists', () => {
     document.cookie = 'mecfs-paperwork.storage-key=secret';
 
@@ -9,6 +33,18 @@ describe('getStorageEncryptionCookieDiagnostics', () => {
 
     expect(diagnostics.keyCookiePresent).toBe(true);
     expect(diagnostics.secureFlagVerifiable).toBe(false);
+  });
+
+  it('reports missing key-cookie when only unrelated cookie entries exist', () => {
+    const originalDocument = globalThis.document;
+    vi.stubGlobal('document', { cookie: 'other-cookie=value' } as Document);
+
+    try {
+      const diagnostics = getStorageEncryptionCookieDiagnostics();
+      expect(diagnostics.keyCookiePresent).toBe(false);
+    } finally {
+      vi.stubGlobal('document', originalDocument);
+    }
   });
 
   it('reports https context when protocol is https', () => {

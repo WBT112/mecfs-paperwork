@@ -119,4 +119,38 @@ describe('docxLazy', () => {
     cancel();
     expect(cancelIdleCallback).toHaveBeenCalledWith(7);
   });
+
+  it('skips preload execution when idle callback fires after cancellation', async () => {
+    const preloadTask = vi.fn(async () => undefined);
+    let idleCallback: (() => void) | undefined;
+    const requestIdleCallback = vi.fn((callback: () => void) => {
+      idleCallback = callback;
+      return 13;
+    });
+
+    vi.stubGlobal(
+      'requestIdleCallback',
+      requestIdleCallback as unknown as (...args: unknown[]) => number,
+    );
+
+    const cancel = scheduleDocxPreload(preloadTask);
+    cancel();
+
+    idleCallback?.();
+    await Promise.resolve();
+
+    expect(preloadTask).not.toHaveBeenCalled();
+  });
+
+  it('swallows preload task failures', async () => {
+    vi.useFakeTimers();
+    const preloadTask = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValue(new Error('preload failed'));
+
+    scheduleDocxPreload(preloadTask);
+    await vi.runAllTimersAsync();
+
+    expect(preloadTask).toHaveBeenCalledTimes(1);
+  });
 });

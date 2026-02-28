@@ -65,6 +65,8 @@ const CopyButton = getComponent<IconButtonProps>(
   formpackTemplates.ButtonTemplates?.CopyButton,
   'CopyButton',
 );
+const ARRAY_DESCRIPTION_TEST_ID = 'array-description';
+const UI_DESCRIPTION_TEXT = 'Ui description';
 
 const createTemplateButton = (
   label: string,
@@ -95,7 +97,7 @@ const defaultTitleTemplate = ({
 const defaultDescriptionTemplate = ({
   description,
 }: ArrayFieldDescriptionProps) => (
-  <div data-testid="array-description">{description}</div>
+  <div data-testid={ARRAY_DESCRIPTION_TEST_ID}>{description}</div>
 );
 
 const mockValidator: ValidatorType = {
@@ -299,7 +301,7 @@ describe('rjsfTemplates', () => {
     const registry = createRegistry({ formContext: { t } });
     const uiSchema: UiSchema = {
       'ui:title': arrayTitle,
-      'ui:description': 'Ui description',
+      'ui:description': UI_DESCRIPTION_TEXT,
     };
     const props = createArrayFieldProps(registry, {
       uiSchema,
@@ -313,8 +315,8 @@ describe('rjsfTemplates', () => {
     expect(
       screen.getByRole('button', { name: addMedicationLabel }),
     ).toBeInTheDocument();
-    expect(screen.getByTestId('array-description')).toHaveTextContent(
-      'Ui description',
+    expect(screen.getByTestId(ARRAY_DESCRIPTION_TEST_ID)).toHaveTextContent(
+      UI_DESCRIPTION_TEXT,
     );
     expect(screen.getByTestId(optionalControlTestId)).toBeInTheDocument();
     expect(
@@ -387,6 +389,43 @@ describe('rjsfTemplates', () => {
     expect(
       screen.getByRole('button', { name: addTranslation }),
     ).toBeInTheDocument();
+  });
+
+  it('falls back to schema description when ui:description is not provided', () => {
+    const t = vi.fn((key: string) => `translated:${key}`);
+    const registry = createRegistry({ formContext: { t } });
+    const props = createArrayFieldProps(registry, {
+      uiSchema: {},
+      schema: { type: 'array', description: 'Schema fallback description' },
+    });
+
+    render(<ArrayFieldTemplate {...props} />);
+
+    expect(screen.getByTestId(ARRAY_DESCRIPTION_TEST_ID)).toHaveTextContent(
+      'Schema fallback description',
+    );
+  });
+
+  it('falls back to schema description when ui options description is empty', () => {
+    const t = vi.fn((key: string) => `translated:${key}`);
+    const registry = createRegistry({ formContext: { t } });
+    const props = createArrayFieldProps(registry, {
+      uiSchema: {
+        'ui:options': {
+          description: '',
+        },
+      } as UiSchema,
+      schema: {
+        type: 'array',
+        description: 'Schema fallback from empty option',
+      },
+    });
+
+    render(<ArrayFieldTemplate {...props} />);
+
+    expect(screen.getByTestId(ARRAY_DESCRIPTION_TEST_ID)).toHaveTextContent(
+      'Schema fallback from empty option',
+    );
   });
 
   it('renders item title with default translation when no parent title exists', () => {

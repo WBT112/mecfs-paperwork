@@ -56,6 +56,35 @@ describe('profiles storage', () => {
 
       expect(result).toBeNull();
     });
+
+    it('migrates plaintext profile data when re-encryption is required', async () => {
+      const { getProfile } = await import('../../../src/storage/profiles');
+      const encryptionModule =
+        await import('../../../src/storage/atRestEncryption');
+
+      const entry: ProfileEntry = {
+        id: PROFILE_ID,
+        data: { patient: { firstName: 'Max' } },
+        createdAt: FIXED_TIMESTAMP,
+        updatedAt: FIXED_TIMESTAMP,
+      };
+      mockDb.get.mockResolvedValue(entry);
+      mockDb.put.mockRejectedValue(new Error('persist failed'));
+
+      vi.mocked(encryptionModule.decodeStoredData).mockResolvedValueOnce({
+        data: entry.data,
+        shouldReencrypt: true,
+      });
+
+      const result = await getProfile(PROFILE_ID);
+
+      expect(result).toEqual(entry);
+      expect(mockDb.put).toHaveBeenCalledTimes(1);
+
+      // Wait for the fire-and-forget migration write to reject and hit the catch handler.
+      await Promise.resolve();
+      await Promise.resolve();
+    });
   });
 
   describe('upsertProfile', () => {

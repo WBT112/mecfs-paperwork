@@ -69,7 +69,7 @@ const createSnapshot = (
   ...overrides,
 });
 
-const renderRecordsHook = (formpackId: string) => {
+const renderRecordsHook = (formpackId: string | null) => {
   let latest: RecordsHook | null = null;
 
   const TestComponent = () => {
@@ -249,6 +249,100 @@ describe('storage hooks', () => {
     expect(getLatest()?.records).toContainEqual(active);
   });
 
+  it('sets operation error when records refresh fails', async () => {
+    vi.mocked(listRecords).mockRejectedValue(new Error('list failed'));
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    await waitFor(() => {
+      expect(getLatest()?.isLoading).toBe(false);
+    });
+
+    expect(getLatest()?.errorCode).toBe('operation');
+  });
+
+  it('refresh resets local record state when no formpack id is available', async () => {
+    const { getLatest } = renderRecordsHook(null);
+
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    await act(async () => {
+      await getLatest()?.refresh();
+    });
+
+    expect(getLatest()?.records).toEqual([]);
+    expect(getLatest()?.activeRecord).toBeNull();
+    expect(getLatest()?.hasLoaded).toBe(false);
+  });
+
+  it('returns null from createRecord when formpack id is missing', async () => {
+    const { getLatest } = renderRecordsHook(null);
+
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let created: RecordEntry | null | undefined;
+    await act(async () => {
+      created = await getLatest()?.createRecord('de', { field: 'x' }, 'title');
+    });
+
+    expect(created).toBeNull();
+    expect(createRecordEntry).not.toHaveBeenCalled();
+  });
+
+  it('sets operation error when loadRecord throws', async () => {
+    vi.mocked(getRecordEntry).mockRejectedValue(new Error('read failed'));
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    let loaded: RecordEntry | null | undefined;
+    await act(async () => {
+      loaded = await getLatest()?.loadRecord('broken-id');
+    });
+
+    expect(loaded).toBeNull();
+    expect(getLatest()?.errorCode).toBe('operation');
+  });
+
+  it('clears active record during refresh when it belongs to another formpack', async () => {
+    const record = createRecord({ id: 'present' });
+    vi.mocked(listRecords).mockResolvedValue([record]);
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    await act(async () => {
+      getLatest()?.setActiveRecord(
+        createRecord({ id: 'foreign', formpackId: 'other-formpack' }),
+      );
+    });
+
+    await act(async () => {
+      await getLatest()?.refresh();
+    });
+
+    expect(getLatest()?.activeRecord).toBeNull();
+  });
+
+  it('keeps active record when refresh result already contains it', async () => {
+    const active = createRecord({ id: 'already-listed' });
+    vi.mocked(listRecords).mockResolvedValue([active]);
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    await act(async () => {
+      getLatest()?.setActiveRecord(active);
+    });
+
+    await act(async () => {
+      await getLatest()?.refresh();
+    });
+
+    expect(getLatest()?.activeRecord?.id).toBe(active.id);
+  });
+
   it('prevents deleting the active record', async () => {
     const record = createRecord({ id: RECORD_ACTIVE_ID });
     const { getLatest } = renderRecordsHook(FORM_PACK_ID);
@@ -314,6 +408,64 @@ describe('storage hooks', () => {
 
     expect(result).toBe(false);
     expect(getLatest()?.errorCode).toBe('operation');
+  });
+
+  it('returns false without mutating state when deleteRecordEntry returns false', async () => {
+    const recordActive = createRecord({ id: RECORD_ACTIVE_ID });
+    const recordToDelete = createRecord({ id: RECORD_DELETE_ID });
+    vi.mocked(deleteRecordEntry).mockResolvedValue(false);
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    await act(async () => {
+      getLatest()?.applyRecordUpdate(recordActive);
+      getLatest()?.applyRecordUpdate(recordToDelete);
+      getLatest()?.setActiveRecord(recordActive);
+    });
+
+    let result: boolean | undefined;
+    await act(async () => {
+      result = await getLatest()?.deleteRecord(recordToDelete.id);
+    });
+
+    expect(result).toBe(false);
+    expect(getLatest()?.records).toEqual([recordActive, recordToDelete]);
+  });
+
+  it('keeps a concurrently switched active record during refresh', async () => {
+    let resolveListRecords: ((records: RecordEntry[]) => void) | null = null;
+    vi.mocked(listRecords).mockImplementation(
+      () =>
+        new Promise<RecordEntry[]>((resolve) => {
+          resolveListRecords = resolve;
+        }),
+    );
+
+    const { getLatest } = renderRecordsHook(FORM_PACK_ID);
+    await waitFor(() => expect(getLatest()).not.toBeNull());
+
+    await act(async () => {
+      getLatest()?.setActiveRecord(createRecord({ id: 'active-inflight-1' }));
+    });
+
+    let refreshPromise: Promise<void> | undefined;
+    await act(async () => {
+      refreshPromise = getLatest()?.refresh();
+    });
+
+    await act(async () => {
+      getLatest()?.setActiveRecord(createRecord({ id: 'active-inflight-2' }));
+    });
+
+    expect(resolveListRecords).toBeTypeOf('function');
+    resolveListRecords!([]);
+
+    await act(async () => {
+      await refreshPromise;
+    });
+
+    expect(getLatest()?.activeRecord?.id).toBe('active-inflight-2');
   });
 
   it('clears snapshots for a record and resets local state', async () => {
@@ -654,6 +806,57 @@ describe('useAutosaveRecord', () => {
     expect(updateRecordEntry).not.toHaveBeenCalled();
   });
 
+  it('uses the default autosave delay when options are omitted', async () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    vi.mocked(updateRecordEntry).mockResolvedValue(
+      createRecord({ id: AUTOSAVE_RECORD_ID }),
+    );
+
+    const TestComponent = ({
+      formData,
+    }: {
+      formData: Record<string, unknown>;
+    }) => {
+      useAutosaveRecord(AUTOSAVE_RECORD_ID, formData, 'de', {
+        field: 'initial',
+      });
+      return null;
+    };
+
+    const { rerender } = render(
+      <TestComponent formData={{ field: 'initial' }} />,
+    );
+    rerender(<TestComponent formData={{ field: 'changed' }} />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(1300);
+    });
+
+    expect(setTimeoutSpy).toHaveBeenCalled();
+    expect(setTimeoutSpy.mock.calls.at(-1)?.[1]).toBe(1200);
+  });
+
+  it('initializes autosave baseline from null and still persists pending data', async () => {
+    vi.mocked(updateRecordEntry).mockResolvedValue(
+      createRecord({ id: AUTOSAVE_RECORD_ID }),
+    );
+
+    renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: null,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    expect(updateRecordEntry).toHaveBeenCalledWith(AUTOSAVE_RECORD_ID, {
+      data: { field: 'changed' },
+      locale: 'de',
+    });
+  });
+
   it('cleans up timeout on unmount', async () => {
     vi.mocked(updateRecordEntry).mockResolvedValue(
       createRecord({ id: AUTOSAVE_RECORD_ID }),
@@ -750,5 +953,31 @@ describe('useAutosaveRecord', () => {
     });
 
     expect(updateRecordEntry).not.toHaveBeenCalled();
+  });
+
+  it('does not call onError when beforeunload flush fails', async () => {
+    vi.mocked(updateRecordEntry).mockRejectedValue(new Error('flush failed'));
+    const onError = vi.fn();
+
+    const { rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'initial' },
+      baselineData: { field: 'initial' },
+      onError,
+    });
+
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: { field: 'initial' },
+      onError,
+    });
+
+    await act(async () => {
+      globalThis.dispatchEvent(new Event('beforeunload'));
+      await Promise.resolve();
+    });
+
+    expect(onError).not.toHaveBeenCalled();
   });
 });

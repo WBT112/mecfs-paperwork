@@ -176,6 +176,14 @@ const profileMappingState = vi.hoisted(() => ({
   ),
 }));
 
+const translationState = vi.hoisted(() => ({
+  appCommonClose: null as string | null,
+}));
+
+const rjsfRenderState = vi.hoisted(() => ({
+  lastTemplates: null as unknown,
+}));
+
 const ARIA_EXPANDED = 'aria-expanded';
 const sectionLabels = {
   records: 'formpackRecordsHeading',
@@ -252,6 +260,7 @@ const PDF_SUCCESS_BUTTON_LABEL = 'pdf-success';
 const ENCRYPTED_EXPORT_KIND = 'mecfs-paperwork-json-encrypted';
 const ENCRYPTED_IMPORT_CONTENT = `{"kind":"${ENCRYPTED_EXPORT_KIND}"}`;
 const EXPORT_FILENAME = 'export.json';
+const SNAPSHOT_ID = 'snapshot-1';
 
 const mockFileText = (content: string) => {
   const descriptor = Object.getOwnPropertyDescriptor(File.prototype, 'text');
@@ -310,22 +319,29 @@ vi.mock('@rjsf/core', () => ({
     children,
     formData,
     onChange,
+    className,
+    templates,
   }: {
     children?: React.ReactNode;
     formData?: Record<string, unknown>;
     onChange?: (event: { formData: Record<string, unknown> }) => void;
-  }) => (
-    <div>
-      <div data-testid="form-data">{JSON.stringify(formData)}</div>
-      <button
-        type="button"
-        onClick={() => onChange?.({ formData: { field: 'value' } })}
-      >
-        trigger-change
-      </button>
-      {children}
-    </div>
-  ),
+    className?: string;
+    templates?: unknown;
+  }) => {
+    rjsfRenderState.lastTemplates = templates ?? null;
+    return (
+      <div className={className}>
+        <div data-testid="form-data">{JSON.stringify(formData)}</div>
+        <button
+          type="button"
+          onClick={() => onChange?.({ formData: { field: 'value' } })}
+        >
+          trigger-change
+        </button>
+        {children}
+      </div>
+    );
+  },
 }));
 
 vi.mock('../../src/i18n/formpack', () => ({
@@ -455,6 +471,9 @@ const mockT = (key: string, options?: { ns?: string }) => {
   if (!options?.ns) {
     return key;
   }
+  if (options.ns === 'app' && key === 'common.close') {
+    return translationState.appCommonClose ?? key;
+  }
   if (options.ns === 'formpack:notfallpass') {
     if (key === 'notfallpass.export.diagnoses.meCfs.paragraph') {
       return 'ME/CFS Paragraph';
@@ -524,6 +543,8 @@ describe('FormpackDetailPage', () => {
     profileState.hasUsableProfileData.mockClear();
     profileMappingState.extractProfileData.mockClear();
     profileMappingState.applyProfileData.mockClear();
+    translationState.appCommonClose = null;
+    rjsfRenderState.lastTemplates = null;
     visibilityState.isDevUiEnabled = true;
     formpackState.manifest = {
       id: record.formpackId,
@@ -672,6 +693,149 @@ describe('FormpackDetailPage', () => {
     } finally {
       restoreText();
     }
+  });
+
+  it('shows an encryption import error when encrypted payload decryption fails', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: ['docx', 'json'],
+    };
+
+    const envelope = {
+      kind: ENCRYPTED_EXPORT_KIND,
+      version: 1,
+      cipher: 'AES-GCM',
+      tagLength: 128,
+      kdf: 'PBKDF2',
+      hash: 'SHA-256',
+      iterations: 310000,
+      salt: 'salt',
+      iv: 'iv',
+      ciphertext: 'ciphertext',
+    };
+    const decryptError = new jsonEncryptionState.JsonEncryptionError(
+      'decrypt_failed',
+      'Wrong password',
+    );
+
+    jsonEncryptionState.decryptJsonWithPassword.mockRejectedValue(decryptError);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openImportSection();
+
+    const encryptedImportJson = JSON.stringify(envelope);
+    const file = new File([encryptedImportJson], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+
+    const restoreFileText = mockFileText(encryptedImportJson);
+    fireEvent.change(screen.getByLabelText('formpackImportLabel'), {
+      target: { files: [file] },
+    });
+
+    await screen.findByText('formpackImportFileName');
+    await userEvent.type(
+      await screen.findByLabelText('formpackImportPasswordLabel'),
+      'wrong-secret',
+    );
+    await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+
+    expect(
+      await screen.findByText('importPasswordInvalid'),
+    ).toBeInTheDocument();
+    expect(storageImportState.importRecordWithSnapshots).not.toHaveBeenCalled();
+
+    restoreFileText();
+  });
+
+  it('decrypts encrypted imports before validating payloads', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      exports: ['docx', 'json'],
+    };
+    const envelope = {
+      kind: ENCRYPTED_EXPORT_KIND,
+      version: 1,
+      cipher: 'AES-GCM',
+      tagLength: 128,
+      kdf: 'PBKDF2',
+      hash: 'SHA-256',
+      iterations: 310000,
+      salt: 'salt',
+      iv: 'iv',
+      ciphertext: 'ciphertext',
+    };
+    const payload = {
+      version: 1,
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        title: 'Imported encrypted',
+        locale: 'de',
+        data: { name: 'Ada' },
+      },
+      revisions: [],
+    };
+
+    jsonEncryptionState.decryptJsonWithPassword.mockResolvedValue(
+      IMPORT_FILE_CONTENT,
+    );
+    importState.validateJsonImport.mockReturnValue({
+      payload,
+      error: null,
+    });
+    storageImportState.importRecordWithSnapshots.mockResolvedValue({
+      ...record,
+      data: payload.record.data,
+    });
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openImportSection();
+
+    const encryptedImportJson = JSON.stringify(envelope);
+    const file = new File([encryptedImportJson], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+
+    const restoreFileText = mockFileText(encryptedImportJson);
+    fireEvent.change(screen.getByLabelText('formpackImportLabel'), {
+      target: { files: [file] },
+    });
+
+    await screen.findByText('formpackImportFileName');
+    await userEvent.type(
+      await screen.findByLabelText('formpackImportPasswordLabel'),
+      'secret',
+    );
+    await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+
+    await waitFor(() => {
+      expect(jsonEncryptionState.decryptJsonWithPassword).toHaveBeenCalledWith(
+        envelope,
+        'secret',
+      );
+    });
+    expect(importState.validateJsonImport).toHaveBeenCalledWith(
+      IMPORT_FILE_CONTENT,
+      expect.any(Object),
+      record.formpackId,
+    );
+    expect(await screen.findByText(IMPORT_SUCCESS_LABEL)).toBeInTheDocument();
+
+    restoreFileText();
   });
 
   it('requires confirmation before overwriting an import', async () => {
@@ -1074,7 +1238,7 @@ describe('FormpackDetailPage', () => {
 
   it('restores a snapshot from the list', async () => {
     const snapshot: SnapshotEntry = {
-      id: 'snapshot-1',
+      id: SNAPSHOT_ID,
       recordId: record.id,
       label: 'Snapshot',
       createdAt: new Date().toISOString(),
@@ -1106,6 +1270,95 @@ describe('FormpackDetailPage', () => {
     expect(storageState.markAsSaved).toHaveBeenCalledWith(snapshot.data);
   });
 
+  it('creates snapshots for the active draft', async () => {
+    storageState.createSnapshot.mockResolvedValue({
+      id: SNAPSHOT_ID,
+      recordId: record.id,
+      label: 'Snapshot',
+      data: record.data,
+      createdAt: new Date().toISOString(),
+    });
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openSnapshotsSection();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackSnapshotCreate' }),
+    );
+
+    await waitFor(() =>
+      expect(storageState.createSnapshot).toHaveBeenCalledWith(
+        {},
+        'formpackSnapshotLabel',
+      ),
+    );
+  });
+
+  it('restores snapshot data without marking saved when persistence fails', async () => {
+    const snapshot: SnapshotEntry = {
+      id: SNAPSHOT_ID,
+      recordId: record.id,
+      label: 'Snapshot',
+      createdAt: new Date().toISOString(),
+      data: { field: 'snapshot' },
+    };
+    storageState.snapshots = [snapshot];
+    storageState.loadSnapshot.mockResolvedValue(snapshot);
+    storageState.updateActiveRecord.mockResolvedValue(null);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openSnapshotsSection();
+    await userEvent.click(await screen.findByText('formpackSnapshotRestore'));
+
+    await waitFor(() =>
+      expect(storageState.updateActiveRecord).toHaveBeenCalledWith(record.id, {
+        data: snapshot.data,
+      }),
+    );
+    expect(storageState.markAsSaved).not.toHaveBeenCalledWith(snapshot.data);
+  });
+
+  it('does not restore a snapshot when it can no longer be loaded', async () => {
+    const snapshot: SnapshotEntry = {
+      id: SNAPSHOT_ID,
+      recordId: record.id,
+      label: 'Snapshot',
+      createdAt: new Date().toISOString(),
+      data: { field: 'snapshot' },
+    };
+    storageState.snapshots = [snapshot];
+    storageState.loadSnapshot.mockResolvedValue(null);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openSnapshotsSection();
+    await userEvent.click(await screen.findByText('formpackSnapshotRestore'));
+
+    await waitFor(() =>
+      expect(storageState.loadSnapshot).toHaveBeenCalledWith(SNAPSHOT_ID),
+    );
+    expect(storageState.updateActiveRecord).not.toHaveBeenCalled();
+  });
+
   it('loads records from the list', async () => {
     const secondRecord = {
       ...record,
@@ -1132,6 +1385,35 @@ describe('FormpackDetailPage', () => {
       expect(storageState.loadRecord).toHaveBeenCalledWith(secondRecord.id),
     );
     expect(storageState.markAsSaved).toHaveBeenCalledWith(secondRecord.data);
+  });
+
+  it('does not update form state when loading a record returns null', async () => {
+    const secondRecord = {
+      ...record,
+      id: 'record-2',
+      title: 'Second',
+      data: { field: 'second' },
+    };
+    storageState.records = [record, secondRecord];
+    storageState.loadRecord.mockResolvedValue(null);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openRecordsSection();
+    const initialSavedCalls = storageState.markAsSaved.mock.calls.length;
+    const loadButtons = await screen.findAllByText('formpackRecordLoad');
+    await userEvent.click(loadButtons[1]);
+
+    await waitFor(() =>
+      expect(storageState.loadRecord).toHaveBeenCalledWith(secondRecord.id),
+    );
+    expect(storageState.markAsSaved.mock.calls.length).toBe(initialSavedCalls);
   });
 
   it('shows delete action only for non-active drafts', async () => {
@@ -1248,7 +1530,7 @@ describe('FormpackDetailPage', () => {
 
   it('clears snapshots when confirmed', async () => {
     const snapshot: SnapshotEntry = {
-      id: 'snapshot-1',
+      id: SNAPSHOT_ID,
       recordId: record.id,
       label: 'Snapshot',
       data: { field: 'snapshot' },
@@ -1274,6 +1556,34 @@ describe('FormpackDetailPage', () => {
     await waitFor(() =>
       expect(storageState.clearSnapshots).toHaveBeenCalledWith(),
     );
+    confirmSpy.mockRestore();
+  });
+
+  it('does not clear snapshots when confirmation is dismissed', async () => {
+    const snapshot: SnapshotEntry = {
+      id: SNAPSHOT_ID,
+      recordId: record.id,
+      label: 'Snapshot',
+      data: { field: 'snapshot' },
+      createdAt: new Date().toISOString(),
+    };
+    storageState.snapshots = [snapshot];
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openSnapshotsSection();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackSnapshotsClearAll' }),
+    );
+
+    expect(storageState.clearSnapshots).not.toHaveBeenCalled();
     confirmSpy.mockRestore();
   });
 
@@ -1335,6 +1645,88 @@ describe('FormpackDetailPage', () => {
     );
 
     setItemSpy.mockRestore();
+  });
+
+  it('creates a new draft from the records panel and focuses the form', async () => {
+    const createdRecord = {
+      ...record,
+      id: 'record-created',
+      data: { field: 'created' },
+      title: 'Created',
+      updatedAt: new Date().toISOString(),
+    };
+    storageState.updateActiveRecord.mockResolvedValue(record);
+    storageState.createRecord.mockResolvedValue(createdRecord);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openRecordsSection();
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackRecordNew' }),
+    );
+
+    await waitFor(() =>
+      expect(storageState.updateActiveRecord).toHaveBeenCalledWith(record.id, {
+        data: {},
+        locale: 'de',
+      }),
+    );
+    await waitFor(() =>
+      expect(storageState.createRecord).toHaveBeenCalledWith(
+        'de',
+        {},
+        'formpackTitle',
+      ),
+    );
+    expect(storageState.markAsSaved).toHaveBeenCalledWith(createdRecord.data);
+  });
+
+  it('does not mark reset form data as saved when persistence fails', async () => {
+    storageState.updateActiveRecord.mockResolvedValue(null);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackFormReset' }),
+    );
+
+    await waitFor(() =>
+      expect(storageState.updateActiveRecord).toHaveBeenCalled(),
+    );
+    expect(storageState.markAsSaved).not.toHaveBeenCalledWith({});
+  });
+
+  it('does not create a draft when createRecord returns null', async () => {
+    storageState.createRecord.mockResolvedValue(null);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openRecordsSection();
+    const initialSavedCalls = storageState.markAsSaved.mock.calls.length;
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackRecordNew' }),
+    );
+
+    await waitFor(() => expect(storageState.createRecord).toHaveBeenCalled());
+    expect(storageState.markAsSaved.mock.calls.length).toBe(initialSavedCalls);
   });
 
   it('does not create a new record when updating the active record fails', async () => {
@@ -1415,6 +1807,38 @@ describe('FormpackDetailPage', () => {
     expect(
       await screen.findByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
     ).toBeInTheDocument();
+  });
+
+  it('uses the formpack field template when info boxes are configured', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      ui: {
+        infoBoxes: [
+          {
+            id: 'info-1',
+            anchor: 'field',
+            enabled: true,
+            i18nKey: 'info.key',
+            format: 'text',
+          },
+        ],
+      },
+    };
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await screen.findByRole('button', { name: 'formpackFormReset' });
+    const lastTemplates = rjsfRenderState.lastTemplates as {
+      FieldTemplate?: unknown;
+    } | null;
+    expect(lastTemplates).not.toBeNull();
+    expect(typeof lastTemplates?.FieldTemplate).toBe('function');
   });
 
   it('exports JSON backups when requested', async () => {
@@ -2091,6 +2515,75 @@ describe('FormpackDetailPage', () => {
       }
     } finally {
       restoreText();
+    }
+  }, 10000);
+
+  it('resolves common translation keys via the app namespace in preview values', async () => {
+    translationState.appCommonClose = 'Close';
+    const payload = {
+      version: 1,
+      formpack: { id: record.formpackId, version: '1.0.0' },
+      record: {
+        title: 'Enum translations',
+        locale: 'de',
+        data: {
+          translationField: 'done',
+        },
+      },
+      revisions: [],
+    };
+    importState.validateJsonImport.mockReturnValue({
+      payload,
+      error: null,
+    });
+    storageImportState.importRecordWithSnapshots.mockResolvedValue({
+      ...record,
+      id: 'record-translation',
+      title: payload.record.title,
+      data: payload.record.data,
+    });
+    formpackState.schema = {
+      type: 'object',
+      properties: {
+        translationField: {
+          type: 'string',
+          enum: ['done'],
+        },
+      },
+    };
+    formpackState.uiSchema = {
+      translationField: {
+        'ui:title': 'translationField',
+        'ui:enumNames': ['common.close'],
+      },
+    };
+
+    const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
+      type: 'application/json',
+    });
+    const restoreText = mockFileText(IMPORT_FILE_CONTENT);
+
+    try {
+      render(
+        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+          <Routes>
+            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+          </Routes>
+        </TestRouter>,
+      );
+
+      await openImportSection();
+      await userEvent.upload(
+        await screen.findByLabelText('formpackImportLabel'),
+        file,
+      );
+      await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+
+      expect(await screen.findByText(IMPORT_SUCCESS_LABEL)).toBeInTheDocument();
+      expect(await screen.findByText('Close')).toBeInTheDocument();
+    } finally {
+      restoreText();
+      translationState.appCommonClose = null;
     }
   }, 10000);
 });

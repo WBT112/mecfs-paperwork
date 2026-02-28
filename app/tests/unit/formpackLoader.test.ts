@@ -25,6 +25,8 @@ const SCHEMA_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/schema.json`;
 const UI_SCHEMA_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/ui.schema.json`;
 const UNKNOWN_FORMPACK_ID = 'unknown-formpack';
 const UNKNOWN_FORMPACK_MESSAGE = 'The requested formpack id is not registered.';
+const DOCX_ASSETS_ERROR_MESSAGE =
+  'The formpack manifest declares DOCX exports without valid DOCX assets.';
 
 describe('parseManifest', () => {
   const validPayload: FormpackManifestPayload = {
@@ -175,12 +177,7 @@ describe('parseManifest', () => {
     };
     expect(() =>
       parseManifest(payload as FormpackManifestPayload, TEST_FORMPACK_ID),
-    ).toThrow(
-      new FormpackLoaderError(
-        'invalid',
-        'The formpack manifest declares DOCX exports without valid DOCX assets.',
-      ),
-    );
+    ).toThrow(new FormpackLoaderError('invalid', DOCX_ASSETS_ERROR_MESSAGE));
   });
 
   it('rejects wallet templates outside notfallpass', () => {
@@ -217,6 +214,147 @@ describe('parseManifest', () => {
       NOTFALLPASS_ID,
     );
     expect(manifest.docx?.templates.wallet).toBe(DOCX_WALLET_PATH);
+  });
+
+  it('throws when DOCX templates are invalid or mapping is not a string', () => {
+    const invalidTemplatesPayload = {
+      ...validPayload,
+      exports: ['docx'],
+      docx: {
+        templates: 'invalid',
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+    expect(() =>
+      parseManifest(
+        invalidTemplatesPayload as unknown as FormpackManifestPayload,
+        TEST_FORMPACK_ID,
+      ),
+    ).toThrow(new FormpackLoaderError('invalid', DOCX_ASSETS_ERROR_MESSAGE));
+
+    const invalidWalletTypePayload = {
+      ...validPayload,
+      exports: ['docx'],
+      docx: {
+        templates: { a4: DOCX_A4_PATH, wallet: 123 },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+    expect(() =>
+      parseManifest(
+        invalidWalletTypePayload as unknown as FormpackManifestPayload,
+        TEST_FORMPACK_ID,
+      ),
+    ).toThrow(new FormpackLoaderError('invalid', DOCX_ASSETS_ERROR_MESSAGE));
+
+    const invalidMappingPayload = {
+      ...validPayload,
+      exports: ['docx'],
+      docx: {
+        templates: { a4: DOCX_A4_PATH },
+        mapping: 123,
+      },
+    };
+    expect(() =>
+      parseManifest(
+        invalidMappingPayload as unknown as FormpackManifestPayload,
+        TEST_FORMPACK_ID,
+      ),
+    ).toThrow(new FormpackLoaderError('invalid', DOCX_ASSETS_ERROR_MESSAGE));
+  });
+
+  it('accepts a DOCX manifest with only an a4 template', () => {
+    const payload = {
+      ...validPayload,
+      exports: ['docx'],
+      docx: {
+        templates: { a4: DOCX_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const manifest = parseManifest(
+      payload as FormpackManifestPayload,
+      TEST_FORMPACK_ID,
+    );
+
+    expect(manifest.docx).toEqual({
+      templates: { a4: DOCX_A4_PATH },
+      mapping: DOCX_MAPPING_PATH,
+    });
+  });
+
+  it('parses optional meta with category/keywords and drops invalid meta values', () => {
+    const withBoth = parseManifest(
+      {
+        ...validPayload,
+        meta: {
+          category: 'general',
+          keywords: ['foo', 'bar'],
+        },
+      } as FormpackManifestPayload,
+      TEST_FORMPACK_ID,
+    );
+    expect(withBoth.meta).toEqual({
+      category: 'general',
+      keywords: ['foo', 'bar'],
+    });
+
+    const withCategoryOnly = parseManifest(
+      {
+        ...validPayload,
+        meta: {
+          category: 'doctor',
+          keywords: 123,
+        },
+      } as unknown as FormpackManifestPayload,
+      TEST_FORMPACK_ID,
+    );
+    expect(withCategoryOnly.meta).toEqual({ category: 'doctor' });
+
+    const withKeywordsOnly = parseManifest(
+      {
+        ...validPayload,
+        meta: {
+          category: 'invalid-category',
+          keywords: ['only-keywords'],
+        },
+      } as unknown as FormpackManifestPayload,
+      TEST_FORMPACK_ID,
+    );
+    expect(withKeywordsOnly.meta).toEqual({ keywords: ['only-keywords'] });
+
+    const withInvalidMeta = parseManifest(
+      {
+        ...validPayload,
+        meta: {
+          category: 'invalid-category',
+          keywords: 123,
+        },
+      } as unknown as FormpackManifestPayload,
+      TEST_FORMPACK_ID,
+    );
+    expect(withInvalidMeta.meta).toBeUndefined();
+  });
+
+  it('keeps ui configuration when manifest ui payload is an object', () => {
+    const payload = {
+      ...validPayload,
+      ui: {
+        showValidityBanner: true,
+        sectionMode: 'tabs',
+      },
+    };
+
+    const manifest = parseManifest(
+      payload as FormpackManifestPayload,
+      TEST_FORMPACK_ID,
+    );
+
+    expect(manifest.ui).toEqual({
+      showValidityBanner: true,
+      sectionMode: 'tabs',
+    });
   });
 });
 
@@ -429,6 +567,36 @@ describe('formpack loader fetches', () => {
     await expect(loadFormpackSchema(DOCTOR_LETTER_ID)).rejects.toMatchObject({
       code: 'schema_unavailable',
     });
+  });
+
+  it('handles non-ok schema responses and reuses cached schema resources', async () => {
+    const nonOkFetch = buildFetchMock({
+      [SCHEMA_PATH_DOCTOR]: {
+        ok: false,
+        status: 500,
+      },
+    });
+    vi.stubGlobal('fetch', nonOkFetch as unknown as typeof fetch);
+
+    await expect(loadFormpackSchema(DOCTOR_LETTER_ID)).rejects.toMatchObject({
+      code: 'schema_unavailable',
+    });
+
+    clearFormpackCaches();
+
+    const cachedSchemaFetch = buildFetchMock({
+      [SCHEMA_PATH_DOCTOR]: {
+        ok: true,
+        json: async () => ({ type: 'object', title: 'Schema' }),
+      },
+    });
+    vi.stubGlobal('fetch', cachedSchemaFetch as unknown as typeof fetch);
+
+    const first = await loadFormpackSchema(DOCTOR_LETTER_ID);
+    const second = await loadFormpackSchema(DOCTOR_LETTER_ID);
+
+    expect(first).toEqual(second);
+    expect(cachedSchemaFetch).toHaveBeenCalledTimes(1);
   });
 
   it('lists all registered formpacks', async () => {
