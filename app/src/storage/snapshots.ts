@@ -1,5 +1,6 @@
-import { decodeStoredData, encryptStorageData } from './atRestEncryption';
+import { encryptStorageData } from './atRestEncryption';
 import { openStorage } from './db';
+import { decodeStorageEntry } from './decodeStorageEntry';
 import type { SnapshotEntry } from './types';
 
 /** Maximum number of snapshots retained per record. */
@@ -61,21 +62,9 @@ export const listSnapshots = async (
   );
 
   const snapshots = await Promise.all(
-    persistedSnapshots.map(async (entry) => {
-      const { data, shouldReencrypt } = await decodeStoredData(entry.data);
-      if (shouldReencrypt) {
-        const migrated = {
-          ...entry,
-          data: await encryptStorageData(data),
-        };
-        db.put('snapshots', migrated).catch(() => undefined);
-      }
-
-      return {
-        ...entry,
-        data,
-      };
-    }),
+    persistedSnapshots.map((entry) =>
+      decodeStorageEntry(entry, (migrated) => db.put('snapshots', migrated)),
+    ),
   );
 
   return sortByCreatedAtDesc(snapshots);
@@ -93,19 +82,9 @@ export const getSnapshot = async (
     return null;
   }
 
-  const { data, shouldReencrypt } = await decodeStoredData(persisted.data);
-  if (shouldReencrypt) {
-    const migrated = {
-      ...persisted,
-      data: await encryptStorageData(data),
-    };
-    db.put('snapshots', migrated).catch(() => undefined);
-  }
-
-  return {
-    ...persisted,
-    data,
-  };
+  return decodeStorageEntry(persisted, (migrated) =>
+    db.put('snapshots', migrated),
+  );
 };
 
 /**

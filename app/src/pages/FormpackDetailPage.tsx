@@ -26,6 +26,7 @@ import {
   exportDocx,
   getDocxErrorKey,
   preloadDocxAssets,
+  scheduleDocxPreload,
   type DocxTemplateId,
 } from '../export/docxLazy';
 import type { PdfExportControlsProps } from '../export/pdf';
@@ -39,6 +40,7 @@ import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/previewValue';
 import { getFirstItem, isRecord } from '../lib/utils';
 import { buildRandomDummyPatch } from '../lib/devDummyFill';
+import { focusWithRetry } from '../lib/focusWithRetry';
 import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
@@ -1513,8 +1515,12 @@ export default function FormpackDetailPage() {
       return;
     }
 
+    const docxManifest = manifest.docx;
+
     // Preload DOCX assets so export still works after going offline.
-    preloadDocxAssets(formpackId, manifest.docx).catch(() => undefined);
+    return scheduleDocxPreload(() =>
+      preloadDocxAssets(formpackId, docxManifest),
+    );
   }, [formpackId, manifest]);
 
   useEffect(() => {
@@ -2357,41 +2363,14 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    let cancelled = false;
-    let attempts = 0;
-
-    const tryFocus = () => {
-      if (cancelled) {
-        return;
-      }
-
-      const root = formContentRef.current;
-      const target = root?.querySelector<HTMLElement>(
-        FORM_PRIMARY_FOCUS_SELECTOR,
-      );
-      if (target) {
-        target.focus();
-        setPendingIntroFocus(false);
-        return;
-      }
-
-      if (attempts < FOCUS_RETRY_ATTEMPTS) {
-        attempts += 1;
-        globalThis.setTimeout(tryFocus, FOCUS_RETRY_DELAY_MS);
-        return;
-      }
-
-      const fallback = root?.querySelector<HTMLElement>(
-        FORM_FALLBACK_FOCUS_SELECTOR,
-      );
-      fallback?.focus();
-      setPendingIntroFocus(false);
-    };
-
-    globalThis.setTimeout(tryFocus, 0);
-    return () => {
-      cancelled = true;
-    };
+    return focusWithRetry({
+      getRoot: () => formContentRef.current,
+      selector: FORM_PRIMARY_FOCUS_SELECTOR,
+      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
+      maxAttempts: FOCUS_RETRY_ATTEMPTS,
+      retryDelayMs: FOCUS_RETRY_DELAY_MS,
+      onResolved: () => setPendingIntroFocus(false),
+    });
   }, [isIntroGateVisible, pendingIntroFocus]);
 
   useEffect(() => {
@@ -2399,38 +2378,14 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    let cancelled = false;
-    let attempts = 0;
-
-    const tryFocus = () => {
-      if (cancelled) {
-        return;
-      }
-
-      const root = formContentRef.current;
-      const target = root?.querySelector<HTMLElement>(
-        FORM_PRIMARY_FOCUS_SELECTOR,
-      );
-      if (target) {
-        target.focus();
-        setPendingFormFocus(false);
-        return;
-      }
-
-      if (attempts < FOCUS_RETRY_ATTEMPTS) {
-        attempts += 1;
-        globalThis.setTimeout(tryFocus, FOCUS_RETRY_DELAY_MS);
-        return;
-      }
-
-      root?.querySelector<HTMLElement>(FORM_FALLBACK_FOCUS_SELECTOR)?.focus();
-      setPendingFormFocus(false);
-    };
-
-    globalThis.setTimeout(tryFocus, 0);
-    return () => {
-      cancelled = true;
-    };
+    return focusWithRetry({
+      getRoot: () => formContentRef.current,
+      selector: FORM_PRIMARY_FOCUS_SELECTOR,
+      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
+      maxAttempts: FOCUS_RETRY_ATTEMPTS,
+      retryDelayMs: FOCUS_RETRY_DELAY_MS,
+      onResolved: () => setPendingFormFocus(false),
+    });
   }, [isIntroGateVisible, pendingFormFocus]);
 
   useEffect(() => {
@@ -2444,36 +2399,14 @@ export default function FormpackDetailPage() {
 
     const selector =
       OFFLABEL_FOCUS_SELECTOR_BY_TARGET[pendingOfflabelFocusTarget];
-    let cancelled = false;
-    let attempts = 0;
-
-    const tryFocus = () => {
-      if (cancelled) {
-        return;
-      }
-
-      const root = formContentRef.current;
-      const target = root?.querySelector<HTMLElement>(selector);
-      if (target) {
-        target.focus();
-        setPendingOfflabelFocusTarget(null);
-        return;
-      }
-
-      if (attempts < FOCUS_RETRY_ATTEMPTS) {
-        attempts += 1;
-        globalThis.setTimeout(tryFocus, FOCUS_RETRY_DELAY_MS);
-        return;
-      }
-
-      root?.querySelector<HTMLElement>(FORM_FALLBACK_FOCUS_SELECTOR)?.focus();
-      setPendingOfflabelFocusTarget(null);
-    };
-
-    globalThis.setTimeout(tryFocus, 0);
-    return () => {
-      cancelled = true;
-    };
+    return focusWithRetry({
+      getRoot: () => formContentRef.current,
+      selector,
+      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
+      maxAttempts: FOCUS_RETRY_ATTEMPTS,
+      retryDelayMs: FOCUS_RETRY_DELAY_MS,
+      onResolved: () => setPendingOfflabelFocusTarget(null),
+    });
   }, [formpackId, isIntroGateVisible, pendingOfflabelFocusTarget]);
 
   // Use custom field template for formpacks that provide InfoBoxes.

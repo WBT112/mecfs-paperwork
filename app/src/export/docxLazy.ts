@@ -18,6 +18,15 @@ type DocxModule = {
 };
 
 let docxModulePromise: Promise<DocxModule> | null = null;
+const DOCX_PRELOAD_IDLE_TIMEOUT_MS = 2_000;
+
+type IdleScheduler = {
+  requestIdleCallback?: (
+    callback: () => void,
+    options?: { timeout: number },
+  ) => number;
+  cancelIdleCallback?: (id: number) => void;
+};
 
 /**
  * Loads the heavy DOCX module once and reuses it for subsequent calls.
@@ -77,4 +86,50 @@ export const preloadDocxAssets = async (
 ) => {
   const module = await loadDocxModule();
   return module.preloadDocxAssets(formpackId, docx);
+};
+
+/**
+ * Schedules DOCX preloading during browser idle time with a timeout fallback.
+ *
+ * @param preloadTask - Async preload action for DOCX module + assets.
+ * @returns Cleanup callback to cancel queued preload work.
+ */
+export const scheduleDocxPreload = (
+  preloadTask: () => Promise<void>,
+): (() => void) => {
+  let cancelled = false;
+  let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+  let idleCallbackId: number | null = null;
+
+  const runTask = () => {
+    if (cancelled) {
+      return;
+    }
+
+    preloadTask().catch(() => undefined);
+  };
+
+  const scheduler = globalThis as IdleScheduler;
+  if (typeof scheduler.requestIdleCallback === 'function') {
+    idleCallbackId = scheduler.requestIdleCallback(runTask, {
+      timeout: DOCX_PRELOAD_IDLE_TIMEOUT_MS,
+    });
+  } else {
+    timeoutId = globalThis.setTimeout(runTask, 0);
+  }
+
+  return () => {
+    cancelled = true;
+
+    if (timeoutId !== null) {
+      globalThis.clearTimeout(timeoutId);
+    }
+
+    if (
+      idleCallbackId !== null &&
+      typeof scheduler.cancelIdleCallback === 'function'
+    ) {
+      scheduler.cancelIdleCallback(idleCallbackId);
+    }
+  };
 };

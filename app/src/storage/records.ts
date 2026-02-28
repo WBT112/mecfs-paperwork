@@ -1,6 +1,7 @@
 import type { SupportedLocale } from '../i18n/locale';
 import { decodeStoredData, encryptStorageData } from './atRestEncryption';
 import { openStorage } from './db';
+import { decodeStorageEntry } from './decodeStorageEntry';
 import type { RecordEntry } from './types';
 
 const sortByUpdatedAtDesc = (records: RecordEntry[]): RecordEntry[] =>
@@ -48,21 +49,9 @@ export const listRecords = async (
   );
 
   const records = await Promise.all(
-    persistedRecords.map(async (entry) => {
-      const { data, shouldReencrypt } = await decodeStoredData(entry.data);
-      if (shouldReencrypt) {
-        const migrated = {
-          ...entry,
-          data: await encryptStorageData(data),
-        };
-        db.put('records', migrated).catch(() => undefined);
-      }
-
-      return {
-        ...entry,
-        data,
-      };
-    }),
+    persistedRecords.map((entry) =>
+      decodeStorageEntry(entry, (migrated) => db.put('records', migrated)),
+    ),
   );
 
   return sortByUpdatedAtDesc(records);
@@ -78,20 +67,9 @@ export const getRecord = async (id: string): Promise<RecordEntry | null> => {
     return null;
   }
 
-  const { data, shouldReencrypt } = await decodeStoredData(persisted.data);
-
-  if (shouldReencrypt) {
-    const migrated = {
-      ...persisted,
-      data: await encryptStorageData(data),
-    };
-    db.put('records', migrated).catch(() => undefined);
-  }
-
-  return {
-    ...persisted,
-    data,
-  };
+  return decodeStorageEntry(persisted, (migrated) =>
+    db.put('records', migrated),
+  );
 };
 
 /**

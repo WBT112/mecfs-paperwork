@@ -307,6 +307,10 @@ vi.mock('../../src/export/docxLazy', () => ({
   exportDocx: vi.fn(),
   getDocxErrorKey: vi.fn().mockResolvedValue('formpackDocxExportError'),
   preloadDocxAssets: vi.fn().mockResolvedValue(undefined),
+  scheduleDocxPreload: vi.fn((task: () => Promise<void>) => {
+    task().catch(() => undefined);
+    return () => undefined;
+  }),
 }));
 
 vi.mock('../../src/export/json', () => jsonExportState);
