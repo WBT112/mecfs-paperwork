@@ -1,6 +1,7 @@
 import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import type { DocumentModel } from '../types';
 import { ensurePdfFontsRegistered, PDF_FONT_FAMILY_SANS } from '../fonts';
+import { formatLocalizedDate } from '../../../lib/version';
 import type { OfflabelPdfTemplateData } from '../../../formpacks/offlabel-antrag/export/pdfDocumentModel';
 import type { OffLabelPostExportChecklist } from '../../../formpacks/offlabel-antrag/export/documentModel';
 
@@ -171,18 +172,45 @@ const buildCompactSenderLines = (senderLines: string[]): string[] => {
   return [compactLine, ...remainingLines];
 };
 
-const formatDateValue = (rawDateLine: string, locale: string): string => {
+const parseDayMonthYearDate = (rawDateLine: string): Date | null => {
   const match = rawDateLine.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
   if (!match) {
+    return null;
+  }
+
+  const [, dayRaw, monthRaw, yearRaw] = match;
+  const day = Number(dayRaw);
+  const month = Number(monthRaw);
+  const year = Number(yearRaw);
+
+  if (
+    !Number.isInteger(day) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(year)
+  ) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+};
+
+const formatDateValue = (rawDateLine: string, locale: string): string => {
+  const date = parseDayMonthYearDate(rawDateLine);
+  if (!date) {
     return rawDateLine.trim();
   }
 
-  const [, left, middle, year] = match;
-  if (locale.toLowerCase().startsWith('de')) {
-    return `${left.padStart(2, '0')}.${middle.padStart(2, '0')}.${year}`;
-  }
-
-  return `${left.padStart(2, '0')}/${middle.padStart(2, '0')}/${year}`;
+  return formatLocalizedDate(date, locale, { dateStyle: 'medium' });
 };
 
 const formatDateLine = (rawDateLine: string, locale: string): string => {
@@ -239,9 +267,33 @@ const splitParagraphsForClosingBlock = (paragraphs: string[]) => {
 };
 
 const splitLiabilityParagraphsAtConsent = (paragraphs: string[]) => {
-  const consentIndex = paragraphs.findIndex((line) => /^3\.\s+/.test(line));
+  const isConsentHeading = (line: string): boolean => {
+    const normalized = line.trim().toLowerCase();
+    if (!normalized) {
+      return false;
+    }
+
+    const hasSectionPrefix = /^3(?:\s|[.)\-–:])/.test(normalized);
+    if (!hasSectionPrefix) {
+      return false;
+    }
+
+    return /(einwilligung|consent)/.test(normalized);
+  };
+
+  const consentIndex = paragraphs.findIndex((line) => isConsentHeading(line));
   if (consentIndex < 0) {
-    return { before: paragraphs, fromConsent: [] as string[] };
+    const fallbackSectionIndex = paragraphs.findIndex((line) =>
+      /^3(?:\s|[.)\-–:])/.test(line.trim()),
+    );
+    if (fallbackSectionIndex < 0) {
+      return { before: paragraphs, fromConsent: [] as string[] };
+    }
+
+    return {
+      before: paragraphs.slice(0, fallbackSectionIndex),
+      fromConsent: paragraphs.slice(fallbackSectionIndex),
+    };
   }
 
   return {

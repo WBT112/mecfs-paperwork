@@ -29,6 +29,26 @@ type TranslatedManifest = {
   searchBlob: string;
 };
 
+const LAST_ACTIVE_FORMPACK_KEY = 'mecfs-paperwork.lastActiveFormpackId';
+
+const readResumeFormpackId = (): string | null => {
+  try {
+    const formpackId = globalThis.localStorage.getItem(
+      LAST_ACTIVE_FORMPACK_KEY,
+    );
+    if (!formpackId) {
+      return null;
+    }
+
+    const activeRecordId = globalThis.localStorage.getItem(
+      `mecfs-paperwork.activeRecordId.${formpackId}`,
+    );
+    return activeRecordId ? formpackId : null;
+  } catch {
+    return null;
+  }
+};
+
 const buildTranslatedManifests = (
   manifests: FormpackManifest[],
   t: (key: string, options?: Record<string, unknown>) => string,
@@ -172,6 +192,15 @@ export default function FormpackListPage() {
     [translated, query],
   );
 
+  const resumeFormpack = useMemo(() => {
+    const resumeId = readResumeFormpackId();
+    if (!resumeId) {
+      return null;
+    }
+
+    return translated.find((item) => item.manifest.id === resumeId) ?? null;
+  }, [translated]);
+
   if (isLoading || !isI18nReady) {
     return (
       <section className="app__card">
@@ -198,6 +227,19 @@ export default function FormpackListPage() {
           <p className="app__subtitle">{t('formpackListDescription')}</p>
         </div>
       </div>
+      {resumeFormpack && (
+        <p>
+          <Link
+            className="app__button"
+            to={`/formpacks/${resumeFormpack.manifest.id}`}
+            aria-label={t('formpackOpenWithTitle', {
+              title: resumeFormpack.title,
+            })}
+          >
+            {t('formpackResumeLast')}
+          </Link>
+        </p>
+      )}
       {manifests.length > 0 && (
         <input
           type="search"

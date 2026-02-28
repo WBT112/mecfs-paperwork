@@ -384,7 +384,7 @@ export default function HelpPage() {
                     <dd data-testid="storage-health-quota">{quotaDisplay}</dd>
                   </div>
                   <div>
-                    <dt>Status</dt>
+                    <dt>{t('storageHealthStatusLabel')}</dt>
                     <dd
                       data-testid="storage-health-status"
                       data-status={health.status}
@@ -395,7 +395,7 @@ export default function HelpPage() {
                 </dl>
                 {health.status !== 'ok' && (
                   <output className="help-page__storage-guidance">
-                    {health.message}
+                    {t(health.message)}
                   </output>
                 )}
                 <button
@@ -439,6 +439,9 @@ export default function HelpPage() {
             data-testid="danger-zone"
           >
             <h4>{t('resetAllTitle')}</h4>
+            <p className="help-page__danger-zone-description" role="note">
+              {t('resetAllBackupHint')}
+            </p>
             <p className="help-page__danger-zone-description">
               {t('resetAllDescription')}
             </p>

@@ -26,6 +26,7 @@ const {
   registerServiceWorker,
   shouldRegisterServiceWorker,
   subscribeServiceWorkerWaiting,
+  APP_UPDATE_AVAILABLE_EVENT,
 } = registerModule;
 
 describe('shouldRegisterServiceWorker', () => {
@@ -65,9 +66,11 @@ describe('registerServiceWorker', () => {
 
   it('emits an update event and activates a waiting service worker', () => {
     const listener = vi.fn();
+    const appUpdateListener = vi.fn();
     const updateSW = vi.fn(async () => undefined);
     registerSW.mockReturnValueOnce(updateSW);
     const unsubscribe = subscribeServiceWorkerWaiting(listener);
+    globalThis.addEventListener(APP_UPDATE_AVAILABLE_EVENT, appUpdateListener);
 
     registerServiceWorker({ DEV: false });
 
@@ -82,8 +85,13 @@ describe('registerServiceWorker', () => {
     options.onNeedRefresh?.();
     expect(listener).toHaveBeenCalledTimes(1);
     expect(updateSW).toHaveBeenCalledWith(true);
+    expect(appUpdateListener).toHaveBeenCalledTimes(1);
 
     unsubscribe();
+    globalThis.removeEventListener(
+      APP_UPDATE_AVAILABLE_EVENT,
+      appUpdateListener,
+    );
   });
 
   it('keeps onNeedRefresh resilient when activating the waiting worker fails', async () => {

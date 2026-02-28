@@ -1941,11 +1941,35 @@ describe('FormpackDetailPage', () => {
       );
     });
 
+    expect(
+      await screen.findByText('updateFormpacksAvailable'),
+    ).toBeInTheDocument();
+
     await waitFor(() =>
       expect(
         formpackMetaState.getFormpackMeta.mock.calls.length,
       ).toBeGreaterThan(callsBeforeUpdate),
     );
+  });
+
+  it('shows a passive app update notice when service worker update event is emitted', async () => {
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await screen.findByText('formpackFormHeading');
+
+    await act(async () => {
+      window.dispatchEvent(new Event('app:update-available'));
+    });
+
+    expect(
+      await screen.findByText('updateAppAvailablePassive'),
+    ).toBeInTheDocument();
   });
 
   it('dismisses the quota banner in warning state', async () => {

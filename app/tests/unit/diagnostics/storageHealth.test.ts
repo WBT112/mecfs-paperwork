@@ -98,7 +98,7 @@ describe('checkStorageHealth', () => {
     const result = await checkStorageHealth();
     expect(result.indexedDbAvailable).toBe(false);
     expect(result.status).toBe('error');
-    expect(result.message).toContain('IndexedDB is not available');
+    expect(result.message).toBe('storageHealthGuidanceError');
   });
 
   it('returns warning when storage usage is above 85%', async () => {
@@ -112,7 +112,7 @@ describe('checkStorageHealth', () => {
 
     const result = await checkStorageHealth();
     expect(result.status).toBe('warning');
-    expect(result.message).toContain('high');
+    expect(result.message).toBe('storageHealthGuidanceWarning');
   });
 
   it('returns error when storage quota is exceeded', async () => {
@@ -126,7 +126,7 @@ describe('checkStorageHealth', () => {
 
     const result = await checkStorageHealth();
     expect(result.status).toBe('error');
-    expect(result.message).toContain('exceeded');
+    expect(result.message).toBe('storageHealthGuidanceQuotaExceeded');
   });
 
   it('handles navigator.storage.estimate not being available', async () => {

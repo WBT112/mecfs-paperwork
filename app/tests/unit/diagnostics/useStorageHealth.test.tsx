@@ -14,14 +14,14 @@ const healthyResult: StorageHealthInfo = {
   indexedDbAvailable: true,
   storageEstimate: { supported: true, usage: 5000, quota: 100000 },
   status: 'ok',
-  message: 'Storage is available and working normally.',
+  message: '',
 };
 
 const errorResult: StorageHealthInfo = {
   indexedDbAvailable: false,
   storageEstimate: { supported: false },
   status: 'error',
-  message: 'IndexedDB is not available.',
+  message: 'storageHealthGuidanceError',
 };
 
 describe('useStorageHealth', () => {
@@ -72,9 +72,7 @@ describe('useStorageHealth', () => {
     expect(result.current.health.indexedDbAvailable).toBe(false);
     expect(result.current.health.storageEstimate.supported).toBe(false);
     expect(result.current.health.status).toBe('error');
-    expect(result.current.health.message).toBe(
-      'Failed to check storage health.',
-    );
+    expect(result.current.health.message).toBe('storageHealthGuidanceError');
   });
 
   it('re-checks storage health when refresh is called', async () => {

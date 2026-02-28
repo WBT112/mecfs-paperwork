@@ -11,43 +11,58 @@ import type { FormpackManifest } from '../../src/formpacks/types';
 const TITLE_INSURER = 'Insurer Pack';
 const TITLE_DOCTOR = 'Doctor Pack';
 const TITLE_PLAIN = 'Plain Pack';
+const FORMPACK_ID_INSURER = 'formpack-insurer';
 
-vi.mock('../../src/formpacks/loader', () => ({
-  listFormpacks: vi.fn().mockResolvedValue([
-    {
-      id: 'formpack-insurer',
-      version: '1.0.0',
-      defaultLocale: 'de',
-      locales: ['de'],
-      titleKey: 'Insurer Pack',
-      descriptionKey: 'Insurer description',
-      exports: ['json'],
-      visibility: 'public',
-      meta: { category: 'insurer', keywords: ['kasse', 'antrag'] },
-    },
-    {
-      id: 'formpack-doctor',
-      version: '1.0.0',
-      defaultLocale: 'de',
-      locales: ['de'],
-      titleKey: 'Doctor Pack',
-      descriptionKey: 'Doctor description',
-      exports: ['json'],
-      visibility: 'public',
-      meta: { category: 'doctor', keywords: ['arzt', 'brief'] },
-    },
-    {
-      id: 'formpack-plain',
-      version: '1.0.0',
-      defaultLocale: 'en',
-      locales: ['en'],
-      titleKey: 'Plain Pack',
-      descriptionKey: 'Plain description',
-      exports: ['json'],
-      visibility: 'public',
-    },
-  ]),
-}));
+vi.mock('../../src/formpacks/loader', () => {
+  const formpackVersion = '1.0.0';
+  const localeDe = 'de';
+  const localeEn = 'en';
+  const exportJson = 'json';
+  const visibilityPublic = 'public';
+  const formpackIdInsurer = 'formpack-insurer';
+  const formpackIdDoctor = 'formpack-doctor';
+  const formpackIdPlain = 'formpack-plain';
+  const titleInsurer = 'Insurer Pack';
+  const titleDoctor = 'Doctor Pack';
+  const titlePlain = 'Plain Pack';
+
+  return {
+    listFormpacks: vi.fn().mockResolvedValue([
+      {
+        id: formpackIdInsurer,
+        version: formpackVersion,
+        defaultLocale: localeDe,
+        locales: [localeDe],
+        titleKey: titleInsurer,
+        descriptionKey: 'Insurer description',
+        exports: [exportJson],
+        visibility: visibilityPublic,
+        meta: { category: 'insurer', keywords: ['kasse', 'antrag'] },
+      },
+      {
+        id: formpackIdDoctor,
+        version: formpackVersion,
+        defaultLocale: localeDe,
+        locales: [localeDe],
+        titleKey: titleDoctor,
+        descriptionKey: 'Doctor description',
+        exports: [exportJson],
+        visibility: visibilityPublic,
+        meta: { category: 'doctor', keywords: ['arzt', 'brief'] },
+      },
+      {
+        id: formpackIdPlain,
+        version: formpackVersion,
+        defaultLocale: localeEn,
+        locales: [localeEn],
+        titleKey: titlePlain,
+        descriptionKey: 'Plain description',
+        exports: [exportJson],
+        visibility: visibilityPublic,
+      },
+    ]),
+  };
+});
 
 const renderPage = () =>
   render(
@@ -75,6 +90,7 @@ const waitForLoaded = async () => {
 describe('FormpackListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   it('renders formpacks grouped by category', async () => {
@@ -178,6 +194,34 @@ describe('FormpackListPage', () => {
     expect(
       screen.getByPlaceholderText('formpackSearchPlaceholder'),
     ).toBeInTheDocument();
+  });
+
+  it('renders a resume shortcut when a last active draft exists', async () => {
+    window.localStorage.setItem(
+      'mecfs-paperwork.lastActiveFormpackId',
+      FORMPACK_ID_INSURER,
+    );
+    window.localStorage.setItem(
+      'mecfs-paperwork.activeRecordId.formpack-insurer',
+      'record-1',
+    );
+
+    renderPage();
+    await waitForLoaded();
+
+    expect(screen.getByText('formpackResumeLast')).toBeInTheDocument();
+  });
+
+  it('hides the resume shortcut when the active record marker is missing', async () => {
+    window.localStorage.setItem(
+      'mecfs-paperwork.lastActiveFormpackId',
+      FORMPACK_ID_INSURER,
+    );
+
+    renderPage();
+    await waitForLoaded();
+
+    expect(screen.queryByText('formpackResumeLast')).not.toBeInTheDocument();
   });
 
   it('shows empty registry message and no search input when no formpacks exist', async () => {

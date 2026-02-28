@@ -37,7 +37,7 @@ export const useStorageHealth = (): {
             indexedDbAvailable: false,
             storageEstimate: { supported: false },
             status: 'error',
-            message: 'Failed to check storage health.',
+            message: 'storageHealthGuidanceError',
           });
         }
       })

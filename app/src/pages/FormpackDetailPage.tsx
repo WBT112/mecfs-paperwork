@@ -117,6 +117,7 @@ import {
   RecordsPanel,
   SnapshotsPanel,
 } from './formpack-detail';
+import { APP_UPDATE_AVAILABLE_EVENT } from '../pwa/register';
 import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
@@ -207,6 +208,7 @@ const buildErrorMessage = (
 };
 
 const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
+const LAST_ACTIVE_FORMPACK_KEY = 'mecfs-paperwork.lastActiveFormpackId';
 const JSON_ENCRYPTION_KIND = 'mecfs-paperwork-json-encrypted';
 const FORM_PRIMARY_FOCUS_SELECTOR =
   '.formpack-form input:not([type="hidden"]):not([disabled]), .formpack-form select:not([disabled]), .formpack-form textarea:not([disabled]), .formpack-form button:not([disabled]), .formpack-form [tabindex]:not([tabindex="-1"])';
@@ -1169,6 +1171,9 @@ export default function FormpackDetailPage() {
   );
   const [assetRefreshVersion, setAssetRefreshVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [showFormpackUpdateNotice, setShowFormpackUpdateNotice] =
+    useState(false);
+  const [showAppUpdateNotice, setShowAppUpdateNotice] = useState(false);
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
   const [pendingIntroFocus, setPendingIntroFocus] = useState(false);
   const [pendingFormFocus, setPendingFormFocus] = useState(false);
@@ -1465,6 +1470,7 @@ export default function FormpackDetailPage() {
         return;
       }
 
+      setShowFormpackUpdateNotice(true);
       refreshMeta().catch(() => undefined);
       setAssetRefreshVersion((value) => value + 1);
     };
@@ -1482,6 +1488,24 @@ export default function FormpackDetailPage() {
       );
     };
   }, [manifest?.id]);
+
+  useEffect(() => {
+    const handleAppUpdateAvailable = () => {
+      setShowAppUpdateNotice(true);
+    };
+
+    globalThis.addEventListener(
+      APP_UPDATE_AVAILABLE_EVENT,
+      handleAppUpdateAvailable,
+    );
+
+    return () => {
+      globalThis.removeEventListener(
+        APP_UPDATE_AVAILABLE_EVENT,
+        handleAppUpdateAvailable,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     const manifestExports = manifest?.exports;
@@ -1683,21 +1707,28 @@ export default function FormpackDetailPage() {
 
   const persistActiveRecordId = useCallback(
     (recordId: string | null) => {
-      if (!activeRecordStorageKey) {
+      if (!activeRecordStorageKey || !formpackId) {
         return;
       }
 
       try {
         if (recordId) {
           globalThis.localStorage.setItem(activeRecordStorageKey, recordId);
+          globalThis.localStorage.setItem(LAST_ACTIVE_FORMPACK_KEY, formpackId);
         } else {
           globalThis.localStorage.removeItem(activeRecordStorageKey);
+          const lastActiveFormpackId = globalThis.localStorage.getItem(
+            LAST_ACTIVE_FORMPACK_KEY,
+          );
+          if (lastActiveFormpackId === formpackId) {
+            globalThis.localStorage.removeItem(LAST_ACTIVE_FORMPACK_KEY);
+          }
         }
       } catch {
         // Ignore storage errors to keep the UI responsive.
       }
     },
-    [activeRecordStorageKey],
+    [activeRecordStorageKey, formpackId],
   );
 
   const getLastActiveRecord = useCallback(
@@ -3221,6 +3252,24 @@ export default function FormpackDetailPage() {
           errorText={t('storageQuotaError')}
           dismissLabel={t('storageQuotaDismiss')}
           onDismiss={() => setDismissedQuotaStatus(currentQuotaStatus)}
+        />
+      )}
+      {showFormpackUpdateNotice && (
+        <QuotaBanner
+          status="warning"
+          warningText={t('updateFormpacksAvailable')}
+          errorText={t('updateFormpacksAvailable')}
+          dismissLabel={t('storageQuotaDismiss')}
+          onDismiss={() => setShowFormpackUpdateNotice(false)}
+        />
+      )}
+      {showAppUpdateNotice && (
+        <QuotaBanner
+          status="warning"
+          warningText={t('updateAppAvailablePassive')}
+          errorText={t('updateAppAvailablePassive')}
+          dismissLabel={t('storageQuotaDismiss')}
+          onDismiss={() => setShowAppUpdateNotice(false)}
         />
       )}
       <div

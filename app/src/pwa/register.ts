@@ -9,12 +9,15 @@ export const shouldRegisterServiceWorker = (
   env: RuntimeEnv = import.meta.env,
 ): boolean => !env.DEV || env.VITE_ENABLE_DEV_SW === 'true';
 
+export const APP_UPDATE_AVAILABLE_EVENT = 'app:update-available';
+
 const swWaitingListeners = new Set<() => void>();
 const SW_UPDATE_CHECK_INTERVAL_MS = 30 * 60 * 1000;
 let hasStartedServiceWorkerUpdatePolling = false;
 
 const emitSwWaiting = (): void => {
   swWaitingListeners.forEach((listener) => listener());
+  globalThis.dispatchEvent(new Event(APP_UPDATE_AVAILABLE_EVENT));
 };
 
 export const subscribeServiceWorkerWaiting = (

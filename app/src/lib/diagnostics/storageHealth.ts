@@ -146,9 +146,7 @@ const resolveStatus = (
   if (!idbAvailable) {
     return {
       status: 'error',
-      message:
-        'IndexedDB is not available. Data cannot be saved. ' +
-        'This may happen in private/incognito mode or on some iOS browsers.',
+      message: 'storageHealthGuidanceError',
     };
   }
 
@@ -162,21 +160,20 @@ const resolveStatus = (
     if (ratio >= 1) {
       return {
         status: 'error',
-        message:
-          'Storage quota exceeded. Free up space or clear unused data to continue.',
+        message: 'storageHealthGuidanceQuotaExceeded',
       };
     }
     if (ratio >= QUOTA_WARNING_THRESHOLD) {
       return {
         status: 'warning',
-        message: `Storage usage is high (${Math.round(ratio * 100)}%). Consider exporting and removing old drafts.`,
+        message: 'storageHealthGuidanceWarning',
       };
     }
   }
 
   return {
     status: 'ok',
-    message: 'Storage is available and working normally.',
+    message: '',
   };
 };
 

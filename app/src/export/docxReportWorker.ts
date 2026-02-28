@@ -3,6 +3,7 @@
  * to a background thread, keeping the main thread responsive.
  */
 import { createReport } from 'docx-templates/lib/browser.js';
+import { formatLocalizedDate } from '../lib/version';
 
 type WorkerRequest = {
   id: number;
@@ -23,9 +24,7 @@ type WorkerResponse =
 
 const formatDate = (locale: string) => (value: string | null | undefined) => {
   if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date);
+  return formatLocalizedDate(value, locale, { dateStyle: 'medium' });
 };
 
 const formatPhone = (value: string | null | undefined): string => {

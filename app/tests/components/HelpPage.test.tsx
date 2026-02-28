@@ -50,7 +50,7 @@ let mockHealthState: {
       secureFlagVerifiable: false,
     },
     status: 'ok',
-    message: 'Storage is available and working normally.',
+    message: '',
   },
   loading: false,
   refresh: mockRefreshHealth,
@@ -97,7 +97,7 @@ describe('HelpPage', () => {
           secureFlagVerifiable: false,
         },
         status: 'ok' as const,
-        message: 'Storage is available and working normally.',
+        message: '',
       },
       loading: false,
       refresh: mockRefreshHealth,
@@ -363,7 +363,7 @@ describe('HelpPage', () => {
           indexedDbAvailable: true,
           storageEstimate: { supported: true, usage: 90000, quota: 100000 },
           status: 'warning',
-          message: 'Storage usage is high (90%).',
+          message: 'storageHealthGuidanceWarning',
         },
       };
 
@@ -374,7 +374,7 @@ describe('HelpPage', () => {
       expect(statusEl).toHaveTextContent('storageHealthStatusWarning');
 
       expect(screen.getByRole('status')).toHaveTextContent(
-        'Storage usage is high (90%).',
+        'storageHealthGuidanceWarning',
       );
     });
 
@@ -385,7 +385,7 @@ describe('HelpPage', () => {
           indexedDbAvailable: false,
           storageEstimate: { supported: false },
           status: 'error',
-          message: 'IndexedDB is not available.',
+          message: 'storageHealthGuidanceError',
         },
       };
 
@@ -396,7 +396,7 @@ describe('HelpPage', () => {
       expect(statusEl).toHaveTextContent('storageHealthStatusError');
 
       expect(screen.getByRole('status')).toHaveTextContent(
-        'IndexedDB is not available.',
+        'storageHealthGuidanceError',
       );
     });
 
@@ -606,6 +606,7 @@ describe('HelpPage', () => {
       render(<HelpPage />);
 
       expect(await screen.findByTestId('danger-zone')).toBeInTheDocument();
+      expect(screen.getByText('resetAllBackupHint')).toBeInTheDocument();
       expect(screen.getByTestId(TID_RESET_ALL_DATA)).toBeInTheDocument();
     });
 
