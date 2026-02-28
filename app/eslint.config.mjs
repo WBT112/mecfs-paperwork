@@ -279,6 +279,7 @@ export default [
       ...sonarjsAllRules,
       'sonarjs/cognitive-complexity': ['error', 15],
       'sonarjs/duplicates-in-character-class': 'error',
+      'sonarjs/prefer-regexp-exec': 'error',
     },
   },
 

@@ -414,18 +414,32 @@ const normalizeOfflabelRequest = (
   showDevMedications: boolean,
 ): Record<string, unknown> => {
   const visibleMedicationKeys = getVisibleMedicationKeys(showDevMedications);
-  const fallbackDrug = visibleMedicationKeys[0] ?? 'other';
   const requestedDrug = isMedicationKey(request.drug) ? request.drug : null;
   const normalizedDrug =
     requestedDrug && visibleMedicationKeys.includes(requestedDrug)
       ? requestedDrug
-      : fallbackDrug;
+      : null;
+
+  if (!normalizedDrug) {
+    const {
+      drug: _unusedDrug,
+      selectedIndicationKey: _unusedIndication,
+      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
+      applySection2Abs1a: _unusedSection2Fallback,
+      ...rest
+    } = request;
+    return rest;
+  }
+
   const profile = resolveMedicationProfile(normalizedDrug);
   const requestedIndicationKey =
     typeof request.selectedIndicationKey === 'string'
       ? request.selectedIndicationKey
       : '';
-  const fallbackIndicationKey = profile.indications[0]?.key ?? '';
+  const hasMultipleIndications = profile.indications.length > 1;
+  const fallbackIndicationKey = hasMultipleIndications
+    ? ''
+    : (profile.indications[0]?.key ?? '');
   const hasValidIndication =
     requestedIndicationKey.length > 0 &&
     profile.indications.some((entry) => entry.key === requestedIndicationKey);
@@ -434,17 +448,63 @@ const normalizeOfflabelRequest = (
     : fallbackIndicationKey;
 
   if (profile.isOther) {
-    const { selectedIndicationKey: _unused, ...otherRequest } = request;
+    const {
+      selectedIndicationKey: _unused,
+      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
+      applySection2Abs1a: _unusedSection2Fallback,
+      ...otherRequest
+    } = request;
     return {
       ...otherRequest,
       drug: normalizedDrug,
     };
   }
 
-  return {
+  const hasCompletedIndicationStep = normalizedIndicationKey.length > 0;
+  const requestedIndicationConfirmation =
+    request.indicationFullyMetOrDoctorConfirms;
+  const hasSelectedIndicationConfirmation =
+    requestedIndicationConfirmation === 'yes' ||
+    requestedIndicationConfirmation === 'no';
+
+  const normalizedRequest: Record<string, unknown> = {
     ...request,
     drug: normalizedDrug,
     selectedIndicationKey: normalizedIndicationKey,
+  };
+
+  if (!hasCompletedIndicationStep) {
+    const {
+      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
+      applySection2Abs1a: _unusedSection2Fallback,
+      ...withoutIndicationConfirmation
+    } = normalizedRequest;
+    return withoutIndicationConfirmation;
+  }
+
+  if (!hasSelectedIndicationConfirmation) {
+    const {
+      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
+      ...withoutIndicationConfirmation
+    } = normalizedRequest;
+    if (typeof request.applySection2Abs1a !== 'boolean') {
+      const {
+        applySection2Abs1a: _unusedSection2Fallback,
+        ...withoutFallback
+      } = withoutIndicationConfirmation;
+      return withoutFallback;
+    }
+    return withoutIndicationConfirmation;
+  }
+
+  if (typeof request.applySection2Abs1a !== 'boolean') {
+    const { applySection2Abs1a: _unusedSection2Fallback, ...withoutFallback } =
+      normalizedRequest;
+    return withoutFallback;
+  }
+
+  return {
+    ...normalizedRequest,
   };
 };
 
@@ -484,13 +544,7 @@ const buildOfflabelFormSchema = (
   const scopedIndicationEnum = profile.indications.map(
     (indication) => indication.key,
   );
-  const fallbackIndicationEnum = toStringArray(
-    selectedIndicationSchemaNode.enum,
-  );
-  const nextIndicationEnum =
-    scopedIndicationEnum.length > 0
-      ? scopedIndicationEnum
-      : fallbackIndicationEnum;
+  const nextIndicationEnum = scopedIndicationEnum;
   const currentIndicationEnum = toStringArray(
     selectedIndicationSchemaNode.enum,
   );

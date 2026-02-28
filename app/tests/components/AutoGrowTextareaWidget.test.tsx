@@ -218,6 +218,26 @@ describe('AccessibleSelectWidget', () => {
     expect(options[0]).toHaveValue('');
   });
 
+  it('uses ui:options.emptyValueLabel when provided', () => {
+    render(
+      <AccessibleSelectWidget
+        {...buildSelectProps({
+          placeholder: '',
+          options: {
+            enumOptions: [
+              { value: 'a', label: 'Option A' },
+              { value: 'b', label: 'Option B' },
+            ],
+            emptyValueLabel: '[Medikament wählen]',
+          },
+        })}
+      />,
+    );
+    const options = screen.getAllByRole('option');
+    expect(options[0]).toHaveTextContent('[Medikament wählen]');
+    expect(options[0]).toHaveValue('');
+  });
+
   it('hides placeholder when schema.default is defined', () => {
     render(
       <AccessibleSelectWidget

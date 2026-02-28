@@ -160,6 +160,10 @@ describe('formpack detail helpers', () => {
   });
 
   it('merges dummy patches and normalizes offlabel request variants', () => {
+    const MED_A = 'med-a';
+    const INDICATION_A = 'indication-a';
+    const INDICATION_B = 'indication-b';
+
     expect(detail.toStringArray(['a', 1, 'b'])).toEqual(['a', 'b']);
     expect(detail.hasSameStringArray(['a'], ['a'])).toBe(true);
     expect(detail.hasSameStringArray(['a'], ['b'])).toBe(false);
@@ -167,22 +171,58 @@ describe('formpack detail helpers', () => {
     expect(detail.mergeDummyPatch({ a: 1 }, { b: 2 })).toEqual({ a: 1, b: 2 });
     expect(detail.mergeDummyPatch({ a: 1 }, ['x'])).toEqual(['x']);
 
-    mocked.getVisibleMedicationKeys.mockReturnValue(['med-a', 'other']);
+    mocked.getVisibleMedicationKeys.mockReturnValue([MED_A, 'other']);
     mocked.isMedicationKey.mockImplementation(
-      (value: unknown) => value === 'med-a',
+      (value: unknown) => value === MED_A,
     );
     mocked.resolveMedicationProfile.mockReturnValue({
       isOther: false,
-      indications: [{ key: 'indication-a' }],
+      indications: [{ key: INDICATION_A }],
     });
     expect(
       detail.normalizeOfflabelRequest(
-        { drug: 'med-a', selectedIndicationKey: 'missing' },
+        { drug: MED_A, selectedIndicationKey: 'missing' },
         false,
       ),
     ).toMatchObject({
-      drug: 'med-a',
-      selectedIndicationKey: 'indication-a',
+      drug: MED_A,
+      selectedIndicationKey: INDICATION_A,
+    });
+
+    mocked.resolveMedicationProfile.mockReturnValue({
+      isOther: false,
+      indications: [{ key: INDICATION_A }, { key: INDICATION_B }],
+    });
+    expect(
+      detail.normalizeOfflabelRequest(
+        {
+          drug: MED_A,
+          selectedIndicationKey: 'missing',
+          indicationFullyMetOrDoctorConfirms: 'yes',
+          applySection2Abs1a: true,
+        },
+        false,
+      ),
+    ).toMatchObject({
+      drug: MED_A,
+      selectedIndicationKey: '',
+    });
+
+    expect(
+      detail.normalizeOfflabelRequest(
+        {
+          drug: MED_A,
+          selectedIndicationKey: INDICATION_B,
+          indicationFullyMetOrDoctorConfirms: 'no',
+          applySection2Abs1a: true,
+        },
+        false,
+      ),
+    ).toMatchObject({
+      drug: MED_A,
+      selectedIndicationKey: INDICATION_B,
+      indicationFullyMetOrDoctorConfirms: 'no',
+      applySection2Abs1a: true,
     });
 
     mocked.resolveMedicationProfile.mockReturnValue({
@@ -191,11 +231,11 @@ describe('formpack detail helpers', () => {
     });
     expect(
       detail.normalizeOfflabelRequest(
-        { drug: 'med-a', selectedIndicationKey: 'ignored', other: true },
+        { drug: MED_A, selectedIndicationKey: 'ignored', other: true },
         false,
       ),
     ).toMatchObject({
-      drug: 'med-a',
+      drug: MED_A,
       other: true,
     });
   });

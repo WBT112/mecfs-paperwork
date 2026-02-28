@@ -11,6 +11,8 @@ const asRecord = (value: unknown): Record<string, unknown> => {
   return {};
 };
 
+const AGOMELATIN_LONG_POST_COVID_FATIGUE = 'agomelatin.long_post_covid_fatigue';
+
 const buildUiSchema = (): UiSchema => ({
   request: {
     drug: {},
@@ -52,7 +54,7 @@ describe('applyOfflabelVisibility', () => {
       (request.indicationFullyMetOrDoctorConfirms as Record<string, unknown>)[
         'ui:widget'
       ],
-    ).toBe('radio');
+    ).toBe('hidden');
   });
 
   it('hides manual medication fields for standard medications', () => {
@@ -135,6 +137,65 @@ describe('applyOfflabelVisibility', () => {
         label: 'Long-/Post-COVID mit Fatigue',
       },
     ]);
+    expect(
+      (request.indicationFullyMetOrDoctorConfirms as Record<string, unknown>)[
+        'ui:widget'
+      ],
+    ).toBe('hidden');
+  });
+
+  it('shows confirmation and fallback after selecting a valid indication', () => {
+    const uiSchema = buildUiSchema();
+
+    const withIndication = applyOfflabelVisibility(
+      uiSchema,
+      {
+        request: {
+          drug: 'agomelatin',
+          selectedIndicationKey: AGOMELATIN_LONG_POST_COVID_FATIGUE,
+        },
+      },
+      'de',
+    );
+
+    const withIndicationRequest = withIndication.request as Record<
+      string,
+      unknown
+    >;
+    expect(
+      (
+        withIndicationRequest.indicationFullyMetOrDoctorConfirms as Record<
+          string,
+          unknown
+        >
+      )['ui:widget'],
+    ).toBe('radio');
+    expect(
+      (withIndicationRequest.applySection2Abs1a as Record<string, unknown>)[
+        'ui:widget'
+      ],
+    ).toBeUndefined();
+
+    const withConfirmation = applyOfflabelVisibility(
+      uiSchema,
+      {
+        request: {
+          drug: 'agomelatin',
+          selectedIndicationKey: AGOMELATIN_LONG_POST_COVID_FATIGUE,
+          indicationFullyMetOrDoctorConfirms: 'yes',
+        },
+      },
+      'de',
+    );
+    const withConfirmationRequest = withConfirmation.request as Record<
+      string,
+      unknown
+    >;
+    expect(
+      (withConfirmationRequest.applySection2Abs1a as Record<string, unknown>)[
+        'ui:widget'
+      ],
+    ).toBeUndefined();
   });
 
   it('sets localized medication enum options for request.drug', () => {
@@ -170,6 +231,41 @@ describe('applyOfflabelVisibility', () => {
         label: 'anderes Medikament',
       },
     ]);
+    expect(drugOptions.emptyValueLabel).toBe('[Medikament wählen]');
+  });
+
+  it('sets indication selector empty option labels per locale', () => {
+    const uiSchema = buildUiSchema();
+
+    const deResult = applyOfflabelVisibility(
+      uiSchema,
+      { request: { drug: 'agomelatin' } },
+      'de',
+    );
+    const deRequest = deResult.request as Record<string, unknown>;
+    const deIndication = deRequest.selectedIndicationKey as Record<
+      string,
+      unknown
+    >;
+    const deOptions = deIndication['ui:options'] as Record<string, unknown>;
+    expect(deOptions.emptyValueLabel).toBe('[Indikation wählen]');
+
+    const enResult = applyOfflabelVisibility(
+      uiSchema,
+      { request: { drug: 'agomelatin' } },
+      'en',
+    );
+    const enRequest = enResult.request as Record<string, unknown>;
+    const enDrug = enRequest.drug as Record<string, unknown>;
+    const enDrugOptions = enDrug['ui:options'] as Record<string, unknown>;
+    const enIndication = enRequest.selectedIndicationKey as Record<
+      string,
+      unknown
+    >;
+    const enOptions = enIndication['ui:options'] as Record<string, unknown>;
+
+    expect(enDrugOptions.emptyValueLabel).toBe('[Select medication]');
+    expect(enOptions.emptyValueLabel).toBe('[Select indication]');
   });
 
   it('shows manual medication fields for other', () => {
@@ -272,6 +368,10 @@ describe('applyOfflabelVisibility', () => {
 
     expect(drugOptions.preserve).toBe('drug');
     expect(selectedIndicationOptions.preserve).toBe('indication');
+    expect(drugOptions.emptyValueLabel).toBe('[Medikament wählen]');
+    expect(selectedIndicationOptions.emptyValueLabel).toBe(
+      '[Indikation wählen]',
+    );
     expect(Array.isArray(drugOptions.enumOptions)).toBe(true);
     expect(Array.isArray(selectedIndicationOptions.enumOptions)).toBe(true);
   });

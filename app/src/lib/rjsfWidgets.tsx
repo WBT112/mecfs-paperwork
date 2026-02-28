@@ -4,6 +4,7 @@ import {
   useRef,
   type ChangeEvent,
   type FocusEvent,
+  type RefObject,
 } from 'react';
 import {
   ariaDescribedByIds,
@@ -23,6 +24,21 @@ type SelectWidgetOptions = {
   enumOptions?: Array<{ value: unknown; label: string }>;
   enumDisabled?: unknown[];
   emptyValue?: unknown;
+  emptyValueLabel?: unknown;
+};
+
+type AutoGrowTextareaProps = {
+  id: string;
+  textareaRef: RefObject<HTMLTextAreaElement | null>;
+  value: string;
+  rows: number;
+  required?: boolean;
+  disabled?: boolean;
+  readonly?: boolean;
+  onChange: WidgetProps['onChange'];
+  onBlur: WidgetProps['onBlur'];
+  onFocus: WidgetProps['onFocus'];
+  placeholder?: string;
 };
 
 type AttachmentsAssistantItem = {
@@ -172,12 +188,82 @@ const getSelectValue = (
         .map((option) => option.value)
     : event.target.value;
 
-const stripMarkdownStrong = (value: string): string =>
-  value.replace(/^\*\*\s*/u, '').replace(/\s*\*\*$/u, '');
+const resolveWidgetRows = (rowsOption: unknown): number =>
+  typeof rowsOption === 'number' && Number.isFinite(rowsOption)
+    ? Math.max(1, Math.floor(rowsOption))
+    : DEFAULT_ROWS;
 
-const resolveSelectPlaceholderLabel = (placeholder: unknown): string => {
+const resolveStringValue = (value: unknown): string =>
+  typeof value === 'string' ? value : '';
+
+const resolveSelectWidgetValue = (
+  event: ChangeEvent<HTMLSelectElement> | FocusEvent<HTMLSelectElement>,
+  multiple: boolean,
+  enumOptions: SelectWidgetOptions['enumOptions'],
+  optionsEmptyValue: unknown,
+): unknown =>
+  enumOptionsValueForIndex(
+    getSelectValue(event as ChangeEvent<HTMLSelectElement>, multiple),
+    enumOptions,
+    optionsEmptyValue,
+  ) as unknown;
+
+const AutoGrowTextarea = ({
+  id,
+  textareaRef,
+  value,
+  rows,
+  required,
+  disabled,
+  readonly,
+  onChange,
+  onBlur,
+  onFocus,
+  placeholder,
+}: AutoGrowTextareaProps) => (
+  <textarea
+    id={id}
+    ref={textareaRef}
+    className="formpack-textarea--auto"
+    value={value}
+    placeholder={placeholder}
+    rows={rows}
+    required={required}
+    disabled={disabled}
+    readOnly={readonly}
+    onChange={(event) => onChange(event.target.value)}
+    onBlur={(event) => onBlur(id, event.target.value)}
+    onFocus={(event) => onFocus(id, event.target.value)}
+  />
+);
+
+const stripMarkdownStrong = (value: string): string => {
+  let normalized = value;
+
+  if (normalized.startsWith('**')) {
+    normalized = normalized.slice(2).trimStart();
+  }
+
+  if (normalized.endsWith('**')) {
+    normalized = normalized.slice(0, -2).trimEnd();
+  }
+
+  return normalized;
+};
+
+const resolveSelectPlaceholderLabel = (
+  placeholder: unknown,
+  emptyValueLabel: unknown,
+): string => {
   if (typeof placeholder === 'string' && placeholder.trim().length > 0) {
     return placeholder;
+  }
+
+  if (
+    typeof emptyValueLabel === 'string' &&
+    emptyValueLabel.trim().length > 0
+  ) {
+    return emptyValueLabel;
   }
 
   return i18n.t(EMPTY_SELECT_LABEL_I18N_KEY, {
@@ -198,30 +284,26 @@ export const AutoGrowTextareaWidget = ({
   onFocus,
 }: WidgetProps) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const rowsOption = options.rows;
-  const rows =
-    typeof rowsOption === 'number' && Number.isFinite(rowsOption)
-      ? Math.max(1, Math.floor(rowsOption))
-      : DEFAULT_ROWS;
+  const rows = resolveWidgetRows(options.rows);
+  const textValue = resolveStringValue(value);
 
   useLayoutEffect(() => {
     adjustTextareaHeight(textareaRef.current);
-  }, [value]);
+  }, [textValue]);
 
   return (
-    <textarea
+    <AutoGrowTextarea
       id={id}
-      ref={textareaRef}
-      className="formpack-textarea--auto"
-      value={typeof value === 'string' ? value : ''}
+      textareaRef={textareaRef}
+      value={textValue}
       placeholder={placeholder}
       rows={rows}
       required={required}
       disabled={disabled}
-      readOnly={readonly}
-      onChange={(event) => onChange(event.target.value)}
-      onBlur={(event) => onBlur(id, event.target.value)}
-      onFocus={(event) => onFocus(id, event.target.value)}
+      readonly={readonly}
+      onChange={onChange}
+      onBlur={onBlur}
+      onFocus={onFocus}
     />
   );
 };
@@ -252,21 +334,29 @@ export const AccessibleSelectWidget = ({
   const enumOptions = selectOptions.enumOptions;
   const enumDisabled = selectOptions.enumDisabled;
   const optionsEmptyValue = selectOptions.emptyValue;
+  const optionsEmptyValueLabel = selectOptions.emptyValueLabel;
   const selectedIndexes = enumOptionsIndexForValue(
     value,
     enumOptions,
     multiple,
   );
   const showPlaceholderOption = !multiple && schema.default === undefined;
-  const placeholderLabel = resolveSelectPlaceholderLabel(placeholder);
+  const placeholderLabel = resolveSelectPlaceholderLabel(
+    placeholder,
+    optionsEmptyValueLabel,
+  );
   const emptyValue = multiple ? [] : EMPTY_SELECT_VALUE;
 
   const handleBlur = useCallback(
     (event: FocusEvent<HTMLSelectElement>) => {
-      const nextValue = getSelectValue(event, multiple);
       onBlur(
         id,
-        enumOptionsValueForIndex(nextValue, enumOptions, optionsEmptyValue),
+        resolveSelectWidgetValue(
+          event,
+          multiple,
+          enumOptions,
+          optionsEmptyValue,
+        ),
       );
     },
     [id, multiple, onBlur, enumOptions, optionsEmptyValue],
@@ -274,10 +364,14 @@ export const AccessibleSelectWidget = ({
 
   const handleFocus = useCallback(
     (event: FocusEvent<HTMLSelectElement>) => {
-      const nextValue = getSelectValue(event, multiple);
       onFocus(
         id,
-        enumOptionsValueForIndex(nextValue, enumOptions, optionsEmptyValue),
+        resolveSelectWidgetValue(
+          event,
+          multiple,
+          enumOptions,
+          optionsEmptyValue,
+        ),
       );
     },
     [id, multiple, onFocus, enumOptions, optionsEmptyValue],
@@ -285,9 +379,13 @@ export const AccessibleSelectWidget = ({
 
   const handleChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
-      const nextValue = getSelectValue(event, multiple);
       onChange(
-        enumOptionsValueForIndex(nextValue, enumOptions, optionsEmptyValue),
+        resolveSelectWidgetValue(
+          event,
+          multiple,
+          enumOptions,
+          optionsEmptyValue,
+        ),
       );
     },
     [multiple, onChange, enumOptions, optionsEmptyValue],
@@ -339,12 +437,8 @@ export const AttachmentsAssistantWidget = ({
   onFocus,
 }: WidgetProps) => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const rowsOption = options.rows;
-  const rows =
-    typeof rowsOption === 'number' && Number.isFinite(rowsOption)
-      ? Math.max(1, Math.floor(rowsOption))
-      : DEFAULT_ROWS;
-  const textValue = typeof value === 'string' ? value : '';
+  const rows = resolveWidgetRows(options.rows);
+  const textValue = resolveStringValue(value);
   const locale = resolveAttachmentsAssistantLocale(
     i18n.resolvedLanguage ?? i18n.language,
   );
@@ -415,18 +509,17 @@ export const AttachmentsAssistantWidget = ({
           </>
         ) : null}
       </label>
-      <textarea
+      <AutoGrowTextarea
         id={id}
-        ref={textareaRef}
-        className="formpack-textarea--auto"
+        textareaRef={textareaRef}
         value={textValue}
         rows={rows}
         required={required}
         disabled={disabled}
-        readOnly={readonly}
-        onChange={(event) => onChange(event.target.value)}
-        onBlur={(event) => onBlur(id, event.target.value)}
-        onFocus={(event) => onFocus(id, event.target.value)}
+        readonly={readonly}
+        onChange={onChange}
+        onBlur={onBlur}
+        onFocus={onFocus}
       />
     </div>
   );

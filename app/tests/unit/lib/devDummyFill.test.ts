@@ -194,11 +194,10 @@ describe('buildRandomDummyPatch', () => {
     const patch = buildRandomDummyPatch(schema, {} as UiSchema, {
       rng: () => 0.75,
     });
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
     expect(typeof patch.birthDate).toBe('string');
-    expect((patch.birthDate as string).match(/^\d{4}-\d{2}-\d{2}$/)).not.toBe(
-      null,
-    );
+    expect(datePattern.exec(patch.birthDate as string)).not.toBe(null);
     expect(typeof patch.consent).toBe('boolean');
     expect(Number.isInteger(patch.visits)).toBe(true);
     expect(typeof patch.score).toBe('number');

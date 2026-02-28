@@ -131,8 +131,7 @@
           "enum": [
             "yes",
             "no"
-          ],
-          "default": "yes"
+          ]
         },
         "applySection2Abs1a": {
           "type": "boolean"

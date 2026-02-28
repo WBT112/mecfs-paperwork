@@ -85,6 +85,59 @@ const selectDrugByValue = async (page: Page, value: string) => {
   await select.selectOption(resolvedValue);
 };
 
+const selectDrugNoEntry = async (page: Page) => {
+  const select = page.locator('#root_request_drug');
+  await expect(select).toBeVisible({ timeout: 20_000 });
+
+  const hasEmptyOption = await select.evaluate((node) => {
+    const options = Array.from((node as HTMLSelectElement).options);
+    return options.some((option) => {
+      const label = option.textContent?.toLowerCase() ?? '';
+      return (
+        option.value === '' ||
+        label.includes('[medikament wählen]') ||
+        label.includes('[select medication]') ||
+        label.includes('[keine angabe]') ||
+        label.includes('[no entry]')
+      );
+    });
+  });
+
+  if (!hasEmptyOption) {
+    throw new Error('No empty medication option found.');
+  }
+
+  await select.selectOption('');
+};
+
+const selectIndicationConfirmation = async (
+  page: Page,
+  value: 'yes' | 'no',
+) => {
+  const confirmationIndex = value === 'yes' ? 0 : 1;
+  const confirmationInput = page
+    .locator('input[name="root_request_indicationFullyMetOrDoctorConfirms"]')
+    .nth(confirmationIndex);
+  await expect(confirmationInput).toBeVisible();
+  await confirmationInput.check({ force: true });
+};
+
+const expectSelectedDrugLabelContains = async (
+  page: Page,
+  labelSnippet: string,
+) => {
+  const select = page.locator('#root_request_drug');
+  await expect(select).toBeVisible({ timeout: 20_000 });
+  await expect
+    .poll(async () =>
+      select.evaluate((node) => {
+        const selected = (node as HTMLSelectElement).selectedOptions.item(0);
+        return selected?.textContent?.toLowerCase() ?? '';
+      }),
+    )
+    .toContain(labelSnippet.toLowerCase());
+};
+
 const setTheme = async (page: Page, theme: 'dark' | 'light') => {
   const themeSelect = page.locator('#theme-select');
   await expect(themeSelect).toBeVisible({ timeout: 20_000 });
@@ -115,6 +168,7 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     page,
   }) => {
     await selectDrugByValue(page, 'ivabradine');
+    await selectIndicationConfirmation(page, 'yes');
     await page
       .getByLabel(
         /Hilfsweise gleichzeitig Antrag nach § 2 Abs\. 1a SGB V stellen/i,
@@ -194,5 +248,25 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await expect(preview).toContainText(
       /Es liegen veröffentlichte Erkenntnisse vor, die nach sozialmedizinischer Einordnung eine der Zulassungsreife vergleichbare Datenlage stützen/i,
     );
+  });
+
+  test('keeps medication empty for [keine Angabe] in mobile workflow @mobile', async ({
+    page,
+  }) => {
+    const select = page.locator('#root_request_drug');
+
+    await selectDrugByValue(page, 'vortioxetine');
+    await selectIndicationByLabelText(page, 'depressiven Symptomen');
+    await expectSelectedDrugLabelContains(page, 'vortiox');
+
+    await selectDrugNoEntry(page);
+    await expect(select).toHaveValue('');
+
+    await selectDrugByValue(page, 'agomelatin');
+    await selectIndicationByLabelText(page, 'Long-/Post-COVID mit Fatigue');
+    await expectSelectedDrugLabelContains(page, 'agomelat');
+
+    await selectDrugNoEntry(page);
+    await expect(select).toHaveValue('');
   });
 });

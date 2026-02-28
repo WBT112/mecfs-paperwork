@@ -173,7 +173,7 @@ const buildCompactSenderLines = (senderLines: string[]): string[] => {
 };
 
 const parseDayMonthYearDate = (rawDateLine: string): Date | null => {
-  const match = rawDateLine.match(/(\d{1,2})[./-](\d{1,2})[./-](\d{4})/);
+  const match = /(\d{1,2})[./-](\d{1,2})[./-](\d{4})/.exec(rawDateLine);
   if (!match) {
     return null;
   }

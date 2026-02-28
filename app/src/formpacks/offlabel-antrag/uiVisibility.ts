@@ -12,6 +12,17 @@ import {
 type FormDataState = Record<string, unknown>;
 type UiNode = Record<string, unknown>;
 
+const OFFLABEL_SELECT_EMPTY_LABELS = {
+  de: {
+    drug: '[Medikament wählen]',
+    indication: '[Indikation wählen]',
+  },
+  en: {
+    drug: '[Select medication]',
+    indication: '[Select indication]',
+  },
+} as const;
+
 const setWidgetVisibility = (
   node: UiNode,
   isHidden: boolean,
@@ -35,15 +46,33 @@ export const applyOfflabelVisibility = (
   showDevMedications = false,
 ): UiSchema => {
   const selectedDrug = getPathValue(formData, 'request.drug');
-  const isOtherDrug = selectedDrug === 'other';
+  const selectedIndicationKey = getPathValue(
+    formData,
+    'request.selectedIndicationKey',
+  );
   const medicationProfile = resolveMedicationProfile(selectedDrug);
   const indicationOptions = getMedicationIndications(selectedDrug, locale);
   const medicationOptions = getVisibleMedicationOptions(
     locale,
     showDevMedications,
   );
+  const hasSelectedMedication = medicationOptions.some(
+    (option) => option.key === selectedDrug,
+  );
+  const isOtherDrug = hasSelectedMedication && selectedDrug === 'other';
+  const hasSelectedIndication =
+    typeof selectedIndicationKey === 'string' &&
+    indicationOptions.some((option) => option.key === selectedIndicationKey);
+  const hasSingleMedicationIndication =
+    !isOtherDrug && medicationProfile.indications.length === 1;
   const shouldShowIndicationSelector =
-    !isOtherDrug && hasMultipleMedicationIndications(medicationProfile);
+    hasSelectedMedication &&
+    !isOtherDrug &&
+    hasMultipleMedicationIndications(medicationProfile);
+  const isIndicationStepComplete =
+    hasSelectedMedication &&
+    !isOtherDrug &&
+    (hasSingleMedicationIndication || hasSelectedIndication);
 
   if (!isRecord(uiSchema.request)) {
     return uiSchema;
@@ -64,10 +93,10 @@ export const applyOfflabelVisibility = (
 
   applyFieldVisibility(
     'indicationFullyMetOrDoctorConfirms',
-    isOtherDrug,
+    !isIndicationStepComplete,
     'radio',
   );
-  applyFieldVisibility('applySection2Abs1a', isOtherDrug);
+  applyFieldVisibility('applySection2Abs1a', !isIndicationStepComplete);
   applyFieldVisibility('otherDrugName', !isOtherDrug);
   applyFieldVisibility('selectedIndicationKey', !shouldShowIndicationSelector);
   applyFieldVisibility('otherIndication', !isOtherDrug);
@@ -93,6 +122,7 @@ export const applyOfflabelVisibility = (
       value: key,
       label,
     })),
+    emptyValueLabel: OFFLABEL_SELECT_EMPTY_LABELS[locale].drug,
   };
   requestUiSchema.drug = selectedDrugNode;
 
@@ -111,6 +141,7 @@ export const applyOfflabelVisibility = (
       value: key,
       label,
     })),
+    emptyValueLabel: OFFLABEL_SELECT_EMPTY_LABELS[locale].indication,
   };
   requestUiSchema.selectedIndicationKey = selectedIndicationNode;
 
