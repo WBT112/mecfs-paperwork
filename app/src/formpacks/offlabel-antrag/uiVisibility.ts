@@ -73,6 +73,14 @@ export const applyOfflabelVisibility = (
     hasSelectedMedication &&
     !isOtherDrug &&
     (hasSingleMedicationIndication || hasSelectedIndication);
+  const indicationConfirmation = getPathValue(
+    formData,
+    'request.indicationFullyMetOrDoctorConfirms',
+  );
+  const hasIndicationConfirmation =
+    indicationConfirmation === 'yes' || indicationConfirmation === 'no';
+  const shouldShowSection2Fallback =
+    isIndicationStepComplete && hasIndicationConfirmation;
 
   if (!isRecord(uiSchema.request)) {
     return uiSchema;
@@ -96,7 +104,7 @@ export const applyOfflabelVisibility = (
     !isIndicationStepComplete,
     'radio',
   );
-  applyFieldVisibility('applySection2Abs1a', !isIndicationStepComplete);
+  applyFieldVisibility('applySection2Abs1a', !shouldShowSection2Fallback);
   applyFieldVisibility('otherDrugName', !isOtherDrug);
   applyFieldVisibility('selectedIndicationKey', !shouldShowIndicationSelector);
   applyFieldVisibility('otherIndication', !isOtherDrug);

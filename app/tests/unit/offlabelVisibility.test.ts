@@ -100,6 +100,30 @@ describe('applyOfflabelVisibility', () => {
     ).toBe('radio');
     expect(
       (request.applySection2Abs1a as Record<string, unknown>)['ui:widget'],
+    ).toBe('hidden');
+
+    const withConfirmation = applyOfflabelVisibility(uiSchema, {
+      request: {
+        drug: 'ivabradine',
+        indicationFullyMetOrDoctorConfirms: 'yes',
+      },
+    });
+    const withConfirmationRequest = withConfirmation.request as Record<
+      string,
+      unknown
+    >;
+    expect(
+      (
+        withConfirmationRequest.indicationFullyMetOrDoctorConfirms as Record<
+          string,
+          unknown
+        >
+      )['ui:widget'],
+    ).toBe('radio');
+    expect(
+      (withConfirmationRequest.applySection2Abs1a as Record<string, unknown>)[
+        'ui:widget'
+      ],
     ).toBeUndefined();
   });
 
@@ -174,7 +198,7 @@ describe('applyOfflabelVisibility', () => {
       (withIndicationRequest.applySection2Abs1a as Record<string, unknown>)[
         'ui:widget'
       ],
-    ).toBeUndefined();
+    ).toBe('hidden');
 
     const withConfirmation = applyOfflabelVisibility(
       uiSchema,

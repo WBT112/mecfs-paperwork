@@ -1616,7 +1616,25 @@ export default function FormpackDetailPage() {
   // trigger expensive structuredClone on every keystroke, even when the user
   // edits unrelated text fields.
   const selectedDrug = getPathValue(formData, 'request.drug');
+  const selectedIndicationKey = getPathValue(
+    formData,
+    'request.selectedIndicationKey',
+  );
+  const indicationConfirmation = getPathValue(
+    formData,
+    'request.indicationFullyMetOrDoctorConfirms',
+  );
   const decisionData = formData.decision;
+  const offlabelVisibilityData = useMemo(
+    () => ({
+      request: {
+        drug: selectedDrug,
+        selectedIndicationKey,
+        indicationFullyMetOrDoctorConfirms: indicationConfirmation,
+      },
+    }),
+    [selectedDrug, selectedIndicationKey, indicationConfirmation],
+  );
 
   const formSchema = useMemo(() => {
     if (!schema || formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
@@ -1634,7 +1652,7 @@ export default function FormpackDetailPage() {
     if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
       return applyOfflabelVisibility(
         normalizedUiSchema,
-        formData,
+        offlabelVisibilityData,
         locale,
         showDevMedicationOptions,
       );
@@ -1646,7 +1664,7 @@ export default function FormpackDetailPage() {
 
     // Treat missing or invalid decision as empty object to apply visibility rules
     const decision = (
-      isRecord(formData.decision) ? formData.decision : {}
+      isRecord(decisionData) ? decisionData : {}
     ) as DecisionData;
     const visibility = getFieldVisibility(decision);
 
@@ -1672,7 +1690,13 @@ export default function FormpackDetailPage() {
     }
 
     return clonedUiSchema;
-  }, [normalizedUiSchema, formpackId, decisionData, selectedDrug, locale]); // eslint-disable-line react-hooks/exhaustive-deps -- formData read narrowed to decisionData + selectedDrug
+  }, [
+    normalizedUiSchema,
+    formpackId,
+    decisionData,
+    locale,
+    offlabelVisibilityData,
+  ]);
 
   const handleApplyDummyData = useCallback(() => {
     if (!isDevUiEnabled || !formSchema || !conditionalUiSchema) {
