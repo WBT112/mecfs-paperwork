@@ -285,80 +285,77 @@ const toNormalizedPath = (path: readonly string[]): string =>
     .join('.')
     .toLowerCase();
 
+const endsWithAny = (value: string, suffixes: readonly string[]): boolean =>
+  suffixes.some((suffix) => value.endsWith(suffix));
+
+const includesAny = (value: string, needles: readonly string[]): boolean =>
+  needles.some((needle) => value.includes(needle));
+
+const LAST_NAME_SUFFIXES = [
+  'lastname',
+  'birthname',
+  'surname',
+  'familyname',
+] as const;
+
+const STREET_SUFFIXES = ['streetandnumber', 'street'] as const;
+const POSTAL_CODE_SUFFIXES = ['postalcode', 'zipcode', 'plz'] as const;
+const CITY_SUFFIXES = ['city', 'town'] as const;
+const PHONE_SUFFIXES = ['phone', 'telephone', 'mobile', 'tel'] as const;
+const EMAIL_SUFFIXES = ['email', 'mail'] as const;
+const INSURANCE_NUMBER_SUFFIXES = [
+  'insurancenumber',
+  'insuranceid',
+  'policynumber',
+] as const;
+const PRACTICE_SUFFIXES = ['practice', 'clinic'] as const;
+const INSURER_NAME_SUFFIXES = ['insurer.name', 'healthinsurance.name'] as const;
+const MEDICATION_KEYWORDS = ['drug', 'medication', 'wirkstoff'] as const;
+const NOTE_KEYWORDS = [
+  'note',
+  'comment',
+  'reason',
+  'symptom',
+  'details',
+] as const;
+
 const resolveTextPool = (path: readonly string[]): readonly string[] => {
   const normalizedPath = toNormalizedPath(path);
 
   if (normalizedPath.endsWith('firstname')) {
     return FIRST_NAME_VALUES;
   }
-  if (
-    normalizedPath.endsWith('lastname') ||
-    normalizedPath.endsWith('birthname') ||
-    normalizedPath.endsWith('surname') ||
-    normalizedPath.endsWith('familyname')
-  ) {
+  if (endsWithAny(normalizedPath, LAST_NAME_SUFFIXES)) {
     return LAST_NAME_VALUES;
   }
-  if (
-    normalizedPath.endsWith('streetandnumber') ||
-    normalizedPath.endsWith('street')
-  ) {
+  if (endsWithAny(normalizedPath, STREET_SUFFIXES)) {
     return STREET_VALUES;
   }
-  if (
-    normalizedPath.endsWith('postalcode') ||
-    normalizedPath.endsWith('zipcode') ||
-    normalizedPath.endsWith('plz')
-  ) {
+  if (endsWithAny(normalizedPath, POSTAL_CODE_SUFFIXES)) {
     return POSTAL_CODE_VALUES;
   }
-  if (normalizedPath.endsWith('city') || normalizedPath.endsWith('town')) {
+  if (endsWithAny(normalizedPath, CITY_SUFFIXES)) {
     return CITY_VALUES;
   }
-  if (
-    normalizedPath.endsWith('phone') ||
-    normalizedPath.endsWith('telephone') ||
-    normalizedPath.endsWith('mobile') ||
-    normalizedPath.endsWith('tel')
-  ) {
+  if (endsWithAny(normalizedPath, PHONE_SUFFIXES)) {
     return PHONE_VALUES;
   }
-  if (normalizedPath.endsWith('email') || normalizedPath.endsWith('mail')) {
+  if (endsWithAny(normalizedPath, EMAIL_SUFFIXES)) {
     return EMAIL_VALUES;
   }
-  if (
-    normalizedPath.endsWith('insurancenumber') ||
-    normalizedPath.endsWith('insuranceid') ||
-    normalizedPath.endsWith('policynumber')
-  ) {
+  if (endsWithAny(normalizedPath, INSURANCE_NUMBER_SUFFIXES)) {
     return INSURANCE_NUMBER_VALUES;
   }
-  if (
-    normalizedPath.endsWith('practice') ||
-    normalizedPath.endsWith('clinic')
-  ) {
+  if (endsWithAny(normalizedPath, PRACTICE_SUFFIXES)) {
     return PRACTICE_VALUES;
   }
-  if (
-    normalizedPath.endsWith('insurer.name') ||
-    normalizedPath.endsWith('healthinsurance.name')
-  ) {
+  if (endsWithAny(normalizedPath, INSURER_NAME_SUFFIXES)) {
     return INSURER_VALUES;
   }
-  if (
-    normalizedPath.includes('drug') ||
-    normalizedPath.includes('medication') ||
-    normalizedPath.includes('wirkstoff')
-  ) {
+  if (includesAny(normalizedPath, MEDICATION_KEYWORDS)) {
     return MEDICATION_VALUES;
   }
-  if (
-    normalizedPath.includes('note') ||
-    normalizedPath.includes('comment') ||
-    normalizedPath.includes('reason') ||
-    normalizedPath.includes('symptom') ||
-    normalizedPath.includes('details')
-  ) {
+  if (includesAny(normalizedPath, NOTE_KEYWORDS)) {
     return NOTE_VALUES;
   }
   if (normalizedPath.endsWith('name')) {
