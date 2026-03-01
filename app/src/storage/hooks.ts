@@ -111,7 +111,7 @@ export const useRecords = (formpackId: string | null) => {
 
   useEffect(() => {
     setHasLoaded(false);
-    refresh().catch(Promise.resolve.bind(Promise));
+    refresh().catch(Promise.reject.bind(Promise));
   }, [refresh]);
 
   const createRecord = useCallback(
@@ -260,7 +260,7 @@ export const useSnapshots = (recordId: string | null) => {
   }, [recordId, setErrorCode, setSnapshots]);
 
   useEffect(() => {
-    refresh().catch(Promise.resolve.bind(Promise));
+    refresh().catch(Promise.reject.bind(Promise));
   }, [refresh]);
 
   const createSnapshot = useCallback(
@@ -323,9 +323,20 @@ export const useSnapshots = (recordId: string | null) => {
 };
 
 /**
- * Autosaves record data changes after a debounce delay.
+ * Autosaves record data changes after a debounce delay and attempts a final
+ * best-effort persist on `beforeunload`.
  *
- * Returns helpers for syncing the autosave baseline after programmatic updates.
+ * @remarks
+ * The `beforeunload` persist path does not notify `onSaved` or `onError`
+ * because the browser may terminate execution while the request is still in
+ * flight.
+ *
+ * @param recordId - Current record identifier, or `null` when no record is active.
+ * @param formData - Latest in-memory form data to be persisted.
+ * @param locale - Locale that is stored with the record payload.
+ * @param baselineData - Last known persisted record data used to initialize autosave state.
+ * @param options - Optional autosave configuration such as debounce delay and callbacks.
+ * @returns Helpers for syncing the autosave baseline after programmatic updates.
  */
 export const useAutosaveRecord = (
   recordId: string | null,
@@ -370,15 +381,12 @@ export const useAutosaveRecord = (
     if (lastRecordIdRef.current !== recordId) {
       lastRecordIdRef.current = recordId;
       lastSavedRef.current = baselineData ? JSON.stringify(baselineData) : null;
-    }
-  }, [recordId, baselineData]);
-
-  useEffect(() => {
-    if (!recordId || !baselineData) {
       return;
     }
 
-    lastSavedRef.current = JSON.stringify(baselineData);
+    if (baselineData) {
+      lastSavedRef.current = JSON.stringify(baselineData);
+    }
   }, [recordId, baselineData]);
 
   /**
@@ -431,7 +439,7 @@ export const useAutosaveRecord = (
     }
 
     const timeout = globalThis.setTimeout(() => {
-      persistPendingChanges(true).catch(Promise.resolve.bind(Promise));
+      persistPendingChanges(true).catch(Promise.reject.bind(Promise));
     }, delay);
 
     return () => {
@@ -441,7 +449,7 @@ export const useAutosaveRecord = (
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      persistPendingChanges(false).catch(Promise.resolve.bind(Promise));
+      persistPendingChanges(false).catch(Promise.reject.bind(Promise));
     };
 
     globalThis.addEventListener('beforeunload', handleBeforeUnload);

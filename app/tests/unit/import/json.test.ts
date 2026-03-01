@@ -79,6 +79,47 @@ describe('validateJsonImport', () => {
     required: ['name'],
   } as const satisfies RJSFSchema;
 
+  const buildDeepRequiredSchema = (depth: number): RJSFSchema => {
+    let current: RJSFSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        must: { type: 'string' },
+      },
+      required: ['must'],
+    };
+
+    for (let level = 0; level < depth; level += 1) {
+      current = {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          child: current,
+        },
+        required: ['child'],
+      };
+    }
+
+    return current;
+  };
+
+  const buildDeepDataWithoutLeafField = (
+    depth: number,
+  ): Record<string, unknown> => {
+    let current: Record<string, unknown> = {};
+    for (let level = 0; level < depth; level += 1) {
+      current = { child: current };
+    }
+    return current;
+  };
+
+  const expectRecord = (value: unknown): Record<string, unknown> => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      throw new Error('Expected a plain object.');
+    }
+    return value as Record<string, unknown>;
+  };
+
   it('returns a payload for valid JSON', () => {
     const validJson = JSON.stringify({
       formpack: { id: PRIMARY_FORMPACK_ID },
@@ -724,6 +765,37 @@ describe('validateJsonImport', () => {
     expect(result.error?.message).toContain('10 MB');
   });
 
+  it('accepts files above the fast size pre-check when byte size stays below 10 MB', () => {
+    const fastPrecheckThreshold = Math.floor((10 * 1024 * 1024) / 4);
+    const nearThresholdPayload = 'a'.repeat(fastPrecheckThreshold + 128);
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: {
+          name: 'Test',
+          note: nearThresholdPayload,
+        },
+      },
+    });
+
+    expect(importJson.length).toBeGreaterThan(fastPrecheckThreshold);
+    expect(new TextEncoder().encode(importJson).byteLength).toBeLessThan(
+      10 * 1024 * 1024,
+    );
+
+    const result = validateJsonImport(
+      importJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.record.data).toEqual({
+      name: 'Test',
+    });
+  });
+
   it('rejects imports that exceed 10 MB in bytes with multibyte characters', () => {
     const oversizedMultibyte = '€'.repeat(
       Math.floor((10 * 1024 * 1024) / 3) + 1,
@@ -830,6 +902,67 @@ describe('validateJsonImport', () => {
     );
   });
 
+  it('removes unknown fields in nested objects and arrays when additionalProperties is false', () => {
+    const strictSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        known: { type: 'string' },
+        nested: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            keep: { type: 'string' },
+            list: {
+              type: 'array',
+              items: {
+                type: 'object',
+                additionalProperties: false,
+                properties: {
+                  id: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    } as const satisfies RJSFSchema;
+
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: {
+          known: 'ok',
+          unknownRoot: 'drop-me',
+          nested: {
+            keep: 'still-here',
+            unknownNested: 'drop-me-too',
+            list: [
+              { id: '1', unknownItem: 'drop' },
+              { id: '2', unknownItem: 'drop' },
+            ],
+          },
+        },
+      },
+    });
+
+    const result = validateJsonImport(
+      importJson,
+      strictSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.record.data).toEqual({
+      known: 'ok',
+      nested: {
+        keep: 'still-here',
+        list: [{ id: '1' }, { id: '2' }],
+      },
+    });
+  });
+
   it('throws for invalid tuple-style array schemas that use array-valued items', () => {
     const invalidTupleSchema = {
       type: 'object',
@@ -907,5 +1040,55 @@ describe('validateJsonImport', () => {
 
     expect(result.error).toBe(null);
     expect(result.payload?.record.data).toEqual(buildDeepData(depth));
+  });
+
+  it('keeps schemas at depth 50 lenient so deep required fields do not block legacy imports', () => {
+    const dataDepth = 50;
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: buildDeepDataWithoutLeafField(dataDepth),
+      },
+    });
+
+    const result = validateJsonImport(
+      importJson,
+      buildDeepRequiredSchema(dataDepth),
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload).not.toBe(null);
+    if (!result.payload) {
+      throw new Error('Expected payload to be present.');
+    }
+
+    let leaf = expectRecord(result.payload.record.data);
+    for (let level = 0; level < dataDepth; level += 1) {
+      leaf = expectRecord(leaf.child);
+    }
+
+    expect(Object.hasOwn(leaf, 'must')).toBe(true);
+    expect(leaf.must).toBe('');
+  });
+
+  it('stops lenient traversal beyond depth 50 and reports schema mismatches for deeper required fields', () => {
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: buildDeepDataWithoutLeafField(51),
+      },
+    });
+
+    const result = validateJsonImport(
+      importJson,
+      buildDeepRequiredSchema(51),
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('schema_mismatch');
   });
 });

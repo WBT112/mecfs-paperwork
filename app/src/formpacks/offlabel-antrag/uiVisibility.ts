@@ -10,7 +10,12 @@ import {
 } from './medications';
 
 type FormDataState = Record<string, unknown>;
-type UiNode = Record<string, unknown>;
+type UiNode = {
+  'ui:widget'?: string;
+  'ui:enumNames'?: string[];
+  'ui:options'?: Record<string, unknown>;
+  [key: string]: unknown;
+};
 
 const OFFLABEL_SELECT_EMPTY_LABELS = {
   de: {
@@ -39,6 +44,17 @@ const setWidgetVisibility = (
   delete node['ui:widget'];
 };
 
+/**
+ * Applies off-label visibility toggles and localized enum options.
+ *
+ * @param uiSchema - UI schema to transform.
+ * @param formData - Form data subset used by visibility rules.
+ * @param locale - Active locale for enum labels.
+ * @param showDevMedications - Enables development-only medication options.
+ * @returns Either the original `uiSchema` (when `request` is missing/invalid)
+ * or a cloned and transformed schema.
+ * @remarks `uiSchema` is never mutated in either return path.
+ */
 export const applyOfflabelVisibility = (
   uiSchema: UiSchema,
   formData: FormDataState,
@@ -86,13 +102,21 @@ export const applyOfflabelVisibility = (
     return uiSchema;
   }
 
-  const clonedUiSchema = structuredClone(uiSchema);
+  const clonedUiSchema: UiSchema = {
+    ...uiSchema,
+    request: structuredClone(uiSchema.request),
+  };
   const requestUiSchema = clonedUiSchema.request as UiNode;
   const ensureFieldUiNode = (key: string): UiNode => {
     const currentNode = requestUiSchema[key];
     const fieldUiNode = isRecord(currentNode) ? currentNode : {};
     requestUiSchema[key] = fieldUiNode;
     return fieldUiNode;
+  };
+
+  const ensureFieldUiOptionsNode = (fieldUiNode: UiNode): UiNode => {
+    const currentOptions = fieldUiNode['ui:options'];
+    return isRecord(currentOptions) ? (currentOptions as UiNode) : {};
   };
 
   const applyFieldVisibility = (
@@ -124,9 +148,7 @@ export const applyOfflabelVisibility = (
   selectedDrugNode['ui:enumNames'] = medicationOptions.map(
     ({ label }) => label,
   );
-  const drugUiOptions = isRecord(selectedDrugNode['ui:options'])
-    ? (selectedDrugNode['ui:options'] as UiNode)
-    : {};
+  const drugUiOptions = ensureFieldUiOptionsNode(selectedDrugNode);
   selectedDrugNode['ui:options'] = {
     ...drugUiOptions,
     enumOptions: medicationOptions.map(({ key, label }) => ({
@@ -141,9 +163,7 @@ export const applyOfflabelVisibility = (
   selectedIndicationNode['ui:enumNames'] = indicationOptions.map(
     ({ label }) => label,
   );
-  const baseUiOptions = isRecord(selectedIndicationNode['ui:options'])
-    ? (selectedIndicationNode['ui:options'] as UiNode)
-    : {};
+  const baseUiOptions = ensureFieldUiOptionsNode(selectedIndicationNode);
   selectedIndicationNode['ui:options'] = {
     ...baseUiOptions,
     enumOptions: indicationOptions.map(({ key, label }) => ({

@@ -269,6 +269,7 @@ const FORMPACK_META_UPDATED_AT = '2026-02-24T09:03:00.000Z';
 const FORMPACK_META_UPDATED_AT_REFRESHED = '2026-02-24T10:03:00.000Z';
 const FORMPACK_META_VERSION = '1.0.0';
 const FORMPACK_META_HASH = 'abc';
+const UPDATE_NOTICE_TIMEOUT_MS = 3000;
 const STORAGE_LOCKED_LABEL = 'storageLocked';
 const PROFILE_SAVE_STORAGE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const PDF_EXPORT_CONTROLS_LABEL = 'pdf-export-controls';
@@ -2747,7 +2748,9 @@ describe('FormpackDetailPage', () => {
     });
 
     expect(
-      await screen.findByText('updateFormpacksAvailable'),
+      await screen.findByText('updateFormpacksAvailable', undefined, {
+        timeout: UPDATE_NOTICE_TIMEOUT_MS,
+      }),
     ).toBeInTheDocument();
 
     await waitFor(() =>
@@ -2794,7 +2797,9 @@ describe('FormpackDetailPage', () => {
     });
 
     expect(
-      await screen.findByText('updateFormpacksAvailable'),
+      await screen.findByText('updateFormpacksAvailable', undefined, {
+        timeout: UPDATE_NOTICE_TIMEOUT_MS,
+      }),
     ).toBeInTheDocument();
 
     await waitFor(() =>
@@ -3114,7 +3119,9 @@ describe('FormpackDetailPage', () => {
     });
 
     expect(
-      await screen.findByText('updateFormpacksAvailable'),
+      await screen.findByText('updateFormpacksAvailable', undefined, {
+        timeout: UPDATE_NOTICE_TIMEOUT_MS,
+      }),
     ).toBeInTheDocument();
 
     await userEvent.click(

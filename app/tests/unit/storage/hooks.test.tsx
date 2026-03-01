@@ -855,7 +855,7 @@ describe('useAutosaveRecord', () => {
       createRecord({ id: AUTOSAVE_RECORD_ID }),
     );
 
-    // Use a stable reference for baselineData to avoid the second effect
+    // Use a stable reference for baselineData to avoid baseline-sync logic
     // resetting lastSavedRef on each render (mirrors real behavior where
     // activeRecord.data is a stable reference).
     const stableBaseline = { field: 'initial' };
@@ -877,6 +877,35 @@ describe('useAutosaveRecord', () => {
       recordId: AUTOSAVE_RECORD_ID,
       formData: { field: 'changed' },
       baselineData: stableBaseline,
+    });
+
+    await act(async () => {
+      vi.advanceTimersByTime(AUTOSAVE_DELAY + 100);
+    });
+
+    expect(updateRecordEntry).not.toHaveBeenCalled();
+  });
+
+  it('keeps manual baseline when baselineData becomes null for the same record', async () => {
+    vi.mocked(updateRecordEntry).mockResolvedValue(
+      createRecord({ id: AUTOSAVE_RECORD_ID }),
+    );
+
+    const stableBaseline = { field: 'initial' };
+    const { getLatest, rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'initial' },
+      baselineData: stableBaseline,
+    });
+
+    act(() => {
+      getLatest()?.markAsSaved({ field: 'changed' });
+    });
+
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: { field: 'changed' },
+      baselineData: null,
     });
 
     await act(async () => {
