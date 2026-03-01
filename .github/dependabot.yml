@@ -73,4 +73,3 @@ updates:
       - "type:ci"
     cooldown:
       default-days: 14
-      semver-patch-days: 14

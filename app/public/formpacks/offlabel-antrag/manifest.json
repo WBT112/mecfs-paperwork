@@ -13,7 +13,7 @@
     "pdf",
     "json"
   ],
-  "visibility": "dev",
+  "visibility": "public",
   "meta": {
     "category": "insurer",
     "keywords": [

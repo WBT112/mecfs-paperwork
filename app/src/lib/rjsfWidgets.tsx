@@ -47,72 +47,44 @@ type AttachmentsAssistantItem = {
   labelKey: string;
 };
 
-const ATTACHMENTS_ASSISTANT_ITEMS: AttachmentsAssistantItem[] = [
-  {
-    id: 'medicalFindings',
-    value: {
-      de: 'Arztbefunde',
-      en: 'Medical findings',
-    },
-    labelKey: 'offlabel-antrag.attachmentsAssistant.item.medicalFindings',
-  },
-  {
-    id: 'physicianStatement',
-    value: {
-      de: 'Ärztliche Stellungnahme zum Off-Label-Antrag',
-      en: 'Physician statement for off-label application',
-    },
-    labelKey: 'offlabel-antrag.attachmentsAssistant.item.physicianStatement',
-  },
-  {
-    id: 'careLevelNotice',
-    value: {
-      de: 'Pflegegrad-Bescheid',
-      en: 'Care level notice',
-    },
-    labelKey: 'offlabel-antrag.attachmentsAssistant.item.careLevelNotice',
-  },
-  {
-    id: 'gdbNotice',
-    value: {
-      de: 'GdB-Bescheid',
-      en: 'Disability degree notice',
-    },
-    labelKey: 'offlabel-antrag.attachmentsAssistant.item.gdbNotice',
-  },
-  {
-    id: 'pensionNotice',
-    value: {
-      de: 'Rentenbescheid',
-      en: 'Pension notice',
-    },
-    labelKey: 'offlabel-antrag.attachmentsAssistant.item.pensionNotice',
-  },
-  {
-    id: 'medicationPlan',
-    value: {
-      de: 'Medikamentenplan / Unverträglichkeiten',
-      en: 'Medication plan / intolerances',
-    },
-    labelKey: 'offlabel-antrag.attachmentsAssistant.item.medicationPlan',
-  },
-  {
-    id: 'symptomLog',
-    value: {
-      de: 'Symptom-/Funktionsprotokoll',
-      en: 'Symptom/function log',
-    },
-    labelKey: 'offlabel-antrag.attachmentsAssistant.item.symptomLog',
-  },
-  {
-    id: 'rehabReport',
-    value: {
-      de: 'Reha-/Klinikbericht',
-      en: 'Rehab/clinic report',
-    },
-    labelKey: 'offlabel-antrag.attachmentsAssistant.item.rehabReport',
-  },
+type AttachmentsAssistantItemSeed = [id: string, de: string, en: string];
+
+const ATTACHMENTS_ASSISTANT_ITEM_SEEDS: AttachmentsAssistantItemSeed[] = [
+  ['medicalFindings', 'Arztbefunde', 'Medical findings'],
+  [
+    'physicianStatement',
+    'Ärztliche Stellungnahme zum Off-Label-Antrag',
+    'Physician statement for off-label application',
+  ],
+  ['careLevelNotice', 'Pflegegrad-Bescheid', 'Care level notice'],
+  ['gdbNotice', 'GdB-Bescheid', 'Disability degree notice'],
+  ['pensionNotice', 'Rentenbescheid', 'Pension notice'],
+  [
+    'medicationPlan',
+    'Medikamentenplan / Unverträglichkeiten',
+    'Medication plan / intolerances',
+  ],
+  ['symptomLog', 'Symptom-/Funktionsprotokoll', 'Symptom/function log'],
+  ['rehabReport', 'Reha-/Klinikbericht', 'Rehab/clinic report'],
 ];
+
+const mapAttachmentAssistantItem = ([
+  id,
+  de,
+  en,
+]: AttachmentsAssistantItemSeed): AttachmentsAssistantItem => ({
+  id,
+  value: {
+    de,
+    en,
+  },
+  labelKey: `offlabel-antrag.attachmentsAssistant.item.${id}`,
+});
+
+const ATTACHMENTS_ASSISTANT_ITEMS: AttachmentsAssistantItem[] =
+  ATTACHMENTS_ASSISTANT_ITEM_SEEDS.map((seed) =>
+    mapAttachmentAssistantItem(seed),
+  );
 const BULLET_PREFIX = /^[-*•]\s+/u;
 const MULTI_SPACE = /\s+/g;
 

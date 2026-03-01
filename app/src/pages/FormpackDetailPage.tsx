@@ -1217,8 +1217,6 @@ export default function FormpackDetailPage() {
   const [pdfSuccess, setPdfSuccess] = useState<string | null>(null);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [_formpackTranslationsVersion, setFormpackTranslationsVersion] =
-    useState(0);
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
   );
@@ -1394,7 +1392,6 @@ export default function FormpackDetailPage() {
           setErrorMessage(result.errorMessage);
           return;
         }
-        setFormpackTranslationsVersion((version) => version + 1);
         const shouldResetFormData =
           lastFormpackIdRef.current !== requestedFormpackId;
         setManifest(result.manifest);
@@ -1424,7 +1421,6 @@ export default function FormpackDetailPage() {
       resetFormpack();
       setFormData({});
       setValidator(null);
-      setFormpackTranslationsVersion(0);
       lastFormpackIdRef.current = undefined;
       setErrorMessage(t('formpackMissingId'));
       setIsLoading(false);
