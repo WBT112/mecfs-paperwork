@@ -285,13 +285,15 @@ new pack id to `FORMPACK_IDS` so it appears in the catalog.
 The following modules provide reusable infrastructure for all formpacks:
 
 ### `loader.ts`
-Loads formpack assets (manifest, schema, UI schema, i18n) from the public directory at runtime.
+Loads formpack assets (manifest, schema, UI schema) from the public directory at runtime.
 
 **Key exports:**
-- `loadFormpack(id: string, locale: SupportedLocale): Promise<FormpackData>` - Loads all assets for a formpack
-- Handles async fetching of JSON files
-- Validates manifest structure
-- Returns a complete `FormpackData` object with all assets
+- `loadFormpackManifest(id: string): Promise<FormpackManifest>` — Fetches and validates a formpack manifest (cached)
+- `loadFormpackSchema(id: string): Promise<Record<string, unknown>>` — Fetches the JSON schema
+- `loadFormpackUiSchema(id: string): Promise<Record<string, unknown>>` — Fetches the UI schema
+- `listFormpacks(): Promise<FormpackManifest[]>` — Loads all registered formpack manifests
+- `parseManifest(payload): FormpackManifest` — Validates a raw manifest payload
+- `FormpackLoaderError` — Error class with typed `code` for loading failures
 
 **Used by:** All formpacks when rendering forms or preparing exports.
 
@@ -347,9 +349,12 @@ Decision tree resolver for the `doctor-letter` formpack (introduced in v0.1.0).
 Shared TypeScript types for formpack infrastructure.
 
 **Key exports:**
-- `FormpackData` - Complete structure of a loaded formpack
-- `FormpackManifest` - Manifest file structure
-- And other common types
+- `FormpackManifest` — Validated manifest structure
+- `FormpackManifestPayload` — Raw manifest shape for validation
+- `FormpackDocxManifest` — DOCX template/mapping paths
+- `FormpackUiConfig` — UI config (infoBoxes, introGate)
+- `InfoBoxConfig` — InfoBox definition with conditional `showIf` rules
+- `FormpackExportType`, `FormpackVisibility`, `FormpackCategory` — Enum types
 
 **Used by:** All modules that work with formpacks.
 
@@ -357,7 +362,8 @@ Shared TypeScript types for formpack infrastructure.
 Determines if a formpack should be visible in the UI based on its `visibility` field.
 
 **Key exports:**
-- `isFormpackVisible(manifest: FormpackManifest, isDev: boolean): boolean`
+- `isFormpackVisible(manifest: Pick<FormpackManifest, 'visibility'>, showDev?: boolean): boolean`
+- `filterVisibleFormpacks(manifests: FormpackManifest[], showDev?: boolean): FormpackManifest[]`
 
 **Rules:**
 - `visibility: "public"` → always visible

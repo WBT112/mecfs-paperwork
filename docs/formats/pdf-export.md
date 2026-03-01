@@ -40,7 +40,7 @@ formData (user input)
 - `bullets` — `{ type: 'bullets', items: string[] }`
 - `kvTable` — `{ type: 'kvTable', rows: [string, string][] }`
 
-### Registry (`app/src/export/pdf/registry.tsx`)
+### Registry (`app/src/export/pdf/pdfExportRegistry.tsx`)
 
 Each formpack registers a `PdfExportConfig` with two functions:
 
@@ -105,7 +105,7 @@ Annex images are loaded as static asset URLs (not JS inlined) to keep PDF chunks
 | File                                             | Purpose                                       |
 | ------------------------------------------------ | --------------------------------------------- |
 | `app/src/export/pdf/types.ts`                    | `DocumentModel`, `DocumentBlock`, type guards |
-| `app/src/export/pdf/registry.tsx`                | Lazy-loaded formpack PDF configs              |
+| `app/src/export/pdf/pdfExportRegistry.tsx`       | Lazy-loaded formpack PDF configs              |
 | `app/src/export/pdf/fonts.ts`                    | Font registration (Liberation Sans)           |
 | `app/src/export/pdf/render.ts`                   | Date formatting, shared render utilities      |
 | `app/src/export/pdf/PdfExportControls.tsx`       | UI controls (export button + blob provider)   |

@@ -66,10 +66,10 @@
 - Keep dependencies current; prioritize high/critical fixes.
 
 ## 8. Open risks / backlog
-- [ ] Document which fields/state (if any) are persisted locally and why.
-- [ ] Define a stable strategy for redaction/sanitization in errors and debug info.
+- [x] Document which fields/state (if any) are persisted locally and why. *(Covered by `docs/diagnostics-bundle.md` and `app/src/storage/README.md`; IndexedDB stores records, snapshots, profiles, and formpack metadata — all encrypted at rest.)*
+- [x] Define a stable strategy for redaction/sanitization in errors and debug info. *(Implemented in `app/src/lib/diagnostics/redact.ts` — ring buffer, forbidden-key stripping, email/date pattern detection.)*
 - [ ] Review NGINX headers and caching strategy for privacy on a regular cadence.
-- [ ] Ensure import/export helpers are robust against malformed inputs.
+- [x] Ensure import/export helpers are robust against malformed inputs. *(JSON import validates with lenient schema, readOnly/unknown field stripping, schema defaults, and size limits; DOCX template errors are caught and mapped to i18n keys.)*
 
 ## 9. Review cadence
 - This document should be reviewed **regularly** and after major architectural changes.

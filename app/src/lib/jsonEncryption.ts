@@ -54,13 +54,14 @@ export type JsonEncryptionErrorCode =
 
 /**
  * Error type for JSON export encryption/decryption operations.
- *
- * @param code - Stable error code for UI mapping.
- * @param message - Human-readable description for diagnostics.
  */
 export class JsonEncryptionError extends Error {
   readonly code: JsonEncryptionErrorCode;
 
+  /**
+   * @param code - Stable error code for UI mapping.
+   * @param message - Human-readable description for diagnostics.
+   */
   constructor(code: JsonEncryptionErrorCode, message: string) {
     super(message);
     this.name = 'JsonEncryptionError';

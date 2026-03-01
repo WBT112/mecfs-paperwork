@@ -30,7 +30,6 @@ type AccessibleDialogOptions = {
  * Provides shared keyboard and focus management for custom dialog overlays.
  *
  * @param options - Dialog lifecycle callbacks and refs used to control focus.
- * @returns Nothing.
  */
 export const useAccessibleDialog = ({
   isOpen,

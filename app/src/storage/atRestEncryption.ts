@@ -157,8 +157,6 @@ export const isEncryptedStoragePayload = (
 
 /**
  * Removes the storage-encryption key cookie.
- *
- * @returns Nothing.
  */
 export const clearStorageEncryptionKeyCookie = (): void => {
   setCookie(STORAGE_ENCRYPTION_COOKIE_NAME, '', 0);
