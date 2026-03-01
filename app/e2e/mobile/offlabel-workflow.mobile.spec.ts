@@ -188,6 +188,32 @@ const getAttachmentCheckboxSizes = async (page: Page) => {
   );
 };
 
+const getSeverityCheckboxReferenceSize = async (page: Page) => {
+  return page.evaluate(() => {
+    const selectors = [
+      '#root_severity_merkzeichen input[type="checkbox"]',
+      'input[name="root_severity_merkzeichen"]',
+      'input[id^="root_severity_merkzeichen_"]',
+    ];
+
+    for (const selector of selectors) {
+      const candidates = Array.from(
+        document.querySelectorAll<HTMLInputElement>(selector),
+      );
+      const visible = candidates.find((candidate) => {
+        const rect = candidate.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      });
+      if (visible) {
+        const rect = visible.getBoundingClientRect();
+        return { width: rect.width, height: rect.height };
+      }
+    }
+
+    return null;
+  });
+};
+
 test.describe('offlabel workflow preview regressions @mobile', () => {
   test.setTimeout(90_000);
 
@@ -317,24 +343,27 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await expectNoHorizontalOverflow(page);
   });
 
-  test('keeps attachments assistant checkboxes at consistent size on mobile @mobile', async ({
+  test('matches attachments assistant checkbox size with severity checkboxes on mobile @mobile', async ({
     page,
   }) => {
+    const referenceSize = await getSeverityCheckboxReferenceSize(page);
+    expect(referenceSize).not.toBeNull();
+
     const sizes = await getAttachmentCheckboxSizes(page);
     const widths = sizes.map((size) => size.width);
     const heights = sizes.map((size) => size.height);
-    const minWidth = Math.min(...widths);
-    const maxWidth = Math.max(...widths);
-    const minHeight = Math.min(...heights);
-    const maxHeight = Math.max(...heights);
-
-    expect(minWidth).toBeGreaterThanOrEqual(14);
-    expect(minHeight).toBeGreaterThanOrEqual(14);
-    expect(maxWidth - minWidth).toBeLessThanOrEqual(1);
-    expect(maxHeight - minHeight).toBeLessThanOrEqual(1);
 
     for (const size of sizes) {
+      expect(
+        Math.abs(size.width - (referenceSize?.width ?? size.width)),
+      ).toBeLessThanOrEqual(1);
+      expect(
+        Math.abs(size.height - (referenceSize?.height ?? size.height)),
+      ).toBeLessThanOrEqual(1);
       expect(Math.abs(size.width - size.height)).toBeLessThanOrEqual(1);
     }
+
+    expect(Math.max(...widths) - Math.min(...widths)).toBeLessThanOrEqual(1);
+    expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
   });
 });

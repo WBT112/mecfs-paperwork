@@ -1062,18 +1062,14 @@ body {
 /* Keep attachments assistant checkboxes visually stable on narrow layouts. */
 .attachments-assistant__recommended > div > label {
   display: grid;
-  grid-template-columns: 1.125rem minmax(0, 1fr);
+  grid-template-columns: max-content minmax(0, 1fr);
   align-items: start;
   column-gap: 0.6rem;
   margin: 0;
 }
 
 .attachments-assistant__recommended input[type='checkbox'] {
-  inline-size: 1.125rem;
-  block-size: 1.125rem;
-  min-inline-size: 1.125rem;
-  min-block-size: 1.125rem;
-  flex: 0 0 1.125rem;
+  flex: 0 0 auto;
   margin: 0;
   margin-inline-end: 0;
   margin-top: 0.1rem;
