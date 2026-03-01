@@ -35,6 +35,7 @@ describe('importRecordWithSnapshots', () => {
     done: Promise<void>;
   };
   type MockDb = {
+    get: Mock;
     transaction: Mock;
   };
 
@@ -66,6 +67,7 @@ describe('importRecordWithSnapshots', () => {
       done: Promise.resolve(),
     };
     db = {
+      get: vi.fn(),
       transaction: vi.fn(() => transaction),
     };
     vi.mocked(openStorage).mockResolvedValue(
@@ -107,7 +109,7 @@ describe('importRecordWithSnapshots', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    recordStore.get.mockResolvedValue(existingRecord);
+    db.get.mockResolvedValue(existingRecord);
 
     const options = {
       formpackId: TEST_FORMPACK_ID,
@@ -140,7 +142,7 @@ describe('importRecordWithSnapshots', () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    recordStore.get.mockResolvedValue(existingRecord);
+    db.get.mockResolvedValue(existingRecord);
 
     await importRecordWithSnapshots({
       formpackId: TEST_FORMPACK_ID,
@@ -173,7 +175,7 @@ describe('importRecordWithSnapshots', () => {
   });
 
   it('throws an error for overwrite mode if record not found', async () => {
-    recordStore.get.mockResolvedValue(undefined);
+    db.get.mockResolvedValue(undefined);
 
     const options = {
       formpackId: TEST_FORMPACK_ID,

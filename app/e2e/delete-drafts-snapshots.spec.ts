@@ -30,68 +30,126 @@ const waitForActiveRecordId = async (page: Page, timeout: number = 10_000) => {
   return activeId as string;
 };
 
-const ensureSectionActionButton = async (
+const clickSectionActionButton = async (
   page: Page,
   sectionId: string,
   actionSelector: string,
+  pick: 'first' | 'last' = 'first',
   timeoutMs = 20_000,
 ) => {
   const toggle = page.locator(`#${sectionId}-toggle`);
-  const button = page.locator(actionSelector).first();
   const startedAt = Date.now();
   let attempt = 0;
 
   while (Date.now() - startedAt < timeoutMs) {
-    if (await button.isVisible().catch(() => false)) {
-      return button;
-    }
     await expect(toggle).toBeVisible({
       timeout: Math.min(5_000, timeoutMs - (Date.now() - startedAt)),
     });
-    await clickActionButton(toggle);
+    const expanded = await toggle.getAttribute('aria-expanded');
+    if (expanded !== 'true') {
+      await clickActionButton(toggle);
+    }
+    const actions = page.locator(actionSelector);
+    const actionsCount = await actions.count();
+    if (actionsCount > 0) {
+      const targetButton =
+        pick === 'last' ? actions.nth(actionsCount - 1) : actions.first();
+      if (
+        (await targetButton.isVisible().catch(() => false)) &&
+        (await targetButton.isEnabled().catch(() => false))
+      ) {
+        try {
+          await clickActionButton(targetButton, 4_000);
+          return;
+        } catch {
+          // Retry with a freshly resolved locator on the next loop iteration.
+        }
+      }
+    }
     attempt += 1;
     await page.waitForTimeout(100 * attempt);
   }
 
-  await expect(button).toBeVisible({ timeout: 1_000 });
-  return button;
+  const finalActions = page.locator(actionSelector);
+  const finalCount = await finalActions.count();
+  const finalButton =
+    pick === 'last'
+      ? finalActions.nth(Math.max(0, finalCount - 1))
+      : finalActions.first();
+  await expect(finalButton).toBeVisible({ timeout: 1_000 });
+  await clickActionButton(finalButton, 4_000);
 };
 
 const ensureActiveRecordId = async (page: Page) => {
   try {
     return await waitForActiveRecordId(page, 12_000);
   } catch {
-    const newDraftButton = await ensureSectionActionButton(
+    await clickSectionActionButton(
       page,
       'formpack-records',
       '.formpack-records__actions .app__button',
     );
-    await clickActionButton(newDraftButton);
     return waitForActiveRecordId(page, 20_000);
   }
 };
 
 const createSnapshot = async (page: Page) => {
-  const createButton = await ensureSectionActionButton(
+  await clickSectionActionButton(
     page,
     'formpack-snapshots',
     '.formpack-snapshots__actions .app__button:visible',
   );
-  await clickActionButton(createButton);
 };
 
 const clearAllSnapshots = async (page: Page) => {
-  await ensureSectionActionButton(
+  await clickSectionActionButton(
     page,
     'formpack-snapshots',
     '.formpack-snapshots__actions .app__button:visible',
+    'last',
   );
-  const actionsButtons = page.locator(
-    '.formpack-snapshots__actions .app__button:visible',
-  );
-  await expect(actionsButtons.first()).toBeVisible({ timeout: 15_000 });
-  const buttonCount = await actionsButtons.count();
-  await clickActionButton(actionsButtons.nth(Math.max(0, buttonCount - 1)));
+};
+
+const clickDeleteOnFirstNonActiveRecord = async (
+  page: Page,
+  timeoutMs = 20_000,
+) => {
+  const startedAt = Date.now();
+  let attempt = 0;
+
+  while (Date.now() - startedAt < timeoutMs) {
+    await openCollapsibleSectionById(page, 'formpack-records');
+    const deleteButton = page
+      .locator(
+        '.formpack-records__item:not(.formpack-records__item--active) .formpack-records__item-actions .app__icon-button',
+      )
+      .first();
+
+    if (
+      (await deleteButton.isVisible().catch(() => false)) &&
+      (await deleteButton.isEnabled().catch(() => false))
+    ) {
+      page.once('dialog', (dialog) => dialog.accept());
+      try {
+        await clickActionButton(deleteButton, 4_000);
+        return;
+      } catch {
+        // Retry with a freshly resolved locator on the next loop iteration.
+      }
+    }
+
+    attempt += 1;
+    await page.waitForTimeout(100 * attempt);
+  }
+
+  const finalButton = page
+    .locator(
+      '.formpack-records__item:not(.formpack-records__item--active) .formpack-records__item-actions .app__icon-button',
+    )
+    .first();
+  await expect(finalButton).toBeVisible({ timeout: 1_000 });
+  page.once('dialog', (dialog) => dialog.accept());
+  await clickActionButton(finalButton, 4_000);
 };
 
 test.beforeEach(async ({ page }) => {
@@ -120,17 +178,10 @@ test('deletes a non-active draft and removes its snapshots', async ({
   await expect(page.locator('.formpack-snapshots__item')).toHaveCount(1);
 
   await openCollapsibleSectionById(page, 'formpack-records');
-  await expect
-    .poll(
-      async () =>
-        page.locator('.formpack-records__actions .app__button').count(),
-      {
-        timeout: 15_000,
-      },
-    )
-    .toBeGreaterThan(0);
-  await clickActionButton(
-    page.locator('.formpack-records__actions .app__button').first(),
+  await clickSectionActionButton(
+    page,
+    'formpack-records',
+    '.formpack-records__actions .app__button',
   );
 
   let newRecordId: string | null = null;
@@ -146,16 +197,7 @@ test('deletes a non-active draft and removes its snapshots', async ({
     })
     .toBeGreaterThan(1);
 
-  await openCollapsibleSectionById(page, 'formpack-records');
-  const nonActiveRecordItem = page
-    .locator('.formpack-records__item:not(.formpack-records__item--active)')
-    .first();
-  await expect(nonActiveRecordItem).toBeVisible();
-  const itemButtons = nonActiveRecordItem.locator('button');
-  const buttonCount = await itemButtons.count();
-  const deleteDraftButton = itemButtons.nth(Math.max(0, buttonCount - 1));
-  page.once('dialog', (dialog) => dialog.accept());
-  await clickActionButton(deleteDraftButton);
+  await clickDeleteOnFirstNonActiveRecord(page);
 
   await expect(page.locator('.formpack-records__item')).toHaveCount(1);
   await waitForSnapshotCount(page, recordId, 0);

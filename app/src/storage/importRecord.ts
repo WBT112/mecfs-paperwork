@@ -27,17 +27,17 @@ export const importRecordWithSnapshots = async (
 ): Promise<RecordEntry> => {
   const db = await openStorage();
   const now = new Date().toISOString();
-  const tx = db.transaction(['records', 'snapshots'], 'readwrite');
-  const recordStore = tx.objectStore('records');
-  const snapshotStore = tx.objectStore('snapshots');
   let record: RecordEntry;
+  let encryptedRecordData:
+    | Awaited<ReturnType<typeof encryptStorageData>>
+    | undefined;
 
   if (options.mode === 'overwrite') {
     if (!options.recordId) {
       throw new TypeError('Missing record id for overwrite import.');
     }
 
-    const existing = await recordStore.get(options.recordId);
+    const existing = await db.get('records', options.recordId);
     if (existing?.formpackId !== options.formpackId) {
       throw new TypeError('Record not found for import.');
     }
@@ -49,11 +49,6 @@ export const importRecordWithSnapshots = async (
       data: options.data,
       updatedAt: now,
     };
-
-    await recordStore.put({
-      ...record,
-      data: await encryptStorageData(record.data),
-    });
   } else {
     record = {
       id: crypto.randomUUID(),
@@ -64,15 +59,36 @@ export const importRecordWithSnapshots = async (
       createdAt: now,
       updatedAt: now,
     };
+  }
 
+  encryptedRecordData = await encryptStorageData(record.data);
+  const encryptedRevisions = options.revisions?.length
+    ? await Promise.all(
+        options.revisions.map(async (revision) => ({
+          ...revision,
+          encryptedData: await encryptStorageData(revision.data),
+        })),
+      )
+    : [];
+
+  const tx = db.transaction(['records', 'snapshots'], 'readwrite');
+  const recordStore = tx.objectStore('records');
+  const snapshotStore = tx.objectStore('snapshots');
+
+  if (options.mode === 'overwrite') {
+    await recordStore.put({
+      ...record,
+      data: encryptedRecordData,
+    });
+  } else {
     await recordStore.add({
       ...record,
-      data: await encryptStorageData(record.data),
+      data: encryptedRecordData,
     });
   }
 
-  if (options.revisions?.length) {
-    for (const revision of options.revisions) {
+  if (encryptedRevisions.length) {
+    for (const revision of encryptedRevisions) {
       const snapshot: SnapshotEntry = {
         id: crypto.randomUUID(),
         recordId: record.id,
@@ -82,7 +98,7 @@ export const importRecordWithSnapshots = async (
       };
       await snapshotStore.add({
         ...snapshot,
-        data: await encryptStorageData(snapshot.data),
+        data: revision.encryptedData,
       });
     }
   }

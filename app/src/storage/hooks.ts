@@ -346,12 +346,19 @@ export const useAutosaveRecord = (
   const latestRecordIdRef = useRef<string | null>(recordId);
   const latestFormDataRef = useRef<Record<string, unknown>>(formData);
   const latestLocaleRef = useRef<SupportedLocale>(locale);
+  const onSavedRef = useRef<typeof onSaved>(onSaved);
+  const onErrorRef = useRef<typeof onError>(onError);
 
   useEffect(() => {
     latestRecordIdRef.current = recordId;
     latestFormDataRef.current = formData;
     latestLocaleRef.current = locale;
   }, [recordId, formData, locale]);
+
+  useEffect(() => {
+    onSavedRef.current = onSaved;
+    onErrorRef.current = onError;
+  }, [onSaved, onError]);
 
   useEffect(() => {
     if (!recordId) {
@@ -400,17 +407,17 @@ export const useAutosaveRecord = (
           locale: latestLocaleRef.current,
         });
 
-        if (record && notifyCallbacks && onSaved) {
-          onSaved(record);
+        if (record && notifyCallbacks && onSavedRef.current) {
+          onSavedRef.current(record);
         }
         lastSavedRef.current = serializedData;
       } catch (error: unknown) {
-        if (notifyCallbacks && onError) {
-          onError(getStorageErrorCode(error));
+        if (notifyCallbacks && onErrorRef.current) {
+          onErrorRef.current(getStorageErrorCode(error));
         }
       }
     },
-    [onError, onSaved],
+    [],
   );
 
   useEffect(() => {

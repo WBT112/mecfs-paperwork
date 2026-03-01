@@ -27,12 +27,13 @@ export const createSnapshot = async (
     data,
     createdAt: now,
   };
+  const encryptedData = await encryptStorageData(snapshot.data);
 
   const tx = db.transaction('snapshots', 'readwrite');
   const store = tx.objectStore('snapshots');
   await store.add({
     ...snapshot,
-    data: await encryptStorageData(snapshot.data),
+    data: encryptedData,
   });
 
   // Enforce per-record retention limit

@@ -794,6 +794,58 @@ describe('useAutosaveRecord', () => {
     expect(onSaved).toHaveBeenCalledWith(savedRecord);
   });
 
+  it('keeps pending autosave when callback props change identity during debounce', async () => {
+    vi.mocked(updateRecordEntry).mockResolvedValue(
+      createRecord({ id: AUTOSAVE_RECORD_ID }),
+    );
+
+    const initialData = { field: 'initial' };
+    const changedData = { field: 'changed' };
+    const firstOnSaved = vi.fn();
+    const firstOnError = vi.fn();
+
+    const { rerender } = renderAutosaveHook({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: initialData,
+      baselineData: initialData,
+      onSaved: firstOnSaved,
+      onError: firstOnError,
+    });
+
+    rerender({
+      recordId: AUTOSAVE_RECORD_ID,
+      formData: changedData,
+      baselineData: initialData,
+      onSaved: vi.fn(),
+      onError: vi.fn(),
+    });
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await act(async () => {
+        vi.advanceTimersByTime(AUTOSAVE_DELAY - 10);
+      });
+
+      rerender({
+        recordId: AUTOSAVE_RECORD_ID,
+        formData: changedData,
+        baselineData: initialData,
+        onSaved: vi.fn(),
+        onError: vi.fn(),
+      });
+    }
+
+    await act(async () => {
+      vi.advanceTimersByTime(20);
+      await vi.runAllTimersAsync();
+    });
+
+    expect(updateRecordEntry).toHaveBeenCalledTimes(1);
+    expect(updateRecordEntry).toHaveBeenCalledWith(AUTOSAVE_RECORD_ID, {
+      data: changedData,
+      locale: 'de',
+    });
+  });
+
   it('calls onError when save fails', async () => {
     await expectAutosaveErrorCode(new Error('db error'), 'operation');
   });

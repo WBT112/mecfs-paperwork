@@ -84,9 +84,7 @@ export const updateRecord = async (
   },
 ): Promise<RecordEntry | null> => {
   const db = await openStorage();
-  const tx = db.transaction('records', 'readwrite');
-  const store = tx.objectStore('records');
-  const existing = await store.get(id);
+  const existing = await db.get('records', id);
 
   if (!existing) {
     return null;
@@ -102,11 +100,10 @@ export const updateRecord = async (
     updatedAt: new Date().toISOString(),
   };
 
-  await store.put({
+  await db.put('records', {
     ...updated,
     data: await encryptStorageData(updated.data),
   });
-  await tx.done;
   return updated;
 };
 

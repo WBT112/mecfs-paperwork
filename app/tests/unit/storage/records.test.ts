@@ -187,24 +187,12 @@ describe('listRecords', () => {
 });
 
 describe('updateRecord', () => {
-  let mockStore: { get: Mock; put: Mock };
-  let mockTx: { objectStore: Mock; done: Promise<void> };
-  let resolveDone: (() => void) | undefined;
-  let mockDb: { transaction: Mock };
+  let mockDb: { get: Mock; put: Mock };
 
   beforeEach(() => {
-    mockStore = {
+    mockDb = {
       get: vi.fn(),
       put: vi.fn(),
-    };
-    mockTx = {
-      objectStore: vi.fn(() => mockStore),
-      done: new Promise<void>((resolve) => {
-        resolveDone = resolve;
-      }),
-    };
-    mockDb = {
-      transaction: vi.fn(() => mockTx),
     };
     vi.mocked(openStorage).mockResolvedValue(mockDb as any);
   });
@@ -218,31 +206,29 @@ describe('updateRecord', () => {
       createdAt: INITIAL_TIMESTAMP,
       updatedAt: INITIAL_TIMESTAMP,
     };
-    mockStore.get.mockResolvedValue(existingRecord);
+    mockDb.get.mockResolvedValue(existingRecord);
 
     const updates = {
       data: { a: 2 },
       title: 'New Title',
       locale: 'de' as const,
     };
-    const resultPromise = updateRecord('1', updates);
-    resolveDone?.();
-    const result = await resultPromise;
+    const result = await updateRecord('1', updates);
 
     expect(result?.data).toEqual(updates.data);
     expect(result?.title).toBe(updates.title);
     expect(result?.locale).toBe(updates.locale);
     expect(result?.createdAt).toBe(existingRecord.createdAt);
     expect(result?.updatedAt).not.toBe(existingRecord.updatedAt);
-    expect(mockStore.put).toHaveBeenCalledWith(result);
-    expect(mockDb.transaction).toHaveBeenCalledWith('records', 'readwrite');
+    expect(mockDb.get).toHaveBeenCalledWith('records', '1');
+    expect(mockDb.put).toHaveBeenCalledWith('records', result);
   });
 
   it('should return null if the record is not found', async () => {
-    mockStore.get.mockResolvedValue(undefined);
+    mockDb.get.mockResolvedValue(undefined);
     const result = await updateRecord('1', {});
     expect(result).toBeNull();
-    expect(mockStore.put).not.toHaveBeenCalled();
+    expect(mockDb.put).not.toHaveBeenCalled();
   });
 
   it('should keep existing data and locale when partial updates omit them', async () => {
@@ -254,11 +240,9 @@ describe('updateRecord', () => {
       createdAt: INITIAL_TIMESTAMP,
       updatedAt: INITIAL_TIMESTAMP,
     };
-    mockStore.get.mockResolvedValue(existingRecord);
+    mockDb.get.mockResolvedValue(existingRecord);
 
-    const resultPromise = updateRecord('1', { title: 'Renamed' });
-    resolveDone?.();
-    const result = await resultPromise;
+    const result = await updateRecord('1', { title: 'Renamed' });
 
     expect(result?.title).toBe('Renamed');
     expect(result?.data).toEqual(existingRecord.data);
