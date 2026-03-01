@@ -114,6 +114,9 @@ jobs:
     name: Deploy to Server
     needs: build-and-push
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-${{ github.event_name == 'workflow_dispatch' && inputs.environment || github.ref_name }}
+      cancel-in-progress: false
     if: >-
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
@@ -130,9 +133,25 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           SSH_HOST: ${{ secrets.DEPLOY_HOST }}
           SSH_USER: ${{ secrets.DEPLOY_USER }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
+          retry() {
+            local attempts="$1"
+            shift
+            local n=1
+            until "$@"; do
+              if [ "$n" -ge "$attempts" ]; then
+                return 1
+              fi
+              sleep $((2 * n))
+              n=$((n + 1))
+            done
+          }
+
           # Setup SSH
           mkdir -p ~/.ssh
           key_written=false
@@ -160,13 +179,21 @@ jobs:
             echo "::error::SSH_PRIVATE_KEY is invalid or corrupted."
             exit 1
           fi
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+          if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            retry 5 ssh-keyscan -T 10 -H -t ed25519,ecdsa "$SSH_HOST" > ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+          SSH_OPTS="-i ~/.ssh/deploy_key -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ConnectionAttempts=3 -o ServerAliveInterval=15 -o ServerAliveCountMax=3"
           
           # Copy deployment files to server
-          scp -i ~/.ssh/deploy_key compose.deploy.yaml Caddyfile "$SSH_USER@$SSH_HOST:/opt/mecfs-paperwork/"
+          retry 5 scp $SSH_OPTS compose.deploy.yaml Caddyfile "$SSH_USER@$SSH_HOST:/opt/mecfs-paperwork/"
           
           # Execute deployment commands on server
-          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+          retry 5 ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
             "cd /opt/mecfs-paperwork && \
              echo '$DOCKERHUB_TOKEN' | docker login -u '$DOCKERHUB_USERNAME' --password-stdin && \
              docker compose -f compose.deploy.yaml pull && \

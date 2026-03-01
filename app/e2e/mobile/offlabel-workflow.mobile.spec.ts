@@ -170,6 +170,24 @@ const expectNoHorizontalOverflow = async (page: Page) => {
     .toBeLessThanOrEqual(0);
 };
 
+const getAttachmentCheckboxSizes = async (page: Page) => {
+  const checkboxes = page.locator(
+    '.attachments-assistant__recommended input[type="checkbox"]',
+  );
+  await expect(checkboxes).toHaveCount(8, { timeout: 20_000 });
+  await checkboxes.first().scrollIntoViewIfNeeded();
+
+  return checkboxes.evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return {
+        width: rect.width,
+        height: rect.height,
+      };
+    }),
+  );
+};
+
 test.describe('offlabel workflow preview regressions @mobile', () => {
   test.setTimeout(90_000);
 
@@ -297,5 +315,26 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     await selectIndicationByLabelText(page, 'Fatigue und PEM');
 
     await expectNoHorizontalOverflow(page);
+  });
+
+  test('keeps attachments assistant checkboxes at consistent size on mobile @mobile', async ({
+    page,
+  }) => {
+    const sizes = await getAttachmentCheckboxSizes(page);
+    const widths = sizes.map((size) => size.width);
+    const heights = sizes.map((size) => size.height);
+    const minWidth = Math.min(...widths);
+    const maxWidth = Math.max(...widths);
+    const minHeight = Math.min(...heights);
+    const maxHeight = Math.max(...heights);
+
+    expect(minWidth).toBeGreaterThanOrEqual(14);
+    expect(minHeight).toBeGreaterThanOrEqual(14);
+    expect(maxWidth - minWidth).toBeLessThanOrEqual(1);
+    expect(maxHeight - minHeight).toBeLessThanOrEqual(1);
+
+    for (const size of sizes) {
+      expect(Math.abs(size.width - size.height)).toBeLessThanOrEqual(1);
+    }
   });
 });
