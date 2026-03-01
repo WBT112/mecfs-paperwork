@@ -367,3 +367,318 @@ test.describe('offlabel workflow preview regressions @mobile', () => {
     expect(Math.max(...heights) - Math.min(...heights)).toBeLessThanOrEqual(1);
   });
 });
+
+type SizeStats = {
+  count: number;
+  min: number | null;
+  max: number | null;
+  median: number | null;
+};
+
+type FormpackLayoutSnapshot = {
+  formpackId: string;
+  documentOverflowX: number;
+  overflowingElementCount: number;
+  overflowingElementSelectors: string[];
+  detailWidth: number;
+  formWidth: number;
+  formPaddingX: number;
+  formBorderRadius: number;
+  fieldsetBorderRadius: number;
+  checkboxSizes: SizeStats;
+  textInputHeights: SizeStats;
+  selectHeights: SizeStats;
+};
+
+const summarizeRange = (values: number[]) =>
+  values.length > 1 ? Math.max(...values) - Math.min(...values) : 0;
+
+const listFormpackIdsFromOverview = async (page: Page) => {
+  await page.goto('/formpacks');
+  const cards = page.locator('.formpack-card[href^="/formpacks/"]');
+  await expect(cards.first()).toBeVisible({ timeout: 20_000 });
+
+  return cards.evaluateAll((nodes) => {
+    const ids = nodes
+      .map((node) => {
+        const href = node.getAttribute('href') ?? '';
+        const [, id = ''] = href.match(/^\/formpacks\/(.+)$/) ?? [];
+        return id.trim();
+      })
+      .filter((id) => id.length > 0);
+
+    return Array.from(new Set(ids));
+  });
+};
+
+const acceptIntroGateIfPresent = async (page: Page) => {
+  const introCheckbox = page.getByLabel(OFFLABEL_INTRO_CHECKBOX_LABEL).first();
+  const hasIntro = await introCheckbox
+    .isVisible({ timeout: 1_500 })
+    .catch(() => false);
+
+  if (!hasIntro) {
+    return;
+  }
+
+  await introCheckbox.check({ force: true });
+  await page
+    .getByRole('button', { name: /weiter|continue/i })
+    .first()
+    .click();
+};
+
+const openFormpackForLayoutAudit = async (page: Page, formpackId: string) => {
+  await openFormpackWithRetry(
+    page,
+    formpackId,
+    page.locator('.formpack-detail, .formpack-form, .app__error').first(),
+  );
+
+  await acceptIntroGateIfPresent(page);
+  await expect(page.locator('.formpack-form')).toBeVisible({ timeout: 20_000 });
+};
+
+const collectLayoutSnapshot = async (
+  page: Page,
+  formpackId: string,
+): Promise<FormpackLayoutSnapshot> => {
+  return page.evaluate((id) => {
+    const detailRoot = document.querySelector<HTMLElement>('.formpack-detail');
+    const formRoot = document.querySelector<HTMLElement>('.formpack-form');
+    const emptyStats: SizeStats = {
+      count: 0,
+      min: null,
+      max: null,
+      median: null,
+    };
+
+    if (!detailRoot || !formRoot) {
+      return {
+        formpackId: id,
+        documentOverflowX: Number.POSITIVE_INFINITY,
+        overflowingElementCount: Number.POSITIVE_INFINITY,
+        overflowingElementSelectors: [
+          'missing .formpack-detail or .formpack-form',
+        ],
+        detailWidth: 0,
+        formWidth: 0,
+        formPaddingX: 0,
+        formBorderRadius: 0,
+        fieldsetBorderRadius: 0,
+        checkboxSizes: emptyStats,
+        textInputHeights: emptyStats,
+        selectHeights: emptyStats,
+      };
+    }
+
+    const summarize = (values: number[]): SizeStats => {
+      if (values.length === 0) {
+        return emptyStats;
+      }
+
+      const sorted = [...values].sort((a, b) => a - b);
+      const middle = Math.floor(sorted.length / 2);
+      const median =
+        sorted.length % 2 === 0
+          ? (sorted[middle - 1] + sorted[middle]) / 2
+          : sorted[middle];
+
+      return {
+        count: sorted.length,
+        min: sorted[0],
+        max: sorted[sorted.length - 1],
+        median,
+      };
+    };
+
+    const isVisible = (element: HTMLElement) => {
+      const rect = element.getBoundingClientRect();
+      const style = window.getComputedStyle(element);
+      return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        style.display !== 'none' &&
+        style.visibility !== 'hidden'
+      );
+    };
+
+    const describeElement = (element: Element) => {
+      if (element.id) {
+        return `#${element.id}`;
+      }
+      const classAttr =
+        typeof element.className === 'string' ? element.className : '';
+      const firstClass = classAttr
+        .split(/\s+/)
+        .map((entry) => entry.trim())
+        .find(Boolean);
+      return `${element.tagName.toLowerCase()}${firstClass ? `.${firstClass}` : ''}`;
+    };
+
+    const viewportWidth = document.documentElement.clientWidth;
+    const documentOverflowX =
+      Math.max(
+        document.documentElement.scrollWidth,
+        document.body.scrollWidth,
+      ) - viewportWidth;
+    const parsePx = (value: string) => Number.parseFloat(value) || 0;
+    const formStyle = window.getComputedStyle(formRoot);
+    const firstFieldset = formRoot.querySelector<HTMLElement>('fieldset');
+    const fieldsetStyle = firstFieldset
+      ? window.getComputedStyle(firstFieldset)
+      : null;
+
+    const overflowingElementSelectors: string[] = [];
+    const overflowCandidates = Array.from(
+      detailRoot.querySelectorAll<HTMLElement>(
+        'fieldset, legend, label, p, h1, h2, h3, h4, h5, h6, input, select, textarea, button, .collapsible-section, .info-box, .app__button',
+      ),
+    );
+
+    for (const candidate of overflowCandidates) {
+      if (!isVisible(candidate)) {
+        continue;
+      }
+
+      const rect = candidate.getBoundingClientRect();
+      if (rect.left < -1 || rect.right > viewportWidth + 1) {
+        overflowingElementSelectors.push(describeElement(candidate));
+      }
+    }
+
+    const checkboxWidths = Array.from(
+      formRoot.querySelectorAll<HTMLInputElement>(
+        'fieldset input[type="checkbox"]',
+      ),
+    )
+      .filter((checkbox) => isVisible(checkbox))
+      .map((checkbox) => checkbox.getBoundingClientRect().width);
+
+    const textInputHeights = Array.from(
+      formRoot.querySelectorAll<HTMLInputElement>(
+        'input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="range"]):not([type="color"]):not([type="submit"]):not([type="reset"])',
+      ),
+    )
+      .filter((control) => isVisible(control))
+      .map((control) => control.getBoundingClientRect().height);
+
+    const selectHeights = Array.from(
+      formRoot.querySelectorAll<HTMLSelectElement>('select'),
+    )
+      .filter((control) => isVisible(control))
+      .map((control) => control.getBoundingClientRect().height);
+
+    return {
+      formpackId: id,
+      documentOverflowX,
+      overflowingElementCount: overflowingElementSelectors.length,
+      overflowingElementSelectors: overflowingElementSelectors.slice(0, 8),
+      detailWidth: detailRoot.getBoundingClientRect().width,
+      formWidth: formRoot.getBoundingClientRect().width,
+      formPaddingX:
+        parsePx(formStyle.paddingLeft) + parsePx(formStyle.paddingRight),
+      formBorderRadius: parsePx(formStyle.borderTopLeftRadius),
+      fieldsetBorderRadius: fieldsetStyle
+        ? parsePx(fieldsetStyle.borderTopLeftRadius)
+        : 0,
+      checkboxSizes: summarize(checkboxWidths),
+      textInputHeights: summarize(textInputHeights),
+      selectHeights: summarize(selectHeights),
+    };
+  }, formpackId);
+};
+
+test.describe('formpack layout consistency @mobile', () => {
+  test.setTimeout(90_000);
+
+  test('keeps layout metrics consistent across all formpacks @mobile', async ({
+    page,
+  }) => {
+    await deleteDatabase(page, DB_NAME);
+
+    const formpackIds = await listFormpackIdsFromOverview(page);
+    expect(formpackIds.length).toBeGreaterThan(0);
+
+    const snapshots: FormpackLayoutSnapshot[] = [];
+
+    for (const formpackId of formpackIds) {
+      await openFormpackForLayoutAudit(page, formpackId);
+      const snapshot = await collectLayoutSnapshot(page, formpackId);
+
+      expect(
+        snapshot.documentOverflowX,
+        `Horizontal overflow in "${formpackId}" was ${snapshot.documentOverflowX}.`,
+      ).toBeLessThanOrEqual(0.5);
+      expect(
+        snapshot.overflowingElementCount,
+        `Overflowing elements in "${formpackId}": ${snapshot.overflowingElementSelectors.join(', ')}`,
+      ).toBe(0);
+      expect(snapshot.detailWidth).toBeGreaterThan(0);
+      expect(snapshot.formWidth).toBeGreaterThan(0);
+      expect(snapshot.formPaddingX).toBeGreaterThanOrEqual(0);
+      expect(snapshot.formBorderRadius).toBeGreaterThanOrEqual(0);
+      expect(snapshot.fieldsetBorderRadius).toBeGreaterThanOrEqual(0);
+
+      if (snapshot.checkboxSizes.count > 1) {
+        expect(
+          (snapshot.checkboxSizes.max ?? 0) - (snapshot.checkboxSizes.min ?? 0),
+        ).toBeLessThanOrEqual(1);
+      }
+
+      if (snapshot.textInputHeights.count > 1) {
+        expect(
+          (snapshot.textInputHeights.max ?? 0) -
+            (snapshot.textInputHeights.min ?? 0),
+        ).toBeLessThanOrEqual(3);
+      }
+
+      if (snapshot.selectHeights.count > 1) {
+        expect(
+          (snapshot.selectHeights.max ?? 0) - (snapshot.selectHeights.min ?? 0),
+        ).toBeLessThanOrEqual(2);
+      }
+
+      snapshots.push(snapshot);
+    }
+
+    const detailWidths = snapshots.map((snapshot) => snapshot.detailWidth);
+    const formWidths = snapshots.map((snapshot) => snapshot.formWidth);
+    const formPaddingValues = snapshots.map(
+      (snapshot) => snapshot.formPaddingX,
+    );
+    const formBorderRadii = snapshots.map(
+      (snapshot) => snapshot.formBorderRadius,
+    );
+    const fieldsetBorderRadii = snapshots.map(
+      (snapshot) => snapshot.fieldsetBorderRadius,
+    );
+    const checkboxMedians = snapshots
+      .map((snapshot) => snapshot.checkboxSizes.median)
+      .filter((value): value is number => value !== null);
+    const textInputMedians = snapshots
+      .map((snapshot) => snapshot.textInputHeights.median)
+      .filter((value): value is number => value !== null);
+    const selectMedians = snapshots
+      .map((snapshot) => snapshot.selectHeights.median)
+      .filter((value): value is number => value !== null);
+
+    expect(summarizeRange(detailWidths)).toBeLessThanOrEqual(2);
+    expect(summarizeRange(formWidths)).toBeLessThanOrEqual(2);
+    expect(summarizeRange(formPaddingValues)).toBeLessThanOrEqual(0.5);
+    expect(summarizeRange(formBorderRadii)).toBeLessThanOrEqual(0.5);
+    expect(summarizeRange(fieldsetBorderRadii)).toBeLessThanOrEqual(0.5);
+
+    if (checkboxMedians.length > 1) {
+      expect(summarizeRange(checkboxMedians)).toBeLessThanOrEqual(1);
+    }
+
+    if (textInputMedians.length > 1) {
+      expect(summarizeRange(textInputMedians)).toBeLessThanOrEqual(3);
+    }
+
+    if (selectMedians.length > 1) {
+      expect(summarizeRange(selectMedians)).toBeLessThanOrEqual(2);
+    }
+  });
+});

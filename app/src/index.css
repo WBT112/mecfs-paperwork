@@ -1043,13 +1043,20 @@ body {
   margin-inline-end: 1.25rem;
 }
 
-.formpack-form input[type='radio'],
+.formpack-form input[type='radio'] {
+  width: auto;
+  max-width: none;
+  padding: 0;
+  margin: 0;
+  margin-inline-end: 1.05rem;
+}
+
 .formpack-form input[type='checkbox'] {
   width: auto;
   max-width: none;
   padding: 0;
   margin: 0;
-  margin-inline-end: 0.85rem; /* <-- bigger distance to text */
+  margin-inline-end: 0.85rem;
 }
 
 .formpack-form label:has(> input[type='radio']) {
