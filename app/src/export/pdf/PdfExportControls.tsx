@@ -26,13 +26,14 @@ const PdfExportControls = ({
   onError,
 }: PdfExportControlsProps) => {
   useEffect(() => {
-    Promise.all([import('./registry'), import('./PdfExportRuntime')]).catch(
-      () => {},
-    );
+    Promise.all([
+      import('./pdfExportRegistry'),
+      import('./PdfExportRuntime'),
+    ]).catch(() => {});
   }, []);
 
   const buildPayload = useCallback(async (): Promise<PdfExportPayload> => {
-    const { getPdfExportConfig } = await import('./registry');
+    const { getPdfExportConfig } = await import('./pdfExportRegistry');
     const config = await getPdfExportConfig(formpackId);
     if (!config) {
       throw new Error('PDF export is not configured for this formpack.');

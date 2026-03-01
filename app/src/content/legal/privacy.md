@@ -24,7 +24,7 @@ E-Mail: info **(at)** mecfs-paperwork.de
 
 - **Kein Backend:** Der Betrieb erfolgt als statische Webanwendung (SPA) auf einem NGINX-Webserver.
 - **Keine Telemetrie/Analytics:** Es werden keine Tracking- oder Analyse-Dienste eingebunden.
-- **Keine Cookies durch die Anwendung:** Die Anwendung setzt keine Cookies zu Tracking- oder Marketingzwecken.
+- **Nur technisches Cookie:** Die Anwendung nutzt ein technisch notwendiges Cookie zur Speicherung eines lokalen Entschlüsselungs-Schlüssels für die lokale Datenablage. Es wird nicht zu Tracking- oder Marketingzwecken verwendet.
 - **Offline-first/PWA:** Die Anwendung kann statische Inhalte für den Offline-Betrieb lokal zwischenspeichern (Cache Storage / Service Worker). Es werden dabei keine Inhalte an den Betreiber übertragen.
 
 ## 3. Hosting und Server-Logfiles
@@ -124,13 +124,14 @@ Die lokal gespeicherten Daten verbleiben in deinem Browser, bis du sie löschst 
 
 ### 4.4 Sicherheit des lokalen Browser‑Speichers
 
-- Keine automatische Verschlüsselung: Der lokale Browser-Speicher, den die Anwendung verwendet (z. B. IndexedDB, LocalStorage, Cache Storage), wird vom Browser bzw. von der Anwendung nicht automatisch verschlüsselt. Daten liegen daher standardmäßig unverschlüsselt auf deinem Gerät.
+- Standardmäßige lokale Verschlüsselung: Entwurfsdaten, Snapshots und gespeicherte Profildaten werden standardmäßig vor der Ablage in IndexedDB lokal verschlüsselt. Der dafür benötigte Schlüssel wird als technisches Cookie im Browserprofil gespeichert. Ohne diesen Schlüssel können bestehende lokale Daten nicht entschlüsselt werden.
 
-- Risiken: Personen mit Zugang zum gleichen Betriebssystem-Benutzerkonto oder Browserprofil, gestohlene oder kompromittierte Geräte, lokale Backups oder synchronisierte Browserprofile können auf diese Daten zugreifen.
+- Risiken: Personen mit Zugang zum gleichen Betriebssystem-Benutzerkonto oder Browserprofil, gestohlene oder kompromittierte Geräte, lokale Backups oder synchronisierte Browserprofile können weiterhin auf lokal gespeicherte Daten oder Schlüsselmaterial zugreifen.
 
 - Empfohlene Minderungsschritte:
   - Verwende ein separates Betriebssystem-Benutzerkonto oder ein eigenes Browserprofil für sensible Daten.
   - Schütze dein Gerät durch Betriebssystem-Verschlüsselung (z. B. BitLocker, FileVault), ein sicheres Passwort/PIN und automatische Sperre.
+  - Lösche Browser-Cookies und lokale Website-Daten nur bewusst: Wenn der Schlüssel-Cookie fehlt, sind lokal vorhandene verschlüsselte Daten nicht mehr lesbar.
   - Lösche nicht mehr benötigte lokale Daten über die App‑Funktion „Alle lokalen Daten löschen“ (sofern vorhanden) oder über die Browser‑Einstellungen (Website‑Daten löschen).
   - Vermeide die Nutzung gemeinsam genutzter Geräte/Browserprofile für sensible Gesundheitsdaten; exportiere bei Bedarf Daten und verwahre sie an einem sicheren Ort.
 

@@ -53,7 +53,7 @@ const openImportSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
     await expect(nameInput).toBeVisible();
@@ -105,7 +105,7 @@ for (const locale of locales) {
       await switchLocale(page, locale);
       await clickNewDraftIfNeeded(page);
 
-      const nameInput = page.locator('#root_person_name');
+      const nameInput = page.locator('#root_person_firstName');
       await fillTextInputStable(page, nameInput, 'Record Alpha', 20_000);
       await page.locator('#root_diagnoses_meCfs').check();
 
@@ -189,3 +189,81 @@ for (const locale of locales) {
     });
   });
 }
+
+test('imports password-encrypted JSON overwrite into active draft', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+  await deleteDatabase(page, DB_NAME);
+
+  await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await openDraftsSection(page);
+  await switchLocale(page, 'de');
+  await clickNewDraftIfNeeded(page);
+
+  const nameInput = page.locator('#root_person_firstName');
+  await fillTextInputStable(page, nameInput, 'Record Alpha', 20_000);
+  await page.locator('#root_diagnoses_meCfs').check();
+
+  const activeIdBeforeExport = await waitForActiveRecordId(page);
+  const exportToggle = page.locator(
+    '.formpack-json-export__toggle input[type="checkbox"]',
+  );
+  await expect(exportToggle).toBeVisible();
+  await exportToggle.check();
+  await page.locator('#json-export-password').fill('secret-123');
+  await page.locator('#json-export-password-confirm').fill('secret-123');
+
+  const downloadPromise = page.waitForEvent('download');
+  const exportButton = page
+    .getByRole('button', {
+      name: /Entwurf exportieren \(JSON\)|Export draft \(JSON\)/i,
+    })
+    .first();
+  await expect(exportButton).toBeEnabled();
+  await exportButton.click();
+  const download = await downloadPromise;
+  const filePath = await download.path();
+  expect(filePath).not.toBeNull();
+
+  await fillTextInputStable(page, nameInput, 'Record Beta', 20_000);
+
+  await openImportSection(page);
+  const overwriteRadio = page.getByRole('radio', {
+    name: /overwrite|überschreiben/i,
+  });
+  await expect(overwriteRadio).toBeEnabled();
+  await overwriteRadio.check();
+
+  await page.locator('#formpack-import-file').setInputFiles(filePath as string);
+  await page.locator('#formpack-import-password').fill('secret-123');
+
+  const importButton = page.locator('.formpack-import__actions .app__button');
+  await expect(importButton).toBeEnabled();
+
+  await page.evaluate(() => {
+    window.confirm = () => true;
+  });
+
+  await importButton.click();
+
+  await expect(importButton).toBeDisabled({ timeout: 30_000 });
+  await expect(importButton).toHaveText(/JSON importieren|Import JSON/i, {
+    timeout: 30_000,
+  });
+
+  await expect
+    .poll(async () => getActiveRecordId(page), {
+      timeout: 30_000,
+      intervals: [250, 500, 1000],
+    })
+    .toBe(activeIdBeforeExport);
+  await expect(nameInput).toHaveValue('Record Alpha', { timeout: 30_000 });
+  await expect(page.locator('#root_diagnoses_meCfs')).toBeChecked({
+    timeout: 30_000,
+  });
+});

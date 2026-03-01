@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+// @vitest-environment node
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const FORM_PACK_ID = 'formpack-a';
 const DOCX_MAPPING = 'docx/mapping.json';
@@ -25,9 +26,15 @@ import {
   exportDocx as exportLazy,
   getDocxErrorKey as getErrorLazy,
   preloadDocxAssets as preloadLazy,
+  scheduleDocxPreload,
 } from '../../src/export/docxLazy';
 
 describe('docxLazy', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
   it('forwards docx export helpers through the lazy loader', async () => {
     await buildFilenameLazy(FORM_PACK_ID, 'a4');
     await exportLazy({
@@ -54,5 +61,96 @@ describe('docxLazy', () => {
       templates: { a4: DOCX_TEMPLATE },
       mapping: DOCX_MAPPING,
     });
+  });
+
+  it('schedules preload via timeout fallback when requestIdleCallback is unavailable', async () => {
+    vi.useFakeTimers();
+    const preloadTask = vi.fn(async () => undefined);
+
+    scheduleDocxPreload(preloadTask);
+    expect(preloadTask).not.toHaveBeenCalled();
+
+    await vi.runAllTimersAsync();
+
+    expect(preloadTask).toHaveBeenCalledTimes(1);
+  });
+
+  it('supports cancelling timeout-fallback preloads', async () => {
+    vi.useFakeTimers();
+    const preloadTask = vi.fn(async () => undefined);
+
+    const cancel = scheduleDocxPreload(preloadTask);
+    cancel();
+
+    await vi.runAllTimersAsync();
+
+    expect(preloadTask).not.toHaveBeenCalled();
+  });
+
+  it('uses requestIdleCallback when available and cancels idle callbacks on cleanup', async () => {
+    const preloadTask = vi.fn(async () => undefined);
+    let idleCallback: (() => void) | undefined;
+    const requestIdleCallback = vi.fn((callback: () => void) => {
+      idleCallback = callback;
+      return 7;
+    });
+    const cancelIdleCallback = vi.fn();
+
+    vi.stubGlobal(
+      'requestIdleCallback',
+      requestIdleCallback as unknown as (...args: unknown[]) => number,
+    );
+    vi.stubGlobal(
+      'cancelIdleCallback',
+      cancelIdleCallback as unknown as (...args: unknown[]) => void,
+    );
+
+    const cancel = scheduleDocxPreload(preloadTask);
+
+    expect(requestIdleCallback).toHaveBeenCalledTimes(1);
+    expect(requestIdleCallback).toHaveBeenCalledWith(expect.any(Function), {
+      timeout: 2000,
+    });
+
+    idleCallback?.();
+    await Promise.resolve();
+    expect(preloadTask).toHaveBeenCalledTimes(1);
+
+    cancel();
+    expect(cancelIdleCallback).toHaveBeenCalledWith(7);
+  });
+
+  it('skips preload execution when idle callback fires after cancellation', async () => {
+    const preloadTask = vi.fn(async () => undefined);
+    let idleCallback: (() => void) | undefined;
+    const requestIdleCallback = vi.fn((callback: () => void) => {
+      idleCallback = callback;
+      return 13;
+    });
+
+    vi.stubGlobal(
+      'requestIdleCallback',
+      requestIdleCallback as unknown as (...args: unknown[]) => number,
+    );
+
+    const cancel = scheduleDocxPreload(preloadTask);
+    cancel();
+
+    idleCallback?.();
+    await Promise.resolve();
+
+    expect(preloadTask).not.toHaveBeenCalled();
+  });
+
+  it('swallows preload task failures', async () => {
+    vi.useFakeTimers();
+    const preloadTask = vi
+      .fn<() => Promise<void>>()
+      .mockRejectedValue(new Error('preload failed'));
+
+    scheduleDocxPreload(preloadTask);
+    await vi.runAllTimersAsync();
+
+    expect(preloadTask).toHaveBeenCalledTimes(1);
   });
 });

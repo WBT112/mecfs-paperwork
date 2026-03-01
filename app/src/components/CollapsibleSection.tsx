@@ -61,7 +61,6 @@ export default memo(function CollapsibleSection(
           id={ids.toggle}
           className="collapsible-section__toggle"
           aria-expanded={isOpen}
-          aria-pressed={isOpen}
           aria-controls={ids.content}
           onClick={handleClick}
           onKeyDown={handleKeyDown}

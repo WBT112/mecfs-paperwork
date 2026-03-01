@@ -2,8 +2,10 @@ import appPackage from '../../package.json';
 import type { RJSFSchema } from '@rjsf/utils';
 import type { SupportedLocale } from '../i18n/locale';
 import type { FormpackManifest } from '../formpacks/types';
+import type { JsonEncryptionEnvelope } from '../lib/jsonEncryption';
 import type { RecordEntry, SnapshotEntry } from '../storage/types';
 import { isRecord } from '../lib/utils';
+import { downloadBlobExport } from './downloadUtils';
 
 const APP_ID = 'mecfs-paperwork';
 const { version: appVersion } = appPackage as { version?: string };
@@ -31,6 +33,8 @@ export type JsonExportPayload = {
   data: Record<string, unknown>;
   revisions?: JsonExportRevision[];
 };
+
+export type JsonDownloadPayload = JsonExportPayload | JsonEncryptionEnvelope;
 
 export type JsonExportOptions = {
   formpack: Pick<FormpackManifest, 'id' | 'version'>;
@@ -226,19 +230,16 @@ export const buildJsonExportFilename = (payload: JsonExportPayload): string => {
  * Trigger a download for the JSON export payload.
  */
 export const downloadJsonExport = (
-  payload: JsonExportPayload,
+  payload: JsonDownloadPayload,
   filename: string,
 ): void => {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: 'application/json',
+  downloadBlobExport({
+    blob: new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json',
+    }),
+    filename,
+    mimeType: 'application/json',
+    defaultExtension: '.json',
+    errorMessage: 'JSON export could not be generated.',
   });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noopener';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
 };

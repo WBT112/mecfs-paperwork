@@ -11,7 +11,7 @@
 
 ## 2. Assets to protect
 - **User-entered form data** (in-memory and any local persistence).
-- **Exports** (e.g., generated DOCX/JSON files and filenames/metadata).
+- **Exports** (e.g., generated DOCX/PDF/JSON files and filenames/metadata).
 - **Local persistence** (e.g., localStorage, cached state, imported packs/templates).
 - **Build/runtime supply chain** (dependencies, Docker images, CI pipeline).
 
@@ -54,6 +54,9 @@
 - **Offline-first:** No telemetry/network calls for core functionality.
 - **Privacy rules:** No real patient/health data in repo, issues, tests, logs.
 - **Container hardening (where applicable):** NGINX config and minimal runtime image.
+- **Safe markdown baseline:** `react-markdown` with raw HTML disabled (`skipHtml`) and explicit link safety checks.
+- **Path write hardening:** shared path helpers block dangerous prototype path segments in mutable writes.
+- **Profile persistence control:** users can disable persistence and optionally delete previously saved profile data.
 
 ## 7. Security requirements (engineering rules)
 - Never log user-entered content or exports (only redacted summaries if necessary).
@@ -65,9 +68,9 @@
 ## 8. Open risks / backlog
 - [ ] Document which fields/state (if any) are persisted locally and why.
 - [ ] Define a stable strategy for redaction/sanitization in errors and debug info.
-- [ ] Review NGINX headers and caching strategy for privacy.
+- [ ] Review NGINX headers and caching strategy for privacy on a regular cadence.
 - [ ] Ensure import/export helpers are robust against malformed inputs.
 
 ## 9. Review cadence
-- This document should be reviewed at least **monthly** and after major architectural changes.
-- The monthly security review summary should be recorded separately (see `docs/security/security-review.md`).
+- This document should be reviewed **regularly** and after major architectural changes.
+- The security review summary should be recorded separately (see `docs/security/security-review.md`) on a regular cadence.

@@ -1,8 +1,13 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { FormpackMetaEntry, RecordEntry, SnapshotEntry } from './types';
+import type {
+  FormpackMetaEntry,
+  ProfileEntry,
+  RecordEntry,
+  SnapshotEntry,
+} from './types';
 
 const DB_NAME = 'mecfs-paperwork';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 /**
  * Typed schema for the IndexedDB storage.
@@ -27,6 +32,13 @@ interface MecfsPaperworkDB extends DBSchema {
   formpackMeta: {
     key: string;
     value: FormpackMetaEntry;
+    indexes: {
+      by_updatedAt: string;
+    };
+  };
+  profiles: {
+    key: string;
+    value: ProfileEntry;
     indexes: {
       by_updatedAt: string;
     };
@@ -85,6 +97,13 @@ export const openStorage = async (): Promise<
           keyPath: 'id',
         });
         formpackMetaStore.createIndex('by_updatedAt', 'updatedAt');
+      }
+
+      if (!database.objectStoreNames.contains('profiles')) {
+        const profileStore = database.createObjectStore('profiles', {
+          keyPath: 'id',
+        });
+        profileStore.createIndex('by_updatedAt', 'updatedAt');
       }
     },
   });

@@ -114,4 +114,21 @@ describe('theme utilities', () => {
 
     expect(getThemeMediaQuery()).toBeNull();
   });
+
+  it('returns the resolved theme when document is unavailable', () => {
+    const originalDocument = globalThis.document;
+    Object.defineProperty(globalThis, 'document', {
+      value: undefined,
+      configurable: true,
+    });
+
+    try {
+      expect(applyTheme('light')).toBe('light');
+    } finally {
+      Object.defineProperty(globalThis, 'document', {
+        value: originalDocument,
+        configurable: true,
+      });
+    }
+  });
 });

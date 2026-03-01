@@ -38,4 +38,24 @@ describe('formpacks/metadata', () => {
     expect(signatureB.versionOrHash).toBe(signatureB.hash);
     expect(signatureA.hash).toBe(signatureB.hash);
   });
+
+  it('falls back to hash when manifest payload is not a record', async () => {
+    const signature = await deriveFormpackRevisionSignature('not-a-manifest');
+
+    expect(signature.version).toBeUndefined();
+    expect(signature.versionOrHash).toBe(signature.hash);
+    expect(signature.hash).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('falls back to hash when manifest version is blank after trimming', async () => {
+    const signature = await deriveFormpackRevisionSignature({
+      id: FORMPACK_ID,
+      version: '   ',
+      matrix: [{ value: 1 }, null, 'x'],
+    });
+
+    expect(signature.version).toBeUndefined();
+    expect(signature.versionOrHash).toBe(signature.hash);
+    expect(signature.hash).toMatch(/^[a-f0-9]{64}$/);
+  });
 });

@@ -5,6 +5,7 @@ import {
   useState,
   type SetStateAction,
 } from 'react';
+import { StorageLockedError } from './atRestEncryption';
 import type { SupportedLocale } from '../i18n/locale';
 import { StorageUnavailableError } from './db';
 import {
@@ -22,10 +23,19 @@ import {
 } from './snapshots';
 import type { RecordEntry, SnapshotEntry } from './types';
 
-export type StorageErrorCode = 'unavailable' | 'operation';
+export type StorageErrorCode = 'unavailable' | 'locked' | 'operation';
 
-const getStorageErrorCode = (error: unknown): StorageErrorCode =>
-  error instanceof StorageUnavailableError ? 'unavailable' : 'operation';
+const getStorageErrorCode = (error: unknown): StorageErrorCode => {
+  if (error instanceof StorageUnavailableError) {
+    return 'unavailable';
+  }
+
+  if (error instanceof StorageLockedError) {
+    return 'locked';
+  }
+
+  return 'operation';
+};
 
 const upsertRecord = (
   records: RecordEntry[],
@@ -89,9 +99,7 @@ export const useRecords = (formpackId: string | null) => {
         if (current.formpackId !== formpackId) {
           return null;
         }
-        return mergedRecords.some((record) => record.id === current.id)
-          ? current
-          : null;
+        return current;
       });
     } catch (error) {
       setErrorCode(getStorageErrorCode(error));
@@ -103,7 +111,7 @@ export const useRecords = (formpackId: string | null) => {
 
   useEffect(() => {
     setHasLoaded(false);
-    refresh().catch(() => undefined);
+    refresh().catch(Promise.resolve);
   }, [refresh]);
 
   const createRecord = useCallback(
@@ -252,7 +260,7 @@ export const useSnapshots = (recordId: string | null) => {
   }, [recordId, setErrorCode, setSnapshots]);
 
   useEffect(() => {
-    refresh().catch(() => undefined);
+    refresh().catch(Promise.resolve);
   }, [refresh]);
 
   const createSnapshot = useCallback(
@@ -335,6 +343,15 @@ export const useAutosaveRecord = (
   const onError = options?.onError;
   const lastSavedRef = useRef<string | null>(null);
   const lastRecordIdRef = useRef<string | null>(null);
+  const latestRecordIdRef = useRef<string | null>(recordId);
+  const latestFormDataRef = useRef<Record<string, unknown>>(formData);
+  const latestLocaleRef = useRef<SupportedLocale>(locale);
+
+  useEffect(() => {
+    latestRecordIdRef.current = recordId;
+    latestFormDataRef.current = formData;
+    latestLocaleRef.current = locale;
+  }, [recordId, formData, locale]);
 
   useEffect(() => {
     if (!recordId) {
@@ -354,9 +371,7 @@ export const useAutosaveRecord = (
       return;
     }
 
-    if (lastRecordIdRef.current === recordId) {
-      lastSavedRef.current = JSON.stringify(baselineData);
-    }
+    lastSavedRef.current = JSON.stringify(baselineData);
   }, [recordId, baselineData]);
 
   /**
@@ -365,6 +380,38 @@ export const useAutosaveRecord = (
   const markAsSaved = useCallback((nextData: Record<string, unknown>) => {
     lastSavedRef.current = JSON.stringify(nextData);
   }, []);
+
+  const persistPendingChanges = useCallback(
+    async (notifyCallbacks: boolean) => {
+      const currentRecordId = latestRecordIdRef.current;
+      if (!currentRecordId) {
+        return;
+      }
+
+      const currentFormData = latestFormDataRef.current;
+      const serializedData = JSON.stringify(currentFormData);
+      if (lastSavedRef.current === serializedData) {
+        return;
+      }
+
+      try {
+        const record = await updateRecordEntry(currentRecordId, {
+          data: currentFormData,
+          locale: latestLocaleRef.current,
+        });
+
+        if (record && notifyCallbacks && onSaved) {
+          onSaved(record);
+        }
+        lastSavedRef.current = serializedData;
+      } catch (error: unknown) {
+        if (notifyCallbacks && onError) {
+          onError(getStorageErrorCode(error));
+        }
+      }
+    },
+    [onError, onSaved],
+  );
 
   useEffect(() => {
     if (!recordId) {
@@ -377,31 +424,24 @@ export const useAutosaveRecord = (
     }
 
     const timeout = globalThis.setTimeout(() => {
-      if (lastSavedRef.current === nextSerialized) {
-        return;
-      }
-
-      updateRecordEntry(recordId, {
-        data: formData,
-        locale,
-      })
-        .then((record) => {
-          if (record && onSaved) {
-            onSaved(record);
-          }
-          lastSavedRef.current = nextSerialized;
-        })
-        .catch((error: unknown) => {
-          if (onError) {
-            onError(getStorageErrorCode(error));
-          }
-        });
+      persistPendingChanges(true).catch(Promise.resolve);
     }, delay);
 
     return () => {
       globalThis.clearTimeout(timeout);
     };
-  }, [recordId, formData, locale, delay, onSaved, onError]);
+  }, [recordId, formData, delay, persistPendingChanges]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      persistPendingChanges(false).catch(Promise.resolve);
+    };
+
+    globalThis.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      globalThis.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [persistPendingChanges]);
 
   return { markAsSaved };
 };

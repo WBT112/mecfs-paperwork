@@ -14,7 +14,17 @@ import { type Page } from '@playwright/test';
 export const deleteDatabase = async (page: Page, dbName: string) => {
   // Navigate to a script-free same-origin page so app/runtime DB handles are closed
   // before deletion. This is especially important on Firefox/WebKit.
-  await page.goto('/e2e-reset.html', { waitUntil: 'domcontentloaded' });
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await page.goto('/e2e-reset.html', { waitUntil: 'domcontentloaded' });
+      break;
+    } catch (error) {
+      if (attempt === 3) {
+        throw error;
+      }
+      await page.waitForTimeout(250 * attempt);
+    }
+  }
 
   const maxAttempts = 4;
   let lastFailureReason = 'Unknown error';
@@ -24,6 +34,15 @@ export const deleteDatabase = async (page: Page, dbName: string) => {
       async ({ name, timeoutMs }) => {
         localStorage.clear();
         sessionStorage.clear();
+        const cookieNames = document.cookie
+          ? document.cookie
+              .split('; ')
+              .map((entry) => entry.split('=')[0])
+              .filter((entry) => entry.length > 0)
+          : [];
+        for (const cookieName of cookieNames) {
+          document.cookie = `${cookieName}=; Max-Age=0; Path=/; SameSite=Strict`;
+        }
 
         return await new Promise<{ ok: boolean; reason?: string }>(
           (resolve) => {

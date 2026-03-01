@@ -8,10 +8,12 @@ import {
   downloadDiagnosticsBundle,
   copyDiagnosticsToClipboard,
   resetAllLocalData,
+  type ServiceWorkerInfo,
+  type StorageHealthStatus,
+  useStorageHealth,
 } from '../lib/diagnostics';
-import { useStorageHealth } from '../lib/diagnostics/useStorageHealth';
-import type { StorageHealthStatus } from '../lib/diagnostics';
-import type { ServiceWorkerInfo } from '../lib/diagnostics/types';
+
+type EncryptionStatus = 'encrypted' | 'not_encrypted' | 'unknown';
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -67,6 +69,40 @@ const fetchSwInfo = async (): Promise<ServiceWorkerInfo> => {
   } catch {
     return { supported: true, registered: false };
   }
+};
+
+const getEncryptionDataStatus = (status: EncryptionStatus): string => {
+  switch (status) {
+    case 'encrypted':
+      return 'available';
+    case 'not_encrypted':
+      return 'warning';
+    default:
+      return 'unknown';
+  }
+};
+
+const getServiceWorkerStateLabel = (
+  info: ServiceWorkerInfo,
+  t: (key: string) => string,
+): string => {
+  if (!info.registered) {
+    return t('swStatusNotRegistered');
+  }
+
+  const labels: Record<string, string> = {
+    activated: t('swStatusStateActivated'),
+    activating: t('swStatusStateActivating'),
+    installed: t('swStatusStateInstalled'),
+    installing: t('swStatusStateInstalling'),
+    redundant: t('swStatusStateRedundant'),
+  };
+
+  if (!info.state) {
+    return t('swStatusRegistered');
+  }
+
+  return labels[info.state] ?? info.state;
 };
 
 export default function HelpPage() {
@@ -176,9 +212,38 @@ export default function HelpPage() {
 
   const idbDataStatus = health.indexedDbAvailable ? 'available' : 'unavailable';
 
-  const swStateLabel = swInfo.registered
-    ? (swInfo.state ?? t('swStatusRegistered'))
-    : t('swStatusNotRegistered');
+  const encryptionAtRest =
+    health.encryptionAtRest ??
+    ({
+      status: 'unknown',
+      keyCookiePresent: false,
+      keyCookieContext: 'unknown',
+      secureFlagVerifiable: false,
+    } as const);
+
+  const encryptionStatusLabel = (
+    {
+      encrypted: t('storageHealthEncryptionEncrypted'),
+      not_encrypted: t('storageHealthEncryptionNotEncrypted'),
+      unknown: t('storageHealthEncryptionUnknown'),
+    } as const
+  )[encryptionAtRest.status];
+
+  const encryptionDataStatus = getEncryptionDataStatus(encryptionAtRest.status);
+
+  const keyCookieLabel = encryptionAtRest.keyCookiePresent
+    ? t('storageHealthCookiePresent')
+    : t('storageHealthCookieMissing');
+
+  const keyCookieContextLabel = (
+    {
+      https: t('storageHealthCookieSecurityHttps'),
+      'non-https': t('storageHealthCookieSecurityNonHttps'),
+      unknown: t('storageHealthCookieSecurityUnknown'),
+    } as const
+  )[encryptionAtRest.keyCookieContext];
+
+  const swStateLabel = getServiceWorkerStateLabel(swInfo, t);
 
   const versionCopyLabel = copied
     ? t('versionInfoCopied')
@@ -263,6 +328,7 @@ export default function HelpPage() {
           <section
             className="help-page__storage-health"
             aria-label={t('storageHealthTitle')}
+            aria-busy={healthLoading}
             data-testid="storage-health"
           >
             <h4>{t('storageHealthTitle')}</h4>
@@ -283,11 +349,42 @@ export default function HelpPage() {
                     </dd>
                   </div>
                   <div>
+                    <dt>{t('storageHealthEncryption')}</dt>
+                    <dd
+                      data-testid="storage-health-encryption"
+                      data-status={encryptionDataStatus}
+                    >
+                      {encryptionStatusLabel}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t('storageHealthKeyCookie')}</dt>
+                    <dd
+                      data-testid="storage-health-key-cookie"
+                      data-status={
+                        encryptionAtRest.keyCookiePresent
+                          ? 'available'
+                          : 'unavailable'
+                      }
+                    >
+                      {keyCookieLabel}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t('storageHealthCookieSecurity')}</dt>
+                    <dd
+                      data-testid="storage-health-cookie-security"
+                      data-status={encryptionAtRest.keyCookieContext}
+                    >
+                      {keyCookieContextLabel}
+                    </dd>
+                  </div>
+                  <div>
                     <dt>{t('storageHealthQuota')}</dt>
                     <dd data-testid="storage-health-quota">{quotaDisplay}</dd>
                   </div>
                   <div>
-                    <dt>Status</dt>
+                    <dt>{t('storageHealthStatusLabel')}</dt>
                     <dd
                       data-testid="storage-health-status"
                       data-status={health.status}
@@ -298,7 +395,7 @@ export default function HelpPage() {
                 </dl>
                 {health.status !== 'ok' && (
                   <output className="help-page__storage-guidance">
-                    {health.message}
+                    {t(health.message)}
                   </output>
                 )}
                 <button
@@ -342,6 +439,9 @@ export default function HelpPage() {
             data-testid="danger-zone"
           >
             <h4>{t('resetAllTitle')}</h4>
+            <p className="help-page__danger-zone-description" role="note">
+              {t('resetAllBackupHint')}
+            </p>
             <p className="help-page__danger-zone-description">
               {t('resetAllDescription')}
             </p>

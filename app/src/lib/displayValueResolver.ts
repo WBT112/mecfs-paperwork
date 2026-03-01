@@ -189,7 +189,7 @@ const resolveArrayItem = (
 const resolveArrayValue = (
   values: unknown[],
   options: DisplayValueResolverOptions,
-): string | null => {
+): string => {
   if (!values.length) {
     return '';
   }
@@ -226,8 +226,7 @@ export const resolveDisplayValue = (
 
   // RATIONALE: Handle arrays (e.g., multi-select, checkbox groups) before primitives
   if (Array.isArray(value)) {
-    const arrayResult = resolveArrayValue(value, options);
-    return arrayResult ?? '';
+    return resolveArrayValue(value, options);
   }
 
   const enumLabel = resolveEnumLabel(value, options);

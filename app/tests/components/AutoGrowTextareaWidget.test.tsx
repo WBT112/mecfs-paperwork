@@ -5,7 +5,9 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   AutoGrowTextareaWidget,
   AccessibleSelectWidget,
+  AttachmentsAssistantWidget,
 } from '../../src/lib/rjsfWidgets';
+import i18n from '../../src/i18n';
 import { adjustTextareaHeight } from '../../src/lib/textareaAutoGrow';
 
 const buildTextareaProps = (
@@ -48,6 +50,26 @@ const buildSelectProps = (
   multiple: false,
   label: 'Test Select',
   placeholder: 'Select...',
+  onChange: vi.fn(),
+  onBlur: vi.fn(),
+  onFocus: vi.fn(),
+  registry: {} as WidgetProps['registry'],
+  ...overrides,
+});
+
+const buildAttachmentsAssistantProps = (
+  overrides: Partial<WidgetProps> = {},
+): WidgetProps => ({
+  id: 'attachmentsFreeText',
+  name: 'attachmentsFreeText',
+  schema: { type: 'string' } as RJSFSchema,
+  options: { rows: 6 },
+  value: '',
+  required: false,
+  disabled: false,
+  readonly: false,
+  label: 'Anlagen',
+  placeholder: '',
   onChange: vi.fn(),
   onBlur: vi.fn(),
   onFocus: vi.fn(),
@@ -188,6 +210,35 @@ describe('AccessibleSelectWidget', () => {
     expect(options[0]).toHaveValue('');
   });
 
+  it('falls back to localized empty label when placeholder is empty', () => {
+    render(
+      <AccessibleSelectWidget {...buildSelectProps({ placeholder: '' })} />,
+    );
+    const options = screen.getAllByRole('option');
+    expect(options[0]).toHaveTextContent('[keine Angabe]');
+    expect(options[0]).toHaveValue('');
+  });
+
+  it('uses ui:options.emptyValueLabel when provided', () => {
+    render(
+      <AccessibleSelectWidget
+        {...buildSelectProps({
+          placeholder: '',
+          options: {
+            enumOptions: [
+              { value: 'a', label: 'Option A' },
+              { value: 'b', label: 'Option B' },
+            ],
+            emptyValueLabel: '[Medikament wählen]',
+          },
+        })}
+      />,
+    );
+    const options = screen.getAllByRole('option');
+    expect(options[0]).toHaveTextContent('[Medikament wählen]');
+    expect(options[0]).toHaveValue('');
+  });
+
   it('hides placeholder when schema.default is defined', () => {
     render(
       <AccessibleSelectWidget
@@ -273,6 +324,46 @@ describe('AccessibleSelectWidget', () => {
     expect(select).toHaveAttribute('multiple');
   });
 
+  it('emits selected values for multiple select change, blur, and focus', () => {
+    const onChange = vi.fn();
+    const onBlur = vi.fn();
+    const onFocus = vi.fn();
+
+    render(
+      <AccessibleSelectWidget
+        {...buildSelectProps({
+          multiple: true,
+          value: ['a'],
+          onChange,
+          onBlur,
+          onFocus,
+        })}
+      />,
+    );
+
+    const select = screen.getByRole<HTMLSelectElement>('listbox');
+    const options = screen.getAllByRole<HTMLOptionElement>('option');
+    options[0].selected = true;
+    options[2].selected = true;
+
+    fireEvent.change(select);
+    fireEvent.blur(select);
+    fireEvent.focus(select);
+
+    expect(onChange).toHaveBeenCalledWith(['a', 'c']);
+    expect(onBlur).toHaveBeenCalledWith('testSelect', expect.any(Array));
+    expect(onFocus).toHaveBeenCalledWith('testSelect', expect.any(Array));
+  });
+
+  it('falls back to empty select value when no enum option is selected', () => {
+    render(
+      <AccessibleSelectWidget {...buildSelectProps({ value: undefined })} />,
+    );
+
+    const select = screen.getByRole<HTMLSelectElement>('combobox');
+    expect(select.value).toBe('');
+  });
+
   it('uses htmlName when provided', () => {
     render(
       <AccessibleSelectWidget
@@ -287,5 +378,165 @@ describe('AccessibleSelectWidget', () => {
     render(<AccessibleSelectWidget {...buildSelectProps()} />);
     const select = screen.getByRole('combobox');
     expect(select).toHaveAttribute('name', 'testSelect');
+  });
+});
+
+describe('AttachmentsAssistantWidget', () => {
+  it('renders recommended attachments checkboxes and editable textarea', () => {
+    render(
+      <AttachmentsAssistantWidget {...buildAttachmentsAssistantProps()} />,
+    );
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes).toHaveLength(8);
+
+    const textarea = screen.getByRole('textbox');
+    expect(textarea).toBeInTheDocument();
+    expect(textarea).toHaveAttribute('rows', '6');
+  });
+
+  it('adds a recommended attachment line when a checkbox is selected', () => {
+    const onChange = vi.fn();
+
+    render(
+      <AttachmentsAssistantWidget
+        {...buildAttachmentsAssistantProps({ onChange })}
+      />,
+    );
+
+    const [firstCheckbox] = screen.getAllByRole('checkbox');
+    fireEvent.click(firstCheckbox);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenLastCalledWith(
+      expect.stringContaining('Arztbefunde'),
+    );
+  });
+
+  it('removes a recommended attachment line when its checkbox is deselected', () => {
+    const onChange = vi.fn();
+
+    render(
+      <AttachmentsAssistantWidget
+        {...buildAttachmentsAssistantProps({
+          value: '- Arztbefunde\n- Freier Anhang',
+          onChange,
+        })}
+      />,
+    );
+
+    const [firstCheckbox] = screen.getAllByRole('checkbox');
+    expect(firstCheckbox).toBeChecked();
+
+    fireEvent.click(firstCheckbox);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenLastCalledWith('- Freier Anhang');
+  });
+
+  it('derives checked state from bullet-prefixed and case-insensitive lines', () => {
+    render(
+      <AttachmentsAssistantWidget
+        {...buildAttachmentsAssistantProps({
+          value: '* arztbefunde\n• gdb-bescheid',
+        })}
+      />,
+    );
+
+    const checkboxes = screen.getAllByRole('checkbox');
+    expect(checkboxes[0]).toBeChecked();
+    expect(checkboxes[3]).toBeChecked();
+  });
+
+  it('keeps free-text editing and forwards textarea events', () => {
+    const onChange = vi.fn();
+    const onBlur = vi.fn();
+    const onFocus = vi.fn();
+
+    render(
+      <AttachmentsAssistantWidget
+        {...buildAttachmentsAssistantProps({
+          onChange,
+          onBlur,
+          onFocus,
+        })}
+      />,
+    );
+
+    const textarea = screen.getByRole('textbox');
+    fireEvent.change(textarea, { target: { value: 'Eigene Anlage' } });
+    fireEvent.focus(textarea);
+    fireEvent.blur(textarea);
+
+    expect(onChange).toHaveBeenCalledWith('Eigene Anlage');
+    expect(onFocus).toHaveBeenCalledWith(
+      'attachmentsFreeText',
+      expect.any(String),
+    );
+    expect(onBlur).toHaveBeenCalledWith(
+      'attachmentsFreeText',
+      expect.any(String),
+    );
+  });
+
+  it('uses language fallback locale and renders markdown hint text', () => {
+    vi.spyOn(i18n, 'resolvedLanguage', 'get').mockReturnValue(undefined);
+    vi.spyOn(i18n, 'language', 'get').mockReturnValue('en-US');
+    const getFixedTSpy = vi.spyOn(i18n, 'getFixedT').mockReturnValue(((
+      key: string,
+      options?: { defaultValue?: string },
+    ) => {
+      if (key === 'offlabel-antrag.attachmentsAssistant.additionalLabel') {
+        return 'Attachments\n**Hint Text**';
+      }
+      return options?.defaultValue ?? key;
+    }) as unknown as ReturnType<typeof i18n.getFixedT>);
+
+    render(
+      <AttachmentsAssistantWidget {...buildAttachmentsAssistantProps()} />,
+    );
+
+    expect(getFixedTSpy).toHaveBeenCalledWith('en', 'formpack:offlabel-antrag');
+    expect(screen.getAllByText('Attachments')).toHaveLength(2);
+    expect(screen.getByText('Hint Text')).toBeInTheDocument();
+  });
+
+  it('renders non-markdown hint text unchanged', () => {
+    vi.spyOn(i18n, 'getFixedT').mockReturnValue(((
+      key: string,
+      options?: { defaultValue?: string },
+    ) => {
+      if (key === 'offlabel-antrag.attachmentsAssistant.additionalLabel') {
+        return 'Anlagen\nHinweis ohne Markdown';
+      }
+      return options?.defaultValue ?? key;
+    }) as unknown as ReturnType<typeof i18n.getFixedT>);
+
+    render(
+      <AttachmentsAssistantWidget {...buildAttachmentsAssistantProps()} />,
+    );
+
+    expect(screen.getByText('Hinweis ohne Markdown')).toBeInTheDocument();
+  });
+
+  it('falls back to default locale when language sources are undefined', () => {
+    vi.spyOn(i18n, 'resolvedLanguage', 'get').mockReturnValue(undefined);
+    vi.spyOn(i18n, 'language', 'get').mockReturnValue(
+      undefined as unknown as string,
+    );
+    const getFixedTSpy = vi
+      .spyOn(i18n, 'getFixedT')
+      .mockReturnValue(
+        ((key: string, options?: { defaultValue?: string }) =>
+          options?.defaultValue ?? key) as unknown as ReturnType<
+          typeof i18n.getFixedT
+        >,
+      );
+
+    render(
+      <AttachmentsAssistantWidget {...buildAttachmentsAssistantProps()} />,
+    );
+
+    expect(getFixedTSpy).toHaveBeenCalledWith('de', 'formpack:offlabel-antrag');
   });
 });

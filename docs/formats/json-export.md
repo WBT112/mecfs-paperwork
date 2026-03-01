@@ -33,6 +33,30 @@ later. The export is offline-first and contains no telemetry.
 - `data`: Record form data (JSON object).
 - `revisions`: Optional snapshots captured for the record.
 
+## Optional encryption envelope
+
+JSON exports can optionally be password-encrypted. In this case, the file content
+is a versioned envelope instead of the plain schema shown above:
+
+```json
+{
+  "kind": "mecfs-paperwork-json-encrypted",
+  "version": 1,
+  "cipher": "AES-GCM",
+  "tagLength": 128,
+  "kdf": "PBKDF2",
+  "hash": "SHA-256",
+  "iterations": 310000,
+  "salt": "base64url",
+  "iv": "base64url",
+  "ciphertext": "base64url"
+}
+```
+
+- The encrypted payload contains the complete JSON export object.
+- Decryption requires the same password that was entered during export.
+- Without encryption enabled, exports remain plain JSON for maximum compatibility.
+
 ### Date formats
 - Fields marked as `format: "date"` in a formpack schema are expected to be
   `YYYY-MM-DD`.

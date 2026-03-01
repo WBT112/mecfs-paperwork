@@ -1,12 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { UiSchema } from '@rjsf/utils';
-import type { RJSFSchema } from '@rjsf/utils';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import { resolveDisplayValue } from '../../../src/lib/displayValueResolver';
 
 describe('resolveDisplayValue', () => {
-  const PACK_NS = 'formpack:notfallpass';
-  const PARAGRAPH_KEY = 'notfallpass.export.diagnoses.meCfs.paragraph';
-  const POTS_PARAGRAPH_KEY = 'notfallpass.export.diagnoses.pots.paragraph';
+  const FORMPACK_ID = 'notfallpass';
+  const PACK_NS = `formpack:${FORMPACK_ID}`;
+  const MECFS_FIELD_PATH = 'diagnoses.meCfs';
+  const PARAGRAPH_KEY = `${FORMPACK_ID}.export.${MECFS_FIELD_PATH}.paragraph`;
+  const POTS_PARAGRAPH_KEY = `${FORMPACK_ID}.export.diagnoses.pots.paragraph`;
+  const MECFS_FALSE_PARAGRAPH_KEY = `${FORMPACK_ID}.export.${MECFS_FIELD_PATH}.false.paragraph`;
 
   it('returns empty string for nullish values', () => {
     expect(resolveDisplayValue(null)).toBe('');
@@ -33,16 +35,16 @@ describe('resolveDisplayValue', () => {
       resolveDisplayValue(true, {
         t,
         namespace: PACK_NS,
-        formpackId: 'notfallpass',
-        fieldPath: 'diagnoses.meCfs',
+        formpackId: FORMPACK_ID,
+        fieldPath: MECFS_FIELD_PATH,
       }),
     ).toBe('Paragraph');
     expect(
       resolveDisplayValue(false, {
         t,
         namespace: PACK_NS,
-        formpackId: 'notfallpass',
-        fieldPath: 'diagnoses.meCfs',
+        formpackId: FORMPACK_ID,
+        fieldPath: MECFS_FIELD_PATH,
       }),
     ).toBe('');
   });
@@ -121,6 +123,173 @@ describe('resolveDisplayValue', () => {
         fieldPath: 'diagnoses.pots',
       }),
     ).toBe('POTS paragraph');
+  });
+
+  it('does not translate enum labels that contain surrounding whitespace', () => {
+    const schema: RJSFSchema = {
+      type: 'string',
+      enum: ['value'],
+    };
+    const uiSchema: UiSchema = {
+      'ui:enumNames': [' key.with.whitespace '],
+    };
+    const t = vi.fn((key: string) => `translated:${key}`);
+
+    expect(resolveDisplayValue('value', { schema, uiSchema, t })).toBe(
+      ' key.with.whitespace ',
+    );
+    expect(t).not.toHaveBeenCalled();
+  });
+
+  it('does not translate enum labels containing spaces', () => {
+    const schema: RJSFSchema = {
+      type: 'string',
+      enum: ['value'],
+    };
+    const uiSchema: UiSchema = {
+      'ui:enumNames': ['key with space'],
+    };
+    const t = vi.fn((key: string) => `translated:${key}`);
+
+    expect(resolveDisplayValue('value', { schema, uiSchema, t })).toBe(
+      'key with space',
+    );
+    expect(t).not.toHaveBeenCalled();
+  });
+
+  it('does not translate empty translation-prefixed enum labels', () => {
+    const schema: RJSFSchema = {
+      type: 'string',
+      enum: ['value'],
+    };
+    const uiSchema: UiSchema = {
+      'ui:enumNames': ['t:   '],
+    };
+    const t = vi.fn((key: string) => `translated:${key}`);
+
+    expect(resolveDisplayValue('value', { schema, uiSchema, t })).toBe('t:   ');
+    expect(t).not.toHaveBeenCalled();
+  });
+
+  it('translates dotted enum labels without t: prefix', () => {
+    const schema: RJSFSchema = {
+      type: 'string',
+      enum: ['value'],
+    };
+    const uiSchema: UiSchema = {
+      'ui:enumNames': ['option.value'],
+    };
+    const t = vi.fn(
+      (key: string, options?: { ns?: string; defaultValue?: string }) => {
+        if (!options) {
+          return key;
+        }
+        if (options.ns !== 'formpack') {
+          return options.defaultValue ?? key;
+        }
+        if (key === 'option.value') {
+          return 'Translated dotted label';
+        }
+        return options.defaultValue ?? key;
+      },
+    );
+
+    expect(
+      resolveDisplayValue('value', {
+        schema,
+        uiSchema,
+        t,
+        namespace: 'formpack',
+      }),
+    ).toBe('Translated dotted label');
+  });
+
+  it('returns the original enum value when no enum option matches', () => {
+    const schema: RJSFSchema = {
+      type: 'string',
+      enum: ['known'],
+    };
+
+    expect(resolveDisplayValue('unknown', { schema })).toBe('unknown');
+  });
+
+  it('returns the original value when enum options are empty', () => {
+    const schema: RJSFSchema = {
+      type: 'string',
+    };
+
+    expect(resolveDisplayValue('plain', { schema })).toBe('plain');
+  });
+
+  it('stringifies non-string enum labels', () => {
+    const schema: RJSFSchema = {
+      type: 'string',
+      enum: ['value'],
+    };
+    const uiSchema = {
+      'ui:enumNames': [123],
+    } as unknown as UiSchema;
+
+    expect(resolveDisplayValue('value', { schema, uiSchema })).toBe('123');
+  });
+
+  it('uses the default formpack namespace for boolean paragraphs', () => {
+    const t = vi.fn(
+      (key: string, options?: { ns?: string; defaultValue?: string }) => {
+        if (!options) {
+          return key;
+        }
+        if (key === PARAGRAPH_KEY && options.ns === PACK_NS) {
+          return 'Default namespace paragraph';
+        }
+        return options.defaultValue ?? key;
+      },
+    );
+
+    expect(
+      resolveDisplayValue(true, {
+        t,
+        formpackId: FORMPACK_ID,
+        fieldPath: MECFS_FIELD_PATH,
+      }),
+    ).toBe('Default namespace paragraph');
+  });
+
+  it('returns empty string when true paragraph translation is missing', () => {
+    const t = vi.fn(
+      (key: string, options?: { ns?: string; defaultValue?: string }) =>
+        options?.defaultValue ?? key,
+    );
+
+    expect(
+      resolveDisplayValue(true, {
+        t,
+        formpackId: FORMPACK_ID,
+        fieldPath: MECFS_FIELD_PATH,
+      }),
+    ).toBe('');
+  });
+
+  it('uses the first translated false paragraph variant', () => {
+    const t = vi.fn(
+      (key: string, options?: { ns?: string; defaultValue?: string }) => {
+        if (!options) {
+          return key;
+        }
+        if (key === MECFS_FALSE_PARAGRAPH_KEY) {
+          return 'Negative paragraph';
+        }
+        return options.defaultValue ?? key;
+      },
+    );
+
+    expect(
+      resolveDisplayValue(false, {
+        t,
+        formpackId: FORMPACK_ID,
+        fieldPath: MECFS_FIELD_PATH,
+      }),
+    ).toBe('Negative paragraph');
   });
 
   it('falls back to stringifying objects', () => {
@@ -216,6 +385,26 @@ describe('resolveDisplayValue', () => {
       const values = ['item1', { nested: 'object' }, 'item2'];
       expect(resolveDisplayValue(values)).toBe('item1, item2');
     });
+
+    it('returns empty string when all array items are filtered out', () => {
+      expect(resolveDisplayValue([{}])).toBe('');
+    });
+  });
+
+  it('formats top-level primitive numbers and strings', () => {
+    expect(resolveDisplayValue(42)).toBe('42');
+    expect(resolveDisplayValue('plain text')).toBe('plain text');
+  });
+
+  it('returns empty string when JSON.stringify returns undefined', () => {
+    expect(resolveDisplayValue(() => undefined)).toBe('');
+  });
+
+  it('returns empty string when JSON.stringify throws', () => {
+    const circular: { self?: unknown } = {};
+    circular.self = circular;
+
+    expect(resolveDisplayValue(circular)).toBe('');
   });
 
   describe('raw-value guard (regression prevention)', () => {
@@ -244,8 +433,8 @@ describe('resolveDisplayValue', () => {
 
       const result = resolveDisplayValue(true, {
         t,
-        namespace: 'formpack:notfallpass',
-        formpackId: 'notfallpass',
+        namespace: PACK_NS,
+        formpackId: FORMPACK_ID,
         fieldPath: 'field',
       });
 

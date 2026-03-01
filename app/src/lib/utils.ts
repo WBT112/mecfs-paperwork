@@ -5,7 +5,7 @@
 /**
  * Trims a string and returns null if the result is empty.
  * Also returns null if the input is null or undefined.
- * @param value The string to process.
+ * @param value - The string to process.
  * @returns The trimmed string or null.
  */
 export const emptyStringToNull = (
@@ -16,7 +16,7 @@ export const emptyStringToNull = (
 
 /**
  * Checks if a value is a non-null, non-array object.
- * @param value The value to check.
+ * @param value - The value to check.
  * @returns True if the value is a record, false otherwise.
  */
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -24,7 +24,7 @@ export const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 /**
  * Returns the first item if the input is an array, or the input itself otherwise.
- * @param items The item or array of items.
+ * @param items - The item or array of items.
  * @returns The first item or the input.
  */
 export const getFirstItem = <T>(items: T | T[] | undefined): T | undefined => {

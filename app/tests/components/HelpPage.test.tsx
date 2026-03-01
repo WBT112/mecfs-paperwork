@@ -2,10 +2,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HelpPage from '../../src/pages/HelpPage';
 
+const i18nMockState = vi.hoisted(() => ({ language: 'en' }));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
-    i18n: { language: 'en' },
+    i18n: { language: i18nMockState.language },
   }),
 }));
 
@@ -17,16 +19,6 @@ vi.mock('../../src/lib/version', () => ({
 
 const mockDownloadDiagnosticsBundle = vi.fn();
 const mockCopyDiagnosticsToClipboard = vi.fn();
-
-vi.mock('../../src/lib/diagnostics', () => ({
-  downloadDiagnosticsBundle: (...args: unknown[]) =>
-    mockDownloadDiagnosticsBundle(...args) as Promise<void>,
-  copyDiagnosticsToClipboard: (...args: unknown[]) =>
-    mockCopyDiagnosticsToClipboard(...args) as Promise<boolean>,
-  resetAllLocalData: (...args: unknown[]) =>
-    mockResetAllLocalData(...args) as Promise<void>,
-}));
-
 const mockResetAllLocalData = vi.fn();
 
 const mockRefreshHealth = vi.fn();
@@ -34,6 +26,12 @@ let mockHealthState: {
   health: {
     indexedDbAvailable: boolean;
     storageEstimate: { supported: boolean; usage?: number; quota?: number };
+    encryptionAtRest?: {
+      status: 'encrypted' | 'not_encrypted' | 'unknown';
+      keyCookiePresent: boolean;
+      keyCookieContext: 'https' | 'non-https' | 'unknown';
+      secureFlagVerifiable: false;
+    };
     status: 'ok' | 'warning' | 'error';
     message: string;
   };
@@ -47,14 +45,26 @@ let mockHealthState: {
       usage: 5000,
       quota: 100000,
     },
+    encryptionAtRest: {
+      status: 'encrypted',
+      keyCookiePresent: true,
+      keyCookieContext: 'https',
+      secureFlagVerifiable: false,
+    },
     status: 'ok',
-    message: 'Storage is available and working normally.',
+    message: '',
   },
   loading: false,
   refresh: mockRefreshHealth,
 };
 
-vi.mock('../../src/lib/diagnostics/useStorageHealth', () => ({
+vi.mock('../../src/lib/diagnostics', () => ({
+  downloadDiagnosticsBundle: (...args: unknown[]) =>
+    mockDownloadDiagnosticsBundle(...args) as Promise<void>,
+  copyDiagnosticsToClipboard: (...args: unknown[]) =>
+    mockCopyDiagnosticsToClipboard(...args) as Promise<boolean>,
+  resetAllLocalData: (...args: unknown[]) =>
+    mockResetAllLocalData(...args) as Promise<void>,
   useStorageHealth: () => mockHealthState,
 }));
 
@@ -62,11 +72,17 @@ const TID_DIAGNOSTICS_DOWNLOAD = 'diagnostics-download';
 const TID_DIAGNOSTICS_COPY = 'diagnostics-copy';
 const TID_STORAGE_HEALTH_STATUS = 'storage-health-status';
 const TID_STORAGE_HEALTH_QUOTA = 'storage-health-quota';
+const TID_STORAGE_HEALTH_ENCRYPTION = 'storage-health-encryption';
+const TID_STORAGE_HEALTH_KEY_COOKIE = 'storage-health-key-cookie';
+const TID_STORAGE_HEALTH_COOKIE_SECURITY = 'storage-health-cookie-security';
 const TID_RESET_ALL_DATA = 'reset-all-data';
+const TID_SW_STATUS_STATE = 'sw-status-state';
+const TID_SW_STATUS_SUPPORTED = 'sw-status-supported';
 const ATTR_DATA_STATUS = 'data-status';
 
 describe('HelpPage', () => {
   beforeEach(() => {
+    i18nMockState.language = 'en';
     mockDownloadDiagnosticsBundle.mockResolvedValue(undefined);
     mockCopyDiagnosticsToClipboard.mockResolvedValue(true);
     mockResetAllLocalData.mockResolvedValue(undefined);
@@ -78,8 +94,14 @@ describe('HelpPage', () => {
           usage: 5000,
           quota: 100000,
         },
+        encryptionAtRest: {
+          status: 'encrypted' as const,
+          keyCookiePresent: true,
+          keyCookieContext: 'https' as const,
+          secureFlagVerifiable: false,
+        },
         status: 'ok' as const,
-        message: 'Storage is available and working normally.',
+        message: '',
       },
       loading: false,
       refresh: mockRefreshHealth,
@@ -88,7 +110,12 @@ describe('HelpPage', () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(navigator, 'serviceWorker', {
       configurable: true,
       value: undefined,
     });
@@ -146,6 +173,31 @@ describe('HelpPage', () => {
     expect(
       screen.getByRole('button', { name: 'versionInfoCopy' }),
     ).toBeInTheDocument();
+  });
+
+  it('does nothing when clipboard API is not available', async () => {
+    vi.stubGlobal('navigator', {} as Navigator);
+
+    render(<HelpPage />);
+    await screen.findByTestId(TID_SW_STATUS_SUPPORTED);
+
+    fireEvent.click(screen.getByRole('button', { name: 'versionInfoCopy' }));
+
+    expect(
+      screen.getByRole('button', { name: 'versionInfoCopy' }),
+    ).toBeInTheDocument();
+  });
+
+  it('renders German markdown content when locale is not en', async () => {
+    i18nMockState.language = 'de';
+
+    render(<HelpPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('heading', { level: 1, name: /hilfe/i }),
+      ).toBeInTheDocument();
+    });
   });
 
   describe('diagnostics download button', () => {
@@ -268,6 +320,177 @@ describe('HelpPage', () => {
     });
   });
 
+  describe('service worker status display', () => {
+    it('shows not supported when service worker API is unavailable', async () => {
+      vi.stubGlobal('navigator', {} as Navigator);
+
+      render(<HelpPage />);
+
+      const supportedEl = await screen.findByTestId(TID_SW_STATUS_SUPPORTED);
+      expect(supportedEl).toHaveAttribute(ATTR_DATA_STATUS, 'unavailable');
+      expect(supportedEl).toHaveTextContent('swStatusNotSupported');
+      expect(screen.queryByTestId(TID_SW_STATUS_STATE)).not.toBeInTheDocument();
+    });
+
+    it('shows not registered when registration lookup returns null', async () => {
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          getRegistration: vi.fn().mockResolvedValue(null),
+        },
+      });
+
+      render(<HelpPage />);
+
+      const stateEl = await screen.findByTestId(TID_SW_STATUS_STATE);
+      expect(stateEl).toHaveAttribute(ATTR_DATA_STATUS, 'unavailable');
+      expect(stateEl).toHaveTextContent('swStatusNotRegistered');
+    });
+
+    it('uses waiting and installing workers when active worker is absent', async () => {
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          getRegistration: vi
+            .fn()
+            .mockResolvedValueOnce({
+              scope: '/app/',
+              active: null,
+              waiting: { state: 'installed' },
+              installing: null,
+            })
+            .mockResolvedValueOnce({
+              scope: '/app/',
+              active: null,
+              waiting: null,
+              installing: { state: 'activating' },
+            }),
+        },
+      });
+
+      const firstRender = render(<HelpPage />);
+
+      const waitingStateEl = await screen.findByTestId(TID_SW_STATUS_STATE);
+      expect(waitingStateEl).toHaveTextContent('swStatusStateInstalled');
+
+      firstRender.unmount();
+      render(<HelpPage />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId(TID_SW_STATUS_STATE)).toHaveTextContent(
+          'swStatusStateActivating',
+        );
+      });
+    });
+
+    it('shows registered label when registration has no worker state', async () => {
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          getRegistration: vi.fn().mockResolvedValue({
+            scope: '/app/',
+            active: null,
+            waiting: null,
+            installing: null,
+          }),
+        },
+      });
+
+      render(<HelpPage />);
+
+      const stateEl = await screen.findByTestId(TID_SW_STATUS_STATE);
+      expect(stateEl).toHaveTextContent('swStatusRegistered');
+    });
+
+    it('maps known worker states to localized labels', async () => {
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          getRegistration: vi.fn().mockResolvedValue({
+            scope: '/app/',
+            active: { state: 'activated' },
+            waiting: null,
+            installing: null,
+          }),
+        },
+      });
+
+      render(<HelpPage />);
+
+      const stateEl = await screen.findByTestId(TID_SW_STATUS_STATE);
+      expect(stateEl).toHaveTextContent('swStatusStateActivated');
+      expect(stateEl).not.toHaveTextContent('activated');
+    });
+
+    it('falls back to raw state for unknown worker states', async () => {
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          getRegistration: vi.fn().mockResolvedValue({
+            scope: '/app/',
+            active: { state: 'custom-state' },
+            waiting: null,
+            installing: null,
+          }),
+        },
+      });
+
+      render(<HelpPage />);
+
+      const stateEl = await screen.findByTestId(TID_SW_STATUS_STATE);
+      expect(stateEl).toHaveTextContent('custom-state');
+    });
+
+    it('does not update service worker state after unmount', async () => {
+      let resolveRegistration: (value: {
+        scope: string;
+        active: { state: string };
+        waiting: null;
+        installing: null;
+      }) => void;
+      const getRegistration = vi.fn().mockReturnValue(
+        new Promise((resolve) => {
+          resolveRegistration = resolve;
+        }),
+      );
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: { getRegistration },
+      });
+
+      const { unmount } = render(<HelpPage />);
+      unmount();
+
+      resolveRegistration!({
+        scope: '/app/',
+        active: { state: 'activated' },
+        waiting: null,
+        installing: null,
+      });
+      await Promise.resolve();
+
+      expect(getRegistration).toHaveBeenCalledTimes(1);
+    });
+
+    it('handles rejected service worker info lookup promise', async () => {
+      const throwingNavigator = new Proxy(
+        {},
+        {
+          has: () => {
+            throw new Error('navigator access failed');
+          },
+        },
+      );
+      vi.stubGlobal('navigator', throwingNavigator as Navigator);
+
+      render(<HelpPage />);
+
+      const supportedEl = await screen.findByTestId(TID_SW_STATUS_SUPPORTED);
+      expect(supportedEl).toHaveAttribute(ATTR_DATA_STATUS, 'unavailable');
+      expect(supportedEl).toHaveTextContent('swStatusNotSupported');
+    });
+  });
+
   describe('storage health display', () => {
     it('shows loading state when health check is pending', async () => {
       mockHealthState = {
@@ -300,7 +523,7 @@ describe('HelpPage', () => {
           indexedDbAvailable: true,
           storageEstimate: { supported: true, usage: 90000, quota: 100000 },
           status: 'warning',
-          message: 'Storage usage is high (90%).',
+          message: 'storageHealthGuidanceWarning',
         },
       };
 
@@ -311,7 +534,7 @@ describe('HelpPage', () => {
       expect(statusEl).toHaveTextContent('storageHealthStatusWarning');
 
       expect(screen.getByRole('status')).toHaveTextContent(
-        'Storage usage is high (90%).',
+        'storageHealthGuidanceWarning',
       );
     });
 
@@ -322,7 +545,7 @@ describe('HelpPage', () => {
           indexedDbAvailable: false,
           storageEstimate: { supported: false },
           status: 'error',
-          message: 'IndexedDB is not available.',
+          message: 'storageHealthGuidanceError',
         },
       };
 
@@ -333,7 +556,7 @@ describe('HelpPage', () => {
       expect(statusEl).toHaveTextContent('storageHealthStatusError');
 
       expect(screen.getByRole('status')).toHaveTextContent(
-        'IndexedDB is not available.',
+        'storageHealthGuidanceError',
       );
     });
 
@@ -399,6 +622,75 @@ describe('HelpPage', () => {
       fireEvent.click(refreshButton);
 
       expect(mockRefreshHealth).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows encryption and key-cookie diagnostics', async () => {
+      render(<HelpPage />);
+
+      const encryptionEl = await screen.findByTestId(
+        TID_STORAGE_HEALTH_ENCRYPTION,
+      );
+      expect(encryptionEl).toHaveAttribute(ATTR_DATA_STATUS, 'available');
+      expect(encryptionEl).toHaveTextContent(
+        'storageHealthEncryptionEncrypted',
+      );
+
+      const keyCookieEl = await screen.findByTestId(
+        TID_STORAGE_HEALTH_KEY_COOKIE,
+      );
+      expect(keyCookieEl).toHaveAttribute(ATTR_DATA_STATUS, 'available');
+      expect(keyCookieEl).toHaveTextContent('storageHealthCookiePresent');
+
+      const cookieSecurityEl = await screen.findByTestId(
+        TID_STORAGE_HEALTH_COOKIE_SECURITY,
+      );
+      expect(cookieSecurityEl).toHaveAttribute(ATTR_DATA_STATUS, 'https');
+      expect(cookieSecurityEl).toHaveTextContent(
+        'storageHealthCookieSecurityHttps',
+      );
+    });
+
+    it('shows unknown encryption status when diagnostics are unavailable', async () => {
+      mockHealthState = {
+        ...mockHealthState,
+        health: {
+          ...mockHealthState.health,
+          encryptionAtRest: undefined,
+        },
+      };
+
+      render(<HelpPage />);
+
+      const encryptionEl = await screen.findByTestId(
+        TID_STORAGE_HEALTH_ENCRYPTION,
+      );
+      expect(encryptionEl).toHaveAttribute(ATTR_DATA_STATUS, 'unknown');
+      expect(encryptionEl).toHaveTextContent('storageHealthEncryptionUnknown');
+    });
+
+    it('shows warning encryption status when data is not encrypted', async () => {
+      mockHealthState = {
+        ...mockHealthState,
+        health: {
+          ...mockHealthState.health,
+          encryptionAtRest: {
+            status: 'not_encrypted',
+            keyCookiePresent: false,
+            keyCookieContext: 'non-https',
+            secureFlagVerifiable: false,
+          },
+        },
+      };
+
+      render(<HelpPage />);
+
+      const encryptionEl = await screen.findByTestId(
+        TID_STORAGE_HEALTH_ENCRYPTION,
+      );
+      expect(encryptionEl).toHaveAttribute(ATTR_DATA_STATUS, 'warning');
+      expect(encryptionEl).toHaveTextContent(
+        'storageHealthEncryptionNotEncrypted',
+      );
     });
   });
 
@@ -499,6 +791,7 @@ describe('HelpPage', () => {
       render(<HelpPage />);
 
       expect(await screen.findByTestId('danger-zone')).toBeInTheDocument();
+      expect(screen.getByText('resetAllBackupHint')).toBeInTheDocument();
       expect(screen.getByTestId(TID_RESET_ALL_DATA)).toBeInTheDocument();
     });
 
