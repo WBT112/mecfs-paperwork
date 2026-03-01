@@ -71,9 +71,6 @@ const PdfExportDownloadHandler = ({
 
   useEffect(() => {
     const finalizeOnce = () => {
-      if (completedRef.current) {
-        return;
-      }
       completedRef.current = true;
       onDone();
     };

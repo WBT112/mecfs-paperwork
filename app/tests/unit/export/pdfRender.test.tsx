@@ -1,5 +1,6 @@
 import { pdf } from '@react-pdf/renderer';
 import { describe, expect, it, vi } from 'vitest';
+import type { ReactElement, ReactNode } from 'react';
 import DoctorLetterPdfDocument from '../../../src/export/pdf/templates/DoctorLetterPdfDocument';
 import type { DocumentModel } from '../../../src/export/pdf/types';
 
@@ -156,6 +157,18 @@ const englishTemplateModel: DocumentModel = {
   ],
 };
 
+const getPageOneText = (model: DocumentModel): string => {
+  const documentNode = DoctorLetterPdfDocument({ model }) as ReactElement<{
+    children: ReactNode;
+  }>;
+  const pages = documentNode.props.children;
+  const pageOne = (Array.isArray(pages) ? pages[0] : pages) as ReactElement<{
+    children?: ReactNode;
+  }>;
+  const pageChildren = pageOne.props.children;
+  return JSON.stringify(pageChildren);
+};
+
 describe('DoctorLetterPdfDocument', () => {
   it('renders a non-empty PDF blob', async () => {
     const instance = pdf(<DoctorLetterPdfDocument model={fixture} />);
@@ -174,5 +187,114 @@ describe('DoctorLetterPdfDocument', () => {
   it('renders with English salutation data', () => {
     const element = DoctorLetterPdfDocument({ model: englishTemplateModel });
     expect(element).toBeTruthy();
+  });
+
+  it('renders English Ms. salutation with populated patient and doctor address lines', () => {
+    const model: DocumentModel = {
+      title: documentTitle,
+      meta: {
+        locale: 'en-US',
+        createdAtIso,
+        templateData: {
+          patient: {
+            firstName: 'Mia',
+            lastName: 'Miller',
+            streetAndNumber: 'Main St. 1',
+            postalCode: '12345',
+            city: 'Sampletown',
+          },
+          doctor: {
+            practice: 'Practice One',
+            gender: 'Frau',
+            title: 'Dr.',
+            name: 'Anna Smith',
+            streetAndNumber: 'Medical Ave 2',
+            postalCode: '54321',
+            city: 'Healthcity',
+          },
+        },
+      },
+      sections: [
+        {
+          id: 'case',
+          blocks: [{ type: 'paragraph', text: 'Case paragraph.' }],
+        },
+      ],
+    };
+
+    const pageOneText = getPageOneText(model);
+
+    expect(pageOneText).toContain('Mia Miller – Main St. 1 – 12345 Sampletown');
+    expect(pageOneText).toContain('Practice One');
+    expect(pageOneText).toContain('Dr. Anna Smith');
+    expect(pageOneText).toContain('Medical Ave 2');
+    expect(pageOneText).toContain('54321 Healthcity');
+    expect(pageOneText).toContain('Dear Ms. Dr. Anna Smith,');
+  });
+
+  it('renders German Mr. salutation and default German date label', () => {
+    const model: DocumentModel = {
+      title: documentTitle,
+      meta: {
+        locale: 'de-DE',
+        createdAtIso,
+        templateData: {
+          doctor: {
+            gender: 'Herr',
+            title: 'Prof.',
+            name: 'Max Mustermann',
+          },
+        },
+      },
+      sections: [
+        {
+          id: 'case',
+          blocks: [{ type: 'paragraph', text: 'Absatz.' }],
+        },
+      ],
+    };
+
+    const pageOneText = getPageOneText(model);
+
+    expect(pageOneText).toContain('Sehr geehrter Herr Prof. Max Mustermann,');
+    expect(pageOneText).toContain('"Datum"');
+  });
+
+  it('renders German Ms. salutation', () => {
+    const model: DocumentModel = {
+      title: documentTitle,
+      meta: {
+        locale: 'de-DE',
+        createdAtIso,
+        templateData: {
+          doctor: {
+            gender: 'Frau',
+            title: 'Dr.',
+            name: 'Erika Beispiel',
+          },
+        },
+      },
+      sections: [
+        {
+          id: 'case',
+          blocks: [{ type: 'paragraph', text: 'Absatz.' }],
+        },
+      ],
+    };
+
+    const pageOneText = getPageOneText(model);
+    expect(pageOneText).toContain('Sehr geehrte Frau Dr. Erika Beispiel,');
+  });
+
+  it('falls back to default locale/date and renders without a case section', () => {
+    const model: DocumentModel = {
+      title: documentTitle,
+      sections: [],
+    };
+
+    const pageOneText = getPageOneText(model);
+
+    expect(pageOneText).toContain('Sehr geehrte Damen und Herren,');
+    expect(pageOneText).toContain('"Datum"');
   });
 });

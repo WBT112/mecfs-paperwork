@@ -19,12 +19,13 @@ When editing or creating formpack content:
 ### schema.json
 - Use JSON Schema Draft 2020-12
 - Required top-level fields: `person`, `contacts`, `diagnoses`, `symptoms`, `medications`, `allergies`, `doctor`
-- All user-facing field names must use i18n keys (prefixed in UI schema)
+- All user-facing field names must use i18n keys (resolved via UI schema)
 - Never hardcode patient data in examples
 
 ### ui.schema.json
 - Use RJSF (react-jsonschema-form) UI Schema format
-- All `ui:title` and `ui:description` must start with `"t:"` prefix for i18n: `"ui:title": "t:notfallpass.section.person.title"`
+- Use i18n keys in `ui:title`, `ui:description`, `ui:help`, and `ui:enumNames`
+- Both plain keys (e.g. `"ui:title": "notfallpass.section.person.title"`) and `"t:"`-prefixed keys are supported; prefer plain keys for consistency with existing formpacks
 - Arrays must allow add/remove operations (`"ui:options": { "addable": true, "removable": true }`)
 - Use `"ui:widget": "textarea"` for multi-line text
 

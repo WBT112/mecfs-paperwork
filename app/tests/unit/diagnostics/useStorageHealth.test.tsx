@@ -14,14 +14,14 @@ const healthyResult: StorageHealthInfo = {
   indexedDbAvailable: true,
   storageEstimate: { supported: true, usage: 5000, quota: 100000 },
   status: 'ok',
-  message: 'Storage is available and working normally.',
+  message: '',
 };
 
 const errorResult: StorageHealthInfo = {
   indexedDbAvailable: false,
   storageEstimate: { supported: false },
   status: 'error',
-  message: 'IndexedDB is not available.',
+  message: 'storageHealthGuidanceError',
 };
 
 describe('useStorageHealth', () => {
@@ -72,9 +72,7 @@ describe('useStorageHealth', () => {
     expect(result.current.health.indexedDbAvailable).toBe(false);
     expect(result.current.health.storageEstimate.supported).toBe(false);
     expect(result.current.health.status).toBe('error');
-    expect(result.current.health.message).toBe(
-      'Failed to check storage health.',
-    );
+    expect(result.current.health.message).toBe('storageHealthGuidanceError');
   });
 
   it('re-checks storage health when refresh is called', async () => {
@@ -124,6 +122,22 @@ describe('useStorageHealth', () => {
     // The hook has been unmounted, so no assertions about state updates
     // The key thing is that this does not cause React warnings about
     // updating state on an unmounted component
+  });
+
+  it('does not set error state when a rejected check resolves after unmount', async () => {
+    let rejectCheck: (error: unknown) => void;
+    mockCheckStorageHealth.mockReturnValue(
+      new Promise<StorageHealthInfo>((_, reject) => {
+        rejectCheck = reject;
+      }),
+    );
+
+    const { unmount } = renderHook(() => useStorageHealth());
+    unmount();
+
+    rejectCheck!(new Error('late failure'));
+    await Promise.resolve();
+    expect(mockCheckStorageHealth).toHaveBeenCalled();
   });
 
   it('exposes a refresh function that is stable between renders', async () => {

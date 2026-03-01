@@ -17,7 +17,7 @@ app/public/formpacks/
       mapping.json
     templates/
       a4.docx
-      wallet.docx
+      wallet.docx   # optional, currently deactivated for notfallpass via manifest
     examples/
       example.json
 ```
@@ -34,11 +34,11 @@ Required fields:
 - `descriptionKey`: i18n key for the description.
 - `exports`: Array of supported export types (MVP: `docx`, `pdf`, `json`).
 - `docx.templates.a4`: Path to the A4 template.
-- `docx.templates.wallet`: Path to the wallet template (only supported for `notfallpass`).
 - `docx.mapping`: Path to the DOCX mapping file.
 
 Optional fields:
 - `visibility`: `public` (default) or `dev`. Dev packs are hidden from UI listings unless `VITE_SHOW_DEV_FORMPACKS=true` or the app runs in dev mode.
+- `docx.templates.wallet`: Optional path to a wallet template (only supported for `notfallpass`). If omitted in `manifest.json`, wallet export is disabled.
 
 ## i18n
 - All labels, section titles, and help texts are referenced by i18n keys.
@@ -84,7 +84,8 @@ Guidance:
 - Uses RJSF UI Schema.
 - Controls section order and field presentation.
 - Use i18n keys for section titles and help texts.
-- For `ui:title` and `ui:description`, prefix the i18n key with `t:` (example: `"ui:title": "t:notfallpass.section.person.title"`).
+- For `ui:title`, `ui:description`, `ui:help`, and `ui:enumNames`, use i18n keys.
+- Both plain keys (for example `"ui:title": "notfallpass.section.person.title"`) and `t:`-prefixed keys are supported. Current formpacks use plain keys.
 - Lists must allow add/remove operations.
 
 ## DOCX Export Templates (docx-templates)
@@ -167,7 +168,7 @@ Word processors (Word/LibreOffice) can split text into multiple internal “runs
 
 ### Template locations
 - `app/public/formpacks/<packId>/templates/a4.docx` is required for all formpacks.
-- `app/public/formpacks/notfallpass/templates/wallet.docx` is optional and only supported for `notfallpass`.
+- `app/public/formpacks/notfallpass/templates/wallet.docx` is optional and only supported for `notfallpass`; export is only enabled when `manifest.docx.templates.wallet` is set.
 
 ### Field placeholders
 - Text fields: `{{INS person.name}}` or `{{person.name}}`.
@@ -260,7 +261,7 @@ Contract checks include:
  - `manifest.json` fields (`id`, `version`, `defaultLocale`, `locales`, `titleKey`, `descriptionKey`, `exports`, `docx`, `visibility`).
 - `exports` includes `docx` and `json` (and optionally `pdf`), with safe asset paths for `docx.templates.a4` and `docx.mapping`.
 - Strict i18n parity between `i18n/de.json` and `i18n/en.json`.
-- Coverage of `t:` keys referenced in `schema.json` and `ui.schema.json`.
+- Coverage of keys explicitly referenced with `t:` in `schema.json` and `ui.schema.json`.
 - Example data validated against `schema.json` (no payload dumps in output).
 
 Validate templates locally with:
@@ -298,7 +299,7 @@ Loads formpack assets (manifest, schema, UI schema, i18n) from the public direct
 Static registry of available formpacks.
 
 **Key exports:**
-- `FORMPACK_IDS` - Array of formpack IDs (e.g., `['doctor-letter', 'notfallpass']`)
+- `FORMPACK_IDS` - Array of formpack IDs (e.g., `['doctor-letter', 'notfallpass', 'offlabel-antrag']`)
 - `FormpackId` - TypeScript type for valid formpack IDs
 
 **Used by:** UI catalog, routing, validation.
@@ -385,7 +386,7 @@ Determines if a formpack should be visible in the UI based on its `visibility` f
 
 **Templates:**
 - `a4.docx` - Standard A4 page format
-- `wallet.docx` - Compact wallet-sized format (special case, only for notfallpass)
+- `wallet.docx` - Compact wallet-sized format (special case, only for notfallpass; currently deactivated in manifest)
 
 **Export behavior:**
 - If `meCfs` flag is false, `diagnosisParagraphs` is empty
@@ -430,6 +431,18 @@ Determines if a formpack should be visible in the UI based on its `visibility` f
 **Testing:**
 - 22 unit tests for `decisionEngine.ts` (100% coverage)
 - 12 integration tests for `buildDocumentModel` (doctor-letter path)
+
+### `offlabel-antrag`
+**Purpose:** Workflow-based off-label reimbursement request with multi-part exports.
+
+**Data model / flow highlights:**
+- Medication-driven content for standard medications via registry data.
+- `other` path for direct § 2 Abs. 1a SGB V argumentation with user-entered medication data.
+- Multi-part output (Part 1 insurer letter, Part 2 physician cover letter, Part 3 physician statement template).
+
+**Templates and exports:**
+- `a4.docx` combined export.
+- PDF export via dedicated React-PDF template registration.
 
 ## Adding formpack-specific logic
 

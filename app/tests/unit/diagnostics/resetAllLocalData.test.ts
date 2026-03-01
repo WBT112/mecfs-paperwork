@@ -86,6 +86,16 @@ describe('resetAllLocalData', () => {
     expect(mockReload).toHaveBeenCalledOnce();
   });
 
+  it('clears the storage encryption key cookie', async () => {
+    vi.stubGlobal('indexedDB', undefined);
+    vi.stubGlobal('navigator', {});
+    document.cookie = 'mecfs-paperwork.storage-key=secret';
+
+    await resetAllLocalData();
+
+    expect(document.cookie).not.toContain('mecfs-paperwork.storage-key=');
+  });
+
   it('handles missing APIs gracefully', async () => {
     vi.stubGlobal('indexedDB', undefined);
     vi.stubGlobal('navigator', {});
@@ -112,5 +122,28 @@ describe('resetAllLocalData', () => {
     await resetAllLocalData();
 
     expect(mockReload).toHaveBeenCalledOnce();
+  });
+
+  it('rejects when deleteDatabase reports an error', async () => {
+    const deleteError = new Error('delete failed');
+    const request = {
+      error: deleteError,
+      set onsuccess(_: () => void) {
+        /* noop */
+      },
+      set onerror(fn: () => void) {
+        fn();
+      },
+      set onblocked(_: () => void) {
+        /* noop */
+      },
+    };
+    const deleteDatabase = vi.fn().mockReturnValue(request);
+
+    vi.stubGlobal('indexedDB', { deleteDatabase });
+    vi.stubGlobal('navigator', {});
+
+    await expect(resetAllLocalData()).rejects.toBe(deleteError);
+    expect(mockReload).not.toHaveBeenCalled();
   });
 });

@@ -74,8 +74,6 @@ export const isDocumentBlock = (value: unknown): value is DocumentBlock => {
       return isStringArray(value.items);
     case 'kvTable':
       return isKvRows(value.rows);
-    default:
-      return false;
   }
 };
 

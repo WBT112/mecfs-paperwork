@@ -2,6 +2,15 @@ name: npm Health
 
 on:
   pull_request:
+    paths:
+      - "app/package.json"
+      - "app/package-lock.json"
+      - "tools/npm-health.mjs"
+      - ".github/workflows/npm-health.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -16,7 +25,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -26,7 +35,7 @@ jobs:
         working-directory: app
         run: |
           set -euo pipefail
-          npm ci --loglevel=warn 2>&1 | tee npm-install.log
+          npm ci --prefer-offline --fund=false --loglevel=warn 2>&1 | tee npm-install.log
 
       - name: Capture npm audit
         working-directory: app

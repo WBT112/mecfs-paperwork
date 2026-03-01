@@ -4,39 +4,49 @@ import {
   downloadDiagnosticsBundle,
   copyDiagnosticsToClipboard,
 } from '../../../src/lib/diagnostics/bundle';
+import { collectDiagnosticsBundle } from '../../../src/lib/diagnostics/collectors';
 
 const MOCK_GENERATED_AT = '2024-01-01T00:00:00Z';
+const diagnosticsMocks = vi.hoisted(() => ({
+  collectDiagnosticsBundleMock: vi.fn(),
+}));
 
 vi.mock('../../../src/lib/diagnostics/collectors', () => ({
-  collectDiagnosticsBundle: vi.fn().mockResolvedValue({
-    generatedAt: '2024-01-01T00:00:00Z',
-    app: { version: 'abc123', buildDate: '2024-01-01', environment: 'test' },
-    browser: {
-      userAgent: 'Test',
-      platform: 'Test',
-      language: 'en',
-      languages: ['en'],
-      timezone: 'UTC',
-      cookiesEnabled: true,
-      onLine: true,
-    },
-    serviceWorker: { supported: false, registered: false },
-    caches: [],
-    indexedDb: { available: true, databases: [], stores: [] },
-    storageHealth: {
-      indexedDbAvailable: true,
-      storageEstimate: { supported: false },
-      status: 'ok',
-      message: 'OK',
-    },
-    formpacks: [],
-    errors: [],
-  }),
+  collectDiagnosticsBundle: diagnosticsMocks.collectDiagnosticsBundleMock,
 }));
 
 describe('bundle', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    diagnosticsMocks.collectDiagnosticsBundleMock.mockReset();
+    diagnosticsMocks.collectDiagnosticsBundleMock.mockResolvedValue({
+      generatedAt: '2024-01-01T00:00:00Z',
+      app: { version: 'abc123', buildDate: '2024-01-01', environment: 'test' },
+      browser: {
+        userAgent: 'Test',
+        platform: 'Test',
+        language: 'en',
+        languages: ['en'],
+        timezone: 'UTC',
+        cookiesEnabled: true,
+        onLine: true,
+      },
+      serviceWorker: { supported: false, registered: false },
+      caches: [],
+      indexedDb: { available: true, databases: [], stores: [] },
+      storageHealth: {
+        indexedDbAvailable: true,
+        storageEstimate: { supported: false },
+        status: 'ok',
+        message: 'OK',
+      },
+      formpacks: [],
+      performance: {
+        supported: true,
+        measures: [],
+      },
+      errors: [],
+    });
   });
 
   describe('generateDiagnosticsBundle', () => {
@@ -44,6 +54,52 @@ describe('bundle', () => {
       const bundle = await generateDiagnosticsBundle();
       expect(bundle.generatedAt).toBe(MOCK_GENERATED_AT);
       expect(bundle.app.version).toBe('abc123');
+    });
+
+    it('redacts sensitive keys from the collected diagnostics payload', async () => {
+      diagnosticsMocks.collectDiagnosticsBundleMock.mockResolvedValueOnce({
+        generatedAt: MOCK_GENERATED_AT,
+        app: {
+          version: 'abc123',
+          buildDate: '2024-01-01',
+          environment: 'test',
+          name: 'Jane Example',
+        },
+        browser: {
+          userAgent: 'Test',
+          platform: 'Test',
+          language: 'en',
+          languages: ['en'],
+          timezone: 'UTC',
+          cookiesEnabled: true,
+          onLine: true,
+          email: 'person@example.com',
+        },
+        serviceWorker: { supported: false, registered: false },
+        caches: [],
+        indexedDb: { available: true, databases: [], stores: [] },
+        storageHealth: {
+          indexedDbAvailable: true,
+          storageEstimate: { supported: false },
+          status: 'ok',
+          message: 'OK',
+        },
+        formpacks: [],
+        performance: {
+          supported: true,
+          measures: [],
+        },
+        errors: [],
+      });
+
+      const bundle = (await generateDiagnosticsBundle()) as unknown as Record<
+        string,
+        Record<string, unknown>
+      >;
+
+      expect(bundle.app.name).toBe('[REDACTED]');
+      expect(bundle.browser.email).toBe('[REDACTED]');
+      expect(vi.mocked(collectDiagnosticsBundle)).toHaveBeenCalledTimes(1);
     });
   });
 

@@ -4,13 +4,10 @@ import { expectNoSeriousA11yViolations } from './helpers/a11y';
 
 const DB_NAME = 'mecfs-paperwork';
 const FORMPACK_ID = 'doctor-letter';
+const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
 const POLL_TIMEOUT = 60_000;
-const DOCTOR_LETTER_A11Y_EXCLUSIONS = [
-  '#root_doctor_title',
-  '#root_doctor_gender',
-  '.info-box a[href*="praxisleitfaden.mecfs.de"]',
-  '.info-box a[href$="/icc"]',
-];
+const OFFLABEL_INTRO_CHECKBOX_LABEL =
+  /Ich habe verstanden|Habe verstanden, Nutzung auf eigenes Risiko|I understand, use at my own risk/i;
 
 const tabUntilFocused = async (
   page: Page,
@@ -38,8 +35,19 @@ const expectFocusVisible = async (locator: Locator) => {
     .toBe(true);
 };
 
-test.describe('a11y baseline', () => {
-  test('home route has no serious/critical violations', async ({
+const acceptOfflabelIntroGate = async (page: Page) => {
+  const introHeading = page.getByRole('heading', { name: /hinweise/i });
+  await expect(introHeading).toBeVisible({ timeout: POLL_TIMEOUT });
+
+  await page.getByLabel(OFFLABEL_INTRO_CHECKBOX_LABEL).check({ force: true });
+  await page.getByRole('button', { name: /weiter/i }).click();
+  await expect(page.locator('.formpack-form')).toBeVisible({
+    timeout: POLL_TIMEOUT,
+  });
+};
+
+test.describe('a11y baseline @chromium-only', () => {
+  test('home route has no moderate/serious/critical violations', async ({
     page,
     browserName,
   }) => {
@@ -53,7 +61,7 @@ test.describe('a11y baseline', () => {
     await expectNoSeriousA11yViolations(page, { routeLabel: '/' });
   });
 
-  test('formpacks route has no serious/critical violations', async ({
+  test('formpacks route has no moderate/serious/critical violations', async ({
     page,
     browserName,
   }) => {
@@ -67,7 +75,7 @@ test.describe('a11y baseline', () => {
     await expectNoSeriousA11yViolations(page, { routeLabel: '/formpacks' });
   });
 
-  test('doctor-letter route has no serious/critical violations', async ({
+  test('doctor-letter route has no moderate/serious/critical violations', async ({
     page,
     browserName,
   }) => {
@@ -90,10 +98,114 @@ test.describe('a11y baseline', () => {
     });
     await expectNoSeriousA11yViolations(page, {
       routeLabel: `/formpacks/${FORMPACK_ID}`,
-      // NOTE: These are known legacy issues in upstream/embedded rendering.
-      // Keep exclusions as narrow selectors so new regressions still fail CI.
-      exclude: DOCTOR_LETTER_A11Y_EXCLUSIONS,
     });
+  });
+
+  test('offlabel intro gate has no moderate/serious/critical violations', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto(`/formpacks/${OFFLABEL_FORMPACK_ID}`);
+    await expect(page.getByRole('heading', { name: /hinweise/i })).toBeVisible({
+      timeout: POLL_TIMEOUT,
+    });
+    await expectNoSeriousA11yViolations(page, {
+      routeLabel: `/formpacks/${OFFLABEL_FORMPACK_ID}#intro`,
+    });
+  });
+
+  test('offlabel form has no moderate/serious/critical violations after intro accept (light mode)', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto(`/formpacks/${OFFLABEL_FORMPACK_ID}`);
+    await acceptOfflabelIntroGate(page);
+
+    const themeSelect = page.locator('#theme-select');
+    await expect(themeSelect).toBeVisible({ timeout: POLL_TIMEOUT });
+    await themeSelect.selectOption('light');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+
+    await expectNoSeriousA11yViolations(page, {
+      routeLabel: `/formpacks/${OFFLABEL_FORMPACK_ID}#form-light`,
+    });
+  });
+
+  test('offlabel form has no moderate/serious/critical violations after intro accept (dark mode)', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto(`/formpacks/${OFFLABEL_FORMPACK_ID}`);
+    await acceptOfflabelIntroGate(page);
+
+    const themeSelect = page.locator('#theme-select');
+    await expect(themeSelect).toBeVisible({ timeout: POLL_TIMEOUT });
+    await themeSelect.selectOption('dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+    await expectNoSeriousA11yViolations(page, {
+      routeLabel: `/formpacks/${OFFLABEL_FORMPACK_ID}#form-dark`,
+    });
+  });
+
+  test('offlabel intro acceptance moves focus into the form', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto(`/formpacks/${OFFLABEL_FORMPACK_ID}`);
+    await acceptOfflabelIntroGate(page);
+
+    await expect
+      .poll(
+        () =>
+          page.evaluate(() => {
+            const active = document.activeElement as HTMLElement | null;
+            return Boolean(active?.closest('.formpack-form'));
+          }),
+        { timeout: POLL_TIMEOUT, intervals: [250, 500, 1_000] },
+      )
+      .toBe(true);
+  });
+
+  test('help route has no moderate/serious/critical violations', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto('/help');
+    await expect(page.getByRole('heading').first()).toBeVisible({
+      timeout: POLL_TIMEOUT,
+    });
+    await expectNoSeriousA11yViolations(page, { routeLabel: '/help' });
   });
 
   test('keyboard smoke reaches primary actions with visible focus', async ({

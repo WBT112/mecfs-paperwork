@@ -59,6 +59,20 @@ export const redactValue = (key: string, value: unknown): unknown => {
   return value;
 };
 
+const redactArray = (arr: unknown[]): unknown[] =>
+  arr.map((item) => {
+    if (Array.isArray(item)) {
+      return redactArray(item);
+    }
+    if (typeof item === 'object' && item !== null) {
+      return redactObject(item as Record<string, unknown>);
+    }
+    if (typeof item === 'string' && containsForbiddenPattern(item)) {
+      return REDACTED_PLACEHOLDER;
+    }
+    return item;
+  });
+
 export const redactObject = (
   obj: Record<string, unknown>,
 ): Record<string, unknown> => {
@@ -70,7 +84,12 @@ export const redactObject = (
       continue;
     }
 
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    if (Array.isArray(value)) {
+      result[key] = redactArray(value);
+      continue;
+    }
+
+    if (typeof value === 'object' && value !== null) {
       result[key] = redactObject(value as Record<string, unknown>);
       continue;
     }

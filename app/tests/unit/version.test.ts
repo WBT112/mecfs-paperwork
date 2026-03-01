@@ -1,4 +1,7 @@
+// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const INVALID_DATE = 'not-a-date';
 
 const importVersionModule = async (appVersion: unknown, buildDate: unknown) => {
   vi.resetModules();
@@ -25,13 +28,18 @@ describe('lib/version', () => {
     expect(versionModule.formatBuildDate('en-US')).not.toBe(
       versionModule.BUILD_DATE_ISO,
     );
+    expect(
+      versionModule.formatLocalizedDate('2026-02-07', 'en-US', {
+        dateStyle: 'medium',
+      }),
+    ).toMatch(/[A-Za-z]|\d/);
   });
 
   it('keeps the raw build value when the date is invalid', async () => {
-    const versionModule = await importVersionModule('v123abc', 'not-a-date');
+    const versionModule = await importVersionModule('v123abc', INVALID_DATE);
 
     expect(versionModule.HAS_VALID_BUILD_DATE).toBe(false);
-    expect(versionModule.formatBuildDate('de-DE')).toBe('not-a-date');
+    expect(versionModule.formatBuildDate('de-DE')).toBe(INVALID_DATE);
   });
 
   it('falls back to unknown for missing or non-string metadata', async () => {
@@ -41,5 +49,10 @@ describe('lib/version', () => {
     expect(versionModule.BUILD_DATE_ISO).toBe('unknown');
     expect(versionModule.HAS_VALID_BUILD_DATE).toBe(false);
     expect(versionModule.formatBuildDate('en')).toBe('unknown');
+    expect(
+      versionModule.formatLocalizedDate(INVALID_DATE, 'en', {
+        dateStyle: 'medium',
+      }),
+    ).toBe(INVALID_DATE);
   });
 });
