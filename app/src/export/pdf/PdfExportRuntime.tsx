@@ -71,6 +71,9 @@ const PdfExportDownloadHandler = ({
 
   useEffect(() => {
     const finalizeOnce = () => {
+      if (completedRef.current) {
+        return;
+      }
       completedRef.current = true;
       onDone();
     };
@@ -101,6 +104,7 @@ const PdfExportDownloadHandler = ({
       toBlobWithTimeout(pdfInstance)
         .then((fallbackBlob) => {
           if (completedRef.current) {
+            finalizeOnce();
             return;
           }
           try {

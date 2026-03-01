@@ -56,6 +56,7 @@ type OptionalRjsfSchema = RJSFSchema | boolean | undefined;
 
 /** Maximum accepted import size (10 MB). */
 const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+const IMPORT_SIZE_ENCODER = new TextEncoder();
 
 /** Maximum nesting depth for recursive schema operations. */
 const MAX_SCHEMA_DEPTH = 50;
@@ -63,7 +64,7 @@ const MAX_SCHEMA_DEPTH = 50;
 const parseJson = (
   value: string,
 ): { payload: unknown } | { error: 'invalid_json'; message: string } => {
-  if (value.length > MAX_IMPORT_BYTES) {
+  if (IMPORT_SIZE_ENCODER.encode(value).byteLength > MAX_IMPORT_BYTES) {
     return {
       error: 'invalid_json',
       message: 'The file exceeds the 10 MB size limit.',

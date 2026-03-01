@@ -724,6 +724,31 @@ describe('validateJsonImport', () => {
     expect(result.error?.message).toContain('10 MB');
   });
 
+  it('rejects imports that exceed 10 MB in bytes with multibyte characters', () => {
+    const oversizedMultibyte = '€'.repeat(
+      Math.floor((10 * 1024 * 1024) / 3) + 1,
+    );
+    const oversizedJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: { note: oversizedMultibyte },
+      },
+    });
+
+    expect(oversizedJson.length).toBeLessThan(10 * 1024 * 1024);
+
+    const result = validateJsonImport(
+      oversizedJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.payload).toBe(null);
+    expect(result.error?.code).toBe('invalid_json');
+    expect(result.error?.message).toContain('10 MB');
+  });
+
   it('normalizes tuple arrays, schema defs, and mixed required defaults without schema mismatch', () => {
     const normalizationSchema = {
       type: 'object',

@@ -111,7 +111,7 @@ export const useRecords = (formpackId: string | null) => {
 
   useEffect(() => {
     setHasLoaded(false);
-    refresh().catch(Promise.resolve);
+    refresh().catch(Promise.resolve.bind(Promise));
   }, [refresh]);
 
   const createRecord = useCallback(
@@ -260,7 +260,7 @@ export const useSnapshots = (recordId: string | null) => {
   }, [recordId, setErrorCode, setSnapshots]);
 
   useEffect(() => {
-    refresh().catch(Promise.resolve);
+    refresh().catch(Promise.resolve.bind(Promise));
   }, [refresh]);
 
   const createSnapshot = useCallback(
@@ -431,7 +431,7 @@ export const useAutosaveRecord = (
     }
 
     const timeout = globalThis.setTimeout(() => {
-      persistPendingChanges(true).catch(Promise.resolve);
+      persistPendingChanges(true).catch(Promise.resolve.bind(Promise));
     }, delay);
 
     return () => {
@@ -441,7 +441,7 @@ export const useAutosaveRecord = (
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      persistPendingChanges(false).catch(Promise.resolve);
+      persistPendingChanges(false).catch(Promise.resolve.bind(Promise));
     };
 
     globalThis.addEventListener('beforeunload', handleBeforeUnload);

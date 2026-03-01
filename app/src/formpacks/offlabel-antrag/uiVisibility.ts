@@ -88,15 +88,20 @@ export const applyOfflabelVisibility = (
 
   const clonedUiSchema = structuredClone(uiSchema);
   const requestUiSchema = clonedUiSchema.request as UiNode;
+  const ensureFieldUiNode = (key: string): UiNode => {
+    const currentNode = requestUiSchema[key];
+    const fieldUiNode = isRecord(currentNode) ? currentNode : {};
+    requestUiSchema[key] = fieldUiNode;
+    return fieldUiNode;
+  };
+
   const applyFieldVisibility = (
     key: string,
     hideField: boolean,
     visibleWidget?: string,
   ): void => {
-    const currentNode = requestUiSchema[key];
-    const fieldUiNode = isRecord(currentNode) ? currentNode : {};
+    const fieldUiNode = ensureFieldUiNode(key);
     setWidgetVisibility(fieldUiNode, hideField, visibleWidget);
-    requestUiSchema[key] = fieldUiNode;
   };
 
   applyFieldVisibility(
@@ -115,9 +120,7 @@ export const applyOfflabelVisibility = (
   applyFieldVisibility('otherEvidenceReference', !isOtherDrug, 'textarea');
   applyFieldVisibility('standardOfCareTriedFreeText', !isOtherDrug, 'textarea');
 
-  const selectedDrugNode = isRecord(requestUiSchema.drug)
-    ? requestUiSchema.drug
-    : {};
+  const selectedDrugNode = ensureFieldUiNode('drug');
   selectedDrugNode['ui:enumNames'] = medicationOptions.map(
     ({ label }) => label,
   );
@@ -134,8 +137,7 @@ export const applyOfflabelVisibility = (
   };
   requestUiSchema.drug = selectedDrugNode;
 
-  const selectedIndicationNode =
-    requestUiSchema.selectedIndicationKey as UiNode;
+  const selectedIndicationNode = ensureFieldUiNode('selectedIndicationKey');
   selectedIndicationNode['ui:enumNames'] = indicationOptions.map(
     ({ label }) => label,
   );
