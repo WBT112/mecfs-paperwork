@@ -44,6 +44,8 @@ export type MedicationProfile = {
   key: MedicationKey;
   displayNameDe: string;
   displayNameEn: string;
+  selectionNameDe: string;
+  selectionNameEn: string;
   visibility: MedicationVisibility;
   indications: MedicationIndication[];
   isOther: boolean;
@@ -63,6 +65,8 @@ type StandardMedicationInput = {
   key: StandardMedicationKey;
   displayNameDe: string;
   displayNameEn: string;
+  selectionNameDe: string;
+  selectionNameEn: string;
   visibility?: MedicationVisibility;
   infoBoxI18nKey: string;
   expertSourceDate: string;
@@ -157,6 +161,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     key: 'agomelatin',
     displayNameDe: 'Agomelatin',
     displayNameEn: 'Agomelatine',
+    selectionNameDe: 'Agomelatin',
+    selectionNameEn: 'Agomelatine',
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.agomelatine',
     expertSourceDate: '02.12.2025',
     expertSourceTextOverride: {
@@ -222,6 +228,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     key: 'ivabradine',
     displayNameDe: 'Ivabradin',
     displayNameEn: 'Ivabradine',
+    selectionNameDe: 'Ivabradin',
+    selectionNameEn: 'Ivabradine',
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.ivabradine',
     expertSourceDate: '15.10.2025',
     expertSourceTextOverride: {
@@ -273,6 +281,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     key: 'vortioxetine',
     displayNameDe: 'Vortioxetin',
     displayNameEn: 'Vortioxetine',
+    selectionNameDe: 'Vortioxetin',
+    selectionNameEn: 'Vortioxetine',
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.vortioxetine',
     expertSourceDate: '15.10.2025',
     expertSourceTextOverride: {
@@ -338,6 +348,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     key: 'ldn',
     displayNameDe: 'Low-Dose Naltrexon (LDN)',
     displayNameEn: 'Low-Dose Naltrexone (LDN)',
+    selectionNameDe: 'Low-Dose Naltrexon (LDN)',
+    selectionNameEn: 'Low-Dose Naltrexone (LDN)',
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.ldn',
     expertSourceDate: '24.02.2026',
     expertSourceTextOverride: {
@@ -399,6 +411,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     key: 'aripiprazole',
     displayNameDe: 'Aripiprazol (LDA)',
     displayNameEn: 'Aripiprazole (LDA)',
+    selectionNameDe: 'Aripiprazol (LDA)',
+    selectionNameEn: 'Aripiprazole (LDA)',
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.aripiprazole',
     expertSourceDate: '24.02.2026',
     expertSourceTextOverride: {
@@ -464,6 +478,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     key: 'methylphenidate',
     displayNameDe: 'Methylphenidat',
     displayNameEn: 'Methylphenidate',
+    selectionNameDe: 'Methylphenidat (Medikinet, Ritalin)',
+    selectionNameEn: 'Methylphenidate (Medikinet, Ritalin)',
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.methylphenidate',
     expertSourceDate: '02.03.2026',
     expertSourceTextOverride: {
@@ -563,6 +579,8 @@ const createStandardMedicationProfile = (
     key: input.key,
     displayNameDe: input.displayNameDe,
     displayNameEn: input.displayNameEn,
+    selectionNameDe: input.selectionNameDe,
+    selectionNameEn: input.selectionNameEn,
     visibility: input.visibility ?? 'public',
     indications: [...input.indications],
     isOther: false,
@@ -592,6 +610,8 @@ const OTHER_MEDICATION_PROFILE: MedicationProfile = {
   key: 'other',
   displayNameDe: 'anderes Medikament',
   displayNameEn: 'other medication',
+  selectionNameDe: 'anderes Medikament',
+  selectionNameEn: 'other medication',
   visibility: 'public',
   indications: [],
   isOther: true,
@@ -646,13 +666,21 @@ export const getMedicationDisplayName = (
   return locale === 'de' ? profile.displayNameDe : profile.displayNameEn;
 };
 
+export const getMedicationSelectionName = (
+  key: MedicationKey,
+  locale: MedicationLocale,
+): string => {
+  const profile = MEDICATIONS[key];
+  return locale === 'de' ? profile.selectionNameDe : profile.selectionNameEn;
+};
+
 export const getVisibleMedicationOptions = (
   locale: MedicationLocale,
   showDevMedications = false,
 ): Array<{ key: MedicationKey; label: string }> =>
   getVisibleMedicationKeys(showDevMedications).map((key) => ({
     key,
-    label: getMedicationDisplayName(key, locale),
+    label: getMedicationSelectionName(key, locale),
   }));
 
 export type MedicationIndicationOption = {

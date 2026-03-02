@@ -242,7 +242,7 @@ describe('applyOfflabelVisibility', () => {
       'Vortioxetin',
       'Low-Dose Naltrexon (LDN)',
       'Aripiprazol (LDA)',
-      'Methylphenidat',
+      'Methylphenidat (Medikinet, Ritalin)',
       'anderes Medikament',
     ]);
     expect(enumOptions).toEqual([
@@ -251,7 +251,10 @@ describe('applyOfflabelVisibility', () => {
       { value: 'vortioxetine', label: 'Vortioxetin' },
       { value: 'ldn', label: 'Low-Dose Naltrexon (LDN)' },
       { value: 'aripiprazole', label: 'Aripiprazol (LDA)' },
-      { value: 'methylphenidate', label: 'Methylphenidat' },
+      {
+        value: 'methylphenidate',
+        label: 'Methylphenidat (Medikinet, Ritalin)',
+      },
       {
         value: 'other',
         label: 'anderes Medikament',

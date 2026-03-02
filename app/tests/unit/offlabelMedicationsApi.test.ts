@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   getMedicationDisplayName,
+  getMedicationSelectionName,
   getMedicationIndications,
   getVisibleMedicationKeys,
   getVisibleMedicationOptions,
@@ -38,6 +39,18 @@ describe('offlabel medications API', () => {
 
     expect(getMedicationDisplayName('agomelatin', 'de')).toBe('Agomelatin');
     expect(getMedicationDisplayName('agomelatin', 'en')).toBe('Agomelatine');
+    expect(getMedicationDisplayName('methylphenidate', 'de')).toBe(
+      'Methylphenidat',
+    );
+    expect(getMedicationDisplayName('methylphenidate', 'en')).toBe(
+      'Methylphenidate',
+    );
+    expect(getMedicationSelectionName('methylphenidate', 'de')).toBe(
+      'Methylphenidat (Medikinet, Ritalin)',
+    );
+    expect(getMedicationSelectionName('methylphenidate', 'en')).toBe(
+      'Methylphenidate (Medikinet, Ritalin)',
+    );
   });
 
   it('filters dev-only medications based on the dev visibility flag', () => {
