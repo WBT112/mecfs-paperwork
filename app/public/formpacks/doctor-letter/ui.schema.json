@@ -106,6 +106,7 @@
     "q4": {
       "ui:title": "doctor-letter.decision.q4.label",
       "ui:help": "doctor-letter.decision.q4.help",
+      "ui:placeholder": "doctor-letter.decision.q4.placeholder",
       "ui:enumNames": [
         "doctor-letter.decision.q4.option.EBV",
         "doctor-letter.decision.q4.option.Influenza",
@@ -116,6 +117,7 @@
     "q5": {
       "ui:title": "doctor-letter.decision.q5.label",
       "ui:help": "doctor-letter.decision.q5.help",
+      "ui:placeholder": "doctor-letter.decision.q5.placeholder",
       "ui:enumNames": [
         "doctor-letter.decision.q5.option.COVID19Vaccination",
         "doctor-letter.decision.q5.option.Fluoroquinolones",
@@ -149,6 +151,7 @@
     "q8": {
       "ui:title": "doctor-letter.decision.q8.label",
       "ui:help": "doctor-letter.decision.q8.help",
+      "ui:placeholder": "doctor-letter.decision.q8.placeholder",
       "ui:enumNames": [
         "doctor-letter.decision.q8.option.NoKnownCause",
         "doctor-letter.decision.q8.option.EBV",

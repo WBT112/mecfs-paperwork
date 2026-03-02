@@ -6,6 +6,7 @@ const TRANSLATABLE_KEYS = new Set([
   'ui:title',
   'ui:description',
   'ui:help',
+  'ui:placeholder',
   'ui:enumNames',
 ]);
 
