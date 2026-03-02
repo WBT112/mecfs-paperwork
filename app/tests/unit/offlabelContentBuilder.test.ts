@@ -46,6 +46,21 @@ const CONSENT_HEADING_IVABRADIN =
   'Aufklärung und Einwilligung zum Off-Label-Use: Ivabradin';
 const buildPart2Intro = (drug: string): string =>
   `Ich bereite mit Hilfe einen Antrag auf Kostenübernahme bei meiner Krankenkasse für einen Off-Label-Therapieversuch mit ${drug} vor und bitte Sie um Ihre ärztliche Unterstützung bei der medizinischen Einordnung und Begleitung, insbesondere durch:`;
+const joinBlockText = (
+  blocks: ReturnType<typeof buildOfflabelDocuments>[number]['blocks'],
+): string =>
+  blocks
+    .reduce<string[]>((items, block) => {
+      if (block.kind === 'list') {
+        items.push(...block.items);
+        return items;
+      }
+      if (block.kind !== 'pageBreak') {
+        items.push(block.text);
+      }
+      return items;
+    }, [])
+    .join('\n');
 
 describe('buildOfflabelDocuments', () => {
   it('builds three parts and includes evidence text for known medication', () => {
@@ -62,10 +77,7 @@ describe('buildOfflabelDocuments', () => {
     expect(docs).toHaveLength(3);
     expect(docs.map((doc) => doc.id)).toEqual(['part1', 'part2', 'part3']);
 
-    const part1Text = docs[0].blocks
-      .filter((block) => block.kind === 'paragraph')
-      .map((block) => block.text)
-      .join('\n');
+    const part1Text = joinBlockText(docs[0].blocks);
     const part1ListItems = docs[0].blocks
       .filter((block) => block.kind === 'list')
       .flatMap((block) => block.items);
@@ -158,10 +170,7 @@ describe('buildOfflabelDocuments', () => {
       },
     });
 
-    const part1Text = docs[0].blocks
-      .filter((block) => block.kind === 'paragraph')
-      .map((block) => block.text)
-      .join('\n');
+    const part1Text = joinBlockText(docs[0].blocks);
 
     expect(part1Text).toContain(CLOSING_GREETING_TEXT);
     expect(part1Text).toContain('Max Mustermann');
@@ -790,10 +799,7 @@ describe('buildOfflabelDocuments', () => {
 
     expect(docs).toHaveLength(3);
 
-    const part1Text = docs[0].blocks
-      .filter((block) => block.kind === 'paragraph')
-      .map((block) => block.text)
-      .join('\n');
+    const part1Text = joinBlockText(docs[0].blocks);
 
     expect(part1Text).toContain(
       'Das Medikament Ivabradin ist in Deutschland nicht indikationsbezogen zugelassen',
@@ -802,7 +808,7 @@ describe('buildOfflabelDocuments', () => {
     expect(part1Text).not.toMatch(/Punkt \d+:/);
   });
 
-  it('keeps liability footer block in locale en for unknown medication keys', () => {
+  it('keeps German liability footer content in locale en for unknown medication keys', () => {
     const docs = buildOfflabelDocuments(
       {
         request: {
@@ -817,7 +823,9 @@ describe('buildOfflabelDocuments', () => {
       .map((block) => block.text)
       .join('\n');
 
-    expect(part2Text).toContain('Date: ');
-    expect(part2Text).toContain('Patient name: ');
+    expect(part2Text).toContain('Datum: _______________________');
+    expect(part2Text).toContain('Patient*in:');
+    expect(part2Text).not.toContain('Date: ');
+    expect(part2Text).not.toContain('Patient name: ');
   });
 });

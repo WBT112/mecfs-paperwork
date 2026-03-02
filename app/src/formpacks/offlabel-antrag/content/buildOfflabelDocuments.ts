@@ -6,7 +6,6 @@ import {
   type MedicationProfile,
 } from '../medications';
 import type { SupportedLocale } from '../../../i18n/locale';
-import { buildOffLabelAntragDocumentModel } from '../export/documentModel';
 
 export type OfflabelRenderedDocument = {
   id: 'part1' | 'part2' | 'part3';
@@ -843,76 +842,9 @@ const buildPart3 = (formData: FormData): OfflabelRenderedDocument => {
   };
 };
 
-const buildFromExportModel = (
-  formData: Record<string, unknown>,
-): OfflabelRenderedDocument[] => {
-  const model = buildOffLabelAntragDocumentModel(formData, 'en');
-
-  return [
-    {
-      id: 'part1',
-      title: 'Part 1',
-      blocks: [
-        {
-          kind: 'heading',
-          text: 'Part 1 – Application to the insurer',
-        },
-        ...model.kk.paragraphs.map((text) => ({
-          kind: 'paragraph' as const,
-          text,
-        })),
-      ],
-    },
-    {
-      id: 'part2',
-      title: 'Part 2',
-      blocks: [
-        {
-          kind: 'heading',
-          text: 'Part 2 – Cover letter to the treating practice',
-        },
-        ...model.arzt.paragraphs.map((text) => ({
-          kind: 'paragraph' as const,
-          text,
-        })),
-        {
-          kind: 'heading' as const,
-          text: model.arzt.liabilityHeading!,
-        },
-        ...model.arzt.liabilityParagraphs!.map((text) => ({
-          kind: 'paragraph' as const,
-          text,
-        })),
-        {
-          kind: 'paragraph' as const,
-          text: `Date: ${model.arzt.liabilityDateLine}`,
-        },
-        {
-          kind: 'paragraph' as const,
-          text: `Patient name: ${model.arzt.liabilitySignerName}`,
-        },
-      ],
-    },
-    {
-      id: 'part3',
-      title: 'Part 3',
-      blocks: [
-        { kind: 'heading', text: model.part3.title },
-        ...model.part3.paragraphs.map((text) => ({
-          kind: 'paragraph' as const,
-          text,
-        })),
-      ],
-    },
-  ];
-};
-
 export function buildOfflabelDocuments(
   formData: Record<string, unknown>,
-  locale: SupportedLocale = 'de',
+  _locale: SupportedLocale = 'de',
 ): OfflabelRenderedDocument[] {
-  if (locale === 'en') {
-    return buildFromExportModel(formData);
-  }
   return [buildPart1(formData), buildPart2(formData), buildPart3(formData)];
 }

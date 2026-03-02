@@ -1255,6 +1255,8 @@ export default function FormpackDetailPage() {
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
   const hasRestoredRecordRef = useRef<string | null>(null);
   const formpackId = manifest?.id ?? null;
+  const offlabelOutputLocale: SupportedLocale =
+    formpackId === OFFLABEL_ANTRAG_FORMPACK_ID ? 'de' : locale;
   const {
     records,
     activeRecord,
@@ -2620,7 +2622,7 @@ export default function FormpackDetailPage() {
         formpackId: formpackId as FormpackId,
         recordId: activeRecord?.id as string,
         variant: docxTemplateId,
-        locale,
+        locale: offlabelOutputLocale,
         schema: formSchema,
         uiSchema: previewUiSchema,
         manifest: manifest as FormpackManifest,
@@ -2642,8 +2644,8 @@ export default function FormpackDetailPage() {
     activeRecord,
     docxTemplateId,
     formpackId,
-    locale,
     manifest,
+    offlabelOutputLocale,
     previewUiSchema,
     formSchema,
     t,
@@ -2739,11 +2741,11 @@ export default function FormpackDetailPage() {
   const offlabelPreviewDocuments = useMemo(
     () =>
       formpackId === OFFLABEL_ANTRAG_FORMPACK_ID
-        ? buildOfflabelDocuments(formData, locale).map((document) =>
-            stripOfflabelPart2ConsentFromPreview(document),
+        ? buildOfflabelDocuments(formData, offlabelOutputLocale).map(
+            (document) => stripOfflabelPart2ConsentFromPreview(document),
           )
         : [],
-    [formData, formpackId, locale],
+    [formData, formpackId, offlabelOutputLocale],
   );
   const docxTemplateOptions = useMemo(() => {
     if (!manifest?.docx) {
@@ -2828,7 +2830,7 @@ export default function FormpackDetailPage() {
           <LazyPdfExportControls
             formpackId={resolvedFormpackId}
             formData={formData}
-            locale={locale}
+            locale={offlabelOutputLocale}
             label={t('formpackRecordExportPdf')}
             loadingLabel={t('formpackPdfExportInProgress')}
             disabled={disabled}

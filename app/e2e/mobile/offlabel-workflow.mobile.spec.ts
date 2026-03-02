@@ -7,14 +7,25 @@ import { openCollapsibleSectionById } from '../helpers/sections';
 const DB_NAME = 'mecfs-paperwork';
 const FORM_PACK_ID = 'offlabel-antrag';
 const OFFLABEL_INTRO_CHECKBOX_LABEL =
-  /Ich habe verstanden|Habe verstanden, Nutzung auf eigenes Risiko|I understand, use at my own risk/i;
+  /Ich habe verstanden|Habe verstanden, Nutzung auf eigenes Risiko|ersetzt weder eine ärztliche noch eine rechtliche Beratung|I understand, use at my own risk/i;
 
 const acceptIntroGate = async (page: Page) => {
   const introHeading = page.getByRole('heading', { name: /hinweise/i });
   await expect(introHeading).toBeVisible({ timeout: 20_000 });
 
-  await page.getByLabel(OFFLABEL_INTRO_CHECKBOX_LABEL).check({ force: true });
-  await page.getByRole('button', { name: /weiter/i }).click();
+  const introCheckbox = page
+    .getByRole('checkbox', { name: OFFLABEL_INTRO_CHECKBOX_LABEL })
+    .first();
+  const continueButton = page
+    .getByRole('button', { name: /weiter|continue/i })
+    .first();
+
+  await expect(introCheckbox).toBeVisible({ timeout: 20_000 });
+  await introCheckbox.scrollIntoViewIfNeeded();
+  await introCheckbox.check({ force: true });
+  await expect(introCheckbox).toBeChecked({ timeout: 10_000 });
+  await expect(continueButton).toBeEnabled({ timeout: 10_000 });
+  await continueButton.click();
   await expect(page.locator('.formpack-form')).toBeVisible({ timeout: 20_000 });
 };
 
@@ -411,23 +422,6 @@ const listFormpackIdsFromOverview = async (page: Page) => {
   });
 };
 
-const acceptIntroGateIfPresent = async (page: Page) => {
-  const introCheckbox = page.getByLabel(OFFLABEL_INTRO_CHECKBOX_LABEL).first();
-  const hasIntro = await introCheckbox
-    .isVisible({ timeout: 1_500 })
-    .catch(() => false);
-
-  if (!hasIntro) {
-    return;
-  }
-
-  await introCheckbox.check({ force: true });
-  await page
-    .getByRole('button', { name: /weiter|continue/i })
-    .first()
-    .click();
-};
-
 const openFormpackForLayoutAudit = async (page: Page, formpackId: string) => {
   await openFormpackWithRetry(
     page,
@@ -435,8 +429,12 @@ const openFormpackForLayoutAudit = async (page: Page, formpackId: string) => {
     page.locator('.formpack-detail, .formpack-form, .app__error').first(),
   );
 
-  await acceptIntroGateIfPresent(page);
-  await expect(page.locator('.formpack-form')).toBeVisible({ timeout: 20_000 });
+  const formLocator = page.locator('.formpack-form');
+  if (formpackId === FORM_PACK_ID) {
+    await acceptIntroGate(page);
+  }
+
+  await expect(formLocator).toBeVisible({ timeout: 20_000 });
 };
 
 const collectLayoutSnapshot = async (

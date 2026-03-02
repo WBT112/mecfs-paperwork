@@ -25,10 +25,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version: 24
           cache: npm
@@ -50,6 +52,10 @@ jobs:
         working-directory: app
         run: npm run typecheck
 
+      - name: Duplication check (0 lines)
+        working-directory: app
+        run: npm run duplication:check
+
       - name: Formpack validation
         working-directory: app
         run: npm run formpack:validate
@@ -60,10 +66,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version: 24
           cache: npm
@@ -79,7 +87,7 @@ jobs:
 
       - name: Upload coverage report
         if: failure() || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: coverage-report
           path: app/coverage/
@@ -91,10 +99,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version: 24
           cache: npm

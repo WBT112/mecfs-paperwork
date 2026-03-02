@@ -28,6 +28,12 @@ try {
       // keys and translation-defined defaults are safe here.
       escapeValue: false,
     },
+    react: {
+      // NOTE: Formpack translations are added at runtime via addResourceBundle.
+      // Binding to store events ensures components rerender immediately after
+      // locale-switch loads without requiring a page refresh.
+      bindI18nStore: 'added removed',
+    },
   });
 } catch {
   // Ignore initialization failures to keep the UI responsive offline.

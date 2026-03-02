@@ -168,6 +168,7 @@ const REQUEST_DEFAULT_FIELDS = [
 const DEFAULT_PART3_SUBJECT_KEY = 'offlabel-antrag.export.part3.subject';
 const DEFAULT_PART3_SUBJECT =
   'Ärztliche Stellungnahme / Befundbericht zum Off-Label-Use';
+const OFFLABEL_OUTPUT_LOCALE: SupportedLocale = 'de';
 const PART2_TITLE = 'Teil 2 – Schreiben an die behandelnde Praxis';
 const PART2_LIABILITY_HEADING_PREFIX =
   'Aufklärung und Einwilligung zum Off-Label-Use:';
@@ -268,10 +269,8 @@ const buildAddressLines = (
   buildPostalCityLine(address.postalCode, address.city),
 ];
 
-const getDateOnly = (locale: SupportedLocale, exportedAt: Date): string => {
-  const localeTag = locale === 'de' ? 'de-DE' : 'en-US';
-  return new Intl.DateTimeFormat(localeTag).format(exportedAt);
-};
+const getDateOnly = (exportedAt: Date): string =>
+  new Intl.DateTimeFormat('de-DE').format(exportedAt);
 
 const isBuiltInMedicationProfile = (
   value: string | null,
@@ -286,22 +285,17 @@ const isBuiltInMedicationProfile = (
 const resolveMedicationFacts = ({
   requestRecord,
   profile,
-  locale,
   defaults,
 }: {
   requestRecord: Record<string, unknown> | null;
   profile: MedicationProfile | null;
-  locale: SupportedLocale;
   defaults: OfflabelAntragExportDefaults;
 }): MedicationFacts => {
   if (profile?.autoFacts) {
-    const localeFacts =
-      locale === 'en' ? profile.autoFacts.en : profile.autoFacts.de;
+    const localeFacts = profile.autoFacts.de;
     return {
-      medicationName:
-        locale === 'en' ? profile.displayNameEn : profile.displayNameDe,
-      medicationIngredient:
-        locale === 'en' ? profile.displayNameEn : profile.displayNameDe,
+      medicationName: profile.displayNameDe,
+      medicationIngredient: profile.displayNameDe,
       expertSource: localeFacts.expertSourceText,
     };
   }
@@ -488,29 +482,18 @@ const buildSourceItems = ({
   return sources;
 };
 
-const checklistText = (
-  t: I18nT,
-  locale: SupportedLocale,
-  key: string,
-  deDefault: string,
-  enDefault: string,
-): string => tr(t, key, locale === 'en' ? enDefault : deDefault);
-
 const buildPostExportChecklist = ({
   t,
-  locale,
   attachments,
 }: {
   t: I18nT;
-  locale: SupportedLocale;
   attachments: string[];
 }): OffLabelPostExportChecklist => {
-  const text = (key: string, deDefault: string, enDefault: string): string =>
-    checklistText(t, locale, key, deDefault, enDefault);
+  const text = (key: string, defaultValue: string): string =>
+    tr(t, key, defaultValue);
   const attachmentsFallbackItem = text(
     'offlabel-antrag.export.checklist.attachments.fallback',
     'Anlagenliste geprüft und ggf. ergänzt (z. B. Befunde, Bescheide, relevante Unterlagen)',
-    'Attachments list reviewed and completed as needed (e.g. findings, notices, relevant documents)',
   );
   const attachmentsChecklistItems =
     attachments.length > 0 ? attachments : [attachmentsFallbackItem];
@@ -519,83 +502,68 @@ const buildPostExportChecklist = ({
     title: text(
       'offlabel-antrag.export.checklist.title',
       'Checkliste - Nächste Schritte nach dem Export',
-      'Checklist - Next steps after export',
     ),
     intro: text(
       'offlabel-antrag.export.checklist.intro',
       'Diese Liste hilft euch, den Antrag vollständig vorzubereiten. Hakt ab, was erledigt ist.',
-      'This list helps you prepare a complete application. Tick off what has been completed.',
     ),
     documentsHeading: text(
       'offlabel-antrag.export.checklist.documents.heading',
       '1) Dokumente prüfen',
-      '1) Review documents',
     ),
     documentsItems: [
       text(
         'offlabel-antrag.export.checklist.documents.item.application',
         'Antrag an die Krankenkasse geprüft (Daten, Datum, Empfänger)',
-        'Application to the health insurer reviewed (data, date, recipient)',
       ),
       text(
         'offlabel-antrag.export.checklist.documents.item.coverLetter',
         'Arztanschreiben geprüft',
-        'Cover letter to physician reviewed',
       ),
       text(
         'offlabel-antrag.export.checklist.documents.item.statementTemplate',
         'Vorlage „Ärztliche Stellungnahme/Befundbericht“ geprüft',
-        'Template "Physician statement/report summary" reviewed',
       ),
       text(
         'offlabel-antrag.export.checklist.documents.item.consent',
         'Aufklärung & Einwilligung geprüft (sofern relevant)',
-        'Information & consent form reviewed (if relevant)',
       ),
     ],
     signaturesHeading: text(
       'offlabel-antrag.export.checklist.signatures.heading',
       '2) Unterschriften',
-      '2) Signatures',
     ),
     signaturesItems: [
       text(
         'offlabel-antrag.export.checklist.signatures.item.applicationSigned',
         'Antrag unterschrieben',
-        'Application signed',
       ),
       text(
         'offlabel-antrag.export.checklist.signatures.item.patientConsentSigned',
         'Aufklärung & Einwilligung: Patient unterschrieben (sofern relevant)',
-        'Information & consent: patient signed (if relevant)',
       ),
     ],
     physicianSupportHeading: text(
       'offlabel-antrag.export.checklist.physician.heading',
       '3) Ärztliche Unterstützung',
-      '3) Physician support',
     ),
     physicianSupportItems: [
       text(
         'offlabel-antrag.export.checklist.physician.item.sentToPractice',
         'Praxis kontaktiert: Arztanschreiben + Vorlage übergeben/gesendet und um ärztliche Stellungnahme gebeten',
-        'Practice contacted: cover letter + template handed over/sent and physician statement requested',
       ),
       text(
         'offlabel-antrag.export.checklist.physician.item.alignedDeadline',
         'Abstimmung erledigt: Rückgabe/Frist vereinbart und offene Punkte geklärt (z. B. Dosierung, Monitoring, Abbruchkriterien)',
-        'Coordination completed: return/deadline agreed and open points clarified (e.g. dosage, monitoring, stop criteria)',
       ),
       text(
         'offlabel-antrag.export.checklist.physician.item.doctorConsentSigned',
         'Finale Unterlagen aus der Praxis erhalten (Stellungnahme/Befundbericht; ggf. Einwilligung unterschrieben)',
-        'Final documents received from practice (statement/report summary; consent signed if applicable)',
       ),
     ],
     attachmentsHeading: text(
       'offlabel-antrag.export.checklist.attachments.heading',
       '4) Anlagen (aus euren Eingaben)',
-      '4) Attachments (from your entries)',
     ),
     attachmentsItems: attachments,
     attachmentsChecklistItems,
@@ -603,39 +571,32 @@ const buildPostExportChecklist = ({
     shippingHeading: text(
       'offlabel-antrag.export.checklist.shipping.heading',
       '5) Versand & Archiv',
-      '5) Dispatch & archive',
     ),
     shippingItems: [
       text(
         'offlabel-antrag.export.checklist.shipping.item.fullSet',
         'Vollständigen Antragssatz zusammengestellt (Antrag + Anlagen + ärztliche Stellungnahme)',
-        'Complete application package assembled (application + attachments + physician statement)',
       ),
       text(
         'offlabel-antrag.export.checklist.shipping.item.copy',
         'Kopie/Scan für eigene Unterlagen erstellt',
-        'Copy/scan created for own records',
       ),
       text(
         'offlabel-antrag.export.checklist.shipping.item.dispatchPrepared',
         'Versand vorbereitet (z. B. Einwurfeinschreiben oder Upload/Portal, falls verfügbar, Einschreiben mit Post App eingescannt bzw. Nummer notiert)',
-        'Dispatch prepared (e.g. tracked mail or upload/portal where available)',
       ),
       text(
         'offlabel-antrag.export.checklist.shipping.item.followUp',
         'Wiedervorlage notiert (Nachfragen, Rückmeldung der Kasse)',
-        'Follow-up reminder noted (queries, insurer feedback)',
       ),
       text(
         'offlabel-antrag.export.checklist.shipping.item.dates',
         'Versand am: ____________________ Frist 3 Wochen: _____________________ Frist 5 Wochen: _____________________',
-        'Sent on: ____________________  3-week deadline: _____________________  5-week deadline: _____________________',
       ),
     ],
     note: text(
       'offlabel-antrag.export.checklist.note',
       'Hinweis: Bearbeitungsfristen können variieren; achtet auf Rückfragen/Nachforderungen.',
-      'Note: Processing deadlines may vary; watch for follow-up questions or requests for additional documents.',
     ),
   };
 };
@@ -679,11 +640,12 @@ const buildLetterSection = ({
 
 export const buildOffLabelAntragDocumentModel = (
   formData: Record<string, unknown>,
-  locale: SupportedLocale,
+  _locale: SupportedLocale,
   options: BuildOptions = {},
 ): OffLabelAntragDocumentModel => {
-  const t = getT(locale);
-  const defaults = options.defaults ?? getOfflabelAntragExportDefaults(locale);
+  const t = getT(OFFLABEL_OUTPUT_LOCALE);
+  const defaults =
+    options.defaults ?? getOfflabelAntragExportDefaults(OFFLABEL_OUTPUT_LOCALE);
   const exportedAt = options.exportedAt ?? new Date();
 
   const patientRecord = getRecordValue(formData.patient);
@@ -747,7 +709,6 @@ export const buildOffLabelAntragDocumentModel = (
   const medicationFacts = resolveMedicationFacts({
     requestRecord,
     profile: builtInProfile,
-    locale,
     defaults,
   });
 
@@ -770,12 +731,12 @@ export const buildOffLabelAntragDocumentModel = (
   });
 
   const patientName = buildPatientName(patient);
-  const dateLine = getDateOnly(locale, exportedAt);
+  const dateLine = getDateOnly(exportedAt);
 
   const attachmentsHeading = tr(
     t,
     'offlabel-antrag.export.attachmentsHeading',
-    locale === 'en' ? 'Attachments' : 'Anlagen',
+    'Anlagen',
   );
   const letterInput: LetterCompositionInput = {
     senderLines: buildPatientSenderLines(patientName, patient),
@@ -804,9 +765,7 @@ export const buildOffLabelAntragDocumentModel = (
     subject: tr(
       t,
       'offlabel-antrag.export.part1.subject',
-      locale === 'en'
-        ? 'Application for case-by-case cost coverage (off-label use): {{drug}}'
-        : 'Antrag auf Kostenübernahme (Off-Label-Use): {{drug}}',
+      'Antrag auf Kostenübernahme (Off-Label-Use): {{drug}}',
       { drug: medicationFacts.medicationName },
     ),
     paragraphs: kkParagraphs,
@@ -821,15 +780,13 @@ export const buildOffLabelAntragDocumentModel = (
     subject: tr(
       t,
       'offlabel-antrag.export.part2.subject',
-      locale === 'en'
-        ? 'Cover letter regarding the off-label request (part 1) - request for support'
-        : 'Begleitschreiben zum Off-Label-Antrag - Bitte um Unterstützung',
+      'Begleitschreiben zum Off-Label-Antrag - Bitte um Unterstützung',
     ),
     paragraphs: arztParagraphs,
     liabilityHeading: previewPart2Content.liabilityHeading,
     liabilityParagraphs: previewPart2Content.liabilityParagraphs,
     liabilityDateLine: previewPart2Content.liabilityHeading
-      ? getDateOnly(locale, exportedAt)
+      ? getDateOnly(exportedAt)
       : '',
     liabilitySignerName: previewPart2Content.liabilityHeading
       ? patientName
@@ -845,7 +802,7 @@ export const buildOffLabelAntragDocumentModel = (
       [insurer.name, insurer.department],
       insurer,
     ),
-    dateLine: getDateOnly(locale, exportedAt),
+    dateLine: getDateOnly(exportedAt),
     subject: tr(t, DEFAULT_PART3_SUBJECT_KEY, DEFAULT_PART3_SUBJECT),
     paragraphs: part3Paragraphs,
   };
@@ -857,7 +814,6 @@ export const buildOffLabelAntragDocumentModel = (
   });
   const postExportChecklist = buildPostExportChecklist({
     t,
-    locale,
     attachments: attachmentEntries,
   });
 
@@ -888,11 +844,7 @@ export const buildOffLabelAntragDocumentModel = (
     arzt,
     part3,
     postExportChecklist,
-    sourcesHeading: tr(
-      t,
-      'offlabel-antrag.export.sourcesHeading',
-      locale === 'en' ? 'Sources' : 'Quellen',
-    ),
+    sourcesHeading: tr(t, 'offlabel-antrag.export.sourcesHeading', 'Quellen'),
     sources,
     exportedAtIso: exportedAt.toISOString(),
     exportBundle,

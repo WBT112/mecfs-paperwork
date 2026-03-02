@@ -22,6 +22,7 @@ Run from `app/` (Node 24 + Playwright required):
 npm run format:check
 npm run lint
 npm run typecheck
+npm run duplication:check
 npm test
 npm run test:e2e
 npm run formpack:validate

@@ -14,6 +14,11 @@ const STATIC_GATES = [
   { name: 'Lint', command: 'npm', args: ['run', 'lint'] },
   { name: 'Typecheck', command: 'npm', args: ['run', 'typecheck'] },
   {
+    name: 'Duplication Check (0 lines)',
+    command: 'npm',
+    args: ['run', 'duplication:check'],
+  },
+  {
     name: 'Formpack Validation',
     command: 'npm',
     args: ['run', 'formpack:validate'],

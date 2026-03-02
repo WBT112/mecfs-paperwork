@@ -18,6 +18,7 @@
     "format": "prettier . --write",
     "format:check": "prettier . --check",
     "typecheck": "tsc --noEmit --pretty false --incremental",
+    "duplication:check": "node scripts/check-duplication.mjs",
     "i18n:validate": "node scripts/validate-app-i18n.mjs",
     "formpack:new": "node scripts/new-formpack.mjs",
     "formpack:offlabel:sync-medications": "node --import tsx/esm scripts/sync-offlabel-medications.mjs",

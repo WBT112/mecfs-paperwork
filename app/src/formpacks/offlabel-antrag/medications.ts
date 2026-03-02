@@ -137,6 +137,52 @@ const createIndication = (
   texts,
 });
 
+type MedicationLocalizedFactsTuple = readonly [
+  label: string,
+  diagnosisNominative: string,
+  diagnosisDative: string,
+  point2ConfirmationSentence: string,
+  targetSymptoms: string,
+];
+
+const buildLocalizedFactsFromTuple = (
+  tuple: MedicationLocalizedFactsTuple,
+): MedicationLocalizedFacts => {
+  const [
+    label,
+    diagnosisNominative,
+    diagnosisDative,
+    point2ConfirmationSentence,
+    targetSymptoms,
+  ] = tuple;
+
+  return {
+    label,
+    diagnosisNominative,
+    diagnosisDative,
+    point2ConfirmationSentence,
+    targetSymptoms,
+  };
+};
+
+const createTupleIndication = (
+  key: string,
+  deTuple: MedicationLocalizedFactsTuple,
+  enTuple: MedicationLocalizedFactsTuple,
+): MedicationIndication =>
+  createIndication(key, {
+    de: buildLocalizedFactsFromTuple(deTuple),
+    en: buildLocalizedFactsFromTuple(enTuple),
+  });
+
+const createAutoFactsByLocale = (
+  de: MedicationAutoFactsTuple,
+  en: MedicationAutoFactsTuple,
+): StandardMedicationInput['autoFacts'] => ({
+  de,
+  en,
+});
+
 const buildExpertTextsFromOverride = (
   sourceText: string,
 ): Pick<MedicationAutoFacts, 'expertSourceText' | 'expertAttachmentText'> => ({
@@ -156,6 +202,13 @@ const buildAutoFacts = (
   };
 };
 
+const mapLocaleRecord = <T>(
+  factory: (locale: MedicationLocale) => T,
+): Record<MedicationLocale, T> => ({
+  de: factory('de'),
+  en: factory('en'),
+});
+
 const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
   {
     key: 'agomelatin',
@@ -170,59 +223,53 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       en: AGOMELATIN_BFARM_TITLE_EN,
     },
     indications: [
-      createIndication('agomelatin.mecfs_fatigue', {
-        de: {
-          label: MECFS_FATIGUE_DE,
-          diagnosisNominative: MECFS_FATIGUE_DE,
-          diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue',
-          point2ConfirmationSentence:
-            'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
-          targetSymptoms:
-            'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
-        },
-        en: {
-          label: AGOMELATIN_MECFS_FATIGUE_EN,
-          diagnosisNominative: AGOMELATIN_MECFS_FATIGUE_EN,
-          diagnosisDative: AGOMELATIN_MECFS_FATIGUE_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue is documented as a leading symptom.',
-          targetSymptoms:
-            'improvement of fatigue and health-related quality of life (HRQoL)',
-        },
-      }),
-      createIndication('agomelatin.long_post_covid_fatigue', {
-        de: {
-          label: AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
-          diagnosisNominative: AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
-          diagnosisDative: AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
-          point2ConfirmationSentence:
-            'Die Diagnose Long-/Post-COVID ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
-          targetSymptoms:
-            'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
-        },
-        en: {
-          label: AGOMELATIN_LONG_POST_COVID_FATIGUE_EN,
-          diagnosisNominative: AGOMELATIN_LONG_POST_COVID_FATIGUE_EN,
-          diagnosisDative: AGOMELATIN_LONG_POST_COVID_FATIGUE_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID is established (see findings). Fatigue is documented as a leading symptom.',
-          targetSymptoms:
-            'improvement of fatigue and health-related quality of life (HRQoL)',
-        },
-      }),
+      createTupleIndication(
+        'agomelatin.mecfs_fatigue',
+        [
+          MECFS_FATIGUE_DE,
+          MECFS_FATIGUE_DE,
+          'postinfektiöser ME/CFS mit Fatigue',
+          'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
+          'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
+        ],
+        [
+          AGOMELATIN_MECFS_FATIGUE_EN,
+          AGOMELATIN_MECFS_FATIGUE_EN,
+          AGOMELATIN_MECFS_FATIGUE_EN,
+          'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue is documented as a leading symptom.',
+          'improvement of fatigue and health-related quality of life (HRQoL)',
+        ],
+      ),
+      createTupleIndication(
+        'agomelatin.long_post_covid_fatigue',
+        [
+          AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
+          AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
+          AGOMELATIN_LONG_POST_COVID_FATIGUE_DE,
+          'Die Diagnose Long-/Post-COVID ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
+          'Verbesserung von Fatigue und gesundheitsbezogener Lebensqualität (HRQoL)',
+        ],
+        [
+          AGOMELATIN_LONG_POST_COVID_FATIGUE_EN,
+          AGOMELATIN_LONG_POST_COVID_FATIGUE_EN,
+          AGOMELATIN_LONG_POST_COVID_FATIGUE_EN,
+          'The diagnosis of long/post-COVID is established (see findings). Fatigue is documented as a leading symptom.',
+          'improvement of fatigue and health-related quality of life (HRQoL)',
+        ],
+      ),
     ],
-    autoFacts: {
-      de: [
+    autoFacts: createAutoFactsByLocale(
+      [
         '25 mg zur Nacht; nach 2 Wochen ggf. 50 mg. Behandlungsdauer mindestens 12 Wochen, danach Nutzen-Risiko-Prüfung',
         'Leberwerte überwachen; bei Leberschädigungssymptomen sofort absetzen; Abbruch bei Transaminasen > 3x oberer Normwert',
         PRIOR_MEASURES_DEFAULT.de,
       ],
-      en: [
+      [
         '25 mg at night; after 2 weeks increase to 50 mg if needed. Continue for at least 12 weeks and re-evaluate benefit-risk',
         'monitor liver function; stop immediately with liver injury symptoms; discontinue if transaminases exceed 3x upper normal limit',
         PRIOR_MEASURES_DEFAULT.en,
       ],
-    },
+    ),
   },
   {
     key: 'ivabradine',
@@ -237,45 +284,36 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       en: IVABRADINE_BFARM_TITLE_EN,
     },
     indications: [
-      createIndication('ivabradine.pots_long_post_covid', {
-        de: {
-          label:
-            'postinfektiöses PoTS bei Long/Post-COVID (insbesondere bei Betablocker-Unverträglichkeit)',
-          diagnosisNominative:
-            'postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
-          diagnosisDative:
-            'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
-          point2ConfirmationSentence:
-            'Die Diagnose COVID-19-assoziiertes PoTS ist gesichert (siehe Befunde).',
-          targetSymptoms:
-            'Senkung der Herzfrequenz und Verbesserung der gesundheitsbezogenen Lebensqualität (HRQoL)',
-        },
-        en: {
-          label:
-            'post-infectious PoTS in long/post-COVID (especially with beta-blocker intolerance)',
-          diagnosisNominative:
-            'post-infectious PoTS in long/post-COVID, especially when beta blockers are not tolerated',
-          diagnosisDative:
-            'post-infectious PoTS in long/post-COVID, especially when beta blockers are not tolerated',
-          point2ConfirmationSentence:
-            'The diagnosis of COVID-19 associated PoTS is established (see findings).',
-          targetSymptoms:
-            'heart-rate reduction and improved health-related quality of life (HRQoL)',
-        },
-      }),
+      createTupleIndication(
+        'ivabradine.pots_long_post_covid',
+        [
+          'postinfektiöses PoTS bei Long/Post-COVID (insbesondere bei Betablocker-Unverträglichkeit)',
+          'postinfektiöses PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
+          'postinfektiösem PoTS bei Long/Post-COVID, insbesondere bei Betablocker-Unverträglichkeit',
+          'Die Diagnose COVID-19-assoziiertes PoTS ist gesichert (siehe Befunde).',
+          'Senkung der Herzfrequenz und Verbesserung der gesundheitsbezogenen Lebensqualität (HRQoL)',
+        ],
+        [
+          'post-infectious PoTS in long/post-COVID (especially with beta-blocker intolerance)',
+          'post-infectious PoTS in long/post-COVID, especially when beta blockers are not tolerated',
+          'post-infectious PoTS in long/post-COVID, especially when beta blockers are not tolerated',
+          'The diagnosis of COVID-19 associated PoTS is established (see findings).',
+          'heart-rate reduction and improved health-related quality of life (HRQoL)',
+        ],
+      ),
     ],
-    autoFacts: {
-      de: [
+    autoFacts: createAutoFactsByLocale(
+      [
         'Start 2,5 mg morgens; Titration bis max. 2x5 mg (Standard 2x5 mg, Abenddosis ggf. weglassen)',
         'Absetzen erwägen, wenn innerhalb von 3 Monaten keine klinisch relevante Reduktion der Ruhe-HF und nur eingeschränkte Symptomverbesserung erreicht wird; Abbruch bei persistierender Bradykardie (HF <50), Bradykardie-Symptomen oder schweren Nebenwirkungen',
         'Betablocker wurden bereits eingesetzt, waren nicht verträglich oder nicht geeignet; weitere symptomorientierte Maßnahmen waren unzureichend.',
       ],
-      en: [
+      [
         'start at 2.5 mg in the morning; titrate up to max. 5 mg twice daily (standard 5 mg twice daily; evening dose may be omitted)',
         'consider discontinuation if no clinically relevant resting heart-rate reduction is achieved within 3 months and symptom improvement remains limited; stop with persistent bradycardia (HR <50), bradycardia symptoms, or severe adverse events',
         'Beta blockers were already used but not tolerated or not suitable; further symptom-oriented measures were insufficient.',
       ],
-    },
+    ),
   },
   {
     key: 'vortioxetine',
@@ -290,59 +328,53 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       en: VORTIOXETINE_BFARM_TITLE_EN,
     },
     indications: [
-      createIndication('vortioxetine.long_post_covid_cognitive', {
-        de: {
-          label: VORTIOXETINE_COGNITIVE_DE,
-          diagnosisNominative: VORTIOXETINE_COGNITIVE_DE,
-          diagnosisDative: VORTIOXETINE_COGNITIVE_DE,
-          point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen sind dokumentiert.',
-          targetSymptoms:
-            'Verbesserung von Kognition sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
-        },
-        en: {
-          label: VORTIOXETINE_COGNITIVE_EN,
-          diagnosisNominative: VORTIOXETINE_COGNITIVE_EN,
-          diagnosisDative: VORTIOXETINE_COGNITIVE_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment is documented.',
-          targetSymptoms:
-            'improvement of cognition and health-related quality of life (HRQoL)',
-        },
-      }),
-      createIndication('vortioxetine.long_post_covid_depressive', {
-        de: {
-          label: VORTIOXETINE_DEPRESSIVE_DE,
-          diagnosisNominative: VORTIOXETINE_DEPRESSIVE_DE,
-          diagnosisDative: VORTIOXETINE_DEPRESSIVE_DE,
-          point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Depressive Symptome sind dokumentiert.',
-          targetSymptoms:
-            'Verbesserung depressiver Symptomatik sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
-        },
-        en: {
-          label: VORTIOXETINE_DEPRESSIVE_EN,
-          diagnosisNominative: VORTIOXETINE_DEPRESSIVE_EN,
-          diagnosisDative: VORTIOXETINE_DEPRESSIVE_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID is established (see findings). Depressive symptoms are documented.',
-          targetSymptoms:
-            'improvement of depressive symptoms and health-related quality of life (HRQoL)',
-        },
-      }),
+      createTupleIndication(
+        'vortioxetine.long_post_covid_cognitive',
+        [
+          VORTIOXETINE_COGNITIVE_DE,
+          VORTIOXETINE_COGNITIVE_DE,
+          VORTIOXETINE_COGNITIVE_DE,
+          'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen sind dokumentiert.',
+          'Verbesserung von Kognition sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
+        ],
+        [
+          VORTIOXETINE_COGNITIVE_EN,
+          VORTIOXETINE_COGNITIVE_EN,
+          VORTIOXETINE_COGNITIVE_EN,
+          'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment is documented.',
+          'improvement of cognition and health-related quality of life (HRQoL)',
+        ],
+      ),
+      createTupleIndication(
+        'vortioxetine.long_post_covid_depressive',
+        [
+          VORTIOXETINE_DEPRESSIVE_DE,
+          VORTIOXETINE_DEPRESSIVE_DE,
+          VORTIOXETINE_DEPRESSIVE_DE,
+          'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Depressive Symptome sind dokumentiert.',
+          'Verbesserung depressiver Symptomatik sowie der gesundheitsbezogenen Lebensqualität (HRQoL)',
+        ],
+        [
+          VORTIOXETINE_DEPRESSIVE_EN,
+          VORTIOXETINE_DEPRESSIVE_EN,
+          VORTIOXETINE_DEPRESSIVE_EN,
+          'The diagnosis of long/post-COVID is established (see findings). Depressive symptoms are documented.',
+          'improvement of depressive symptoms and health-related quality of life (HRQoL)',
+        ],
+      ),
     ],
-    autoFacts: {
-      de: [
+    autoFacts: createAutoFactsByLocale(
+      [
         '5-20 mg 1x täglich; Start 5 mg, nach 2 Wochen Dosisanpassung; Fortführung bis mindestens 6 Monate nach Symptomfreiheit',
         'Abbruch bei Serotonin-Syndrom, hyponatriämischer Enzephalopathie, neuroleptischem malignen Syndrom oder nicht tolerierbaren Nebenwirkungen.',
         PRIOR_MEASURES_DEFAULT.de,
       ],
-      en: [
+      [
         '5-20 mg once daily; start with 5 mg and adjust dose after 2 weeks; continue for at least 6 months after symptom remission',
         'discontinue in serotonin syndrome, hyponatremic encephalopathy, neuroleptic malignant syndrome, or intolerable adverse events.',
         PRIOR_MEASURES_DEFAULT.en,
       ],
-    },
+    ),
   },
   {
     key: 'ldn',
@@ -357,55 +389,53 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       en: 'Long-COVID/PCC: O’Kelly B et al. Safety and efficacy of low dose naltrexone in a long covid cohort (Brain Behav Immun Health. 2022;24:100485. DOI: 10.1016/j.bbih.2022.100485); ME/CFS: Polo O, Pesonen A-K, Tuominen A et al. Low-dose naltrexone in myalgic encephalomyelitis/chronic fatigue syndrome (Fatigue. 2019. DOI: 10.1080/21641846.2019.1692770); ongoing randomized post-COVID fatigue trial: NCT05430152.',
     },
     indications: [
-      createIndication('ldn.mecfs_fatigue', {
-        de: {
-          label: LDN_MECFS_DE,
-          diagnosisNominative: LDN_MECFS_DE,
-          diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue',
-          point2ConfirmationSentence:
-            'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
-          targetSymptoms: LDN_TARGET_SYMPTOMS_DE,
-        },
-        en: {
-          label: LDN_MECFS_EN,
-          diagnosisNominative: LDN_MECFS_EN,
-          diagnosisDative: LDN_MECFS_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue is documented as a core symptom.',
-          targetSymptoms: LDN_TARGET_SYMPTOMS_EN,
-        },
-      }),
-      createIndication('ldn.long_post_covid_fatigue', {
-        de: {
-          label: LDN_LONG_POST_COVID_DE,
-          diagnosisNominative: LDN_LONG_POST_COVID_DE,
-          diagnosisDative: LDN_LONG_POST_COVID_DE,
-          point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
-          targetSymptoms: LDN_TARGET_SYMPTOMS_DE,
-        },
-        en: {
-          label: LDN_LONG_POST_COVID_EN,
-          diagnosisNominative: LDN_LONG_POST_COVID_EN,
-          diagnosisDative: LDN_LONG_POST_COVID_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID is established (see findings). Fatigue is documented as a core symptom.',
-          targetSymptoms: LDN_TARGET_SYMPTOMS_EN,
-        },
-      }),
+      createTupleIndication(
+        'ldn.mecfs_fatigue',
+        [
+          LDN_MECFS_DE,
+          LDN_MECFS_DE,
+          'postinfektiöser ME/CFS mit Fatigue',
+          'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
+          LDN_TARGET_SYMPTOMS_DE,
+        ],
+        [
+          LDN_MECFS_EN,
+          LDN_MECFS_EN,
+          LDN_MECFS_EN,
+          'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue is documented as a core symptom.',
+          LDN_TARGET_SYMPTOMS_EN,
+        ],
+      ),
+      createTupleIndication(
+        'ldn.long_post_covid_fatigue',
+        [
+          LDN_LONG_POST_COVID_DE,
+          LDN_LONG_POST_COVID_DE,
+          LDN_LONG_POST_COVID_DE,
+          'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Fatigue ist als Leitsymptom dokumentiert.',
+          LDN_TARGET_SYMPTOMS_DE,
+        ],
+        [
+          LDN_LONG_POST_COVID_EN,
+          LDN_LONG_POST_COVID_EN,
+          LDN_LONG_POST_COVID_EN,
+          'The diagnosis of long/post-COVID is established (see findings). Fatigue is documented as a core symptom.',
+          LDN_TARGET_SYMPTOMS_EN,
+        ],
+      ),
     ],
-    autoFacts: {
-      de: [
+    autoFacts: createAutoFactsByLocale(
+      [
         'Start 1,0 mg 1x täglich; stufenweise Titration (z. B. +0,5-1,0 mg pro 1-2 Wochen) bis 4,5 mg/Tag oder maximal verträgliche Dosis; Therapieversuch 12-16 Wochen',
         'Engmaschiges Monitoring von Schlafstörungen/lebhaften Träumen, Übelkeit, Kopfschmerz, gastrointestinalen Beschwerden sowie Leberwerten bei Risikoprofil; keine gleichzeitige Opioid-Einnahme; Abbruch bei klinisch relevanter Verschlechterung, nicht tolerierbaren Nebenwirkungen oder ausbleibendem Nutzen nach 12-16 Wochen',
         PRIOR_MEASURES_DEFAULT.de,
       ],
-      en: [
+      [
         'start at 1.0 mg once daily; stepwise titration (e.g. +0.5-1.0 mg every 1-2 weeks) up to 4.5 mg/day or maximally tolerated dose; treatment trial for 12-16 weeks',
         'close monitoring for insomnia/vivid dreams, nausea, headache, gastrointestinal adverse effects, and liver parameters in at-risk patients; no concomitant opioid use; discontinue with clinically relevant worsening, intolerable adverse effects, or lack of meaningful benefit after 12-16 weeks',
         PRIOR_MEASURES_DEFAULT.en,
       ],
-    },
+    ),
   },
   {
     key: 'aripiprazole',
@@ -420,59 +450,53 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       en: 'Crosby LD et al. Off label use of Aripiprazole in ME/CFS (J Transl Med. 2021;19:50. DOI: 10.1186/s12967-021-02721-9) and Cui J et al. Low-Dose Aripiprazole in Long COVID (Open Forum Infect Dis. 2026;13(Suppl 1):ofaf695.1788. DOI: 10.1093/ofid/ofaf695.1788).',
     },
     indications: [
-      createIndication('aripiprazole.mecfs_fatigue_pem', {
-        de: {
-          label: ARIPIPRAZOLE_MECFS_DE,
-          diagnosisNominative: ARIPIPRAZOLE_MECFS_DE,
-          diagnosisDative: 'postinfektiöser ME/CFS mit Fatigue und PEM',
-          point2ConfirmationSentence:
-            'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue und PEM sind dokumentiert.',
-          targetSymptoms:
-            'Verbesserung von Fatigue, PEM-Frequenz, kognitiver Symptomatik und funktionellem Status (HRQoL)',
-        },
-        en: {
-          label: ARIPIPRAZOLE_MECFS_EN,
-          diagnosisNominative: ARIPIPRAZOLE_MECFS_EN,
-          diagnosisDative: ARIPIPRAZOLE_MECFS_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue and PEM are documented.',
-          targetSymptoms:
-            'improvement of fatigue, PEM frequency, cognitive symptoms, and functional status (HRQoL)',
-        },
-      }),
-      createIndication('aripiprazole.long_post_covid_fatigue_pem', {
-        de: {
-          label: ARIPIPRAZOLE_LONG_POST_COVID_DE,
-          diagnosisNominative: ARIPIPRAZOLE_LONG_POST_COVID_DE,
-          diagnosisDative: ARIPIPRAZOLE_LONG_POST_COVID_DE,
-          point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Fatigue und PEM sind dokumentiert.',
-          targetSymptoms:
-            'Verbesserung von Fatigue, PEM-Frequenz, kognitiver Symptomatik und funktionellem Status (HRQoL)',
-        },
-        en: {
-          label: ARIPIPRAZOLE_LONG_POST_COVID_EN,
-          diagnosisNominative: ARIPIPRAZOLE_LONG_POST_COVID_EN,
-          diagnosisDative: ARIPIPRAZOLE_LONG_POST_COVID_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID is established (see findings). Fatigue and PEM are documented.',
-          targetSymptoms:
-            'improvement of fatigue, PEM frequency, cognitive symptoms, and functional status (HRQoL)',
-        },
-      }),
+      createTupleIndication(
+        'aripiprazole.mecfs_fatigue_pem',
+        [
+          ARIPIPRAZOLE_MECFS_DE,
+          ARIPIPRAZOLE_MECFS_DE,
+          'postinfektiöser ME/CFS mit Fatigue und PEM',
+          'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue und PEM sind dokumentiert.',
+          'Verbesserung von Fatigue, PEM-Frequenz, kognitiver Symptomatik und funktionellem Status (HRQoL)',
+        ],
+        [
+          ARIPIPRAZOLE_MECFS_EN,
+          ARIPIPRAZOLE_MECFS_EN,
+          ARIPIPRAZOLE_MECFS_EN,
+          'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue and PEM are documented.',
+          'improvement of fatigue, PEM frequency, cognitive symptoms, and functional status (HRQoL)',
+        ],
+      ),
+      createTupleIndication(
+        'aripiprazole.long_post_covid_fatigue_pem',
+        [
+          ARIPIPRAZOLE_LONG_POST_COVID_DE,
+          ARIPIPRAZOLE_LONG_POST_COVID_DE,
+          ARIPIPRAZOLE_LONG_POST_COVID_DE,
+          'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Fatigue und PEM sind dokumentiert.',
+          'Verbesserung von Fatigue, PEM-Frequenz, kognitiver Symptomatik und funktionellem Status (HRQoL)',
+        ],
+        [
+          ARIPIPRAZOLE_LONG_POST_COVID_EN,
+          ARIPIPRAZOLE_LONG_POST_COVID_EN,
+          ARIPIPRAZOLE_LONG_POST_COVID_EN,
+          'The diagnosis of long/post-COVID is established (see findings). Fatigue and PEM are documented.',
+          'improvement of fatigue, PEM frequency, cognitive symptoms, and functional status (HRQoL)',
+        ],
+      ),
     ],
-    autoFacts: {
-      de: [
+    autoFacts: createAutoFactsByLocale(
+      [
         'Start 0,1-0,25 mg 1x täglich; langsame Titration in 0,25-mg-Schritten bis max. 2 mg/Tag; Nutzen-Risiko-Re-Evaluation nach 6-12 Wochen',
         'Engmaschiges Monitoring von Unruhe/Akathisie, Insomnie, orthostatischer Verträglichkeit, Tagesmüdigkeit und Gewicht; Abbruch bei klinisch relevanter Verschlechterung, ausgeprägter Agitation/Akathisie oder fehlendem Nutzen nach 6-12 Wochen',
         PRIOR_MEASURES_DEFAULT.de,
       ],
-      en: [
+      [
         'start at 0.1-0.25 mg once daily; slow titration in 0.25 mg steps up to max. 2 mg/day; re-evaluate benefit-risk after 6-12 weeks',
         'close monitoring of agitation/akathisia, insomnia, orthostatic tolerance, daytime somnolence, and weight; discontinue with clinically relevant worsening, marked agitation/akathisia, or no meaningful benefit after 6-12 weeks',
         PRIOR_MEASURES_DEFAULT.en,
       ],
-    },
+    ),
   },
   {
     key: 'methylphenidate',
@@ -487,93 +511,87 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       en: 'ME/CFS: Blockmans D et al. Does methylphenidate reduce the symptoms of chronic fatigue syndrome? (Am J Med. 2006;119(2):167.e23-30. DOI: 10.1016/j.amjmed.2005.07.047); long-COVID: Clark P et al. Methylphenidate for the Treatment of Post-COVID Cognitive Dysfunction (J Med Cases. 2024;15(8):195-200. DOI: 10.14740/jmc4254) and Morelli-Zaher C et al. Post-COVID central hypersomnia, a treatable trait in long COVID: 4 case reports (Front Neurol. 2024. DOI: 10.3389/fneur.2024.1349486).',
     },
     indications: [
-      createIndication('methylphenidate.mecfs_fatigue_cognitive', {
-        de: {
-          label: METHYLPHENIDATE_MECFS_DE,
-          diagnosisNominative: METHYLPHENIDATE_MECFS_DE,
-          diagnosisDative:
-            'postinfektiöser ME/CFS mit Fatigue und kognitiven Beeinträchtigungen',
-          point2ConfirmationSentence:
-            'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue und kognitive Beeinträchtigungen sind dokumentiert.',
-          targetSymptoms:
-            'Verbesserung von Fatigue, Kognition und alltagsrelevanter Funktionsfähigkeit (HRQoL)',
-        },
-        en: {
-          label: METHYLPHENIDATE_MECFS_EN,
-          diagnosisNominative: METHYLPHENIDATE_MECFS_EN,
-          diagnosisDative: METHYLPHENIDATE_MECFS_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue and cognitive impairment are documented.',
-          targetSymptoms:
-            'improvement of fatigue, cognition, and day-to-day functional capacity (HRQoL)',
-        },
-      }),
-      createIndication('methylphenidate.long_post_covid_cognitive', {
-        de: {
-          label: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE,
-          diagnosisNominative: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE,
-          diagnosisDative: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE,
-          point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen sind dokumentiert.',
-          targetSymptoms:
-            'Verbesserung von Aufmerksamkeit, Gedächtnisleistung und Fatigue-bedingter Alltagseinschränkung',
-        },
-        en: {
-          label: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN,
-          diagnosisNominative: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN,
-          diagnosisDative: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment is documented.',
-          targetSymptoms:
-            'improvement of attention, memory performance, and fatigue-related daily limitations',
-        },
-      }),
-      createIndication('methylphenidate.long_post_covid_hypersomnia', {
-        de: {
-          label: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE,
-          diagnosisNominative: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE,
-          diagnosisDative: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE,
-          point2ConfirmationSentence:
-            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Klinisch relevante Hypersomnie bzw. Tagesschläfrigkeit ist dokumentiert.',
-          targetSymptoms:
-            'Reduktion von Tagesschläfrigkeit und Verbesserung der funktionellen Belastbarkeit',
-        },
-        en: {
-          label: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN,
-          diagnosisNominative: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN,
-          diagnosisDative: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN,
-          point2ConfirmationSentence:
-            'The diagnosis of long/post-COVID is established (see findings). Clinically relevant hypersomnia or daytime sleepiness is documented.',
-          targetSymptoms:
-            'reduction of daytime sleepiness and improvement of functional capacity',
-        },
-      }),
+      createTupleIndication(
+        'methylphenidate.mecfs_fatigue_cognitive',
+        [
+          METHYLPHENIDATE_MECFS_DE,
+          METHYLPHENIDATE_MECFS_DE,
+          'postinfektiöser ME/CFS mit Fatigue und kognitiven Beeinträchtigungen',
+          'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue und kognitive Beeinträchtigungen sind dokumentiert.',
+          'Verbesserung von Fatigue, Kognition und alltagsrelevanter Funktionsfähigkeit (HRQoL)',
+        ],
+        [
+          METHYLPHENIDATE_MECFS_EN,
+          METHYLPHENIDATE_MECFS_EN,
+          METHYLPHENIDATE_MECFS_EN,
+          'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue and cognitive impairment are documented.',
+          'improvement of fatigue, cognition, and day-to-day functional capacity (HRQoL)',
+        ],
+      ),
+      createTupleIndication(
+        'methylphenidate.long_post_covid_cognitive',
+        [
+          METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE,
+          METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE,
+          METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE,
+          'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen sind dokumentiert.',
+          'Verbesserung von Aufmerksamkeit, Gedächtnisleistung und Fatigue-bedingter Alltagseinschränkung',
+        ],
+        [
+          METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN,
+          METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN,
+          METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN,
+          'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment is documented.',
+          'improvement of attention, memory performance, and fatigue-related daily limitations',
+        ],
+      ),
+      createTupleIndication(
+        'methylphenidate.long_post_covid_hypersomnia',
+        [
+          METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE,
+          METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE,
+          METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE,
+          'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Klinisch relevante Hypersomnie bzw. Tagesschläfrigkeit ist dokumentiert.',
+          'Reduktion von Tagesschläfrigkeit und Verbesserung der funktionellen Belastbarkeit',
+        ],
+        [
+          METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN,
+          METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN,
+          METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN,
+          'The diagnosis of long/post-COVID is established (see findings). Clinically relevant hypersomnia or daytime sleepiness is documented.',
+          'reduction of daytime sleepiness and improvement of functional capacity',
+        ],
+      ),
     ],
-    autoFacts: {
-      de: [
+    autoFacts: createAutoFactsByLocale(
+      [
         'Start 5 mg morgens; je nach Verträglichkeit Steigerung in 5-mg-Schritten bis 10 mg 2x täglich (max. 20 mg/Tag); erster Wirksamkeits-Check nach ca. 4 Wochen',
         'Engmaschiges Monitoring von Blutdruck, Herzfrequenz, Gewicht, Schlaf und psychischen Nebenwirkungen; Abbruch bei fehlendem klinisch relevantem Nutzen nach 4 Wochen unter ausreichender Dosis oder bei nicht tolerierbaren Nebenwirkungen (z. B. Agitiertheit, Palpitationen, deutliche RR/Puls-Erhöhung)',
         PRIOR_MEASURES_DEFAULT.de,
       ],
-      en: [
+      [
         'start at 5 mg in the morning; titrate in 5 mg steps as tolerated up to 10 mg twice daily (max. 20 mg/day); first efficacy check after about 4 weeks',
         'close monitoring of blood pressure, heart rate, weight, sleep, and psychiatric adverse effects; discontinue when there is no clinically meaningful benefit after 4 weeks at an adequate dose or when adverse effects are not tolerated (e.g. agitation, palpitations, marked BP/HR increase)',
         PRIOR_MEASURES_DEFAULT.en,
       ],
-    },
+    ),
   },
 ] as const;
 
 const createStandardMedicationProfile = (
   input: StandardMedicationInput,
 ): MedicationProfile => {
-  const [deAutoFacts, enAutoFacts] = [input.autoFacts.de, input.autoFacts.en];
-  const deExpertTexts = buildExpertTextsFromOverride(
-    input.expertSourceTextOverride!.de,
-  );
-  const enExpertTexts = buildExpertTextsFromOverride(
-    input.expertSourceTextOverride!.en,
-  );
+  const autoFacts = mapLocaleRecord((locale) => {
+    const localeAutoFacts = input.autoFacts[locale];
+    const expertTexts = buildExpertTextsFromOverride(
+      input.expertSourceTextOverride![locale],
+    );
+
+    return {
+      ...buildAutoFacts(localeAutoFacts),
+      ...expertTexts,
+    };
+  });
 
   return {
     key: input.key,
@@ -587,16 +605,7 @@ const createStandardMedicationProfile = (
     requiresManualFields: false,
     requiresPriorMeasures: false,
     infoBoxI18nKey: input.infoBoxI18nKey,
-    autoFacts: {
-      de: {
-        ...buildAutoFacts(deAutoFacts),
-        ...deExpertTexts,
-      },
-      en: {
-        ...buildAutoFacts(enAutoFacts),
-        ...enExpertTexts,
-      },
-    },
+    autoFacts,
   };
 };
 

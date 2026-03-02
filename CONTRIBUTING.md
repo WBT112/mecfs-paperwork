@@ -23,6 +23,7 @@ Run locally (from `app/`):
 npm run format:check
 npm run lint
 npm run typecheck
+npm run duplication:check
 npm test
 npm run test:e2e
 npm run formpack:validate

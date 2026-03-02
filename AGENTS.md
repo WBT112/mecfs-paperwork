@@ -52,13 +52,14 @@ For every change that touches `app/`:
 2. `npm run format:check`
 3. `npm run lint`
 4. `npm run typecheck`
-5. `npm test`
-6. `npm run test:coverage:changed` (hard gate: every changed file in `src/**` must reach **100%** for statements/functions/lines/branches)
-7. `npm run test:e2e` (NOTE: E2E tests take very long so only do them once after all coding work is done and all other quality gates pass (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)) 
-8. `npm run formpack:validate`
-9. `npm run build`
-10. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
-11. Ignoring files or silencing errors is not a solution. All quality gates must be met.
+5. `npm run duplication:check` (hard gate: **0 duplicated lines**)
+6. `npm test`
+7. `npm run test:coverage:changed` (hard gate: every changed file in `src/**` must reach **100%** for statements/functions/lines/branches)
+8. `npm run test:e2e` (NOTE: E2E tests take very long so only do them once after all coding work is done and all other quality gates pass (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)) 
+9. `npm run formpack:validate`
+10. `npm run build`
+11. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
+12. Ignoring files or silencing errors is not a solution. All quality gates must be met.
 
 If any step fails: fix it before finishing.
 

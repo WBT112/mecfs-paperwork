@@ -125,7 +125,7 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.attachments).toEqual([]);
   });
 
-  it('uses locale defaults for fallback values', () => {
+  it('uses German defaults for fallback values independent of requested locale', () => {
     const bundle = buildOffLabelAntragDocumentModel(
       {
         patient: {
@@ -143,9 +143,9 @@ describe('offlabel-antrag letter builder', () => {
       { exportedAt: FIXED_EXPORTED_AT },
     ).exportBundle;
 
-    expect(bundle.part1.senderLines[0]).toBe('Max Example');
+    expect(bundle.part1.senderLines[0]).toBe('Max Mustermann');
     expect(bundle.part1.addresseeLines[0]).toBe('AOK Minus');
-    expect(bundle.part1.subject).toContain('PLEASE SELECT');
+    expect(bundle.part1.subject).toContain('BITTE AUSWÄHLEN');
   });
 
   it('parses attachment free text via exported helper', () => {

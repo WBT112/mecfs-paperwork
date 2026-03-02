@@ -141,6 +141,10 @@ const visibilityState = vi.hoisted(() => ({
   isDevUiEnabled: true,
 }));
 
+const localeState = vi.hoisted(() => ({
+  locale: 'de' as 'de' | 'en',
+}));
+
 const offlabelPreviewState = vi.hoisted(() => ({
   buildDocuments:
     vi.fn<
@@ -153,6 +157,8 @@ const offlabelPreviewState = vi.hoisted(() => ({
 
 const pdfExportControlsState = vi.hoisted(() => ({
   props: null as {
+    locale?: 'de' | 'en';
+    formpackId?: string;
     onSuccess?: () => void;
     onError?: () => void;
   } | null,
@@ -256,6 +262,8 @@ const jsonEncryptionState = vi.hoisted(() => {
 const record = storageState.record;
 const mockUpdateActiveRecord = storageState.updateActiveRecord;
 const FORMPACK_ROUTE = `/formpacks/${FORMPACK_ID}`;
+const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
+const OFFLABEL_ROUTE = `/formpacks/${OFFLABEL_FORMPACK_ID}`;
 const DOCX_EXPORT_BUTTON_LABEL = 'formpackRecordExportDocx';
 const IMPORT_ACTION_LABEL = 'formpackImportAction';
 const IMPORT_SUCCESS_LABEL = 'importSuccess';
@@ -354,7 +362,7 @@ vi.mock('../../src/i18n/formpack', () => ({
 
 vi.mock('../../src/i18n/useLocale', () => ({
   useLocale: () => ({
-    locale: 'de',
+    locale: localeState.locale,
     setLocale: storageState.setLocale,
   }),
 }));
@@ -394,7 +402,12 @@ vi.mock('../../src/formpacks/loader', () => ({
 }));
 
 vi.mock('../../src/export/pdf/PdfExportControls', () => ({
-  default: (props: { onSuccess?: () => void; onError?: () => void }) => {
+  default: (props: {
+    locale?: 'de' | 'en';
+    formpackId?: string;
+    onSuccess?: () => void;
+    onError?: () => void;
+  }) => {
     pdfExportControlsState.props = props;
     return (
       <div>
@@ -498,7 +511,7 @@ const mockT = (key: string, options?: { ns?: string }) => {
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: mockT,
-    i18n: { language: 'de' },
+    i18n: { language: localeState.locale },
   }),
   initReactI18next: {
     type: '3rdParty',
@@ -508,6 +521,7 @@ vi.mock('react-i18next', () => ({
 
 describe('FormpackDetailPage', () => {
   beforeEach(() => {
+    localeState.locale = 'de';
     storageState.records = [storageState.record];
     storageState.activeRecord = storageState.record;
     storageState.isRecordsLoading = false;
@@ -1187,6 +1201,65 @@ describe('FormpackDetailPage', () => {
       expect(
         screen.queryByText('formpackPdfExportSuccess'),
       ).not.toBeInTheDocument(),
+    );
+  });
+
+  it('forces German output locale for offlabel preview and exports even when UI locale is English', async () => {
+    localeState.locale = 'en';
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: OFFLABEL_FORMPACK_ID,
+      exports: ['docx', 'pdf'],
+    };
+    const report = new Blob(['docx']);
+    vi.mocked(exportDocx).mockResolvedValue(report);
+    offlabelPreviewState.buildDocuments.mockReturnValue([
+      {
+        id: 'part1',
+        title: 'Teil 1',
+        blocks: [{ kind: 'paragraph', text: 'preview-part-1' }],
+      },
+      {
+        id: 'part2',
+        title: 'Teil 2',
+        blocks: [{ kind: 'paragraph', text: 'preview-part-2' }],
+      },
+      {
+        id: 'part3',
+        title: 'Teil 3',
+        blocks: [{ kind: 'paragraph', text: 'preview-part-3' }],
+      },
+    ]);
+
+    render(
+      <TestRouter initialEntries={[OFFLABEL_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await screen.findByText('preview-part-1');
+    expect(offlabelPreviewState.buildDocuments).toHaveBeenCalled();
+    expect(
+      offlabelPreviewState.buildDocuments.mock.calls.every(
+        ([, usedLocale]) => usedLocale === 'de',
+      ),
+    ).toBe(true);
+
+    await screen.findByText(PDF_EXPORT_CONTROLS_LABEL);
+    expect(pdfExportControlsState.props?.formpackId).toBe(OFFLABEL_FORMPACK_ID);
+    expect(pdfExportControlsState.props?.locale).toBe('de');
+
+    await userEvent.click(await screen.findByText(DOCX_EXPORT_BUTTON_LABEL));
+
+    await waitFor(() =>
+      expect(exportDocx).toHaveBeenCalledWith(
+        expect.objectContaining({
+          formpackId: OFFLABEL_FORMPACK_ID,
+          locale: 'de',
+        }),
+      ),
     );
   });
 
