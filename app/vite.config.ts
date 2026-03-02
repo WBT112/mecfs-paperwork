@@ -256,12 +256,11 @@ const createConfig = (mode: string): AppConfig => ({
         'src/pages/formpack-detail/sectionTypes.ts',
       ],
       thresholds: {
-        // Global coverage thresholds (CI enforced)
-        // Locked near current baseline to prevent regressions.
-        lines: 93.1,
-        branches: 85.8,
-        functions: 94.1,
-        statements: 92.7,
+        // Global coverage thresholds (CI enforced).
+        lines: 100,
+        branches: 100,
+        functions: 100,
+        statements: 100,
       },
     },
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],

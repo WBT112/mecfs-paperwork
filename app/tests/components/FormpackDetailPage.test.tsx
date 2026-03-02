@@ -2761,6 +2761,7 @@ describe('FormpackDetailPage', () => {
   });
 
   it('falls back to null metadata when update-triggered refresh fails', async () => {
+    const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
     let metaLookupCalls = 0;
     formpackMetaState.getFormpackMeta.mockImplementation(async () => {
       metaLookupCalls += 1;
@@ -2785,6 +2786,14 @@ describe('FormpackDetailPage', () => {
     );
 
     await screen.findByText('formpackFormHeading');
+    await waitFor(() =>
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        FORMPACKS_UPDATED_EVENT,
+        expect.any(Function),
+      ),
+    );
+    addEventListenerSpy.mockRestore();
+
     const callsBeforeUpdate =
       formpackMetaState.getFormpackMeta.mock.calls.length;
 
