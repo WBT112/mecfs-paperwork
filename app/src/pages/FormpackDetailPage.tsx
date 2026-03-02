@@ -547,10 +547,13 @@ const buildOfflabelFormSchema = (
   const scopedIndicationEnum = profile.indications.map(
     (indication) => indication.key,
   );
-  const nextIndicationEnum = scopedIndicationEnum;
   const currentIndicationEnum = toStringArray(
     selectedIndicationSchemaNode.enum,
   );
+  const nextIndicationEnum =
+    scopedIndicationEnum.length > 0
+      ? scopedIndicationEnum
+      : currentIndicationEnum;
   const currentDrugEnum = toStringArray(selectedDrugSchemaNode.enum);
 
   if (

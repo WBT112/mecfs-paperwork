@@ -2,6 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import deTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/de.json';
 import enTranslationsJson from '../../public/formpacks/offlabel-antrag/i18n/en.json';
+import i18n from '../../src/i18n';
 import {
   buildOffLabelAntragDocumentModel,
   parseOfflabelAttachments,
@@ -146,6 +147,60 @@ describe('offlabel-antrag letter builder', () => {
     expect(bundle.part1.senderLines[0]).toBe('Max Mustermann');
     expect(bundle.part1.addresseeLines[0]).toBe('AOK Minus');
     expect(bundle.part1.subject).toContain('BITTE AUSWÄHLEN');
+  });
+
+  it('keeps core export text German while checklist stays English for locale en', () => {
+    const model = buildOffLabelAntragDocumentModel(
+      {
+        request: {
+          drug: 'ivabradine',
+        },
+      },
+      'en',
+      { exportedAt: FIXED_EXPORTED_AT },
+    );
+
+    expect(model.kk.subject).toContain('Antrag auf Kostenübernahme');
+    expect(model.arzt.subject).toContain(
+      'Begleitschreiben zum Off-Label-Antrag',
+    );
+    expect(model.sourcesHeading).toBe('Quellen');
+
+    expect(model.postExportChecklist.title).toBe(
+      'Checklist - Next steps after export',
+    );
+    expect(model.postExportChecklist.documentsHeading).toBe(
+      '1) Review documents',
+    );
+    expect(model.postExportChecklist.note).toContain(
+      'Processing deadlines may vary',
+    );
+  });
+
+  it('uses i18n runtime language for checklist when requested locale is not en', () => {
+    const i18nState = i18n as unknown as { language?: string };
+    const previousLanguage = i18nState.language;
+    i18nState.language = 'en';
+
+    try {
+      const model = buildOffLabelAntragDocumentModel(
+        {
+          request: {
+            drug: 'ivabradine',
+          },
+        },
+        'de',
+        { exportedAt: FIXED_EXPORTED_AT },
+      );
+
+      expect(model.kk.subject).toContain('Antrag auf Kostenübernahme');
+      expect(model.sourcesHeading).toBe('Quellen');
+      expect(model.postExportChecklist.title).toBe(
+        'Checklist - Next steps after export',
+      );
+    } finally {
+      i18nState.language = previousLanguage;
+    }
   });
 
   it('parses attachment free text via exported helper', () => {

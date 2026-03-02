@@ -179,6 +179,17 @@ const GREETING_LINES = new Set(['Mit freundlichen Grüßen', 'Kind regards']);
 const getT = (locale: SupportedLocale): I18nT =>
   i18n.getFixedT(locale, 'formpack:offlabel-antrag');
 
+const toSupportedLocale = (value: unknown): SupportedLocale =>
+  value === 'en' ? 'en' : 'de';
+
+const resolveChecklistLocale = (requestedLocale: SupportedLocale) => {
+  if (requestedLocale === 'en') {
+    return 'en';
+  }
+
+  return toSupportedLocale(i18n.language);
+};
+
 const tr = (
   t: I18nT,
   key: string,
@@ -640,10 +651,12 @@ const buildLetterSection = ({
 
 export const buildOffLabelAntragDocumentModel = (
   formData: Record<string, unknown>,
-  _locale: SupportedLocale,
+  locale: SupportedLocale,
   options: BuildOptions = {},
 ): OffLabelAntragDocumentModel => {
   const t = getT(OFFLABEL_OUTPUT_LOCALE);
+  const checklistLocale = resolveChecklistLocale(locale);
+  const tChecklist = getT(checklistLocale);
   const defaults =
     options.defaults ?? getOfflabelAntragExportDefaults(OFFLABEL_OUTPUT_LOCALE);
   const exportedAt = options.exportedAt ?? new Date();
@@ -813,7 +826,7 @@ export const buildOffLabelAntragDocumentModel = (
     includeCaseLawSource,
   });
   const postExportChecklist = buildPostExportChecklist({
-    t,
+    t: tChecklist,
     attachments: attachmentEntries,
   });
 

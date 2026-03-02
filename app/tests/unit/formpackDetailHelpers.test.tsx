@@ -289,6 +289,43 @@ describe('formpack detail helpers', () => {
       (requestNode.properties.selectedIndicationKey as { enum: string[] }).enum,
     ).toEqual(['k1', 'k2']);
 
+    mocked.resolveMedicationProfile.mockReturnValueOnce({
+      isOther: true,
+      indications: [],
+    });
+    const schemaWithExistingIndicationEnum = {
+      type: 'object',
+      properties: {
+        request: {
+          type: 'object',
+          properties: {
+            drug: { type: 'string', enum: ['med-a', 'other'] },
+            selectedIndicationKey: {
+              type: 'string',
+              enum: ['kept-indication'],
+            },
+          },
+        },
+      },
+    } as RJSFSchema;
+    const schemaWithoutSelectedDrug = detail.buildOfflabelFormSchema(
+      schemaWithExistingIndicationEnum,
+      { request: {} },
+      false,
+    );
+    const requestNodeWithoutSelectedDrug = (
+      schemaWithoutSelectedDrug.properties as Record<string, unknown>
+    ).request as {
+      properties: Record<string, unknown>;
+    };
+    expect(
+      (
+        requestNodeWithoutSelectedDrug.properties.selectedIndicationKey as {
+          enum: string[];
+        }
+      ).enum,
+    ).toEqual(['kept-indication']);
+
     expect(
       detail.buildOfflabelFormSchema(
         { type: 'object' } as RJSFSchema,
