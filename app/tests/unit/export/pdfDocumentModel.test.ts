@@ -105,7 +105,7 @@ describe('buildDoctorLetterDocumentModel', () => {
     ]);
 
     expect(doctorRows.rows.map((row) => row[0])).toEqual([
-      'Praxis',
+      'Praxisname',
       'Titel',
       'Anrede',
       'Name',
