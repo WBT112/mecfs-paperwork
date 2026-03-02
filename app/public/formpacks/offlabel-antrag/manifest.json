@@ -112,6 +112,20 @@
         ]
       },
       {
+        "id": "drug-methylphenidate",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.methylphenidate",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "methylphenidate"
+          }
+        ]
+      },
+      {
         "id": "drug-other",
         "anchor": "request.drug",
         "enabled": true,

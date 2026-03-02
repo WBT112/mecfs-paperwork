@@ -144,6 +144,7 @@
         "offlabel-antrag.request.drug.option.vortioxetine",
         "offlabel-antrag.request.drug.option.ldn",
         "offlabel-antrag.request.drug.option.aripiprazole",
+        "offlabel-antrag.request.drug.option.methylphenidate",
         "offlabel-antrag.request.drug.option.other"
       ]
     },

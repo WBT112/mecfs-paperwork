@@ -4,6 +4,7 @@ export const OFFLABEL_MEDICATION_KEYS = [
   'vortioxetine',
   'ldn',
   'aripiprazole',
+  'methylphenidate',
   'other',
 ] as const;
 
@@ -99,6 +100,18 @@ const ARIPIPRAZOLE_MECFS_DE = 'postinfektiöse ME/CFS mit Fatigue und PEM';
 const ARIPIPRAZOLE_MECFS_EN = 'post-infectious ME/CFS with fatigue and PEM';
 const ARIPIPRAZOLE_LONG_POST_COVID_DE = 'Long/Post-COVID mit Fatigue und PEM';
 const ARIPIPRAZOLE_LONG_POST_COVID_EN = 'long/post-COVID with fatigue and PEM';
+const METHYLPHENIDATE_MECFS_DE =
+  'postinfektiöse ME/CFS mit Fatigue und kognitiven Beeinträchtigungen';
+const METHYLPHENIDATE_MECFS_EN =
+  'post-infectious ME/CFS with fatigue and cognitive impairment';
+const METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE =
+  'Long/Post-COVID mit kognitiven Beeinträchtigungen (Brain Fog)';
+const METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN =
+  'long/post-COVID with cognitive impairment (brain fog)';
+const METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE =
+  'Long/Post-COVID mit Hypersomnie/Tagesschläfrigkeit';
+const METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN =
+  'long/post-COVID with hypersomnia/daytime sleepiness';
 const AGOMELATIN_BFARM_TITLE_DE =
   'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Agomelatin zur Behandlung der Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/Chronischem Fatigue-Syndrom (ME/CFS) und bei Long/Post-COVID (Stand 02.12.2025).';
 const AGOMELATIN_BFARM_TITLE_EN =
@@ -443,6 +456,92 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       en: [
         'start at 0.1-0.25 mg once daily; slow titration in 0.25 mg steps up to max. 2 mg/day; re-evaluate benefit-risk after 6-12 weeks',
         'close monitoring of agitation/akathisia, insomnia, orthostatic tolerance, daytime somnolence, and weight; discontinue with clinically relevant worsening, marked agitation/akathisia, or no meaningful benefit after 6-12 weeks',
+        PRIOR_MEASURES_DEFAULT.en,
+      ],
+    },
+  },
+  {
+    key: 'methylphenidate',
+    displayNameDe: 'Methylphenidat',
+    displayNameEn: 'Methylphenidate',
+    infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.methylphenidate',
+    expertSourceDate: '02.03.2026',
+    expertSourceTextOverride: {
+      de: 'ME/CFS: Blockmans D et al. Does methylphenidate reduce the symptoms of chronic fatigue syndrome? (Am J Med. 2006;119(2):167.e23-30. DOI: 10.1016/j.amjmed.2005.07.047); Long-COVID: Clark P et al. Methylphenidate for the Treatment of Post-COVID Cognitive Dysfunction (J Med Cases. 2024;15(8):195-200. DOI: 10.14740/jmc4254) sowie Morelli-Zaher C et al. Post-COVID central hypersomnia, a treatable trait in long COVID: 4 case reports (Front Neurol. 2024. DOI: 10.3389/fneur.2024.1349486).',
+      en: 'ME/CFS: Blockmans D et al. Does methylphenidate reduce the symptoms of chronic fatigue syndrome? (Am J Med. 2006;119(2):167.e23-30. DOI: 10.1016/j.amjmed.2005.07.047); long-COVID: Clark P et al. Methylphenidate for the Treatment of Post-COVID Cognitive Dysfunction (J Med Cases. 2024;15(8):195-200. DOI: 10.14740/jmc4254) and Morelli-Zaher C et al. Post-COVID central hypersomnia, a treatable trait in long COVID: 4 case reports (Front Neurol. 2024. DOI: 10.3389/fneur.2024.1349486).',
+    },
+    indications: [
+      createIndication('methylphenidate.mecfs_fatigue_cognitive', {
+        de: {
+          label: METHYLPHENIDATE_MECFS_DE,
+          diagnosisNominative: METHYLPHENIDATE_MECFS_DE,
+          diagnosisDative:
+            'postinfektiöser ME/CFS mit Fatigue und kognitiven Beeinträchtigungen',
+          point2ConfirmationSentence:
+            'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue und kognitive Beeinträchtigungen sind dokumentiert.',
+          targetSymptoms:
+            'Verbesserung von Fatigue, Kognition und alltagsrelevanter Funktionsfähigkeit (HRQoL)',
+        },
+        en: {
+          label: METHYLPHENIDATE_MECFS_EN,
+          diagnosisNominative: METHYLPHENIDATE_MECFS_EN,
+          diagnosisDative: METHYLPHENIDATE_MECFS_EN,
+          point2ConfirmationSentence:
+            'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue and cognitive impairment are documented.',
+          targetSymptoms:
+            'improvement of fatigue, cognition, and day-to-day functional capacity (HRQoL)',
+        },
+      }),
+      createIndication('methylphenidate.long_post_covid_cognitive', {
+        de: {
+          label: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE,
+          diagnosisNominative: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE,
+          diagnosisDative: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_DE,
+          point2ConfirmationSentence:
+            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Kognitive Beeinträchtigungen sind dokumentiert.',
+          targetSymptoms:
+            'Verbesserung von Aufmerksamkeit, Gedächtnisleistung und Fatigue-bedingter Alltagseinschränkung',
+        },
+        en: {
+          label: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN,
+          diagnosisNominative: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN,
+          diagnosisDative: METHYLPHENIDATE_LONG_POST_COVID_COGNITIVE_EN,
+          point2ConfirmationSentence:
+            'The diagnosis of long/post-COVID is established (see findings). Cognitive impairment is documented.',
+          targetSymptoms:
+            'improvement of attention, memory performance, and fatigue-related daily limitations',
+        },
+      }),
+      createIndication('methylphenidate.long_post_covid_hypersomnia', {
+        de: {
+          label: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE,
+          diagnosisNominative: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE,
+          diagnosisDative: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_DE,
+          point2ConfirmationSentence:
+            'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Klinisch relevante Hypersomnie bzw. Tagesschläfrigkeit ist dokumentiert.',
+          targetSymptoms:
+            'Reduktion von Tagesschläfrigkeit und Verbesserung der funktionellen Belastbarkeit',
+        },
+        en: {
+          label: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN,
+          diagnosisNominative: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN,
+          diagnosisDative: METHYLPHENIDATE_LONG_POST_COVID_HYPERSOMNIA_EN,
+          point2ConfirmationSentence:
+            'The diagnosis of long/post-COVID is established (see findings). Clinically relevant hypersomnia or daytime sleepiness is documented.',
+          targetSymptoms:
+            'reduction of daytime sleepiness and improvement of functional capacity',
+        },
+      }),
+    ],
+    autoFacts: {
+      de: [
+        'Start 5 mg morgens; je nach Verträglichkeit Steigerung in 5-mg-Schritten bis 10 mg 2x täglich (max. 20 mg/Tag); erster Wirksamkeits-Check nach ca. 4 Wochen',
+        'Engmaschiges Monitoring von Blutdruck, Herzfrequenz, Gewicht, Schlaf und psychischen Nebenwirkungen; Abbruch bei fehlendem klinisch relevantem Nutzen nach 4 Wochen unter ausreichender Dosis oder bei nicht tolerierbaren Nebenwirkungen (z. B. Agitiertheit, Palpitationen, deutliche RR/Puls-Erhöhung)',
+        PRIOR_MEASURES_DEFAULT.de,
+      ],
+      en: [
+        'start at 5 mg in the morning; titrate in 5 mg steps as tolerated up to 10 mg twice daily (max. 20 mg/day); first efficacy check after about 4 weeks',
+        'close monitoring of blood pressure, heart rate, weight, sleep, and psychiatric adverse effects; discontinue when there is no clinically meaningful benefit after 4 weeks at an adequate dose or when adverse effects are not tolerated (e.g. agitation, palpitations, marked BP/HR increase)',
         PRIOR_MEASURES_DEFAULT.en,
       ],
     },

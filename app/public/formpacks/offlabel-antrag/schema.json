@@ -109,6 +109,7 @@
             "vortioxetine",
             "ldn",
             "aripiprazole",
+            "methylphenidate",
             "other"
           ]
         },
@@ -123,7 +124,10 @@
             "ldn.mecfs_fatigue",
             "ldn.long_post_covid_fatigue",
             "aripiprazole.mecfs_fatigue_pem",
-            "aripiprazole.long_post_covid_fatigue_pem"
+            "aripiprazole.long_post_covid_fatigue_pem",
+            "methylphenidate.mecfs_fatigue_cognitive",
+            "methylphenidate.long_post_covid_cognitive",
+            "methylphenidate.long_post_covid_hypersomnia"
           ]
         },
         "indicationFullyMetOrDoctorConfirms": {
