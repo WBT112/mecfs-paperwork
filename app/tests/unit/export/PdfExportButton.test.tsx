@@ -50,6 +50,25 @@ describe('PdfExportButton', () => {
     runtimeRenderSpy.mockReset();
   });
 
+  const renderAndGetRequestKey = async (
+    buildPayload: () => Promise<PdfExportPayload>,
+  ) => {
+    render(
+      <PdfExportButton
+        buildPayload={buildPayload}
+        label={exportLabel}
+        loadingLabel={loadingLabel}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: exportLabel }));
+    await waitFor(() => expect(runtimeRenderSpy).toHaveBeenCalled());
+    const props = runtimeRenderSpy.mock.calls[0][0] as {
+      requestKey?: string;
+    };
+    return props.requestKey;
+  };
+
   it('builds a payload and completes the export flow', async () => {
     const buildPayload = vi.fn().mockResolvedValue({
       document: <div />,
@@ -133,8 +152,16 @@ describe('PdfExportButton', () => {
     const originalSetTimeout = globalThis.setTimeout.bind(globalThis);
     const rafSpy = vi.fn(() => 1);
     const cancelSpy = vi.fn();
-    globalThis.requestAnimationFrame = rafSpy;
-    globalThis.cancelAnimationFrame = cancelSpy;
+    Object.defineProperty(globalThis, 'requestAnimationFrame', {
+      value: rafSpy,
+      configurable: true,
+      writable: true,
+    });
+    Object.defineProperty(globalThis, 'cancelAnimationFrame', {
+      value: cancelSpy,
+      configurable: true,
+      writable: true,
+    });
     const setTimeoutSpy = vi
       .spyOn(globalThis, 'setTimeout')
       .mockImplementation((handler, timeout, ...args) => {
@@ -169,8 +196,16 @@ describe('PdfExportButton', () => {
       expect(cancelSpy).toHaveBeenCalled();
     } finally {
       setTimeoutSpy.mockRestore();
-      globalThis.requestAnimationFrame = originalRaf;
-      globalThis.cancelAnimationFrame = originalCancel;
+      Object.defineProperty(globalThis, 'requestAnimationFrame', {
+        value: originalRaf,
+        configurable: true,
+        writable: true,
+      });
+      Object.defineProperty(globalThis, 'cancelAnimationFrame', {
+        value: originalCancel,
+        configurable: true,
+        writable: true,
+      });
     }
   });
 
@@ -186,21 +221,8 @@ describe('PdfExportButton', () => {
     });
     setGlobalCrypto({ getRandomValues } as unknown as Crypto);
 
-    render(
-      <PdfExportButton
-        buildPayload={buildPayload}
-        label={exportLabel}
-        loadingLabel={loadingLabel}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: exportLabel }));
-
-    await waitFor(() => expect(runtimeRenderSpy).toHaveBeenCalled());
-    const props = runtimeRenderSpy.mock.calls[0][0] as {
-      requestKey?: string;
-    };
-    expect(props.requestKey).toMatch(/^[0-9a-f]{32}$/i);
+    const requestKey = await renderAndGetRequestKey(buildPayload);
+    expect(requestKey).toMatch(/^[0-9a-f]{32}$/i);
 
     setGlobalCrypto(originalCrypto);
   });
@@ -224,20 +246,8 @@ describe('PdfExportButton', () => {
       configurable: true,
     });
 
-    render(
-      <PdfExportButton
-        buildPayload={buildPayload}
-        label={exportLabel}
-        loadingLabel={loadingLabel}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: exportLabel }));
-    await waitFor(() => expect(runtimeRenderSpy).toHaveBeenCalled());
-    const props = runtimeRenderSpy.mock.calls[0][0] as {
-      requestKey?: string;
-    };
-    expect(props.requestKey).toBe('12345');
+    const requestKey = await renderAndGetRequestKey(buildPayload);
+    expect(requestKey).toBe('12345');
 
     setGlobalCrypto(originalCrypto);
     Object.defineProperty(globalThis, 'requestAnimationFrame', {
@@ -269,5 +279,304 @@ describe('PdfExportButton', () => {
     fireEvent.click(screen.getByRole('button', { name: exportLabel }));
 
     expect(buildPayload).not.toHaveBeenCalled();
+  });
+
+  it('bails out in the click handler when disabled and events are dispatched programmatically', () => {
+    const buildPayload = vi.fn().mockResolvedValue({
+      document: <div />,
+      filename: pdfFilename,
+    });
+
+    render(
+      <PdfExportButton
+        buildPayload={buildPayload}
+        label={exportLabel}
+        loadingLabel={loadingLabel}
+        disabled
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: exportLabel });
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+
+    expect(buildPayload).not.toHaveBeenCalled();
+  });
+
+  it('ignores repeated clicks while an export is already running', async () => {
+    let resolvePayload: ((payload: PdfExportPayload) => void) | null = null;
+    const buildPayload = vi.fn(
+      () =>
+        new Promise<PdfExportPayload>((resolve) => {
+          resolvePayload = resolve;
+        }),
+    );
+
+    render(
+      <PdfExportButton
+        buildPayload={buildPayload}
+        label={exportLabel}
+        loadingLabel={loadingLabel}
+      />,
+    );
+
+    const button = screen.getByRole('button', { name: exportLabel });
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    expect(buildPayload).toHaveBeenCalledTimes(1);
+
+    resolvePayload!({ document: <div />, filename: pdfFilename });
+    await waitFor(() => expect(runtimeRenderSpy).toHaveBeenCalledTimes(1));
+  });
+
+  it('times out long-running export requests and resets state', async () => {
+    const onError = vi.fn();
+    const buildPayload = vi.fn(
+      () =>
+        new Promise<PdfExportPayload>(() => {
+          // Intentionally unresolved to trigger request timeout.
+        }),
+    );
+
+    const originalSetTimeout = globalThis.setTimeout.bind(globalThis);
+    const setTimeoutSpy = vi
+      .spyOn(globalThis, 'setTimeout')
+      .mockImplementation((handler, timeout, ...args) => {
+        if (timeout === 25_000 && typeof handler === 'function') {
+          handler(...args);
+          return originalSetTimeout(() => undefined, 0);
+        }
+        return originalSetTimeout(handler, timeout, ...args);
+      });
+
+    try {
+      render(
+        <PdfExportButton
+          buildPayload={buildPayload}
+          label={exportLabel}
+          loadingLabel={loadingLabel}
+          onError={onError}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: exportLabel }));
+
+      await waitFor(() =>
+        expect(onError).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: 'PDF export timed out. Please try again.',
+          }),
+        ),
+      );
+      expect(screen.getByRole('button', { name: exportLabel })).toBeEnabled();
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
+  });
+
+  it('does not update state or call handlers after unmount', async () => {
+    let rejectPayload: ((error?: unknown) => void) | null = null;
+    const buildPayload = vi.fn(
+      () =>
+        new Promise<PdfExportPayload>((_, reject) => {
+          rejectPayload = reject;
+        }),
+    );
+    const onError = vi.fn();
+
+    const view = render(
+      <PdfExportButton
+        buildPayload={buildPayload}
+        label={exportLabel}
+        loadingLabel={loadingLabel}
+        onError={onError}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: exportLabel }));
+    view.unmount();
+
+    rejectPayload!(new Error('late failure'));
+    await Promise.resolve();
+
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it('supports requestAnimationFrame-based timeout progression', async () => {
+    const onError = vi.fn();
+    const buildPayload = vi.fn(
+      () =>
+        new Promise<PdfExportPayload>(() => {
+          // Keep pending so RAF timeout path decides the outcome.
+        }),
+    );
+
+    const originalRaf = globalThis.requestAnimationFrame;
+    const originalCancel = globalThis.cancelAnimationFrame;
+    const originalSetTimeout = globalThis.setTimeout.bind(globalThis);
+    const rafCallbacks: FrameRequestCallback[] = [];
+    const rafSpy = vi.fn((callback: FrameRequestCallback) => {
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    });
+    const cancelSpy = vi.fn();
+    globalThis.requestAnimationFrame = rafSpy;
+    globalThis.cancelAnimationFrame = cancelSpy;
+    const nowSpy = vi.spyOn(performance, 'now').mockImplementation(() => 0);
+    const setTimeoutSpy = vi
+      .spyOn(globalThis, 'setTimeout')
+      .mockImplementation((handler, timeout, ...args) => {
+        if (timeout === 20_000 || timeout === 25_000) {
+          return 1 as unknown as ReturnType<typeof setTimeout>;
+        }
+        return originalSetTimeout(handler, timeout, ...args);
+      });
+
+    try {
+      render(
+        <PdfExportButton
+          buildPayload={buildPayload}
+          label={exportLabel}
+          loadingLabel={loadingLabel}
+          onError={onError}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: exportLabel }));
+
+      await waitFor(() => expect(rafCallbacks.length).toBeGreaterThan(0));
+      const firstTick = rafCallbacks.shift();
+      const secondTickPromise = Promise.resolve().then(() =>
+        rafCallbacks.shift(),
+      );
+      firstTick?.(1);
+      const secondTick = await secondTickPromise;
+      secondTick?.(20_001);
+
+      await waitFor(() =>
+        expect(onError).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: 'PDF export timed out while preparing the document.',
+          }),
+        ),
+      );
+      expect(cancelSpy).toHaveBeenCalled();
+    } finally {
+      setTimeoutSpy.mockRestore();
+      nowSpy.mockRestore();
+      globalThis.requestAnimationFrame = originalRaf;
+      globalThis.cancelAnimationFrame = originalCancel;
+    }
+  });
+
+  it('ignores stale requestAnimationFrame ticks after timeout cancellation', async () => {
+    const buildPayload = vi.fn().mockResolvedValue({
+      document: <div />,
+      filename: pdfFilename,
+    });
+
+    const originalRaf = globalThis.requestAnimationFrame;
+    const originalCancel = globalThis.cancelAnimationFrame;
+    const rafCallbacks: FrameRequestCallback[] = [];
+    const rafSpy = vi.fn((callback: FrameRequestCallback) => {
+      rafCallbacks.push(callback);
+      return rafCallbacks.length;
+    });
+    const cancelSpy = vi.fn();
+
+    globalThis.requestAnimationFrame = rafSpy;
+    globalThis.cancelAnimationFrame = cancelSpy;
+
+    try {
+      render(
+        <PdfExportButton
+          buildPayload={buildPayload}
+          label={exportLabel}
+          loadingLabel={loadingLabel}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: exportLabel }));
+      await waitFor(() => expect(runtimeRenderSpy).toHaveBeenCalled());
+
+      expect(rafCallbacks.length).toBeGreaterThan(0);
+      const firstTick = rafCallbacks[0];
+      const rafCallsBeforeTick = rafSpy.mock.calls.length;
+      firstTick(1);
+
+      expect(rafSpy.mock.calls.length).toBe(rafCallsBeforeTick);
+      expect(cancelSpy).toHaveBeenCalled();
+    } finally {
+      globalThis.requestAnimationFrame = originalRaf;
+      globalThis.cancelAnimationFrame = originalCancel;
+    }
+  });
+
+  it('does not update request state when unmounted before payload resolution', async () => {
+    let resolvePayload: ((payload: PdfExportPayload) => void) | null = null;
+    const buildPayload = vi.fn(
+      () =>
+        new Promise<PdfExportPayload>((resolve) => {
+          resolvePayload = resolve;
+        }),
+    );
+
+    const view = render(
+      <PdfExportButton
+        buildPayload={buildPayload}
+        label={exportLabel}
+        loadingLabel={loadingLabel}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: exportLabel }));
+    view.unmount();
+
+    resolvePayload!({ document: <div />, filename: pdfFilename });
+    await Promise.resolve();
+
+    expect(runtimeRenderSpy).not.toHaveBeenCalled();
+  });
+
+  it('stops request-timeout callbacks after unmount', async () => {
+    let requestTimeoutHandler: (() => void) | null = null;
+    const onError = vi.fn();
+    const buildPayload = vi.fn(
+      () =>
+        new Promise<PdfExportPayload>(() => {
+          // Keep pending until timeout callback fires.
+        }),
+    );
+    const originalSetTimeout = globalThis.setTimeout.bind(globalThis);
+    const setTimeoutSpy = vi
+      .spyOn(globalThis, 'setTimeout')
+      .mockImplementation((handler, timeout, ...args) => {
+        if (timeout === 25_000 && typeof handler === 'function') {
+          requestTimeoutHandler = () => {
+            handler(...args);
+          };
+          return 1 as unknown as ReturnType<typeof setTimeout>;
+        }
+        return originalSetTimeout(handler, timeout, ...args);
+      });
+
+    try {
+      const view = render(
+        <PdfExportButton
+          buildPayload={buildPayload}
+          label={exportLabel}
+          loadingLabel={loadingLabel}
+          onError={onError}
+        />,
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: exportLabel }));
+      view.unmount();
+      requestTimeoutHandler!();
+
+      expect(onError).not.toHaveBeenCalled();
+    } finally {
+      setTimeoutSpy.mockRestore();
+    }
   });
 });

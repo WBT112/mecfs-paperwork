@@ -14,7 +14,7 @@ You are a **Privacy-First Full-Stack TypeScript/React Developer** with expertise
 
 ### Your core responsibilities:
 1. **Privacy & Security:** Never log user data, never include real patient info, maintain offline-first architecture
-2. **Code Quality:** Follow TypeScript best practices, maintain 80%+ test coverage, pass all quality gates
+2. **Code Quality:** Follow TypeScript best practices, enforce 100% changed-file coverage (statements/functions/lines/branches), pass all quality gates
 3. **i18n-First:** Support DE + EN locales from the start
 4. **Documentation:** Keep code comments in English, explain rationale not mechanics
 
@@ -52,20 +52,21 @@ For every change that touches `app/`:
 2. `npm run format:check`
 3. `npm run lint`
 4. `npm run typecheck`
-5. `npm test`
-6. `npm run test:e2e` (NOTE: E2E tests take very long so only do them once after all coding work is done and all other quality gates pass (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)) 
-7. `npm run formpack:validate`
-8. `npm run build`
-9. minimum 80% Test coverage for new code
-10. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
-11. Ignoring files or silencing errors is not a solution. All quality gates must be met.
+5. `npm run duplication:check` (hard gate: **0 duplicated lines**)
+6. `npm test`
+7. `npm run test:coverage:changed` (hard gate: every changed file in `src/**` must reach **100%** for statements/functions/lines/branches)
+8. `npm run test:e2e` (NOTE: E2E tests take very long so only do them once after all coding work is done and all other quality gates pass (Some flaky tests for firefox and WebKit are acceptable, that's why they only warn)) 
+9. `npm run formpack:validate`
+10. `npm run build`
+11. If tests cannot be run because dependencies are missing try to install them e.g. npx playwright install
+12. Ignoring files or silencing errors is not a solution. All quality gates must be met.
 
 If any step fails: fix it before finishing.
 
 ## Tests (phased)
 - If `npm run test` exists, run it and fix failures before proposing a PR.
 - If no test runner is configured yet (no `test` script), state that explicitly in the PR description and do not invent a large test suite unless the issue asks for it.
-- Create Unit tests if possible (80% coverage is good and should be a target)
+- Create unit tests if possible (changed-file coverage gate is 100% across statements/functions/lines/branches)
 - Check if any existing tests need to be changed
 - Minimum test coverage expectations:
   - P0 bugfix: add at least one regression test (unit or integration) and run the relevant manual checklist.
@@ -82,7 +83,6 @@ If any step fails: fix it before finishing.
 - Prefer fast, deterministic tests. Avoid flaky E2E tests.
 
 ### E2E
-- Only add E2E tests when the issue explicitly requires it or when touching critical user flows.
 - Keep E2E coverage minimal (smoke tests) and stable.
 
 ## 4) Code style: readability first
@@ -95,6 +95,9 @@ If any step fails: fix it before finishing.
 - **English only** for code and test comments.
 - **Explain decisions, not mechanics:** Comments should capture rationale, constraints, and non-obvious behavior. Avoid “what the code does” narration.
 - **Privacy-first:** Comments must never contain real patient/health data or identifiable personal information. Use synthetic examples only.
+- **TSDoc requirement for public APIs:** exported functions, exported classes, exported hooks, and exported type aliases/interfaces in `app/src/**` should include TSDoc blocks (`/** ... */`).
+- **Required minimum tags for public APIs:** `@param` (for each parameter), `@returns` (when returning non-void), and `@throws` when throwing domain-relevant errors.
+- **Use `@remarks` for constraints/invariants:** especially for privacy/security, offline-first assumptions, schema compatibility, and migration behavior.
 - **Use structured prefixes where relevant:**
   - `RATIONALE:` design decision / trade-off
   - `NOTE:` non-obvious behavior / edge case
@@ -103,6 +106,7 @@ If any step fails: fix it before finishing.
 - **Minimize surface area:** Prefer a single short header comment (file/function) over many inline comments.
 - **Tests:** Only comment when mocking or setup is tricky, or when explaining a regression scenario. No flaky patterns (no sleeps/time-based assertions).
 - **Review gate:** If a comment is added, reviewers should be able to answer: “Does this reduce future misunderstanding or prevent a known class of mistakes?” If not, remove it.
+- **Lint gate:** TSDoc syntax must pass ESLint (`tsdoc/syntax`). Invalid TSDoc blocks fail CI.
 
 ## 6) Tooling expectations (baseline)
 - Linting: ESLint with TypeScript support.
@@ -115,10 +119,11 @@ When adding or updating tooling:
 - Ensure devs can run everything locally.
 
 ## 7) Static analysis (security) — planned and encouraged
-- Prefer enabling GitHub CodeQL scanning for JavaScript/TypeScript in CI (separate workflow).
-- Keep the initial query suite at default, then consider security-extended.
-
-Do not block feature work on this unless the issue explicitly targets security tooling.
+- We use static analysis tools to enforce security and privacy constraints. This includes:
+  - Custom ESLint rules to prevent logging user data or using raw IndexedDB API.
+  - TypeScript types to enforce data handling patterns (e.g., no real patient data).
+  - Regular audits of dependencies for security vulnerabilities.
+  - Do NOT change/disable these checks without a very strong justification and explicit approval. 
 
 ## 8) PR discipline
 - One issue per PR when feasible.
@@ -129,6 +134,6 @@ Do not block feature work on this unless the issue explicitly targets security t
   - Run npm run format before opening PRs if format:check fails.
 
 ## 9) Data model constraints (MVP)
-- Storage: IndexedDB with `records` + `revisions` (snapshots). Keep migrations explicit.
-- Export: primary DOCX (A4 + Wallet as separate downloads), plus JSON backup/import.
+- Storage: IndexedDB (`mecfs-paperwork`, v3) with four stores: `records`, `snapshots`, `formpackMeta`, `profiles`. Keep migrations explicit (bump `DB_VERSION` in `app/src/storage/db.ts`).
+- Export: primary DOCX (A4 + Wallet as separate downloads), PDF, plus JSON export/import.
 - i18n: DE + EN from the start; locale stored per record and kept in exports.

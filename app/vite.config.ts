@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { createRequire } from 'node:module';
+import { availableParallelism } from 'node:os';
 import { execSync } from 'node:child_process';
 import { createPwaConfig } from './src/lib/pwaConfig';
 
@@ -78,6 +79,25 @@ const resolveBuildDate = (): string => {
 
 const APP_VERSION = resolveAppVersion();
 const BUILD_DATE = resolveBuildDate();
+
+const parsePositiveInt = (value: string | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const isCI = Boolean(process.env.CI);
+const defaultLocalVitestWorkers = Math.max(
+  2,
+  Math.min(10, Math.floor(availableParallelism() * 0.7)),
+);
+const configuredVitestWorkers = parsePositiveInt(
+  process.env.VITEST_MAX_WORKERS ?? process.env.VITEST_WORKERS,
+);
+const vitestMaxWorkers =
+  configuredVitestWorkers ?? (isCI ? 2 : defaultLocalVitestWorkers);
 
 const createConfig = (mode: string): AppConfig => ({
   define: {
@@ -216,10 +236,10 @@ const createConfig = (mode: string): AppConfig => ({
     globals: true,
     environment: 'jsdom',
     setupFiles: './tests/setup/setup.ts',
+    maxWorkers: vitestMaxWorkers,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      all: true,
       include: ['src/**/*.{ts,tsx,mjs}'],
       exclude: [
         'src/**/*.d.ts',
@@ -228,13 +248,19 @@ const createConfig = (mode: string): AppConfig => ({
         'src/lib/diagnostics/types.ts',
         // Re-export barrels with no logic
         'src/lib/diagnostics/index.ts',
+        'src/export/pdf/index.ts',
+        'src/formpacks/index.ts',
+        'src/pages/formpack-detail/index.ts',
+        'src/storage/index.ts',
+        // Type-only file with no runtime code
+        'src/pages/formpack-detail/sectionTypes.ts',
       ],
       thresholds: {
-        // Global coverage thresholds (CI enforced)
-        lines: 85,
-        branches: 75,
-        functions: 80,
-        statements: 85,
+        // Global coverage thresholds (CI enforced).
+        lines: 100,
+        branches: 100,
+        functions: 100,
+        statements: 100,
       },
     },
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],

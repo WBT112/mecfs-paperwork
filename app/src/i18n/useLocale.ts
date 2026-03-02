@@ -36,6 +36,11 @@ export const useLocale = () => {
     };
   }, [setLocale]);
 
+  useEffect(() => {
+    document.documentElement.lang = locale;
+    document.documentElement.dir = 'ltr';
+  }, [locale]);
+
   const changeLocale = async (nextLocale: SupportedLocale) => {
     if (nextLocale === i18n.language) {
       return;

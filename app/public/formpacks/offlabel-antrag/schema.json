@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mecfs-paperwork.local/formpacks/offlabel-antrag/schema.json",
+  "title": "offlabel-antrag",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "introAccepted": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "patient": {
+      "type": "object",
+      "properties": {
+        "firstName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "birthDate": {
+          "type": "string",
+          "format": "date"
+        },
+        "streetAndNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "insuranceNumber": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "doctor": {
+      "type": "object",
+      "properties": {
+        "practice": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string",
+          "enum": [
+            "kein",
+            "Dr.",
+            "Prof. Dr."
+          ]
+        },
+        "gender": {
+          "type": "string",
+          "enum": [
+            "Frau",
+            "Herr"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "streetAndNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "insurer": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "department": {
+          "type": "string"
+        },
+        "streetAndNumber": {
+          "type": "string"
+        },
+        "postalCode": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "request": {
+      "type": "object",
+      "properties": {
+        "drug": {
+          "type": "string",
+          "enum": [
+            "agomelatin",
+            "ivabradine",
+            "vortioxetine",
+            "ldn",
+            "aripiprazole",
+            "methylphenidate",
+            "other"
+          ]
+        },
+        "selectedIndicationKey": {
+          "type": "string",
+          "enum": [
+            "agomelatin.mecfs_fatigue",
+            "agomelatin.long_post_covid_fatigue",
+            "ivabradine.pots_long_post_covid",
+            "vortioxetine.long_post_covid_cognitive",
+            "vortioxetine.long_post_covid_depressive",
+            "ldn.mecfs_fatigue",
+            "ldn.long_post_covid_fatigue",
+            "aripiprazole.mecfs_fatigue_pem",
+            "aripiprazole.long_post_covid_fatigue_pem",
+            "methylphenidate.mecfs_fatigue_cognitive",
+            "methylphenidate.long_post_covid_cognitive",
+            "methylphenidate.long_post_covid_hypersomnia"
+          ]
+        },
+        "indicationFullyMetOrDoctorConfirms": {
+          "type": "string",
+          "enum": [
+            "yes",
+            "no"
+          ]
+        },
+        "applySection2Abs1a": {
+          "type": "boolean"
+        },
+        "otherDrugName": {
+          "type": "string"
+        },
+        "otherIndication": {
+          "type": "string"
+        },
+        "otherTreatmentGoal": {
+          "type": "string"
+        },
+        "otherDose": {
+          "type": "string"
+        },
+        "otherDuration": {
+          "type": "string"
+        },
+        "otherMonitoring": {
+          "type": "string"
+        },
+        "otherEvidenceReference": {
+          "type": "string"
+        },
+        "standardOfCareTriedFreeText": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "severity": {
+      "type": "object",
+      "properties": {
+        "bellScore": {
+          "type": "string",
+          "enum": [
+            "0",
+            "10",
+            "20",
+            "30",
+            "40",
+            "50",
+            "60",
+            "70",
+            "80",
+            "90",
+            "100"
+          ]
+        },
+        "gdb": {
+          "type": "string",
+          "enum": [
+            "20",
+            "30",
+            "40",
+            "50",
+            "60",
+            "70",
+            "80",
+            "90",
+            "100"
+          ]
+        },
+        "merkzeichen": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "G",
+              "aG",
+              "H",
+              "B"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "pflegegrad": {
+          "type": "string",
+          "enum": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5"
+          ]
+        },
+        "workStatus": {
+          "type": "string",
+          "enum": [
+            "Arbeitsunfähig",
+            "Erwerbsminderungsrente",
+            "Teilzeit arbeitsfähig"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "attachmentsFreeText": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "request": {
+            "type": "object",
+            "properties": {
+              "drug": {
+                "const": "other"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "request": {
+            "type": "object",
+            "required": [
+              "otherDrugName",
+              "otherIndication",
+              "otherTreatmentGoal",
+              "otherDose",
+              "otherDuration",
+              "otherMonitoring",
+              "otherEvidenceReference",
+              "standardOfCareTriedFreeText"
+            ],
+            "properties": {
+              "otherDrugName": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherIndication": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherTreatmentGoal": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherDose": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherDuration": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherMonitoring": {
+                "type": "string",
+                "minLength": 1
+              },
+              "otherEvidenceReference": {
+                "type": "string",
+                "minLength": 1
+              },
+              "standardOfCareTriedFreeText": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

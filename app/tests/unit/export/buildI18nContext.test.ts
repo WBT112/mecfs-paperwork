@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { describe, expect, it, beforeAll, afterEach, vi } from 'vitest';
 import {
   buildI18nContext,
   setNested,
@@ -6,7 +6,7 @@ import {
 import i18n from '../../../src/i18n';
 
 describe('buildI18nContext', () => {
-  beforeEach(async () => {
+  beforeAll(async () => {
     await i18n.init();
   });
 
@@ -148,6 +148,17 @@ describe('buildI18nContext', () => {
 
       const result = buildI18nContext('test', 'en');
       expect(result).toEqual({ t: {} });
+    });
+
+    it('keeps alias resolution stable for prefixes without path segments', () => {
+      vi.spyOn(i18n, 'getResourceBundle').mockReturnValue({
+        'test.export.title': 'Title',
+      });
+
+      const result = buildI18nContext('test', 'en', '.');
+
+      expect(result.t).toEqual({});
+      expect(result.t).not.toHaveProperty('__PACK_ID__');
     });
   });
 });

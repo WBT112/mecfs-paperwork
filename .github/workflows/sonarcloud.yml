@@ -20,8 +20,9 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
+          persist-credentials: false
           # Sonar empfiehlt vollständige Historie für relevanteres Reporting
           fetch-depth: 0
         # fetch-depth Empfehlung in Sonar Doku/Beispielen für GitHub Actions
@@ -30,7 +31,7 @@ jobs:
         # (Cite below)
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -40,7 +41,7 @@ jobs:
         working-directory: app
         env:
           HUSKY: "0"
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --fund=false
 
       - name: Unit tests + coverage (lcov)
         working-directory: app
@@ -52,6 +53,6 @@ jobs:
             --coverage.reporter=html
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v7
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9 # v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

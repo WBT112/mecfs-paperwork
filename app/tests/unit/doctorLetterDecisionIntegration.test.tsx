@@ -196,6 +196,10 @@ vi.mock('react-i18next', () => ({
 vi.mock('../../src/export/docxLazy', () => ({
   preloadDocxAssets: vi.fn().mockResolvedValue(undefined),
   getDocxErrorKey: vi.fn(),
+  scheduleDocxPreload: vi.fn((task: () => Promise<void>) => {
+    task().catch(() => undefined);
+    return () => undefined;
+  }),
 }));
 
 describe('Doctor Letter Decision Integration', () => {

@@ -1,11 +1,17 @@
+import { encryptStorageData } from './atRestEncryption';
 import { openStorage } from './db';
+import { decodeStorageEntry } from './decodeStorageEntry';
 import type { SnapshotEntry } from './types';
+
+/** Maximum number of snapshots retained per record. */
+const MAX_SNAPSHOTS_PER_RECORD = 50;
 
 const sortByCreatedAtDesc = (snapshots: SnapshotEntry[]): SnapshotEntry[] =>
   [...snapshots].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
 /**
  * Creates a snapshot for the provided record.
+ * Automatically removes the oldest snapshots when the per-record limit is exceeded.
  */
 export const createSnapshot = async (
   recordId: string,
@@ -21,8 +27,25 @@ export const createSnapshot = async (
     data,
     createdAt: now,
   };
+  const encryptedData = await encryptStorageData(snapshot.data);
 
-  await db.add('snapshots', snapshot);
+  const tx = db.transaction('snapshots', 'readwrite');
+  const store = tx.objectStore('snapshots');
+  await store.add({
+    ...snapshot,
+    data: encryptedData,
+  });
+
+  // Enforce per-record retention limit
+  const allKeys = await store.index('by_recordId').getAllKeys(recordId);
+  if (allKeys.length > MAX_SNAPSHOTS_PER_RECORD) {
+    const allSnapshots = await store.index('by_recordId').getAll(recordId);
+    const sorted = sortByCreatedAtDesc(allSnapshots);
+    const toDelete = sorted.slice(MAX_SNAPSHOTS_PER_RECORD);
+    await Promise.all(toDelete.map((s) => store.delete(s.id)));
+  }
+
+  await tx.done;
   return snapshot;
 };
 
@@ -33,11 +56,18 @@ export const listSnapshots = async (
   recordId: string,
 ): Promise<SnapshotEntry[]> => {
   const db = await openStorage();
-  const snapshots = await db.getAllFromIndex(
+  const persistedSnapshots = await db.getAllFromIndex(
     'snapshots',
     'by_recordId',
     recordId,
   );
+
+  const snapshots = await Promise.all(
+    persistedSnapshots.map((entry) =>
+      decodeStorageEntry(entry, (migrated) => db.put('snapshots', migrated)),
+    ),
+  );
+
   return sortByCreatedAtDesc(snapshots);
 };
 
@@ -48,8 +78,14 @@ export const getSnapshot = async (
   snapshotId: string,
 ): Promise<SnapshotEntry | null> => {
   const db = await openStorage();
-  const snapshot = await db.get('snapshots', snapshotId);
-  return snapshot ?? null;
+  const persisted = await db.get('snapshots', snapshotId);
+  if (!persisted) {
+    return null;
+  }
+
+  return decodeStorageEntry(persisted, (migrated) =>
+    db.put('snapshots', migrated),
+  );
 };
 
 /**

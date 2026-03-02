@@ -35,18 +35,19 @@ jobs:
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'staging'))
-    
+
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref || github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -90,7 +91,7 @@ jobs:
         run: echo "date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: .
           push: true
@@ -114,15 +115,19 @@ jobs:
     name: Deploy to Server
     needs: build-and-push
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-${{ github.event_name == 'workflow_dispatch' && inputs.environment || github.ref_name }}
+      cancel-in-progress: false
     if: >-
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
       (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'staging'))
-    
+
     steps:
       - name: Checkout code (for compose file)
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref || github.event.pull_request.merge_commit_sha || github.sha }}
 
       - name: Deploy to server via SSH
@@ -130,9 +135,25 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           SSH_HOST: ${{ secrets.DEPLOY_HOST }}
           SSH_USER: ${{ secrets.DEPLOY_USER }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
+          set -euo pipefail
+
+          retry() {
+            local attempts="$1"
+            shift
+            local n=1
+            until "$@"; do
+              if [ "$n" -ge "$attempts" ]; then
+                return 1
+              fi
+              sleep $((2 * n))
+              n=$((n + 1))
+            done
+          }
+
           # Setup SSH
           mkdir -p ~/.ssh
           key_written=false
@@ -160,13 +181,21 @@ jobs:
             echo "::error::SSH_PRIVATE_KEY is invalid or corrupted."
             exit 1
           fi
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
-          
+
+          if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            retry 5 ssh-keyscan -T 10 -H -t ed25519,ecdsa "$SSH_HOST" > ~/.ssh/known_hosts
+          fi
+          chmod 600 ~/.ssh/known_hosts
+
+          SSH_OPTS="-i ~/.ssh/deploy_key -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ConnectionAttempts=3 -o ServerAliveInterval=15 -o ServerAliveCountMax=3"
+
           # Copy deployment files to server
-          scp -i ~/.ssh/deploy_key compose.deploy.yaml Caddyfile "$SSH_USER@$SSH_HOST:/opt/mecfs-paperwork/"
-          
+          retry 5 scp $SSH_OPTS compose.deploy.yaml Caddyfile "$SSH_USER@$SSH_HOST:/opt/mecfs-paperwork/"
+
           # Execute deployment commands on server
-          ssh -i ~/.ssh/deploy_key "$SSH_USER@$SSH_HOST" \
+          retry 5 ssh $SSH_OPTS "$SSH_USER@$SSH_HOST" \
             "cd /opt/mecfs-paperwork && \
              echo '$DOCKERHUB_TOKEN' | docker login -u '$DOCKERHUB_USERNAME' --password-stdin && \
              docker compose -f compose.deploy.yaml pull && \

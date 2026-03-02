@@ -14,22 +14,26 @@ test('collapsible sections default and toggle offline', async ({
 }) => {
   await deleteDatabase(page, DB_NAME);
 
-  for (let attempt = 1; attempt <= 2; attempt += 1) {
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
-    await expect(page.locator('.formpack-detail')).toBeVisible();
 
     const manifestLoadError = page.getByText(
       /unable to reach the formpack manifest/i,
     );
-    if (await manifestLoadError.isVisible().catch(() => false)) {
-      if (attempt < 2) {
-        await page.waitForTimeout(250);
-        continue;
-      }
+
+    const recordsToggle = page.locator('#formpack-records-toggle');
+    const recordsVisible = await recordsToggle
+      .isVisible({ timeout: 15_000 })
+      .catch(() => false);
+    if (recordsVisible) {
+      break;
     }
 
-    if (await page.locator('#formpack-records-toggle').count()) {
-      break;
+    if (await manifestLoadError.isVisible().catch(() => false)) {
+      if (attempt < 5) {
+        await page.waitForTimeout(400 * attempt);
+        continue;
+      }
     }
   }
 

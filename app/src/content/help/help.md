@@ -4,6 +4,8 @@ Diese Anwendung hilft dir, **Formulare und Schreiben strukturiert zu erstellen**
 Am Ende kannst du ein **DOCX-Dokument** (zur Weiterbearbeitung) oder eine **PDF-Datei** (zum direkten Versenden/Drucken) exportieren.
 
 > Datenschutz-Hinweis: Bitte gib **keine sensiblen Gesundheitsdaten** in öffentliche Bereiche (z. B. GitHub-Issues, Support-Mails, Screenshots) ein. Behandle Exporte sorgfältig.
+>
+> Sprach-Hinweis: Aus Gründen der besseren Lesbarkeit und wegen begrenzter Energie vieler Nutzer verzichten wir auf Genderzeichen. Gemeint sind selbstverständlich alle Menschen.
 
 ---
 
@@ -50,6 +52,8 @@ Mit dem JSON-Export sicherst du deine Eingaben als Datei.
 
 - Ideal als **Backup** (z. B. bevor du Gerät/Browser wechselst).
 - Nützlich, wenn du einen Fall später wieder importieren willst.
+- Optional kannst du den JSON-Export mit einem **Kennwort verschlüsseln**.
+- Wenn du verschlüsselst: Kennwort sicher aufbewahren. Ohne dieses Kennwort ist der Import nicht möglich.
 
 ### JSON importieren (Wiederherstellen/Übertragen)
 
@@ -57,6 +61,8 @@ Mit dem Import lädst du eine zuvor exportierte JSON-Datei wieder in die App.
 
 - Gut zum Umzug auf ein anderes Gerät oder wenn du aus einem Backup wiederherstellen willst.
 - Wenn es eine Option „Aktiven Entwurf überschreiben“ gibt: nutze sie nur bewusst, wenn du den aktuellen Stand wirklich ersetzen willst.
+- Für **verschlüsselte JSON-Dateien** musst du beim Import dasselbe Kennwort eingeben wie beim Export.
+- Falls „Daten passen nicht zum aktuellen Schema“ erscheint: prüfe, ob Datei und aktuelles Formpack zusammenpassen und ob die Datei vollständig ist.
 
 ---
 
@@ -158,8 +164,13 @@ Typischer Ablauf:
 - Lade die Seite neu.
 - Versuche das ganze nochmal in einem „Privaten Fenster“ (Hinweis: Daten werden dort ggf. nicht gespeichert).
 - Wenn das nicht hilft: kontaktier uns über den Feedback-Button.
-- Wenn das nicht hilft: kontaktier uns über den Feedback-Button.
 - Falls du damit leben kannst die Daten nochmal einzugeben, scroll nach unten und klicke auf "Alle lokalen Daten löschen"
+
+**„Lokale Daten können nicht entschlüsselt werden.“**
+
+- Das passiert meist, wenn Browser-Cookies gelöscht wurden, aber noch verschlüsselte Entwürfe in IndexedDB liegen.
+- In diesem Fall ist eine Wiederherstellung in der App nicht möglich.
+- Nutze „Alle lokalen Daten löschen“, um den lokalen Speicher vollständig zurückzusetzen.
 
 ---
 
@@ -167,6 +178,8 @@ Typischer Ablauf:
 
 - Prüfe vor dem Teilen eines DOCX/PDF/JSON, ob Inhalte enthalten sind, die du nicht weitergeben möchtest.
 - Es werden nach dem Laden der Seite keine weiteren Daten zwischen deinem Gerät und dem Server ausgetauscht (außer zur Prüfung auf Formpack-Updates).
+- Entwürfe, Snapshots und gespeicherte Stammdaten werden lokal vor der IndexedDB-Ablage verschlüsselt. Der benötigte Schlüssel liegt als technischer Cookie im Browserprofil.
+- Bei verschlüsselten JSON-Exporten wird das Kennwort ausschließlich lokal zur Ver- und Entschlüsselung verwendet und nicht übertragen oder gespeichert. Ohne Kennwort ist ein späterer Import nicht möglich.
 - Lokale Daten löschen: Wenn du alle lokal gespeicherten Daten (Entwürfe, Snapshots, lokale Exporte) auf diesem Gerät entfernen möchtest, nutze die Option "Alle lokalen Daten löschen" (zu finden in den Einstellungen bzw. am Ende der Hilfeseite). Diese Aktion entfernt alle lokalen Daten nur auf diesem Gerät und ist dauerhaft; sie kann nicht rückgängig gemacht werden.
 - Wenn du nur einzelne Entwürfe oder Snapshots löschen willst, verwende die jeweilige Löschfunktion in der Entwurfs-/Snapshot-Ansicht.
 - Alternativ kannst du gespeicherte Browserdaten über die Einstellungen deines Browsers (Verlauf/Browserdaten löschen) entfernen.

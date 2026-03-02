@@ -1,5 +1,5 @@
 /* global process, console */
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { checkNodeVersion } from './check-node-version.mjs';
 
 checkNodeVersion();
@@ -9,47 +9,96 @@ const C_RED = '\x1b[31m';
 const C_GREEN = '\x1b[32m';
 const C_CYAN = '\x1b[36m';
 
-const GATES = [
+const STATIC_GATES = [
   { name: 'Format Check', command: 'npm', args: ['run', 'format:check'] },
   { name: 'Lint', command: 'npm', args: ['run', 'lint'] },
   { name: 'Typecheck', command: 'npm', args: ['run', 'typecheck'] },
-  { name: 'Unit Tests', command: 'npm', args: ['test'] },
-  { name: 'E2E Tests', command: 'npm', args: ['run', 'test:e2e'] },
+  {
+    name: 'Duplication Check (0 lines)',
+    command: 'npm',
+    args: ['run', 'duplication:check'],
+  },
   {
     name: 'Formpack Validation',
     command: 'npm',
     args: ['run', 'formpack:validate'],
   },
-  { name: 'Build', command: 'npm', args: ['run', 'build'] },
 ];
 
-console.log(`${C_CYAN}🧩 Wrench: Running all Quality Gates...${C_RESET}\n`);
+const SEQUENTIAL_GATES = [
+  { name: 'Unit Tests', command: 'npm', args: ['test'] },
+  {
+    name: 'Changed-file Coverage (100%)',
+    command: 'npm',
+    args: ['run', 'test:coverage:changed'],
+  },
+  { name: 'Build', command: 'npm', args: ['run', 'build:bundle'] },
+  { name: 'E2E Tests', command: 'npm', args: ['run', 'test:e2e'] },
+];
 
-let failed = false;
-
-for (const gate of GATES) {
-  console.log(`${C_CYAN}==> Running ${gate.name}...${C_RESET}`);
-
-  const result = spawnSync(gate.command, gate.args, {
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
+const runGate = (gate) =>
+  new Promise((resolve) => {
+    console.log(`${C_CYAN}==> Running ${gate.name}...${C_RESET}`);
+    const child = spawn(gate.command, gate.args, {
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
+    child.on('close', (code) => {
+      resolve({
+        name: gate.name,
+        success: code === 0,
+        code: code ?? 1,
+      });
+    });
   });
 
-  if (result.status !== 0) {
-    console.error(
-      `\n${C_RED}❌ ${gate.name} failed with exit code ${result.status}.${C_RESET}`,
-    );
-    failed = true;
-    break;
+const runStaticGates = async () => {
+  console.log(
+    `${C_CYAN}🧩 Wrench: Running static quality gates in parallel...${C_RESET}\n`,
+  );
+  const results = await Promise.all(STATIC_GATES.map((gate) => runGate(gate)));
+  let failed = false;
+  for (const result of results) {
+    if (!result.success) {
+      console.error(
+        `\n${C_RED}❌ ${result.name} failed with exit code ${result.code}.${C_RESET}`,
+      );
+      failed = true;
+    } else {
+      console.log(`${C_GREEN}✅ ${result.name} passed.${C_RESET}`);
+    }
   }
+  return !failed;
+};
 
-  console.log(`${C_GREEN}✅ ${gate.name} passed.${C_RESET}\n`);
-}
+const runSequentialGates = async () => {
+  console.log(
+    `\n${C_CYAN}🧩 Wrench: Running sequential quality gates...${C_RESET}\n`,
+  );
+  for (const gate of SEQUENTIAL_GATES) {
+    const result = await runGate(gate);
+    if (!result.success) {
+      console.error(
+        `\n${C_RED}❌ ${result.name} failed with exit code ${result.code}.${C_RESET}`,
+      );
+      return false;
+    }
+    console.log(`${C_GREEN}✅ ${result.name} passed.${C_RESET}\n`);
+  }
+  return true;
+};
 
-if (failed) {
+const staticPassed = await runStaticGates();
+if (!staticPassed) {
   console.log(`${C_RED}🛑 Quality Gates FAILED.${C_RESET}`);
   process.exit(1);
-} else {
-  console.log(`${C_GREEN}🎉 All Quality Gates PASSED!${C_RESET}`);
-  process.exit(0);
 }
+
+const sequentialPassed = await runSequentialGates();
+if (!sequentialPassed) {
+  console.log(`${C_RED}🛑 Quality Gates FAILED.${C_RESET}`);
+  process.exit(1);
+}
+
+console.log(`${C_GREEN}🎉 All Quality Gates PASSED!${C_RESET}`);
+process.exit(0);

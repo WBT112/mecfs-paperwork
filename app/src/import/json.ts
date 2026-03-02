@@ -54,9 +54,29 @@ export type ImportValidationResult =
 
 type OptionalRjsfSchema = RJSFSchema | boolean | undefined;
 
+/** Maximum accepted import size (10 MB). */
+const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+const MAX_UTF8_BYTES_PER_CODE_POINT = 4;
+const MAX_IMPORT_CHARS_WITHOUT_ENCODING = Math.floor(
+  MAX_IMPORT_BYTES / MAX_UTF8_BYTES_PER_CODE_POINT,
+);
+const IMPORT_SIZE_ENCODER = new TextEncoder();
+
+/** Maximum nesting depth for recursive schema operations. */
+const MAX_SCHEMA_DEPTH = 50;
+
 const parseJson = (
   value: string,
 ): { payload: unknown } | { error: 'invalid_json'; message: string } => {
+  if (
+    value.length > MAX_IMPORT_CHARS_WITHOUT_ENCODING &&
+    IMPORT_SIZE_ENCODER.encode(value).byteLength > MAX_IMPORT_BYTES
+  ) {
+    return {
+      error: 'invalid_json',
+      message: 'The file exceeds the 10 MB size limit.',
+    };
+  }
   const normalized = value.replace(/^\uFEFF/, '').trimStart();
   if (!normalized) {
     return { error: 'invalid_json', message: 'The file is empty.' };
@@ -132,32 +152,114 @@ const validateSchema = (schema: RJSFSchema, data: unknown): boolean => {
   return validate(data);
 };
 
-// Create a lenient version of schema for import validation
-// Removes 'required' and 'minLength' constraints to allow partial data import
-const makeLenientSchema = (schema: RJSFSchema): RJSFSchema => {
-  const lenient = { ...schema };
+const makeLenientSubschema = (
+  schema: OptionalRjsfSchema,
+  depth: number,
+): OptionalRjsfSchema => {
+  if (!schema || typeof schema !== 'object') {
+    return schema;
+  }
+  return makeLenientSchema(schema, depth + 1);
+};
 
-  // Remove top-level 'required' constraint
+const makeLenientSubschemaArray = (
+  schemas: unknown,
+  depth: number,
+): unknown => {
+  if (!Array.isArray(schemas)) {
+    return schemas;
+  }
+  return schemas.map((entry) =>
+    makeLenientSubschema(entry as OptionalRjsfSchema, depth),
+  );
+};
+
+// Create a lenient version of schema for import validation.
+// Removes strict presence/length constraints recursively so older or partial
+// exports stay importable after schema evolution.
+const makeLenientSchema = (schema: RJSFSchema, depth = 0): RJSFSchema => {
+  if (depth > MAX_SCHEMA_DEPTH) {
+    return schema;
+  }
+
+  const lenient: RJSFSchema = { ...schema };
+
   delete lenient.required;
+  delete lenient.enum;
+  delete lenient.const;
+  delete lenient.format;
+  delete lenient.pattern;
+  delete lenient.minLength;
+  delete lenient.maxLength;
+  delete lenient.minItems;
+  delete lenient.maxItems;
+  delete lenient.minProperties;
+  delete lenient.maxProperties;
 
-  // Remove 'minLength' from string properties
-  if (lenient.properties) {
-    const properties = { ...lenient.properties };
+  if (lenient.properties && typeof lenient.properties === 'object') {
+    const properties = { ...lenient.properties } as Record<string, unknown>;
     for (const key of Object.keys(properties)) {
-      const prop = properties[key];
-      if (prop && typeof prop === 'object' && !Array.isArray(prop)) {
-        const propCopy = { ...prop };
-        delete propCopy.minLength;
-
-        // Recursively handle nested objects
-        if (propCopy.type === 'object') {
-          properties[key] = makeLenientSchema(propCopy as RJSFSchema);
-        } else {
-          properties[key] = propCopy;
-        }
-      }
+      properties[key] = makeLenientSubschema(
+        properties[key] as OptionalRjsfSchema,
+        depth,
+      );
     }
-    lenient.properties = properties;
+    lenient.properties = properties as NonNullable<RJSFSchema['properties']>;
+  }
+
+  if (Array.isArray(lenient.items)) {
+    lenient.items = lenient.items.map((entry) =>
+      makeLenientSubschema(entry as OptionalRjsfSchema, depth),
+    ) as unknown as RJSFSchema['items'];
+  } else {
+    lenient.items = makeLenientSubschema(
+      lenient.items as OptionalRjsfSchema,
+      depth,
+    ) as RJSFSchema['items'];
+  }
+
+  lenient.additionalProperties = makeLenientSubschema(
+    lenient.additionalProperties as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['additionalProperties'];
+  lenient.not = makeLenientSubschema(
+    lenient.not as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['not'];
+  lenient.if = makeLenientSubschema(
+    lenient.if as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['if'];
+  const lenientRecord = lenient as Record<string, unknown>;
+  const thenSubschema = makeLenientSubschema(
+    lenientRecord['then'] as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['then'];
+  if (thenSubschema === undefined) {
+    delete lenientRecord['then'];
+  } else {
+    // JSON Schema uses "then" as a keyword; Reflect.set avoids unicorn/no-thenable.
+    Reflect.set(lenientRecord, 'then', thenSubschema as unknown);
+  }
+  lenient.else = makeLenientSubschema(
+    lenient.else as OptionalRjsfSchema,
+    depth,
+  ) as RJSFSchema['else'];
+  lenient.allOf = makeLenientSubschemaArray(lenient.allOf, depth) as
+    | RJSFSchema['allOf']
+    | undefined;
+  lenient.anyOf = makeLenientSubschemaArray(lenient.anyOf, depth) as
+    | RJSFSchema['anyOf']
+    | undefined;
+  lenient.oneOf = makeLenientSubschemaArray(lenient.oneOf, depth) as
+    | RJSFSchema['oneOf']
+    | undefined;
+  if (lenient.$defs && typeof lenient.$defs === 'object') {
+    const defs = { ...lenient.$defs } as Record<string, unknown>;
+    for (const key of Object.keys(defs)) {
+      defs[key] = makeLenientSubschema(defs[key] as OptionalRjsfSchema, depth);
+    }
+    lenient.$defs = defs as NonNullable<RJSFSchema['$defs']>;
   }
 
   return lenient;
@@ -193,8 +295,9 @@ const resolveSchemaDefaultValue = (schema: OptionalRjsfSchema): unknown => {
 const removeReadOnlyFields = (
   schema: RJSFSchema,
   data: Record<string, unknown>,
+  depth = 0,
 ): Record<string, unknown> => {
-  if (!schema.properties) {
+  if (depth > MAX_SCHEMA_DEPTH || !schema.properties) {
     return data;
   }
 
@@ -215,8 +318,75 @@ const removeReadOnlyFields = (
 
     // Recursively handle nested objects
     if (propertySchema.type === 'object' && isRecord(normalized[key])) {
-      normalized[key] = removeReadOnlyFields(propertySchema, normalized[key]);
+      normalized[key] = removeReadOnlyFields(
+        propertySchema,
+        normalized[key],
+        depth + 1,
+      );
     }
+  }
+
+  return normalized;
+};
+
+const getFirstItemSchema = (
+  schema: RJSFSchema,
+): OptionalRjsfSchema | undefined => {
+  if (Array.isArray(schema.items)) {
+    return schema.items[0] as OptionalRjsfSchema;
+  }
+  return schema.items as OptionalRjsfSchema;
+};
+
+// Remove unknown fields when schema disallows additional properties.
+// This keeps imports compatible with older exports after schema evolution.
+const removeUnknownSchemaFields = (
+  schema: RJSFSchema,
+  data: unknown,
+  depth = 0,
+): unknown => {
+  if (depth > MAX_SCHEMA_DEPTH) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    const itemSchema = getFirstItemSchema(schema);
+    if (!itemSchema || typeof itemSchema !== 'object') {
+      return data;
+    }
+    return data.map((item) =>
+      removeUnknownSchemaFields(itemSchema, item, depth + 1),
+    );
+  }
+
+  if (!isRecord(data)) {
+    return data;
+  }
+
+  if (!schema.properties) {
+    return data;
+  }
+
+  const properties = schema.properties as Record<string, unknown>;
+  const allowsAdditionalProperties = schema.additionalProperties === true;
+  const normalized: Record<string, unknown> = allowsAdditionalProperties
+    ? { ...data }
+    : {};
+
+  for (const [key, value] of Object.entries(data)) {
+    const propertySchema = properties[key] as OptionalRjsfSchema;
+    if (!propertySchema || typeof propertySchema !== 'object') {
+      if (allowsAdditionalProperties) {
+        normalized[key] = value;
+      }
+      continue;
+    }
+
+    normalized[key] = removeUnknownSchemaFields(
+      propertySchema,
+      value,
+      depth + 1,
+    );
   }
 
   return normalized;
@@ -256,15 +426,12 @@ const addRequiredDefaults = (
 const applyNestedDefaults = (
   schema: RJSFSchema,
   normalized: Record<string, unknown>,
+  depth: number,
 ): void => {
-  if (!schema.properties) {
-    return;
-  }
+  const properties = schema.properties as Record<string, unknown>;
 
   for (const key of Object.keys(normalized)) {
-    const propertySchema = (schema.properties as Record<string, unknown>)[
-      key
-    ] as OptionalRjsfSchema;
+    const propertySchema = properties[key] as OptionalRjsfSchema;
 
     if (
       propertySchema &&
@@ -272,7 +439,11 @@ const applyNestedDefaults = (
       propertySchema.type === 'object' &&
       isRecord(normalized[key])
     ) {
-      normalized[key] = applySchemaDefaults(propertySchema, normalized[key]);
+      normalized[key] = applySchemaDefaults(
+        propertySchema,
+        normalized[key],
+        depth + 1,
+      );
     }
   }
 };
@@ -280,8 +451,9 @@ const applyNestedDefaults = (
 const applySchemaDefaults = (
   schema: RJSFSchema,
   data: Record<string, unknown>,
+  depth = 0,
 ): Record<string, unknown> => {
-  if (!schema.properties) {
+  if (depth > MAX_SCHEMA_DEPTH || !schema.properties) {
     return data;
   }
 
@@ -291,7 +463,7 @@ const applySchemaDefaults = (
   addRequiredDefaults(schema, normalized);
 
   // Recursively apply defaults to nested objects
-  applyNestedDefaults(schema, normalized);
+  applyNestedDefaults(schema, normalized, depth);
 
   return normalized;
 };
@@ -450,7 +622,14 @@ const normalizeExportPayload = (
 
   // Remove readOnly fields before validation (they're auto-generated, not user input)
   const withoutReadOnly = removeReadOnlyFields(schema, recordDataResult.value);
-  const normalizedData = applySchemaDefaults(schema, withoutReadOnly);
+  const withoutUnknownFields = removeUnknownSchemaFields(
+    schema,
+    withoutReadOnly,
+  );
+  const normalizedData = applySchemaDefaults(
+    schema,
+    withoutUnknownFields as Record<string, unknown>,
+  );
 
   // Use lenient schema for import validation (allows partial/incomplete data)
   const lenientSchema = makeLenientSchema(schema);
@@ -480,13 +659,15 @@ const normalizeExportPayload = (
 };
 
 /**
- * Migration stub for future JSON export format changes.
+ * Migration hook for JSON export format evolution.
+ * Keep this pure so imports remain deterministic and testable.
  */
 export const migrateExport = (payload: JsonImportPayload): JsonImportPayload =>
   payload;
 
 /**
  * Parses and validates JSON import payloads for a formpack.
+ * SECURITY: returns structured error codes and avoids exposing raw payload data.
  */
 export const validateJsonImport = (
   rawJson: string,

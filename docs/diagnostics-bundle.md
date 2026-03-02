@@ -21,6 +21,7 @@ The support bundle is a privacy-safe metadata export designed for troubleshootin
 | **IndexedDB**      | Database names, object store names, record counts       |
 | **Storage Health** | IDB availability, quota usage/limit, status             |
 | **Formpacks**      | Formpack IDs and version hashes (no form content)       |
+| **Performance**    | User timing measures (`mecfs.*`) for technical profiling |
 | **Errors**         | Last 50 app errors (message + source only, redacted)    |
 
 ## What's explicitly excluded
@@ -31,6 +32,7 @@ The support bundle is a privacy-safe metadata export designed for troubleshootin
 - Email addresses, dates of birth, names
 - Any personal or medical data
 - Anything that could identify a patient
+- Performance timings containing user-entered form content
 
 ## Privacy statement
 
@@ -88,4 +90,5 @@ Use this when:
 - Bundle format: JSON (single file)
 - Error buffer: In-memory ring buffer, max 50 entries, truncated to 500 chars each
 - Redaction: Forbidden keys are stripped recursively; email/date patterns are detected
+- Performance: Includes the latest 200 `mecfs.*` user timing measures (name + start/duration only)
 - No network requests: Everything is collected from browser APIs

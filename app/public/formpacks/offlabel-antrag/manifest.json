@@ -1,0 +1,252 @@
+{
+  "id": "offlabel-antrag",
+  "version": "1.0.0",
+  "defaultLocale": "de",
+  "locales": [
+    "de",
+    "en"
+  ],
+  "titleKey": "offlabel-antrag.title",
+  "descriptionKey": "offlabel-antrag.description",
+  "exports": [
+    "docx",
+    "pdf",
+    "json"
+  ],
+  "visibility": "public",
+  "meta": {
+    "category": "insurer",
+    "keywords": [
+      "offlabel",
+      "kostenübernahme",
+      "krankenkasse",
+      "medikament",
+      "antrag"
+    ]
+  },
+  "docx": {
+    "templates": {
+      "a4": "templates/a4.docx"
+    },
+    "mapping": "docx/mapping.json"
+  },
+  "ui": {
+    "introGate": {
+      "enabled": true,
+      "acceptedFieldPath": "meta.introAccepted",
+      "titleKey": "offlabel-antrag.ui.intro.title",
+      "bodyKey": "offlabel-antrag.ui.intro.body",
+      "checkboxLabelKey": "offlabel-antrag.ui.intro.checkboxLabel",
+      "startButtonLabelKey": "offlabel-antrag.ui.intro.startButtonLabel",
+      "reopenButtonLabelKey": "offlabel-antrag.ui.intro.reopenButtonLabel"
+    },
+    "infoBoxes": [
+      {
+        "id": "drug-agomelatin",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.agomelatine",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "agomelatin"
+          }
+        ]
+      },
+      {
+        "id": "drug-ivabradine",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.ivabradine",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "ivabradine"
+          }
+        ]
+      },
+      {
+        "id": "drug-vortioxetine",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.vortioxetine",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "vortioxetine"
+          }
+        ]
+      },
+      {
+        "id": "drug-ldn",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.ldn",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "ldn"
+          }
+        ]
+      },
+      {
+        "id": "drug-aripiprazole",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.aripiprazole",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "aripiprazole"
+          }
+        ]
+      },
+      {
+        "id": "drug-methylphenidate",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.methylphenidate",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "methylphenidate"
+          }
+        ]
+      },
+      {
+        "id": "drug-other",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.other",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "other"
+          }
+        ]
+      },
+      {
+        "id": "offlabel-flow-status-regular",
+        "anchor": "request",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.flowStatus.regular",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          },
+          {
+            "path": "request.applySection2Abs1a",
+            "op": "neq",
+            "value": true
+          }
+        ]
+      },
+      {
+        "id": "offlabel-flow-status-regular-aux",
+        "anchor": "request",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.flowStatus.regularWithAux",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          },
+          {
+            "path": "request.applySection2Abs1a",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      {
+        "id": "offlabel-flow-status-direct-section2",
+        "anchor": "request",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.flowStatus.directSection2",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "other"
+          }
+        ]
+      },
+      {
+        "id": "indication-selection",
+        "anchor": "request.selectedIndicationKey",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.selectedIndicationKey",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          }
+        ]
+      },
+      {
+        "id": "indication-confirmation",
+        "anchor": "request.indicationFullyMetOrDoctorConfirms",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.p2a",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          }
+        ]
+      },
+      {
+        "id": "section-2-abs-1a",
+        "anchor": "request.applySection2Abs1a",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.section2a",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "neq",
+            "value": "other"
+          }
+        ]
+      },
+      {
+        "id": "standard-of-care-other-note",
+        "anchor": "request.standardOfCareTriedFreeText",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.standardOfCareOther",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "other"
+          }
+        ]
+      }
+    ]
+  }
+}

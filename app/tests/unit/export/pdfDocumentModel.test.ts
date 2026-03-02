@@ -89,6 +89,32 @@ describe('buildDoctorLetterDocumentModel', () => {
       throw new Error('Expected a kvTable block for doctor rows.');
     }
 
+    const patientRows = patientSection.blocks.find(
+      (block) => block.type === 'kvTable',
+    );
+    expect(patientRows?.type).toBe('kvTable');
+    if (!patientRows) {
+      throw new Error('Expected a kvTable block for patient rows.');
+    }
+    expect(patientRows.rows.map((row) => row[0])).toEqual([
+      'Vorname',
+      'Name',
+      'Straße und Hausnummer',
+      'PLZ',
+      'Ort',
+    ]);
+
+    expect(doctorRows.rows.map((row) => row[0])).toEqual([
+      'Praxisname',
+      'Titel',
+      'Anrede',
+      'Name',
+      'Straße und Hausnummer',
+      'PLZ',
+      'Ort',
+      'Datum',
+    ]);
+
     const dateRow = doctorRows.rows.find((row) => row[0] === 'Datum');
     expect(dateRow?.[1]).toBeTruthy();
 

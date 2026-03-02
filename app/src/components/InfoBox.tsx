@@ -21,19 +21,8 @@ export const InfoBox = memo(function InfoBox({
 
   return (
     <div
-      className={`info-box ${className}`}
-      style={{
-        backgroundColor: 'var(--color-info-bg, #e3f2fd)',
-        border: '1px solid var(--color-info-border, #2196f3)',
-        borderRadius: '4px',
-        padding: '0.75rem 1rem',
-        marginTop: '0.5rem',
-        marginBottom: '0.5rem',
-        fontSize: '0.9rem',
-        color: 'var(--color-info-text, #0d47a1)',
-      }}
+      className={['info-box', className].filter(Boolean).join(' ')}
       role="note"
-      aria-live="polite"
     >
       <span className="info-box__icon" aria-hidden="true">
         ℹ️

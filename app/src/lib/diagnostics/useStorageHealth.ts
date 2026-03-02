@@ -9,6 +9,9 @@ const INITIAL_STATE: StorageHealthInfo = {
   message: '',
 };
 
+/**
+ * React hook wrapper for storage-health diagnostics with manual refresh support.
+ */
 export const useStorageHealth = (): {
   health: StorageHealthInfo;
   loading: boolean;
@@ -34,7 +37,7 @@ export const useStorageHealth = (): {
             indexedDbAvailable: false,
             storageEstimate: { supported: false },
             status: 'error',
-            message: 'Failed to check storage health.',
+            message: 'storageHealthGuidanceError',
           });
         }
       })

@@ -16,9 +16,10 @@ updates:
       - "type:dependencies"
     # Reduce supply-chain risk + noise: delay very fresh releases
     cooldown:
+      default-days: 14
       semver-major-days: 30
       semver-minor-days: 14
-      semver-patch-days: 7
+      semver-patch-days: 14
     # Bundle low-risk updates; majors remain separate PRs
     groups:
       root-minor-and-patch:
@@ -43,9 +44,10 @@ updates:
     labels:
       - "type:dependencies"
     cooldown:
+      default-days: 14
       semver-major-days: 30
       semver-minor-days: 14
-      semver-patch-days: 7
+      semver-patch-days: 14
     groups:
       app-minor-and-patch:
         applies-to: "version-updates"

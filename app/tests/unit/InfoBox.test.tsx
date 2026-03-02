@@ -14,10 +14,10 @@ describe('InfoBox', () => {
     expect(noteDiv).toBeInTheDocument();
   });
 
-  it('has proper ARIA attributes', () => {
+  it('renders as a static note without aria-live announcements', () => {
     const { container } = render(<InfoBox message="Important note" />);
     const noteDiv = container.querySelector('[role="note"]');
-    expect(noteDiv).toHaveAttribute('aria-live', 'polite');
+    expect(noteDiv).not.toHaveAttribute('aria-live');
   });
 
   it('renders info icon emoji', () => {

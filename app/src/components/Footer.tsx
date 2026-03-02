@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { getRepoUrl } from '../lib/repo';
+import { getRepoUrl } from '../lib/repoUrl';
 import { getSponsorUrl } from '../lib/funding';
 import { APP_VERSION, BUILD_DATE_ISO, formatBuildDate } from '../lib/version';
 

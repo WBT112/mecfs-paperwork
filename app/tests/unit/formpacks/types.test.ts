@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FORMPACK_CATEGORIES,
   FORMPACK_EXPORT_TYPES,
   FORMPACK_VISIBILITIES,
+  isFormpackCategory,
   isFormpackExportType,
   isFormpackVisibility,
 } from '../../../src/formpacks/types';
@@ -30,5 +32,23 @@ describe('formpack type helpers', () => {
     expect(isFormpackVisibility(validVisibility)).toBe(true);
     expect(isFormpackVisibility(invalidVisibility)).toBe(false);
     expect(isFormpackVisibility(null)).toBe(false);
+  });
+
+  it('exposes the supported categories', () => {
+    expect(FORMPACK_CATEGORIES).toEqual([
+      'insurer',
+      'doctor',
+      'general',
+      'other',
+    ]);
+  });
+
+  it('validates categories', () => {
+    expect(isFormpackCategory('insurer')).toBe(true);
+    expect(isFormpackCategory('doctor')).toBe(true);
+    expect(isFormpackCategory('general')).toBe(true);
+    expect(isFormpackCategory('other')).toBe(true);
+    expect(isFormpackCategory('unknown')).toBe(false);
+    expect(isFormpackCategory(123)).toBe(false);
   });
 });

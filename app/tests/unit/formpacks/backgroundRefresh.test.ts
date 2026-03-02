@@ -31,8 +31,8 @@ vi.mock('../../../src/formpacks/metadata', () => ({
   deriveFormpackRevisionSignature,
 }));
 
-import { runFormpackBackgroundRefresh } from '../../../src/formpacks/backgroundRefresh';
 import {
+  runFormpackBackgroundRefresh,
   FORMPACKS_UPDATED_EVENT,
   startFormpackBackgroundRefresh,
 } from '../../../src/formpacks/backgroundRefresh';
@@ -173,6 +173,29 @@ describe('formpacks/backgroundRefresh', () => {
     expect(headers.get('x-formpack-refresh')).toBe('1');
   });
 
+  it('bootstraps metadata without invalidating caches when no baseline exists', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    installFetchMock();
+    getFormpackMeta.mockResolvedValue(null);
+
+    const result = await runFormpackBackgroundRefresh();
+
+    expect(result.skippedOffline).toBe(false);
+    expect(result.updatedIds).toEqual([]);
+    expect(upsertFormpackMeta).toHaveBeenCalledWith({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.1',
+      version: '1.0.1',
+      hash: 'new-hash',
+    });
+    expect(clearFormpackCaches).not.toHaveBeenCalled();
+    expect(clearFormpackI18nCache).not.toHaveBeenCalled();
+  });
+
   it('does not refresh unchanged revisions', async () => {
     Object.defineProperty(navigator, 'onLine', {
       configurable: true,
@@ -269,6 +292,200 @@ describe('formpacks/backgroundRefresh', () => {
     expect(result.updatedIds).toEqual([]);
     expect(upsertFormpackMeta).not.toHaveBeenCalled();
     expect(clearFormpackCaches).not.toHaveBeenCalled();
+  });
+
+  it('downloads wallet docx template resources when configured in manifest', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    const fetchMock = installFetchMock();
+    parseManifest.mockReturnValue({
+      ...parsedManifest,
+      docx: {
+        ...parsedManifest.docx,
+        templates: {
+          ...parsedManifest.docx.templates,
+          wallet: 'docx/wallet.docx',
+        },
+      },
+    });
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.0',
+      version: '1.0.0',
+      hash: 'old-hash',
+      updatedAt: UPDATED_AT,
+    });
+
+    const result = await runFormpackBackgroundRefresh();
+
+    expect(result.updatedIds).toEqual([FORMPACK_ID]);
+    const fetchedUrls = fetchMock.mock.calls.map(([input]) => String(input));
+    expect(
+      fetchedUrls.some((url) =>
+        url.endsWith(`/formpacks/${FORMPACK_ID}/docx/wallet.docx`),
+      ),
+    ).toBe(true);
+  });
+
+  it('refreshes changed formpacks without docx resources when manifest has no docx section', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    const fetchMock = installFetchMock();
+    parseManifest.mockReturnValue({
+      ...parsedManifest,
+      docx: undefined,
+    });
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.0',
+      version: '1.0.0',
+      hash: 'old-hash',
+      updatedAt: UPDATED_AT,
+    });
+
+    const result = await runFormpackBackgroundRefresh();
+
+    expect(result.updatedIds).toEqual([FORMPACK_ID]);
+    const fetchedUrls = fetchMock.mock.calls.map(([input]) => String(input));
+    expect(fetchedUrls.some((url) => url.includes('/docx/'))).toBe(false);
+  });
+
+  it('does not emit update callbacks/events when scheduled refresh finds no changes', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    installFetchMock();
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.1',
+      version: '1.0.1',
+      hash: 'new-hash',
+      updatedAt: UPDATED_AT,
+    });
+
+    let idleCallback:
+      | ((deadline: {
+          didTimeout: boolean;
+          timeRemaining: () => number;
+        }) => void)
+      | null = null;
+    vi.stubGlobal(
+      'requestIdleCallback',
+      vi.fn((callback: typeof idleCallback) => {
+        idleCallback = callback;
+        return 101;
+      }),
+    );
+    vi.stubGlobal('cancelIdleCallback', vi.fn());
+
+    const onUpdated = vi.fn();
+    const eventListener = vi.fn();
+    globalThis.addEventListener(
+      FORMPACKS_UPDATED_EVENT,
+      eventListener as EventListener,
+    );
+
+    const stop = startFormpackBackgroundRefresh({
+      onUpdated,
+      intervalMs: 60_000,
+    });
+
+    expect(idleCallback).toBeTypeOf('function');
+    idleCallback!({
+      didTimeout: false,
+      timeRemaining: () => 10,
+    });
+    await Promise.resolve();
+
+    expect(onUpdated).not.toHaveBeenCalled();
+    expect(eventListener).not.toHaveBeenCalled();
+
+    stop();
+    globalThis.removeEventListener(
+      FORMPACKS_UPDATED_EVENT,
+      eventListener as EventListener,
+    );
+  });
+
+  it('uses the default interval when no interval override is provided', () => {
+    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+    vi.stubGlobal(
+      'requestIdleCallback',
+      vi.fn(() => 202),
+    );
+    vi.stubGlobal('cancelIdleCallback', vi.fn());
+
+    const stop = startFormpackBackgroundRefresh();
+
+    const setIntervalDelay = setIntervalSpy.mock.calls.at(-1)?.[1];
+    expect(setIntervalDelay).toBe(6 * 60 * 60 * 1000);
+
+    stop();
+  });
+
+  it('ignores timeout, interval and online callbacks after stop with setTimeout scheduler fallback', async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    const fetchMock = installFetchMock();
+    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+
+    const stop = startFormpackBackgroundRefresh({ intervalMs: 10 });
+    stop();
+
+    await vi.advanceTimersByTimeAsync(2_000);
+    globalThis.dispatchEvent(new Event('online'));
+    await vi.advanceTimersByTimeAsync(50);
+    await Promise.resolve();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('returns early when timeout, interval, and online callbacks fire after stop', () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    const fetchMock = installFetchMock();
+    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
+    const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
+    const addEventListenerSpy = vi.spyOn(globalThis, 'addEventListener');
+
+    const stop = startFormpackBackgroundRefresh({ intervalMs: 10 });
+
+    const timeoutCallback = setTimeoutSpy.mock.calls.at(-1)?.[0] as
+      | (() => void)
+      | undefined;
+    const intervalCallback = setIntervalSpy.mock.calls.at(-1)?.[0] as
+      | (() => void)
+      | undefined;
+    const onlineListener = addEventListenerSpy.mock.calls.find(
+      ([type]) => type === 'online',
+    )?.[1] as EventListener | undefined;
+
+    stop();
+
+    timeoutCallback?.();
+    intervalCallback?.();
+    onlineListener?.(new Event('online'));
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('runs scheduled refreshes via requestIdleCallback and emits update events', async () => {
@@ -370,6 +587,69 @@ describe('formpacks/backgroundRefresh', () => {
     stop();
   });
 
+  it('executes setTimeout and interval refresh paths while scheduler is active', async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    const fetchMock = installFetchMock();
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.1',
+      version: '1.0.1',
+      hash: 'new-hash',
+      updatedAt: UPDATED_AT,
+    });
+
+    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+
+    const stop = startFormpackBackgroundRefresh({ intervalMs: 10 });
+
+    await vi.advanceTimersByTimeAsync(1_600);
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(0);
+
+    const callsAfterTimeout = fetchMock.mock.calls.length;
+    await vi.advanceTimersByTimeAsync(20);
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(callsAfterTimeout);
+
+    stop();
+  });
+
+  it('handles online events while active without throwing', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    const fetchMock = installFetchMock();
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.1',
+      version: '1.0.1',
+      hash: 'new-hash',
+      updatedAt: UPDATED_AT,
+    });
+
+    vi.stubGlobal(
+      'requestIdleCallback',
+      vi.fn(() => 500),
+    );
+    vi.stubGlobal('cancelIdleCallback', vi.fn());
+
+    const stop = startFormpackBackgroundRefresh({ intervalMs: 60_000 });
+
+    const previousCalls = fetchMock.mock.calls.length;
+    globalThis.dispatchEvent(new Event('online'));
+    await Promise.resolve();
+
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(previousCalls);
+
+    stop();
+  });
+
   it('ignores a queued idle callback after refresh has been stopped', async () => {
     Object.defineProperty(navigator, 'onLine', {
       configurable: true,
@@ -403,6 +683,52 @@ describe('formpacks/backgroundRefresh', () => {
     });
 
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('swallows callback errors from timeout, interval and online refresh triggers', async () => {
+    vi.useFakeTimers();
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    installFetchMock();
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.0',
+      version: '1.0.0',
+      hash: 'old-hash',
+      updatedAt: UPDATED_AT,
+    });
+
+    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+
+    const eventListener = vi.fn();
+    globalThis.addEventListener(
+      FORMPACKS_UPDATED_EVENT,
+      eventListener as EventListener,
+    );
+
+    const stop = startFormpackBackgroundRefresh({
+      onUpdated: () => {
+        throw new Error('boom');
+      },
+      intervalMs: 10,
+    });
+
+    await vi.advanceTimersByTimeAsync(1_600);
+    await vi.advanceTimersByTimeAsync(20);
+    globalThis.dispatchEvent(new Event('online'));
+    await Promise.resolve();
+
+    expect(eventListener).not.toHaveBeenCalled();
+
+    stop();
+    globalThis.removeEventListener(
+      FORMPACKS_UPDATED_EVENT,
+      eventListener as EventListener,
+    );
   });
 
   it('swallows callback errors from onUpdated during scheduled refresh', async () => {
