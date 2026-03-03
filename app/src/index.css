@@ -1792,7 +1792,8 @@ body {
   color: var(--color-text-strong);
 }
 
-.help-page__storage-details dd[data-status='available'] {
+.help-page__storage-details dd[data-status='available'],
+.help-page__storage-details dd[data-status='ok'] {
   color: var(--color-success);
 }
 

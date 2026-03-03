@@ -69,3 +69,10 @@ it('does not accumulate statically unreachable index.css classes', () => {
 
   expect(unusedClasses).toEqual([...runtimeGeneratedAllowlist].sort());
 });
+
+it('styles help page storage status "ok" in the same success color as "available"', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+  expect(cssSource).toMatch(
+    /\.help-page__storage-details dd\[data-status='available'\],\s*\.help-page__storage-details dd\[data-status='ok'\]\s*\{\s*color:\s*var\(--color-success\);/m,
+  );
+});
