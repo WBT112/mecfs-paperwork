@@ -277,6 +277,9 @@ const TEMPLATE_COPY: Record<'de' | 'en', TemplateCopy> = {
 const getTemplateCopy = (locale: string): TemplateCopy =>
   locale.toLowerCase().startsWith('de') ? TEMPLATE_COPY.de : TEMPLATE_COPY.en;
 
+const normalizePdfLanguage = (locale: string): string =>
+  locale.toLowerCase().startsWith('de') ? 'de-DE' : 'en-US';
+
 const getSectionById = (model: DocumentModel, id: string) =>
   model.sections.find((section) => section.id === id);
 
@@ -336,7 +339,9 @@ export const DoctorLetterPdfDocument = ({
     | undefined;
 
   const locale = model.meta?.locale ?? 'de-DE';
+  const pdfLanguage = normalizePdfLanguage(locale);
   const copy = getTemplateCopy(locale);
+  const title = model.title?.trim() || copy.subject;
   const formattedDate =
     templateData?.formattedDate ??
     new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
@@ -366,9 +371,17 @@ export const DoctorLetterPdfDocument = ({
     .trim();
 
   return (
-    <Document>
+    <Document
+      title={title}
+      subject={copy.subject}
+      creator="mecfs-paperwork"
+      producer="@react-pdf/renderer"
+      keywords="ME/CFS, PDF, Doctor Letter"
+      language={pdfLanguage}
+      pageMode="useOutlines"
+    >
       {/* Page 1: Letter + attachments */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} bookmark={copy.subject}>
         {pLine ? <Text style={styles.headerPatientLine}>{pLine}</Text> : null}
         <View style={styles.hr} />
 
@@ -426,7 +439,7 @@ export const DoctorLetterPdfDocument = ({
       </Page>
 
       {/* Page 2: Annex 1 */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} bookmark={copy.annex1.title}>
         <Text style={styles.annexTitle}>{copy.annex1.title}</Text>
 
         <Image
@@ -445,7 +458,7 @@ export const DoctorLetterPdfDocument = ({
       </Page>
 
       {/* Page 3: Annex 2 */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} bookmark={copy.annex2.title}>
         <Text style={styles.annexTitle}>{copy.annex2.title}</Text>
         <Text style={styles.annexSubTitle}>{copy.annex2.subtitle}</Text>
         <Text style={styles.annexCaption}>

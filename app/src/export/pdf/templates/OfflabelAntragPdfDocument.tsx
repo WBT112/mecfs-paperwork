@@ -20,6 +20,8 @@ type LetterLike = {
 };
 
 const GREETING_LINES = new Set(['Mit freundlichen Grüßen', 'Kind regards']);
+const OFFLABEL_DE_TITLE = 'Off-Label-Antrag (Teil 1-3)';
+const OFFLABEL_EN_TITLE = 'Off-label application (parts 1-3)';
 
 const styles = StyleSheet.create({
   page: {
@@ -102,6 +104,12 @@ const styles = StyleSheet.create({
 });
 
 ensurePdfFontsRegistered();
+
+const normalizePdfLanguage = (locale: string): string =>
+  locale.toLowerCase().startsWith('de') ? 'de-DE' : 'en-US';
+
+const resolveOfflabelTitle = (locale: string): string =>
+  locale.toLowerCase().startsWith('de') ? OFFLABEL_DE_TITLE : OFFLABEL_EN_TITLE;
 
 const toKeyedEntries = (items: string[], prefix: string) => {
   const seenCounts = new Map<string, number>();
@@ -328,8 +336,10 @@ const renderChecklistItems = (items: string[], keyPrefix: string) =>
 
 const renderChecklistPage = ({
   checklist,
+  bookmark,
 }: {
   checklist: OffLabelPostExportChecklist;
+  bookmark: string;
 }) => {
   const attachmentItems =
     checklist.attachmentsItems.length > 0
@@ -337,7 +347,7 @@ const renderChecklistPage = ({
       : [checklist.attachmentsFallbackItem];
 
   return (
-    <Page size="A4" style={styles.page}>
+    <Page size="A4" style={styles.page} bookmark={bookmark}>
       <Text style={styles.subject}>{checklist.title}</Text>
       <Text style={styles.paragraph}>{checklist.intro}</Text>
 
@@ -390,12 +400,14 @@ const renderChecklistPage = ({
 const renderLetterPage = ({
   data,
   locale,
+  bookmark,
   includeSources = false,
   sourcesHeading,
   sources,
 }: {
   data: LetterLike;
   locale: string;
+  bookmark: string;
   includeSources?: boolean;
   sourcesHeading?: string;
   sources?: string[];
@@ -407,7 +419,7 @@ const renderLetterPage = ({
   );
 
   return (
-    <Page size="A4" style={styles.page}>
+    <Page size="A4" style={styles.page} bookmark={bookmark}>
       <View style={styles.senderBlock}>
         {toKeyedEntries(compactSenderLines, 'sender').map((entry) => (
           <Text key={entry.key} style={styles.senderLine}>
@@ -460,12 +472,16 @@ const renderLiabilityPage = ({ data }: { data: LetterLike }) => {
 
   return (
     <>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} bookmark={data.liabilityHeading}>
         <Text style={styles.subject}>{data.liabilityHeading}</Text>
         {renderParagraphs(before, 'liability-before-consent')}
       </Page>
       {fromConsent.length > 0 ? (
-        <Page size="A4" style={styles.page}>
+        <Page
+          size="A4"
+          style={styles.page}
+          bookmark={`${data.liabilityHeading} - Einwilligung`}
+        >
           {renderParagraphs(fromConsent, 'liability-from-consent')}
         </Page>
       ) : null}
@@ -483,9 +499,11 @@ const EMPTY_LETTER: LetterLike = {
 
 const OfflabelAntragPdfDocument = ({ model }: { model: DocumentModel }) => {
   const locale = model.meta?.locale ?? 'de';
+  const pdfLanguage = normalizePdfLanguage(locale);
   const templateData = model.meta?.templateData as
     | OfflabelPdfTemplateData
     | undefined;
+  const title = model.title?.trim() || resolveOfflabelTitle(locale);
 
   const part1 = templateData?.exportBundle.part1 ?? {
     ...EMPTY_LETTER,
@@ -499,10 +517,21 @@ const OfflabelAntragPdfDocument = ({ model }: { model: DocumentModel }) => {
   const checklist = templateData?.postExportChecklist;
 
   return (
-    <Document>
+    <Document
+      title={title}
+      subject={title}
+      creator="mecfs-paperwork"
+      producer="@react-pdf/renderer"
+      keywords="ME/CFS, Off-Label, PDF"
+      language={pdfLanguage}
+      pageMode="useOutlines"
+    >
       {renderLetterPage({
         data: part1,
         locale,
+        bookmark: locale.toLowerCase().startsWith('en')
+          ? 'Part 1 - Letter to health insurer'
+          : 'Teil 1 - Schreiben an die Krankenkasse',
         includeSources: true,
         sourcesHeading: templateData?.sourcesHeading,
         sources: templateData?.sources,
@@ -510,13 +539,24 @@ const OfflabelAntragPdfDocument = ({ model }: { model: DocumentModel }) => {
       {renderLetterPage({
         data: part2,
         locale,
+        bookmark: locale.toLowerCase().startsWith('en')
+          ? 'Part 2 - Cover letter to physician'
+          : 'Teil 2 - Begleitschreiben an die Arztpraxis',
       })}
       {renderLiabilityPage({ data: part2 })}
       {renderLetterPage({
         data: part3,
         locale,
+        bookmark: locale.toLowerCase().startsWith('en')
+          ? 'Part 3 - Physician statement template'
+          : 'Teil 3 - Ärztliche Stellungnahme / Befundbericht',
       })}
-      {checklist ? renderChecklistPage({ checklist }) : null}
+      {checklist
+        ? renderChecklistPage({
+            checklist,
+            bookmark: checklist.title,
+          })
+        : null}
     </Document>
   );
 };
