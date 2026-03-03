@@ -16,6 +16,9 @@ import {
   resolveMedicationProfile,
 } from '../../src/formpacks/offlabel-antrag/medications';
 
+const LDN_MECFS_FATIGUE_KEY = 'ldn.mecfs_fatigue';
+const LDN_LONG_POST_COVID_FATIGUE_KEY = 'ldn.long_post_covid_fatigue';
+
 describe('offlabel medications API', () => {
   const originalAgomelatinVisibility = MEDICATIONS.agomelatin.visibility;
 
@@ -86,7 +89,10 @@ describe('offlabel medications API', () => {
     const unknownIndications = getMedicationIndications('unknown', 'en');
 
     expect(ldnIndications.length).toBeGreaterThan(1);
-    expect(ldnIndications[0]?.key).toBe('ldn.mecfs_fatigue');
+    expect(ldnIndications.map((entry) => entry.key)).toEqual([
+      LDN_LONG_POST_COVID_FATIGUE_KEY,
+      LDN_MECFS_FATIGUE_KEY,
+    ]);
     expect(typeof ldnIndications[0]?.label).toBe('string');
     expect(unknownIndications).toEqual([]);
   });
@@ -104,14 +110,14 @@ describe('offlabel medications API', () => {
     ).toBeNull();
 
     const fallback = resolveMedicationIndication(MEDICATIONS.ldn, 123, 'de');
-    expect(fallback?.key).toBe('ldn.mecfs_fatigue');
+    expect(fallback?.key).toBe(LDN_MECFS_FATIGUE_KEY);
 
     const explicit = resolveMedicationIndication(
       MEDICATIONS.ldn,
-      'ldn.long_post_covid_fatigue',
+      LDN_LONG_POST_COVID_FATIGUE_KEY,
       'en',
     );
-    expect(explicit?.key).toBe('ldn.long_post_covid_fatigue');
+    expect(explicit?.key).toBe(LDN_LONG_POST_COVID_FATIGUE_KEY);
     expect(explicit?.diagnosisNominative).toContain('long/post-COVID');
   });
 });

@@ -1,6 +1,7 @@
 export const OFFLABEL_MEDICATION_KEYS = [
   'agomelatin',
   'ivabradine',
+  'pyridostigmine',
   'vortioxetine',
   'ldn',
   'aripiprazole',
@@ -87,6 +88,14 @@ const MECFS_FATIGUE_DE = 'postinfektiöse ME/CFS mit Fatigue';
 const AGOMELATIN_MECFS_FATIGUE_EN = 'post-infectious ME/CFS with fatigue';
 const AGOMELATIN_LONG_POST_COVID_FATIGUE_DE = 'Long-/Post-COVID mit Fatigue';
 const AGOMELATIN_LONG_POST_COVID_FATIGUE_EN = 'long/post-COVID with fatigue';
+const PYRIDOSTIGMINE_MECFS_DE =
+  'postinfektiöse ME/CFS mit Fatigue und orthostatischer Intoleranz';
+const PYRIDOSTIGMINE_MECFS_EN =
+  'post-infectious ME/CFS with fatigue and orthostatic intolerance';
+const PYRIDOSTIGMINE_LONG_POST_COVID_DE =
+  'Long/Post-COVID mit Fatigue und orthostatischer Intoleranz';
+const PYRIDOSTIGMINE_LONG_POST_COVID_EN =
+  'long/post-COVID with fatigue and orthostatic intolerance';
 const VORTIOXETINE_COGNITIVE_DE =
   'Long/Post-COVID mit kognitiven Beeinträchtigungen';
 const VORTIOXETINE_COGNITIVE_EN = 'long/post-COVID with cognitive impairment';
@@ -208,6 +217,19 @@ const mapLocaleRecord = <T>(
   de: factory('de'),
   en: factory('en'),
 });
+
+const getLocaleLabelCollator = (locale: MedicationLocale): Intl.Collator =>
+  new Intl.Collator(locale === 'de' ? 'de' : 'en', { sensitivity: 'base' });
+
+const sortOptionsAlphabetically = <T extends { label: string }>(
+  options: readonly T[],
+  locale: MedicationLocale,
+): T[] => {
+  const collator = getLocaleLabelCollator(locale);
+  return [...options].sort((left, right) =>
+    collator.compare(left.label, right.label),
+  );
+};
 
 const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
   {
@@ -372,6 +394,67 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
       [
         '5-20 mg once daily; start with 5 mg and adjust dose after 2 weeks; continue for at least 6 months after symptom remission',
         'discontinue in serotonin syndrome, hyponatremic encephalopathy, neuroleptic malignant syndrome, or intolerable adverse events.',
+        PRIOR_MEASURES_DEFAULT.en,
+      ],
+    ),
+  },
+  {
+    key: 'pyridostigmine',
+    displayNameDe: 'Pyridostigmin (Mestinon)',
+    displayNameEn: 'Pyridostigmine (Mestinon)',
+    selectionNameDe: 'Pyridostigmin (Mestinon)',
+    selectionNameEn: 'Pyridostigmine (Mestinon)',
+    infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.pyridostigmine',
+    expertSourceDate: '03.03.2026',
+    expertSourceTextOverride: {
+      de: 'ME/CFS: Joseph P et al. Neurovascular Dysregulation and Acute Exercise Intolerance in ME/CFS: A Randomized, Placebo-Controlled Trial of Pyridostigmine (Chest. 2022;162(5):1116-1126. DOI: 10.1016/j.chest.2022.04.146); Schlomer E et al. Pyridostigmine improves hand grip strength in ME/CFS (Front Neurosci. 2025;19:1637838. DOI: 10.3389/fnins.2025.1637838); Kawamura Y et al. Efficacy of a half dose of oral pyridostigmine in CFS: three case reports (Pathophysiology. 2003;9(3):189-194. DOI: 10.1016/S0928-4680(03)00007-5). Orthostatische Intoleranz/POTS: Singer W et al. (J Clin Neurophysiol. 2006;23(5):476-481. DOI: 10.1097/01.wnp.0000229946.01494.4c) und Kanjwal K et al. (Pacing Clin Electrophysiol. 2011;34(6):750-755. DOI: 10.1111/j.1540-8159.2011.03047.x). Laufende randomisierte Studie bei ME/CFS/Long COVID: NCT06366724.',
+      en: 'ME/CFS: Joseph P et al. Neurovascular Dysregulation and Acute Exercise Intolerance in ME/CFS: A Randomized, Placebo-Controlled Trial of Pyridostigmine (Chest. 2022;162(5):1116-1126. DOI: 10.1016/j.chest.2022.04.146); Schlomer E et al. Pyridostigmine improves hand grip strength in ME/CFS (Front Neurosci. 2025;19:1637838. DOI: 10.3389/fnins.2025.1637838); Kawamura Y et al. Efficacy of a half dose of oral pyridostigmine in CFS: three case reports (Pathophysiology. 2003;9(3):189-194. DOI: 10.1016/S0928-4680(03)00007-5). Orthostatic intolerance/POTS: Singer W et al. (J Clin Neurophysiol. 2006;23(5):476-481. DOI: 10.1097/01.wnp.0000229946.01494.4c) and Kanjwal K et al. (Pacing Clin Electrophysiol. 2011;34(6):750-755. DOI: 10.1111/j.1540-8159.2011.03047.x). Ongoing randomized trial in ME/CFS/long COVID: NCT06366724.',
+    },
+    indications: [
+      createTupleIndication(
+        'pyridostigmine.mecfs_fatigue_orthostatic_intolerance',
+        [
+          PYRIDOSTIGMINE_MECFS_DE,
+          PYRIDOSTIGMINE_MECFS_DE,
+          'postinfektiöser ME/CFS mit Fatigue und orthostatischer Intoleranz',
+          'Die Diagnose postinfektiöse ME/CFS ist gesichert (siehe Befunde). Fatigue und orthostatische Intoleranz sind dokumentiert.',
+          'Verbesserung von Belastbarkeit, Fatigue-bedingter Alltagseinschränkung und orthostatischer Symptomatik',
+        ],
+        [
+          PYRIDOSTIGMINE_MECFS_EN,
+          PYRIDOSTIGMINE_MECFS_EN,
+          PYRIDOSTIGMINE_MECFS_EN,
+          'The diagnosis of post-infectious ME/CFS is established (see findings). Fatigue and orthostatic intolerance are documented.',
+          'improvement of exertional tolerance, fatigue-related daily limitations, and orthostatic symptoms',
+        ],
+      ),
+      createTupleIndication(
+        'pyridostigmine.long_post_covid_fatigue_orthostatic_intolerance',
+        [
+          PYRIDOSTIGMINE_LONG_POST_COVID_DE,
+          PYRIDOSTIGMINE_LONG_POST_COVID_DE,
+          PYRIDOSTIGMINE_LONG_POST_COVID_DE,
+          'Die Diagnose Long/Post-COVID ist gesichert (siehe Befunde). Fatigue und orthostatische Intoleranz sind dokumentiert.',
+          'Verbesserung von Belastbarkeit, Fatigue-bedingter Alltagseinschränkung und orthostatischer Symptomatik',
+        ],
+        [
+          PYRIDOSTIGMINE_LONG_POST_COVID_EN,
+          PYRIDOSTIGMINE_LONG_POST_COVID_EN,
+          PYRIDOSTIGMINE_LONG_POST_COVID_EN,
+          'The diagnosis of long/post-COVID is established (see findings). Fatigue and orthostatic intolerance are documented.',
+          'improvement of exertional tolerance, fatigue-related daily limitations, and orthostatic symptoms',
+        ],
+      ),
+    ],
+    autoFacts: createAutoFactsByLocale(
+      [
+        'Start 30 mg 1x täglich; je nach Verträglichkeit Steigerung in 30-mg-Schritten auf 30-60 mg 2-3x täglich (typischer Off-Label-Therapieversuch 60-180 mg/Tag); Wirksamkeits-Check nach 8-12 Wochen',
+        'Engmaschiges Monitoring von Herzfrequenz, Blutdruck (inkl. Orthostase), GI-Nebenwirkungen, Speichel-/Bronchialsekretion und Belastungsverträglichkeit; strenge Prüfung bei Asthma/COPD, Bradykardie/AV-Block sowie mechanischer GI- oder Harnwegsobstruktion; Abbruch bei nicht tolerierbaren cholinergen Nebenwirkungen, ausgeprägter Bradykardie/Synkopen oder fehlendem Nutzen nach 8-12 Wochen',
+        PRIOR_MEASURES_DEFAULT.de,
+      ],
+      [
+        'start at 30 mg once daily; titrate in 30 mg steps as tolerated to 30-60 mg 2-3 times daily (typical off-label treatment trial 60-180 mg/day); efficacy check after 8-12 weeks',
+        'close monitoring of heart rate, blood pressure (including orthostatic response), gastrointestinal adverse effects, salivary/bronchial secretion, and exertional tolerance; strict review in asthma/COPD, bradycardia/AV block, and mechanical gastrointestinal or urinary obstruction; discontinue with intolerable cholinergic adverse effects, marked bradycardia/syncope, or lack of meaningful benefit after 8-12 weeks',
         PRIOR_MEASURES_DEFAULT.en,
       ],
     ),
@@ -686,11 +769,19 @@ export const getMedicationSelectionName = (
 export const getVisibleMedicationOptions = (
   locale: MedicationLocale,
   showDevMedications = false,
-): Array<{ key: MedicationKey; label: string }> =>
-  getVisibleMedicationKeys(showDevMedications).map((key) => ({
+): Array<{ key: MedicationKey; label: string }> => {
+  const options = getVisibleMedicationKeys(showDevMedications).map((key) => ({
     key,
     label: getMedicationSelectionName(key, locale),
   }));
+  const collator = getLocaleLabelCollator(locale);
+
+  return [...options].sort(
+    (left, right) =>
+      Number(left.key === 'other') - Number(right.key === 'other') ||
+      collator.compare(left.label, right.label),
+  );
+};
 
 export type MedicationIndicationOption = {
   key: string;
@@ -705,10 +796,13 @@ const getMedicationIndicationsInternal = (
   profile: MedicationProfile,
   locale: MedicationLocale,
 ): MedicationIndicationOption[] =>
-  profile.indications.map((indication) => ({
-    key: indication.key,
-    label: indication.texts[locale].label,
-  }));
+  sortOptionsAlphabetically(
+    profile.indications.map((indication) => ({
+      key: indication.key,
+      label: indication.texts[locale].label,
+    })),
+    locale,
+  );
 
 export const getMedicationIndications = (
   value: unknown,

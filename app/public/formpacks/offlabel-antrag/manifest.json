@@ -70,6 +70,20 @@
         ]
       },
       {
+        "id": "drug-pyridostigmine",
+        "anchor": "request.drug",
+        "enabled": true,
+        "i18nKey": "offlabel-antrag.ui.infobox.drug.pyridostigmine",
+        "format": "markdown",
+        "showIf": [
+          {
+            "path": "request.drug",
+            "op": "eq",
+            "value": "pyridostigmine"
+          }
+        ]
+      },
+      {
         "id": "drug-vortioxetine",
         "anchor": "request.drug",
         "enabled": true,

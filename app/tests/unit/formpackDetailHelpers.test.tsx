@@ -13,7 +13,9 @@ const mocked = vi.hoisted(() => ({
   normalizeDecisionAnswers: vi.fn(),
   resolveDecisionTree: vi.fn(),
   resolveMedicationProfile: vi.fn(),
+  getMedicationIndications: vi.fn(),
   getVisibleMedicationKeys: vi.fn(),
+  getVisibleMedicationOptions: vi.fn(),
 }));
 
 vi.mock('../../src/i18n/formpack', () => ({
@@ -26,7 +28,9 @@ vi.mock('../../src/formpacks/doctor-letter/decisionAnswers', () => ({
 }));
 
 vi.mock('../../src/formpacks/offlabel-antrag/medications', () => ({
+  getMedicationIndications: mocked.getMedicationIndications,
   getVisibleMedicationKeys: mocked.getVisibleMedicationKeys,
+  getVisibleMedicationOptions: mocked.getVisibleMedicationOptions,
   isMedicationKey: mocked.isMedicationKey,
   resolveMedicationProfile: mocked.resolveMedicationProfile,
 }));
@@ -64,7 +68,9 @@ describe('formpack detail helpers', () => {
     mocked.normalizeDecisionAnswers.mockReset();
     mocked.resolveDecisionTree.mockReset();
     mocked.resolveMedicationProfile.mockReset();
+    mocked.getMedicationIndications.mockReset();
     mocked.getVisibleMedicationKeys.mockReset();
+    mocked.getVisibleMedicationOptions.mockReset();
   });
 
   it('loads formpack assets and returns not-found for invisible formpacks', async () => {
@@ -250,6 +256,14 @@ describe('formpack detail helpers', () => {
 
   it('builds dynamic offlabel schema enums and keeps unchanged schemas intact', () => {
     mocked.getVisibleMedicationKeys.mockReturnValue(['med-a', 'other']);
+    mocked.getVisibleMedicationOptions.mockReturnValue([
+      { key: 'med-a', label: 'Med A' },
+      { key: 'other', label: 'Other' },
+    ]);
+    mocked.getMedicationIndications.mockReturnValue([
+      { key: 'k1', label: 'K1' },
+      { key: 'k2', label: 'K2' },
+    ]);
     mocked.isMedicationKey.mockImplementation(
       (value: unknown) => value === 'med-a',
     );
@@ -293,6 +307,7 @@ describe('formpack detail helpers', () => {
       isOther: true,
       indications: [],
     });
+    mocked.getMedicationIndications.mockReturnValueOnce([]);
     const schemaWithExistingIndicationEnum = {
       type: 'object',
       properties: {

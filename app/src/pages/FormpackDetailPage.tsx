@@ -78,6 +78,8 @@ import {
   type OfflabelRenderedDocument,
 } from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
 import {
+  getMedicationIndications,
+  getVisibleMedicationOptions,
   getVisibleMedicationKeys,
   isMedicationKey,
   resolveMedicationProfile,
@@ -515,6 +517,7 @@ const buildOfflabelFormSchema = (
   schema: RJSFSchema,
   formData: FormDataState,
   showDevMedications: boolean,
+  locale: SupportedLocale = 'de',
 ): RJSFSchema => {
   if (!isRecord(schema.properties)) {
     return schema;
@@ -536,17 +539,20 @@ const buildOfflabelFormSchema = (
     return schema;
   }
 
-  const visibleMedicationKeys = getVisibleMedicationKeys(showDevMedications);
+  const visibleMedicationKeys = getVisibleMedicationOptions(
+    locale,
+    showDevMedications,
+  ).map(({ key }) => key);
   const normalizedRequest = normalizeOfflabelRequest(
     {
       drug: getPathValue(formData, 'request.drug'),
     },
     showDevMedications,
   );
-  const profile = resolveMedicationProfile(normalizedRequest.drug);
-  const scopedIndicationEnum = profile.indications.map(
-    (indication) => indication.key,
-  );
+  const scopedIndicationEnum = getMedicationIndications(
+    normalizedRequest.drug,
+    locale,
+  ).map((indication) => indication.key);
   const currentIndicationEnum = toStringArray(
     selectedIndicationSchemaNode.enum,
   );
@@ -1623,8 +1629,13 @@ export default function FormpackDetailPage() {
     if (!schema || formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
       return schema;
     }
-    return buildOfflabelFormSchema(schema, formData, showDevMedicationOptions);
-  }, [selectedDrug, formpackId, schema]); // eslint-disable-line react-hooks/exhaustive-deps -- formData read narrowed to selectedDrug
+    return buildOfflabelFormSchema(
+      schema,
+      formData,
+      showDevMedicationOptions,
+      locale,
+    );
+  }, [selectedDrug, formpackId, schema, locale, showDevMedicationOptions]); // eslint-disable-line react-hooks/exhaustive-deps -- formData read narrowed to selectedDrug
 
   // Apply conditional visibility for doctor-letter decision tree
   const conditionalUiSchema = useMemo(() => {

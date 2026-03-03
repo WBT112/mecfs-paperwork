@@ -148,17 +148,17 @@ describe('applyOfflabelVisibility', () => {
 
     expect(selectedIndication['ui:widget']).toBeUndefined();
     expect(selectedIndication['ui:enumNames']).toEqual([
-      'postinfektiöse ME/CFS mit Fatigue',
       'Long-/Post-COVID mit Fatigue',
+      'postinfektiöse ME/CFS mit Fatigue',
     ]);
     expect(enumOptions).toEqual([
       {
-        value: 'agomelatin.mecfs_fatigue',
-        label: 'postinfektiöse ME/CFS mit Fatigue',
-      },
-      {
         value: 'agomelatin.long_post_covid_fatigue',
         label: 'Long-/Post-COVID mit Fatigue',
+      },
+      {
+        value: 'agomelatin.mecfs_fatigue',
+        label: 'postinfektiöse ME/CFS mit Fatigue',
       },
     ]);
     expect(
@@ -238,23 +238,25 @@ describe('applyOfflabelVisibility', () => {
 
     expect(drug['ui:enumNames']).toEqual([
       'Agomelatin',
-      'Ivabradin',
-      'Vortioxetin',
-      'Low-Dose Naltrexon (LDN)',
       'Aripiprazol (LDA)',
+      'Ivabradin',
+      'Low-Dose Naltrexon (LDN)',
       'Methylphenidat (Medikinet, Ritalin)',
+      'Pyridostigmin (Mestinon)',
+      'Vortioxetin',
       'anderes Medikament',
     ]);
     expect(enumOptions).toEqual([
       { value: 'agomelatin', label: 'Agomelatin' },
-      { value: 'ivabradine', label: 'Ivabradin' },
-      { value: 'vortioxetine', label: 'Vortioxetin' },
-      { value: 'ldn', label: 'Low-Dose Naltrexon (LDN)' },
       { value: 'aripiprazole', label: 'Aripiprazol (LDA)' },
+      { value: 'ivabradine', label: 'Ivabradin' },
+      { value: 'ldn', label: 'Low-Dose Naltrexon (LDN)' },
       {
         value: 'methylphenidate',
         label: 'Methylphenidat (Medikinet, Ritalin)',
       },
+      { value: 'pyridostigmine', label: 'Pyridostigmin (Mestinon)' },
+      { value: 'vortioxetine', label: 'Vortioxetin' },
       {
         value: 'other',
         label: 'anderes Medikament',

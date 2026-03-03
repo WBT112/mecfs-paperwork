@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
+  getMedicationIndications,
+  getVisibleMedicationOptions,
   getVisibleMedicationKeys,
   MEDICATIONS,
   OFFLABEL_MEDICATION_KEYS,
@@ -192,6 +194,48 @@ describe('offlabel medication source consistency', () => {
     ]);
     expect(getVisibleMedicationKeys(true)).toEqual([
       ...OFFLABEL_MEDICATION_KEYS,
+    ]);
+  });
+
+  it('sorts visible medication options alphabetically and keeps other last', () => {
+    expect(getVisibleMedicationOptions('de').map(({ label }) => label)).toEqual(
+      [
+        'Agomelatin',
+        'Aripiprazol (LDA)',
+        'Ivabradin',
+        'Low-Dose Naltrexon (LDN)',
+        'Methylphenidat (Medikinet, Ritalin)',
+        'Pyridostigmin (Mestinon)',
+        'Vortioxetin',
+        'anderes Medikament',
+      ],
+    );
+    expect(getVisibleMedicationOptions('en').map(({ label }) => label)).toEqual(
+      [
+        'Agomelatine',
+        'Aripiprazole (LDA)',
+        'Ivabradine',
+        'Low-Dose Naltrexone (LDN)',
+        'Methylphenidate (Medikinet, Ritalin)',
+        'Pyridostigmine (Mestinon)',
+        'Vortioxetine',
+        'other medication',
+      ],
+    );
+  });
+
+  it('sorts indication options alphabetically per locale', () => {
+    expect(
+      getMedicationIndications('agomelatin', 'de').map(({ label }) => label),
+    ).toEqual([
+      'Long-/Post-COVID mit Fatigue',
+      'postinfektiöse ME/CFS mit Fatigue',
+    ]);
+    expect(
+      getMedicationIndications('agomelatin', 'en').map(({ label }) => label),
+    ).toEqual([
+      'long/post-COVID with fatigue',
+      'post-infectious ME/CFS with fatigue',
     ]);
   });
 });

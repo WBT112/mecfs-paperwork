@@ -106,6 +106,7 @@
           "enum": [
             "agomelatin",
             "ivabradine",
+            "pyridostigmine",
             "vortioxetine",
             "ldn",
             "aripiprazole",
@@ -119,6 +120,8 @@
             "agomelatin.mecfs_fatigue",
             "agomelatin.long_post_covid_fatigue",
             "ivabradine.pots_long_post_covid",
+            "pyridostigmine.mecfs_fatigue_orthostatic_intolerance",
+            "pyridostigmine.long_post_covid_fatigue_orthostatic_intolerance",
             "vortioxetine.long_post_covid_cognitive",
             "vortioxetine.long_post_covid_depressive",
             "ldn.mecfs_fatigue",
