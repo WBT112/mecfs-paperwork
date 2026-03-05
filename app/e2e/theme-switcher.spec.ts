@@ -15,7 +15,10 @@ test('defaults to system and persists theme selection', async ({ page }) => {
 
   const themeSelect = page.locator('#theme-select');
   await expect(themeSelect).toHaveValue('system');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', /dark|light/);
+  await expect(page.locator('html')).toHaveAttribute(
+    'data-theme',
+    /dark|light/,
+  );
 
   const storedDefaultTheme = await page.evaluate(
     (key) => localStorage.getItem(key),
