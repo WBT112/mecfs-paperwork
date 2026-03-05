@@ -6,7 +6,7 @@ export type ThemeMode = (typeof themeModes)[number];
 
 export type ResolvedTheme = Exclude<ThemeMode, 'system'>;
 
-export const defaultThemeMode: ThemeMode = 'dark';
+export const defaultThemeMode: ThemeMode = 'system';
 
 export const isThemeMode = (value: string): value is ThemeMode =>
   themeModes.includes(value as ThemeMode);

@@ -38,8 +38,8 @@ describe('theme utilities', () => {
     window.localStorage.clear();
   });
 
-  it('defaults to dark when no stored theme is available', () => {
-    expect(getInitialThemeMode()).toBe('dark');
+  it('defaults to system when no stored theme is available', () => {
+    expect(getInitialThemeMode()).toBe('system');
   });
 
   it('validates supported theme modes', () => {
