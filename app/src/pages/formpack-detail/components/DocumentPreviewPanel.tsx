@@ -1,5 +1,9 @@
 import CollapsibleSection from '../../../components/CollapsibleSection';
-import type { SectionWithChildrenProps } from './sectionTypes';
+
+type SectionWithChildrenProps = {
+  children: React.ReactNode;
+  title: string;
+};
 
 type DocumentPreviewPanelProps = SectionWithChildrenProps & {
   isIntroGateVisible: boolean;

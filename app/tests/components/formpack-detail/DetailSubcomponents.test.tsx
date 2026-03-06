@@ -65,6 +65,7 @@ import FormpackExportActions from '../../../src/pages/formpack-detail/components
 import FormpackFormPanel from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
 import FormpackToolsSection from '../../../src/pages/formpack-detail/components/FormpackToolsSection';
 import type { FormpackFormPanelProps } from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
+import * as formpackDetailComponents from '../../../src/pages/formpack-detail/components';
 
 const DummyForm = ({
   children,
@@ -178,6 +179,33 @@ const createFormPanelProps = (
 });
 
 describe('formpack detail subcomponents', () => {
+  it('re-exports the page-local component entrypoints through the barrel', () => {
+    expect(formpackDetailComponents.FormpackDetailHeader).toBeTypeOf(
+      'function',
+    );
+    expect(formpackDetailComponents.DocumentPreviewPanel).toBeTypeOf(
+      'function',
+    );
+    expect(formpackDetailComponents.FormContentSection).toBeTypeOf('function');
+    expect(formpackDetailComponents.QuotaBanner).toBeTypeOf('function');
+    expect(formpackDetailComponents.DevMetadataPanel).toBeTypeOf('function');
+    expect(formpackDetailComponents.ImportPanel).toBeTypeOf('function');
+    expect(formpackDetailComponents.RecordsPanel).toBeTypeOf('function');
+    expect(formpackDetailComponents.SnapshotsPanel).toBeTypeOf('function');
+    expect(formpackDetailComponents.FormpackFormPanel).toBe(
+      FormpackFormPanel,
+    );
+    expect(formpackDetailComponents.FormpackExportActions).toBe(
+      FormpackExportActions,
+    );
+    expect(formpackDetailComponents.FormpackDocumentPreviewContent).toBe(
+      FormpackDocumentPreviewContent,
+    );
+    expect(formpackDetailComponents.FormpackToolsSection).toBe(
+      FormpackToolsSection,
+    );
+  });
+
   it('renders offlabel, generic, and empty preview states', () => {
     const onSelectOfflabelPreview = vi.fn();
     const { rerender } = render(
