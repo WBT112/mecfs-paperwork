@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import HelpPage from '../../src/pages/HelpPage';
 
@@ -796,20 +802,27 @@ describe('HelpPage', () => {
     });
 
     it('shows confirm dialog on button click and does nothing on cancel', async () => {
-      const confirmSpy = vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
-
       render(<HelpPage />);
       fireEvent.click(await screen.findByTestId(TID_RESET_ALL_DATA));
-
-      expect(confirmSpy).toHaveBeenCalledWith('resetAllConfirm');
+      const dialog = await screen.findByRole('dialog', {
+        name: 'confirmationDialogTitle',
+      });
+      expect(within(dialog).getByText('resetAllConfirm')).toBeInTheDocument();
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: 'common.cancel' }),
+      );
       expect(mockResetAllLocalData).not.toHaveBeenCalled();
     });
 
     it('calls resetAllLocalData when confirmed', async () => {
-      vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
-
       render(<HelpPage />);
       fireEvent.click(await screen.findByTestId(TID_RESET_ALL_DATA));
+      const dialog = await screen.findByRole('dialog', {
+        name: 'confirmationDialogTitle',
+      });
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: 'resetAllButton' }),
+      );
 
       await waitFor(() => {
         expect(mockResetAllLocalData).toHaveBeenCalledOnce();
@@ -817,7 +830,6 @@ describe('HelpPage', () => {
     });
 
     it('shows loading state while resetting', async () => {
-      vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
       let resolveReset: () => void;
       mockResetAllLocalData.mockReturnValue(
         new Promise<void>((resolve) => {
@@ -828,6 +840,13 @@ describe('HelpPage', () => {
       render(<HelpPage />);
       const button = await screen.findByTestId(TID_RESET_ALL_DATA);
       fireEvent.click(button);
+      fireEvent.click(
+        within(
+          await screen.findByRole('dialog', {
+            name: 'confirmationDialogTitle',
+          }),
+        ).getByRole('button', { name: 'resetAllButton' }),
+      );
 
       await waitFor(() => {
         expect(button).toHaveTextContent('resetAllInProgress');
@@ -838,12 +857,18 @@ describe('HelpPage', () => {
     });
 
     it('re-enables button if reset fails', async () => {
-      vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
       mockResetAllLocalData.mockRejectedValue(new Error('fail'));
 
       render(<HelpPage />);
       const button = await screen.findByTestId(TID_RESET_ALL_DATA);
       fireEvent.click(button);
+      fireEvent.click(
+        within(
+          await screen.findByRole('dialog', {
+            name: 'confirmationDialogTitle',
+          }),
+        ).getByRole('button', { name: 'resetAllButton' }),
+      );
 
       await waitFor(() => {
         expect(button).not.toBeDisabled();

@@ -249,9 +249,12 @@
   "storageQuotaError": "Storage limit reached. Export your data and delete unused drafts.",
   "storageQuotaDismiss": "Dismiss",
   "common.add": "Add",
+  "common.cancel": "Cancel",
   "common.close": "Close",
+  "common.delete": "Delete",
   "common.remove": "Remove",
   "common.item": "Item",
   "common.itemWithIndex": "{{item}} {{index}}",
-  "common.addItemWithTitle": "Add {{item}}"
+  "common.addItemWithTitle": "Add {{item}}",
+  "confirmationDialogTitle": "Confirmation required"
 }

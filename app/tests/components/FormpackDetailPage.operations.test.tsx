@@ -222,6 +222,28 @@ const openRecordsSection = async () => {
   await openSection(sectionLabels.records);
 };
 
+const findConfirmationDialog = async (message: string) => {
+  const dialog = await screen.findByRole('dialog', {
+    name: 'confirmationDialogTitle',
+  });
+  expect(within(dialog).getByText(message)).toBeInTheDocument();
+  return dialog;
+};
+
+const confirmDialog = async (message: string, confirmLabel: string) => {
+  const dialog = await findConfirmationDialog(message);
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: confirmLabel }),
+  );
+};
+
+const cancelDialog = async (message: string) => {
+  const dialog = await findConfirmationDialog(message);
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'common.cancel' }),
+  );
+};
+
 const storageImportState = vi.hoisted(() => ({
   importRecordWithSnapshots: vi.fn(),
 }));
@@ -906,7 +928,6 @@ describe('FormpackDetailPage', () => {
       payload,
       error: null,
     });
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
     const file = new File([IMPORT_FILE_CONTENT], IMPORT_FILE_NAME, {
       type: 'application/json',
     });
@@ -930,14 +951,13 @@ describe('FormpackDetailPage', () => {
         screen.getByLabelText('formpackImportModeOverwrite'),
       );
       await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+      await cancelDialog('importOverwriteConfirm');
 
-      expect(confirmSpy).toHaveBeenCalledWith('importOverwriteConfirm');
       expect(
         storageImportState.importRecordWithSnapshots,
       ).not.toHaveBeenCalled();
       expect(screen.queryByText(IMPORT_SUCCESS_LABEL)).not.toBeInTheDocument();
     } finally {
-      confirmSpy.mockRestore();
       restoreText();
     }
   });
@@ -1572,7 +1592,6 @@ describe('FormpackDetailPage', () => {
     storageState.records = [record, secondRecord];
     storageState.activeRecord = record;
     storageState.deleteRecord.mockResolvedValue(true);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1586,9 +1605,9 @@ describe('FormpackDetailPage', () => {
     await userEvent.click(
       await screen.findByRole('button', { name: 'formpackRecordDelete' }),
     );
+    await cancelDialog('formpackRecordDeleteConfirm');
 
     expect(storageState.deleteRecord).not.toHaveBeenCalled();
-    confirmSpy.mockRestore();
   });
 
   it('deletes a draft when confirmed', async () => {
@@ -1601,7 +1620,6 @@ describe('FormpackDetailPage', () => {
     storageState.records = [record, secondRecord];
     storageState.activeRecord = record;
     storageState.deleteRecord.mockResolvedValue(true);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1615,11 +1633,11 @@ describe('FormpackDetailPage', () => {
     await userEvent.click(
       await screen.findByRole('button', { name: 'formpackRecordDelete' }),
     );
+    await confirmDialog('formpackRecordDeleteConfirm', 'formpackRecordDelete');
 
     await waitFor(() =>
       expect(storageState.deleteRecord).toHaveBeenCalledWith(secondRecord.id),
     );
-    confirmSpy.mockRestore();
   });
 
   it('uses untitled fallback in delete confirmation when draft title is missing', async () => {
@@ -1631,7 +1649,6 @@ describe('FormpackDetailPage', () => {
     };
     storageState.records = [record, secondRecord];
     storageState.activeRecord = record;
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1645,10 +1662,9 @@ describe('FormpackDetailPage', () => {
     await userEvent.click(
       await screen.findByRole('button', { name: 'formpackRecordDelete' }),
     );
+    await cancelDialog('formpackRecordDeleteConfirm');
 
-    expect(confirmSpy).toHaveBeenCalledWith('formpackRecordDeleteConfirm');
     expect(storageState.deleteRecord).not.toHaveBeenCalled();
-    confirmSpy.mockRestore();
   });
 
   it('disables clear snapshots when none exist', async () => {
@@ -1679,7 +1695,6 @@ describe('FormpackDetailPage', () => {
     };
     storageState.snapshots = [snapshot];
     storageState.clearSnapshots.mockResolvedValue(1);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1693,11 +1708,14 @@ describe('FormpackDetailPage', () => {
     await userEvent.click(
       await screen.findByRole('button', { name: 'formpackSnapshotsClearAll' }),
     );
+    await confirmDialog(
+      'formpackSnapshotsClearAllConfirm',
+      'formpackSnapshotsClearAll',
+    );
 
     await waitFor(() =>
       expect(storageState.clearSnapshots).toHaveBeenCalledWith(),
     );
-    confirmSpy.mockRestore();
   });
 
   it('does not clear snapshots when confirmation is dismissed', async () => {
@@ -1709,7 +1727,6 @@ describe('FormpackDetailPage', () => {
       createdAt: new Date().toISOString(),
     };
     storageState.snapshots = [snapshot];
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1723,9 +1740,9 @@ describe('FormpackDetailPage', () => {
     await userEvent.click(
       await screen.findByRole('button', { name: 'formpackSnapshotsClearAll' }),
     );
+    await cancelDialog('formpackSnapshotsClearAllConfirm');
 
     expect(storageState.clearSnapshots).not.toHaveBeenCalled();
-    confirmSpy.mockRestore();
   });
 
   it('restores the last active record from local storage', async () => {

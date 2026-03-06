@@ -1372,6 +1372,62 @@ body {
   padding: 1rem;
 }
 
+.confirmation-dialog {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 30;
+}
+
+.confirmation-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(0 0 0 / 45%);
+  border: 0;
+}
+
+.confirmation-dialog__content {
+  position: relative;
+  width: min(34rem, 100%);
+  max-height: 85vh;
+  overflow: hidden;
+  background: var(--color-surface);
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  box-shadow: var(--shadow-subtle);
+}
+
+.confirmation-dialog__header {
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.confirmation-dialog__header h4 {
+  margin: 0;
+}
+
+.confirmation-dialog__body {
+  padding: 1rem;
+}
+
+.confirmation-dialog__body p {
+  margin: 0;
+}
+
+.confirmation-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+}
+
 .formpack-docx-export {
   display: grid;
   grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);

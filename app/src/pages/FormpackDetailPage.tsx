@@ -10,7 +10,6 @@ import {
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Ajv2020 from 'ajv/dist/2020';
-import { loadFormpackI18n } from '../i18n/formpack';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
 import type { SupportedLocale } from '../i18n/locale';
@@ -38,7 +37,7 @@ import {
 import { FormpackFieldTemplate } from '../lib/rjsfFormpackFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/previewValue';
-import { getFirstItem, isRecord } from '../lib/utils';
+import { isRecord } from '../lib/utils';
 import { buildRandomDummyPatch } from '../lib/devDummyFill';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
@@ -48,9 +47,7 @@ import {
   USER_TIMING_NAMES,
   startUserTiming,
 } from '../lib/performance/userTiming';
-import type { JsonEncryptionEnvelope } from '../lib/jsonEncryption';
 import {
-  FormpackLoaderError,
   FORMPACKS_UPDATED_EVENT,
   DOCTOR_LETTER_FORMPACK_ID,
   NOTFALLPASS_FORMPACK_ID,
@@ -60,55 +57,32 @@ import {
   clearHiddenFields,
   isDevUiEnabled,
   isFormpackVisible,
-  loadFormpackManifest,
-  loadFormpackSchema,
-  loadFormpackUiSchema,
   resolveDecisionTree,
   type DecisionData,
   type FormpackId,
   type FormpackManifest,
   type InfoBoxConfig,
 } from '../formpacks';
-import {
-  isCompletedCase0Path,
-  normalizeDecisionAnswers,
-} from '../formpacks/doctor-letter/decisionAnswers';
-import {
-  buildOfflabelDocuments,
-  type OfflabelRenderedDocument,
-} from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
-import {
-  getMedicationIndications,
-  getVisibleMedicationOptions,
-  getVisibleMedicationKeys,
-  isMedicationKey,
-  resolveMedicationProfile,
-} from '../formpacks/offlabel-antrag/medications';
+import { buildOfflabelDocuments } from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
 import {
   resolveOfflabelFocusTarget,
   type OfflabelFocusTarget,
 } from '../formpacks/offlabel-antrag/focusTarget';
 import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
+import { normalizeDecisionAnswers } from '../formpacks/doctor-letter/decisionAnswers';
 import {
   type FormpackMetaEntry,
   type RecordEntry,
   type StorageErrorCode,
-  deleteProfile,
   getFormpackMeta,
-  getProfile,
-  hasUsableProfileData,
   importRecordWithSnapshots,
   upsertFormpackMeta,
-  upsertProfile,
   useAutosaveRecord,
   useRecords,
   useSnapshots,
 } from '../storage';
-import {
-  extractProfileData,
-  applyProfileData,
-} from '../lib/profile/profileMapping';
 import { resetAllLocalData, useStorageHealth } from '../lib/diagnostics';
+import { useConfirmationDialog } from '../components/useConfirmationDialog';
 import FormpackIntroGate from '../components/FormpackIntroGate';
 import FormpackIntroModal from '../components/FormpackIntroModal';
 import {
@@ -121,6 +95,9 @@ import {
   RecordsPanel,
   SnapshotsPanel,
 } from './formpack-detail';
+import { formpackDetailHelpers } from './formpack-detail/formpackDetailHelpers';
+import { useFormpackLoader } from './formpack-detail/useFormpackLoader';
+import { useProfileSync } from './formpack-detail/useProfileSync';
 import { APP_UPDATE_AVAILABLE_EVENT } from '../pwa/register';
 import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
@@ -140,1057 +117,16 @@ const LazyPdfExportControls = lazy(async () => {
   return { default: module.default as ComponentType<PdfExportControlsProps> };
 });
 
-type ManifestLoadResult = {
-  manifest: FormpackManifest | null;
-  schema: RJSFSchema | null;
-  uiSchema: UiSchema | null;
-  errorMessage: string | null;
-};
-
-const loadFormpackAssets = async (
-  formpackId: string,
-  locale: SupportedLocale,
-  t: (key: string) => string,
-): Promise<ManifestLoadResult> => {
-  const timing = startUserTiming(USER_TIMING_NAMES.formpackLoadTotal);
-
-  try {
-    const manifest = await loadFormpackManifest(formpackId);
-    if (!isFormpackVisible(manifest)) {
-      return {
-        manifest: null,
-        schema: null,
-        uiSchema: null,
-        errorMessage: t('formpackNotFound'),
-      };
-    }
-
-    await loadFormpackI18n(formpackId, locale);
-    const [schemaData, uiSchemaData] = await Promise.all([
-      loadFormpackSchema(formpackId),
-      loadFormpackUiSchema(formpackId),
-    ]);
-
-    return {
-      manifest,
-      schema: schemaData as RJSFSchema,
-      uiSchema: uiSchemaData as UiSchema,
-      errorMessage: null,
-    };
-  } finally {
-    timing.end();
-  }
-};
-
-const FORMPACK_ERROR_KEYS: Partial<
-  Record<FormpackLoaderError['code'], string>
-> = {
-  network: 'formpackLoadError',
-  schema_not_found: 'formpackSchemaNotFound',
-  schema_invalid: 'formpackSchemaInvalid',
-  schema_unavailable: 'formpackSchemaUnavailable',
-  ui_schema_not_found: 'formpackUiSchemaNotFound',
-  ui_schema_invalid: 'formpackUiSchemaInvalid',
-  ui_schema_unavailable: 'formpackUiSchemaUnavailable',
-  not_found: 'formpackNotFound',
-  unsupported: 'formpackUnsupported',
-  invalid: 'formpackInvalid',
-};
-
-const buildErrorMessage = (
-  error: unknown,
-  t: (key: string) => string,
-): string => {
-  if (error instanceof FormpackLoaderError) {
-    const key = FORMPACK_ERROR_KEYS[error.code];
-    if (key) {
-      return t(key);
-    }
-  }
-
-  return t('formpackLoadError');
-};
-
-const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const LAST_ACTIVE_FORMPACK_KEY = 'mecfs-paperwork.lastActiveFormpackId';
-const JSON_ENCRYPTION_KIND = 'mecfs-paperwork-json-encrypted';
 const FORM_PRIMARY_FOCUS_SELECTOR =
   '.formpack-form input:not([type="hidden"]):not([disabled]), .formpack-form select:not([disabled]), .formpack-form textarea:not([disabled]), .formpack-form button:not([disabled]), .formpack-form [tabindex]:not([tabindex="-1"])';
 const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
 const FOCUS_RETRY_DELAY_MS = 50;
 const FOCUS_RETRY_ATTEMPTS = 30;
 
-type JsonEncryptionRuntimeErrorCode =
-  | 'crypto_unsupported'
-  | 'invalid_envelope'
-  | 'decrypt_failed';
-
-const isJsonEncryptionRuntimeError = (
-  error: unknown,
-): error is { code: JsonEncryptionRuntimeErrorCode } => {
-  if (!isRecord(error)) {
-    return false;
-  }
-
-  const code = error.code;
-  return (
-    error.name === 'JsonEncryptionError' &&
-    typeof code === 'string' &&
-    (code === 'crypto_unsupported' ||
-      code === 'invalid_envelope' ||
-      code === 'decrypt_failed')
-  );
-};
-
-const tryParseEncryptedEnvelope = (
-  rawJson: string,
-): JsonEncryptionEnvelope | null => {
-  const normalized = rawJson.replace(/^\uFEFF/, '').trimStart();
-  if (!normalized) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(normalized) as unknown;
-    if (!isRecord(parsed)) {
-      return null;
-    }
-
-    return parsed.kind === JSON_ENCRYPTION_KIND
-      ? (parsed as JsonEncryptionEnvelope)
-      : null;
-  } catch {
-    return null;
-  }
-};
-
-const loadJsonEncryptionModule = async () => import('../lib/jsonEncryption');
-
-const OFFLABEL_FOCUS_SELECTOR_BY_TARGET: Record<OfflabelFocusTarget, string> = {
-  'request.otherDrugName':
-    '#root_request_otherDrugName, [name="root_request_otherDrugName"]',
-  'request.selectedIndicationKey':
-    '#root_request_selectedIndicationKey, [name="root_request_selectedIndicationKey"]',
-  'request.indicationFullyMetOrDoctorConfirms':
-    '#root_request_indicationFullyMetOrDoctorConfirms_0, input[name="root_request_indicationFullyMetOrDoctorConfirms"]',
-};
-
-const hasLetterLayout = (formpackId: string | null): boolean =>
-  formpackId === DOCTOR_LETTER_FORMPACK_ID ||
-  formpackId === OFFLABEL_ANTRAG_FORMPACK_ID;
-
-const resolveImportErrorMessage = (
-  error: { code: string; message?: string },
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string => {
-  switch (error.code) {
-    case 'invalid_json':
-      return error.message
-        ? t('importInvalidJsonWithDetails', { message: error.message })
-        : t('importInvalidJson');
-    case 'unknown_formpack':
-      return t('importUnknownFormpack');
-    case 'schema_mismatch':
-      return t('importSchemaMismatch');
-    case 'formpack_mismatch':
-      return t('importFormpackMismatch');
-    case 'invalid_revisions':
-      return t('importInvalidRevisions');
-    case 'unsupported_locale':
-      return t('importUnsupportedLocale');
-    default:
-      return t('importInvalidPayload');
-  }
-};
-
-const resolveJsonEncryptionErrorMessage = (
-  error: unknown,
-  mode: 'export' | 'import',
-  t: (key: string) => string,
-): string => {
-  if (isJsonEncryptionRuntimeError(error)) {
-    if (error.code === 'crypto_unsupported') {
-      return t('jsonEncryptionUnsupported');
-    }
-    if (error.code === 'decrypt_failed') {
-      return t('importPasswordInvalid');
-    }
-    return t('importEncryptedPayloadInvalid');
-  }
-
-  return mode === 'export'
-    ? t('formpackJsonExportError')
-    : t('importInvalidJson');
-};
-
-const resolveActionSourceElement = (
-  target: EventTarget | null,
-): HTMLElement | null => {
-  if (target instanceof HTMLElement) {
-    return target;
-  }
-  if (target instanceof Node) {
-    const parentElement = target.parentElement;
-    return parentElement instanceof HTMLElement ? parentElement : null;
-  }
-  return null;
-};
-
-const getActionButtonDataAction = (
-  target: EventTarget | null,
-): string | null => {
-  const element = resolveActionSourceElement(target);
-  if (!element) {
-    return null;
-  }
-
-  const actionButton = element.closest('button.app__button');
-  if (!(actionButton instanceof HTMLButtonElement)) {
-    return null;
-  }
-
-  return actionButton.dataset.action ?? '';
-};
-
 const showDevMedicationOptions = isFormpackVisible({ visibility: 'dev' });
 const ignoreAsyncError = (): void => {
   // Intentionally ignore async follow-up errors to keep UI flows resilient.
-};
-
-// Helper: Apply field visibility rules to decision tree UI schema
-const applyFieldVisibility = (
-  decisionUiSchema: Record<string, unknown>,
-  visibility: ReturnType<typeof getFieldVisibility>,
-): void => {
-  (['q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'] as const).forEach((field) => {
-    if (!visibility[field]) {
-      if (!isRecord(decisionUiSchema[field])) {
-        decisionUiSchema[field] = {};
-      }
-      const fieldSchema = decisionUiSchema[field] as Record<string, unknown>;
-      fieldSchema['ui:widget'] = 'hidden';
-    }
-  });
-};
-
-// Helper: Check if Case 0 result should be hidden
-const shouldHideCase0Result = (decision: DecisionData): boolean => {
-  const result = resolveDecisionTree(normalizeDecisionAnswers(decision));
-  const isCase0 = result.caseId === 0;
-
-  if (!isCase0) {
-    return false;
-  }
-
-  // Check if Case 0 is a valid completed path
-  // Only hide if Case 0 is due to incomplete tree, not a valid path.
-  return !isCompletedCase0Path(decision);
-};
-
-const toStringArray = (value: unknown): string[] =>
-  Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === 'string')
-    : [];
-
-const hasSameStringArray = (left: string[], right: string[]): boolean =>
-  left.length === right.length &&
-  left.every((entry, index) => entry === right[index]);
-
-const mergeDummyPatch = (base: unknown, patch: unknown): unknown => {
-  if (patch === undefined) {
-    return base;
-  }
-  if (Array.isArray(patch)) {
-    return patch;
-  }
-  if (!isRecord(base) || !isRecord(patch)) {
-    return patch;
-  }
-
-  const next: Record<string, unknown> = { ...base };
-  for (const [key, patchValue] of Object.entries(patch)) {
-    next[key] = mergeDummyPatch(base[key], patchValue);
-  }
-  return next;
-};
-
-const normalizeOfflabelRequest = (
-  request: Record<string, unknown>,
-  showDevMedications: boolean,
-): Record<string, unknown> => {
-  const visibleMedicationKeys = getVisibleMedicationKeys(showDevMedications);
-  const requestedDrug = isMedicationKey(request.drug) ? request.drug : null;
-  const normalizedDrug =
-    requestedDrug && visibleMedicationKeys.includes(requestedDrug)
-      ? requestedDrug
-      : null;
-
-  if (!normalizedDrug) {
-    const {
-      drug: _unusedDrug,
-      selectedIndicationKey: _unusedIndication,
-      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
-      applySection2Abs1a: _unusedSection2Fallback,
-      ...rest
-    } = request;
-    return rest;
-  }
-
-  const profile = resolveMedicationProfile(normalizedDrug);
-  const requestedIndicationKey =
-    typeof request.selectedIndicationKey === 'string'
-      ? request.selectedIndicationKey
-      : '';
-  const hasMultipleIndications = profile.indications.length > 1;
-  const fallbackIndicationKey = hasMultipleIndications
-    ? ''
-    : (profile.indications[0]?.key ?? '');
-  const hasValidIndication =
-    requestedIndicationKey.length > 0 &&
-    profile.indications.some((entry) => entry.key === requestedIndicationKey);
-  const normalizedIndicationKey = hasValidIndication
-    ? requestedIndicationKey
-    : fallbackIndicationKey;
-
-  if (profile.isOther) {
-    const {
-      selectedIndicationKey: _unused,
-      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
-      applySection2Abs1a: _unusedSection2Fallback,
-      ...otherRequest
-    } = request;
-    return {
-      ...otherRequest,
-      drug: normalizedDrug,
-    };
-  }
-
-  const hasCompletedIndicationStep = normalizedIndicationKey.length > 0;
-  const requestedIndicationConfirmation =
-    request.indicationFullyMetOrDoctorConfirms;
-  const hasSelectedIndicationConfirmation =
-    requestedIndicationConfirmation === 'yes' ||
-    requestedIndicationConfirmation === 'no';
-
-  const normalizedRequest: Record<string, unknown> = {
-    ...request,
-    drug: normalizedDrug,
-    selectedIndicationKey: normalizedIndicationKey,
-  };
-
-  if (!hasCompletedIndicationStep) {
-    const {
-      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
-      applySection2Abs1a: _unusedSection2Fallback,
-      ...withoutIndicationConfirmation
-    } = normalizedRequest;
-    return withoutIndicationConfirmation;
-  }
-
-  if (!hasSelectedIndicationConfirmation) {
-    const {
-      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
-      ...withoutIndicationConfirmation
-    } = normalizedRequest;
-    if (typeof request.applySection2Abs1a !== 'boolean') {
-      const {
-        applySection2Abs1a: _unusedSection2Fallback,
-        ...withoutFallback
-      } = withoutIndicationConfirmation;
-      return withoutFallback;
-    }
-    return withoutIndicationConfirmation;
-  }
-
-  if (typeof request.applySection2Abs1a !== 'boolean') {
-    const { applySection2Abs1a: _unusedSection2Fallback, ...withoutFallback } =
-      normalizedRequest;
-    return withoutFallback;
-  }
-
-  return {
-    ...normalizedRequest,
-  };
-};
-
-const buildOfflabelFormSchema = (
-  schema: RJSFSchema,
-  formData: FormDataState,
-  showDevMedications: boolean,
-  locale: SupportedLocale = 'de',
-): RJSFSchema => {
-  if (!isRecord(schema.properties)) {
-    return schema;
-  }
-
-  const requestSchemaNode = (schema.properties as Record<string, unknown>)
-    .request;
-  if (!isRecord(requestSchemaNode) || !isRecord(requestSchemaNode.properties)) {
-    return schema;
-  }
-
-  const requestProperties = requestSchemaNode.properties;
-  const selectedIndicationSchemaNode = requestProperties.selectedIndicationKey;
-  const selectedDrugSchemaNode = requestProperties.drug;
-  if (
-    !isRecord(selectedIndicationSchemaNode) ||
-    !isRecord(selectedDrugSchemaNode)
-  ) {
-    return schema;
-  }
-
-  const visibleMedicationKeys = getVisibleMedicationOptions(
-    locale,
-    showDevMedications,
-  ).map(({ key }) => key);
-  const normalizedRequest = normalizeOfflabelRequest(
-    {
-      drug: getPathValue(formData, 'request.drug'),
-    },
-    showDevMedications,
-  );
-  const scopedIndicationEnum = getMedicationIndications(
-    normalizedRequest.drug,
-    locale,
-  ).map((indication) => indication.key);
-  const currentIndicationEnum = toStringArray(
-    selectedIndicationSchemaNode.enum,
-  );
-  const nextIndicationEnum =
-    scopedIndicationEnum.length > 0
-      ? scopedIndicationEnum
-      : currentIndicationEnum;
-  const currentDrugEnum = toStringArray(selectedDrugSchemaNode.enum);
-
-  if (
-    hasSameStringArray(currentDrugEnum, visibleMedicationKeys) &&
-    hasSameStringArray(currentIndicationEnum, nextIndicationEnum)
-  ) {
-    return schema;
-  }
-
-  const clonedSchema = structuredClone(schema);
-  if (!isRecord(clonedSchema.properties)) {
-    return schema;
-  }
-  const clonedRequestSchemaNode = (
-    clonedSchema.properties as Record<string, unknown>
-  ).request;
-  if (
-    !isRecord(clonedRequestSchemaNode) ||
-    !isRecord(clonedRequestSchemaNode.properties)
-  ) {
-    return schema;
-  }
-  const clonedRequestProperties = clonedRequestSchemaNode.properties;
-  const clonedSelectedIndicationNode =
-    clonedRequestProperties.selectedIndicationKey;
-  const clonedSelectedDrugNode = clonedRequestProperties.drug;
-  if (
-    !isRecord(clonedSelectedIndicationNode) ||
-    !isRecord(clonedSelectedDrugNode)
-  ) {
-    return schema;
-  }
-
-  clonedSelectedDrugNode.enum = [...visibleMedicationKeys];
-  clonedSelectedIndicationNode.enum = [...nextIndicationEnum];
-  return clonedSchema;
-};
-
-type PreviewValueResolver = (
-  value: unknown,
-  schema?: RJSFSchema,
-  uiSchema?: UiSchema,
-  fieldPath?: string,
-) => ReactNode;
-
-const getOrderedKeys = (
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | null | undefined,
-  value: Record<string, unknown>,
-): string[] => {
-  const schemaProps =
-    schemaNode && isRecord(schemaNode.properties)
-      ? (schemaNode.properties as Record<string, RJSFSchema>)
-      : null;
-  const keys = Array.from(
-    new Set([
-      ...(schemaProps ? Object.keys(schemaProps) : []),
-      ...Object.keys(value),
-    ]),
-  );
-  const uiOrderRaw =
-    isRecord(uiNode) && Array.isArray(uiNode['ui:order'])
-      ? uiNode['ui:order']
-      : null;
-  if (!uiOrderRaw) {
-    return keys;
-  }
-  const order = uiOrderRaw.filter((entry) => typeof entry === 'string');
-  const remaining = keys.filter((key) => !order.includes(key) && key !== '*');
-  if (order.includes('*')) {
-    const ordered: string[] = [];
-    order.forEach((entry) => {
-      if (entry === '*') {
-        ordered.push(...remaining);
-        return;
-      }
-      if (keys.includes(entry)) {
-        ordered.push(entry);
-      }
-    });
-    return ordered;
-  }
-  return [...order.filter((entry) => entry !== '*'), ...remaining];
-};
-
-const getUiSchemaNode = (
-  uiNode: UiSchema | null | undefined,
-  key: string,
-): UiSchema | undefined => {
-  if (!isRecord(uiNode)) {
-    return undefined;
-  }
-  const entry = (uiNode as Record<string, unknown>)[key];
-  return isRecord(entry) ? (entry as UiSchema) : undefined;
-};
-
-const getItemSchema = (
-  schemaNode: RJSFSchema | undefined,
-): RJSFSchema | undefined =>
-  getFirstItem(schemaNode?.items) as RJSFSchema | undefined;
-
-const getItemUiSchema = (
-  uiNode: UiSchema | null | undefined,
-): UiSchema | undefined => getFirstItem(uiNode?.items) as UiSchema | undefined;
-
-const buildFieldPath = (segment: string, prefix?: string): string =>
-  prefix ? `${prefix}.${segment}` : segment;
-
-const normalizeParagraphs = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
-    .filter(Boolean);
-};
-
-const isDecisionCaseTextPath = (
-  fieldPath?: string,
-): fieldPath is 'decision.caseText' | 'decision.resolvedCaseText' =>
-  fieldPath === 'decision.caseText' ||
-  fieldPath === 'decision.resolvedCaseText';
-
-const isDecisionCaseParagraphsPath = (
-  fieldPath?: string,
-): fieldPath is 'decision.caseParagraphs' =>
-  fieldPath === 'decision.caseParagraphs';
-
-const renderParagraphs = (
-  paragraphs: string[],
-  keyPrefix: string,
-): ReactNode => {
-  const counts = new Map<string, number>();
-
-  return (
-    <>
-      {paragraphs.map((paragraph) => {
-        const count = counts.get(paragraph) ?? 0;
-        counts.set(paragraph, count + 1);
-        const key = `${keyPrefix}-${paragraph}-${count}`;
-
-        return <p key={key}>{paragraph}</p>;
-      })}
-    </>
-  );
-};
-
-type OfflabelRenderedBlock = OfflabelRenderedDocument['blocks'][number];
-const OFFLABEL_PART2_CONSENT_HEADING_PREFIX =
-  'Aufklärung und Einwilligung zum Off-Label-Use:';
-
-const getOfflabelPreviewBlockKey = (
-  documentId: string,
-  block: OfflabelRenderedBlock,
-): string => {
-  if (block.kind === 'list') {
-    return `${documentId}-${block.kind}-${block.items.join('|')}`;
-  }
-  if (block.kind === 'pageBreak') {
-    return `${documentId}-${block.kind}`;
-  }
-  return `${documentId}-${block.kind}-${block.text}`;
-};
-
-const renderOfflabelPreviewBlock = (
-  documentId: string,
-  block: OfflabelRenderedBlock,
-): ReactNode => {
-  const blockKey = getOfflabelPreviewBlockKey(documentId, block);
-
-  if (block.kind === 'heading') {
-    return <h3 key={blockKey}>{block.text}</h3>;
-  }
-
-  if (block.kind === 'paragraph') {
-    return <p key={blockKey}>{block.text}</p>;
-  }
-
-  if (block.kind === 'list') {
-    if (!block.items.length) {
-      return null;
-    }
-
-    return (
-      <ul key={blockKey}>
-        {block.items.map((item) => (
-          <li key={`${documentId}-${block.kind}-${item}`}>{item}</li>
-        ))}
-      </ul>
-    );
-  }
-
-  return null;
-};
-
-const renderOfflabelPreviewDocument = (
-  document: OfflabelRenderedDocument,
-): ReactNode => (
-  <div key={document.id}>
-    {document.blocks.map((block) =>
-      renderOfflabelPreviewBlock(document.id, block),
-    )}
-  </div>
-);
-
-const stripOfflabelPart2ConsentFromPreview = (
-  document: OfflabelRenderedDocument,
-): OfflabelRenderedDocument => {
-  if (document.id !== 'part2') {
-    return document;
-  }
-
-  const consentHeadingIndex = document.blocks.findIndex(
-    (block) =>
-      block.kind === 'heading' &&
-      block.text.startsWith(OFFLABEL_PART2_CONSENT_HEADING_PREFIX),
-  );
-
-  if (consentHeadingIndex < 0) {
-    return document;
-  }
-
-  return {
-    ...document,
-    blocks: document.blocks.slice(0, consentHeadingIndex),
-  };
-};
-
-const hasDecisionCaseText = (value: Record<string, unknown>): boolean =>
-  typeof value.caseText === 'string' ||
-  typeof value.resolvedCaseText === 'string';
-
-const getDecisionVisibleKeys = (
-  keys: string[],
-  decisionParagraphs: string[],
-  includesDecisionCaseText: boolean,
-): string[] =>
-  decisionParagraphs.length && includesDecisionCaseText
-    ? keys.filter((key) => key !== 'caseParagraphs')
-    : keys;
-
-const getDecisionParagraphsForEntry = (
-  entry: unknown,
-  decisionParagraphs: string[],
-): string[] => {
-  if (decisionParagraphs.length) {
-    return decisionParagraphs;
-  }
-  if (typeof entry === 'string') {
-    return normalizeParagraphText(entry).paragraphs;
-  }
-  return [];
-};
-
-const resolveDecisionCaseTextValue = (
-  entry: unknown,
-  childPath: string | undefined,
-  decisionParagraphs: string[],
-): ReactNode | null => {
-  if (!isDecisionCaseTextPath(childPath)) {
-    return null;
-  }
-
-  const paragraphs = getDecisionParagraphsForEntry(entry, decisionParagraphs);
-  if (!paragraphs.length) {
-    return null;
-  }
-
-  return renderParagraphs(paragraphs, childPath);
-};
-
-const buildDecisionPreviewContext = (
-  value: Record<string, unknown>,
-  fieldPath: string | undefined,
-  keys: string[],
-  resolveWithFallback: PreviewValueResolver,
-): { visibleKeys: string[]; resolveValue: PreviewValueResolver } => {
-  if (fieldPath !== 'decision') {
-    return { visibleKeys: keys, resolveValue: resolveWithFallback };
-  }
-
-  const decisionParagraphs = normalizeParagraphs(value.caseParagraphs);
-  const visibleKeys = getDecisionVisibleKeys(
-    keys,
-    decisionParagraphs,
-    hasDecisionCaseText(value),
-  );
-  const resolveValue: PreviewValueResolver = (
-    entry,
-    schemaNode,
-    uiNode,
-    childPath,
-  ) => {
-    const caseText = resolveDecisionCaseTextValue(
-      entry,
-      childPath,
-      decisionParagraphs,
-    );
-    if (caseText) {
-      return caseText;
-    }
-    return resolveWithFallback(entry, schemaNode, uiNode, childPath);
-  };
-
-  return { visibleKeys, resolveValue };
-};
-
-const getLabel = (
-  key: string,
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | null | undefined,
-): string => {
-  if (isRecord(uiNode) && typeof uiNode['ui:title'] === 'string') {
-    return uiNode['ui:title'];
-  }
-  if (typeof schemaNode?.title === 'string' && schemaNode.title.length > 0) {
-    return schemaNode.title;
-  }
-  return key;
-};
-
-type PreviewEntry =
-  | { type: 'row'; node: ReactNode }
-  | { type: 'nested'; node: ReactNode };
-
-type PreviewEntryOptions = {
-  entry: unknown;
-  key: string;
-  childSchema: RJSFSchema | undefined;
-  childUi: UiSchema | undefined;
-  childLabel: string;
-  resolveValue: PreviewValueResolver;
-  fieldPath: string;
-  sectionKey?: string;
-};
-
-const buildPreviewRow = (
-  key: string,
-  label: string,
-  entry: unknown,
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | undefined,
-  resolveValue: PreviewValueResolver,
-  fieldPath: string,
-) => (
-  <div key={`row-${key}`}>
-    <dt>{label}</dt>
-    <dd>{resolveValue(entry, schemaNode, uiNode, fieldPath)}</dd>
-  </div>
-);
-
-const buildPreviewEntry = ({
-  entry,
-  key,
-  childSchema,
-  childUi,
-  childLabel,
-  resolveValue,
-  fieldPath,
-  sectionKey,
-}: PreviewEntryOptions): PreviewEntry | null => {
-  if (!hasPreviewValue(entry)) {
-    return null;
-  }
-
-  const nestedKey = `${sectionKey ?? 'section'}-${key}`;
-  if (Array.isArray(entry)) {
-    const section = renderPreviewArray(
-      entry,
-      childSchema,
-      childUi,
-      childLabel,
-      resolveValue,
-      fieldPath,
-      nestedKey,
-    );
-    return { type: 'nested', node: section };
-  }
-
-  if (isRecord(entry)) {
-    const section = renderPreviewObject(
-      entry,
-      childSchema,
-      childUi,
-      childLabel,
-      resolveValue,
-      fieldPath,
-      nestedKey,
-    );
-    return { type: 'nested', node: section };
-  }
-
-  return {
-    type: 'row',
-    node: buildPreviewRow(
-      key,
-      childLabel,
-      entry,
-      childSchema,
-      childUi,
-      resolveValue,
-      fieldPath,
-    ),
-  };
-};
-
-const buildArrayItem = (
-  entry: unknown,
-  index: number,
-  itemSchema: RJSFSchema | undefined,
-  itemUi: UiSchema | undefined,
-  resolveValue: PreviewValueResolver,
-  fieldPath: string,
-  sectionKey?: string,
-): ReactNode | null => {
-  if (!hasPreviewValue(entry)) {
-    return null;
-  }
-
-  const nestedKey = `${sectionKey ?? 'array'}-${index}`;
-  if (Array.isArray(entry)) {
-    const nested = renderPreviewArray(
-      entry,
-      itemSchema,
-      itemUi,
-      undefined,
-      resolveValue,
-      fieldPath,
-      nestedKey,
-    );
-    return <li key={`nested-${index}`}>{nested}</li>;
-  }
-
-  if (isRecord(entry)) {
-    const nested = renderPreviewObject(
-      entry,
-      itemSchema,
-      itemUi,
-      undefined,
-      resolveValue,
-      fieldPath,
-      nestedKey,
-    );
-    return <li key={`object-${index}`}>{nested}</li>;
-  }
-
-  return (
-    <li key={`value-${index}`}>
-      {resolveValue(entry, itemSchema, itemUi, fieldPath)}
-    </li>
-  );
-};
-
-// RATIONALE: These functions are pure and do not depend on component state.
-// Defining them outside the component prevents them from being re-created on every
-// render, which improves performance by reducing garbage collection and avoiding
-// unnecessary re-renders of memoized components that depend on them.
-function renderPreviewObject(
-  value: Record<string, unknown>,
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | null | undefined,
-  label?: string,
-  resolveValue?: PreviewValueResolver,
-  fieldPath?: string,
-  sectionKey?: string,
-): ReactNode {
-  const resolveWithFallback =
-    resolveValue ??
-    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
-      resolveDisplayValue(entryValue, {
-        schema: entrySchema,
-        uiSchema: entryUi,
-        fieldPath: entryFieldPath,
-      }));
-  const schemaProps =
-    schemaNode && isRecord(schemaNode.properties)
-      ? (schemaNode.properties as Record<string, RJSFSchema>)
-      : null;
-  const keys = getOrderedKeys(schemaNode, uiNode, value);
-  const { visibleKeys, resolveValue: resolveWithDecisionParagraphs } =
-    buildDecisionPreviewContext(value, fieldPath, keys, resolveWithFallback);
-  const rows: ReactNode[] = [];
-  const nested: ReactNode[] = [];
-
-  visibleKeys.forEach((key) => {
-    const entry = value[key];
-    const childSchema = schemaProps ? schemaProps[key] : undefined;
-    const childUi = getUiSchemaNode(uiNode, key);
-    const childLabel = getLabel(key, childSchema, childUi);
-    const childPath = buildFieldPath(key, fieldPath);
-    const preview = buildPreviewEntry({
-      entry,
-      key,
-      childSchema,
-      childUi,
-      childLabel,
-      resolveValue: resolveWithDecisionParagraphs,
-      fieldPath: childPath,
-      sectionKey,
-    });
-    if (!preview) {
-      return;
-    }
-    if (preview.type === 'row') {
-      rows.push(preview.node);
-    } else {
-      nested.push(preview.node);
-    }
-  });
-
-  if (!rows.length && !nested.length) {
-    return null;
-  }
-
-  const content = (
-    <>
-      {rows.length > 0 ? <dl>{rows}</dl> : null}
-      {nested}
-    </>
-  );
-
-  if (!label) {
-    return content;
-  }
-
-  return (
-    <div className="formpack-document-preview__section" key={sectionKey}>
-      <h4>{label}</h4>
-      {content}
-    </div>
-  );
-}
-
-function renderPreviewArray(
-  values: unknown[],
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | null | undefined,
-  label?: string,
-  resolveValue?: PreviewValueResolver,
-  fieldPath?: string,
-  sectionKey?: string,
-): ReactNode {
-  if (isDecisionCaseParagraphsPath(fieldPath)) {
-    const paragraphValues = normalizeParagraphs(values);
-    if (paragraphValues.length) {
-      return (
-        <div className="formpack-document-preview__section" key={sectionKey}>
-          {label ? <h4>{label}</h4> : null}
-          {renderParagraphs(paragraphValues, fieldPath)}
-        </div>
-      );
-    }
-  }
-
-  const itemSchema = getItemSchema(schemaNode);
-  const itemUi = getItemUiSchema(uiNode);
-  const resolveWithFallback =
-    resolveValue ??
-    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
-      resolveDisplayValue(entryValue, {
-        schema: entrySchema,
-        uiSchema: entryUi,
-        fieldPath: entryFieldPath,
-      }));
-  const items = values
-    .map<ReactNode>((entry, index) => {
-      return buildArrayItem(
-        entry,
-        index,
-        itemSchema,
-        itemUi,
-        resolveWithFallback,
-        fieldPath ?? '',
-        sectionKey,
-      );
-    })
-    .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
-      Boolean(entry),
-    );
-
-  if (!items.length) {
-    return null;
-  }
-
-  return (
-    <div className="formpack-document-preview__section" key={sectionKey}>
-      {label ? <h4>{label}</h4> : null}
-      <ul className="formpack-document-preview__list">{items}</ul>
-    </div>
-  );
-}
-
-export const __formpackDetailTestUtils = {
-  applyFieldVisibility,
-  buildDecisionPreviewContext,
-  buildErrorMessage,
-  buildFieldPath,
-  buildOfflabelFormSchema,
-  buildPreviewEntry,
-  buildPreviewRow,
-  getDecisionParagraphsForEntry,
-  getDecisionVisibleKeys,
-  getItemSchema,
-  getItemUiSchema,
-  getLabel,
-  getOfflabelPreviewBlockKey,
-  getOrderedKeys,
-  getUiSchemaNode,
-  hasDecisionCaseText,
-  hasLetterLayout,
-  hasSameStringArray,
-  isDecisionCaseParagraphsPath,
-  isDecisionCaseTextPath,
-  isJsonEncryptionRuntimeError,
-  loadFormpackAssets,
-  mergeDummyPatch,
-  normalizeOfflabelRequest,
-  resolveImportErrorMessage,
-  resolveJsonEncryptionErrorMessage,
-  normalizeParagraphs,
-  getActionButtonDataAction,
-  renderOfflabelPreviewBlock,
-  renderOfflabelPreviewDocument,
-  renderParagraphs,
-  renderPreviewArray,
-  renderPreviewObject,
-  resolveDecisionCaseTextValue,
-  shouldHideCase0Result,
-  toStringArray,
-  tryParseEncryptedEnvelope,
 };
 
 /**
@@ -1198,11 +134,9 @@ export const __formpackDetailTestUtils = {
  */
 export default function FormpackDetailPage() {
   const { t, i18n } = useTranslation();
+  const { confirmationDialog, requestConfirmation } = useConfirmationDialog();
   const { locale, setLocale } = useLocale();
   const { id } = useParams();
-  const [manifest, setManifest] = useState<FormpackManifest | null>(null);
-  const [schema, setSchema] = useState<RJSFSchema | null>(null);
-  const [uiSchema, setUiSchema] = useState<UiSchema | null>(null);
   const [formData, setFormData] = useState<FormDataState>({});
   const [importJson, setImportJson] = useState('');
   const [importFileName, setImportFileName] = useState<string | null>(null);
@@ -1225,7 +159,6 @@ export default function FormpackDetailPage() {
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [pdfSuccess, setPdfSuccess] = useState<string | null>(null);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
   );
@@ -1237,7 +170,6 @@ export default function FormpackDetailPage() {
     null,
   );
   const [assetRefreshVersion, setAssetRefreshVersion] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [showFormpackUpdateNotice, setShowFormpackUpdateNotice] =
     useState(false);
   const [showAppUpdateNotice, setShowAppUpdateNotice] = useState(false);
@@ -1246,24 +178,25 @@ export default function FormpackDetailPage() {
   const [pendingFormFocus, setPendingFormFocus] = useState(false);
   const [pendingOfflabelFocusTarget, setPendingOfflabelFocusTarget] =
     useState<OfflabelFocusTarget | null>(null);
-  const [profileSaveEnabled, setProfileSaveEnabled] = useState(() => {
-    try {
-      const stored = globalThis.localStorage.getItem(PROFILE_SAVE_KEY);
-      return stored === null ? true : stored === 'true';
-    } catch {
-      return true;
-    }
-  });
-  const [profileHasSavedData, setProfileHasSavedData] = useState(false);
-  const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [selectedOfflabelPreviewId, setSelectedOfflabelPreviewId] = useState<
     'part1' | 'part2' | 'part3'
   >('part1');
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const formContentRef = useRef<HTMLDivElement | null>(null);
-  const lastFormpackIdRef = useRef<string | undefined>(undefined);
   const hasRestoredRecordRef = useRef<string | null>(null);
-  const formpackId = manifest?.id ?? null;
+  const handleLoadedFormpackChange = useCallback(() => {
+    setFormData({});
+    setIsIntroModalOpen(false);
+  }, []);
+  const { errorMessage, isLoading, manifest, schema, uiSchema } =
+    useFormpackLoader({
+      formpackId: id,
+      locale,
+      onFormpackChanged: handleLoadedFormpackChange,
+      refreshToken: assetRefreshVersion,
+      t,
+    });
+  const formpackId = (manifest?.id as FormpackId | undefined) ?? null;
   const offlabelOutputLocale: SupportedLocale =
     formpackId === OFFLABEL_ANTRAG_FORMPACK_ID ? 'de' : locale;
   const {
@@ -1297,150 +230,27 @@ export default function FormpackDetailPage() {
       onSaved: (record) => {
         setStorageError(null);
         applyRecordUpdate(record);
-
-        if (profileSaveEnabled && formpackId) {
-          const partial = extractProfileData(
-            formpackId as FormpackId,
-            record.data,
-          );
-          upsertProfile('default', partial).then((entry) => {
-            setProfileHasSavedData(hasUsableProfileData(entry.data));
-          }, ignoreAsyncError);
-        }
+        handleProfileRecordSaved(record);
       },
       onError: setStorageError,
     },
   );
-
-  const refreshProfileState = useCallback(() => {
-    getProfile('default').then(
-      (entry) => {
-        setProfileHasSavedData(
-          entry !== null && hasUsableProfileData(entry.data),
-        );
-      },
-      () => {
-        setProfileHasSavedData(false);
-      },
-    );
-  }, []);
-
-  useEffect(() => {
-    refreshProfileState();
-  }, [refreshProfileState]);
-
-  const handleProfileSaveToggle = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const enabled = event.target.checked;
-      setProfileSaveEnabled(enabled);
-      try {
-        globalThis.localStorage.setItem(
-          PROFILE_SAVE_KEY,
-          enabled ? 'true' : 'false',
-        );
-      } catch {
-        // Ignore storage errors.
-      }
-
-      if (!enabled && profileHasSavedData) {
-        const shouldDeleteExisting =
-          typeof globalThis.confirm === 'function'
-            ? globalThis.confirm(t('profileDeleteConfirmPrompt'))
-            : false;
-
-        if (shouldDeleteExisting) {
-          deleteProfile('default').then(() => {
-            setProfileHasSavedData(false);
-          }, ignoreAsyncError);
-        }
-      }
-    },
-    [profileHasSavedData, t],
-  );
-
-  const handleApplyProfile = useCallback(async () => {
-    setProfileStatus(null);
-    try {
-      const entry = await getProfile('default');
-      if (!entry || !hasUsableProfileData(entry.data)) {
-        setProfileStatus(t('profileApplyNoData'));
-        return;
-      }
-      const next = applyProfileData(
-        formpackId as FormpackId,
-        formData,
-        entry.data,
-      );
-      setFormData(next);
-      markAsSaved(next);
-      setProfileStatus(t('profileApplySuccess'));
-    } catch {
-      setProfileStatus(t('profileApplyError'));
-    }
-  }, [formpackId, formData, markAsSaved, t]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const resetFormpack = () => {
-      setManifest(null);
-      setSchema(null);
-      setUiSchema(null);
-      setFormpackMeta(null);
-    };
-
-    const loadManifest = async (requestedFormpackId: string) => {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const result = await loadFormpackAssets(requestedFormpackId, locale, t);
-        if (!isActive) {
-          return;
-        }
-        if (result.errorMessage) {
-          resetFormpack();
-          setErrorMessage(result.errorMessage);
-          return;
-        }
-        const shouldResetFormData =
-          lastFormpackIdRef.current !== requestedFormpackId;
-        setManifest(result.manifest);
-        setSchema(result.schema);
-        setUiSchema(result.uiSchema);
-        if (shouldResetFormData) {
-          setFormData({});
-          setIsIntroModalOpen(false);
-          lastFormpackIdRef.current = requestedFormpackId;
-        }
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-        resetFormpack();
-        setErrorMessage(buildErrorMessage(error, t));
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    if (id) {
-      loadManifest(id).catch(ignoreAsyncError);
-    } else {
-      resetFormpack();
-      setFormData({});
-      setValidator(null);
-      lastFormpackIdRef.current = undefined;
-      setErrorMessage(t('formpackMissingId'));
-      setIsLoading(false);
-    }
-
-    return () => {
-      isActive = false;
-    };
-  }, [assetRefreshVersion, id, locale, t]);
+  const {
+    profileSaveEnabled,
+    profileHasSavedData,
+    profileStatus,
+    clearProfileStatus,
+    handleProfileRecordSaved,
+    handleProfileSaveToggle,
+    handleApplyProfile,
+  } = useProfileSync({
+    formpackId,
+    formData,
+    markAsSaved,
+    requestConfirmation,
+    setFormData,
+    t,
+  });
 
   useEffect(() => {
     setSelectedOfflabelPreviewId('part1');
@@ -1629,7 +439,7 @@ export default function FormpackDetailPage() {
     if (!schema || formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
       return schema;
     }
-    return buildOfflabelFormSchema(
+    return formpackDetailHelpers.buildOfflabelFormSchema(
       schema,
       formData,
       showDevMedicationOptions,
@@ -1672,11 +482,11 @@ export default function FormpackDetailPage() {
     const decisionUiSchema = clonedUiSchema.decision;
 
     // Apply field visibility rules
-    applyFieldVisibility(decisionUiSchema, visibility);
+    formpackDetailHelpers.applyFieldVisibility(decisionUiSchema, visibility);
 
     // Hide result field for incomplete decision tree (but show for valid Case 0)
     if (
-      shouldHideCase0Result(decision) &&
+      formpackDetailHelpers.shouldHideCase0Result(decision) &&
       isRecord(decisionUiSchema.resolvedCaseText)
     ) {
       const resultSchema = decisionUiSchema.resolvedCaseText;
@@ -1694,13 +504,19 @@ export default function FormpackDetailPage() {
 
   const handleApplyDummyData = useCallback(() => {
     const patch = buildRandomDummyPatch(formSchema, conditionalUiSchema);
-    const merged = mergeDummyPatch(formData, patch);
+    const merged = formpackDetailHelpers.mergeDummyPatch(formData, patch);
     const nextData = isRecord(merged) ? merged : formData;
 
-    setProfileStatus(null);
+    clearProfileStatus();
     setFormData(nextData);
     markAsSaved(nextData);
-  }, [conditionalUiSchema, formData, formSchema, markAsSaved]);
+  }, [
+    clearProfileStatus,
+    conditionalUiSchema,
+    formData,
+    formSchema,
+    markAsSaved,
+  ]);
 
   const dateFormatter = useMemo(
     () =>
@@ -1737,15 +553,23 @@ export default function FormpackDetailPage() {
       ? t('storageUnavailable')
       : t('storageError');
   }, [effectiveStorageError, t]);
+  const confirmationDialogTitle = t('confirmationDialogTitle');
+  const cancelLabel = t('common.cancel');
 
   const handleResetAllStorageData = useCallback(async () => {
-    const confirmed = globalThis.confirm(t('resetAllConfirm'));
+    const confirmed = await requestConfirmation({
+      title: confirmationDialogTitle,
+      message: t('resetAllConfirm'),
+      confirmLabel: t('resetAllButton'),
+      cancelLabel,
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
 
     await resetAllLocalData();
-  }, [t]);
+  }, [cancelLabel, confirmationDialogTitle, requestConfirmation, t]);
 
   const storageBlocked =
     effectiveStorageError === 'unavailable' ||
@@ -1950,10 +774,11 @@ export default function FormpackDetailPage() {
         const previousRequest = isRecord(formData.request)
           ? formData.request
           : null;
-        const normalizedRequest = normalizeOfflabelRequest(
-          nextData.request,
-          showDevMedicationOptions,
-        );
+        const normalizedRequest =
+          formpackDetailHelpers.normalizeOfflabelRequest(
+            nextData.request,
+            showDevMedicationOptions,
+          );
         nextData = {
           ...nextData,
           request: normalizedRequest,
@@ -2004,7 +829,7 @@ export default function FormpackDetailPage() {
     }
 
     const request = formData.request;
-    const normalizedRequest = normalizeOfflabelRequest(
+    const normalizedRequest = formpackDetailHelpers.normalizeOfflabelRequest(
       request,
       showDevMedicationOptions,
     );
@@ -2123,18 +948,29 @@ export default function FormpackDetailPage() {
         return;
       }
 
-      const confirmed = globalThis.confirm(
-        t('formpackRecordDeleteConfirm', {
+      const confirmed = await requestConfirmation({
+        title: confirmationDialogTitle,
+        message: t('formpackRecordDeleteConfirm', {
           title: record.title ?? t('formpackRecordUntitled'),
         }),
-      );
+        confirmLabel: t('formpackRecordDelete'),
+        cancelLabel,
+        tone: 'danger',
+      });
       if (!confirmed) {
         return;
       }
 
       await deleteRecord(record.id);
     },
-    [activeRecord?.id, deleteRecord, t],
+    [
+      activeRecord?.id,
+      cancelLabel,
+      confirmationDialogTitle,
+      deleteRecord,
+      requestConfirmation,
+      t,
+    ],
   );
 
   const handleRestoreSnapshot = useCallback(
@@ -2165,13 +1001,26 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    const confirmed = globalThis.confirm(t('formpackSnapshotsClearAllConfirm'));
+    const confirmed = await requestConfirmation({
+      title: confirmationDialogTitle,
+      message: t('formpackSnapshotsClearAllConfirm'),
+      confirmLabel: t('formpackSnapshotsClearAll'),
+      cancelLabel,
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
 
     await clearSnapshots();
-  }, [activeRecord, clearSnapshots, t]);
+  }, [
+    activeRecord,
+    cancelLabel,
+    clearSnapshots,
+    confirmationDialogTitle,
+    requestConfirmation,
+    t,
+  ]);
 
   const applyImportedRecord = useCallback(
     (record: RecordEntry) => {
@@ -2190,7 +1039,13 @@ export default function FormpackDetailPage() {
         return null;
       }
 
-      const confirmed = globalThis.confirm(t('importOverwriteConfirm'));
+      const confirmed = await requestConfirmation({
+        title: confirmationDialogTitle,
+        message: t('importOverwriteConfirm'),
+        confirmLabel: t('formpackImportModeOverwrite'),
+        cancelLabel,
+        tone: 'danger',
+      });
       if (!confirmed) {
         return null;
       }
@@ -2211,8 +1066,11 @@ export default function FormpackDetailPage() {
     [
       activeRecord,
       applyImportedRecord,
+      cancelLabel,
+      confirmationDialogTitle,
       formpackId,
       importIncludeRevisions,
+      requestConfirmation,
       setImportError,
       t,
     ],
@@ -2252,7 +1110,8 @@ export default function FormpackDetailPage() {
 
     try {
       let normalizedImportJson = importJson;
-      const encryptionEnvelope = tryParseEncryptedEnvelope(importJson);
+      const encryptionEnvelope =
+        formpackDetailHelpers.tryParseEncryptedEnvelope(importJson);
 
       if (encryptionEnvelope) {
         if (!importPassword) {
@@ -2260,7 +1119,8 @@ export default function FormpackDetailPage() {
           return;
         }
 
-        const { decryptJsonWithPassword } = await loadJsonEncryptionModule();
+        const { decryptJsonWithPassword } =
+          await formpackDetailHelpers.loadJsonEncryptionModule();
 
         normalizedImportJson = await decryptJsonWithPassword(
           encryptionEnvelope,
@@ -2275,7 +1135,9 @@ export default function FormpackDetailPage() {
       );
 
       if (result.error) {
-        setImportError(resolveImportErrorMessage(result.error, t));
+        setImportError(
+          formpackDetailHelpers.resolveImportErrorMessage(result.error, t),
+        );
         return;
       }
 
@@ -2305,8 +1167,14 @@ export default function FormpackDetailPage() {
       setIsImportFileEncrypted(false);
       importInputRef.current!.value = '';
     } catch (error) {
-      if (isJsonEncryptionRuntimeError(error)) {
-        setImportError(resolveJsonEncryptionErrorMessage(error, 'import', t));
+      if (formpackDetailHelpers.isJsonEncryptionRuntimeError(error)) {
+        setImportError(
+          formpackDetailHelpers.resolveJsonEncryptionErrorMessage(
+            error,
+            'import',
+            t,
+          ),
+        );
         return;
       }
 
@@ -2348,7 +1216,9 @@ export default function FormpackDetailPage() {
         const text = await file.text();
         setImportJson(text);
         setImportFileName(file.name);
-        setIsImportFileEncrypted(Boolean(tryParseEncryptedEnvelope(text)));
+        setIsImportFileEncrypted(
+          Boolean(formpackDetailHelpers.tryParseEncryptedEnvelope(text)),
+        );
       } catch {
         setImportJson('');
         setImportFileName(file.name);
@@ -2452,7 +1322,9 @@ export default function FormpackDetailPage() {
     }
 
     const selector =
-      OFFLABEL_FOCUS_SELECTOR_BY_TARGET[pendingOfflabelFocusTarget];
+      formpackDetailHelpers.OFFLABEL_FOCUS_SELECTOR_BY_TARGET[
+        pendingOfflabelFocusTarget
+      ];
     return focusWithRetry({
       getRoot: () => formContentRef.current,
       selector,
@@ -2479,7 +1351,14 @@ export default function FormpackDetailPage() {
     () => JSON.stringify(formData, null, 2),
     [formData],
   );
-  const resolvePreviewValue = useCallback<PreviewValueResolver>(
+  const resolvePreviewValue = useCallback<
+    (
+      value: unknown,
+      schemaNode?: RJSFSchema,
+      uiNode?: UiSchema,
+      fieldPath?: string,
+    ) => ReactNode
+  >(
     (value, schemaNode, uiNode, fieldPath) =>
       resolveDisplayValue(value, {
         schema: schemaNode,
@@ -2506,7 +1385,7 @@ export default function FormpackDetailPage() {
     const schemaProps = isRecord(formSchema?.properties)
       ? (formSchema.properties as Record<string, RJSFSchema>)
       : null;
-    const keys = getOrderedKeys(
+    const keys = formpackDetailHelpers.getOrderedKeys(
       formSchema ?? undefined,
       previewUiSchema,
       previewData,
@@ -2518,11 +1397,14 @@ export default function FormpackDetailPage() {
           return null;
         }
         const childSchema = schemaProps ? schemaProps[key] : undefined;
-        const childUi = getUiSchemaNode(previewUiSchema, key);
-        const label = getLabel(key, childSchema, childUi);
+        const childUi = formpackDetailHelpers.getUiSchemaNode(
+          previewUiSchema,
+          key,
+        );
+        const label = formpackDetailHelpers.getLabel(key, childSchema, childUi);
 
         if (Array.isArray(entry)) {
-          return renderPreviewArray(
+          return formpackDetailHelpers.renderPreviewArray(
             entry,
             childSchema,
             childUi,
@@ -2533,7 +1415,7 @@ export default function FormpackDetailPage() {
           );
         }
         if (isRecord(entry)) {
-          return renderPreviewObject(
+          return formpackDetailHelpers.renderPreviewObject(
             entry,
             childSchema,
             childUi,
@@ -2600,7 +1482,8 @@ export default function FormpackDetailPage() {
         return;
       }
 
-      const { encryptJsonWithPassword } = await loadJsonEncryptionModule();
+      const { encryptJsonWithPassword } =
+        await formpackDetailHelpers.loadJsonEncryptionModule();
 
       const encryptedPayload = await encryptJsonWithPassword(
         JSON.stringify(payload),
@@ -2608,7 +1491,13 @@ export default function FormpackDetailPage() {
       );
       downloadJsonExport(encryptedPayload, filename);
     } catch (error) {
-      setJsonExportError(resolveJsonEncryptionErrorMessage(error, 'export', t));
+      setJsonExportError(
+        formpackDetailHelpers.resolveJsonEncryptionErrorMessage(
+          error,
+          'export',
+          t,
+        ),
+      );
     } finally {
       timing.end();
     }
@@ -2697,7 +1586,9 @@ export default function FormpackDetailPage() {
 
   const handleActionClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
-      const action = getActionButtonDataAction(event.target);
+      const action = formpackDetailHelpers.getActionButtonDataAction(
+        event.target,
+      );
       if (action === null) {
         return;
       }
@@ -2756,7 +1647,10 @@ export default function FormpackDetailPage() {
     () =>
       formpackId === OFFLABEL_ANTRAG_FORMPACK_ID
         ? buildOfflabelDocuments(formData, offlabelOutputLocale).map(
-            (document) => stripOfflabelPart2ConsentFromPreview(document),
+            (document) =>
+              formpackDetailHelpers.stripOfflabelPart2ConsentFromPreview(
+                document,
+              ),
           )
         : [],
     [formData, formpackId, offlabelOutputLocale],
@@ -3095,7 +1989,7 @@ export default function FormpackDetailPage() {
         <Suspense fallback={<p>{t('formpackLoading')}</p>}>
           <LazyForm
             className={
-              hasLetterLayout(formpackId)
+              formpackDetailHelpers.hasLetterLayout(formpackId)
                 ? 'formpack-form formpack-form--doctor-letter'
                 : 'formpack-form'
             }
@@ -3176,7 +2070,7 @@ export default function FormpackDetailPage() {
                 role="tabpanel"
                 aria-labelledby={`offlabel-tab-${doc.id}`}
               >
-                {renderOfflabelPreviewDocument(doc)}
+                {formpackDetailHelpers.renderOfflabelPreviewDocument(doc)}
               </div>
             ))}
         </div>
@@ -3377,6 +2271,7 @@ export default function FormpackDetailPage() {
           updatedAt: formpackUpdatedAtDisplay,
         })}
       </p>
+      {confirmationDialog}
     </section>
   );
 }

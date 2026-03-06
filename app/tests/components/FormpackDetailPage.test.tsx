@@ -238,6 +238,28 @@ const openImportSection = async () => {
   await openSection(sectionLabels.import);
 };
 
+const findConfirmationDialog = async (message: string) => {
+  const dialog = await screen.findByRole('dialog', {
+    name: 'confirmationDialogTitle',
+  });
+  expect(within(dialog).getByText(message)).toBeInTheDocument();
+  return dialog;
+};
+
+const confirmDialog = async (message: string, confirmLabel: string) => {
+  const dialog = await findConfirmationDialog(message);
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: confirmLabel }),
+  );
+};
+
+const cancelDialog = async (message: string) => {
+  const dialog = await findConfirmationDialog(message);
+  await userEvent.click(
+    within(dialog).getByRole('button', { name: 'common.cancel' }),
+  );
+};
+
 const storageImportState = vi.hoisted(() => ({
   importRecordWithSnapshots: vi.fn(),
 }));
@@ -1384,7 +1406,6 @@ describe('FormpackDetailPage', () => {
 
   it('toggles profile quickfill persistence in localStorage', async () => {
     const setItemSpy = vi.spyOn(window.localStorage.__proto__, 'setItem');
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1400,13 +1421,14 @@ describe('FormpackDetailPage', () => {
 
     await userEvent.click(checkbox);
     expect(setItemSpy).toHaveBeenCalledWith(PROFILE_SAVE_STORAGE_KEY, 'false');
-    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('dialog', { name: 'confirmationDialogTitle' }),
+    ).toBeNull();
     expect(profileState.deleteProfile).not.toHaveBeenCalled();
 
     await userEvent.click(checkbox);
     expect(setItemSpy).toHaveBeenCalledWith(PROFILE_SAVE_STORAGE_KEY, 'true');
 
-    confirmSpy.mockRestore();
     setItemSpy.mockRestore();
   });
 
@@ -1523,8 +1545,6 @@ describe('FormpackDetailPage', () => {
       data: { patient: { firstName: 'Alice' } },
     });
 
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
@@ -1543,13 +1563,11 @@ describe('FormpackDetailPage', () => {
 
     await userEvent.click(checkbox);
 
-    expect(confirmSpy).toHaveBeenCalledWith('profileDeleteConfirmPrompt');
+    await confirmDialog('profileDeleteConfirmPrompt', 'common.delete');
     await waitFor(() =>
       expect(profileState.deleteProfile).toHaveBeenCalledWith('default'),
     );
     await waitFor(() => expect(applyButton).toBeDisabled());
-
-    confirmSpy.mockRestore();
   });
 
   it('keeps saved profile data when deletion confirmation is declined', async () => {
@@ -1558,8 +1576,6 @@ describe('FormpackDetailPage', () => {
     });
     window.localStorage.setItem(PROFILE_SAVE_STORAGE_KEY, 'true');
 
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
-
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
@@ -1578,44 +1594,41 @@ describe('FormpackDetailPage', () => {
 
     await userEvent.click(checkbox);
 
-    expect(confirmSpy).toHaveBeenCalledWith('profileDeleteConfirmPrompt');
+    await cancelDialog('profileDeleteConfirmPrompt');
     expect(profileState.deleteProfile).not.toHaveBeenCalled();
     window.localStorage.removeItem(PROFILE_SAVE_STORAGE_KEY);
-    confirmSpy.mockRestore();
   });
 
-  it('keeps saved profile data when confirm is unavailable', async () => {
+  it('keeps saved profile data when the confirmation dialog is dismissed', async () => {
     profileState.getProfile.mockResolvedValue({
       data: { patient: { firstName: 'Alice' } },
     });
     window.localStorage.setItem(PROFILE_SAVE_STORAGE_KEY, 'true');
-    const originalConfirm = globalThis.confirm;
-    (globalThis as { confirm?: unknown }).confirm = undefined;
 
-    try {
-      render(
-        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
-          <Routes>
-            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
-          </Routes>
-        </TestRouter>,
-      );
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
 
-      const checkbox = await screen.findByRole('checkbox', {
-        name: 'profileSaveCheckbox',
-      });
-      const applyButton = await screen.findByRole('button', {
-        name: 'profileApplyButton',
-      });
-      await waitFor(() => expect(applyButton).toBeEnabled());
+    const checkbox = await screen.findByRole('checkbox', {
+      name: 'profileSaveCheckbox',
+    });
+    const applyButton = await screen.findByRole('button', {
+      name: 'profileApplyButton',
+    });
+    await waitFor(() => expect(applyButton).toBeEnabled());
 
-      await userEvent.click(checkbox);
+    await userEvent.click(checkbox);
+    const dialog = await findConfirmationDialog('profileDeleteConfirmPrompt');
+    await userEvent.click(
+      within(dialog).getByRole('button', { name: 'common.cancel' }),
+    );
 
-      expect(profileState.deleteProfile).not.toHaveBeenCalled();
-    } finally {
-      window.localStorage.removeItem(PROFILE_SAVE_STORAGE_KEY);
-      (globalThis as { confirm?: unknown }).confirm = originalConfirm;
-    }
+    expect(profileState.deleteProfile).not.toHaveBeenCalled();
+    window.localStorage.removeItem(PROFILE_SAVE_STORAGE_KEY);
   });
 
   it('continues when deleting saved profile data fails', async () => {
@@ -1623,7 +1636,6 @@ describe('FormpackDetailPage', () => {
       data: { patient: { firstName: 'Alice' } },
     });
     profileState.deleteProfile.mockRejectedValue(new Error('delete failed'));
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -1643,12 +1655,10 @@ describe('FormpackDetailPage', () => {
 
     await userEvent.click(checkbox);
 
-    expect(confirmSpy).toHaveBeenCalledWith('profileDeleteConfirmPrompt');
+    await confirmDialog('profileDeleteConfirmPrompt', 'common.delete');
     await waitFor(() =>
       expect(profileState.deleteProfile).toHaveBeenCalledWith('default'),
     );
-
-    confirmSpy.mockRestore();
   });
 
   it('applies profile data and shows success status', async () => {
@@ -1826,7 +1836,6 @@ describe('FormpackDetailPage', () => {
       type: 'application/json',
     });
     const restoreText = mockFileText(IMPORT_FILE_CONTENT);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     try {
       render(
@@ -1846,6 +1855,10 @@ describe('FormpackDetailPage', () => {
         screen.getByLabelText('formpackImportModeOverwrite'),
       );
       await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+      await confirmDialog(
+        'importOverwriteConfirm',
+        'formpackImportModeOverwrite',
+      );
 
       await waitFor(() =>
         expect(
@@ -1860,10 +1873,8 @@ describe('FormpackDetailPage', () => {
         ),
       );
       expect(storageState.refreshSnapshots).toHaveBeenCalled();
-      expect(confirmSpy).toHaveBeenCalledWith('importOverwriteConfirm');
     } finally {
       restoreText();
-      confirmSpy.mockRestore();
     }
   });
 
@@ -1889,7 +1900,6 @@ describe('FormpackDetailPage', () => {
       type: 'application/json',
     });
     const restoreText = mockFileText(IMPORT_FILE_CONTENT);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     try {
       render(
@@ -1909,6 +1919,10 @@ describe('FormpackDetailPage', () => {
         screen.getByLabelText('formpackImportModeOverwrite'),
       );
       await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+      await confirmDialog(
+        'importOverwriteConfirm',
+        'formpackImportModeOverwrite',
+      );
 
       await waitFor(() =>
         expect(
@@ -1920,10 +1934,8 @@ describe('FormpackDetailPage', () => {
           }),
         ),
       );
-      expect(confirmSpy).toHaveBeenCalledWith('importOverwriteConfirm');
     } finally {
       restoreText();
-      confirmSpy.mockRestore();
     }
   });
 
@@ -1950,7 +1962,6 @@ describe('FormpackDetailPage', () => {
       type: 'application/json',
     });
     const restoreText = mockFileText(IMPORT_FILE_CONTENT);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     try {
       render(
@@ -1973,6 +1984,10 @@ describe('FormpackDetailPage', () => {
         screen.getByLabelText('formpackImportIncludeRevisions'),
       );
       await userEvent.click(screen.getByText(IMPORT_ACTION_LABEL));
+      await confirmDialog(
+        'importOverwriteConfirm',
+        'formpackImportModeOverwrite',
+      );
 
       await waitFor(() =>
         expect(
@@ -1984,10 +1999,8 @@ describe('FormpackDetailPage', () => {
           }),
         ),
       );
-      expect(confirmSpy).toHaveBeenCalledWith('importOverwriteConfirm');
     } finally {
       restoreText();
-      confirmSpy.mockRestore();
     }
   });
 
@@ -2122,7 +2135,6 @@ describe('FormpackDetailPage', () => {
       type: 'application/json',
     });
     const restoreText = mockFileText(IMPORT_FILE_CONTENT);
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     try {
       render(
@@ -2154,10 +2166,11 @@ describe('FormpackDetailPage', () => {
           }),
         ),
       );
-      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(
+        screen.queryByRole('dialog', { name: 'confirmationDialogTitle' }),
+      ).toBeNull();
     } finally {
       restoreText();
-      confirmSpy.mockRestore();
     }
   });
 
@@ -2240,53 +2253,44 @@ describe('FormpackDetailPage', () => {
 
   it('executes full storage reset when recovery is confirmed', async () => {
     storageState.recordsError = 'locked';
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
-    try {
-      render(
-        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
-          <Routes>
-            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
-          </Routes>
-        </TestRouter>,
-      );
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
 
-      await openSection(sectionLabels.records);
-      await userEvent.click(
-        await screen.findByRole('button', { name: 'resetAllButton' }),
-      );
+    await openSection(sectionLabels.records);
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'resetAllButton' }),
+    );
+    await confirmDialog('resetAllConfirm', 'resetAllButton');
 
-      await waitFor(() =>
-        expect(diagnosticsState.resetAllLocalData).toHaveBeenCalledTimes(1),
-      );
-      expect(confirmSpy).toHaveBeenCalledWith('resetAllConfirm');
-    } finally {
-      confirmSpy.mockRestore();
-    }
+    await waitFor(() =>
+      expect(diagnosticsState.resetAllLocalData).toHaveBeenCalledTimes(1),
+    );
   });
 
   it('does not reset storage when recovery confirmation is denied', async () => {
     storageState.recordsError = 'locked';
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
-    try {
-      render(
-        <TestRouter initialEntries={[FORMPACK_ROUTE]}>
-          <Routes>
-            <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
-          </Routes>
-        </TestRouter>,
-      );
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
 
-      await openSection(sectionLabels.records);
-      await userEvent.click(
-        await screen.findByRole('button', { name: 'resetAllButton' }),
-      );
+    await openSection(sectionLabels.records);
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'resetAllButton' }),
+    );
+    await cancelDialog('resetAllConfirm');
 
-      expect(diagnosticsState.resetAllLocalData).not.toHaveBeenCalled();
-    } finally {
-      confirmSpy.mockRestore();
-    }
+    expect(diagnosticsState.resetAllLocalData).not.toHaveBeenCalled();
   });
 
   it('continues rendering when localStorage access throws', async () => {
@@ -2960,6 +2964,9 @@ describe('FormpackDetailPage', () => {
     );
 
     await screen.findByText('formpackFormHeading');
+    await waitFor(() =>
+      expect(formpackMetaState.getFormpackMeta).toHaveBeenCalled(),
+    );
 
     await act(async () => {
       window.dispatchEvent(

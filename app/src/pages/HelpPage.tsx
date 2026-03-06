@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useConfirmationDialog } from '../components/useConfirmationDialog';
 import MarkdownRenderer from '../components/Markdown/MarkdownRenderer';
 import helpDe from '../content/help/help.md?raw';
 import helpEn from '../content/help/help.en.md?raw';
@@ -107,6 +108,7 @@ const getServiceWorkerStateLabel = (
 
 export default function HelpPage() {
   const { t, i18n } = useTranslation();
+  const { confirmationDialog, requestConfirmation } = useConfirmationDialog();
   const [copied, setCopied] = useState(false);
   const [diagState, setDiagState] = useState<
     'idle' | 'downloading' | 'downloaded' | 'copying' | 'copied' | 'failed'
@@ -175,7 +177,13 @@ export default function HelpPage() {
   }, []);
 
   const handleResetAllData = useCallback(async () => {
-    const confirmed = globalThis.confirm(t('resetAllConfirm'));
+    const confirmed = await requestConfirmation({
+      title: t('confirmationDialogTitle'),
+      message: t('resetAllConfirm'),
+      confirmLabel: t('resetAllButton'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    });
     if (!confirmed) return;
     setResetting(true);
     try {
@@ -183,7 +191,7 @@ export default function HelpPage() {
     } catch {
       setResetting(false);
     }
-  }, [t]);
+  }, [requestConfirmation, t]);
 
   const quotaDisplay = getQuotaDisplay(
     health.storageEstimate,
@@ -457,6 +465,7 @@ export default function HelpPage() {
           </section>
         </section>
       </section>
+      {confirmationDialog}
     </section>
   );
 }
