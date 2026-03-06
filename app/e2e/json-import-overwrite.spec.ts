@@ -11,6 +11,9 @@ import { openCollapsibleSection } from './helpers/sections';
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
 const DB_NAME = 'mecfs-paperwork';
+const CONFIRMATION_DIALOG_TITLE =
+  /Bestätigung erforderlich|Confirmation required/i;
+const OVERWRITE_LABEL = /Aktiven Entwurf überschreiben|Overwrite active draft/i;
 
 const getActiveRecordId = async (page: Page) => {
   return page.evaluate(
@@ -42,6 +45,12 @@ const waitForRecordListReady = async (page: Page) => {
     }
     return true;
   });
+};
+
+const confirmOverwriteDialog = async (page: Page) => {
+  const dialog = page.getByRole('dialog', { name: CONFIRMATION_DIALOG_TITLE });
+  await expect(dialog).toBeVisible({ timeout: 5_000 });
+  await dialog.getByRole('button', { name: OVERWRITE_LABEL }).click();
 };
 
 const openDraftsSection = async (page: Page) => {
@@ -144,13 +153,8 @@ for (const locale of locales) {
       );
       await expect(importButton).toBeEnabled();
 
-      // Overwrite mode uses a native confirm dialog. Stubbing it makes the E2E
-      // test deterministic and avoids timing issues with dialog handling.
-      await page.evaluate(() => {
-        window.confirm = () => true;
-      });
-
       await importButton.click();
+      await confirmOverwriteDialog(page);
 
       // Note: after a successful import the app clears the file input and the
       // JSON payload, so the import button becomes disabled again.
@@ -245,11 +249,8 @@ test('imports password-encrypted JSON overwrite into active draft', async ({
   const importButton = page.locator('.formpack-import__actions .app__button');
   await expect(importButton).toBeEnabled();
 
-  await page.evaluate(() => {
-    window.confirm = () => true;
-  });
-
   await importButton.click();
+  await confirmOverwriteDialog(page);
 
   await expect(importButton).toBeDisabled({ timeout: 30_000 });
   await expect(importButton).toHaveText(/JSON importieren|Import JSON/i, {

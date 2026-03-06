@@ -158,13 +158,13 @@ describe('json export', () => {
   });
 
   describe('buildJsonExportFilename', () => {
-    it('sanitizes the record name and formats the export date', () => {
+    it('sanitizes the record title and formats the export date', () => {
       const payload = {
         app: { id: APP_ID, version: APP_VERSION },
         formpack: { id: FORMPACK_ID, version: '0.1.0' },
         record: {
           id: 'record-4',
-          name: 'Hello World! 2024',
+          title: 'Hello World! 2024',
           updatedAt: UPDATED_AT,
           locale: 'de' as const,
           data: {},
@@ -188,7 +188,7 @@ describe('json export', () => {
         formpack: { id: FORMPACK_ID, version: '0.1.0' },
         record: {
           id: 'record-5',
-          name: '!!!',
+          title: '!!!',
           updatedAt: UPDATED_AT,
           locale: 'de' as const,
           data: {},
@@ -203,7 +203,7 @@ describe('json export', () => {
       );
     });
 
-    it('uses the record id when no name is provided', () => {
+    it('uses the record id when no title is provided', () => {
       const payload = {
         app: { id: APP_ID, version: APP_VERSION },
         formpack: { id: FORMPACK_ID, version: '0.1.0' },
@@ -221,6 +221,28 @@ describe('json export', () => {
       expect(buildJsonExportFilename(payload)).toBe(
         'notfallpass_record-7_2024-02-05_de.json',
       );
+    });
+
+    it('stores record.title in the export payload', () => {
+      const record: RecordEntry = {
+        id: 'record-8',
+        formpackId: FORMPACK_ID,
+        title: 'Primary title',
+        locale: 'de',
+        data: { note: 'hello' },
+        createdAt: CREATED_AT,
+        updatedAt: UPDATED_AT,
+      };
+
+      const payload = buildJsonExportPayload({
+        formpack: { id: FORMPACK_ID, version: '0.1.0' },
+        record,
+        data: record.data,
+        locale: 'de',
+      });
+
+      expect(payload.record.title).toBe('Primary title');
+      expect(payload.record).not.toHaveProperty('name');
     });
   });
 

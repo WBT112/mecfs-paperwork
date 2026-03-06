@@ -105,6 +105,9 @@ describe('FormpackListPage', () => {
     expect(screen.getByText(TITLE_INSURER)).toBeInTheDocument();
     expect(screen.getByText(TITLE_DOCTOR)).toBeInTheDocument();
     expect(screen.getByText(TITLE_PLAIN)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'formpackSearchResultsStatus 3',
+    );
   });
 
   it('navigates to the detail page on click', async () => {
@@ -136,6 +139,9 @@ describe('FormpackListPage', () => {
     });
     expect(screen.getByText(TITLE_INSURER)).toBeInTheDocument();
     expect(screen.queryByText(TITLE_PLAIN)).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'formpackSearchResultsStatus 1',
+    );
   });
 
   it('shows empty state when search yields no results', async () => {
@@ -150,6 +156,9 @@ describe('FormpackListPage', () => {
 
     expect(screen.getByText('formpackSearchEmpty')).toBeInTheDocument();
     expect(screen.queryByText(TITLE_INSURER)).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'formpackSearchResultsStatus 0',
+    );
   });
 
   it('restores all formpacks when search is cleared', async () => {
@@ -249,6 +258,7 @@ describe('FormpackListPage', () => {
     expect(
       screen.queryByPlaceholderText('formpackSearchPlaceholder'),
     ).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('groups multiple formpacks in the same category', async () => {

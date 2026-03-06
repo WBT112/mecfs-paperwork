@@ -22,28 +22,8 @@ const isObjectLike = (
 ): value is Record<string, unknown> | unknown[] =>
   isRecord(value) || Array.isArray(value);
 
-const cloneNestedValue = (value: unknown): unknown => {
-  if (Array.isArray(value)) {
-    return value.map((entry) => cloneNestedValue(entry));
-  }
-  if (isRecord(value)) {
-    const cloned: Record<string, unknown> = {};
-    Object.entries(value).forEach(([key, entry]) => {
-      cloned[key] = cloneNestedValue(entry);
-    });
-    return cloned;
-  }
-  return value;
-};
-
-const cloneRecord = (
-  value: Record<string, unknown>,
-): Record<string, unknown> => {
-  if (typeof structuredClone === 'function') {
-    return structuredClone(value);
-  }
-  return cloneNestedValue(value) as Record<string, unknown>;
-};
+const cloneRecord = (value: Record<string, unknown>): Record<string, unknown> =>
+  structuredClone(value);
 
 const createContainerForSegment = (
   segment: string,

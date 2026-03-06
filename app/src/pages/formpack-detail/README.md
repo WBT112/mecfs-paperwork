@@ -2,18 +2,16 @@
 
 ## Purpose
 
-UI sections used by `FormpackDetailPage`.
+Private module area used by `FormpackDetailPage`.
 
 ## Structure
 
-Each file in this folder owns one focused section:
+- `components/`: page-local UI building blocks
+- `hooks/`: stateful workflow orchestration
+- `helpers/`: pure helper modules grouped by domain
 
-- header/status (`FormpackDetailHeader`, `QuotaBanner`)
-- data actions (`RecordsPanel`, `SnapshotsPanel`, `ImportPanel`)
-- editor/view (`FormContentSection`, `DocumentPreviewPanel`)
-- dev helpers (`DevMetadataPanel`)
+## Boundary
 
-## Public boundary
-
-- Import section components from `./index.ts` instead of deep file paths.
-- Keep cross-section types in `sectionTypes.ts`.
+- This module is page-private.
+- `components/index.ts` is the local UI barrel for `FormpackDetailPage`.
+- For `hooks/` and `helpers/`, prefer direct imports from the owning domain module instead of recreating a catch-all barrel at the root.

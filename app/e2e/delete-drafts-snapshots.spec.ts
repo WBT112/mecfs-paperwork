@@ -11,8 +11,18 @@ import {
 
 const FORM_PACK_ID = 'notfallpass';
 const DB_NAME = 'mecfs-paperwork';
+const CONFIRMATION_DIALOG_TITLE =
+  /Bestätigung erforderlich|Confirmation required/i;
+const CONFIRM_DELETE_LABEL = /Löschen|Delete/i;
+const CONFIRM_SNAPSHOTS_LABEL = /Alle Snapshots löschen|Delete all snapshots/i;
 
 test.setTimeout(60_000);
+
+const confirmDialog = async (page: Page, confirmLabel: RegExp) => {
+  const dialog = page.getByRole('dialog', { name: CONFIRMATION_DIALOG_TITLE });
+  await expect(dialog).toBeVisible({ timeout: 4_000 });
+  await clickActionButton(dialog.getByRole('button', { name: confirmLabel }));
+};
 
 const waitForActiveRecordId = async (page: Page, timeout: number = 10_000) => {
   let activeId: string | null = null;
@@ -129,9 +139,9 @@ const clickDeleteOnFirstNonActiveRecord = async (
       (await deleteButton.isVisible().catch(() => false)) &&
       (await deleteButton.isEnabled().catch(() => false))
     ) {
-      page.once('dialog', (dialog) => dialog.accept());
       try {
         await clickActionButton(deleteButton, 4_000);
+        await confirmDialog(page, CONFIRM_DELETE_LABEL);
         return;
       } catch {
         // Retry with a freshly resolved locator on the next loop iteration.
@@ -148,8 +158,8 @@ const clickDeleteOnFirstNonActiveRecord = async (
     )
     .first();
   await expect(finalButton).toBeVisible({ timeout: 1_000 });
-  page.once('dialog', (dialog) => dialog.accept());
   await clickActionButton(finalButton, 4_000);
+  await confirmDialog(page, CONFIRM_DELETE_LABEL);
 };
 
 test.beforeEach(async ({ page }) => {
@@ -214,8 +224,8 @@ test('clears snapshots for the active draft', async ({ page, browserName }) => {
   await waitForSnapshotCount(page, recordId, 1);
   await expect(page.locator('.formpack-snapshots__item')).toHaveCount(1);
 
-  page.once('dialog', (dialog) => dialog.accept());
   await clearAllSnapshots(page);
+  await confirmDialog(page, CONFIRM_SNAPSHOTS_LABEL);
 
   await expect(page.locator('.formpack-snapshots__item')).toHaveCount(0);
   await waitForSnapshotCount(page, recordId, 0);

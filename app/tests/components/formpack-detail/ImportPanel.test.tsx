@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import ImportPanel from '../../../src/pages/formpack-detail/ImportPanel';
+import ImportPanel from '../../../src/pages/formpack-detail/components/ImportPanel';
 
 const IMPORT_SECTION_LABEL = 'Import';
 const IMPORT_ACTION_LABEL = 'Import now';

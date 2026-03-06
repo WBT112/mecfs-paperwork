@@ -1,5 +1,5 @@
-import CollapsibleSection from '../../components/CollapsibleSection';
-import type { RecordEntry } from '../../storage/types';
+import CollapsibleSection from '../../../components/CollapsibleSection';
+import type { RecordEntry } from '../../../storage/types';
 
 type RecordsPanelLabels = {
   title: string;

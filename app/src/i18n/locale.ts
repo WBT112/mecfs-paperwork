@@ -1,3 +1,5 @@
+import { readLocalStorage, writeLocalStorage } from '../lib/safeLocalStorage';
+
 /**
  * Locale utilities for storing and validating the UI language preference.
  */
@@ -20,16 +22,10 @@ export const isSupportedLocale = (value: string): value is SupportedLocale =>
  * Loads the stored locale preference from localStorage when available.
  */
 export const getStoredLocale = (): SupportedLocale | null => {
-  try {
-    const storedValue = globalThis.localStorage.getItem(storageKey);
-
-    if (storedValue && isSupportedLocale(storedValue)) {
-      return storedValue;
-    }
-  } catch {
-    return null;
+  const storedValue = readLocalStorage(storageKey);
+  if (storedValue && isSupportedLocale(storedValue)) {
+    return storedValue;
   }
-
   return null;
 };
 
@@ -37,9 +33,5 @@ export const getStoredLocale = (): SupportedLocale | null => {
  * Persists the locale preference in localStorage.
  */
 export const setStoredLocale = (locale: SupportedLocale): void => {
-  try {
-    globalThis.localStorage.setItem(storageKey, locale);
-  } catch {
-    // Ignore storage failures to keep the offline UI responsive.
-  }
+  writeLocalStorage(storageKey, locale);
 };

@@ -406,10 +406,12 @@ const summarizeRange = (values: number[]) =>
 
 const listFormpackIdsFromOverview = async (page: Page) => {
   await page.goto('/formpacks');
-  const cards = page.locator('.formpack-card[href^="/formpacks/"]');
-  await expect(cards.first()).toBeVisible({ timeout: 20_000 });
-
-  return cards.evaluateAll((nodes) => {
+  const idsHandle = await page.waitForFunction(() => {
+    const nodes = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>(
+        '.formpack-card[href^="/formpacks/"]',
+      ),
+    );
     const ids = nodes
       .map((node) => {
         const href = node.getAttribute('href') ?? '';
@@ -418,8 +420,10 @@ const listFormpackIdsFromOverview = async (page: Page) => {
       })
       .filter((id) => id.length > 0);
 
-    return Array.from(new Set(ids));
+    return ids.length > 0 ? Array.from(new Set(ids)) : null;
   });
+
+  return idsHandle.jsonValue<string[]>();
 };
 
 const openFormpackForLayoutAudit = async (page: Page, formpackId: string) => {

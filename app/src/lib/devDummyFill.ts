@@ -522,3 +522,29 @@ export const buildRandomDummyPatch = (
   const value = buildValue(schema, uiSchema, toRuntimeOptions(options), []);
   return isRecord(value) ? value : {};
 };
+
+/**
+ * Merges a generated dummy-data patch into existing form data while replacing
+ * arrays wholesale.
+ *
+ * @param base - Existing form data.
+ * @param patch - Generated patch to merge.
+ * @returns Merged form data value.
+ */
+export const mergeDummyPatch = (base: unknown, patch: unknown): unknown => {
+  if (patch === undefined) {
+    return base;
+  }
+  if (Array.isArray(patch)) {
+    return patch;
+  }
+  if (!isRecord(base) || !isRecord(patch)) {
+    return patch;
+  }
+
+  const next: Record<string, unknown> = { ...base };
+  for (const [key, patchValue] of Object.entries(patch)) {
+    next[key] = mergeDummyPatch(base[key], patchValue);
+  }
+  return next;
+};

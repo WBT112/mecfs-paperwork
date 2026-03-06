@@ -161,45 +161,25 @@ const createConfig = (mode: string): AppConfig => ({
     cors: false,
   },
   build: {
+    // NOTE: The react-pdf stack must stay in a single lazy vendor chunk to
+    // avoid circular cross-chunk warnings. Size is enforced separately via the
+    // bundle budget test, so the generic Vite warning threshold can be higher.
+    chunkSizeWarningLimit: 1800,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) {
             return undefined;
           }
-          if (id.includes('@react-pdf/renderer')) {
-            return 'vendor-react-pdf-renderer';
-          }
           if (
-            id.includes('@react-pdf/layout') ||
-            id.includes('@react-pdf/textkit')
-          ) {
-            return 'vendor-react-pdf-layout';
-          }
-          if (id.includes('@react-pdf/font')) {
-            return 'vendor-react-pdf-font';
-          }
-          if (
-            id.includes('@react-pdf/image') ||
-            id.includes('@react-pdf/png-js')
-          ) {
-            return 'vendor-react-pdf-image';
-          }
-          if (id.includes('@react-pdf/primitives')) {
-            return 'vendor-react-pdf-primitives';
-          }
-          if (id.includes('@react-pdf/pdfkit')) {
-            return 'vendor-react-pdf-pdfkit';
-          }
-          if (id.includes('yoga-layout')) {
-            return 'vendor-react-pdf-yoga';
-          }
-          if (
+            id.includes('@react-pdf/') ||
+            id.includes('@react-pdf/png-js') ||
+            id.includes('yoga-layout') ||
             id.includes('fontkit') ||
             id.includes('/unicode-') ||
             id.includes('linebreak')
           ) {
-            return 'vendor-react-pdf-fontkit';
+            return 'vendor-react-pdf';
           }
           if (id.includes('@rjsf')) {
             return 'vendor-rjsf';
@@ -248,12 +228,11 @@ const createConfig = (mode: string): AppConfig => ({
         'src/lib/diagnostics/types.ts',
         // Re-export barrels with no logic
         'src/lib/diagnostics/index.ts',
-        'src/export/pdf/index.ts',
         'src/formpacks/index.ts',
-        'src/pages/formpack-detail/index.ts',
+        'src/pages/formpack-detail/components/index.ts',
         'src/storage/index.ts',
         // Type-only file with no runtime code
-        'src/pages/formpack-detail/sectionTypes.ts',
+        'src/pages/formpack-detail/components/sectionTypes.ts',
       ],
       thresholds: {
         // Global coverage thresholds (CI enforced).

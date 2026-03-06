@@ -47,14 +47,31 @@ vi.mock('../../src/formpacks', async (importOriginal) => {
   };
 });
 
-import { __formpackDetailTestUtils as detail } from '../../src/pages/FormpackDetailPage';
+import { doctorLetterHelpers } from '../../src/pages/formpack-detail/helpers/doctorLetterHelpers';
+import { formpackAssetHelpers } from '../../src/pages/formpack-detail/helpers/formpackAssetHelpers';
 import { FormpackLoaderError } from '../../src/formpacks';
+import { hasLetterLayout } from '../../src/formpacks/layout';
+import { mergeDummyPatch } from '../../src/lib/devDummyFill';
+import { offlabelFormHelpers } from '../../src/pages/formpack-detail/helpers/offlabelFormHelpers';
+import { offlabelPreviewHelpers } from '../../src/pages/formpack-detail/helpers/offlabelPreviewHelpers';
+import { previewHelpers } from '../../src/pages/formpack-detail/helpers/previewHelpers';
+
+const detail = {
+  ...doctorLetterHelpers,
+  ...formpackAssetHelpers,
+  ...offlabelFormHelpers,
+  ...offlabelPreviewHelpers,
+  ...previewHelpers,
+  hasLetterLayout,
+  mergeDummyPatch,
+};
 
 const TEST_MED_A = 'med-a';
 const TEST_INDICATION_A = 'indication-a';
 const TEST_INDICATION_B = 'indication-b';
 const TEST_NOT_BOOLEAN = 'not-boolean';
 const DECISION_CASE_PARAGRAPHS_PATH = 'decision.caseParagraphs';
+const DECISION_CASE_TEXT_PATH = 'decision.caseText';
 
 describe('formpack detail helpers', () => {
   beforeEach(() => {
@@ -146,6 +163,12 @@ describe('formpack detail helpers', () => {
     ).toMatchObject({ kind: 'mecfs-paperwork-json-encrypted' });
   });
 
+  it('loads the json encryption module on demand', async () => {
+    const module = await detail.loadJsonEncryptionModule();
+    expect(module).toHaveProperty('encryptJsonWithPassword');
+    expect(module).toHaveProperty('decryptJsonWithPassword');
+  });
+
   it('handles decision visibility and case-0 hiding logic', () => {
     const decisionUi: Record<string, unknown> = {};
     const visibility: Parameters<typeof detail.applyFieldVisibility>[1] = {
@@ -175,6 +198,41 @@ describe('formpack detail helpers', () => {
     expect(detail.shouldHideCase0Result({} as never)).toBe(false);
     mocked.isCompletedCase0Path.mockReturnValue(false);
     expect(detail.shouldHideCase0Result({} as never)).toBe(true);
+
+    const existingDecisionUi = {
+      q2: {},
+    } as Record<string, unknown>;
+    detail.applyFieldVisibility(existingDecisionUi, visibility);
+    expect(
+      (existingDecisionUi.q2 as Record<string, unknown>)['ui:widget'],
+    ).toBe('hidden');
+
+    const baseUiSchema: UiSchema = {
+      decision: {
+        q2: {},
+        resolvedCaseText: {},
+      },
+    };
+    mocked.resolveDecisionTree.mockReturnValue({ caseId: 0 });
+    mocked.isCompletedCase0Path.mockReturnValue(false);
+
+    const conditionalUiSchema = detail.buildDoctorLetterConditionalUiSchema(
+      baseUiSchema,
+      { q1: 'yes' },
+    );
+    expect(conditionalUiSchema).not.toBe(baseUiSchema);
+    expect(
+      (
+        (conditionalUiSchema.decision as Record<string, unknown>)
+          .resolvedCaseText as Record<string, unknown>
+      )['ui:widget'],
+    ).toBe('hidden');
+
+    const passthroughUiSchema = detail.buildDoctorLetterConditionalUiSchema(
+      { summary: {} },
+      null,
+    );
+    expect(passthroughUiSchema).toEqual({ summary: {} });
   });
 
   it('merges dummy patches and normalizes offlabel request variants', () => {
@@ -451,7 +509,70 @@ describe('formpack detail helpers', () => {
     ).toEqual({ 'ui:title': 'x' });
     expect(detail.buildFieldPath('child', 'parent')).toBe('parent.child');
     expect(detail.normalizeParagraphs([' x ', null, ''])).toEqual(['x']);
+    expect(detail.normalizeParagraphs(null)).toEqual([]);
     expect(detail.getLabel('fallback', undefined, undefined)).toBe('fallback');
+    expect(
+      detail.getLabel(
+        'fallback',
+        { title: 'Schema title' } as RJSFSchema,
+        undefined,
+      ),
+    ).toBe('Schema title');
+  });
+
+  it('covers offlabel schema and ordering fallback branches', () => {
+    expect(
+      detail.getOrderedKeys(
+        { type: 'object', properties: { a: {}, b: {} } } as RJSFSchema,
+        { 'ui:order': ['missing', 'b'] } as UiSchema,
+        {},
+      ),
+    ).toEqual(['missing', 'b', 'a']);
+    expect(
+      detail.getOrderedKeys(
+        { type: 'object', properties: { a: {}, b: {} } } as RJSFSchema,
+        { 'ui:order': ['missing', '*'] } as UiSchema,
+        {},
+      ),
+    ).toEqual(['a', 'b']);
+
+    expect(
+      detail.buildOfflabelFormSchema(
+        {
+          type: 'object',
+          properties: {
+            request: { type: 'object' },
+          },
+        } as unknown as RJSFSchema,
+        { request: {} },
+        false,
+      ),
+    ).toMatchObject({
+      type: 'object',
+    });
+
+    mocked.getVisibleMedicationKeys.mockReturnValue([TEST_MED_A]);
+    mocked.isMedicationKey.mockImplementation(
+      (value: unknown) => value === TEST_MED_A,
+    );
+    mocked.resolveMedicationProfile.mockReturnValue({
+      isOther: false,
+      indications: [{ key: TEST_INDICATION_A }, { key: TEST_INDICATION_B }],
+    });
+    expect(
+      detail.normalizeOfflabelRequest(
+        {
+          drug: TEST_MED_A,
+          selectedIndicationKey: TEST_INDICATION_A,
+          applySection2Abs1a: true,
+        },
+        false,
+      ),
+    ).toEqual({
+      drug: TEST_MED_A,
+      selectedIndicationKey: TEST_INDICATION_A,
+      applySection2Abs1a: true,
+    });
   });
 
   it('renders offlabel preview blocks and documents', () => {
@@ -479,6 +600,9 @@ describe('formpack detail helpers', () => {
     expect(
       detail.renderOfflabelPreviewBlock('doc', { kind: 'list', items: [] }),
     ).toBeNull();
+    expect(
+      detail.renderOfflabelPreviewBlock('doc', { kind: 'pageBreak' }),
+    ).toBeNull();
 
     const docMarkup = renderToStaticMarkup(
       <>
@@ -490,6 +614,39 @@ describe('formpack detail helpers', () => {
       </>,
     );
     expect(docMarkup).toContain('<p>P</p>');
+
+    const untouchedDoc = {
+      id: 'part1' as const,
+      title: 'Part 1',
+      blocks: [{ kind: 'paragraph' as const, text: 'Body' }],
+    };
+    expect(detail.stripOfflabelPart2ConsentFromPreview(untouchedDoc)).toBe(
+      untouchedDoc,
+    );
+
+    const part2WithoutConsent = {
+      id: 'part2' as const,
+      title: 'Part 2',
+      blocks: [{ kind: 'paragraph' as const, text: 'Body' }],
+    };
+    expect(
+      detail.stripOfflabelPart2ConsentFromPreview(part2WithoutConsent),
+    ).toBe(part2WithoutConsent);
+
+    expect(
+      detail.stripOfflabelPart2ConsentFromPreview({
+        id: 'part2',
+        title: 'Part 2',
+        blocks: [
+          { kind: 'paragraph', text: 'Body' },
+          {
+            kind: 'heading',
+            text: 'Aufklärung und Einwilligung zum Off-Label-Use: More',
+          },
+          { kind: 'paragraph', text: 'Consent' },
+        ] as const,
+      }).blocks,
+    ).toEqual([{ kind: 'paragraph', text: 'Body' }]);
   });
 
   it('builds decision preview context and array/object previews', () => {
@@ -504,15 +661,18 @@ describe('formpack detail helpers', () => {
       detail.getDecisionVisibleKeys(['a', 'caseParagraphs'], ['x'], true),
     ).toEqual(['a']);
     expect(
+      detail.getDecisionVisibleKeys(['a', 'caseParagraphs'], [], false),
+    ).toEqual(['a', 'caseParagraphs']);
+    expect(
       detail.resolveDecisionCaseTextValue('x', 'other.path', ['P1']),
     ).toBeNull();
     expect(
-      detail.resolveDecisionCaseTextValue('x', 'decision.caseText', ['P1']),
+      detail.resolveDecisionCaseTextValue('x', DECISION_CASE_TEXT_PATH, ['P1']),
     ).not.toBeNull();
     expect(
       detail.resolveDecisionCaseTextValue(
         { value: 'x' },
-        'decision.caseText',
+        DECISION_CASE_TEXT_PATH,
         [],
       ),
     ).toBeNull();
@@ -527,6 +687,21 @@ describe('formpack detail helpers', () => {
       (entry) => String(entry),
     );
     expect(context.visibleKeys).toEqual(['caseText']);
+    expect(
+      renderToStaticMarkup(
+        <>
+          {context.resolveValue(
+            'ignored',
+            undefined,
+            undefined,
+            DECISION_CASE_TEXT_PATH,
+          )}
+        </>,
+      ),
+    ).toContain('P1');
+    expect(
+      context.resolveValue('ignored', undefined, undefined, 'other.path'),
+    ).toBe('ignored');
 
     const objectMarkup = renderToStaticMarkup(
       <>
@@ -617,6 +792,32 @@ describe('formpack detail helpers', () => {
     );
     expect(nestedNullsMarkup).toBe('');
 
+    const nestedArrayPreview = detail.buildPreviewEntry({
+      entry: ['nested'],
+      key: 'array',
+      childSchema: { type: 'array', items: { type: 'string' } } as RJSFSchema,
+      childUi: {} as UiSchema,
+      childLabel: 'Array',
+      resolveValue: (value) => String(value),
+      fieldPath: 'root.array',
+      sectionKey: 'root',
+    });
+    expect(nestedArrayPreview?.type).toBe('nested');
+
+    const mixedNestedMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewArray(
+          [['alpha'], { nested: 'beta' }],
+          undefined,
+          undefined,
+          undefined,
+          (value) => String(value),
+        )}
+      </>,
+    );
+    expect(mixedNestedMarkup).toContain('alpha');
+    expect(mixedNestedMarkup).toContain('beta');
+
     const objectOnlyNestedMarkup = renderToStaticMarkup(
       <>
         {detail.renderPreviewObject(
@@ -672,6 +873,18 @@ describe('formpack detail helpers', () => {
       </>,
     );
     expect(emptyParagraphArrayMarkup).toBe('');
+
+    const objectWithHiddenEntryMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewObject(
+          { hidden: '', shown: 'value' },
+          undefined,
+          undefined,
+          'Section',
+        )}
+      </>,
+    );
+    expect(objectWithHiddenEntryMarkup).toContain('shown');
   });
 
   it('exposes static helpers for letter layout detection', () => {
@@ -755,6 +968,10 @@ describe('formpack detail helpers', () => {
 
     const detachedText = document.createTextNode('detached');
     expect(detail.getActionButtonDataAction(detachedText)).toBeNull();
+
+    const buttonWithoutAction = document.createElement('button');
+    buttonWithoutAction.className = 'app__button';
+    expect(detail.getActionButtonDataAction(buttonWithoutAction)).toBe('');
   });
 
   it('covers offlabel normalization fallback branches for section 2 flag handling', () => {

@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import CollapsibleSection from '../../src/components/CollapsibleSection';
 
@@ -24,7 +25,8 @@ describe('CollapsibleSection', () => {
     expect(content).not.toHaveAttribute('hidden');
   });
 
-  it('prevents double toggle when Space keydown is followed by keyup', () => {
+  it('toggles content visibility on Space key activation', async () => {
+    const user = userEvent.setup();
     render(
       <CollapsibleSection id="symptoms" title="Symptoms">
         <p>Body</p>
@@ -32,18 +34,14 @@ describe('CollapsibleSection', () => {
     );
 
     const button = screen.getByRole('button', { name: 'Symptoms' });
+    button.focus();
 
-    fireEvent.keyDown(button, { code: 'Space' });
+    await user.keyboard('[Space]');
     expect(button).toHaveAttribute(ARIA_EXPANDED, 'true');
-
-    fireEvent.keyUp(button, { code: 'Space' });
-    expect(button).toHaveAttribute(ARIA_EXPANDED, 'true');
-
-    fireEvent.keyUp(button, { code: 'Space' });
-    expect(button).toHaveAttribute(ARIA_EXPANDED, 'false');
   });
 
-  it('toggles on Enter keyup when no keydown toggle happened', () => {
+  it('toggles content visibility on Enter key activation', async () => {
+    const user = userEvent.setup();
     render(
       <CollapsibleSection id="medication" title="Medication">
         <p>Body</p>
@@ -51,8 +49,9 @@ describe('CollapsibleSection', () => {
     );
 
     const button = screen.getByRole('button', { name: 'Medication' });
+    button.focus();
 
-    fireEvent.keyUp(button, { code: 'Enter' });
+    await user.keyboard('[Enter]');
     expect(button).toHaveAttribute(ARIA_EXPANDED, 'true');
   });
 

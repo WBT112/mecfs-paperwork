@@ -15,9 +15,12 @@ import { openCollapsibleSectionById } from './helpers/sections';
 const FORM_PACK_ID = 'offlabel-antrag';
 const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 30_000;
+const CONFIRMATION_DIALOG_TITLE =
+  /Bestätigung erforderlich|Confirmation required/i;
 const OFFLABEL_INTRO_CHECKBOX_LABEL =
   /Ich habe verstanden|Habe verstanden, Nutzung auf eigenes Risiko|I understand, use at my own risk/i;
 const JSON_EXPORT_PASSWORD = 'secret-123';
+const OVERWRITE_LABEL = /Aktiven Entwurf überschreiben|Overwrite active draft/i;
 
 type RoundtripFormData = {
   firstName: string;
@@ -43,6 +46,14 @@ const acceptIntroGate = async (page: Page) => {
   await expect(page.locator('.formpack-form')).toBeVisible({
     timeout: POLL_TIMEOUT,
   });
+};
+
+const confirmOverwriteDialog = async (page: Page) => {
+  const dialog = page.getByRole('dialog', { name: CONFIRMATION_DIALOG_TITLE });
+  await expect(dialog).toBeVisible({ timeout: POLL_TIMEOUT });
+  await clickActionButton(
+    dialog.getByRole('button', { name: OVERWRITE_LABEL }),
+  );
 };
 
 const selectDrugByValue = async (page: Page, value: string) => {
@@ -262,13 +273,10 @@ const importJsonOverwrite = async (
     await fillTextInputStable(page, '#formpack-import-password', password);
   }
 
-  await page.evaluate(() => {
-    window.confirm = () => true;
-  });
-
   const importButton = page.locator('.formpack-import__actions .app__button');
   await expect(importButton).toBeEnabled({ timeout: POLL_TIMEOUT });
   await clickActionButton(importButton.first(), POLL_TIMEOUT);
+  await confirmOverwriteDialog(page);
 
   const importPanel = page.locator('#formpack-import-content');
   await expect(importPanel.locator('.formpack-import__success')).toBeVisible({

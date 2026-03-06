@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import QuotaBanner from '../../../src/pages/formpack-detail/QuotaBanner';
+import QuotaBanner from '../../../src/pages/formpack-detail/components/QuotaBanner';
 
 describe('QuotaBanner', () => {
   it('shows warning text for warning status and triggers dismiss', async () => {

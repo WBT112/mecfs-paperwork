@@ -52,6 +52,7 @@
   "formpackSearchPlaceholder": "Hilfsangebote durchsuchen\u2026",
   "formpackSelectEmptyOption": "[keine Angabe]",
   "formpackSearchEmpty": "Keine Ergebnisse.",
+  "formpackSearchResultsStatus": "Gefundene Hilfsangebote:",
   "formpackCategoryInsurer": "Krankenkasse",
   "formpackCategoryDoctor": "Arzt",
   "formpackCategoryGeneral": "Allgemein",
@@ -249,9 +250,12 @@
   "storageQuotaError": "Das Speicherlimit wurde erreicht. Exportiere deine Daten und lösche ungenutzte Entwürfe.",
   "storageQuotaDismiss": "Hinweis schließen",
   "common.add": "Hinzufügen",
+  "common.cancel": "Abbrechen",
   "common.close": "Schließen",
+  "common.delete": "Löschen",
   "common.remove": "Entfernen",
   "common.item": "Eintrag",
   "common.itemWithIndex": "{{item}} {{index}}",
-  "common.addItemWithTitle": "{{item}} hinzufügen"
+  "common.addItemWithTitle": "{{item}} hinzufügen",
+  "confirmationDialogTitle": "Bestätigung erforderlich"
 }

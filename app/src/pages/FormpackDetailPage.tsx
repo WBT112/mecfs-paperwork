@@ -1,35 +1,10 @@
-import {
-  Suspense,
-  lazy,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Ajv2020 from 'ajv/dist/2020';
-import { loadFormpackI18n } from '../i18n/formpack';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
-import type { SupportedLocale } from '../i18n/locale';
-import { validateJsonImport, type JsonImportPayload } from '../import/json';
-import {
-  buildJsonExportFilename,
-  buildJsonExportPayload,
-  downloadJsonExport,
-} from '../export/json';
-import {
-  buildDocxExportFilename,
-  downloadDocxExport,
-  exportDocx,
-  getDocxErrorKey,
-  preloadDocxAssets,
-  scheduleDocxPreload,
-  type DocxTemplateId,
-} from '../export/docxLazy';
-import type { PdfExportControlsProps } from '../export/pdf';
+import type { PdfExportControlsProps } from '../export/pdf/PdfExportControls';
 import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
   formpackTemplates,
@@ -38,91 +13,59 @@ import {
 import { FormpackFieldTemplate } from '../lib/rjsfFormpackFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/previewValue';
-import { getFirstItem, isRecord } from '../lib/utils';
-import { buildRandomDummyPatch } from '../lib/devDummyFill';
+import { isRecord } from '../lib/utils';
+import { buildRandomDummyPatch, mergeDummyPatch } from '../lib/devDummyFill';
+import { createAsyncGuard } from '../lib/asyncGuard';
 import { focusWithRetry } from '../lib/focusWithRetry';
-import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
 import {
-  USER_TIMING_NAMES,
-  startUserTiming,
-} from '../lib/performance/userTiming';
-import type { JsonEncryptionEnvelope } from '../lib/jsonEncryption';
-import {
-  FormpackLoaderError,
   FORMPACKS_UPDATED_EVENT,
   DOCTOR_LETTER_FORMPACK_ID,
-  NOTFALLPASS_FORMPACK_ID,
-  OFFLABEL_ANTRAG_FORMPACK_ID,
   deriveFormpackRevisionSignature,
-  getFieldVisibility,
   clearHiddenFields,
   isDevUiEnabled,
   isFormpackVisible,
-  loadFormpackManifest,
-  loadFormpackSchema,
-  loadFormpackUiSchema,
   resolveDecisionTree,
   type DecisionData,
   type FormpackId,
-  type FormpackManifest,
   type InfoBoxConfig,
 } from '../formpacks';
-import {
-  isCompletedCase0Path,
-  normalizeDecisionAnswers,
-} from '../formpacks/doctor-letter/decisionAnswers';
-import {
-  buildOfflabelDocuments,
-  type OfflabelRenderedDocument,
-} from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
-import {
-  getMedicationIndications,
-  getVisibleMedicationOptions,
-  getVisibleMedicationKeys,
-  isMedicationKey,
-  resolveMedicationProfile,
-} from '../formpacks/offlabel-antrag/medications';
-import {
-  resolveOfflabelFocusTarget,
-  type OfflabelFocusTarget,
-} from '../formpacks/offlabel-antrag/focusTarget';
-import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
+import { hasLetterLayout } from '../formpacks/layout';
+import { normalizeDecisionAnswers } from '../formpacks/doctor-letter/decisionAnswers';
 import {
   type FormpackMetaEntry,
-  type RecordEntry,
   type StorageErrorCode,
-  deleteProfile,
   getFormpackMeta,
-  getProfile,
-  hasUsableProfileData,
-  importRecordWithSnapshots,
   upsertFormpackMeta,
-  upsertProfile,
   useAutosaveRecord,
   useRecords,
   useSnapshots,
 } from '../storage';
-import {
-  extractProfileData,
-  applyProfileData,
-} from '../lib/profile/profileMapping';
 import { resetAllLocalData, useStorageHealth } from '../lib/diagnostics';
-import FormpackIntroGate from '../components/FormpackIntroGate';
-import FormpackIntroModal from '../components/FormpackIntroModal';
+import { useConfirmationDialog } from '../components/useConfirmationDialog';
 import {
   DevMetadataPanel,
   DocumentPreviewPanel,
   FormContentSection,
   FormpackDetailHeader,
-  ImportPanel,
+  FormpackDocumentPreviewContent,
+  FormpackExportActions,
+  FormpackFormPanel,
+  FormpackToolsSection,
   QuotaBanner,
-  RecordsPanel,
-  SnapshotsPanel,
-} from './formpack-detail';
+} from './formpack-detail/components';
+import { doctorLetterHelpers } from './formpack-detail/helpers/doctorLetterHelpers';
+import { previewHelpers } from './formpack-detail/helpers/previewHelpers';
+import { useExportFlow } from './formpack-detail/hooks/useExportFlow';
+import { useFormpackLoader } from './formpack-detail/hooks/useFormpackLoader';
+import { useImportFlow } from './formpack-detail/hooks/useImportFlow';
+import { useOfflabelWorkflow } from './formpack-detail/hooks/useOfflabelWorkflow';
+import { useProfileSync } from './formpack-detail/hooks/useProfileSync';
+import { useRecordManager } from './formpack-detail/hooks/useRecordManager';
+import { useSnapshotManager } from './formpack-detail/hooks/useSnapshotManager';
 import { APP_UPDATE_AVAILABLE_EVENT } from '../pwa/register';
-import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
 
@@ -140,1057 +83,15 @@ const LazyPdfExportControls = lazy(async () => {
   return { default: module.default as ComponentType<PdfExportControlsProps> };
 });
 
-type ManifestLoadResult = {
-  manifest: FormpackManifest | null;
-  schema: RJSFSchema | null;
-  uiSchema: UiSchema | null;
-  errorMessage: string | null;
-};
-
-const loadFormpackAssets = async (
-  formpackId: string,
-  locale: SupportedLocale,
-  t: (key: string) => string,
-): Promise<ManifestLoadResult> => {
-  const timing = startUserTiming(USER_TIMING_NAMES.formpackLoadTotal);
-
-  try {
-    const manifest = await loadFormpackManifest(formpackId);
-    if (!isFormpackVisible(manifest)) {
-      return {
-        manifest: null,
-        schema: null,
-        uiSchema: null,
-        errorMessage: t('formpackNotFound'),
-      };
-    }
-
-    await loadFormpackI18n(formpackId, locale);
-    const [schemaData, uiSchemaData] = await Promise.all([
-      loadFormpackSchema(formpackId),
-      loadFormpackUiSchema(formpackId),
-    ]);
-
-    return {
-      manifest,
-      schema: schemaData as RJSFSchema,
-      uiSchema: uiSchemaData as UiSchema,
-      errorMessage: null,
-    };
-  } finally {
-    timing.end();
-  }
-};
-
-const FORMPACK_ERROR_KEYS: Partial<
-  Record<FormpackLoaderError['code'], string>
-> = {
-  network: 'formpackLoadError',
-  schema_not_found: 'formpackSchemaNotFound',
-  schema_invalid: 'formpackSchemaInvalid',
-  schema_unavailable: 'formpackSchemaUnavailable',
-  ui_schema_not_found: 'formpackUiSchemaNotFound',
-  ui_schema_invalid: 'formpackUiSchemaInvalid',
-  ui_schema_unavailable: 'formpackUiSchemaUnavailable',
-  not_found: 'formpackNotFound',
-  unsupported: 'formpackUnsupported',
-  invalid: 'formpackInvalid',
-};
-
-const buildErrorMessage = (
-  error: unknown,
-  t: (key: string) => string,
-): string => {
-  if (error instanceof FormpackLoaderError) {
-    const key = FORMPACK_ERROR_KEYS[error.code];
-    if (key) {
-      return t(key);
-    }
-  }
-
-  return t('formpackLoadError');
-};
-
-const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
-const LAST_ACTIVE_FORMPACK_KEY = 'mecfs-paperwork.lastActiveFormpackId';
-const JSON_ENCRYPTION_KIND = 'mecfs-paperwork-json-encrypted';
 const FORM_PRIMARY_FOCUS_SELECTOR =
   '.formpack-form input:not([type="hidden"]):not([disabled]), .formpack-form select:not([disabled]), .formpack-form textarea:not([disabled]), .formpack-form button:not([disabled]), .formpack-form [tabindex]:not([tabindex="-1"])';
 const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
 const FOCUS_RETRY_DELAY_MS = 50;
 const FOCUS_RETRY_ATTEMPTS = 30;
 
-type JsonEncryptionRuntimeErrorCode =
-  | 'crypto_unsupported'
-  | 'invalid_envelope'
-  | 'decrypt_failed';
-
-const isJsonEncryptionRuntimeError = (
-  error: unknown,
-): error is { code: JsonEncryptionRuntimeErrorCode } => {
-  if (!isRecord(error)) {
-    return false;
-  }
-
-  const code = error.code;
-  return (
-    error.name === 'JsonEncryptionError' &&
-    typeof code === 'string' &&
-    (code === 'crypto_unsupported' ||
-      code === 'invalid_envelope' ||
-      code === 'decrypt_failed')
-  );
-};
-
-const tryParseEncryptedEnvelope = (
-  rawJson: string,
-): JsonEncryptionEnvelope | null => {
-  const normalized = rawJson.replace(/^\uFEFF/, '').trimStart();
-  if (!normalized) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(normalized) as unknown;
-    if (!isRecord(parsed)) {
-      return null;
-    }
-
-    return parsed.kind === JSON_ENCRYPTION_KIND
-      ? (parsed as JsonEncryptionEnvelope)
-      : null;
-  } catch {
-    return null;
-  }
-};
-
-const loadJsonEncryptionModule = async () => import('../lib/jsonEncryption');
-
-const OFFLABEL_FOCUS_SELECTOR_BY_TARGET: Record<OfflabelFocusTarget, string> = {
-  'request.otherDrugName':
-    '#root_request_otherDrugName, [name="root_request_otherDrugName"]',
-  'request.selectedIndicationKey':
-    '#root_request_selectedIndicationKey, [name="root_request_selectedIndicationKey"]',
-  'request.indicationFullyMetOrDoctorConfirms':
-    '#root_request_indicationFullyMetOrDoctorConfirms_0, input[name="root_request_indicationFullyMetOrDoctorConfirms"]',
-};
-
-const hasLetterLayout = (formpackId: string | null): boolean =>
-  formpackId === DOCTOR_LETTER_FORMPACK_ID ||
-  formpackId === OFFLABEL_ANTRAG_FORMPACK_ID;
-
-const resolveImportErrorMessage = (
-  error: { code: string; message?: string },
-  t: (key: string, options?: Record<string, unknown>) => string,
-): string => {
-  switch (error.code) {
-    case 'invalid_json':
-      return error.message
-        ? t('importInvalidJsonWithDetails', { message: error.message })
-        : t('importInvalidJson');
-    case 'unknown_formpack':
-      return t('importUnknownFormpack');
-    case 'schema_mismatch':
-      return t('importSchemaMismatch');
-    case 'formpack_mismatch':
-      return t('importFormpackMismatch');
-    case 'invalid_revisions':
-      return t('importInvalidRevisions');
-    case 'unsupported_locale':
-      return t('importUnsupportedLocale');
-    default:
-      return t('importInvalidPayload');
-  }
-};
-
-const resolveJsonEncryptionErrorMessage = (
-  error: unknown,
-  mode: 'export' | 'import',
-  t: (key: string) => string,
-): string => {
-  if (isJsonEncryptionRuntimeError(error)) {
-    if (error.code === 'crypto_unsupported') {
-      return t('jsonEncryptionUnsupported');
-    }
-    if (error.code === 'decrypt_failed') {
-      return t('importPasswordInvalid');
-    }
-    return t('importEncryptedPayloadInvalid');
-  }
-
-  return mode === 'export'
-    ? t('formpackJsonExportError')
-    : t('importInvalidJson');
-};
-
-const resolveActionSourceElement = (
-  target: EventTarget | null,
-): HTMLElement | null => {
-  if (target instanceof HTMLElement) {
-    return target;
-  }
-  if (target instanceof Node) {
-    const parentElement = target.parentElement;
-    return parentElement instanceof HTMLElement ? parentElement : null;
-  }
-  return null;
-};
-
-const getActionButtonDataAction = (
-  target: EventTarget | null,
-): string | null => {
-  const element = resolveActionSourceElement(target);
-  if (!element) {
-    return null;
-  }
-
-  const actionButton = element.closest('button.app__button');
-  if (!(actionButton instanceof HTMLButtonElement)) {
-    return null;
-  }
-
-  return actionButton.dataset.action ?? '';
-};
-
 const showDevMedicationOptions = isFormpackVisible({ visibility: 'dev' });
 const ignoreAsyncError = (): void => {
   // Intentionally ignore async follow-up errors to keep UI flows resilient.
-};
-
-// Helper: Apply field visibility rules to decision tree UI schema
-const applyFieldVisibility = (
-  decisionUiSchema: Record<string, unknown>,
-  visibility: ReturnType<typeof getFieldVisibility>,
-): void => {
-  (['q2', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8'] as const).forEach((field) => {
-    if (!visibility[field]) {
-      if (!isRecord(decisionUiSchema[field])) {
-        decisionUiSchema[field] = {};
-      }
-      const fieldSchema = decisionUiSchema[field] as Record<string, unknown>;
-      fieldSchema['ui:widget'] = 'hidden';
-    }
-  });
-};
-
-// Helper: Check if Case 0 result should be hidden
-const shouldHideCase0Result = (decision: DecisionData): boolean => {
-  const result = resolveDecisionTree(normalizeDecisionAnswers(decision));
-  const isCase0 = result.caseId === 0;
-
-  if (!isCase0) {
-    return false;
-  }
-
-  // Check if Case 0 is a valid completed path
-  // Only hide if Case 0 is due to incomplete tree, not a valid path.
-  return !isCompletedCase0Path(decision);
-};
-
-const toStringArray = (value: unknown): string[] =>
-  Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === 'string')
-    : [];
-
-const hasSameStringArray = (left: string[], right: string[]): boolean =>
-  left.length === right.length &&
-  left.every((entry, index) => entry === right[index]);
-
-const mergeDummyPatch = (base: unknown, patch: unknown): unknown => {
-  if (patch === undefined) {
-    return base;
-  }
-  if (Array.isArray(patch)) {
-    return patch;
-  }
-  if (!isRecord(base) || !isRecord(patch)) {
-    return patch;
-  }
-
-  const next: Record<string, unknown> = { ...base };
-  for (const [key, patchValue] of Object.entries(patch)) {
-    next[key] = mergeDummyPatch(base[key], patchValue);
-  }
-  return next;
-};
-
-const normalizeOfflabelRequest = (
-  request: Record<string, unknown>,
-  showDevMedications: boolean,
-): Record<string, unknown> => {
-  const visibleMedicationKeys = getVisibleMedicationKeys(showDevMedications);
-  const requestedDrug = isMedicationKey(request.drug) ? request.drug : null;
-  const normalizedDrug =
-    requestedDrug && visibleMedicationKeys.includes(requestedDrug)
-      ? requestedDrug
-      : null;
-
-  if (!normalizedDrug) {
-    const {
-      drug: _unusedDrug,
-      selectedIndicationKey: _unusedIndication,
-      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
-      applySection2Abs1a: _unusedSection2Fallback,
-      ...rest
-    } = request;
-    return rest;
-  }
-
-  const profile = resolveMedicationProfile(normalizedDrug);
-  const requestedIndicationKey =
-    typeof request.selectedIndicationKey === 'string'
-      ? request.selectedIndicationKey
-      : '';
-  const hasMultipleIndications = profile.indications.length > 1;
-  const fallbackIndicationKey = hasMultipleIndications
-    ? ''
-    : (profile.indications[0]?.key ?? '');
-  const hasValidIndication =
-    requestedIndicationKey.length > 0 &&
-    profile.indications.some((entry) => entry.key === requestedIndicationKey);
-  const normalizedIndicationKey = hasValidIndication
-    ? requestedIndicationKey
-    : fallbackIndicationKey;
-
-  if (profile.isOther) {
-    const {
-      selectedIndicationKey: _unused,
-      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
-      applySection2Abs1a: _unusedSection2Fallback,
-      ...otherRequest
-    } = request;
-    return {
-      ...otherRequest,
-      drug: normalizedDrug,
-    };
-  }
-
-  const hasCompletedIndicationStep = normalizedIndicationKey.length > 0;
-  const requestedIndicationConfirmation =
-    request.indicationFullyMetOrDoctorConfirms;
-  const hasSelectedIndicationConfirmation =
-    requestedIndicationConfirmation === 'yes' ||
-    requestedIndicationConfirmation === 'no';
-
-  const normalizedRequest: Record<string, unknown> = {
-    ...request,
-    drug: normalizedDrug,
-    selectedIndicationKey: normalizedIndicationKey,
-  };
-
-  if (!hasCompletedIndicationStep) {
-    const {
-      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
-      applySection2Abs1a: _unusedSection2Fallback,
-      ...withoutIndicationConfirmation
-    } = normalizedRequest;
-    return withoutIndicationConfirmation;
-  }
-
-  if (!hasSelectedIndicationConfirmation) {
-    const {
-      indicationFullyMetOrDoctorConfirms: _unusedIndicationConfirmation,
-      ...withoutIndicationConfirmation
-    } = normalizedRequest;
-    if (typeof request.applySection2Abs1a !== 'boolean') {
-      const {
-        applySection2Abs1a: _unusedSection2Fallback,
-        ...withoutFallback
-      } = withoutIndicationConfirmation;
-      return withoutFallback;
-    }
-    return withoutIndicationConfirmation;
-  }
-
-  if (typeof request.applySection2Abs1a !== 'boolean') {
-    const { applySection2Abs1a: _unusedSection2Fallback, ...withoutFallback } =
-      normalizedRequest;
-    return withoutFallback;
-  }
-
-  return {
-    ...normalizedRequest,
-  };
-};
-
-const buildOfflabelFormSchema = (
-  schema: RJSFSchema,
-  formData: FormDataState,
-  showDevMedications: boolean,
-  locale: SupportedLocale = 'de',
-): RJSFSchema => {
-  if (!isRecord(schema.properties)) {
-    return schema;
-  }
-
-  const requestSchemaNode = (schema.properties as Record<string, unknown>)
-    .request;
-  if (!isRecord(requestSchemaNode) || !isRecord(requestSchemaNode.properties)) {
-    return schema;
-  }
-
-  const requestProperties = requestSchemaNode.properties;
-  const selectedIndicationSchemaNode = requestProperties.selectedIndicationKey;
-  const selectedDrugSchemaNode = requestProperties.drug;
-  if (
-    !isRecord(selectedIndicationSchemaNode) ||
-    !isRecord(selectedDrugSchemaNode)
-  ) {
-    return schema;
-  }
-
-  const visibleMedicationKeys = getVisibleMedicationOptions(
-    locale,
-    showDevMedications,
-  ).map(({ key }) => key);
-  const normalizedRequest = normalizeOfflabelRequest(
-    {
-      drug: getPathValue(formData, 'request.drug'),
-    },
-    showDevMedications,
-  );
-  const scopedIndicationEnum = getMedicationIndications(
-    normalizedRequest.drug,
-    locale,
-  ).map((indication) => indication.key);
-  const currentIndicationEnum = toStringArray(
-    selectedIndicationSchemaNode.enum,
-  );
-  const nextIndicationEnum =
-    scopedIndicationEnum.length > 0
-      ? scopedIndicationEnum
-      : currentIndicationEnum;
-  const currentDrugEnum = toStringArray(selectedDrugSchemaNode.enum);
-
-  if (
-    hasSameStringArray(currentDrugEnum, visibleMedicationKeys) &&
-    hasSameStringArray(currentIndicationEnum, nextIndicationEnum)
-  ) {
-    return schema;
-  }
-
-  const clonedSchema = structuredClone(schema);
-  if (!isRecord(clonedSchema.properties)) {
-    return schema;
-  }
-  const clonedRequestSchemaNode = (
-    clonedSchema.properties as Record<string, unknown>
-  ).request;
-  if (
-    !isRecord(clonedRequestSchemaNode) ||
-    !isRecord(clonedRequestSchemaNode.properties)
-  ) {
-    return schema;
-  }
-  const clonedRequestProperties = clonedRequestSchemaNode.properties;
-  const clonedSelectedIndicationNode =
-    clonedRequestProperties.selectedIndicationKey;
-  const clonedSelectedDrugNode = clonedRequestProperties.drug;
-  if (
-    !isRecord(clonedSelectedIndicationNode) ||
-    !isRecord(clonedSelectedDrugNode)
-  ) {
-    return schema;
-  }
-
-  clonedSelectedDrugNode.enum = [...visibleMedicationKeys];
-  clonedSelectedIndicationNode.enum = [...nextIndicationEnum];
-  return clonedSchema;
-};
-
-type PreviewValueResolver = (
-  value: unknown,
-  schema?: RJSFSchema,
-  uiSchema?: UiSchema,
-  fieldPath?: string,
-) => ReactNode;
-
-const getOrderedKeys = (
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | null | undefined,
-  value: Record<string, unknown>,
-): string[] => {
-  const schemaProps =
-    schemaNode && isRecord(schemaNode.properties)
-      ? (schemaNode.properties as Record<string, RJSFSchema>)
-      : null;
-  const keys = Array.from(
-    new Set([
-      ...(schemaProps ? Object.keys(schemaProps) : []),
-      ...Object.keys(value),
-    ]),
-  );
-  const uiOrderRaw =
-    isRecord(uiNode) && Array.isArray(uiNode['ui:order'])
-      ? uiNode['ui:order']
-      : null;
-  if (!uiOrderRaw) {
-    return keys;
-  }
-  const order = uiOrderRaw.filter((entry) => typeof entry === 'string');
-  const remaining = keys.filter((key) => !order.includes(key) && key !== '*');
-  if (order.includes('*')) {
-    const ordered: string[] = [];
-    order.forEach((entry) => {
-      if (entry === '*') {
-        ordered.push(...remaining);
-        return;
-      }
-      if (keys.includes(entry)) {
-        ordered.push(entry);
-      }
-    });
-    return ordered;
-  }
-  return [...order.filter((entry) => entry !== '*'), ...remaining];
-};
-
-const getUiSchemaNode = (
-  uiNode: UiSchema | null | undefined,
-  key: string,
-): UiSchema | undefined => {
-  if (!isRecord(uiNode)) {
-    return undefined;
-  }
-  const entry = (uiNode as Record<string, unknown>)[key];
-  return isRecord(entry) ? (entry as UiSchema) : undefined;
-};
-
-const getItemSchema = (
-  schemaNode: RJSFSchema | undefined,
-): RJSFSchema | undefined =>
-  getFirstItem(schemaNode?.items) as RJSFSchema | undefined;
-
-const getItemUiSchema = (
-  uiNode: UiSchema | null | undefined,
-): UiSchema | undefined => getFirstItem(uiNode?.items) as UiSchema | undefined;
-
-const buildFieldPath = (segment: string, prefix?: string): string =>
-  prefix ? `${prefix}.${segment}` : segment;
-
-const normalizeParagraphs = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
-    .filter(Boolean);
-};
-
-const isDecisionCaseTextPath = (
-  fieldPath?: string,
-): fieldPath is 'decision.caseText' | 'decision.resolvedCaseText' =>
-  fieldPath === 'decision.caseText' ||
-  fieldPath === 'decision.resolvedCaseText';
-
-const isDecisionCaseParagraphsPath = (
-  fieldPath?: string,
-): fieldPath is 'decision.caseParagraphs' =>
-  fieldPath === 'decision.caseParagraphs';
-
-const renderParagraphs = (
-  paragraphs: string[],
-  keyPrefix: string,
-): ReactNode => {
-  const counts = new Map<string, number>();
-
-  return (
-    <>
-      {paragraphs.map((paragraph) => {
-        const count = counts.get(paragraph) ?? 0;
-        counts.set(paragraph, count + 1);
-        const key = `${keyPrefix}-${paragraph}-${count}`;
-
-        return <p key={key}>{paragraph}</p>;
-      })}
-    </>
-  );
-};
-
-type OfflabelRenderedBlock = OfflabelRenderedDocument['blocks'][number];
-const OFFLABEL_PART2_CONSENT_HEADING_PREFIX =
-  'Aufklärung und Einwilligung zum Off-Label-Use:';
-
-const getOfflabelPreviewBlockKey = (
-  documentId: string,
-  block: OfflabelRenderedBlock,
-): string => {
-  if (block.kind === 'list') {
-    return `${documentId}-${block.kind}-${block.items.join('|')}`;
-  }
-  if (block.kind === 'pageBreak') {
-    return `${documentId}-${block.kind}`;
-  }
-  return `${documentId}-${block.kind}-${block.text}`;
-};
-
-const renderOfflabelPreviewBlock = (
-  documentId: string,
-  block: OfflabelRenderedBlock,
-): ReactNode => {
-  const blockKey = getOfflabelPreviewBlockKey(documentId, block);
-
-  if (block.kind === 'heading') {
-    return <h3 key={blockKey}>{block.text}</h3>;
-  }
-
-  if (block.kind === 'paragraph') {
-    return <p key={blockKey}>{block.text}</p>;
-  }
-
-  if (block.kind === 'list') {
-    if (!block.items.length) {
-      return null;
-    }
-
-    return (
-      <ul key={blockKey}>
-        {block.items.map((item) => (
-          <li key={`${documentId}-${block.kind}-${item}`}>{item}</li>
-        ))}
-      </ul>
-    );
-  }
-
-  return null;
-};
-
-const renderOfflabelPreviewDocument = (
-  document: OfflabelRenderedDocument,
-): ReactNode => (
-  <div key={document.id}>
-    {document.blocks.map((block) =>
-      renderOfflabelPreviewBlock(document.id, block),
-    )}
-  </div>
-);
-
-const stripOfflabelPart2ConsentFromPreview = (
-  document: OfflabelRenderedDocument,
-): OfflabelRenderedDocument => {
-  if (document.id !== 'part2') {
-    return document;
-  }
-
-  const consentHeadingIndex = document.blocks.findIndex(
-    (block) =>
-      block.kind === 'heading' &&
-      block.text.startsWith(OFFLABEL_PART2_CONSENT_HEADING_PREFIX),
-  );
-
-  if (consentHeadingIndex < 0) {
-    return document;
-  }
-
-  return {
-    ...document,
-    blocks: document.blocks.slice(0, consentHeadingIndex),
-  };
-};
-
-const hasDecisionCaseText = (value: Record<string, unknown>): boolean =>
-  typeof value.caseText === 'string' ||
-  typeof value.resolvedCaseText === 'string';
-
-const getDecisionVisibleKeys = (
-  keys: string[],
-  decisionParagraphs: string[],
-  includesDecisionCaseText: boolean,
-): string[] =>
-  decisionParagraphs.length && includesDecisionCaseText
-    ? keys.filter((key) => key !== 'caseParagraphs')
-    : keys;
-
-const getDecisionParagraphsForEntry = (
-  entry: unknown,
-  decisionParagraphs: string[],
-): string[] => {
-  if (decisionParagraphs.length) {
-    return decisionParagraphs;
-  }
-  if (typeof entry === 'string') {
-    return normalizeParagraphText(entry).paragraphs;
-  }
-  return [];
-};
-
-const resolveDecisionCaseTextValue = (
-  entry: unknown,
-  childPath: string | undefined,
-  decisionParagraphs: string[],
-): ReactNode | null => {
-  if (!isDecisionCaseTextPath(childPath)) {
-    return null;
-  }
-
-  const paragraphs = getDecisionParagraphsForEntry(entry, decisionParagraphs);
-  if (!paragraphs.length) {
-    return null;
-  }
-
-  return renderParagraphs(paragraphs, childPath);
-};
-
-const buildDecisionPreviewContext = (
-  value: Record<string, unknown>,
-  fieldPath: string | undefined,
-  keys: string[],
-  resolveWithFallback: PreviewValueResolver,
-): { visibleKeys: string[]; resolveValue: PreviewValueResolver } => {
-  if (fieldPath !== 'decision') {
-    return { visibleKeys: keys, resolveValue: resolveWithFallback };
-  }
-
-  const decisionParagraphs = normalizeParagraphs(value.caseParagraphs);
-  const visibleKeys = getDecisionVisibleKeys(
-    keys,
-    decisionParagraphs,
-    hasDecisionCaseText(value),
-  );
-  const resolveValue: PreviewValueResolver = (
-    entry,
-    schemaNode,
-    uiNode,
-    childPath,
-  ) => {
-    const caseText = resolveDecisionCaseTextValue(
-      entry,
-      childPath,
-      decisionParagraphs,
-    );
-    if (caseText) {
-      return caseText;
-    }
-    return resolveWithFallback(entry, schemaNode, uiNode, childPath);
-  };
-
-  return { visibleKeys, resolveValue };
-};
-
-const getLabel = (
-  key: string,
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | null | undefined,
-): string => {
-  if (isRecord(uiNode) && typeof uiNode['ui:title'] === 'string') {
-    return uiNode['ui:title'];
-  }
-  if (typeof schemaNode?.title === 'string' && schemaNode.title.length > 0) {
-    return schemaNode.title;
-  }
-  return key;
-};
-
-type PreviewEntry =
-  | { type: 'row'; node: ReactNode }
-  | { type: 'nested'; node: ReactNode };
-
-type PreviewEntryOptions = {
-  entry: unknown;
-  key: string;
-  childSchema: RJSFSchema | undefined;
-  childUi: UiSchema | undefined;
-  childLabel: string;
-  resolveValue: PreviewValueResolver;
-  fieldPath: string;
-  sectionKey?: string;
-};
-
-const buildPreviewRow = (
-  key: string,
-  label: string,
-  entry: unknown,
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | undefined,
-  resolveValue: PreviewValueResolver,
-  fieldPath: string,
-) => (
-  <div key={`row-${key}`}>
-    <dt>{label}</dt>
-    <dd>{resolveValue(entry, schemaNode, uiNode, fieldPath)}</dd>
-  </div>
-);
-
-const buildPreviewEntry = ({
-  entry,
-  key,
-  childSchema,
-  childUi,
-  childLabel,
-  resolveValue,
-  fieldPath,
-  sectionKey,
-}: PreviewEntryOptions): PreviewEntry | null => {
-  if (!hasPreviewValue(entry)) {
-    return null;
-  }
-
-  const nestedKey = `${sectionKey ?? 'section'}-${key}`;
-  if (Array.isArray(entry)) {
-    const section = renderPreviewArray(
-      entry,
-      childSchema,
-      childUi,
-      childLabel,
-      resolveValue,
-      fieldPath,
-      nestedKey,
-    );
-    return { type: 'nested', node: section };
-  }
-
-  if (isRecord(entry)) {
-    const section = renderPreviewObject(
-      entry,
-      childSchema,
-      childUi,
-      childLabel,
-      resolveValue,
-      fieldPath,
-      nestedKey,
-    );
-    return { type: 'nested', node: section };
-  }
-
-  return {
-    type: 'row',
-    node: buildPreviewRow(
-      key,
-      childLabel,
-      entry,
-      childSchema,
-      childUi,
-      resolveValue,
-      fieldPath,
-    ),
-  };
-};
-
-const buildArrayItem = (
-  entry: unknown,
-  index: number,
-  itemSchema: RJSFSchema | undefined,
-  itemUi: UiSchema | undefined,
-  resolveValue: PreviewValueResolver,
-  fieldPath: string,
-  sectionKey?: string,
-): ReactNode | null => {
-  if (!hasPreviewValue(entry)) {
-    return null;
-  }
-
-  const nestedKey = `${sectionKey ?? 'array'}-${index}`;
-  if (Array.isArray(entry)) {
-    const nested = renderPreviewArray(
-      entry,
-      itemSchema,
-      itemUi,
-      undefined,
-      resolveValue,
-      fieldPath,
-      nestedKey,
-    );
-    return <li key={`nested-${index}`}>{nested}</li>;
-  }
-
-  if (isRecord(entry)) {
-    const nested = renderPreviewObject(
-      entry,
-      itemSchema,
-      itemUi,
-      undefined,
-      resolveValue,
-      fieldPath,
-      nestedKey,
-    );
-    return <li key={`object-${index}`}>{nested}</li>;
-  }
-
-  return (
-    <li key={`value-${index}`}>
-      {resolveValue(entry, itemSchema, itemUi, fieldPath)}
-    </li>
-  );
-};
-
-// RATIONALE: These functions are pure and do not depend on component state.
-// Defining them outside the component prevents them from being re-created on every
-// render, which improves performance by reducing garbage collection and avoiding
-// unnecessary re-renders of memoized components that depend on them.
-function renderPreviewObject(
-  value: Record<string, unknown>,
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | null | undefined,
-  label?: string,
-  resolveValue?: PreviewValueResolver,
-  fieldPath?: string,
-  sectionKey?: string,
-): ReactNode {
-  const resolveWithFallback =
-    resolveValue ??
-    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
-      resolveDisplayValue(entryValue, {
-        schema: entrySchema,
-        uiSchema: entryUi,
-        fieldPath: entryFieldPath,
-      }));
-  const schemaProps =
-    schemaNode && isRecord(schemaNode.properties)
-      ? (schemaNode.properties as Record<string, RJSFSchema>)
-      : null;
-  const keys = getOrderedKeys(schemaNode, uiNode, value);
-  const { visibleKeys, resolveValue: resolveWithDecisionParagraphs } =
-    buildDecisionPreviewContext(value, fieldPath, keys, resolveWithFallback);
-  const rows: ReactNode[] = [];
-  const nested: ReactNode[] = [];
-
-  visibleKeys.forEach((key) => {
-    const entry = value[key];
-    const childSchema = schemaProps ? schemaProps[key] : undefined;
-    const childUi = getUiSchemaNode(uiNode, key);
-    const childLabel = getLabel(key, childSchema, childUi);
-    const childPath = buildFieldPath(key, fieldPath);
-    const preview = buildPreviewEntry({
-      entry,
-      key,
-      childSchema,
-      childUi,
-      childLabel,
-      resolveValue: resolveWithDecisionParagraphs,
-      fieldPath: childPath,
-      sectionKey,
-    });
-    if (!preview) {
-      return;
-    }
-    if (preview.type === 'row') {
-      rows.push(preview.node);
-    } else {
-      nested.push(preview.node);
-    }
-  });
-
-  if (!rows.length && !nested.length) {
-    return null;
-  }
-
-  const content = (
-    <>
-      {rows.length > 0 ? <dl>{rows}</dl> : null}
-      {nested}
-    </>
-  );
-
-  if (!label) {
-    return content;
-  }
-
-  return (
-    <div className="formpack-document-preview__section" key={sectionKey}>
-      <h4>{label}</h4>
-      {content}
-    </div>
-  );
-}
-
-function renderPreviewArray(
-  values: unknown[],
-  schemaNode: RJSFSchema | undefined,
-  uiNode: UiSchema | null | undefined,
-  label?: string,
-  resolveValue?: PreviewValueResolver,
-  fieldPath?: string,
-  sectionKey?: string,
-): ReactNode {
-  if (isDecisionCaseParagraphsPath(fieldPath)) {
-    const paragraphValues = normalizeParagraphs(values);
-    if (paragraphValues.length) {
-      return (
-        <div className="formpack-document-preview__section" key={sectionKey}>
-          {label ? <h4>{label}</h4> : null}
-          {renderParagraphs(paragraphValues, fieldPath)}
-        </div>
-      );
-    }
-  }
-
-  const itemSchema = getItemSchema(schemaNode);
-  const itemUi = getItemUiSchema(uiNode);
-  const resolveWithFallback =
-    resolveValue ??
-    ((entryValue, entrySchema, entryUi, entryFieldPath) =>
-      resolveDisplayValue(entryValue, {
-        schema: entrySchema,
-        uiSchema: entryUi,
-        fieldPath: entryFieldPath,
-      }));
-  const items = values
-    .map<ReactNode>((entry, index) => {
-      return buildArrayItem(
-        entry,
-        index,
-        itemSchema,
-        itemUi,
-        resolveWithFallback,
-        fieldPath ?? '',
-        sectionKey,
-      );
-    })
-    .filter((entry): entry is Exclude<ReactNode, null | undefined | false> =>
-      Boolean(entry),
-    );
-
-  if (!items.length) {
-    return null;
-  }
-
-  return (
-    <div className="formpack-document-preview__section" key={sectionKey}>
-      {label ? <h4>{label}</h4> : null}
-      <ul className="formpack-document-preview__list">{items}</ul>
-    </div>
-  );
-}
-
-export const __formpackDetailTestUtils = {
-  applyFieldVisibility,
-  buildDecisionPreviewContext,
-  buildErrorMessage,
-  buildFieldPath,
-  buildOfflabelFormSchema,
-  buildPreviewEntry,
-  buildPreviewRow,
-  getDecisionParagraphsForEntry,
-  getDecisionVisibleKeys,
-  getItemSchema,
-  getItemUiSchema,
-  getLabel,
-  getOfflabelPreviewBlockKey,
-  getOrderedKeys,
-  getUiSchemaNode,
-  hasDecisionCaseText,
-  hasLetterLayout,
-  hasSameStringArray,
-  isDecisionCaseParagraphsPath,
-  isDecisionCaseTextPath,
-  isJsonEncryptionRuntimeError,
-  loadFormpackAssets,
-  mergeDummyPatch,
-  normalizeOfflabelRequest,
-  resolveImportErrorMessage,
-  resolveJsonEncryptionErrorMessage,
-  normalizeParagraphs,
-  getActionButtonDataAction,
-  renderOfflabelPreviewBlock,
-  renderOfflabelPreviewDocument,
-  renderParagraphs,
-  renderPreviewArray,
-  renderPreviewObject,
-  resolveDecisionCaseTextValue,
-  shouldHideCase0Result,
-  toStringArray,
-  tryParseEncryptedEnvelope,
 };
 
 /**
@@ -1198,34 +99,11 @@ export const __formpackDetailTestUtils = {
  */
 export default function FormpackDetailPage() {
   const { t, i18n } = useTranslation();
+  const { confirmationDialog, requestConfirmation } = useConfirmationDialog();
   const { locale, setLocale } = useLocale();
   const { id } = useParams();
-  const [manifest, setManifest] = useState<FormpackManifest | null>(null);
-  const [schema, setSchema] = useState<RJSFSchema | null>(null);
-  const [uiSchema, setUiSchema] = useState<UiSchema | null>(null);
   const [formData, setFormData] = useState<FormDataState>({});
-  const [importJson, setImportJson] = useState('');
-  const [importFileName, setImportFileName] = useState<string | null>(null);
-  const [importPassword, setImportPassword] = useState('');
-  const [isImportFileEncrypted, setIsImportFileEncrypted] = useState(false);
-  const [importMode, setImportMode] = useState<'new' | 'overwrite'>('new');
-  const [importIncludeRevisions, setImportIncludeRevisions] = useState(true);
-  const [importError, setImportError] = useState<string | null>(null);
-  const [importSuccess, setImportSuccess] = useState<string | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const [encryptJsonExport, setEncryptJsonExport] = useState(false);
-  const [jsonExportPassword, setJsonExportPassword] = useState('');
-  const [jsonExportPasswordConfirm, setJsonExportPasswordConfirm] =
-    useState('');
-  const [jsonExportError, setJsonExportError] = useState<string | null>(null);
-  const [docxTemplateId, setDocxTemplateId] = useState<DocxTemplateId>('a4');
-  const [docxError, setDocxError] = useState<string | null>(null);
-  const [docxSuccess, setDocxSuccess] = useState<string | null>(null);
-  const [isDocxExporting, setIsDocxExporting] = useState(false);
-  const [pdfError, setPdfError] = useState<string | null>(null);
-  const [pdfSuccess, setPdfSuccess] = useState<string | null>(null);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
   );
@@ -1237,35 +115,27 @@ export default function FormpackDetailPage() {
     null,
   );
   const [assetRefreshVersion, setAssetRefreshVersion] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
   const [showFormpackUpdateNotice, setShowFormpackUpdateNotice] =
     useState(false);
   const [showAppUpdateNotice, setShowAppUpdateNotice] = useState(false);
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
   const [pendingIntroFocus, setPendingIntroFocus] = useState(false);
   const [pendingFormFocus, setPendingFormFocus] = useState(false);
-  const [pendingOfflabelFocusTarget, setPendingOfflabelFocusTarget] =
-    useState<OfflabelFocusTarget | null>(null);
-  const [profileSaveEnabled, setProfileSaveEnabled] = useState(() => {
-    try {
-      const stored = globalThis.localStorage.getItem(PROFILE_SAVE_KEY);
-      return stored === null ? true : stored === 'true';
-    } catch {
-      return true;
-    }
-  });
-  const [profileHasSavedData, setProfileHasSavedData] = useState(false);
-  const [profileStatus, setProfileStatus] = useState<string | null>(null);
-  const [selectedOfflabelPreviewId, setSelectedOfflabelPreviewId] = useState<
-    'part1' | 'part2' | 'part3'
-  >('part1');
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const formContentRef = useRef<HTMLDivElement | null>(null);
-  const lastFormpackIdRef = useRef<string | undefined>(undefined);
-  const hasRestoredRecordRef = useRef<string | null>(null);
-  const formpackId = manifest?.id ?? null;
-  const offlabelOutputLocale: SupportedLocale =
-    formpackId === OFFLABEL_ANTRAG_FORMPACK_ID ? 'de' : locale;
+  const handleLoadedFormpackChange = useCallback(() => {
+    setFormData({});
+    setIsIntroModalOpen(false);
+  }, []);
+  const { errorMessage, isLoading, manifest, schema, uiSchema } =
+    useFormpackLoader({
+      formpackId: id,
+      locale,
+      onFormpackChanged: handleLoadedFormpackChange,
+      refreshToken: assetRefreshVersion,
+      t,
+    });
+  const formpackId = (manifest?.id as FormpackId | undefined) ?? null;
   const {
     records,
     activeRecord,
@@ -1297,154 +167,27 @@ export default function FormpackDetailPage() {
       onSaved: (record) => {
         setStorageError(null);
         applyRecordUpdate(record);
-
-        if (profileSaveEnabled && formpackId) {
-          const partial = extractProfileData(
-            formpackId as FormpackId,
-            record.data,
-          );
-          upsertProfile('default', partial).then((entry) => {
-            setProfileHasSavedData(hasUsableProfileData(entry.data));
-          }, ignoreAsyncError);
-        }
+        handleProfileRecordSaved(record);
       },
       onError: setStorageError,
     },
   );
-
-  const refreshProfileState = useCallback(() => {
-    getProfile('default').then(
-      (entry) => {
-        setProfileHasSavedData(
-          entry !== null && hasUsableProfileData(entry.data),
-        );
-      },
-      () => {
-        setProfileHasSavedData(false);
-      },
-    );
-  }, []);
-
-  useEffect(() => {
-    refreshProfileState();
-  }, [refreshProfileState]);
-
-  const handleProfileSaveToggle = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      const enabled = event.target.checked;
-      setProfileSaveEnabled(enabled);
-      try {
-        globalThis.localStorage.setItem(
-          PROFILE_SAVE_KEY,
-          enabled ? 'true' : 'false',
-        );
-      } catch {
-        // Ignore storage errors.
-      }
-
-      if (!enabled && profileHasSavedData) {
-        const shouldDeleteExisting =
-          typeof globalThis.confirm === 'function'
-            ? globalThis.confirm(t('profileDeleteConfirmPrompt'))
-            : false;
-
-        if (shouldDeleteExisting) {
-          deleteProfile('default').then(() => {
-            setProfileHasSavedData(false);
-          }, ignoreAsyncError);
-        }
-      }
-    },
-    [profileHasSavedData, t],
-  );
-
-  const handleApplyProfile = useCallback(async () => {
-    setProfileStatus(null);
-    try {
-      const entry = await getProfile('default');
-      if (!entry || !hasUsableProfileData(entry.data)) {
-        setProfileStatus(t('profileApplyNoData'));
-        return;
-      }
-      const next = applyProfileData(
-        formpackId as FormpackId,
-        formData,
-        entry.data,
-      );
-      setFormData(next);
-      markAsSaved(next);
-      setProfileStatus(t('profileApplySuccess'));
-    } catch {
-      setProfileStatus(t('profileApplyError'));
-    }
-  }, [formpackId, formData, markAsSaved, t]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const resetFormpack = () => {
-      setManifest(null);
-      setSchema(null);
-      setUiSchema(null);
-      setFormpackMeta(null);
-    };
-
-    const loadManifest = async (requestedFormpackId: string) => {
-      setIsLoading(true);
-      setErrorMessage(null);
-
-      try {
-        const result = await loadFormpackAssets(requestedFormpackId, locale, t);
-        if (!isActive) {
-          return;
-        }
-        if (result.errorMessage) {
-          resetFormpack();
-          setErrorMessage(result.errorMessage);
-          return;
-        }
-        const shouldResetFormData =
-          lastFormpackIdRef.current !== requestedFormpackId;
-        setManifest(result.manifest);
-        setSchema(result.schema);
-        setUiSchema(result.uiSchema);
-        if (shouldResetFormData) {
-          setFormData({});
-          setIsIntroModalOpen(false);
-          lastFormpackIdRef.current = requestedFormpackId;
-        }
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-        resetFormpack();
-        setErrorMessage(buildErrorMessage(error, t));
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    if (id) {
-      loadManifest(id).catch(ignoreAsyncError);
-    } else {
-      resetFormpack();
-      setFormData({});
-      setValidator(null);
-      lastFormpackIdRef.current = undefined;
-      setErrorMessage(t('formpackMissingId'));
-      setIsLoading(false);
-    }
-
-    return () => {
-      isActive = false;
-    };
-  }, [assetRefreshVersion, id, locale, t]);
-
-  useEffect(() => {
-    setSelectedOfflabelPreviewId('part1');
-  }, [formpackId]);
+  const {
+    profileSaveEnabled,
+    profileHasSavedData,
+    profileStatus,
+    clearProfileStatus,
+    handleProfileRecordSaved,
+    handleProfileSaveToggle,
+    handleApplyProfile,
+  } = useProfileSync({
+    formpackId,
+    formData,
+    markAsSaved,
+    requestConfirmation,
+    setFormData,
+    t,
+  });
 
   useEffect(() => {
     if (!manifest) {
@@ -1452,7 +195,7 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    let isActive = true;
+    const guard = createAsyncGuard();
 
     const ensureFormpackMeta = async () => {
       try {
@@ -1473,11 +216,11 @@ export default function FormpackDetailPage() {
               hash: signature.hash,
             });
 
-        if (isActive) {
+        if (guard.isActive()) {
           setFormpackMeta(nextMeta);
         }
       } catch {
-        if (isActive) {
+        if (guard.isActive()) {
           setFormpackMeta(null);
         }
       }
@@ -1485,9 +228,7 @@ export default function FormpackDetailPage() {
 
     ensureFormpackMeta().catch(ignoreAsyncError);
 
-    return () => {
-      isActive = false;
-    };
+    return guard.deactivate;
   }, [manifest]);
 
   useEffect(() => {
@@ -1495,12 +236,12 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    let isActive = true;
+    const guard = createAsyncGuard();
     const currentFormpackId = manifest.id;
 
     const refreshMeta = async () => {
       const next = await getFormpackMeta(currentFormpackId);
-      if (isActive) {
+      if (guard.isActive()) {
         setFormpackMeta(next);
       }
     };
@@ -1527,7 +268,7 @@ export default function FormpackDetailPage() {
     );
 
     return () => {
-      isActive = false;
+      guard.deactivate();
       globalThis.removeEventListener(
         FORMPACKS_UPDATED_EVENT,
         handleUpdated as EventListener,
@@ -1552,20 +293,6 @@ export default function FormpackDetailPage() {
       );
     };
   }, []);
-
-  useEffect(() => {
-    const manifestExports = manifest?.exports;
-    if (!manifest?.docx || !manifestExports?.includes('docx') || !formpackId) {
-      return;
-    }
-
-    const docxManifest = manifest.docx;
-
-    // Preload DOCX assets so export still works after going offline.
-    return scheduleDocxPreload(() =>
-      preloadDocxAssets(formpackId, docxManifest),
-    );
-  }, [formpackId, manifest]);
 
   useEffect(() => {
     setStorageError(recordsError ?? snapshotsError ?? null);
@@ -1600,42 +327,26 @@ export default function FormpackDetailPage() {
         : null,
     [schema, translatedUiSchema],
   );
-  // ⚡ Perf: Extract the narrow slices of formData that actually affect schema
-  // and UI visibility. Using the full formData as a useMemo dependency would
-  // trigger expensive structuredClone on every keystroke, even when the user
-  // edits unrelated text fields.
-  const selectedDrug = getPathValue(formData, 'request.drug');
-  const selectedIndicationKey = getPathValue(
+  const {
+    clearPendingOfflabelFocusTarget,
+    formSchema,
+    handleOfflabelFormChange,
+    offlabelOutputLocale,
+    offlabelPreviewDocuments,
+    offlabelUiSchema,
+    pendingOfflabelFocusSelector,
+    selectedOfflabelPreviewId,
+    setSelectedOfflabelPreviewId,
+  } = useOfflabelWorkflow({
     formData,
-    'request.selectedIndicationKey',
-  );
-  const indicationConfirmation = getPathValue(
-    formData,
-    'request.indicationFullyMetOrDoctorConfirms',
-  );
+    formpackId,
+    locale,
+    normalizedUiSchema,
+    schema,
+    setFormData,
+    showDevMedicationOptions,
+  });
   const decisionData = formData.decision;
-  const offlabelVisibilityData = useMemo(
-    () => ({
-      request: {
-        drug: selectedDrug,
-        selectedIndicationKey,
-        indicationFullyMetOrDoctorConfirms: indicationConfirmation,
-      },
-    }),
-    [selectedDrug, selectedIndicationKey, indicationConfirmation],
-  );
-
-  const formSchema = useMemo(() => {
-    if (!schema || formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
-      return schema;
-    }
-    return buildOfflabelFormSchema(
-      schema,
-      formData,
-      showDevMedicationOptions,
-      locale,
-    );
-  }, [selectedDrug, formpackId, schema, locale, showDevMedicationOptions]); // eslint-disable-line react-hooks/exhaustive-deps -- formData read narrowed to selectedDrug
 
   // Apply conditional visibility for doctor-letter decision tree
   const conditionalUiSchema = useMemo(() => {
@@ -1643,64 +354,34 @@ export default function FormpackDetailPage() {
       return normalizedUiSchema;
     }
 
-    if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
-      return applyOfflabelVisibility(
-        normalizedUiSchema,
-        offlabelVisibilityData,
-        locale,
-        showDevMedicationOptions,
-      );
+    if (offlabelUiSchema !== normalizedUiSchema) {
+      return offlabelUiSchema;
     }
 
     if (formpackId !== DOCTOR_LETTER_FORMPACK_ID) {
       return normalizedUiSchema;
     }
-
-    // Treat missing or invalid decision as empty object to apply visibility rules
-    const decision = (
-      isRecord(decisionData) ? decisionData : {}
-    ) as DecisionData;
-    const visibility = getFieldVisibility(decision);
-
-    // Clone the UI schema to avoid mutations
-    const clonedUiSchema = structuredClone(normalizedUiSchema);
-
-    if (!isRecord(clonedUiSchema.decision)) {
-      return normalizedUiSchema;
-    }
-
-    const decisionUiSchema = clonedUiSchema.decision;
-
-    // Apply field visibility rules
-    applyFieldVisibility(decisionUiSchema, visibility);
-
-    // Hide result field for incomplete decision tree (but show for valid Case 0)
-    if (
-      shouldHideCase0Result(decision) &&
-      isRecord(decisionUiSchema.resolvedCaseText)
-    ) {
-      const resultSchema = decisionUiSchema.resolvedCaseText;
-      resultSchema['ui:widget'] = 'hidden';
-    }
-
-    return clonedUiSchema;
-  }, [
-    normalizedUiSchema,
-    formpackId,
-    decisionData,
-    locale,
-    offlabelVisibilityData,
-  ]);
+    return doctorLetterHelpers.buildDoctorLetterConditionalUiSchema(
+      normalizedUiSchema,
+      decisionData,
+    );
+  }, [decisionData, formpackId, normalizedUiSchema, offlabelUiSchema]);
 
   const handleApplyDummyData = useCallback(() => {
     const patch = buildRandomDummyPatch(formSchema, conditionalUiSchema);
     const merged = mergeDummyPatch(formData, patch);
     const nextData = isRecord(merged) ? merged : formData;
 
-    setProfileStatus(null);
+    clearProfileStatus();
     setFormData(nextData);
     markAsSaved(nextData);
-  }, [conditionalUiSchema, formData, formSchema, markAsSaved]);
+  }, [
+    clearProfileStatus,
+    conditionalUiSchema,
+    formData,
+    formSchema,
+    markAsSaved,
+  ]);
 
   const dateFormatter = useMemo(
     () =>
@@ -1737,88 +418,27 @@ export default function FormpackDetailPage() {
       ? t('storageUnavailable')
       : t('storageError');
   }, [effectiveStorageError, t]);
+  const confirmationDialogTitle = t('confirmationDialogTitle');
+  const cancelLabel = t('common.cancel');
 
   const handleResetAllStorageData = useCallback(async () => {
-    const confirmed = globalThis.confirm(t('resetAllConfirm'));
+    const confirmed = await requestConfirmation({
+      title: confirmationDialogTitle,
+      message: t('resetAllConfirm'),
+      confirmLabel: t('resetAllButton'),
+      cancelLabel,
+      tone: 'danger',
+    });
     if (!confirmed) {
       return;
     }
 
     await resetAllLocalData();
-  }, [t]);
+  }, [cancelLabel, confirmationDialogTitle, requestConfirmation, t]);
 
   const storageBlocked =
     effectiveStorageError === 'unavailable' ||
     effectiveStorageError === 'locked';
-
-  useEffect(() => {
-    if (!activeRecord && importMode === 'overwrite') {
-      setImportMode('new');
-    }
-  }, [activeRecord, importMode]);
-
-  useEffect(() => {
-    if (!encryptJsonExport) {
-      setJsonExportPassword('');
-      setJsonExportPasswordConfirm('');
-      setJsonExportError(null);
-    }
-  }, [encryptJsonExport]);
-
-  const activeRecordStorageKey = useMemo(
-    () => (formpackId ? `mecfs-paperwork.activeRecordId.${formpackId}` : null),
-    [formpackId],
-  );
-
-  const readActiveRecordId = useCallback(() => {
-    try {
-      return globalThis.localStorage.getItem(activeRecordStorageKey!);
-    } catch {
-      return null;
-    }
-  }, [activeRecordStorageKey]);
-
-  const persistActiveRecordId = useCallback(
-    (recordId: string) => {
-      try {
-        globalThis.localStorage.setItem(activeRecordStorageKey!, recordId);
-        globalThis.localStorage.setItem(LAST_ACTIVE_FORMPACK_KEY, formpackId!);
-      } catch {
-        // Ignore storage errors to keep the UI responsive.
-      }
-    },
-    [activeRecordStorageKey, formpackId],
-  );
-
-  const getLastActiveRecord = useCallback(
-    async (currentFormpackId: string) => {
-      const lastId = readActiveRecordId();
-      if (!lastId) {
-        return null;
-      }
-
-      const record = await loadRecord(lastId);
-      if (record?.formpackId === currentFormpackId) {
-        return record;
-      }
-
-      return null;
-    },
-    [loadRecord, readActiveRecordId],
-  );
-
-  const getFallbackRecord = useCallback(
-    (currentFormpackId: string) => {
-      if (records.length === 0) {
-        return null;
-      }
-      const fallbackRecord = records[0];
-      return fallbackRecord.formpackId === currentFormpackId
-        ? fallbackRecord
-        : null;
-    },
-    [records],
-  );
 
   const title = manifest
     ? t(manifest.titleKey, {
@@ -1833,6 +453,102 @@ export default function FormpackDetailPage() {
         defaultValue: manifest.descriptionKey,
       })
     : '';
+  const {
+    handleCreateRecord,
+    handleDeleteRecord,
+    handleLoadRecord,
+    handleResetForm,
+    persistActiveRecordId,
+  } = useRecordManager({
+    activeRecord,
+    createRecord,
+    deleteRecord,
+    formData,
+    formpackId,
+    hasLoadedRecords,
+    hasManifest: Boolean(manifest),
+    isRecordsLoading,
+    loadRecord,
+    locale,
+    markAsSaved,
+    records,
+    requestConfirmation,
+    setActiveRecord,
+    setFormData,
+    setPendingFormFocus,
+    storageBlocked,
+    t,
+    title,
+    updateActiveRecord,
+  });
+  const {
+    clearImportSuccess,
+    handleImport,
+    handleImportFileChange,
+    importError,
+    importFileName,
+    importIncludeRevisions,
+    importJson,
+    importMode,
+    importPassword,
+    importSuccess,
+    isImportFileEncrypted,
+    isImporting,
+    setImportIncludeRevisions,
+    setImportMode,
+    setImportPassword,
+  } = useImportFlow({
+    activeRecord,
+    applyRecordUpdate,
+    formpackId,
+    importInputRef,
+    manifest,
+    markAsSaved,
+    persistActiveRecordId,
+    refreshSnapshots,
+    requestConfirmation,
+    schema,
+    setFormData,
+    setLocale,
+    t,
+    title,
+  });
+  const {
+    docxError,
+    docxSuccess,
+    docxTemplateId,
+    docxTemplateOptions,
+    encryptJsonExport,
+    handleActionClickCapture,
+    handleExportDocx,
+    handleExportJson,
+    handlePdfExportError,
+    handlePdfExportSuccess,
+    isDocxExporting,
+    jsonExportError,
+    jsonExportPassword,
+    jsonExportPasswordConfirm,
+    pdfError,
+    pdfSuccess,
+    setDocxTemplateId,
+    setEncryptJsonExport,
+    setJsonExportPassword,
+    setJsonExportPasswordConfirm,
+  } = useExportFlow({
+    activeRecord,
+    formData,
+    formSchema,
+    formpackId,
+    locale,
+    manifest,
+    offlabelOutputLocale,
+    onAnyActionTriggered: clearImportSuccess,
+    previewUiSchema:
+      conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema,
+    schema,
+    snapshots,
+    t,
+  });
   const formpackVersionDisplay =
     formpackMeta?.versionOrHash ??
     manifest?.version ??
@@ -1840,88 +556,6 @@ export default function FormpackDetailPage() {
   const formpackUpdatedAtDisplay = formpackMeta
     ? formatTimestamp(formpackMeta.updatedAt)
     : t('formpackVersionUpdatedUnknown');
-
-  const restoreActiveRecord = useCallback(
-    async (currentFormpackId: string, isActive: () => boolean) => {
-      try {
-        const restoredRecord = await getLastActiveRecord(currentFormpackId);
-        if (!isActive()) {
-          return;
-        }
-
-        if (restoredRecord) {
-          setActiveRecord(restoredRecord);
-          persistActiveRecordId(restoredRecord.id);
-          return;
-        }
-
-        const fallbackRecord = getFallbackRecord(currentFormpackId);
-        if (fallbackRecord) {
-          setActiveRecord(fallbackRecord);
-          persistActiveRecordId(fallbackRecord.id);
-          return;
-        }
-
-        if (!manifest || storageBlocked) {
-          setActiveRecord(null);
-          return;
-        }
-
-        const recordTitle = title || t('formpackRecordUntitled');
-        const record = await createRecord(locale, formData, recordTitle);
-        if (isActive() && record?.formpackId === currentFormpackId) {
-          setActiveRecord(record);
-          persistActiveRecordId(record.id);
-          return;
-        }
-
-        setActiveRecord(null);
-      } catch {
-        // Keep active record restore best-effort.
-      }
-    },
-    [
-      createRecord,
-      formData,
-      getFallbackRecord,
-      getLastActiveRecord,
-      locale,
-      manifest,
-      persistActiveRecordId,
-      setActiveRecord,
-      storageBlocked,
-      t,
-      title,
-    ],
-  );
-
-  useEffect(() => {
-    if (!formpackId) {
-      hasRestoredRecordRef.current = null;
-      return;
-    }
-
-    // Wait for the initial records load to avoid creating duplicate drafts.
-    if (!hasLoadedRecords || isRecordsLoading) {
-      return;
-    }
-
-    if (hasRestoredRecordRef.current === formpackId) {
-      return;
-    }
-
-    let isActive = true;
-    const currentFormpackId = formpackId;
-    hasRestoredRecordRef.current = formpackId;
-
-    restoreActiveRecord(currentFormpackId, () => isActive).catch(
-      ignoreAsyncError,
-    );
-
-    return () => {
-      isActive = false;
-    };
-  }, [formpackId, hasLoadedRecords, isRecordsLoading, restoreActiveRecord]);
 
   const resolveAndPopulateDoctorLetterCase = useCallback(
     (decision: Record<string, unknown>): string => {
@@ -1941,32 +575,9 @@ export default function FormpackDetailPage() {
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = useCallback(
     (event) => {
       const incomingData = event.formData as FormDataState;
-      let nextData: FormDataState = { ...incomingData };
-
-      if (
-        formpackId === OFFLABEL_ANTRAG_FORMPACK_ID &&
-        isRecord(nextData.request)
-      ) {
-        const previousRequest = isRecord(formData.request)
-          ? formData.request
-          : null;
-        const normalizedRequest = normalizeOfflabelRequest(
-          nextData.request,
-          showDevMedicationOptions,
-        );
-        nextData = {
-          ...nextData,
-          request: normalizedRequest,
-        };
-        const focusTarget = resolveOfflabelFocusTarget(
-          previousRequest,
-          normalizedRequest,
-          showDevMedicationOptions,
-        );
-        if (focusTarget) {
-          setPendingOfflabelFocusTarget(focusTarget);
-        }
-      }
+      let nextData: FormDataState = handleOfflabelFormChange({
+        ...incomingData,
+      });
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
       if (
@@ -1992,31 +603,8 @@ export default function FormpackDetailPage() {
 
       setFormData(nextData);
     },
-    [formData.request, formpackId, setFormData],
+    [formpackId, handleOfflabelFormChange, setFormData],
   );
-
-  useEffect(() => {
-    if (
-      formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID ||
-      !isRecord(formData.request)
-    ) {
-      return;
-    }
-
-    const request = formData.request;
-    const normalizedRequest = normalizeOfflabelRequest(
-      request,
-      showDevMedicationOptions,
-    );
-    if (JSON.stringify(request) === JSON.stringify(normalizedRequest)) {
-      return;
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      request: normalizedRequest,
-    }));
-  }, [formData, formpackId, setFormData]);
 
   // Resolve decision tree after formData changes (for doctor-letter only)
   useEffect(() => {
@@ -2048,316 +636,21 @@ export default function FormpackDetailPage() {
     },
     [setFormData],
   );
-
-  const handleResetForm = useCallback(async () => {
-    const clearedData: FormDataState = {};
-    setFormData(clearedData);
-
-    const updated = await updateActiveRecord(activeRecord!.id, {
-      data: clearedData,
-      locale,
-    });
-    if (updated) {
-      markAsSaved(updated.data);
-    }
-    setPendingFormFocus(true);
-  }, [activeRecord, locale, markAsSaved, updateActiveRecord]);
-
-  const handleCreateRecord = useCallback(async () => {
-    const recordTitle = title || t('formpackRecordUntitled');
-    if (activeRecord) {
-      const baseRecord = await updateActiveRecord(activeRecord.id, {
-        data: formData,
-        locale,
-      });
-      if (!baseRecord) {
-        return;
-      }
-    }
-
-    const record = await createRecord(locale, formData, recordTitle);
-    if (!record) {
-      return;
-    }
-
-    markAsSaved(record.data);
-    setFormData(record.data);
-    persistActiveRecordId(record.id);
-    setPendingFormFocus(true);
-  }, [
-    activeRecord,
-    createRecord,
-    formData,
-    locale,
-    markAsSaved,
-    persistActiveRecordId,
-    t,
-    title,
-    updateActiveRecord,
-  ]);
-
-  const handleLoadRecord = useCallback(
-    async (recordId: string) => {
-      const record = await loadRecord(recordId);
-      if (record) {
-        markAsSaved(record.data);
-        setFormData(record.data);
-        persistActiveRecordId(record.id);
-        setPendingFormFocus(true);
-      }
-    },
-    [loadRecord, markAsSaved, persistActiveRecordId],
-  );
-
-  const handleCreateSnapshot = useCallback(async () => {
-    if (!activeRecord) {
-      return;
-    }
-
-    await createSnapshot(formData, buildSnapshotLabel());
-  }, [activeRecord, buildSnapshotLabel, createSnapshot, formData]);
-
-  const handleDeleteRecord = useCallback(
-    async (record: RecordEntry) => {
-      if (record.id === activeRecord?.id) {
-        return;
-      }
-
-      const confirmed = globalThis.confirm(
-        t('formpackRecordDeleteConfirm', {
-          title: record.title ?? t('formpackRecordUntitled'),
-        }),
-      );
-      if (!confirmed) {
-        return;
-      }
-
-      await deleteRecord(record.id);
-    },
-    [activeRecord?.id, deleteRecord, t],
-  );
-
-  const handleRestoreSnapshot = useCallback(
-    async (snapshotId: string) => {
-      if (!activeRecord) {
-        return;
-      }
-
-      const snapshot = await loadSnapshot(snapshotId);
-      if (!snapshot) {
-        return;
-      }
-
-      setFormData(snapshot.data);
-      const updated = await updateActiveRecord(activeRecord.id, {
-        data: snapshot.data,
-      });
-      if (updated) {
-        markAsSaved(snapshot.data);
-      }
-      setPendingFormFocus(true);
-    },
-    [activeRecord, loadSnapshot, markAsSaved, updateActiveRecord],
-  );
-
-  const handleClearSnapshots = useCallback(async () => {
-    if (!activeRecord) {
-      return;
-    }
-
-    const confirmed = globalThis.confirm(t('formpackSnapshotsClearAllConfirm'));
-    if (!confirmed) {
-      return;
-    }
-
-    await clearSnapshots();
-  }, [activeRecord, clearSnapshots, t]);
-
-  const applyImportedRecord = useCallback(
-    (record: RecordEntry) => {
-      applyRecordUpdate(record);
-      markAsSaved(record.data);
-      setFormData(record.data);
-      persistActiveRecordId(record.id);
-    },
-    [applyRecordUpdate, markAsSaved, persistActiveRecordId],
-  );
-
-  const importOverwriteRecord = useCallback(
-    async (payload: JsonImportPayload): Promise<RecordEntry | null> => {
-      if (!formpackId || !activeRecord) {
-        setImportError(t('importNoActiveRecord'));
-        return null;
-      }
-
-      const confirmed = globalThis.confirm(t('importOverwriteConfirm'));
-      if (!confirmed) {
-        return null;
-      }
-
-      const updated = await importRecordWithSnapshots({
-        formpackId,
-        mode: 'overwrite',
-        recordId: activeRecord.id,
-        data: payload.record.data,
-        locale: payload.record.locale,
-        title: payload.record.title ?? activeRecord.title,
-        revisions: importIncludeRevisions ? payload.revisions : [],
-      });
-
-      applyImportedRecord(updated);
-      return updated;
-    },
-    [
+  const { handleClearSnapshots, handleCreateSnapshot, handleRestoreSnapshot } =
+    useSnapshotManager({
       activeRecord,
-      applyImportedRecord,
-      formpackId,
-      importIncludeRevisions,
-      setImportError,
+      buildSnapshotLabel,
+      clearSnapshots,
+      createSnapshot,
+      formData,
+      loadSnapshot,
+      markAsSaved,
+      requestConfirmation,
+      setFormData,
+      setPendingFormFocus,
       t,
-    ],
-  );
-
-  const importNewRecord = useCallback(
-    async (payload: JsonImportPayload): Promise<RecordEntry | null> => {
-      if (!formpackId) {
-        return null;
-      }
-
-      const recordTitle =
-        payload.record.title ?? (title || t('formpackRecordUntitled'));
-      const record = await importRecordWithSnapshots({
-        formpackId,
-        mode: 'new',
-        data: payload.record.data,
-        locale: payload.record.locale,
-        title: recordTitle,
-        revisions: importIncludeRevisions ? payload.revisions : [],
-      });
-
-      applyImportedRecord(record);
-      return record;
-    },
-    [applyImportedRecord, formpackId, importIncludeRevisions, t, title],
-  );
-
-  const handleImport = useCallback(async () => {
-    if (!manifest || !schema) {
-      return;
-    }
-
-    setImportError(null);
-    setImportSuccess(null);
-    setIsImporting(true);
-
-    try {
-      let normalizedImportJson = importJson;
-      const encryptionEnvelope = tryParseEncryptedEnvelope(importJson);
-
-      if (encryptionEnvelope) {
-        if (!importPassword) {
-          setImportError(t('importPasswordRequired'));
-          return;
-        }
-
-        const { decryptJsonWithPassword } = await loadJsonEncryptionModule();
-
-        normalizedImportJson = await decryptJsonWithPassword(
-          encryptionEnvelope,
-          importPassword,
-        );
-      }
-
-      const result = validateJsonImport(
-        normalizedImportJson,
-        schema,
-        manifest.id,
-      );
-
-      if (result.error) {
-        setImportError(resolveImportErrorMessage(result.error, t));
-        return;
-      }
-
-      const payload = result.payload;
-      const record =
-        importMode === 'overwrite'
-          ? await importOverwriteRecord(payload)
-          : await importNewRecord(payload);
-
-      if (!record) {
-        return;
-      }
-
-      if (
-        importIncludeRevisions &&
-        payload.revisions?.length &&
-        importMode === 'overwrite'
-      ) {
-        await refreshSnapshots();
-      }
-
-      await setLocale(payload.record.locale);
-      setImportSuccess(t('importSuccess'));
-      setImportJson('');
-      setImportFileName(null);
-      setImportPassword('');
-      setIsImportFileEncrypted(false);
-      importInputRef.current!.value = '';
-    } catch (error) {
-      if (isJsonEncryptionRuntimeError(error)) {
-        setImportError(resolveJsonEncryptionErrorMessage(error, 'import', t));
-        return;
-      }
-
-      setImportError(t('importStorageError'));
-    } finally {
-      setIsImporting(false);
-    }
-  }, [
-    importIncludeRevisions,
-    importJson,
-    importMode,
-    importNewRecord,
-    importPassword,
-    importOverwriteRecord,
-    manifest,
-    refreshSnapshots,
-    schema,
-    setLocale,
-    t,
-  ]);
-
-  const handleImportFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0] ?? null;
-      setImportError(null);
-      setImportSuccess(null);
-
-      if (!file) {
-        setImportJson('');
-        setImportFileName(null);
-        setImportPassword('');
-        setIsImportFileEncrypted(false);
-        return;
-      }
-
-      setImportPassword('');
-
-      try {
-        const text = await file.text();
-        setImportJson(text);
-        setImportFileName(file.name);
-        setIsImportFileEncrypted(Boolean(tryParseEncryptedEnvelope(text)));
-      } catch {
-        setImportJson('');
-        setImportFileName(file.name);
-        setIsImportFileEncrypted(false);
-        setImportError(t('importInvalidJson'));
-      }
-    },
-    [t],
-  );
+      updateActiveRecord,
+    });
   const formContext = useMemo<
     FormpackFormContext & {
       formpackId?: string;
@@ -2443,25 +736,23 @@ export default function FormpackDetailPage() {
   }, [isIntroGateVisible, pendingFormFocus]);
 
   useEffect(() => {
-    if (
-      formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID ||
-      !pendingOfflabelFocusTarget ||
-      isIntroGateVisible
-    ) {
+    if (!pendingOfflabelFocusSelector || isIntroGateVisible) {
       return;
     }
 
-    const selector =
-      OFFLABEL_FOCUS_SELECTOR_BY_TARGET[pendingOfflabelFocusTarget];
     return focusWithRetry({
       getRoot: () => formContentRef.current,
-      selector,
+      selector: pendingOfflabelFocusSelector,
       fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
       maxAttempts: FOCUS_RETRY_ATTEMPTS,
       retryDelayMs: FOCUS_RETRY_DELAY_MS,
-      onResolved: () => setPendingOfflabelFocusTarget(null),
+      onResolved: clearPendingOfflabelFocusTarget,
     });
-  }, [formpackId, isIntroGateVisible, pendingOfflabelFocusTarget]);
+  }, [
+    clearPendingOfflabelFocusTarget,
+    isIntroGateVisible,
+    pendingOfflabelFocusSelector,
+  ]);
 
   // Use custom field template for formpacks that provide InfoBoxes.
   const templates = useMemo(() => {
@@ -2479,7 +770,14 @@ export default function FormpackDetailPage() {
     () => JSON.stringify(formData, null, 2),
     [formData],
   );
-  const resolvePreviewValue = useCallback<PreviewValueResolver>(
+  const resolvePreviewValue = useCallback<
+    (
+      value: unknown,
+      schemaNode?: RJSFSchema,
+      uiNode?: UiSchema,
+      fieldPath?: string,
+    ) => ReactNode
+  >(
     (value, schemaNode, uiNode, fieldPath) =>
       resolveDisplayValue(value, {
         schema: schemaNode,
@@ -2506,7 +804,7 @@ export default function FormpackDetailPage() {
     const schemaProps = isRecord(formSchema?.properties)
       ? (formSchema.properties as Record<string, RJSFSchema>)
       : null;
-    const keys = getOrderedKeys(
+    const keys = previewHelpers.getOrderedKeys(
       formSchema ?? undefined,
       previewUiSchema,
       previewData,
@@ -2518,11 +816,11 @@ export default function FormpackDetailPage() {
           return null;
         }
         const childSchema = schemaProps ? schemaProps[key] : undefined;
-        const childUi = getUiSchemaNode(previewUiSchema, key);
-        const label = getLabel(key, childSchema, childUi);
+        const childUi = previewHelpers.getUiSchemaNode(previewUiSchema, key);
+        const label = previewHelpers.getLabel(key, childSchema, childUi);
 
         if (Array.isArray(entry)) {
-          return renderPreviewArray(
+          return previewHelpers.renderPreviewArray(
             entry,
             childSchema,
             childUi,
@@ -2533,7 +831,7 @@ export default function FormpackDetailPage() {
           );
         }
         if (isRecord(entry)) {
-          return renderPreviewObject(
+          return previewHelpers.renderPreviewObject(
             entry,
             childSchema,
             childUi,
@@ -2565,170 +863,9 @@ export default function FormpackDetailPage() {
 
     return sections.length ? sections : null;
   }, [formData, formSchema, previewUiSchema, resolvePreviewValue]);
-  const handleExportJson = useCallback(async () => {
-    const currentManifest = manifest as FormpackManifest;
-    const currentRecord = activeRecord as RecordEntry;
-    const timing = startUserTiming(USER_TIMING_NAMES.exportJsonTotal);
-    setJsonExportError(null);
-
-    try {
-      const payload = buildJsonExportPayload({
-        formpack: {
-          id: currentManifest.id,
-          version: currentManifest.version,
-        },
-        record: currentRecord,
-        data: formData,
-        locale,
-        revisions: snapshots,
-        schema: schema as RJSFSchema | undefined,
-      });
-      const filename = buildJsonExportFilename(payload);
-
-      if (!encryptJsonExport) {
-        downloadJsonExport(payload, filename);
-        return;
-      }
-
-      if (!jsonExportPassword) {
-        setJsonExportError(t('formpackJsonExportPasswordRequired'));
-        return;
-      }
-
-      if (jsonExportPassword !== jsonExportPasswordConfirm) {
-        setJsonExportError(t('formpackJsonExportPasswordMismatch'));
-        return;
-      }
-
-      const { encryptJsonWithPassword } = await loadJsonEncryptionModule();
-
-      const encryptedPayload = await encryptJsonWithPassword(
-        JSON.stringify(payload),
-        jsonExportPassword,
-      );
-      downloadJsonExport(encryptedPayload, filename);
-    } catch (error) {
-      setJsonExportError(resolveJsonEncryptionErrorMessage(error, 'export', t));
-    } finally {
-      timing.end();
-    }
-  }, [
-    activeRecord,
-    encryptJsonExport,
-    formData,
-    jsonExportPassword,
-    jsonExportPasswordConfirm,
-    locale,
-    manifest,
-    schema,
-    snapshots,
-    t,
-  ]);
-
-  const handleExportDocx = useCallback(async () => {
-    const timing = startUserTiming(USER_TIMING_NAMES.exportDocxTotal);
-    setDocxError(null);
-    setDocxSuccess(null);
-    setIsDocxExporting(true);
-
-    try {
-      const report = await exportDocx({
-        formpackId: formpackId as FormpackId,
-        recordId: activeRecord?.id as string,
-        variant: docxTemplateId,
-        locale: offlabelOutputLocale,
-        schema: formSchema,
-        uiSchema: previewUiSchema,
-        manifest: manifest as FormpackManifest,
-      });
-      const filename = await buildDocxExportFilename(
-        formpackId as FormpackId,
-        docxTemplateId,
-      );
-      await downloadDocxExport(report, filename);
-      setDocxSuccess(t('formpackDocxExportSuccess'));
-    } catch (error) {
-      const errorKey = await getDocxErrorKey(error);
-      setDocxError(t(errorKey));
-    } finally {
-      setIsDocxExporting(false);
-      timing.end();
-    }
-  }, [
-    activeRecord,
-    docxTemplateId,
-    formpackId,
-    manifest,
-    offlabelOutputLocale,
-    previewUiSchema,
-    formSchema,
-    t,
-  ]);
-
-  const handlePdfExportSuccess = useCallback(() => {
-    setPdfError(null);
-    setPdfSuccess(t('formpackPdfExportSuccess'));
-  }, [t]);
-
-  const handlePdfExportError = useCallback(() => {
-    setPdfError(t('formpackPdfExportError'));
-    setPdfSuccess(null);
-  }, [t]);
-
-  const clearDocxSuccess = useCallback(() => {
-    if (docxSuccess) {
-      setDocxSuccess(null);
-    }
-  }, [docxSuccess]);
-
-  const clearImportSuccess = useCallback(() => {
-    if (importSuccess) {
-      setImportSuccess(null);
-    }
-  }, [importSuccess]);
-
-  const clearPdfSuccess = useCallback(() => {
-    if (pdfSuccess) {
-      setPdfSuccess(null);
-    }
-  }, [pdfSuccess]);
-
-  const clearJsonExportError = useCallback(() => setJsonExportError(null), []);
-
-  const handleActionClickCapture = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
-      const action = getActionButtonDataAction(event.target);
-      if (action === null) {
-        return;
-      }
-      if (action === 'docx-export') {
-        clearJsonExportError();
-        clearImportSuccess();
-        clearPdfSuccess();
-        return;
-      }
-      if (action === 'json-import') {
-        clearJsonExportError();
-        clearDocxSuccess();
-        clearPdfSuccess();
-        return;
-      }
-
-      clearDocxSuccess();
-      clearJsonExportError();
-      clearPdfSuccess();
-      clearImportSuccess();
-    },
-    [
-      clearDocxSuccess,
-      clearImportSuccess,
-      clearJsonExportError,
-      clearPdfSuccess,
-    ],
-  );
 
   useEffect(() => {
-    let isActive = true;
+    const guard = createAsyncGuard();
 
     const loadValidator = async () => {
       const module = await import('@rjsf/validator-ajv8');
@@ -2736,63 +873,20 @@ export default function FormpackDetailPage() {
       const loadedValidator = module.customizeValidator({
         AjvClass: Ajv2020,
       });
-      if (isActive) {
+      if (guard.isActive()) {
         setValidator(loadedValidator);
       }
     };
 
     loadValidator().catch(ignoreAsyncError);
 
-    return () => {
-      isActive = false;
-    };
+    return guard.deactivate;
   }, []);
 
   const hasDocumentContent = useMemo(
     () => hasPreviewValue(formData),
     [formData],
   );
-  const offlabelPreviewDocuments = useMemo(
-    () =>
-      formpackId === OFFLABEL_ANTRAG_FORMPACK_ID
-        ? buildOfflabelDocuments(formData, offlabelOutputLocale).map(
-            (document) => stripOfflabelPart2ConsentFromPreview(document),
-          )
-        : [],
-    [formData, formpackId, offlabelOutputLocale],
-  );
-  const docxTemplateOptions = useMemo(() => {
-    if (!manifest?.docx) {
-      return [];
-    }
-
-    const options: Array<{ id: DocxTemplateId; label: string }> = [
-      { id: 'a4', label: t('formpackDocxTemplateA4Option') },
-    ];
-
-    if (
-      manifest.id === NOTFALLPASS_FORMPACK_ID &&
-      manifest.docx.templates.wallet
-    ) {
-      options.push({
-        id: 'wallet',
-        label: t('formpackDocxTemplateWalletOption'),
-      });
-    }
-
-    return options;
-  }, [manifest, t]);
-
-  useEffect(() => {
-    if (!docxTemplateOptions.length) {
-      setDocxTemplateId('a4');
-      return;
-    }
-
-    if (!docxTemplateOptions.some((option) => option.id === docxTemplateId)) {
-      setDocxTemplateId(docxTemplateOptions[0].id);
-    }
-  }, [docxTemplateId, docxTemplateOptions]);
 
   if (isLoading) {
     return (
@@ -2822,377 +916,43 @@ export default function FormpackDetailPage() {
 
   const formatSnapshotCreatedAt = (timestamp: string) =>
     t('formpackSnapshotCreatedAt', { timestamp: formatTimestamp(timestamp) });
-
-  const renderPdfExportControls = () => {
-    const pdfSupported = manifest.exports.includes('pdf');
-    const disabled = storageBlocked;
-    const resolvedFormpackId = manifest.id;
-
-    if (!pdfSupported) {
-      return null;
-    }
-
-    return (
-      <div className="formpack-pdf-export">
-        <Suspense
-          fallback={
-            <button type="button" className="app__button" disabled>
-              {t('formpackRecordExportPdf')}
-            </button>
-          }
-        >
-          <LazyPdfExportControls
-            formpackId={resolvedFormpackId}
-            formData={formData}
-            locale={offlabelOutputLocale}
-            label={t('formpackRecordExportPdf')}
-            loadingLabel={t('formpackPdfExportInProgress')}
-            disabled={disabled}
-            onSuccess={handlePdfExportSuccess}
-            onError={handlePdfExportError}
-          />
-        </Suspense>
-      </div>
-    );
-  };
-
-  const renderDocxExportControls = () => {
-    if (
-      !manifest.exports.includes('docx') ||
-      !manifest.docx ||
-      docxTemplateOptions.length === 0
-    ) {
-      return null;
-    }
-
-    const pdfControls = renderPdfExportControls();
-    const isOfflabelFormpack = formpackId === OFFLABEL_ANTRAG_FORMPACK_ID;
-    const hasMultipleDocxTemplates = docxTemplateOptions.length > 1;
-    const hasPdfControls = Boolean(pdfControls);
-    const docxExportClassName = hasMultipleDocxTemplates
-      ? 'formpack-docx-export'
-      : 'formpack-docx-export formpack-docx-export--single-template';
-    const docxButtonsClassNameBase = hasPdfControls
-      ? 'formpack-docx-export__buttons'
-      : 'formpack-docx-export__buttons formpack-docx-export__buttons--single-action';
-    const docxButtonsClassName = isOfflabelFormpack
-      ? `${docxButtonsClassNameBase} formpack-docx-export__buttons--offlabel`
-      : docxButtonsClassNameBase;
-    const docxButtonClassName = isOfflabelFormpack
-      ? 'app__button formpack-docx-export__button--primary'
-      : 'app__button';
-
-    return (
-      <div className={docxExportClassName}>
-        {hasMultipleDocxTemplates && (
-          <div className="formpack-docx-export__template">
-            <label
-              className="formpack-docx-export__label"
-              htmlFor="docx-template-select"
-            >
-              {t('formpackDocxTemplateLabel')}
-              <select
-                id="docx-template-select"
-                className="formpack-docx-export__select"
-                value={docxTemplateId}
-                onChange={(event) =>
-                  setDocxTemplateId(event.target.value as DocxTemplateId)
-                }
-              >
-                {docxTemplateOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
-        <div className={docxButtonsClassName}>
-          <button
-            type="button"
-            className={docxButtonClassName}
-            onClick={handleExportDocx}
-            data-action="docx-export"
-            disabled={storageBlocked || isDocxExporting}
-          >
-            {isDocxExporting
-              ? t('formpackDocxExportInProgress')
-              : t('formpackRecordExportDocx')}
-          </button>
-          {pdfControls}
-        </div>
-      </div>
-    );
-  };
-
-  const renderJsonExportControls = () =>
-    manifest.exports.includes('json') ? (
-      <div className="formpack-json-export">
-        <label className="formpack-json-export__toggle">
-          <input
-            type="checkbox"
-            checked={encryptJsonExport}
-            onChange={(event) => setEncryptJsonExport(event.target.checked)}
-          />
-          {t('formpackJsonExportEncryptionToggle')}
-        </label>
-        <p className="formpack-json-export__hint">
-          {t('formpackJsonExportEncryptionHint')}
-        </p>
-        {encryptJsonExport && (
-          <div className="formpack-json-export__passwords">
-            <label
-              className="formpack-json-export__field"
-              htmlFor="json-export-password"
-            >
-              {t('formpackJsonExportPasswordLabel')}
-              <input
-                id="json-export-password"
-                type="password"
-                className="formpack-json-export__input"
-                value={jsonExportPassword}
-                onChange={(event) => setJsonExportPassword(event.target.value)}
-                autoComplete="new-password"
-              />
-            </label>
-            <label
-              className="formpack-json-export__field"
-              htmlFor="json-export-password-confirm"
-            >
-              {t('formpackJsonExportPasswordConfirmLabel')}
-              <input
-                id="json-export-password-confirm"
-                type="password"
-                className="formpack-json-export__input"
-                value={jsonExportPasswordConfirm}
-                onChange={(event) =>
-                  setJsonExportPasswordConfirm(event.target.value)
-                }
-                autoComplete="new-password"
-              />
-            </label>
-          </div>
-        )}
-        <button
-          type="button"
-          className="app__button"
-          onClick={handleExportJson}
-          disabled={storageBlocked}
-        >
-          {t('formpackRecordExportJson')}
-        </button>
-      </div>
-    ) : null;
-
-  const renderActionStatus = () => {
-    if (
-      !docxError &&
-      !docxSuccess &&
-      !pdfError &&
-      !pdfSuccess &&
-      !jsonExportError
-    ) {
-      return null;
-    }
-
-    return (
-      <div className="formpack-actions__status" aria-live="polite">
-        {docxError && <span className="app__error">{docxError}</span>}
-        {docxSuccess && (
-          <span className="formpack-actions__success">{docxSuccess}</span>
-        )}
-        {jsonExportError && (
-          <span className="app__error">{jsonExportError}</span>
-        )}
-        {pdfError && <span className="app__error">{pdfError}</span>}
-        {pdfSuccess && (
-          <span className="formpack-actions__success">{pdfSuccess}</span>
-        )}
-      </div>
-    );
-  };
-
-  const renderFormContent = () => {
-    if (!activeRecord) {
-      return (
-        <p className="formpack-records__empty">
-          {t('formpackFormNoActiveRecord')}
-        </p>
-      );
-    }
-
-    if (!formSchema || !conditionalUiSchema || !validator) {
-      return null;
-    }
-
-    if (isIntroGateVisible && introTexts) {
-      return (
-        <div ref={formContentRef}>
-          <FormpackIntroGate
-            title={introTexts.title}
-            body={introTexts.body}
-            checkboxLabel={introTexts.checkboxLabel}
-            startButtonLabel={introTexts.startButtonLabel}
-            onConfirm={handleAcceptIntroGate}
-          />
-        </div>
-      );
-    }
-
-    return (
-      <div ref={formContentRef}>
-        {introGateConfig?.enabled && introTexts && (
-          <div className="formpack-intro__reopen">
-            <button
-              type="button"
-              className="app__button"
-              onClick={() => setIsIntroModalOpen(true)}
-            >
-              {introTexts.reopenButtonLabel}
-            </button>
-          </div>
-        )}
-        <div className="profile-quickfill">
-          <label className="profile-quickfill__save">
-            <input
-              type="checkbox"
-              checked={profileSaveEnabled}
-              onChange={handleProfileSaveToggle}
-            />
-            {t('profileSaveCheckbox')}
-          </label>
-          <button
-            type="button"
-            className="app__button"
-            disabled={!profileHasSavedData}
-            onClick={handleApplyProfile}
-          >
-            {t('profileApplyButton')}
-          </button>
-          {showDevSections && (
-            <button
-              type="button"
-              className="app__button"
-              onClick={handleApplyDummyData}
-            >
-              {t('profileApplyDummyButton')}
-            </button>
-          )}
-          {profileStatus && (
-            <span
-              className={
-                profileStatus === t('profileApplySuccess')
-                  ? 'profile-quickfill__success'
-                  : 'profile-quickfill__error'
-              }
-              aria-live="polite"
-            >
-              {profileStatus}
-            </span>
-          )}
-        </div>
-        <Suspense fallback={<p>{t('formpackLoading')}</p>}>
-          <LazyForm
-            className={
-              hasLetterLayout(formpackId)
-                ? 'formpack-form formpack-form--doctor-letter'
-                : 'formpack-form'
-            }
-            schema={formSchema}
-            uiSchema={conditionalUiSchema}
-            templates={templates}
-            widgets={formpackWidgets}
-            validator={validator}
-            formData={formData}
-            omitExtraData
-            liveOmit
-            onChange={handleFormChange}
-            onSubmit={handleFormSubmit}
-            formContext={formContext}
-            noHtml5Validate
-            showErrorList={false}
-          >
-            <div className="formpack-form__actions">
-              <div className="formpack-actions__group formpack-actions__group--export">
-                {renderDocxExportControls()}
-              </div>
-              <div className="formpack-actions__group formpack-actions__group--secondary">
-                <button
-                  type="button"
-                  className="app__button"
-                  onClick={handleResetForm}
-                >
-                  {t('formpackFormReset')}
-                </button>
-                {renderJsonExportControls()}
-              </div>
-              {renderActionStatus()}
-            </div>
-          </LazyForm>
-        </Suspense>
-        {introGateConfig?.enabled && introTexts && (
-          <FormpackIntroModal
-            isOpen={isIntroModalOpen}
-            title={introTexts.title}
-            body={introTexts.body}
-            closeLabel={t('common.close')}
-            onClose={() => setIsIntroModalOpen(false)}
-          />
-        )}
-      </div>
-    );
-  };
-
   const getJsonPreviewContent = () =>
     Object.keys(formData).length ? jsonPreview : t('formpackFormPreviewEmpty');
-
-  const renderDocumentPreviewContent = () => {
-    if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
-      return (
-        <div className="formpack-document-preview formpack-document-preview--offlabel">
-          <div className="formpack-document-preview__tabs" role="tablist">
-            {offlabelPreviewDocuments.map((doc) => (
-              <button
-                key={doc.id}
-                id={`offlabel-tab-${doc.id}`}
-                role="tab"
-                type="button"
-                className="app__button"
-                aria-selected={selectedOfflabelPreviewId === doc.id}
-                aria-controls={`offlabel-tabpanel-${doc.id}`}
-                onClick={() => setSelectedOfflabelPreviewId(doc.id)}
-              >
-                {doc.title}
-              </button>
-            ))}
-          </div>
-          {offlabelPreviewDocuments
-            .filter((doc) => doc.id === selectedOfflabelPreviewId)
-            .map((doc) => (
-              <div
-                key={doc.id}
-                id={`offlabel-tabpanel-${doc.id}`}
-                role="tabpanel"
-                aria-labelledby={`offlabel-tab-${doc.id}`}
-              >
-                {renderOfflabelPreviewDocument(doc)}
-              </div>
-            ))}
-        </div>
-      );
-    }
-
-    if (hasDocumentContent) {
-      return <div className="formpack-document-preview">{documentPreview}</div>;
-    }
-
-    return (
-      <p className="formpack-document-preview__empty">
-        {t('formpackDocumentPreviewEmpty')}
-      </p>
-    );
-  };
+  const exportActions = (
+    <FormpackExportActions
+      PdfExportControlsComponent={LazyPdfExportControls}
+      docxError={docxError}
+      docxSuccess={docxSuccess}
+      docxTemplateId={docxTemplateId}
+      docxTemplateOptions={docxTemplateOptions}
+      encryptJsonExport={encryptJsonExport}
+      formData={formData}
+      formpackId={formpackId}
+      handleExportDocx={handleExportDocx}
+      handleExportJson={handleExportJson}
+      handlePdfExportError={handlePdfExportError}
+      handlePdfExportSuccess={handlePdfExportSuccess}
+      isDocxExporting={isDocxExporting}
+      jsonExportError={jsonExportError}
+      jsonExportPassword={jsonExportPassword}
+      jsonExportPasswordConfirm={jsonExportPasswordConfirm}
+      manifest={manifest}
+      offlabelOutputLocale={offlabelOutputLocale}
+      pdfError={pdfError}
+      pdfSuccess={pdfSuccess}
+      secondaryActions={
+        <button type="button" className="app__button" onClick={handleResetForm}>
+          {t('formpackFormReset')}
+        </button>
+      }
+      setDocxTemplateId={setDocxTemplateId}
+      setEncryptJsonExport={setEncryptJsonExport}
+      setJsonExportPassword={setJsonExportPassword}
+      setJsonExportPasswordConfirm={setJsonExportPasswordConfirm}
+      storageBlocked={storageBlocked}
+      t={t}
+    />
+  );
 
   const currentQuotaStatus =
     storageHealth.status === 'ok' ? null : storageHealth.status;
@@ -3259,110 +1019,167 @@ export default function FormpackDetailPage() {
         </div>
         <div className="formpack-detail__form">
           <FormContentSection title={t('formpackFormHeading')}>
-            {renderFormContent()}
+            <FormpackFormPanel
+              FormComponent={LazyForm}
+              actions={exportActions}
+              activeRecordExists={Boolean(activeRecord)}
+              closeLabel={t('common.close')}
+              emptyMessage={t('formpackFormNoActiveRecord')}
+              formClassName={
+                hasLetterLayout(formpackId)
+                  ? 'formpack-form formpack-form--doctor-letter'
+                  : 'formpack-form'
+              }
+              formContentRef={formContentRef}
+              formContext={formContext}
+              formData={formData}
+              formSchema={formSchema}
+              introGateEnabled={Boolean(introGateConfig?.enabled)}
+              introTexts={introTexts}
+              isIntroGateVisible={isIntroGateVisible}
+              isIntroModalOpen={isIntroModalOpen}
+              loadingLabel={t('formpackLoading')}
+              onApplyDummyData={handleApplyDummyData}
+              onApplyProfile={handleApplyProfile}
+              onCloseIntroModal={() => setIsIntroModalOpen(false)}
+              onConfirmIntroGate={handleAcceptIntroGate}
+              onFormChange={handleFormChange}
+              onFormSubmit={handleFormSubmit}
+              onOpenIntroModal={() => setIsIntroModalOpen(true)}
+              onProfileSaveToggle={handleProfileSaveToggle}
+              profileApplyDummyLabel={t('profileApplyDummyButton')}
+              profileApplyLabel={t('profileApplyButton')}
+              profileHasSavedData={profileHasSavedData}
+              profileSaveEnabled={profileSaveEnabled}
+              profileStatus={profileStatus}
+              profileStatusSuccessText={t('profileApplySuccess')}
+              profileToggleLabel={t('profileSaveCheckbox')}
+              showDevSections={showDevSections}
+              templates={templates}
+              uiSchema={conditionalUiSchema}
+              validator={validator}
+            />
           </FormContentSection>
           <DocumentPreviewPanel
             title={t('formpackDocumentPreviewHeading')}
             isIntroGateVisible={isIntroGateVisible}
           >
-            {renderDocumentPreviewContent()}
+            <FormpackDocumentPreviewContent
+              documentPreview={documentPreview}
+              emptyLabel={t('formpackDocumentPreviewEmpty')}
+              formpackId={formpackId}
+              hasDocumentContent={hasDocumentContent}
+              offlabelPreviewDocuments={offlabelPreviewDocuments}
+              onSelectOfflabelPreview={setSelectedOfflabelPreviewId}
+              selectedOfflabelPreviewId={selectedOfflabelPreviewId}
+            />
           </DocumentPreviewPanel>
-          <div className="formpack-detail__section formpack-detail__tools-section">
-            <div className="formpack-detail__tools-panel">
-              <h3 className="formpack-detail__tools-title">
-                {t('formpackToolsHeading')}
-              </h3>
-              <div className="formpack-detail__tools">
-                <RecordsPanel
-                  labels={{
-                    title: t('formpackRecordsHeading'),
-                    recordNew: t('formpackRecordNew'),
-                    recordsListLabel: t('formpackRecordsListLabel'),
-                    recordUntitled: t('formpackRecordUntitled'),
-                    recordLoad: t('formpackRecordLoad'),
-                    recordDelete: t('formpackRecordDelete'),
-                    recordActive: t('formpackRecordActive'),
-                    recordsLoading: t('formpackRecordsLoading'),
-                    recordsEmpty: t('formpackRecordsEmpty'),
-                  }}
-                  records={records}
-                  activeRecordId={activeRecord?.id ?? null}
-                  isRecordsLoading={isRecordsLoading}
-                  storageUnavailable={storageBlocked}
-                  storageErrorMessage={storageErrorMessage}
-                  storageRecoveryActionLabel={
-                    storageError === 'locked' ? t('resetAllButton') : undefined
-                  }
-                  formatUpdatedAt={formatRecordUpdatedAt}
-                  onStorageRecoveryAction={
-                    storageError === 'locked'
-                      ? handleResetAllStorageData
-                      : undefined
-                  }
-                  onCreateRecord={handleCreateRecord}
-                  onLoadRecord={handleLoadRecord}
-                  onDeleteRecord={handleDeleteRecord}
-                />
-                <ImportPanel
-                  labels={{
-                    title: t('formpackImportHeading'),
-                    hint: t('formpackImportHint'),
-                    fileLabel: t('formpackImportLabel'),
-                    fileName: (name) => t('formpackImportFileName', { name }),
-                    passwordLabel: t('formpackImportPasswordLabel'),
-                    passwordHint: t('formpackImportPasswordHint'),
-                    passwordEncryptedHint: t('formpackImportEncryptedHint'),
-                    modeLabel: t('formpackImportModeLabel'),
-                    modeNew: t('formpackImportModeNew'),
-                    modeOverwrite: t('formpackImportModeOverwrite'),
-                    modeOverwriteHint: t('formpackImportModeOverwriteHint'),
-                    includeRevisions: t('formpackImportIncludeRevisions'),
-                    statusLabel: t('formpackImportStatusLabel'),
-                    inProgress: t('formpackImportInProgress'),
-                    action: t('formpackImportAction'),
-                  }}
-                  importInputRef={importInputRef}
-                  importFileName={importFileName}
-                  importPassword={importPassword}
-                  isImportFileEncrypted={isImportFileEncrypted}
-                  importMode={importMode}
-                  importIncludeRevisions={importIncludeRevisions}
-                  importError={importError}
-                  importSuccess={importSuccess}
-                  importJson={importJson}
-                  isImporting={isImporting}
-                  activeRecordExists={Boolean(activeRecord)}
-                  storageUnavailable={storageBlocked}
-                  onImportModeChange={setImportMode}
-                  onIncludeRevisionsChange={setImportIncludeRevisions}
-                  onImportPasswordChange={setImportPassword}
-                  onFileChange={handleImportFileChange}
-                  onImport={handleImport}
-                />
-                <SnapshotsPanel
-                  labels={{
-                    title: t('formpackSnapshotsHeading'),
-                    snapshotsListLabel: t('formpackSnapshotsListLabel'),
-                    snapshotUntitled: t('formpackSnapshotUntitled'),
-                    snapshotRestore: t('formpackSnapshotRestore'),
-                    snapshotsLoading: t('formpackSnapshotsLoading'),
-                    snapshotsEmpty: t('formpackSnapshotsEmpty'),
-                    snapshotsNoRecord: t('formpackSnapshotsNoRecord'),
-                    snapshotCreate: t('formpackSnapshotCreate'),
-                    snapshotsClearAll: t('formpackSnapshotsClearAll'),
-                  }}
-                  snapshots={snapshots}
-                  activeRecordExists={Boolean(activeRecord)}
-                  isSnapshotsLoading={isSnapshotsLoading}
-                  storageUnavailable={storageBlocked}
-                  formatCreatedAt={formatSnapshotCreatedAt}
-                  onCreateSnapshot={handleCreateSnapshot}
-                  onClearSnapshots={handleClearSnapshots}
-                  onRestoreSnapshot={handleRestoreSnapshot}
-                />
-              </div>
-            </div>
-          </div>
+          <FormpackToolsSection
+            heading={t('formpackToolsHeading')}
+            recordsPanelProps={{
+              labels: {
+                title: t('formpackRecordsHeading'),
+                recordNew: t('formpackRecordNew'),
+                recordsListLabel: t('formpackRecordsListLabel'),
+                recordUntitled: t('formpackRecordUntitled'),
+                recordLoad: t('formpackRecordLoad'),
+                recordDelete: t('formpackRecordDelete'),
+                recordActive: t('formpackRecordActive'),
+                recordsLoading: t('formpackRecordsLoading'),
+                recordsEmpty: t('formpackRecordsEmpty'),
+              },
+              records,
+              activeRecordId: activeRecord?.id ?? null,
+              isRecordsLoading,
+              storageUnavailable: storageBlocked,
+              storageErrorMessage,
+              storageRecoveryActionLabel:
+                storageError === 'locked' ? t('resetAllButton') : undefined,
+              formatUpdatedAt: formatRecordUpdatedAt,
+              onStorageRecoveryAction:
+                storageError === 'locked'
+                  ? () => {
+                      handleResetAllStorageData().catch(ignoreAsyncError);
+                    }
+                  : undefined,
+              onCreateRecord: () => {
+                handleCreateRecord().catch(ignoreAsyncError);
+              },
+              onLoadRecord: (recordId) => {
+                handleLoadRecord(recordId).catch(ignoreAsyncError);
+              },
+              onDeleteRecord: (record) => {
+                handleDeleteRecord(record).catch(ignoreAsyncError);
+              },
+            }}
+            importPanelProps={{
+              labels: {
+                title: t('formpackImportHeading'),
+                hint: t('formpackImportHint'),
+                fileLabel: t('formpackImportLabel'),
+                fileName: (name) => t('formpackImportFileName', { name }),
+                passwordLabel: t('formpackImportPasswordLabel'),
+                passwordHint: t('formpackImportPasswordHint'),
+                passwordEncryptedHint: t('formpackImportEncryptedHint'),
+                modeLabel: t('formpackImportModeLabel'),
+                modeNew: t('formpackImportModeNew'),
+                modeOverwrite: t('formpackImportModeOverwrite'),
+                modeOverwriteHint: t('formpackImportModeOverwriteHint'),
+                includeRevisions: t('formpackImportIncludeRevisions'),
+                statusLabel: t('formpackImportStatusLabel'),
+                inProgress: t('formpackImportInProgress'),
+                action: t('formpackImportAction'),
+              },
+              importInputRef,
+              importFileName,
+              importPassword,
+              isImportFileEncrypted,
+              importMode,
+              importIncludeRevisions,
+              importError,
+              importSuccess,
+              importJson,
+              isImporting,
+              activeRecordExists: Boolean(activeRecord),
+              storageUnavailable: storageBlocked,
+              onImportModeChange: setImportMode,
+              onIncludeRevisionsChange: setImportIncludeRevisions,
+              onImportPasswordChange: setImportPassword,
+              onFileChange: (event) => {
+                handleImportFileChange(event).catch(ignoreAsyncError);
+              },
+              onImport: () => {
+                handleImport().catch(ignoreAsyncError);
+              },
+            }}
+            snapshotsPanelProps={{
+              labels: {
+                title: t('formpackSnapshotsHeading'),
+                snapshotsListLabel: t('formpackSnapshotsListLabel'),
+                snapshotUntitled: t('formpackSnapshotUntitled'),
+                snapshotRestore: t('formpackSnapshotRestore'),
+                snapshotsLoading: t('formpackSnapshotsLoading'),
+                snapshotsEmpty: t('formpackSnapshotsEmpty'),
+                snapshotsNoRecord: t('formpackSnapshotsNoRecord'),
+                snapshotCreate: t('formpackSnapshotCreate'),
+                snapshotsClearAll: t('formpackSnapshotsClearAll'),
+              },
+              snapshots,
+              activeRecordExists: Boolean(activeRecord),
+              isSnapshotsLoading,
+              storageUnavailable: storageBlocked,
+              formatCreatedAt: formatSnapshotCreatedAt,
+              onCreateSnapshot: () => {
+                handleCreateSnapshot().catch(ignoreAsyncError);
+              },
+              onClearSnapshots: () => {
+                handleClearSnapshots().catch(ignoreAsyncError);
+              },
+              onRestoreSnapshot: (snapshotId) => {
+                handleRestoreSnapshot(snapshotId).catch(ignoreAsyncError);
+              },
+            }}
+          />
           {showDevSections && (
             <div className="formpack-detail__section">
               <h3>{t('formpackFormPreviewHeading')}</h3>
@@ -3377,6 +1194,7 @@ export default function FormpackDetailPage() {
           updatedAt: formpackUpdatedAtDisplay,
         })}
       </p>
+      {confirmationDialog}
     </section>
   );
 }

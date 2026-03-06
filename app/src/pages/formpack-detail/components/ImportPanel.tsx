@@ -1,5 +1,5 @@
 import type { ChangeEvent, RefObject } from 'react';
-import CollapsibleSection from '../../components/CollapsibleSection';
+import CollapsibleSection from '../../../components/CollapsibleSection';
 
 type ImportPanelLabels = {
   title: string;

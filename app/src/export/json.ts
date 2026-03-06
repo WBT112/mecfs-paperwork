@@ -23,7 +23,7 @@ export type JsonExportPayload = {
   formpack: { id: string; version: string };
   record: {
     id: string;
-    name?: string;
+    title?: string;
     updatedAt: string;
     locale: SupportedLocale;
     data: Record<string, unknown>;
@@ -187,7 +187,7 @@ export const buildJsonExportPayload = (
     formpack: { id: options.formpack.id, version: options.formpack.version },
     record: {
       id: options.record.id,
-      name: options.record.title,
+      title: options.record.title,
       updatedAt: options.record.updatedAt,
       locale: options.locale,
       data: normalizedData,
@@ -219,11 +219,11 @@ const formatExportDate = (value: string): string => {
  * Build the JSON export filename.
  */
 export const buildJsonExportFilename = (payload: JsonExportPayload): string => {
-  const recordName = payload.record.name
-    ? sanitizeFilenameSegment(payload.record.name)
+  const recordTitle = payload.record.title
+    ? sanitizeFilenameSegment(payload.record.title)
     : payload.record.id;
   const date = formatExportDate(payload.exportedAt);
-  return `${payload.formpack.id}_${recordName}_${date}_${payload.locale}.json`;
+  return `${payload.formpack.id}_${recordTitle}_${date}_${payload.locale}.json`;
 };
 
 /**

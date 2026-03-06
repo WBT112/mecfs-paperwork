@@ -6,6 +6,7 @@ import {
   textEncoder,
   toBase64Url,
 } from './cryptoCommon';
+import { isRecord } from './utils';
 
 const ENCRYPTION_KIND = 'mecfs-paperwork-json-encrypted';
 const ENCRYPTION_VERSION = 1;
@@ -43,9 +44,6 @@ const deriveAesGcmKey = async (
     keyUsages,
   );
 };
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 export type JsonEncryptionErrorCode =
   | 'crypto_unsupported'

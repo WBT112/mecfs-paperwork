@@ -28,7 +28,7 @@ describe('buildJsonExportFilename', () => {
       formpack: { id: TEST_FORMPACK_ID, version: '1.1.0' },
       record: {
         id: TEST_RECORD_ID,
-        name: '  My/Test\\Record Name  ',
+        title: '  My/Test\\Record Name  ',
         updatedAt: TEST_TIMESTAMP,
         locale: 'en',
         data: {},
@@ -44,7 +44,7 @@ describe('buildJsonExportFilename', () => {
     expect(actual).toBe(expected);
   });
 
-  it('should use the record ID if the record name is missing', () => {
+  it('should use the record ID if the record title is missing', () => {
     const payload: JsonExportPayload = {
       app: { id: 'mecfs-paperwork', version: '1.0.0' },
       formpack: { id: TEST_FORMPACK_ID, version: '1.1.0' },

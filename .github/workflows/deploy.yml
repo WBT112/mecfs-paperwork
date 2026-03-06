@@ -31,6 +31,8 @@ jobs:
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    outputs:
+      public_origin: ${{ steps.config.outputs.public_origin }}
     if: >-
       (github.event_name == 'workflow_dispatch') ||
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
@@ -182,11 +184,11 @@ jobs:
             exit 1
           fi
 
-          if [ -n "${SSH_KNOWN_HOSTS:-}" ]; then
-            printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          else
-            retry 5 ssh-keyscan -T 10 -H -t ed25519,ecdsa "$SSH_HOST" > ~/.ssh/known_hosts
+          if [ -z "${SSH_KNOWN_HOSTS:-}" ]; then
+            echo "::error::DEPLOY_KNOWN_HOSTS must be set. Refusing TOFU fallback via ssh-keyscan."
+            exit 1
           fi
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
           SSH_OPTS="-i ~/.ssh/deploy_key -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ConnectionAttempts=3 -o ServerAliveInterval=15 -o ServerAliveCountMax=3"
@@ -201,3 +203,25 @@ jobs:
              docker compose -f compose.deploy.yaml pull && \
              docker compose -f compose.deploy.yaml up -d && \
              docker image prune -af --filter 'until=168h'"
+
+      - name: Post-deploy health check
+        env:
+          PUBLIC_ORIGIN: ${{ needs.build-and-push.outputs.public_origin }}
+        run: |
+          set -euo pipefail
+
+          retry() {
+            local attempts="$1"
+            shift
+            local n=1
+            until "$@"; do
+              if [ "$n" -ge "$attempts" ]; then
+                return 1
+              fi
+              sleep $((2 * n))
+              n=$((n + 1))
+            done
+          }
+
+          retry 10 curl --fail --silent --show-error --location --max-time 15 \
+            --output /dev/null "$PUBLIC_ORIGIN/"

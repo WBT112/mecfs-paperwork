@@ -208,6 +208,40 @@ test.describe('a11y baseline @chromium-only', () => {
     await expectNoSeriousA11yViolations(page, { routeLabel: '/help' });
   });
 
+  test('imprint route has no moderate/serious/critical violations', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto('/imprint');
+    await expect(page.getByRole('heading').first()).toBeVisible({
+      timeout: POLL_TIMEOUT,
+    });
+    await expectNoSeriousA11yViolations(page, { routeLabel: '/imprint' });
+  });
+
+  test('privacy route has no moderate/serious/critical violations', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium',
+      'A11y baseline is gated on Chromium for stability.',
+    );
+
+    await deleteDatabase(page, DB_NAME);
+    await page.goto('/privacy');
+    await expect(page.getByRole('heading').first()).toBeVisible({
+      timeout: POLL_TIMEOUT,
+    });
+    await expectNoSeriousA11yViolations(page, { routeLabel: '/privacy' });
+  });
+
   test('keyboard smoke reaches primary actions with visible focus', async ({
     page,
     browserName,

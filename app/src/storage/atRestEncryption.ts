@@ -6,6 +6,7 @@ import {
   textEncoder,
   toBase64Url,
 } from '../lib/cryptoCommon';
+import { isRecord } from '../lib/utils';
 
 const STORAGE_ENCRYPTION_KIND = 'mecfs-paperwork-idb-encrypted';
 const STORAGE_ENCRYPTION_VERSION = 1;
@@ -14,9 +15,6 @@ const STORAGE_KEY_BYTES = 32;
 const STORAGE_KEY_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 const AES_GCM_TAG_LENGTH = 128;
 const AES_GCM_IV_BYTES = 12;
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
 
 const getCookieValue = (name: string): string | null => {
   if (typeof document === 'undefined') {

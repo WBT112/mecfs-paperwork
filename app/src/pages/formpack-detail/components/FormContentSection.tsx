@@ -1,4 +1,9 @@
-import type { SectionWithChildrenProps } from './sectionTypes';
+import type { ReactNode } from 'react';
+
+type SectionWithChildrenProps = {
+  children: ReactNode;
+  title: string;
+};
 
 export default function FormContentSection({
   title,
