@@ -250,10 +250,10 @@ const createConfig = (mode: string): AppConfig => ({
         'src/lib/diagnostics/index.ts',
         'src/export/pdf/index.ts',
         'src/formpacks/index.ts',
-        'src/pages/formpack-detail/index.ts',
+        'src/pages/formpack-detail/components/index.ts',
         'src/storage/index.ts',
         // Type-only file with no runtime code
-        'src/pages/formpack-detail/sectionTypes.ts',
+        'src/pages/formpack-detail/components/sectionTypes.ts',
       ],
       thresholds: {
         // Global coverage thresholds (CI enforced).
