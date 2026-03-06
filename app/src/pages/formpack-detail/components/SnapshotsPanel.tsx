@@ -1,5 +1,5 @@
-import CollapsibleSection from '../../components/CollapsibleSection';
-import type { SnapshotEntry } from '../../storage/types';
+import CollapsibleSection from '../../../components/CollapsibleSection';
+import type { SnapshotEntry } from '../../../storage/types';
 
 type SnapshotsPanelLabels = {
   title: string;

@@ -436,6 +436,21 @@ vi.mock('@rjsf/core', () => ({
       <button
         type="button"
         onClick={() =>
+          onChange?.({
+            formData: {
+              decision: {
+                q1: 'yes',
+                q2: 'no',
+              },
+            },
+          })
+        }
+      >
+        trigger-doctor-letter-noop-change
+      </button>
+      <button
+        type="button"
+        onClick={() =>
           onSubmit?.(
             { formData: { submitted: true } },
             { preventDefault: () => undefined },
@@ -2448,6 +2463,38 @@ describe('FormpackDetailPage', () => {
     });
   });
 
+  it('keeps doctor-letter decision data unchanged when no hidden fields need clearing', async () => {
+    const doctorLetterRoute = '/formpacks/doctor-letter';
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: 'doctor-letter',
+      titleKey: 'doctorLetterTitle',
+      descriptionKey: 'doctorLetterDescription',
+      exports: ['docx'],
+    } as FormpackManifest;
+
+    render(
+      <TestRouter initialEntries={[doctorLetterRoute]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByText('trigger-doctor-letter-noop-change'),
+    );
+
+    await waitFor(() => {
+      const data = JSON.parse(screen.getByTestId('form-data').textContent) as {
+        decision?: Record<string, unknown>;
+      };
+
+      expect(data.decision).toMatchObject({ q1: 'yes', q2: 'no' });
+      expect(data.decision?.q3).toBeUndefined();
+    });
+  });
+
   it('normalizes loaded offlabel request data via the normalization effect', async () => {
     const offlabelBaseRecord = {
       ...storageState.record,
@@ -3006,6 +3053,34 @@ describe('FormpackDetailPage', () => {
           detail: { formpackIds: 'invalid-payload' },
         }),
       );
+    });
+
+    expect(
+      screen.queryByText('updateFormpacksAvailable'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('ignores update events without a detail payload', async () => {
+    formpackMetaState.getFormpackMeta.mockResolvedValue({
+      id: record.formpackId,
+      versionOrHash: FORMPACK_META_VERSION,
+      version: FORMPACK_META_VERSION,
+      hash: FORMPACK_META_HASH,
+      updatedAt: FORMPACK_META_UPDATED_AT,
+    });
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await screen.findByText('formpackFormHeading');
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent(FORMPACKS_UPDATED_EVENT));
     });
 
     expect(

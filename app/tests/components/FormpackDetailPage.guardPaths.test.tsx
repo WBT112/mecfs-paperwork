@@ -238,17 +238,8 @@ vi.mock('../../src/storage/hooks', () => ({
   }),
 }));
 
-vi.mock('../../src/pages/formpack-detail', () => ({
-  DevMetadataPanel: () => <div />,
-  DocumentPreviewPanel: ({ children }: { children?: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  FormContentSection: ({ children }: { children?: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-  FormpackDetailHeader: () => <div />,
-  QuotaBanner: () => null,
-  RecordsPanel: ({
+vi.mock('../../src/pages/formpack-detail', () => {
+  const RecordsPanel = ({
     records,
     activeRecordId,
     onCreateRecord,
@@ -272,8 +263,9 @@ vi.mock('../../src/pages/formpack-detail', () => ({
         </button>
       </div>
     );
-  },
-  ImportPanel: ({
+  };
+
+  const ImportPanel = ({
     onImportModeChange,
     onImport,
     importError,
@@ -300,8 +292,9 @@ vi.mock('../../src/pages/formpack-detail', () => ({
         {importError && <p>{importError}</p>}
       </div>
     );
-  },
-  SnapshotsPanel: ({
+  };
+
+  const SnapshotsPanel = ({
     onCreateSnapshot,
     onRestoreSnapshot,
     onClearSnapshots,
@@ -321,8 +314,154 @@ vi.mock('../../src/pages/formpack-detail', () => ({
         trigger-clear-snapshots
       </button>
     </div>
-  ),
+  );
+
+  return {
+    DevMetadataPanel: () => <div />,
+    DocumentPreviewPanel: ({ children }: { children?: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
+    FormContentSection: ({ children }: { children?: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
+    FormpackDetailHeader: () => <div />,
+    FormpackDocumentPreviewContent: () => <div />,
+    FormpackExportActions: ({
+      secondaryActions,
+    }: {
+      secondaryActions?: React.ReactNode;
+    }) => <div>{secondaryActions}</div>,
+    FormpackFormPanel: ({ actions }: { actions?: React.ReactNode }) => (
+      <div>{actions}</div>
+    ),
+    FormpackToolsSection: ({
+      recordsPanelProps,
+      importPanelProps,
+      snapshotsPanelProps,
+    }: {
+      recordsPanelProps: React.ComponentProps<typeof RecordsPanel>;
+      importPanelProps: React.ComponentProps<typeof ImportPanel>;
+      snapshotsPanelProps: React.ComponentProps<typeof SnapshotsPanel>;
+    }) => (
+      <div>
+        <RecordsPanel {...recordsPanelProps} />
+        <ImportPanel {...importPanelProps} />
+        <SnapshotsPanel {...snapshotsPanelProps} />
+      </div>
+    ),
+    QuotaBanner: () => null,
+    RecordsPanel,
+    ImportPanel,
+    SnapshotsPanel,
+  };
+});
+
+vi.mock(
+  '../../src/pages/formpack-detail/components/FormpackDocumentPreviewContent',
+  () => ({
+    default: () => <div />,
+  }),
+);
+
+vi.mock(
+  '../../src/pages/formpack-detail/components/FormpackExportActions',
+  () => ({
+    default: ({ secondaryActions }: { secondaryActions?: React.ReactNode }) => (
+      <div>{secondaryActions}</div>
+    ),
+  }),
+);
+
+vi.mock('../../src/pages/formpack-detail/components/FormpackFormPanel', () => ({
+  default: ({ actions }: { actions?: React.ReactNode }) => <div>{actions}</div>,
 }));
+
+vi.mock(
+  '../../src/pages/formpack-detail/components/FormpackToolsSection',
+  () => ({
+    default: ({
+      recordsPanelProps,
+      importPanelProps,
+      snapshotsPanelProps,
+    }: {
+      recordsPanelProps: {
+        records: RecordEntry[];
+        activeRecordId: string | null;
+        onCreateRecord: () => void | Promise<void>;
+        onDeleteRecord: (record: RecordEntry) => void | Promise<void>;
+      };
+      importPanelProps: {
+        onImportModeChange: (mode: 'new' | 'overwrite') => void;
+        onImport: () => void | Promise<void>;
+        importError: string | null;
+      };
+      snapshotsPanelProps: {
+        onCreateSnapshot: () => void | Promise<void>;
+        onRestoreSnapshot: (snapshotId: string) => void | Promise<void>;
+        onClearSnapshots: () => void | Promise<void>;
+      };
+    }) => {
+      const activeRecord =
+        recordsPanelProps.records.find(
+          (entry) => entry.id === recordsPanelProps.activeRecordId,
+        ) ?? recordsPanelProps.records[0];
+
+      const triggerImport = () => {
+        const maybePromise = importPanelProps.onImport();
+        if (maybePromise instanceof Promise) {
+          maybePromise.catch(() => undefined);
+        }
+      };
+
+      return (
+        <div>
+          <button
+            type="button"
+            onClick={() => recordsPanelProps.onCreateRecord()}
+          >
+            trigger-create-record
+          </button>
+          <button
+            type="button"
+            onClick={() => recordsPanelProps.onDeleteRecord(activeRecord)}
+          >
+            trigger-delete-active
+          </button>
+          <button
+            type="button"
+            onClick={() => importPanelProps.onImportModeChange('overwrite')}
+          >
+            trigger-set-overwrite
+          </button>
+          <button type="button" onClick={triggerImport}>
+            trigger-import
+          </button>
+          {importPanelProps.importError && (
+            <p>{importPanelProps.importError}</p>
+          )}
+          <button
+            type="button"
+            onClick={() => snapshotsPanelProps.onCreateSnapshot()}
+          >
+            trigger-create-snapshot
+          </button>
+          <button
+            type="button"
+            onClick={() => snapshotsPanelProps.onRestoreSnapshot(SNAPSHOT_ID)}
+          >
+            trigger-restore-snapshot
+          </button>
+          <button
+            type="button"
+            onClick={() => snapshotsPanelProps.onClearSnapshots()}
+          >
+            trigger-clear-snapshots
+          </button>
+        </div>
+      );
+    },
+  }),
+);
 
 describe('FormpackDetailPage guard paths', () => {
   beforeEach(() => {

@@ -11,7 +11,7 @@ import {
   buildJsonExportFilename,
   buildJsonExportPayload,
   downloadJsonExport,
-} from '../../export/json';
+} from '../../../export/json';
 import {
   buildDocxExportFilename,
   downloadDocxExport,
@@ -20,19 +20,19 @@ import {
   preloadDocxAssets,
   scheduleDocxPreload,
   type DocxTemplateId,
-} from '../../export/docxLazy';
-import type { SupportedLocale } from '../../i18n/locale';
+} from '../../../export/docxLazy';
+import type { SupportedLocale } from '../../../i18n/locale';
 import {
   USER_TIMING_NAMES,
   startUserTiming,
-} from '../../lib/performance/userTiming';
+} from '../../../lib/performance/userTiming';
 import {
   NOTFALLPASS_FORMPACK_ID,
   type FormpackId,
   type FormpackManifest,
-} from '../../formpacks';
-import { formpackDetailHelpers } from './formpackDetailHelpers';
-import type { RecordEntry, SnapshotEntry } from '../../storage';
+} from '../../../formpacks';
+import { formpackAssetHelpers } from '../helpers/formpackAssetHelpers';
+import type { RecordEntry, SnapshotEntry } from '../../../storage';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 /**
@@ -205,7 +205,7 @@ export const useExportFlow = ({
       }
 
       const { encryptJsonWithPassword } =
-        await formpackDetailHelpers.loadJsonEncryptionModule();
+        await formpackAssetHelpers.loadJsonEncryptionModule();
 
       const encryptedPayload = await encryptJsonWithPassword(
         JSON.stringify(payload),
@@ -214,7 +214,7 @@ export const useExportFlow = ({
       downloadJsonExport(encryptedPayload, filename);
     } catch (error) {
       setJsonExportError(
-        formpackDetailHelpers.resolveJsonEncryptionErrorMessage(
+        formpackAssetHelpers.resolveJsonEncryptionErrorMessage(
           error,
           'export',
           t,
@@ -312,7 +312,7 @@ export const useExportFlow = ({
 
   const handleActionClickCapture = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
-      const action = formpackDetailHelpers.getActionButtonDataAction(
+      const action = formpackAssetHelpers.getActionButtonDataAction(
         event.target,
       );
       if (action === null) {

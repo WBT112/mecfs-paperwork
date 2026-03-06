@@ -29,7 +29,7 @@ vi.mock('../../../src/storage', async (importOriginal) => {
   };
 });
 
-import { useProfileSync } from '../../../src/pages/formpack-detail/useProfileSync';
+import { useProfileSync } from '../../../src/pages/formpack-detail/hooks/useProfileSync';
 
 const DEFAULT_FORMPACK_ID = 'doctor-letter' as const;
 const DEFAULT_PROFILE_ID = 'default';

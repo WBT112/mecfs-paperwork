@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { SupportedLocale } from '../../i18n/locale';
+import type { SupportedLocale } from '../../../i18n/locale';
 import {
   USER_TIMING_NAMES,
   startUserTiming,
-} from '../../lib/performance/userTiming';
-import type { FormpackManifest } from '../../formpacks';
-import { formpackDetailHelpers } from './formpackDetailHelpers';
+} from '../../../lib/performance/userTiming';
+import type { FormpackManifest } from '../../../formpacks';
+import { formpackAssetHelpers } from '../helpers/formpackAssetHelpers';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 /**
@@ -74,7 +74,7 @@ export const useFormpackLoader = ({
       setErrorMessage(null);
 
       try {
-        const result = await formpackDetailHelpers.loadFormpackAssets(
+        const result = await formpackAssetHelpers.loadFormpackAssets(
           requestedFormpackId,
           locale,
           t,
@@ -113,7 +113,7 @@ export const useFormpackLoader = ({
         }
 
         resetFormpack();
-        setErrorMessage(formpackDetailHelpers.buildErrorMessage(error, t));
+        setErrorMessage(formpackAssetHelpers.buildErrorMessage(error, t));
       });
     } else {
       resetFormpack();

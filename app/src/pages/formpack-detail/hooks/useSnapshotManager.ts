@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import type { ConfirmationRequest } from '../../components/useConfirmationDialog';
-import type { RecordEntry, SnapshotEntry } from '../../storage';
+import type { ConfirmationRequest } from '../../../components/useConfirmationDialog';
+import type { RecordEntry, SnapshotEntry } from '../../../storage';
 
 /**
  * Dependencies required to manage snapshot actions for the active record.

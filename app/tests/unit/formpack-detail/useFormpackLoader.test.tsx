@@ -7,12 +7,15 @@ const mocked = vi.hoisted(() => ({
   startUserTiming: vi.fn(),
 }));
 
-vi.mock('../../../src/pages/formpack-detail/formpackDetailHelpers', () => ({
-  formpackDetailHelpers: {
-    buildErrorMessage: mocked.buildErrorMessage,
-    loadFormpackAssets: mocked.loadFormpackAssets,
-  },
-}));
+vi.mock(
+  '../../../src/pages/formpack-detail/helpers/formpackAssetHelpers',
+  () => ({
+    formpackAssetHelpers: {
+      buildErrorMessage: mocked.buildErrorMessage,
+      loadFormpackAssets: mocked.loadFormpackAssets,
+    },
+  }),
+);
 
 vi.mock('../../../src/lib/performance/userTiming', async (importOriginal) => {
   const original =
@@ -25,7 +28,7 @@ vi.mock('../../../src/lib/performance/userTiming', async (importOriginal) => {
   };
 });
 
-import { useFormpackLoader } from '../../../src/pages/formpack-detail/useFormpackLoader';
+import { useFormpackLoader } from '../../../src/pages/formpack-detail/hooks/useFormpackLoader';
 
 const DEFAULT_FORMPACK_ID = 'doctor-letter';
 

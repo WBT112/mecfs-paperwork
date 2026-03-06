@@ -49,16 +49,20 @@ vi.mock('../../../src/export/docxLazy', () => ({
   scheduleDocxPreload: mocked.scheduleDocxPreload,
 }));
 
-vi.mock('../../../src/pages/formpack-detail/formpackDetailHelpers', () => ({
-  formpackDetailHelpers: {
-    getActionButtonDataAction: mocked.getActionButtonDataAction,
-    isJsonEncryptionRuntimeError: mocked.isJsonEncryptionRuntimeError,
-    loadJsonEncryptionModule: mocked.loadJsonEncryptionModule,
-    resolveImportErrorMessage: mocked.resolveImportErrorMessage,
-    resolveJsonEncryptionErrorMessage: mocked.resolveJsonEncryptionErrorMessage,
-    tryParseEncryptedEnvelope: mocked.tryParseEncryptedEnvelope,
-  },
-}));
+vi.mock(
+  '../../../src/pages/formpack-detail/helpers/formpackAssetHelpers',
+  () => ({
+    formpackAssetHelpers: {
+      getActionButtonDataAction: mocked.getActionButtonDataAction,
+      isJsonEncryptionRuntimeError: mocked.isJsonEncryptionRuntimeError,
+      loadJsonEncryptionModule: mocked.loadJsonEncryptionModule,
+      resolveImportErrorMessage: mocked.resolveImportErrorMessage,
+      resolveJsonEncryptionErrorMessage:
+        mocked.resolveJsonEncryptionErrorMessage,
+      tryParseEncryptedEnvelope: mocked.tryParseEncryptedEnvelope,
+    },
+  }),
+);
 
 vi.mock('../../../src/lib/performance/userTiming', async (importOriginal) => {
   const original =
@@ -71,9 +75,9 @@ vi.mock('../../../src/lib/performance/userTiming', async (importOriginal) => {
   };
 });
 
-import { useExportFlow } from '../../../src/pages/formpack-detail/useExportFlow';
-import { useImportFlow } from '../../../src/pages/formpack-detail/useImportFlow';
-import { useSnapshotManager } from '../../../src/pages/formpack-detail/useSnapshotManager';
+import { useExportFlow } from '../../../src/pages/formpack-detail/hooks/useExportFlow';
+import { useImportFlow } from '../../../src/pages/formpack-detail/hooks/useImportFlow';
+import { useSnapshotManager } from '../../../src/pages/formpack-detail/hooks/useSnapshotManager';
 import type { FormpackManifest, FormpackId } from '../../../src/formpacks';
 import type { RecordEntry, SnapshotEntry } from '../../../src/storage';
 

@@ -7,16 +7,19 @@ import {
   type RefObject,
   type SetStateAction,
 } from 'react';
-import type { ConfirmationRequest } from '../../components/useConfirmationDialog';
-import type { SupportedLocale } from '../../i18n/locale';
-import { validateJsonImport, type JsonImportPayload } from '../../import/json';
-import type { FormpackId, FormpackManifest } from '../../formpacks';
+import type { ConfirmationRequest } from '../../../components/useConfirmationDialog';
+import type { SupportedLocale } from '../../../i18n/locale';
+import {
+  validateJsonImport,
+  type JsonImportPayload,
+} from '../../../import/json';
+import type { FormpackId, FormpackManifest } from '../../../formpacks';
 import {
   importRecordWithSnapshots,
   type RecordEntry,
   type SnapshotEntry,
-} from '../../storage';
-import { formpackDetailHelpers } from './formpackDetailHelpers';
+} from '../../../storage';
+import { formpackAssetHelpers } from '../helpers/formpackAssetHelpers';
 import type { RJSFSchema } from '@rjsf/utils';
 
 /**
@@ -221,7 +224,7 @@ export const useImportFlow = ({
     try {
       let normalizedImportJson = importJson;
       const encryptionEnvelope =
-        formpackDetailHelpers.tryParseEncryptedEnvelope(importJson);
+        formpackAssetHelpers.tryParseEncryptedEnvelope(importJson);
 
       if (encryptionEnvelope) {
         if (!importPassword) {
@@ -230,7 +233,7 @@ export const useImportFlow = ({
         }
 
         const { decryptJsonWithPassword } =
-          await formpackDetailHelpers.loadJsonEncryptionModule();
+          await formpackAssetHelpers.loadJsonEncryptionModule();
 
         normalizedImportJson = await decryptJsonWithPassword(
           encryptionEnvelope,
@@ -246,7 +249,7 @@ export const useImportFlow = ({
 
       if (result.error) {
         setImportError(
-          formpackDetailHelpers.resolveImportErrorMessage(result.error, t),
+          formpackAssetHelpers.resolveImportErrorMessage(result.error, t),
         );
         return;
       }
@@ -273,9 +276,9 @@ export const useImportFlow = ({
       setImportSuccess(t('importSuccess'));
       resetImportState();
     } catch (error) {
-      if (formpackDetailHelpers.isJsonEncryptionRuntimeError(error)) {
+      if (formpackAssetHelpers.isJsonEncryptionRuntimeError(error)) {
         setImportError(
-          formpackDetailHelpers.resolveJsonEncryptionErrorMessage(
+          formpackAssetHelpers.resolveJsonEncryptionErrorMessage(
             error,
             'import',
             t,
@@ -321,7 +324,7 @@ export const useImportFlow = ({
         setImportJson(text);
         setImportFileName(file.name);
         setIsImportFileEncrypted(
-          Boolean(formpackDetailHelpers.tryParseEncryptedEnvelope(text)),
+          Boolean(formpackAssetHelpers.tryParseEncryptedEnvelope(text)),
         );
       } catch {
         setImportJson('');

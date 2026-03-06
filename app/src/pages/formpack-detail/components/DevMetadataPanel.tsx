@@ -1,4 +1,4 @@
-import type { FormpackManifest } from '../../formpacks/types';
+import type { FormpackManifest } from '../../../formpacks/types';
 
 type DevMetadataLabels = {
   detailsHeading: string;

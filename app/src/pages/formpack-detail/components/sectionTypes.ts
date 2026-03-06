@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export type SectionWithChildrenProps = {
-  title: string;
+export interface SectionWithChildrenProps {
   children: ReactNode;
-};
+  title: string;
+}

@@ -1,19 +1,9 @@
-import {
-  Suspense,
-  lazy,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Ajv2020 from 'ajv/dist/2020';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
-import type { SupportedLocale } from '../i18n/locale';
-import { type DocxTemplateId } from '../export/docxLazy';
 import type { PdfExportControlsProps } from '../export/pdf';
 import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
@@ -26,13 +16,11 @@ import { hasPreviewValue } from '../lib/previewValue';
 import { isRecord } from '../lib/utils';
 import { buildRandomDummyPatch } from '../lib/devDummyFill';
 import { focusWithRetry } from '../lib/focusWithRetry';
-import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
 import {
   FORMPACKS_UPDATED_EVENT,
   DOCTOR_LETTER_FORMPACK_ID,
-  OFFLABEL_ANTRAG_FORMPACK_ID,
   deriveFormpackRevisionSignature,
   clearHiddenFields,
   isDevUiEnabled,
@@ -42,16 +30,9 @@ import {
   type FormpackId,
   type InfoBoxConfig,
 } from '../formpacks';
-import { buildOfflabelDocuments } from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
-import {
-  resolveOfflabelFocusTarget,
-  type OfflabelFocusTarget,
-} from '../formpacks/offlabel-antrag/focusTarget';
-import { applyOfflabelVisibility } from '../formpacks/offlabel-antrag/uiVisibility';
 import { normalizeDecisionAnswers } from '../formpacks/doctor-letter/decisionAnswers';
 import {
   type FormpackMetaEntry,
-  type RecordEntry,
   type StorageErrorCode,
   getFormpackMeta,
   upsertFormpackMeta,
@@ -61,24 +42,30 @@ import {
 } from '../storage';
 import { resetAllLocalData, useStorageHealth } from '../lib/diagnostics';
 import { useConfirmationDialog } from '../components/useConfirmationDialog';
-import FormpackIntroGate from '../components/FormpackIntroGate';
-import FormpackIntroModal from '../components/FormpackIntroModal';
 import {
   DevMetadataPanel,
   DocumentPreviewPanel,
   FormContentSection,
   FormpackDetailHeader,
-  ImportPanel,
+  FormpackDocumentPreviewContent,
+  FormpackExportActions,
+  FormpackFormPanel,
+  FormpackToolsSection,
   QuotaBanner,
-  RecordsPanel,
-  SnapshotsPanel,
-} from './formpack-detail';
-import { formpackDetailHelpers } from './formpack-detail/formpackDetailHelpers';
-import { useExportFlow } from './formpack-detail/useExportFlow';
-import { useFormpackLoader } from './formpack-detail/useFormpackLoader';
-import { useImportFlow } from './formpack-detail/useImportFlow';
-import { useProfileSync } from './formpack-detail/useProfileSync';
-import { useSnapshotManager } from './formpack-detail/useSnapshotManager';
+} from './formpack-detail/components';
+import { doctorLetterHelpers } from './formpack-detail/helpers/doctorLetterHelpers';
+import {
+  hasLetterLayout,
+  mergeDummyPatch,
+} from './formpack-detail/helpers/formpackDetailHelpers';
+import { previewHelpers } from './formpack-detail/helpers/previewHelpers';
+import { useExportFlow } from './formpack-detail/hooks/useExportFlow';
+import { useFormpackLoader } from './formpack-detail/hooks/useFormpackLoader';
+import { useImportFlow } from './formpack-detail/hooks/useImportFlow';
+import { useOfflabelWorkflow } from './formpack-detail/hooks/useOfflabelWorkflow';
+import { useProfileSync } from './formpack-detail/hooks/useProfileSync';
+import { useRecordManager } from './formpack-detail/hooks/useRecordManager';
+import { useSnapshotManager } from './formpack-detail/hooks/useSnapshotManager';
 import { APP_UPDATE_AVAILABLE_EVENT } from '../pwa/register';
 import type { ComponentType, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
@@ -98,7 +85,6 @@ const LazyPdfExportControls = lazy(async () => {
   return { default: module.default as ComponentType<PdfExportControlsProps> };
 });
 
-const LAST_ACTIVE_FORMPACK_KEY = 'mecfs-paperwork.lastActiveFormpackId';
 const FORM_PRIMARY_FOCUS_SELECTOR =
   '.formpack-form input:not([type="hidden"]):not([disabled]), .formpack-form select:not([disabled]), .formpack-form textarea:not([disabled]), .formpack-form button:not([disabled]), .formpack-form [tabindex]:not([tabindex="-1"])';
 const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
@@ -137,14 +123,8 @@ export default function FormpackDetailPage() {
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
   const [pendingIntroFocus, setPendingIntroFocus] = useState(false);
   const [pendingFormFocus, setPendingFormFocus] = useState(false);
-  const [pendingOfflabelFocusTarget, setPendingOfflabelFocusTarget] =
-    useState<OfflabelFocusTarget | null>(null);
-  const [selectedOfflabelPreviewId, setSelectedOfflabelPreviewId] = useState<
-    'part1' | 'part2' | 'part3'
-  >('part1');
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const formContentRef = useRef<HTMLDivElement | null>(null);
-  const hasRestoredRecordRef = useRef<string | null>(null);
   const handleLoadedFormpackChange = useCallback(() => {
     setFormData({});
     setIsIntroModalOpen(false);
@@ -158,8 +138,6 @@ export default function FormpackDetailPage() {
       t,
     });
   const formpackId = (manifest?.id as FormpackId | undefined) ?? null;
-  const offlabelOutputLocale: SupportedLocale =
-    formpackId === OFFLABEL_ANTRAG_FORMPACK_ID ? 'de' : locale;
   const {
     records,
     activeRecord,
@@ -212,10 +190,6 @@ export default function FormpackDetailPage() {
     setFormData,
     t,
   });
-
-  useEffect(() => {
-    setSelectedOfflabelPreviewId('part1');
-  }, [formpackId]);
 
   useEffect(() => {
     if (!manifest) {
@@ -357,42 +331,26 @@ export default function FormpackDetailPage() {
         : null,
     [schema, translatedUiSchema],
   );
-  // ⚡ Perf: Extract the narrow slices of formData that actually affect schema
-  // and UI visibility. Using the full formData as a useMemo dependency would
-  // trigger expensive structuredClone on every keystroke, even when the user
-  // edits unrelated text fields.
-  const selectedDrug = getPathValue(formData, 'request.drug');
-  const selectedIndicationKey = getPathValue(
+  const {
+    clearPendingOfflabelFocusTarget,
+    formSchema,
+    handleOfflabelFormChange,
+    offlabelOutputLocale,
+    offlabelPreviewDocuments,
+    offlabelUiSchema,
+    pendingOfflabelFocusSelector,
+    selectedOfflabelPreviewId,
+    setSelectedOfflabelPreviewId,
+  } = useOfflabelWorkflow({
     formData,
-    'request.selectedIndicationKey',
-  );
-  const indicationConfirmation = getPathValue(
-    formData,
-    'request.indicationFullyMetOrDoctorConfirms',
-  );
+    formpackId,
+    locale,
+    normalizedUiSchema,
+    schema,
+    setFormData,
+    showDevMedicationOptions,
+  });
   const decisionData = formData.decision;
-  const offlabelVisibilityData = useMemo(
-    () => ({
-      request: {
-        drug: selectedDrug,
-        selectedIndicationKey,
-        indicationFullyMetOrDoctorConfirms: indicationConfirmation,
-      },
-    }),
-    [selectedDrug, selectedIndicationKey, indicationConfirmation],
-  );
-
-  const formSchema = useMemo(() => {
-    if (!schema || formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
-      return schema;
-    }
-    return formpackDetailHelpers.buildOfflabelFormSchema(
-      schema,
-      formData,
-      showDevMedicationOptions,
-      locale,
-    );
-  }, [selectedDrug, formpackId, schema, locale, showDevMedicationOptions]); // eslint-disable-line react-hooks/exhaustive-deps -- formData read narrowed to selectedDrug
 
   // Apply conditional visibility for doctor-letter decision tree
   const conditionalUiSchema = useMemo(() => {
@@ -400,33 +358,22 @@ export default function FormpackDetailPage() {
       return normalizedUiSchema;
     }
 
-    if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
-      return applyOfflabelVisibility(
-        normalizedUiSchema,
-        offlabelVisibilityData,
-        locale,
-        showDevMedicationOptions,
-      );
+    if (offlabelUiSchema !== normalizedUiSchema) {
+      return offlabelUiSchema;
     }
 
     if (formpackId !== DOCTOR_LETTER_FORMPACK_ID) {
       return normalizedUiSchema;
     }
-    return formpackDetailHelpers.buildDoctorLetterConditionalUiSchema(
+    return doctorLetterHelpers.buildDoctorLetterConditionalUiSchema(
       normalizedUiSchema,
       decisionData,
     );
-  }, [
-    normalizedUiSchema,
-    formpackId,
-    decisionData,
-    locale,
-    offlabelVisibilityData,
-  ]);
+  }, [decisionData, formpackId, normalizedUiSchema, offlabelUiSchema]);
 
   const handleApplyDummyData = useCallback(() => {
     const patch = buildRandomDummyPatch(formSchema, conditionalUiSchema);
-    const merged = formpackDetailHelpers.mergeDummyPatch(formData, patch);
+    const merged = mergeDummyPatch(formData, patch);
     const nextData = isRecord(merged) ? merged : formData;
 
     clearProfileStatus();
@@ -497,61 +444,6 @@ export default function FormpackDetailPage() {
     effectiveStorageError === 'unavailable' ||
     effectiveStorageError === 'locked';
 
-  const activeRecordStorageKey = useMemo(
-    () => (formpackId ? `mecfs-paperwork.activeRecordId.${formpackId}` : null),
-    [formpackId],
-  );
-
-  const readActiveRecordId = useCallback(() => {
-    try {
-      return globalThis.localStorage.getItem(activeRecordStorageKey!);
-    } catch {
-      return null;
-    }
-  }, [activeRecordStorageKey]);
-
-  const persistActiveRecordId = useCallback(
-    (recordId: string) => {
-      try {
-        globalThis.localStorage.setItem(activeRecordStorageKey!, recordId);
-        globalThis.localStorage.setItem(LAST_ACTIVE_FORMPACK_KEY, formpackId!);
-      } catch {
-        // Ignore storage errors to keep the UI responsive.
-      }
-    },
-    [activeRecordStorageKey, formpackId],
-  );
-
-  const getLastActiveRecord = useCallback(
-    async (currentFormpackId: string) => {
-      const lastId = readActiveRecordId();
-      if (!lastId) {
-        return null;
-      }
-
-      const record = await loadRecord(lastId);
-      if (record?.formpackId === currentFormpackId) {
-        return record;
-      }
-
-      return null;
-    },
-    [loadRecord, readActiveRecordId],
-  );
-
-  const getFallbackRecord = useCallback(
-    (currentFormpackId: string) => {
-      if (records.length === 0) {
-        return null;
-      }
-      const fallbackRecord = records[0];
-      return fallbackRecord.formpackId === currentFormpackId
-        ? fallbackRecord
-        : null;
-    },
-    [records],
-  );
-
   const title = manifest
     ? t(manifest.titleKey, {
         ns: namespace,
@@ -565,6 +457,34 @@ export default function FormpackDetailPage() {
         defaultValue: manifest.descriptionKey,
       })
     : '';
+  const {
+    handleCreateRecord,
+    handleDeleteRecord,
+    handleLoadRecord,
+    handleResetForm,
+    persistActiveRecordId,
+  } = useRecordManager({
+    activeRecord,
+    createRecord,
+    deleteRecord,
+    formData,
+    formpackId,
+    hasLoadedRecords,
+    hasManifest: Boolean(manifest),
+    isRecordsLoading,
+    loadRecord,
+    locale,
+    markAsSaved,
+    records,
+    requestConfirmation,
+    setActiveRecord,
+    setFormData,
+    setPendingFormFocus,
+    storageBlocked,
+    t,
+    title,
+    updateActiveRecord,
+  });
   const {
     clearImportSuccess,
     handleImport,
@@ -641,88 +561,6 @@ export default function FormpackDetailPage() {
     ? formatTimestamp(formpackMeta.updatedAt)
     : t('formpackVersionUpdatedUnknown');
 
-  const restoreActiveRecord = useCallback(
-    async (currentFormpackId: string, isActive: () => boolean) => {
-      try {
-        const restoredRecord = await getLastActiveRecord(currentFormpackId);
-        if (!isActive()) {
-          return;
-        }
-
-        if (restoredRecord) {
-          setActiveRecord(restoredRecord);
-          persistActiveRecordId(restoredRecord.id);
-          return;
-        }
-
-        const fallbackRecord = getFallbackRecord(currentFormpackId);
-        if (fallbackRecord) {
-          setActiveRecord(fallbackRecord);
-          persistActiveRecordId(fallbackRecord.id);
-          return;
-        }
-
-        if (!manifest || storageBlocked) {
-          setActiveRecord(null);
-          return;
-        }
-
-        const recordTitle = title || t('formpackRecordUntitled');
-        const record = await createRecord(locale, formData, recordTitle);
-        if (isActive() && record?.formpackId === currentFormpackId) {
-          setActiveRecord(record);
-          persistActiveRecordId(record.id);
-          return;
-        }
-
-        setActiveRecord(null);
-      } catch {
-        // Keep active record restore best-effort.
-      }
-    },
-    [
-      createRecord,
-      formData,
-      getFallbackRecord,
-      getLastActiveRecord,
-      locale,
-      manifest,
-      persistActiveRecordId,
-      setActiveRecord,
-      storageBlocked,
-      t,
-      title,
-    ],
-  );
-
-  useEffect(() => {
-    if (!formpackId) {
-      hasRestoredRecordRef.current = null;
-      return;
-    }
-
-    // Wait for the initial records load to avoid creating duplicate drafts.
-    if (!hasLoadedRecords || isRecordsLoading) {
-      return;
-    }
-
-    if (hasRestoredRecordRef.current === formpackId) {
-      return;
-    }
-
-    let isActive = true;
-    const currentFormpackId = formpackId;
-    hasRestoredRecordRef.current = formpackId;
-
-    restoreActiveRecord(currentFormpackId, () => isActive).catch(
-      ignoreAsyncError,
-    );
-
-    return () => {
-      isActive = false;
-    };
-  }, [formpackId, hasLoadedRecords, isRecordsLoading, restoreActiveRecord]);
-
   const resolveAndPopulateDoctorLetterCase = useCallback(
     (decision: Record<string, unknown>): string => {
       const result = resolveDecisionTree(normalizeDecisionAnswers(decision));
@@ -741,33 +579,9 @@ export default function FormpackDetailPage() {
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = useCallback(
     (event) => {
       const incomingData = event.formData as FormDataState;
-      let nextData: FormDataState = { ...incomingData };
-
-      if (
-        formpackId === OFFLABEL_ANTRAG_FORMPACK_ID &&
-        isRecord(nextData.request)
-      ) {
-        const previousRequest = isRecord(formData.request)
-          ? formData.request
-          : null;
-        const normalizedRequest =
-          formpackDetailHelpers.normalizeOfflabelRequest(
-            nextData.request,
-            showDevMedicationOptions,
-          );
-        nextData = {
-          ...nextData,
-          request: normalizedRequest,
-        };
-        const focusTarget = resolveOfflabelFocusTarget(
-          previousRequest,
-          normalizedRequest,
-          showDevMedicationOptions,
-        );
-        if (focusTarget) {
-          setPendingOfflabelFocusTarget(focusTarget);
-        }
-      }
+      let nextData: FormDataState = handleOfflabelFormChange({
+        ...incomingData,
+      });
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
       if (
@@ -793,31 +607,8 @@ export default function FormpackDetailPage() {
 
       setFormData(nextData);
     },
-    [formData.request, formpackId, setFormData],
+    [formpackId, handleOfflabelFormChange, setFormData],
   );
-
-  useEffect(() => {
-    if (
-      formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID ||
-      !isRecord(formData.request)
-    ) {
-      return;
-    }
-
-    const request = formData.request;
-    const normalizedRequest = formpackDetailHelpers.normalizeOfflabelRequest(
-      request,
-      showDevMedicationOptions,
-    );
-    if (JSON.stringify(request) === JSON.stringify(normalizedRequest)) {
-      return;
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      request: normalizedRequest,
-    }));
-  }, [formData, formpackId, setFormData]);
 
   // Resolve decision tree after formData changes (for doctor-letter only)
   useEffect(() => {
@@ -848,97 +639,6 @@ export default function FormpackDetailPage() {
       setFormData({ ...(event.formData as FormDataState) });
     },
     [setFormData],
-  );
-
-  const handleResetForm = useCallback(async () => {
-    const clearedData: FormDataState = {};
-    setFormData(clearedData);
-
-    const updated = await updateActiveRecord(activeRecord!.id, {
-      data: clearedData,
-      locale,
-    });
-    if (updated) {
-      markAsSaved(updated.data);
-    }
-    setPendingFormFocus(true);
-  }, [activeRecord, locale, markAsSaved, updateActiveRecord]);
-
-  const handleCreateRecord = useCallback(async () => {
-    const recordTitle = title || t('formpackRecordUntitled');
-    if (activeRecord) {
-      const baseRecord = await updateActiveRecord(activeRecord.id, {
-        data: formData,
-        locale,
-      });
-      if (!baseRecord) {
-        return;
-      }
-    }
-
-    const record = await createRecord(locale, formData, recordTitle);
-    if (!record) {
-      return;
-    }
-
-    markAsSaved(record.data);
-    setFormData(record.data);
-    persistActiveRecordId(record.id);
-    setPendingFormFocus(true);
-  }, [
-    activeRecord,
-    createRecord,
-    formData,
-    locale,
-    markAsSaved,
-    persistActiveRecordId,
-    t,
-    title,
-    updateActiveRecord,
-  ]);
-
-  const handleLoadRecord = useCallback(
-    async (recordId: string) => {
-      const record = await loadRecord(recordId);
-      if (record) {
-        markAsSaved(record.data);
-        setFormData(record.data);
-        persistActiveRecordId(record.id);
-        setPendingFormFocus(true);
-      }
-    },
-    [loadRecord, markAsSaved, persistActiveRecordId],
-  );
-
-  const handleDeleteRecord = useCallback(
-    async (record: RecordEntry) => {
-      if (record.id === activeRecord?.id) {
-        return;
-      }
-
-      const confirmed = await requestConfirmation({
-        title: confirmationDialogTitle,
-        message: t('formpackRecordDeleteConfirm', {
-          title: record.title ?? t('formpackRecordUntitled'),
-        }),
-        confirmLabel: t('formpackRecordDelete'),
-        cancelLabel,
-        tone: 'danger',
-      });
-      if (!confirmed) {
-        return;
-      }
-
-      await deleteRecord(record.id);
-    },
-    [
-      activeRecord?.id,
-      cancelLabel,
-      confirmationDialogTitle,
-      deleteRecord,
-      requestConfirmation,
-      t,
-    ],
   );
   const { handleClearSnapshots, handleCreateSnapshot, handleRestoreSnapshot } =
     useSnapshotManager({
@@ -1040,27 +740,23 @@ export default function FormpackDetailPage() {
   }, [isIntroGateVisible, pendingFormFocus]);
 
   useEffect(() => {
-    if (
-      formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID ||
-      !pendingOfflabelFocusTarget ||
-      isIntroGateVisible
-    ) {
+    if (!pendingOfflabelFocusSelector || isIntroGateVisible) {
       return;
     }
 
-    const selector =
-      formpackDetailHelpers.OFFLABEL_FOCUS_SELECTOR_BY_TARGET[
-        pendingOfflabelFocusTarget
-      ];
     return focusWithRetry({
       getRoot: () => formContentRef.current,
-      selector,
+      selector: pendingOfflabelFocusSelector,
       fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
       maxAttempts: FOCUS_RETRY_ATTEMPTS,
       retryDelayMs: FOCUS_RETRY_DELAY_MS,
-      onResolved: () => setPendingOfflabelFocusTarget(null),
+      onResolved: clearPendingOfflabelFocusTarget,
     });
-  }, [formpackId, isIntroGateVisible, pendingOfflabelFocusTarget]);
+  }, [
+    clearPendingOfflabelFocusTarget,
+    isIntroGateVisible,
+    pendingOfflabelFocusSelector,
+  ]);
 
   // Use custom field template for formpacks that provide InfoBoxes.
   const templates = useMemo(() => {
@@ -1112,7 +808,7 @@ export default function FormpackDetailPage() {
     const schemaProps = isRecord(formSchema?.properties)
       ? (formSchema.properties as Record<string, RJSFSchema>)
       : null;
-    const keys = formpackDetailHelpers.getOrderedKeys(
+    const keys = previewHelpers.getOrderedKeys(
       formSchema ?? undefined,
       previewUiSchema,
       previewData,
@@ -1124,14 +820,11 @@ export default function FormpackDetailPage() {
           return null;
         }
         const childSchema = schemaProps ? schemaProps[key] : undefined;
-        const childUi = formpackDetailHelpers.getUiSchemaNode(
-          previewUiSchema,
-          key,
-        );
-        const label = formpackDetailHelpers.getLabel(key, childSchema, childUi);
+        const childUi = previewHelpers.getUiSchemaNode(previewUiSchema, key);
+        const label = previewHelpers.getLabel(key, childSchema, childUi);
 
         if (Array.isArray(entry)) {
-          return formpackDetailHelpers.renderPreviewArray(
+          return previewHelpers.renderPreviewArray(
             entry,
             childSchema,
             childUi,
@@ -1142,7 +835,7 @@ export default function FormpackDetailPage() {
           );
         }
         if (isRecord(entry)) {
-          return formpackDetailHelpers.renderPreviewObject(
+          return previewHelpers.renderPreviewObject(
             entry,
             childSchema,
             childUi,
@@ -1200,18 +893,6 @@ export default function FormpackDetailPage() {
     () => hasPreviewValue(formData),
     [formData],
   );
-  const offlabelPreviewDocuments = useMemo(
-    () =>
-      formpackId === OFFLABEL_ANTRAG_FORMPACK_ID
-        ? buildOfflabelDocuments(formData, offlabelOutputLocale).map(
-            (document) =>
-              formpackDetailHelpers.stripOfflabelPart2ConsentFromPreview(
-                document,
-              ),
-          )
-        : [],
-    [formData, formpackId, offlabelOutputLocale],
-  );
 
   if (isLoading) {
     return (
@@ -1241,377 +922,43 @@ export default function FormpackDetailPage() {
 
   const formatSnapshotCreatedAt = (timestamp: string) =>
     t('formpackSnapshotCreatedAt', { timestamp: formatTimestamp(timestamp) });
-
-  const renderPdfExportControls = () => {
-    const pdfSupported = manifest.exports.includes('pdf');
-    const disabled = storageBlocked;
-    const resolvedFormpackId = manifest.id;
-
-    if (!pdfSupported) {
-      return null;
-    }
-
-    return (
-      <div className="formpack-pdf-export">
-        <Suspense
-          fallback={
-            <button type="button" className="app__button" disabled>
-              {t('formpackRecordExportPdf')}
-            </button>
-          }
-        >
-          <LazyPdfExportControls
-            formpackId={resolvedFormpackId}
-            formData={formData}
-            locale={offlabelOutputLocale}
-            label={t('formpackRecordExportPdf')}
-            loadingLabel={t('formpackPdfExportInProgress')}
-            disabled={disabled}
-            onSuccess={handlePdfExportSuccess}
-            onError={handlePdfExportError}
-          />
-        </Suspense>
-      </div>
-    );
-  };
-
-  const renderDocxExportControls = () => {
-    if (
-      !manifest.exports.includes('docx') ||
-      !manifest.docx ||
-      docxTemplateOptions.length === 0
-    ) {
-      return null;
-    }
-
-    const pdfControls = renderPdfExportControls();
-    const isOfflabelFormpack = formpackId === OFFLABEL_ANTRAG_FORMPACK_ID;
-    const hasMultipleDocxTemplates = docxTemplateOptions.length > 1;
-    const hasPdfControls = Boolean(pdfControls);
-    const docxExportClassName = hasMultipleDocxTemplates
-      ? 'formpack-docx-export'
-      : 'formpack-docx-export formpack-docx-export--single-template';
-    const docxButtonsClassNameBase = hasPdfControls
-      ? 'formpack-docx-export__buttons'
-      : 'formpack-docx-export__buttons formpack-docx-export__buttons--single-action';
-    const docxButtonsClassName = isOfflabelFormpack
-      ? `${docxButtonsClassNameBase} formpack-docx-export__buttons--offlabel`
-      : docxButtonsClassNameBase;
-    const docxButtonClassName = isOfflabelFormpack
-      ? 'app__button formpack-docx-export__button--primary'
-      : 'app__button';
-
-    return (
-      <div className={docxExportClassName}>
-        {hasMultipleDocxTemplates && (
-          <div className="formpack-docx-export__template">
-            <label
-              className="formpack-docx-export__label"
-              htmlFor="docx-template-select"
-            >
-              {t('formpackDocxTemplateLabel')}
-              <select
-                id="docx-template-select"
-                className="formpack-docx-export__select"
-                value={docxTemplateId}
-                onChange={(event) =>
-                  setDocxTemplateId(event.target.value as DocxTemplateId)
-                }
-              >
-                {docxTemplateOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
-        <div className={docxButtonsClassName}>
-          <button
-            type="button"
-            className={docxButtonClassName}
-            onClick={handleExportDocx}
-            data-action="docx-export"
-            disabled={storageBlocked || isDocxExporting}
-          >
-            {isDocxExporting
-              ? t('formpackDocxExportInProgress')
-              : t('formpackRecordExportDocx')}
-          </button>
-          {pdfControls}
-        </div>
-      </div>
-    );
-  };
-
-  const renderJsonExportControls = () =>
-    manifest.exports.includes('json') ? (
-      <div className="formpack-json-export">
-        <label className="formpack-json-export__toggle">
-          <input
-            type="checkbox"
-            checked={encryptJsonExport}
-            onChange={(event) => setEncryptJsonExport(event.target.checked)}
-          />
-          {t('formpackJsonExportEncryptionToggle')}
-        </label>
-        <p className="formpack-json-export__hint">
-          {t('formpackJsonExportEncryptionHint')}
-        </p>
-        {encryptJsonExport && (
-          <div className="formpack-json-export__passwords">
-            <label
-              className="formpack-json-export__field"
-              htmlFor="json-export-password"
-            >
-              {t('formpackJsonExportPasswordLabel')}
-              <input
-                id="json-export-password"
-                type="password"
-                className="formpack-json-export__input"
-                value={jsonExportPassword}
-                onChange={(event) => setJsonExportPassword(event.target.value)}
-                autoComplete="new-password"
-              />
-            </label>
-            <label
-              className="formpack-json-export__field"
-              htmlFor="json-export-password-confirm"
-            >
-              {t('formpackJsonExportPasswordConfirmLabel')}
-              <input
-                id="json-export-password-confirm"
-                type="password"
-                className="formpack-json-export__input"
-                value={jsonExportPasswordConfirm}
-                onChange={(event) =>
-                  setJsonExportPasswordConfirm(event.target.value)
-                }
-                autoComplete="new-password"
-              />
-            </label>
-          </div>
-        )}
-        <button
-          type="button"
-          className="app__button"
-          onClick={handleExportJson}
-          disabled={storageBlocked}
-        >
-          {t('formpackRecordExportJson')}
-        </button>
-      </div>
-    ) : null;
-
-  const renderActionStatus = () => {
-    if (
-      !docxError &&
-      !docxSuccess &&
-      !pdfError &&
-      !pdfSuccess &&
-      !jsonExportError
-    ) {
-      return null;
-    }
-
-    return (
-      <div className="formpack-actions__status" aria-live="polite">
-        {docxError && <span className="app__error">{docxError}</span>}
-        {docxSuccess && (
-          <span className="formpack-actions__success">{docxSuccess}</span>
-        )}
-        {jsonExportError && (
-          <span className="app__error">{jsonExportError}</span>
-        )}
-        {pdfError && <span className="app__error">{pdfError}</span>}
-        {pdfSuccess && (
-          <span className="formpack-actions__success">{pdfSuccess}</span>
-        )}
-      </div>
-    );
-  };
-
-  const renderFormContent = () => {
-    if (!activeRecord) {
-      return (
-        <p className="formpack-records__empty">
-          {t('formpackFormNoActiveRecord')}
-        </p>
-      );
-    }
-
-    if (!formSchema || !conditionalUiSchema || !validator) {
-      return null;
-    }
-
-    if (isIntroGateVisible && introTexts) {
-      return (
-        <div ref={formContentRef}>
-          <FormpackIntroGate
-            title={introTexts.title}
-            body={introTexts.body}
-            checkboxLabel={introTexts.checkboxLabel}
-            startButtonLabel={introTexts.startButtonLabel}
-            onConfirm={handleAcceptIntroGate}
-          />
-        </div>
-      );
-    }
-
-    return (
-      <div ref={formContentRef}>
-        {introGateConfig?.enabled && introTexts && (
-          <div className="formpack-intro__reopen">
-            <button
-              type="button"
-              className="app__button"
-              onClick={() => setIsIntroModalOpen(true)}
-            >
-              {introTexts.reopenButtonLabel}
-            </button>
-          </div>
-        )}
-        <div className="profile-quickfill">
-          <label className="profile-quickfill__save">
-            <input
-              type="checkbox"
-              checked={profileSaveEnabled}
-              onChange={handleProfileSaveToggle}
-            />
-            {t('profileSaveCheckbox')}
-          </label>
-          <button
-            type="button"
-            className="app__button"
-            disabled={!profileHasSavedData}
-            onClick={handleApplyProfile}
-          >
-            {t('profileApplyButton')}
-          </button>
-          {showDevSections && (
-            <button
-              type="button"
-              className="app__button"
-              onClick={handleApplyDummyData}
-            >
-              {t('profileApplyDummyButton')}
-            </button>
-          )}
-          {profileStatus && (
-            <span
-              className={
-                profileStatus === t('profileApplySuccess')
-                  ? 'profile-quickfill__success'
-                  : 'profile-quickfill__error'
-              }
-              aria-live="polite"
-            >
-              {profileStatus}
-            </span>
-          )}
-        </div>
-        <Suspense fallback={<p>{t('formpackLoading')}</p>}>
-          <LazyForm
-            className={
-              formpackDetailHelpers.hasLetterLayout(formpackId)
-                ? 'formpack-form formpack-form--doctor-letter'
-                : 'formpack-form'
-            }
-            schema={formSchema}
-            uiSchema={conditionalUiSchema}
-            templates={templates}
-            widgets={formpackWidgets}
-            validator={validator}
-            formData={formData}
-            omitExtraData
-            liveOmit
-            onChange={handleFormChange}
-            onSubmit={handleFormSubmit}
-            formContext={formContext}
-            noHtml5Validate
-            showErrorList={false}
-          >
-            <div className="formpack-form__actions">
-              <div className="formpack-actions__group formpack-actions__group--export">
-                {renderDocxExportControls()}
-              </div>
-              <div className="formpack-actions__group formpack-actions__group--secondary">
-                <button
-                  type="button"
-                  className="app__button"
-                  onClick={handleResetForm}
-                >
-                  {t('formpackFormReset')}
-                </button>
-                {renderJsonExportControls()}
-              </div>
-              {renderActionStatus()}
-            </div>
-          </LazyForm>
-        </Suspense>
-        {introGateConfig?.enabled && introTexts && (
-          <FormpackIntroModal
-            isOpen={isIntroModalOpen}
-            title={introTexts.title}
-            body={introTexts.body}
-            closeLabel={t('common.close')}
-            onClose={() => setIsIntroModalOpen(false)}
-          />
-        )}
-      </div>
-    );
-  };
-
   const getJsonPreviewContent = () =>
     Object.keys(formData).length ? jsonPreview : t('formpackFormPreviewEmpty');
-
-  const renderDocumentPreviewContent = () => {
-    if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
-      return (
-        <div className="formpack-document-preview formpack-document-preview--offlabel">
-          <div className="formpack-document-preview__tabs" role="tablist">
-            {offlabelPreviewDocuments.map((doc) => (
-              <button
-                key={doc.id}
-                id={`offlabel-tab-${doc.id}`}
-                role="tab"
-                type="button"
-                className="app__button"
-                aria-selected={selectedOfflabelPreviewId === doc.id}
-                aria-controls={`offlabel-tabpanel-${doc.id}`}
-                onClick={() => setSelectedOfflabelPreviewId(doc.id)}
-              >
-                {doc.title}
-              </button>
-            ))}
-          </div>
-          {offlabelPreviewDocuments
-            .filter((doc) => doc.id === selectedOfflabelPreviewId)
-            .map((doc) => (
-              <div
-                key={doc.id}
-                id={`offlabel-tabpanel-${doc.id}`}
-                role="tabpanel"
-                aria-labelledby={`offlabel-tab-${doc.id}`}
-              >
-                {formpackDetailHelpers.renderOfflabelPreviewDocument(doc)}
-              </div>
-            ))}
-        </div>
-      );
-    }
-
-    if (hasDocumentContent) {
-      return <div className="formpack-document-preview">{documentPreview}</div>;
-    }
-
-    return (
-      <p className="formpack-document-preview__empty">
-        {t('formpackDocumentPreviewEmpty')}
-      </p>
-    );
-  };
+  const exportActions = (
+    <FormpackExportActions
+      PdfExportControlsComponent={LazyPdfExportControls}
+      docxError={docxError}
+      docxSuccess={docxSuccess}
+      docxTemplateId={docxTemplateId}
+      docxTemplateOptions={docxTemplateOptions}
+      encryptJsonExport={encryptJsonExport}
+      formData={formData}
+      formpackId={formpackId}
+      handleExportDocx={handleExportDocx}
+      handleExportJson={handleExportJson}
+      handlePdfExportError={handlePdfExportError}
+      handlePdfExportSuccess={handlePdfExportSuccess}
+      isDocxExporting={isDocxExporting}
+      jsonExportError={jsonExportError}
+      jsonExportPassword={jsonExportPassword}
+      jsonExportPasswordConfirm={jsonExportPasswordConfirm}
+      manifest={manifest}
+      offlabelOutputLocale={offlabelOutputLocale}
+      pdfError={pdfError}
+      pdfSuccess={pdfSuccess}
+      secondaryActions={
+        <button type="button" className="app__button" onClick={handleResetForm}>
+          {t('formpackFormReset')}
+        </button>
+      }
+      setDocxTemplateId={setDocxTemplateId}
+      setEncryptJsonExport={setEncryptJsonExport}
+      setJsonExportPassword={setJsonExportPassword}
+      setJsonExportPasswordConfirm={setJsonExportPasswordConfirm}
+      storageBlocked={storageBlocked}
+      t={t}
+    />
+  );
 
   const currentQuotaStatus =
     storageHealth.status === 'ok' ? null : storageHealth.status;
@@ -1678,110 +1025,167 @@ export default function FormpackDetailPage() {
         </div>
         <div className="formpack-detail__form">
           <FormContentSection title={t('formpackFormHeading')}>
-            {renderFormContent()}
+            <FormpackFormPanel
+              FormComponent={LazyForm}
+              actions={exportActions}
+              activeRecordExists={Boolean(activeRecord)}
+              closeLabel={t('common.close')}
+              emptyMessage={t('formpackFormNoActiveRecord')}
+              formClassName={
+                hasLetterLayout(formpackId)
+                  ? 'formpack-form formpack-form--doctor-letter'
+                  : 'formpack-form'
+              }
+              formContentRef={formContentRef}
+              formContext={formContext}
+              formData={formData}
+              formSchema={formSchema}
+              introGateEnabled={Boolean(introGateConfig?.enabled)}
+              introTexts={introTexts}
+              isIntroGateVisible={isIntroGateVisible}
+              isIntroModalOpen={isIntroModalOpen}
+              loadingLabel={t('formpackLoading')}
+              onApplyDummyData={handleApplyDummyData}
+              onApplyProfile={handleApplyProfile}
+              onCloseIntroModal={() => setIsIntroModalOpen(false)}
+              onConfirmIntroGate={handleAcceptIntroGate}
+              onFormChange={handleFormChange}
+              onFormSubmit={handleFormSubmit}
+              onOpenIntroModal={() => setIsIntroModalOpen(true)}
+              onProfileSaveToggle={handleProfileSaveToggle}
+              profileApplyDummyLabel={t('profileApplyDummyButton')}
+              profileApplyLabel={t('profileApplyButton')}
+              profileHasSavedData={profileHasSavedData}
+              profileSaveEnabled={profileSaveEnabled}
+              profileStatus={profileStatus}
+              profileStatusSuccessText={t('profileApplySuccess')}
+              profileToggleLabel={t('profileSaveCheckbox')}
+              showDevSections={showDevSections}
+              templates={templates}
+              uiSchema={conditionalUiSchema}
+              validator={validator}
+            />
           </FormContentSection>
           <DocumentPreviewPanel
             title={t('formpackDocumentPreviewHeading')}
             isIntroGateVisible={isIntroGateVisible}
           >
-            {renderDocumentPreviewContent()}
+            <FormpackDocumentPreviewContent
+              documentPreview={documentPreview}
+              emptyLabel={t('formpackDocumentPreviewEmpty')}
+              formpackId={formpackId}
+              hasDocumentContent={hasDocumentContent}
+              offlabelPreviewDocuments={offlabelPreviewDocuments}
+              onSelectOfflabelPreview={setSelectedOfflabelPreviewId}
+              selectedOfflabelPreviewId={selectedOfflabelPreviewId}
+            />
           </DocumentPreviewPanel>
-          <div className="formpack-detail__section formpack-detail__tools-section">
-            <div className="formpack-detail__tools-panel">
-              <h3 className="formpack-detail__tools-title">
-                {t('formpackToolsHeading')}
-              </h3>
-              <div className="formpack-detail__tools">
-                <RecordsPanel
-                  labels={{
-                    title: t('formpackRecordsHeading'),
-                    recordNew: t('formpackRecordNew'),
-                    recordsListLabel: t('formpackRecordsListLabel'),
-                    recordUntitled: t('formpackRecordUntitled'),
-                    recordLoad: t('formpackRecordLoad'),
-                    recordDelete: t('formpackRecordDelete'),
-                    recordActive: t('formpackRecordActive'),
-                    recordsLoading: t('formpackRecordsLoading'),
-                    recordsEmpty: t('formpackRecordsEmpty'),
-                  }}
-                  records={records}
-                  activeRecordId={activeRecord?.id ?? null}
-                  isRecordsLoading={isRecordsLoading}
-                  storageUnavailable={storageBlocked}
-                  storageErrorMessage={storageErrorMessage}
-                  storageRecoveryActionLabel={
-                    storageError === 'locked' ? t('resetAllButton') : undefined
-                  }
-                  formatUpdatedAt={formatRecordUpdatedAt}
-                  onStorageRecoveryAction={
-                    storageError === 'locked'
-                      ? handleResetAllStorageData
-                      : undefined
-                  }
-                  onCreateRecord={handleCreateRecord}
-                  onLoadRecord={handleLoadRecord}
-                  onDeleteRecord={handleDeleteRecord}
-                />
-                <ImportPanel
-                  labels={{
-                    title: t('formpackImportHeading'),
-                    hint: t('formpackImportHint'),
-                    fileLabel: t('formpackImportLabel'),
-                    fileName: (name) => t('formpackImportFileName', { name }),
-                    passwordLabel: t('formpackImportPasswordLabel'),
-                    passwordHint: t('formpackImportPasswordHint'),
-                    passwordEncryptedHint: t('formpackImportEncryptedHint'),
-                    modeLabel: t('formpackImportModeLabel'),
-                    modeNew: t('formpackImportModeNew'),
-                    modeOverwrite: t('formpackImportModeOverwrite'),
-                    modeOverwriteHint: t('formpackImportModeOverwriteHint'),
-                    includeRevisions: t('formpackImportIncludeRevisions'),
-                    statusLabel: t('formpackImportStatusLabel'),
-                    inProgress: t('formpackImportInProgress'),
-                    action: t('formpackImportAction'),
-                  }}
-                  importInputRef={importInputRef}
-                  importFileName={importFileName}
-                  importPassword={importPassword}
-                  isImportFileEncrypted={isImportFileEncrypted}
-                  importMode={importMode}
-                  importIncludeRevisions={importIncludeRevisions}
-                  importError={importError}
-                  importSuccess={importSuccess}
-                  importJson={importJson}
-                  isImporting={isImporting}
-                  activeRecordExists={Boolean(activeRecord)}
-                  storageUnavailable={storageBlocked}
-                  onImportModeChange={setImportMode}
-                  onIncludeRevisionsChange={setImportIncludeRevisions}
-                  onImportPasswordChange={setImportPassword}
-                  onFileChange={handleImportFileChange}
-                  onImport={handleImport}
-                />
-                <SnapshotsPanel
-                  labels={{
-                    title: t('formpackSnapshotsHeading'),
-                    snapshotsListLabel: t('formpackSnapshotsListLabel'),
-                    snapshotUntitled: t('formpackSnapshotUntitled'),
-                    snapshotRestore: t('formpackSnapshotRestore'),
-                    snapshotsLoading: t('formpackSnapshotsLoading'),
-                    snapshotsEmpty: t('formpackSnapshotsEmpty'),
-                    snapshotsNoRecord: t('formpackSnapshotsNoRecord'),
-                    snapshotCreate: t('formpackSnapshotCreate'),
-                    snapshotsClearAll: t('formpackSnapshotsClearAll'),
-                  }}
-                  snapshots={snapshots}
-                  activeRecordExists={Boolean(activeRecord)}
-                  isSnapshotsLoading={isSnapshotsLoading}
-                  storageUnavailable={storageBlocked}
-                  formatCreatedAt={formatSnapshotCreatedAt}
-                  onCreateSnapshot={handleCreateSnapshot}
-                  onClearSnapshots={handleClearSnapshots}
-                  onRestoreSnapshot={handleRestoreSnapshot}
-                />
-              </div>
-            </div>
-          </div>
+          <FormpackToolsSection
+            heading={t('formpackToolsHeading')}
+            recordsPanelProps={{
+              labels: {
+                title: t('formpackRecordsHeading'),
+                recordNew: t('formpackRecordNew'),
+                recordsListLabel: t('formpackRecordsListLabel'),
+                recordUntitled: t('formpackRecordUntitled'),
+                recordLoad: t('formpackRecordLoad'),
+                recordDelete: t('formpackRecordDelete'),
+                recordActive: t('formpackRecordActive'),
+                recordsLoading: t('formpackRecordsLoading'),
+                recordsEmpty: t('formpackRecordsEmpty'),
+              },
+              records,
+              activeRecordId: activeRecord?.id ?? null,
+              isRecordsLoading,
+              storageUnavailable: storageBlocked,
+              storageErrorMessage,
+              storageRecoveryActionLabel:
+                storageError === 'locked' ? t('resetAllButton') : undefined,
+              formatUpdatedAt: formatRecordUpdatedAt,
+              onStorageRecoveryAction:
+                storageError === 'locked'
+                  ? () => {
+                      handleResetAllStorageData().catch(ignoreAsyncError);
+                    }
+                  : undefined,
+              onCreateRecord: () => {
+                handleCreateRecord().catch(ignoreAsyncError);
+              },
+              onLoadRecord: (recordId) => {
+                handleLoadRecord(recordId).catch(ignoreAsyncError);
+              },
+              onDeleteRecord: (record) => {
+                handleDeleteRecord(record).catch(ignoreAsyncError);
+              },
+            }}
+            importPanelProps={{
+              labels: {
+                title: t('formpackImportHeading'),
+                hint: t('formpackImportHint'),
+                fileLabel: t('formpackImportLabel'),
+                fileName: (name) => t('formpackImportFileName', { name }),
+                passwordLabel: t('formpackImportPasswordLabel'),
+                passwordHint: t('formpackImportPasswordHint'),
+                passwordEncryptedHint: t('formpackImportEncryptedHint'),
+                modeLabel: t('formpackImportModeLabel'),
+                modeNew: t('formpackImportModeNew'),
+                modeOverwrite: t('formpackImportModeOverwrite'),
+                modeOverwriteHint: t('formpackImportModeOverwriteHint'),
+                includeRevisions: t('formpackImportIncludeRevisions'),
+                statusLabel: t('formpackImportStatusLabel'),
+                inProgress: t('formpackImportInProgress'),
+                action: t('formpackImportAction'),
+              },
+              importInputRef,
+              importFileName,
+              importPassword,
+              isImportFileEncrypted,
+              importMode,
+              importIncludeRevisions,
+              importError,
+              importSuccess,
+              importJson,
+              isImporting,
+              activeRecordExists: Boolean(activeRecord),
+              storageUnavailable: storageBlocked,
+              onImportModeChange: setImportMode,
+              onIncludeRevisionsChange: setImportIncludeRevisions,
+              onImportPasswordChange: setImportPassword,
+              onFileChange: (event) => {
+                handleImportFileChange(event).catch(ignoreAsyncError);
+              },
+              onImport: () => {
+                handleImport().catch(ignoreAsyncError);
+              },
+            }}
+            snapshotsPanelProps={{
+              labels: {
+                title: t('formpackSnapshotsHeading'),
+                snapshotsListLabel: t('formpackSnapshotsListLabel'),
+                snapshotUntitled: t('formpackSnapshotUntitled'),
+                snapshotRestore: t('formpackSnapshotRestore'),
+                snapshotsLoading: t('formpackSnapshotsLoading'),
+                snapshotsEmpty: t('formpackSnapshotsEmpty'),
+                snapshotsNoRecord: t('formpackSnapshotsNoRecord'),
+                snapshotCreate: t('formpackSnapshotCreate'),
+                snapshotsClearAll: t('formpackSnapshotsClearAll'),
+              },
+              snapshots,
+              activeRecordExists: Boolean(activeRecord),
+              isSnapshotsLoading,
+              storageUnavailable: storageBlocked,
+              formatCreatedAt: formatSnapshotCreatedAt,
+              onCreateSnapshot: () => {
+                handleCreateSnapshot().catch(ignoreAsyncError);
+              },
+              onClearSnapshots: () => {
+                handleClearSnapshots().catch(ignoreAsyncError);
+              },
+              onRestoreSnapshot: (snapshotId) => {
+                handleRestoreSnapshot(snapshotId).catch(ignoreAsyncError);
+              },
+            }}
+          />
           {showDevSections && (
             <div className="formpack-detail__section">
               <h3>{t('formpackFormPreviewHeading')}</h3>

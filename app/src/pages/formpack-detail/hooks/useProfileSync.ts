@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState, type ChangeEvent } from 'react';
-import type { ConfirmationRequest } from '../../components/useConfirmationDialog';
+import type { ConfirmationRequest } from '../../../components/useConfirmationDialog';
 import {
   applyProfileData,
   extractProfileData,
-} from '../../lib/profile/profileMapping';
-import type { FormpackId } from '../../formpacks';
+} from '../../../lib/profile/profileMapping';
+import type { FormpackId } from '../../../formpacks';
 import {
   deleteProfile,
   getProfile,
   hasUsableProfileData,
   upsertProfile,
   type RecordEntry,
-} from '../../storage';
+} from '../../../storage';
 
 const DEFAULT_PROFILE_ID = 'default';
 const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';

@@ -47,8 +47,26 @@ vi.mock('../../src/formpacks', async (importOriginal) => {
   };
 });
 
-import { formpackDetailHelpers as detail } from '../../src/pages/formpack-detail/formpackDetailHelpers';
+import { doctorLetterHelpers } from '../../src/pages/formpack-detail/helpers/doctorLetterHelpers';
+import { formpackAssetHelpers } from '../../src/pages/formpack-detail/helpers/formpackAssetHelpers';
+import {
+  hasLetterLayout,
+  mergeDummyPatch,
+} from '../../src/pages/formpack-detail/helpers/formpackDetailHelpers';
+import { offlabelFormHelpers } from '../../src/pages/formpack-detail/helpers/offlabelFormHelpers';
+import { offlabelPreviewHelpers } from '../../src/pages/formpack-detail/helpers/offlabelPreviewHelpers';
+import { previewHelpers } from '../../src/pages/formpack-detail/helpers/previewHelpers';
 import { FormpackLoaderError } from '../../src/formpacks';
+
+const detail = {
+  ...doctorLetterHelpers,
+  ...formpackAssetHelpers,
+  ...offlabelFormHelpers,
+  ...offlabelPreviewHelpers,
+  ...previewHelpers,
+  hasLetterLayout,
+  mergeDummyPatch,
+};
 
 const TEST_MED_A = 'med-a';
 const TEST_INDICATION_A = 'indication-a';
