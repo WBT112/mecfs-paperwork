@@ -69,11 +69,11 @@ describe.skipIf(!hasBuild)('bundle size budgets', () => {
     }
   });
 
-  it('vendor-react-pdf-pdfkit stays under configured budget', () => {
-    const chunk = jsAssets.find((a) => a.chunk === 'vendor-react-pdf-pdfkit');
+  it('vendor-react-pdf stays under configured budget', () => {
+    const chunk = jsAssets.find((a) => a.chunk === 'vendor-react-pdf');
     expect(chunk).toBeDefined();
     expect(chunk!.size).toBeLessThanOrEqual(
-      JS_CHUNK_BUDGETS['vendor-react-pdf-pdfkit'],
+      JS_CHUNK_BUDGETS['vendor-react-pdf'],
     );
   });
 
@@ -101,8 +101,7 @@ describe.skipIf(!hasBuild)('bundle size budgets', () => {
       'vendor-react',
       'vendor-docx',
       'vendor-rjsf',
-      'vendor-react-pdf-renderer',
-      'vendor-react-pdf-pdfkit',
+      'vendor-react-pdf',
     ];
     for (const name of expectedVendors) {
       expect(chunkNames, `missing chunk: ${name}`).toContain(name);
