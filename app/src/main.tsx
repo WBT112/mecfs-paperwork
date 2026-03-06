@@ -8,6 +8,7 @@ import { applyTheme } from './theme/applyTheme';
 import { getInitialThemeMode } from './theme/theme';
 import { registerServiceWorker } from './pwa/register';
 import { installGlobalErrorListeners } from './lib/diagnostics';
+import { readLocalStorage } from './lib/safeLocalStorage';
 import {
   USER_TIMING_NAMES,
   startUserTiming,
@@ -17,14 +18,9 @@ const LOCALE_STORAGE_KEY = 'mecfs-paperwork.locale';
 
 const applyInitialDocumentLocale = (): void => {
   let locale = 'de';
-
-  try {
-    const storedLocale = globalThis.localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (storedLocale === 'de' || storedLocale === 'en') {
-      locale = storedLocale;
-    }
-  } catch {
-    // Ignore storage access failures to keep startup resilient.
+  const storedLocale = readLocalStorage(LOCALE_STORAGE_KEY);
+  if (storedLocale === 'de' || storedLocale === 'en') {
+    locale = storedLocale;
   }
 
   document.documentElement.lang = locale;

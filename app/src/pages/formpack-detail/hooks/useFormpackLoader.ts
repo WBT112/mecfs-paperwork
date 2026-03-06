@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { SupportedLocale } from '../../../i18n/locale';
+import { createAsyncGuard } from '../../../lib/asyncGuard';
 import {
   USER_TIMING_NAMES,
   startUserTiming,
@@ -60,7 +61,7 @@ export const useFormpackLoader = ({
   const lastFormpackIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    let isActive = true;
+    const guard = createAsyncGuard();
 
     const resetFormpack = () => {
       setManifest(null);
@@ -79,7 +80,7 @@ export const useFormpackLoader = ({
           locale,
           t,
         );
-        if (!isActive) {
+        if (!guard.isActive()) {
           return;
         }
 
@@ -100,7 +101,7 @@ export const useFormpackLoader = ({
         }
       } finally {
         timing.end();
-        if (isActive) {
+        if (guard.isActive()) {
           setIsLoading(false);
         }
       }
@@ -108,7 +109,7 @@ export const useFormpackLoader = ({
 
     if (formpackId) {
       loadManifest(formpackId).catch((error: unknown) => {
-        if (!isActive) {
+        if (!guard.isActive()) {
           return;
         }
 
@@ -122,9 +123,7 @@ export const useFormpackLoader = ({
       setIsLoading(false);
     }
 
-    return () => {
-      isActive = false;
-    };
+    return guard.deactivate;
   }, [formpackId, locale, onFormpackChanged, refreshToken, t]);
 
   return {

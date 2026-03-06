@@ -1,6 +1,6 @@
 import { Suspense, type ComponentType, type ReactNode } from 'react';
 import type { DocxTemplateId } from '../../../export/docxLazy';
-import type { PdfExportControlsProps } from '../../../export/pdf';
+import type { PdfExportControlsProps } from '../../../export/pdf/PdfExportControls';
 import {
   OFFLABEL_ANTRAG_FORMPACK_ID,
   type FormpackManifest,

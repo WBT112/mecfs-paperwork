@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ConfirmationRequest } from '../../../components/useConfirmationDialog';
 import type { RecordEntry } from '../../../storage';
 import type { SupportedLocale } from '../../../i18n/locale';
+import { createAsyncGuard } from '../../../lib/asyncGuard';
+import {
+  readLocalStorage,
+  writeLocalStorage,
+} from '../../../lib/safeLocalStorage';
 
 const LAST_ACTIVE_FORMPACK_KEY = 'mecfs-paperwork.lastActiveFormpackId';
 const ignorePromiseResult = (): undefined => undefined;
@@ -92,11 +97,7 @@ export const useRecordManager = ({
   );
 
   const readActiveRecordId = useCallback(() => {
-    try {
-      return globalThis.localStorage.getItem(activeRecordStorageKey!);
-    } catch {
-      return null;
-    }
+    return readLocalStorage(activeRecordStorageKey!);
   }, [activeRecordStorageKey]);
 
   const persistActiveRecordId = useCallback(
@@ -105,12 +106,8 @@ export const useRecordManager = ({
         return;
       }
 
-      try {
-        globalThis.localStorage.setItem(activeRecordStorageKey, recordId);
-        globalThis.localStorage.setItem(LAST_ACTIVE_FORMPACK_KEY, formpackId);
-      } catch {
-        // Ignore storage errors to keep the UI responsive.
-      }
+      writeLocalStorage(activeRecordStorageKey, recordId);
+      writeLocalStorage(LAST_ACTIVE_FORMPACK_KEY, formpackId);
     },
     [activeRecordStorageKey, formpackId],
   );
@@ -210,18 +207,16 @@ export const useRecordManager = ({
       return;
     }
 
-    let isActive = true;
+    const guard = createAsyncGuard();
     const currentFormpackId = formpackId;
     hasRestoredRecordRef.current = formpackId;
 
-    restoreActiveRecord(currentFormpackId, () => isActive).then(
+    restoreActiveRecord(currentFormpackId, guard.isActive).then(
       ignorePromiseResult,
       ignorePromiseResult,
     );
 
-    return () => {
-      isActive = false;
-    };
+    return guard.deactivate;
   }, [formpackId, hasLoadedRecords, isRecordsLoading, restoreActiveRecord]);
 
   const handleResetForm = useCallback(async () => {

@@ -49,14 +49,12 @@ vi.mock('../../src/formpacks', async (importOriginal) => {
 
 import { doctorLetterHelpers } from '../../src/pages/formpack-detail/helpers/doctorLetterHelpers';
 import { formpackAssetHelpers } from '../../src/pages/formpack-detail/helpers/formpackAssetHelpers';
-import {
-  hasLetterLayout,
-  mergeDummyPatch,
-} from '../../src/pages/formpack-detail/helpers/formpackDetailHelpers';
+import { FormpackLoaderError } from '../../src/formpacks';
+import { hasLetterLayout } from '../../src/formpacks/layout';
+import { mergeDummyPatch } from '../../src/lib/devDummyFill';
 import { offlabelFormHelpers } from '../../src/pages/formpack-detail/helpers/offlabelFormHelpers';
 import { offlabelPreviewHelpers } from '../../src/pages/formpack-detail/helpers/offlabelPreviewHelpers';
 import { previewHelpers } from '../../src/pages/formpack-detail/helpers/previewHelpers';
-import { FormpackLoaderError } from '../../src/formpacks';
 
 const detail = {
   ...doctorLetterHelpers,

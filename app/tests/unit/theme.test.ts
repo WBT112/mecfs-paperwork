@@ -55,6 +55,12 @@ describe('theme utilities', () => {
     expect(window.localStorage.getItem(themeStorageKey)).toBe('light');
   });
 
+  it('reads a valid stored theme mode', () => {
+    window.localStorage.setItem(themeStorageKey, 'dark');
+
+    expect(getStoredThemeMode()).toBe('dark');
+  });
+
   it('ignores invalid stored theme values', () => {
     window.localStorage.setItem(themeStorageKey, 'neon');
 

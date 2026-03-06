@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import Ajv2020 from 'ajv/dist/2020';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
-import type { PdfExportControlsProps } from '../export/pdf';
+import type { PdfExportControlsProps } from '../export/pdf/PdfExportControls';
 import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
   formpackTemplates,
@@ -14,7 +14,8 @@ import { FormpackFieldTemplate } from '../lib/rjsfFormpackFieldTemplate';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/previewValue';
 import { isRecord } from '../lib/utils';
-import { buildRandomDummyPatch } from '../lib/devDummyFill';
+import { buildRandomDummyPatch, mergeDummyPatch } from '../lib/devDummyFill';
+import { createAsyncGuard } from '../lib/asyncGuard';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
@@ -30,6 +31,7 @@ import {
   type FormpackId,
   type InfoBoxConfig,
 } from '../formpacks';
+import { hasLetterLayout } from '../formpacks/layout';
 import { normalizeDecisionAnswers } from '../formpacks/doctor-letter/decisionAnswers';
 import {
   type FormpackMetaEntry,
@@ -54,10 +56,6 @@ import {
   QuotaBanner,
 } from './formpack-detail/components';
 import { doctorLetterHelpers } from './formpack-detail/helpers/doctorLetterHelpers';
-import {
-  hasLetterLayout,
-  mergeDummyPatch,
-} from './formpack-detail/helpers/formpackDetailHelpers';
 import { previewHelpers } from './formpack-detail/helpers/previewHelpers';
 import { useExportFlow } from './formpack-detail/hooks/useExportFlow';
 import { useFormpackLoader } from './formpack-detail/hooks/useFormpackLoader';
@@ -197,7 +195,7 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    let isActive = true;
+    const guard = createAsyncGuard();
 
     const ensureFormpackMeta = async () => {
       try {
@@ -218,11 +216,11 @@ export default function FormpackDetailPage() {
               hash: signature.hash,
             });
 
-        if (isActive) {
+        if (guard.isActive()) {
           setFormpackMeta(nextMeta);
         }
       } catch {
-        if (isActive) {
+        if (guard.isActive()) {
           setFormpackMeta(null);
         }
       }
@@ -230,9 +228,7 @@ export default function FormpackDetailPage() {
 
     ensureFormpackMeta().catch(ignoreAsyncError);
 
-    return () => {
-      isActive = false;
-    };
+    return guard.deactivate;
   }, [manifest]);
 
   useEffect(() => {
@@ -240,12 +236,12 @@ export default function FormpackDetailPage() {
       return;
     }
 
-    let isActive = true;
+    const guard = createAsyncGuard();
     const currentFormpackId = manifest.id;
 
     const refreshMeta = async () => {
       const next = await getFormpackMeta(currentFormpackId);
-      if (isActive) {
+      if (guard.isActive()) {
         setFormpackMeta(next);
       }
     };
@@ -272,7 +268,7 @@ export default function FormpackDetailPage() {
     );
 
     return () => {
-      isActive = false;
+      guard.deactivate();
       globalThis.removeEventListener(
         FORMPACKS_UPDATED_EVENT,
         handleUpdated as EventListener,
@@ -869,7 +865,7 @@ export default function FormpackDetailPage() {
   }, [formData, formSchema, previewUiSchema, resolvePreviewValue]);
 
   useEffect(() => {
-    let isActive = true;
+    const guard = createAsyncGuard();
 
     const loadValidator = async () => {
       const module = await import('@rjsf/validator-ajv8');
@@ -877,16 +873,14 @@ export default function FormpackDetailPage() {
       const loadedValidator = module.customizeValidator({
         AjvClass: Ajv2020,
       });
-      if (isActive) {
+      if (guard.isActive()) {
         setValidator(loadedValidator);
       }
     };
 
     loadValidator().catch(ignoreAsyncError);
 
-    return () => {
-      isActive = false;
-    };
+    return guard.deactivate;
   }, []);
 
   const hasDocumentContent = useMemo(

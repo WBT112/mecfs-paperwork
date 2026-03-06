@@ -12,28 +12,21 @@ import {
   upsertProfile,
   type RecordEntry,
 } from '../../../storage';
+import {
+  readLocalStorage,
+  writeLocalStorage,
+} from '../../../lib/safeLocalStorage';
 
 const DEFAULT_PROFILE_ID = 'default';
 const PROFILE_SAVE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 
 const readProfileSavePreference = (): boolean => {
-  try {
-    const stored = globalThis.localStorage.getItem(PROFILE_SAVE_KEY);
-    return stored === null ? true : stored === 'true';
-  } catch {
-    return true;
-  }
+  const stored = readLocalStorage(PROFILE_SAVE_KEY);
+  return stored === null ? true : stored === 'true';
 };
 
 const persistProfileSavePreference = (enabled: boolean): void => {
-  try {
-    globalThis.localStorage.setItem(
-      PROFILE_SAVE_KEY,
-      enabled ? 'true' : 'false',
-    );
-  } catch {
-    // Ignore storage errors because the toggle remains usable in-memory.
-  }
+  writeLocalStorage(PROFILE_SAVE_KEY, enabled ? 'true' : 'false');
 };
 
 const ignorePromiseError = (): undefined => undefined;

@@ -248,7 +248,6 @@ const createConfig = (mode: string): AppConfig => ({
         'src/lib/diagnostics/types.ts',
         // Re-export barrels with no logic
         'src/lib/diagnostics/index.ts',
-        'src/export/pdf/index.ts',
         'src/formpacks/index.ts',
         'src/pages/formpack-detail/components/index.ts',
         'src/storage/index.ts',
