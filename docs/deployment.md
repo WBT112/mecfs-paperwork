@@ -25,6 +25,7 @@ The repository ships multiple compose files for different contexts:
 ## Compose Quick Reference
 
 Server runtime (pulls prod + staging images):
+
 ```bash
 docker login docker.io   # only if needed
 COMPOSE_PROJECT_NAME=mecfs-paperwork docker compose -f compose.deploy.yaml pull
@@ -32,22 +33,26 @@ COMPOSE_PROJECT_NAME=mecfs-paperwork docker compose -f compose.deploy.yaml up -d
 ```
 
 Local/CI command (single container, HTTP on localhost:8080):
+
 ```bash
 docker compose -f compose.yaml up -d --build
 ```
 
 Local production topology without TLS:
+
 ```bash
 docker compose -f compose.prod.yaml -f compose.local-proxy.yaml up -d --build
 ```
 
 Notes:
+
 - The deploy stack pins its network name to `mecfs-paperwork_web`. Keep a single Compose project name so Caddy and the app stay on the same network (avoids 502s).
 - The NGINX base image writes its PID to `/run/nginx/nginx.pid`. The compose files mount `/run/nginx` as tmpfs so it remains writable with `read_only: true`. If you change tmpfs settings, recreate the containers.
 
 ## Environment Differences
 
 ### Production (`main` branch)
+
 - **Domain**: `mecfs-paperwork.de` (canonical)
 - **Redirect**: `www.mecfs-paperwork.de` → `https://mecfs-paperwork.de{uri}`
 - **Docker Image**: `wbt112/mecfs-paperwork:prod`
@@ -57,6 +62,7 @@ Notes:
 - **Social Preview Origin**: `VITE_PUBLIC_ORIGIN=https://mecfs-paperwork.de`
 
 ### Staging (`staging` branch)
+
 - **Domain**: `staging.mecfs-paperwork.de`
 - **Docker Image**: `wbt112/mecfs-paperwork:staging`
 - **Build Mode**: `staging`
@@ -81,6 +87,7 @@ Each deployment creates two tags:
    - `staging-<short-sha>` - Staging build from specific commit
 
 **Example:**
+
 - After deploying commit `abc1234` to staging:
   - `staging` → `staging-abc1234`
   - `staging-abc1234` (immutable)
@@ -136,6 +143,8 @@ You can trigger a deployment from the GitHub Actions UI:
 
 This runs the same build/push + server deploy as a normal branch push.
 
+After the remote `docker compose up -d`, the workflow performs a retrying health check against the environment origin (`https://mecfs-paperwork.de/` or `https://staging.mecfs-paperwork.de/`). A deployment is only considered successful when the site answers with a successful HTTP status.
+
 ## Infrastructure Setup
 
 ### Server Requirements
@@ -165,6 +174,17 @@ The following secrets must be configured in the GitHub repository:
 - `DEPLOY_SSH_KEY` - Private SSH key for deployment server access
 - `DEPLOY_HOST` - Deployment server hostname/IP
 - `DEPLOY_USER` - SSH user for deployment
+- `DEPLOY_KNOWN_HOSTS` - Required SSH host key pinning data for the deployment target. The deploy workflow fails closed when this secret is missing and will not fall back to `ssh-keyscan`.
+
+### `DEPLOY_KNOWN_HOSTS` format
+
+Export the server host keys from a trusted machine and store them verbatim in the GitHub secret:
+
+```bash
+ssh-keyscan -H -t ed25519,ecdsa your-server.example.com
+```
+
+Verify the fingerprints out of band before saving them. Update the secret whenever the server host key changes.
 
 ## Rollback Procedure
 
@@ -187,11 +207,11 @@ Edit `compose.deploy.yaml` on the server to use a specific SHA tag:
 ```yaml
 # For production rollback
 web-prod:
-  image: docker.io/wbt112/mecfs-paperwork:prod-abc1234  # Use specific SHA
+  image: docker.io/wbt112/mecfs-paperwork:prod-abc1234 # Use specific SHA
 
 # For staging rollback
 web-staging:
-  image: docker.io/wbt112/mecfs-paperwork:staging-xyz5678  # Use specific SHA
+  image: docker.io/wbt112/mecfs-paperwork:staging-xyz5678 # Use specific SHA
 ```
 
 ### 3. Deploy the Previous Version
@@ -217,6 +237,7 @@ curl -I https://staging.mecfs-paperwork.de
 ### 5. Fix Forward (Recommended)
 
 After verifying the rollback:
+
 1. Fix the issue in your code
 2. Push the fix to `main` or `staging`
 3. The CI/CD pipeline will automatically deploy the fix
@@ -298,6 +319,7 @@ This avoids port conflicts and improves security by not exposing application por
 ### Container Hardening
 
 Both production and staging containers use the same security settings:
+
 - Read-only root filesystem
 - No new privileges
 - Minimal capabilities (only `NET_BIND_SERVICE`)
@@ -311,6 +333,7 @@ Caddy automatically manages Let's Encrypt certificates for all domains.
 ### Staging Environment
 
 The staging environment has additional protections:
+
 - `X-Robots-Tag: noindex, nofollow` header prevents search engine indexing
 - Visible "STAGING" banner helps prevent confusion with production
 - Same security hardening as production
@@ -329,6 +352,7 @@ docker compose -f /opt/mecfs-paperwork/compose.deploy.yaml logs -f
 ### Caddy Health Check
 
 The Caddy container has a health check that verifies:
+
 1. Caddy is running (`caddy version`)
 2. Production app is reachable (`http://web-prod:8080/`)
 3. Staging app is reachable (`http://web-staging:8080/`)
@@ -346,6 +370,7 @@ docker inspect --format='{{.State.Health.Status}}' mecfs-caddy
 **Issue**: `docker compose pull` fails
 
 **Solution**:
+
 1. Verify Docker Hub credentials are correct
 2. Check network connectivity: `curl -I https://hub.docker.com`
 3. Try logging in manually: `docker login`
@@ -355,6 +380,7 @@ docker inspect --format='{{.State.Health.Status}}' mecfs-caddy
 **Issue**: Container immediately exits or restarts
 
 **Solution**:
+
 1. Check logs: `docker compose -f compose.deploy.yaml logs web-prod`
 2. Verify build completed successfully in GitHub Actions
 3. Test the image locally: `docker run -it --rm wbt112/mecfs-paperwork:prod sh`
@@ -364,6 +390,7 @@ docker inspect --format='{{.State.Health.Status}}' mecfs-caddy
 **Issue**: Staging not showing dev formpacks, or production showing them
 
 **Solution**:
+
 1. Check the Docker image build args in GitHub Actions logs
 2. Verify the correct image tag is being used in `compose.deploy.yaml`
 3. Rebuild and redeploy: trigger a new commit to the appropriate branch
@@ -373,6 +400,7 @@ docker inspect --format='{{.State.Health.Status}}' mecfs-caddy
 **Issue**: "Port already in use" errors
 
 **Solution**:
+
 1. Ensure no other services are binding to ports 80 or 443
 2. Check Caddy is the only service with `ports:` (not `expose:`)
 3. Verify app containers use `expose:` only
@@ -404,6 +432,7 @@ docker image prune -af --filter "until=168h"
 ## Support
 
 For deployment issues:
+
 1. Check GitHub Actions logs for build failures
 2. Check server logs: `docker compose -f compose.deploy.yaml logs`
 3. Verify DNS records and server accessibility

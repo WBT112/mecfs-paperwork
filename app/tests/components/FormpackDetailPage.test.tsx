@@ -881,7 +881,7 @@ describe('FormpackDetailPage', () => {
     expect(toggle).toHaveFocus();
 
     toggle.focus();
-    fireEvent.keyUp(toggle, { key: ' ', code: 'Space' });
+    await userEvent.keyboard(' ');
     await waitFor(() => expect(toggle).toHaveAttribute(ARIA_EXPANDED, 'false'));
   });
 

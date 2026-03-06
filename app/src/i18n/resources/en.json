@@ -52,6 +52,7 @@
   "formpackSearchPlaceholder": "Search forms\u2026",
   "formpackSelectEmptyOption": "[no entry]",
   "formpackSearchEmpty": "No results.",
+  "formpackSearchResultsStatus": "Support offers found:",
   "formpackCategoryInsurer": "Health insurer",
   "formpackCategoryDoctor": "Doctor",
   "formpackCategoryGeneral": "General",

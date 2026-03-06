@@ -168,7 +168,7 @@ describe('PdfExportRuntime', () => {
     runtimeMocks.blobProviderState = {
       blob: null,
       url: null,
-      loading: true,
+      loading: false,
       error: null,
     };
     runtimeMocks.pdfToBlob.mockResolvedValue(
@@ -203,7 +203,7 @@ describe('PdfExportRuntime', () => {
     runtimeMocks.blobProviderState = {
       blob: null,
       url: null,
-      loading: true,
+      loading: false,
       error: null,
     };
     runtimeMocks.pdfMock.mockImplementation(() => {
@@ -268,7 +268,7 @@ describe('PdfExportRuntime', () => {
     runtimeMocks.blobProviderState = {
       blob: null,
       url: null,
-      loading: true,
+      loading: false,
       error: null,
     };
     runtimeMocks.pdfToBlob.mockRejectedValue('blob failed');
@@ -301,7 +301,7 @@ describe('PdfExportRuntime', () => {
     runtimeMocks.blobProviderState = {
       blob: null,
       url: null,
-      loading: true,
+      loading: false,
       error: null,
     };
     runtimeMocks.pdfToBlob.mockImplementation(
@@ -336,7 +336,7 @@ describe('PdfExportRuntime', () => {
     runtimeMocks.blobProviderState = {
       blob: null,
       url: null,
-      loading: true,
+      loading: false,
       error: null,
     };
     runtimeMocks.pdfToBlob.mockResolvedValue(
@@ -370,6 +370,30 @@ describe('PdfExportRuntime', () => {
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
+  it('does not start fallback while the blob provider still reports loading', async () => {
+    vi.useFakeTimers();
+    runtimeMocks.blobProviderState = {
+      blob: null,
+      url: null,
+      loading: true,
+      error: null,
+    };
+
+    render(
+      <PdfExportRuntime
+        payload={payload}
+        requestKey="loading"
+        onDone={vi.fn()}
+      />,
+    );
+
+    await vi.advanceTimersByTimeAsync(4_000);
+    await Promise.resolve();
+
+    expect(runtimeMocks.pdfMock).not.toHaveBeenCalled();
+    expect(runtimeMocks.downloadPdfExport).not.toHaveBeenCalled();
+  });
+
   it('skips fallback work when export already completed before timeout', async () => {
     vi.useFakeTimers();
     runtimeMocks.blobProviderState = {
@@ -390,7 +414,7 @@ describe('PdfExportRuntime', () => {
       expect(onDone).toHaveBeenCalledTimes(1);
     });
 
-    await vi.advanceTimersByTimeAsync(4_000);
+    await vi.advanceTimersByTimeAsync(20_000);
 
     expect(runtimeMocks.pdfMock).not.toHaveBeenCalled();
     expect(runtimeMocks.downloadPdfExport).toHaveBeenCalledTimes(1);
@@ -429,7 +453,27 @@ describe('PdfExportRuntime', () => {
 
     await vi.advanceTimersByTimeAsync(4_000);
     await Promise.resolve();
-    expect(runtimeMocks.pdfMock).toHaveBeenCalledTimes(1);
+    expect(runtimeMocks.pdfMock).not.toHaveBeenCalled();
+
+    runtimeMocks.blobProviderState = {
+      blob: null,
+      url: null,
+      loading: false,
+      error: null,
+    };
+    rerender(
+      <PdfExportRuntime
+        payload={payload}
+        requestKey="k"
+        onSuccess={onSuccess}
+        onError={onError}
+        onDone={onDone}
+      />,
+    );
+
+    await vi.waitFor(() => {
+      expect(runtimeMocks.pdfMock).toHaveBeenCalledTimes(1);
+    });
 
     runtimeMocks.blobProviderState = {
       blob: null,
@@ -494,6 +538,26 @@ describe('PdfExportRuntime', () => {
 
     await vi.advanceTimersByTimeAsync(4_000);
     await Promise.resolve();
+    expect(runtimeMocks.pdfMock).not.toHaveBeenCalled();
+
+    runtimeMocks.blobProviderState = {
+      blob: null,
+      url: null,
+      loading: false,
+      error: null,
+    };
+    rerender(
+      <PdfExportRuntime
+        payload={payload}
+        requestKey="l"
+        onError={onError}
+        onDone={onDone}
+      />,
+    );
+
+    await vi.waitFor(() => {
+      expect(runtimeMocks.pdfMock).toHaveBeenCalledTimes(1);
+    });
 
     runtimeMocks.blobProviderState = {
       blob: null,

@@ -105,6 +105,10 @@ const groupByCategory = (
   ]);
 };
 
+const countGroupedItems = (
+  groups: [FormpackCategory, TranslatedManifest[]][],
+): number => groups.reduce((total, [, items]) => total + items.length, 0);
+
 const loadFormpackTranslations = async (
   manifests: FormpackManifest[],
   locale: SupportedLocale,
@@ -193,6 +197,7 @@ export default function FormpackListPage() {
     () => groupByCategory(filterByQuery(translated, query)),
     [translated, query],
   );
+  const resultCount = useMemo(() => countGroupedItems(groups), [groups]);
 
   const resumeFormpack = useMemo(() => {
     const resumeId = readResumeFormpackId();
@@ -243,14 +248,19 @@ export default function FormpackListPage() {
         </p>
       )}
       {manifests.length > 0 && (
-        <input
-          type="search"
-          className="formpack-list__search"
-          placeholder={t('formpackSearchPlaceholder')}
-          aria-label={t('formpackSearchAriaLabel')}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <>
+          <input
+            type="search"
+            className="formpack-list__search"
+            placeholder={t('formpackSearchPlaceholder')}
+            aria-label={t('formpackSearchAriaLabel')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <output aria-live="polite" className="formpack-list__status">
+            {t('formpackSearchResultsStatus')} {resultCount}
+          </output>
+        </>
       )}
       {groups.length > 0 &&
         groups.map(([category, items]) => (

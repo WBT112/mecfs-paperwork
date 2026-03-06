@@ -1,7 +1,8 @@
+import type { ReactNode } from 'react';
 import CollapsibleSection from '../../../components/CollapsibleSection';
 
 type SectionWithChildrenProps = {
-  children: React.ReactNode;
+  children: ReactNode;
   title: string;
 };
 

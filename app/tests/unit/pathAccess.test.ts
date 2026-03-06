@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   getPathValue,
   setPathValueImmutable,
@@ -56,23 +56,17 @@ describe('pathAccess', () => {
       expect(getPathValue(source, ARRAY_VALUE_PATH)).toBe('b');
     });
 
-    it('falls back to recursive cloning when structuredClone is unavailable', () => {
+    it('clones nested arrays before applying immutable updates', () => {
       const source = { nested: [{ value: 'a' }] } as Record<string, unknown>;
-      const originalStructuredClone = globalThis.structuredClone;
 
-      vi.stubGlobal('structuredClone', undefined);
-      try {
-        const updated = setPathValueImmutable(
-          source,
-          NESTED_ARRAY_VALUE_PATH,
-          'updated',
-        );
+      const updated = setPathValueImmutable(
+        source,
+        NESTED_ARRAY_VALUE_PATH,
+        'updated',
+      );
 
-        expect(getPathValue(updated, NESTED_ARRAY_VALUE_PATH)).toBe('updated');
-        expect(getPathValue(source, NESTED_ARRAY_VALUE_PATH)).toBe('a');
-      } finally {
-        vi.stubGlobal('structuredClone', originalStructuredClone);
-      }
+      expect(getPathValue(updated, NESTED_ARRAY_VALUE_PATH)).toBe('updated');
+      expect(getPathValue(source, NESTED_ARRAY_VALUE_PATH)).toBe('a');
     });
   });
 

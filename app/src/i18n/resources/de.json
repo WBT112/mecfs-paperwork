@@ -52,6 +52,7 @@
   "formpackSearchPlaceholder": "Hilfsangebote durchsuchen\u2026",
   "formpackSelectEmptyOption": "[keine Angabe]",
   "formpackSearchEmpty": "Keine Ergebnisse.",
+  "formpackSearchResultsStatus": "Gefundene Hilfsangebote:",
   "formpackCategoryInsurer": "Krankenkasse",
   "formpackCategoryDoctor": "Arzt",
   "formpackCategoryGeneral": "Allgemein",

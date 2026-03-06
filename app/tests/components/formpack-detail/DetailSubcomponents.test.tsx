@@ -192,9 +192,7 @@ describe('formpack detail subcomponents', () => {
     expect(formpackDetailComponents.ImportPanel).toBeTypeOf('function');
     expect(formpackDetailComponents.RecordsPanel).toBeTypeOf('function');
     expect(formpackDetailComponents.SnapshotsPanel).toBeTypeOf('function');
-    expect(formpackDetailComponents.FormpackFormPanel).toBe(
-      FormpackFormPanel,
-    );
+    expect(formpackDetailComponents.FormpackFormPanel).toBe(FormpackFormPanel);
     expect(formpackDetailComponents.FormpackExportActions).toBe(
       FormpackExportActions,
     );
