@@ -3126,6 +3126,8 @@ describe('FormpackDetailPage', () => {
       );
     });
 
+    await waitFor(() => expect(resolveRefresh).not.toBeNull());
+
     view.unmount();
     await act(async () => {
       resolveRefresh?.({
