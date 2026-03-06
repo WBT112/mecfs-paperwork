@@ -13,21 +13,7 @@ import Ajv2020 from 'ajv/dist/2020';
 import { translateUiSchema } from '../i18n/rjsf';
 import { useLocale } from '../i18n/useLocale';
 import type { SupportedLocale } from '../i18n/locale';
-import { validateJsonImport, type JsonImportPayload } from '../import/json';
-import {
-  buildJsonExportFilename,
-  buildJsonExportPayload,
-  downloadJsonExport,
-} from '../export/json';
-import {
-  buildDocxExportFilename,
-  downloadDocxExport,
-  exportDocx,
-  getDocxErrorKey,
-  preloadDocxAssets,
-  scheduleDocxPreload,
-  type DocxTemplateId,
-} from '../export/docxLazy';
+import { type DocxTemplateId } from '../export/docxLazy';
 import type { PdfExportControlsProps } from '../export/pdf';
 import { applyArrayUiSchemaDefaults } from '../lib/rjsfUiSchema';
 import {
@@ -44,23 +30,16 @@ import { formpackWidgets } from '../lib/rjsfWidgetRegistry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
 import {
-  USER_TIMING_NAMES,
-  startUserTiming,
-} from '../lib/performance/userTiming';
-import {
   FORMPACKS_UPDATED_EVENT,
   DOCTOR_LETTER_FORMPACK_ID,
-  NOTFALLPASS_FORMPACK_ID,
   OFFLABEL_ANTRAG_FORMPACK_ID,
   deriveFormpackRevisionSignature,
-  getFieldVisibility,
   clearHiddenFields,
   isDevUiEnabled,
   isFormpackVisible,
   resolveDecisionTree,
   type DecisionData,
   type FormpackId,
-  type FormpackManifest,
   type InfoBoxConfig,
 } from '../formpacks';
 import { buildOfflabelDocuments } from '../formpacks/offlabel-antrag/content/buildOfflabelDocuments';
@@ -75,7 +54,6 @@ import {
   type RecordEntry,
   type StorageErrorCode,
   getFormpackMeta,
-  importRecordWithSnapshots,
   upsertFormpackMeta,
   useAutosaveRecord,
   useRecords,
@@ -96,10 +74,13 @@ import {
   SnapshotsPanel,
 } from './formpack-detail';
 import { formpackDetailHelpers } from './formpack-detail/formpackDetailHelpers';
+import { useExportFlow } from './formpack-detail/useExportFlow';
 import { useFormpackLoader } from './formpack-detail/useFormpackLoader';
+import { useImportFlow } from './formpack-detail/useImportFlow';
 import { useProfileSync } from './formpack-detail/useProfileSync';
+import { useSnapshotManager } from './formpack-detail/useSnapshotManager';
 import { APP_UPDATE_AVAILABLE_EVENT } from '../pwa/register';
-import type { ChangeEvent, ComponentType, MouseEvent, ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
 
@@ -138,26 +119,6 @@ export default function FormpackDetailPage() {
   const { locale, setLocale } = useLocale();
   const { id } = useParams();
   const [formData, setFormData] = useState<FormDataState>({});
-  const [importJson, setImportJson] = useState('');
-  const [importFileName, setImportFileName] = useState<string | null>(null);
-  const [importPassword, setImportPassword] = useState('');
-  const [isImportFileEncrypted, setIsImportFileEncrypted] = useState(false);
-  const [importMode, setImportMode] = useState<'new' | 'overwrite'>('new');
-  const [importIncludeRevisions, setImportIncludeRevisions] = useState(true);
-  const [importError, setImportError] = useState<string | null>(null);
-  const [importSuccess, setImportSuccess] = useState<string | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const [encryptJsonExport, setEncryptJsonExport] = useState(false);
-  const [jsonExportPassword, setJsonExportPassword] = useState('');
-  const [jsonExportPasswordConfirm, setJsonExportPasswordConfirm] =
-    useState('');
-  const [jsonExportError, setJsonExportError] = useState<string | null>(null);
-  const [docxTemplateId, setDocxTemplateId] = useState<DocxTemplateId>('a4');
-  const [docxError, setDocxError] = useState<string | null>(null);
-  const [docxSuccess, setDocxSuccess] = useState<string | null>(null);
-  const [isDocxExporting, setIsDocxExporting] = useState(false);
-  const [pdfError, setPdfError] = useState<string | null>(null);
-  const [pdfSuccess, setPdfSuccess] = useState<string | null>(null);
   const [validator, setValidator] = useState<ValidatorType | null>(null);
   const [storageError, setStorageError] = useState<StorageErrorCode | null>(
     null,
@@ -364,20 +325,6 @@ export default function FormpackDetailPage() {
   }, []);
 
   useEffect(() => {
-    const manifestExports = manifest?.exports;
-    if (!manifest?.docx || !manifestExports?.includes('docx') || !formpackId) {
-      return;
-    }
-
-    const docxManifest = manifest.docx;
-
-    // Preload DOCX assets so export still works after going offline.
-    return scheduleDocxPreload(() =>
-      preloadDocxAssets(formpackId, docxManifest),
-    );
-  }, [formpackId, manifest]);
-
-  useEffect(() => {
     setStorageError(recordsError ?? snapshotsError ?? null);
   }, [recordsError, snapshotsError]);
 
@@ -465,35 +412,10 @@ export default function FormpackDetailPage() {
     if (formpackId !== DOCTOR_LETTER_FORMPACK_ID) {
       return normalizedUiSchema;
     }
-
-    // Treat missing or invalid decision as empty object to apply visibility rules
-    const decision = (
-      isRecord(decisionData) ? decisionData : {}
-    ) as DecisionData;
-    const visibility = getFieldVisibility(decision);
-
-    // Clone the UI schema to avoid mutations
-    const clonedUiSchema = structuredClone(normalizedUiSchema);
-
-    if (!isRecord(clonedUiSchema.decision)) {
-      return normalizedUiSchema;
-    }
-
-    const decisionUiSchema = clonedUiSchema.decision;
-
-    // Apply field visibility rules
-    formpackDetailHelpers.applyFieldVisibility(decisionUiSchema, visibility);
-
-    // Hide result field for incomplete decision tree (but show for valid Case 0)
-    if (
-      formpackDetailHelpers.shouldHideCase0Result(decision) &&
-      isRecord(decisionUiSchema.resolvedCaseText)
-    ) {
-      const resultSchema = decisionUiSchema.resolvedCaseText;
-      resultSchema['ui:widget'] = 'hidden';
-    }
-
-    return clonedUiSchema;
+    return formpackDetailHelpers.buildDoctorLetterConditionalUiSchema(
+      normalizedUiSchema,
+      decisionData,
+    );
   }, [
     normalizedUiSchema,
     formpackId,
@@ -575,20 +497,6 @@ export default function FormpackDetailPage() {
     effectiveStorageError === 'unavailable' ||
     effectiveStorageError === 'locked';
 
-  useEffect(() => {
-    if (!activeRecord && importMode === 'overwrite') {
-      setImportMode('new');
-    }
-  }, [activeRecord, importMode]);
-
-  useEffect(() => {
-    if (!encryptJsonExport) {
-      setJsonExportPassword('');
-      setJsonExportPasswordConfirm('');
-      setJsonExportError(null);
-    }
-  }, [encryptJsonExport]);
-
   const activeRecordStorageKey = useMemo(
     () => (formpackId ? `mecfs-paperwork.activeRecordId.${formpackId}` : null),
     [formpackId],
@@ -657,6 +565,74 @@ export default function FormpackDetailPage() {
         defaultValue: manifest.descriptionKey,
       })
     : '';
+  const {
+    clearImportSuccess,
+    handleImport,
+    handleImportFileChange,
+    importError,
+    importFileName,
+    importIncludeRevisions,
+    importJson,
+    importMode,
+    importPassword,
+    importSuccess,
+    isImportFileEncrypted,
+    isImporting,
+    setImportIncludeRevisions,
+    setImportMode,
+    setImportPassword,
+  } = useImportFlow({
+    activeRecord,
+    applyRecordUpdate,
+    formpackId,
+    importInputRef,
+    manifest,
+    markAsSaved,
+    persistActiveRecordId,
+    refreshSnapshots,
+    requestConfirmation,
+    schema,
+    setFormData,
+    setLocale,
+    t,
+    title,
+  });
+  const {
+    docxError,
+    docxSuccess,
+    docxTemplateId,
+    docxTemplateOptions,
+    encryptJsonExport,
+    handleActionClickCapture,
+    handleExportDocx,
+    handleExportJson,
+    handlePdfExportError,
+    handlePdfExportSuccess,
+    isDocxExporting,
+    jsonExportError,
+    jsonExportPassword,
+    jsonExportPasswordConfirm,
+    pdfError,
+    pdfSuccess,
+    setDocxTemplateId,
+    setEncryptJsonExport,
+    setJsonExportPassword,
+    setJsonExportPasswordConfirm,
+  } = useExportFlow({
+    activeRecord,
+    formData,
+    formSchema,
+    formpackId,
+    locale,
+    manifest,
+    offlabelOutputLocale,
+    onAnyActionTriggered: clearImportSuccess,
+    previewUiSchema:
+      conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema,
+    schema,
+    snapshots,
+    t,
+  });
   const formpackVersionDisplay =
     formpackMeta?.versionOrHash ??
     manifest?.version ??
@@ -934,14 +910,6 @@ export default function FormpackDetailPage() {
     [loadRecord, markAsSaved, persistActiveRecordId],
   );
 
-  const handleCreateSnapshot = useCallback(async () => {
-    if (!activeRecord) {
-      return;
-    }
-
-    await createSnapshot(formData, buildSnapshotLabel());
-  }, [activeRecord, buildSnapshotLabel, createSnapshot, formData]);
-
   const handleDeleteRecord = useCallback(
     async (record: RecordEntry) => {
       if (record.id === activeRecord?.id) {
@@ -972,262 +940,21 @@ export default function FormpackDetailPage() {
       t,
     ],
   );
-
-  const handleRestoreSnapshot = useCallback(
-    async (snapshotId: string) => {
-      if (!activeRecord) {
-        return;
-      }
-
-      const snapshot = await loadSnapshot(snapshotId);
-      if (!snapshot) {
-        return;
-      }
-
-      setFormData(snapshot.data);
-      const updated = await updateActiveRecord(activeRecord.id, {
-        data: snapshot.data,
-      });
-      if (updated) {
-        markAsSaved(snapshot.data);
-      }
-      setPendingFormFocus(true);
-    },
-    [activeRecord, loadSnapshot, markAsSaved, updateActiveRecord],
-  );
-
-  const handleClearSnapshots = useCallback(async () => {
-    if (!activeRecord) {
-      return;
-    }
-
-    const confirmed = await requestConfirmation({
-      title: confirmationDialogTitle,
-      message: t('formpackSnapshotsClearAllConfirm'),
-      confirmLabel: t('formpackSnapshotsClearAll'),
-      cancelLabel,
-      tone: 'danger',
-    });
-    if (!confirmed) {
-      return;
-    }
-
-    await clearSnapshots();
-  }, [
-    activeRecord,
-    cancelLabel,
-    clearSnapshots,
-    confirmationDialogTitle,
-    requestConfirmation,
-    t,
-  ]);
-
-  const applyImportedRecord = useCallback(
-    (record: RecordEntry) => {
-      applyRecordUpdate(record);
-      markAsSaved(record.data);
-      setFormData(record.data);
-      persistActiveRecordId(record.id);
-    },
-    [applyRecordUpdate, markAsSaved, persistActiveRecordId],
-  );
-
-  const importOverwriteRecord = useCallback(
-    async (payload: JsonImportPayload): Promise<RecordEntry | null> => {
-      if (!formpackId || !activeRecord) {
-        setImportError(t('importNoActiveRecord'));
-        return null;
-      }
-
-      const confirmed = await requestConfirmation({
-        title: confirmationDialogTitle,
-        message: t('importOverwriteConfirm'),
-        confirmLabel: t('formpackImportModeOverwrite'),
-        cancelLabel,
-        tone: 'danger',
-      });
-      if (!confirmed) {
-        return null;
-      }
-
-      const updated = await importRecordWithSnapshots({
-        formpackId,
-        mode: 'overwrite',
-        recordId: activeRecord.id,
-        data: payload.record.data,
-        locale: payload.record.locale,
-        title: payload.record.title ?? activeRecord.title,
-        revisions: importIncludeRevisions ? payload.revisions : [],
-      });
-
-      applyImportedRecord(updated);
-      return updated;
-    },
-    [
+  const { handleClearSnapshots, handleCreateSnapshot, handleRestoreSnapshot } =
+    useSnapshotManager({
       activeRecord,
-      applyImportedRecord,
-      cancelLabel,
-      confirmationDialogTitle,
-      formpackId,
-      importIncludeRevisions,
+      buildSnapshotLabel,
+      clearSnapshots,
+      createSnapshot,
+      formData,
+      loadSnapshot,
+      markAsSaved,
       requestConfirmation,
-      setImportError,
+      setFormData,
+      setPendingFormFocus,
       t,
-    ],
-  );
-
-  const importNewRecord = useCallback(
-    async (payload: JsonImportPayload): Promise<RecordEntry | null> => {
-      if (!formpackId) {
-        return null;
-      }
-
-      const recordTitle =
-        payload.record.title ?? (title || t('formpackRecordUntitled'));
-      const record = await importRecordWithSnapshots({
-        formpackId,
-        mode: 'new',
-        data: payload.record.data,
-        locale: payload.record.locale,
-        title: recordTitle,
-        revisions: importIncludeRevisions ? payload.revisions : [],
-      });
-
-      applyImportedRecord(record);
-      return record;
-    },
-    [applyImportedRecord, formpackId, importIncludeRevisions, t, title],
-  );
-
-  const handleImport = useCallback(async () => {
-    if (!manifest || !schema) {
-      return;
-    }
-
-    setImportError(null);
-    setImportSuccess(null);
-    setIsImporting(true);
-
-    try {
-      let normalizedImportJson = importJson;
-      const encryptionEnvelope =
-        formpackDetailHelpers.tryParseEncryptedEnvelope(importJson);
-
-      if (encryptionEnvelope) {
-        if (!importPassword) {
-          setImportError(t('importPasswordRequired'));
-          return;
-        }
-
-        const { decryptJsonWithPassword } =
-          await formpackDetailHelpers.loadJsonEncryptionModule();
-
-        normalizedImportJson = await decryptJsonWithPassword(
-          encryptionEnvelope,
-          importPassword,
-        );
-      }
-
-      const result = validateJsonImport(
-        normalizedImportJson,
-        schema,
-        manifest.id,
-      );
-
-      if (result.error) {
-        setImportError(
-          formpackDetailHelpers.resolveImportErrorMessage(result.error, t),
-        );
-        return;
-      }
-
-      const payload = result.payload;
-      const record =
-        importMode === 'overwrite'
-          ? await importOverwriteRecord(payload)
-          : await importNewRecord(payload);
-
-      if (!record) {
-        return;
-      }
-
-      if (
-        importIncludeRevisions &&
-        payload.revisions?.length &&
-        importMode === 'overwrite'
-      ) {
-        await refreshSnapshots();
-      }
-
-      await setLocale(payload.record.locale);
-      setImportSuccess(t('importSuccess'));
-      setImportJson('');
-      setImportFileName(null);
-      setImportPassword('');
-      setIsImportFileEncrypted(false);
-      importInputRef.current!.value = '';
-    } catch (error) {
-      if (formpackDetailHelpers.isJsonEncryptionRuntimeError(error)) {
-        setImportError(
-          formpackDetailHelpers.resolveJsonEncryptionErrorMessage(
-            error,
-            'import',
-            t,
-          ),
-        );
-        return;
-      }
-
-      setImportError(t('importStorageError'));
-    } finally {
-      setIsImporting(false);
-    }
-  }, [
-    importIncludeRevisions,
-    importJson,
-    importMode,
-    importNewRecord,
-    importPassword,
-    importOverwriteRecord,
-    manifest,
-    refreshSnapshots,
-    schema,
-    setLocale,
-    t,
-  ]);
-
-  const handleImportFileChange = useCallback(
-    async (event: ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0] ?? null;
-      setImportError(null);
-      setImportSuccess(null);
-
-      if (!file) {
-        setImportJson('');
-        setImportFileName(null);
-        setImportPassword('');
-        setIsImportFileEncrypted(false);
-        return;
-      }
-
-      setImportPassword('');
-
-      try {
-        const text = await file.text();
-        setImportJson(text);
-        setImportFileName(file.name);
-        setIsImportFileEncrypted(
-          Boolean(formpackDetailHelpers.tryParseEncryptedEnvelope(text)),
-        );
-      } catch {
-        setImportJson('');
-        setImportFileName(file.name);
-        setIsImportFileEncrypted(false);
-        setImportError(t('importInvalidJson'));
-      }
-    },
-    [t],
-  );
+      updateActiveRecord,
+    });
   const formContext = useMemo<
     FormpackFormContext & {
       formpackId?: string;
@@ -1447,176 +1174,6 @@ export default function FormpackDetailPage() {
 
     return sections.length ? sections : null;
   }, [formData, formSchema, previewUiSchema, resolvePreviewValue]);
-  const handleExportJson = useCallback(async () => {
-    const currentManifest = manifest as FormpackManifest;
-    const currentRecord = activeRecord as RecordEntry;
-    const timing = startUserTiming(USER_TIMING_NAMES.exportJsonTotal);
-    setJsonExportError(null);
-
-    try {
-      const payload = buildJsonExportPayload({
-        formpack: {
-          id: currentManifest.id,
-          version: currentManifest.version,
-        },
-        record: currentRecord,
-        data: formData,
-        locale,
-        revisions: snapshots,
-        schema: schema as RJSFSchema | undefined,
-      });
-      const filename = buildJsonExportFilename(payload);
-
-      if (!encryptJsonExport) {
-        downloadJsonExport(payload, filename);
-        return;
-      }
-
-      if (!jsonExportPassword) {
-        setJsonExportError(t('formpackJsonExportPasswordRequired'));
-        return;
-      }
-
-      if (jsonExportPassword !== jsonExportPasswordConfirm) {
-        setJsonExportError(t('formpackJsonExportPasswordMismatch'));
-        return;
-      }
-
-      const { encryptJsonWithPassword } =
-        await formpackDetailHelpers.loadJsonEncryptionModule();
-
-      const encryptedPayload = await encryptJsonWithPassword(
-        JSON.stringify(payload),
-        jsonExportPassword,
-      );
-      downloadJsonExport(encryptedPayload, filename);
-    } catch (error) {
-      setJsonExportError(
-        formpackDetailHelpers.resolveJsonEncryptionErrorMessage(
-          error,
-          'export',
-          t,
-        ),
-      );
-    } finally {
-      timing.end();
-    }
-  }, [
-    activeRecord,
-    encryptJsonExport,
-    formData,
-    jsonExportPassword,
-    jsonExportPasswordConfirm,
-    locale,
-    manifest,
-    schema,
-    snapshots,
-    t,
-  ]);
-
-  const handleExportDocx = useCallback(async () => {
-    const timing = startUserTiming(USER_TIMING_NAMES.exportDocxTotal);
-    setDocxError(null);
-    setDocxSuccess(null);
-    setIsDocxExporting(true);
-
-    try {
-      const report = await exportDocx({
-        formpackId: formpackId as FormpackId,
-        recordId: activeRecord?.id as string,
-        variant: docxTemplateId,
-        locale: offlabelOutputLocale,
-        schema: formSchema,
-        uiSchema: previewUiSchema,
-        manifest: manifest as FormpackManifest,
-      });
-      const filename = await buildDocxExportFilename(
-        formpackId as FormpackId,
-        docxTemplateId,
-      );
-      await downloadDocxExport(report, filename);
-      setDocxSuccess(t('formpackDocxExportSuccess'));
-    } catch (error) {
-      const errorKey = await getDocxErrorKey(error);
-      setDocxError(t(errorKey));
-    } finally {
-      setIsDocxExporting(false);
-      timing.end();
-    }
-  }, [
-    activeRecord,
-    docxTemplateId,
-    formpackId,
-    manifest,
-    offlabelOutputLocale,
-    previewUiSchema,
-    formSchema,
-    t,
-  ]);
-
-  const handlePdfExportSuccess = useCallback(() => {
-    setPdfError(null);
-    setPdfSuccess(t('formpackPdfExportSuccess'));
-  }, [t]);
-
-  const handlePdfExportError = useCallback(() => {
-    setPdfError(t('formpackPdfExportError'));
-    setPdfSuccess(null);
-  }, [t]);
-
-  const clearDocxSuccess = useCallback(() => {
-    if (docxSuccess) {
-      setDocxSuccess(null);
-    }
-  }, [docxSuccess]);
-
-  const clearImportSuccess = useCallback(() => {
-    if (importSuccess) {
-      setImportSuccess(null);
-    }
-  }, [importSuccess]);
-
-  const clearPdfSuccess = useCallback(() => {
-    if (pdfSuccess) {
-      setPdfSuccess(null);
-    }
-  }, [pdfSuccess]);
-
-  const clearJsonExportError = useCallback(() => setJsonExportError(null), []);
-
-  const handleActionClickCapture = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
-      const action = formpackDetailHelpers.getActionButtonDataAction(
-        event.target,
-      );
-      if (action === null) {
-        return;
-      }
-      if (action === 'docx-export') {
-        clearJsonExportError();
-        clearImportSuccess();
-        clearPdfSuccess();
-        return;
-      }
-      if (action === 'json-import') {
-        clearJsonExportError();
-        clearDocxSuccess();
-        clearPdfSuccess();
-        return;
-      }
-
-      clearDocxSuccess();
-      clearJsonExportError();
-      clearPdfSuccess();
-      clearImportSuccess();
-    },
-    [
-      clearDocxSuccess,
-      clearImportSuccess,
-      clearJsonExportError,
-      clearPdfSuccess,
-    ],
-  );
 
   useEffect(() => {
     let isActive = true;
@@ -1655,38 +1212,6 @@ export default function FormpackDetailPage() {
         : [],
     [formData, formpackId, offlabelOutputLocale],
   );
-  const docxTemplateOptions = useMemo(() => {
-    if (!manifest?.docx) {
-      return [];
-    }
-
-    const options: Array<{ id: DocxTemplateId; label: string }> = [
-      { id: 'a4', label: t('formpackDocxTemplateA4Option') },
-    ];
-
-    if (
-      manifest.id === NOTFALLPASS_FORMPACK_ID &&
-      manifest.docx.templates.wallet
-    ) {
-      options.push({
-        id: 'wallet',
-        label: t('formpackDocxTemplateWalletOption'),
-      });
-    }
-
-    return options;
-  }, [manifest, t]);
-
-  useEffect(() => {
-    if (!docxTemplateOptions.length) {
-      setDocxTemplateId('a4');
-      return;
-    }
-
-    if (!docxTemplateOptions.some((option) => option.id === docxTemplateId)) {
-      setDocxTemplateId(docxTemplateOptions[0].id);
-    }
-  }, [docxTemplateId, docxTemplateOptions]);
 
   if (isLoading) {
     return (

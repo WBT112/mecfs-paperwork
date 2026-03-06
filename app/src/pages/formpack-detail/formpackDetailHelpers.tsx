@@ -8,6 +8,7 @@ import {
   FormpackLoaderError,
   DOCTOR_LETTER_FORMPACK_ID,
   OFFLABEL_ANTRAG_FORMPACK_ID,
+  getFieldVisibility,
   isFormpackVisible,
   loadFormpackManifest,
   loadFormpackSchema,
@@ -15,7 +16,6 @@ import {
   resolveDecisionTree,
   type DecisionData,
   type FormpackManifest,
-  type getFieldVisibility,
 } from '../../formpacks';
 import {
   isCompletedCase0Path,
@@ -273,6 +273,40 @@ function shouldHideCase0Result(decision: DecisionData): boolean {
   }
 
   return !isCompletedCase0Path(decision);
+}
+
+/**
+ * Applies doctor-letter visibility rules to a cloned UI schema instance.
+ *
+ * @param normalizedUiSchema - Locale-resolved base UI schema.
+ * @param decisionData - Current decision subtree from the form data.
+ * @returns A visibility-adjusted UI schema for the doctor-letter workflow.
+ */
+function buildDoctorLetterConditionalUiSchema(
+  normalizedUiSchema: UiSchema,
+  decisionData: unknown,
+): UiSchema {
+  const decision = (isRecord(decisionData) ? decisionData : {}) as DecisionData;
+  const visibility = getFieldVisibility(decision);
+  const clonedUiSchema = structuredClone(normalizedUiSchema);
+
+  if (!isRecord(clonedUiSchema.decision)) {
+    return normalizedUiSchema;
+  }
+
+  const decisionUiSchema = clonedUiSchema.decision;
+
+  applyFieldVisibility(decisionUiSchema, visibility);
+
+  if (
+    shouldHideCase0Result(decision) &&
+    isRecord(decisionUiSchema.resolvedCaseText)
+  ) {
+    const resultSchema = decisionUiSchema.resolvedCaseText;
+    resultSchema['ui:widget'] = 'hidden';
+  }
+
+  return clonedUiSchema;
 }
 
 const toStringArray = (value: unknown): string[] =>
@@ -1057,6 +1091,7 @@ function renderPreviewArray(
 export const formpackDetailHelpers = {
   applyFieldVisibility,
   buildDecisionPreviewContext,
+  buildDoctorLetterConditionalUiSchema,
   buildErrorMessage,
   buildFieldPath,
   buildOfflabelFormSchema,

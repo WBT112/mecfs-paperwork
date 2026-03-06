@@ -190,6 +190,33 @@ describe('formpack detail helpers', () => {
     expect(
       (existingDecisionUi.q2 as Record<string, unknown>)['ui:widget'],
     ).toBe('hidden');
+
+    const baseUiSchema: UiSchema = {
+      decision: {
+        q2: {},
+        resolvedCaseText: {},
+      },
+    };
+    mocked.resolveDecisionTree.mockReturnValue({ caseId: 0 });
+    mocked.isCompletedCase0Path.mockReturnValue(false);
+
+    const conditionalUiSchema = detail.buildDoctorLetterConditionalUiSchema(
+      baseUiSchema,
+      { q1: 'yes' },
+    );
+    expect(conditionalUiSchema).not.toBe(baseUiSchema);
+    expect(
+      (
+        (conditionalUiSchema.decision as Record<string, unknown>)
+          .resolvedCaseText as Record<string, unknown>
+      )['ui:widget'],
+    ).toBe('hidden');
+
+    const passthroughUiSchema = detail.buildDoctorLetterConditionalUiSchema(
+      { summary: {} },
+      null,
+    );
+    expect(passthroughUiSchema).toEqual({ summary: {} });
   });
 
   it('merges dummy patches and normalizes offlabel request variants', () => {
