@@ -5,11 +5,6 @@ on:
     branches:
       - main
       - staging
-  pull_request:
-    types: [closed]
-    branches:
-      - main
-      - staging
   workflow_dispatch:
     inputs:
       environment:
@@ -32,18 +27,18 @@ jobs:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     outputs:
+      deploy_environment: ${{ steps.config.outputs.deployment_env }}
       public_origin: ${{ steps.config.outputs.public_origin }}
     if: >-
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'staging'))
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'))
 
     steps:
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-          ref: ${{ inputs.ref || github.event.pull_request.merge_commit_sha || github.sha }}
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
@@ -59,8 +54,6 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             base_ref="${{ inputs.environment }}"
-          elif [ "${{ github.event_name }}" = "pull_request" ]; then
-            base_ref="${{ github.event.pull_request.base.ref }}"
           else
             base_ref="${GITHUB_REF#refs/heads/}"
           fi
@@ -117,23 +110,24 @@ jobs:
     name: Deploy to Server
     needs: build-and-push
     runs-on: ubuntu-latest
+    environment: ${{ needs.build-and-push.outputs.deploy_environment }}
     concurrency:
       group: deploy-${{ github.event_name == 'workflow_dispatch' && inputs.environment || github.ref_name }}
       cancel-in-progress: false
     if: >-
       (github.event_name == 'workflow_dispatch') ||
-      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')) ||
-      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'staging'))
+      (github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging'))
 
     steps:
       - name: Checkout code (for compose file)
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
-          ref: ${{ inputs.ref || github.event.pull_request.merge_commit_sha || github.sha }}
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Deploy to server via SSH
         env:
+          DEPLOY_ENVIRONMENT: ${{ needs.build-and-push.outputs.deploy_environment }}
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           SSH_HOST: ${{ secrets.DEPLOY_HOST }}
           SSH_USER: ${{ secrets.DEPLOY_USER }}
@@ -185,7 +179,7 @@ jobs:
           fi
 
           if [ -z "${SSH_KNOWN_HOSTS:-}" ]; then
-            echo "::error::DEPLOY_KNOWN_HOSTS must be set. Refusing TOFU fallback via ssh-keyscan."
+            echo "::error::DEPLOY_KNOWN_HOSTS must be set for the '$DEPLOY_ENVIRONMENT' deployment environment. Refusing TOFU fallback via ssh-keyscan."
             exit 1
           fi
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts

@@ -132,6 +132,8 @@ docker compose -f compose.deploy.yaml up -d
 
 Note: For automated deployments, the CI/CD pipeline passes Docker Hub credentials via SSH environment variables.
 
+Deployments are not triggered from pull request events. A merged pull request deploys through the resulting push to `main` or `staging`, which avoids duplicate build/deploy runs.
+
 ### Manual Deployment via GitHub Actions (Button)
 
 You can trigger a deployment from the GitHub Actions UI:
@@ -175,6 +177,8 @@ The following secrets must be configured in the GitHub repository:
 - `DEPLOY_HOST` - Deployment server hostname/IP
 - `DEPLOY_USER` - SSH user for deployment
 - `DEPLOY_KNOWN_HOSTS` - Required SSH host key pinning data for the deployment target. The deploy workflow fails closed when this secret is missing and will not fall back to `ssh-keyscan`.
+
+You can store these as repository secrets or as GitHub Environment secrets for `staging` and `production`. The deploy job binds itself to the resolved target environment so environment-scoped secrets are available during deployment.
 
 ### `DEPLOY_KNOWN_HOSTS` format
 
