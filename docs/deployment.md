@@ -92,6 +92,18 @@ Each deployment creates two tags:
   - `staging` → `staging-abc1234`
   - `staging-abc1234` (immutable)
 
+### Docker Hub retention
+
+To keep registry usage bounded, the repository includes a scheduled workflow at `.github/workflows/dockerhub-cleanup.yml`.
+
+- Runs weekly and can also be triggered manually.
+- Keeps the mutable environment tags `prod` and `staging`.
+- Deletes only SHA-style tags matching `prod-<sha>` or `staging-<sha>`.
+- Default retention is **60 days**.
+- Prints a report with the number of affected tags and an approximate cumulative size based on Docker Hub's `full_size` metadata.
+
+Note: Docker's current Hub OpenAPI documents authentication plus tag listing/read endpoints, but does not clearly expose the tag delete operation in the published schema. The cleanup workflow therefore uses the documented tag resource path with `DELETE` as an API inference. If Docker changes this behavior, the cleanup workflow may need adjustment.
+
 ## Deployment Process
 
 ### Automatic Deployment

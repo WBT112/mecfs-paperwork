@@ -1,0 +1,153 @@
+name: Docker Hub Cleanup
+
+on:
+  schedule:
+    - cron: "23 3 * * 0"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only print which tags would be deleted"
+        required: true
+        type: boolean
+        default: true
+      retention_days:
+        description: "Delete SHA tags older than this many days"
+        required: true
+        type: number
+        default: 60
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    name: Delete old Docker Hub SHA tags
+    runs-on: ubuntu-latest
+    env:
+      DOCKERHUB_NAMESPACE: wbt112
+      DOCKERHUB_REPOSITORY: mecfs-paperwork
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+      RETENTION_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.retention_days || '60' }}
+    steps:
+      - name: Delete old SHA tags
+        run: |
+          set -euo pipefail
+
+          format_bytes() {
+            local bytes="$1"
+            if command -v numfmt >/dev/null 2>&1; then
+              numfmt --to=iec-i --suffix=B "$bytes"
+            else
+              echo "${bytes}B"
+            fi
+          }
+
+          if [ -z "${DOCKERHUB_USERNAME:-}" ] || [ -z "${DOCKERHUB_TOKEN:-}" ]; then
+            echo "::error::DOCKERHUB_USERNAME and DOCKERHUB_TOKEN must be configured."
+            exit 1
+          fi
+
+          auth_response="$(curl --fail --silent --show-error \
+            --request POST \
+            --header 'Content-Type: application/json' \
+            --data "$(jq -cn \
+              --arg identifier "$DOCKERHUB_USERNAME" \
+              --arg secret "$DOCKERHUB_TOKEN" \
+              '{identifier: $identifier, secret: $secret}')" \
+            'https://hub.docker.com/v2/auth/token')"
+          access_token="$(printf '%s' "$auth_response" | jq -r '.access_token // empty')"
+
+          if [ -z "$access_token" ]; then
+            echo "::error::Docker Hub authentication did not return an access token."
+            exit 1
+          fi
+
+          cutoff_epoch="$(date -u -d "${RETENTION_DAYS} days ago" +%s)"
+          page_url="https://hub.docker.com/v2/namespaces/${DOCKERHUB_NAMESPACE}/repositories/${DOCKERHUB_REPOSITORY}/tags?page_size=100"
+          candidate_count=0
+          candidate_bytes=0
+          delete_count=0
+
+          while [ -n "$page_url" ] && [ "$page_url" != "null" ]; do
+            page_json="$(curl --fail --silent --show-error \
+              --header "Authorization: Bearer $access_token" \
+              "$page_url")"
+
+            while IFS=$'\t' read -r tag_name pushed_at full_size; do
+              [ -n "$tag_name" ] || continue
+
+              case "$tag_name" in
+                prod|staging)
+                  continue
+                  ;;
+              esac
+
+              if ! printf '%s' "$tag_name" | grep -Eq '^(prod|staging)-[0-9a-f]{7,40}$'; then
+                continue
+              fi
+
+              timestamp="${pushed_at:-}"
+              if [ -z "$timestamp" ] || [ "$timestamp" = "null" ]; then
+                continue
+              fi
+
+              tag_epoch="$(date -u -d "$timestamp" +%s)"
+              if [ "$tag_epoch" -ge "$cutoff_epoch" ]; then
+                continue
+              fi
+
+              candidate_count=$((candidate_count + 1))
+              if [ -n "${full_size:-}" ] && [ "$full_size" != "null" ]; then
+                candidate_bytes=$((candidate_bytes + full_size))
+              fi
+
+              if [ "$DRY_RUN" = "true" ]; then
+                echo "Would delete tag: $tag_name (last pushed: $timestamp, approx size: $(format_bytes "${full_size:-0}"))"
+              else
+                echo "Deleting tag: $tag_name (last pushed: $timestamp, approx size: $(format_bytes "${full_size:-0}"))"
+                curl --fail --silent --show-error \
+                  --request DELETE \
+                  --header "Authorization: Bearer $access_token" \
+                  "https://hub.docker.com/v2/namespaces/${DOCKERHUB_NAMESPACE}/repositories/${DOCKERHUB_REPOSITORY}/tags/${tag_name}"
+                delete_count=$((delete_count + 1))
+              fi
+            done < <(
+              printf '%s' "$page_json" | jq -r '
+                .results[]
+                | [.name, (.tag_last_pushed // .last_updated // empty), (.full_size // 0)]
+                | @tsv
+              '
+            )
+
+            page_url="$(printf '%s' "$page_json" | jq -r '.next // empty')"
+          done
+
+          candidate_size_human="$(format_bytes "$candidate_bytes")"
+          summary_mode="dry-run"
+          if [ "$DRY_RUN" != "true" ]; then
+            summary_mode="delete"
+          fi
+
+          echo "Found $candidate_count SHA tags older than ${RETENTION_DAYS} days."
+          echo "Approximate total tagged size of affected tags: $candidate_size_human."
+
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            {
+              echo "## Docker Hub cleanup summary"
+              echo
+              echo "- Mode: \`$summary_mode\`"
+              echo "- Retention: \`${RETENTION_DAYS}\` days"
+              echo "- Matching old SHA tags: \`$candidate_count\`"
+              echo "- Approximate cumulative tag size: \`$candidate_size_human\`"
+              echo
+              echo "Note: The size estimate sums Docker Hub's \`full_size\` per tag. Real reclaimed storage can be lower because layers may be shared across tags."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Dry run complete."
+          else
+            echo "Deleted $delete_count old SHA tags."
+          fi
