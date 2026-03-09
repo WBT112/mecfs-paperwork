@@ -368,15 +368,19 @@ const removeUnknownSchemaFields = (
   }
 
   const properties = schema.properties as Record<string, unknown>;
-  const allowsAdditionalProperties = schema.additionalProperties === true;
-  const normalized: Record<string, unknown> = allowsAdditionalProperties
-    ? { ...data }
-    : {};
+  // NOTE: Only prune unknown keys when the schema explicitly forbids them.
+  // Schemas that omit additionalProperties may still introduce valid fields
+  // through allOf/if/then/unevaluatedProperties, and those must survive until
+  // Ajv evaluates the full schema.
+  const prunesUnknownProperties = schema.additionalProperties === false;
+  const normalized: Record<string, unknown> = prunesUnknownProperties
+    ? {}
+    : { ...data };
 
   for (const [key, value] of Object.entries(data)) {
     const propertySchema = properties[key] as OptionalRjsfSchema;
     if (!propertySchema || typeof propertySchema !== 'object') {
-      if (allowsAdditionalProperties) {
+      if (!prunesUnknownProperties) {
         normalized[key] = value;
       }
       continue;

@@ -380,6 +380,26 @@ describe('validateJsonImport', () => {
     expect(result.payload?.record.title).toBe('Custom Title');
   });
 
+  it('falls back to record.name when record.title is absent', () => {
+    const validJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'en',
+        name: 'Legacy Title',
+        data: { name: 'Test' },
+      },
+    });
+
+    const result = validateJsonImport(
+      validJson,
+      mockSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.record.title).toBe('Legacy Title');
+  });
+
   it('returns an error when record metadata is not an object', () => {
     const invalidRecordJson = JSON.stringify({
       formpack: { id: PRIMARY_FORMPACK_ID },
@@ -793,6 +813,7 @@ describe('validateJsonImport', () => {
     expect(result.error).toBe(null);
     expect(result.payload?.record.data).toEqual({
       name: 'Test',
+      note: nearThresholdPayload,
     });
   });
 
@@ -959,6 +980,69 @@ describe('validateJsonImport', () => {
       nested: {
         keep: 'still-here',
         list: [{ id: '1' }, { id: '2' }],
+      },
+    });
+  });
+
+  it('preserves conditional fields when additionalProperties is omitted', () => {
+    const conditionalSchema = {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        diagnoses: {
+          type: 'object',
+          properties: {
+            meCfs: { type: 'boolean' },
+            formatted: { type: 'string' },
+          },
+          allOf: [
+            {
+              if: {
+                properties: {
+                  meCfs: { const: true },
+                },
+                required: ['meCfs'],
+              },
+              then: {
+                properties: {
+                  pots: { type: 'boolean' },
+                  longCovid: { type: 'boolean' },
+                },
+              },
+            },
+          ],
+          unevaluatedProperties: false,
+        },
+      },
+      required: ['diagnoses'],
+    } as unknown as RJSFSchema;
+
+    const importJson = JSON.stringify({
+      formpack: { id: PRIMARY_FORMPACK_ID },
+      record: {
+        locale: 'de',
+        data: {
+          diagnoses: {
+            meCfs: true,
+            pots: true,
+            longCovid: true,
+          },
+        },
+      },
+    });
+
+    const result = validateJsonImport(
+      importJson,
+      conditionalSchema,
+      PRIMARY_FORMPACK_ID,
+    );
+
+    expect(result.error).toBe(null);
+    expect(result.payload?.record.data).toEqual({
+      diagnoses: {
+        meCfs: true,
+        pots: true,
+        longCovid: true,
       },
     });
   });
