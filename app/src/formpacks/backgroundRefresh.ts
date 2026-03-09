@@ -183,7 +183,18 @@ export const runFormpackBackgroundRefresh =
   };
 
 const runSafely = async (onUpdated?: (formpackIds: string[]) => void) => {
-  const result = await runFormpackBackgroundRefresh();
+  let result: Awaited<ReturnType<typeof runFormpackBackgroundRefresh>>;
+  try {
+    result = await runFormpackBackgroundRefresh();
+  } catch (err) {
+    // Refresh errors must never break app startup or background scheduling.
+    // Log the error category for debugging without exposing user data.
+    console.error(
+      '[backgroundRefresh] Refresh failed:',
+      err instanceof Error ? err.message : String(err),
+    );
+    return;
+  }
   if (result.updatedIds.length === 0) {
     return;
   }

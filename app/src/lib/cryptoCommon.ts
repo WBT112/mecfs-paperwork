@@ -7,11 +7,11 @@ export const textDecoder = new TextDecoder();
 export const toBase64Url = (bytes: Uint8Array): string => {
   const globalBuffer = getGlobalBuffer();
   if (typeof btoa === 'function') {
-    let binary = '';
+    const chars: string[] = [];
     for (const byte of bytes) {
-      binary += String.fromCodePoint(byte);
+      chars.push(String.fromCodePoint(byte));
     }
-    return btoa(binary)
+    return btoa(chars.join(''))
       .replaceAll('+', '-')
       .replaceAll('/', '_')
       .replaceAll('=', '');

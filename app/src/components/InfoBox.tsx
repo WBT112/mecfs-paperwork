@@ -23,6 +23,7 @@ export const InfoBox = memo(function InfoBox({
     <div
       className={['info-box', className].filter(Boolean).join(' ')}
       role="note"
+      aria-live="polite"
     >
       <span className="info-box__icon" aria-hidden="true">
         ℹ️

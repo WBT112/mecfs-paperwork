@@ -40,8 +40,23 @@ export const deleteDatabase = async (page: Page, dbName: string) => {
               .map((entry) => entry.split('=')[0])
               .filter((entry) => entry.length > 0)
           : [];
+
+        // Build path prefixes to cover cookies set under different Path values.
+        const pathPrefixes = ['/'];
+        const pathname = window.location.pathname || '/';
+        if (pathname !== '/') {
+          const segments = pathname.split('/').filter((s) => s.length > 0);
+          let current = '';
+          for (const segment of segments) {
+            current += `/${segment}`;
+            pathPrefixes.push(current);
+          }
+        }
+
         for (const cookieName of cookieNames) {
-          document.cookie = `${cookieName}=; Max-Age=0; Path=/; SameSite=Strict`;
+          for (const path of pathPrefixes) {
+            document.cookie = `${cookieName}=; Max-Age=0; Path=${path}; SameSite=Strict`;
+          }
         }
 
         return await new Promise<{ ok: boolean; reason?: string }>(
