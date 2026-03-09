@@ -17,7 +17,7 @@ export const getDevUiEnabled = (
 
 export const isDevUiEnabled = getDevUiEnabled();
 
-export const showDevFormpacks = getShowDevFormpacks();
+const showDevFormpacks = getShowDevFormpacks();
 
 export const isFormpackVisible = (
   manifest: Pick<FormpackManifest, 'visibility'>,

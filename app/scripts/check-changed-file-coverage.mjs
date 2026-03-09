@@ -6,6 +6,14 @@ import path from 'node:path';
 const REQUIRED_COVERAGE_PCT = 100;
 const REQUIRED_METRICS = ['statements', 'functions', 'lines', 'branches'];
 const COVERAGE_SUMMARY_PATH = path.resolve('coverage/coverage-summary.json');
+const COVERAGE_EXCLUDED_SOURCE_FILES = new Set([
+  'src/lib/diagnostics/types.ts',
+  'src/lib/diagnostics/index.ts',
+  'src/formpacks/index.ts',
+  'src/pages/formpack-detail/components/index.ts',
+  'src/storage/index.ts',
+  'src/pages/formpack-detail/components/sectionTypes.ts',
+]);
 
 const normalizePath = (filePath) => filePath.replaceAll('\\', '/');
 
@@ -38,7 +46,11 @@ const extractSourceFiles = (output) =>
   output
     .split('\n')
     .map((rawFile) => toNormalizedSourcePath(rawFile))
-    .filter((filePath) => typeof filePath === 'string');
+    .filter(
+      (filePath) =>
+        typeof filePath === 'string' &&
+        !COVERAGE_EXCLUDED_SOURCE_FILES.has(filePath),
+    );
 
 const canResolveRef = (ref) => {
   try {

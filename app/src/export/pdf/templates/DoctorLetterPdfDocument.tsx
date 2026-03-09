@@ -329,11 +329,7 @@ const buildSalutation = (
   return isGerman ? 'Sehr geehrte Damen und Herren,' : 'Dear Sir or Madam,';
 };
 
-export const DoctorLetterPdfDocument = ({
-  model,
-}: {
-  model: DocumentModel;
-}) => {
+const DoctorLetterPdfDocument = ({ model }: { model: DocumentModel }) => {
   const templateData = model.meta?.templateData as
     | DoctorLetterTemplateData
     | undefined;
