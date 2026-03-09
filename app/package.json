@@ -35,8 +35,8 @@
     "test": "vitest --run",
     "test:unit": "vitest --run",
     "test:watch": "vitest",
-    "test:coverage": "node scripts/run-vitest-coverage-with-retry.mjs",
-    "test:coverage:changed": "node scripts/run-vitest-coverage-with-retry.mjs --changed",
+    "test:coverage": "vitest --run --coverage",
+    "test:coverage:changed": "vitest --run --coverage --coverage.reporter=json-summary --coverage.reporter=text-summary && node scripts/check-changed-file-coverage.mjs",
     "check:bundle-size": "node scripts/check-bundle-size.mjs",
     "cleanup:css:report": "node scripts/report-unused-css.mjs",
     "cleanup:knip:report": "node scripts/report-knip.mjs",
@@ -114,6 +114,8 @@
   "overrides": {
     "@isaacs/brace-expansion": "^5.0.1",
     "source-map": "npm:source-map-js@^1.2.1",
-    "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.5.5"
+    "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.5.5",
+    "serialize-javascript": "^7.0.4",
+    "minimatch": "^9.0.5"
   }
 }
