@@ -34,7 +34,7 @@ const getTranslator = (formContext: unknown): TFunction =>
 const buildButtonClassName = (className?: string) =>
   ['app__button', 'formpack-array-button', className].filter(Boolean).join(' ');
 
-export const TranslatedButton = (
+const TranslatedButton = (
   props: IconButtonProps & { translationKey: string },
 ) => {
   const { className, disabled, onClick, children, registry, translationKey } =

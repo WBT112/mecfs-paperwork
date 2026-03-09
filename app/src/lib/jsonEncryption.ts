@@ -86,7 +86,7 @@ export type JsonEncryptionEnvelope = {
  * @param value - Parsed JSON value to inspect.
  * @returns True when the value matches the supported envelope contract.
  */
-export const isJsonEncryptionEnvelope = (
+const isJsonEncryptionEnvelope = (
   value: unknown,
 ): value is JsonEncryptionEnvelope => {
   if (!isRecord(value)) {
