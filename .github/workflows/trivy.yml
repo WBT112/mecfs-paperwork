@@ -13,6 +13,11 @@ permissions:
   contents: read
   security-events: write
 
+env:
+  # NOTE: Keep this on a published release with downloadable assets.
+  # v0.69.1 existed as a tag but had no release artifacts, which broke setup.
+  TRIVY_VERSION: v0.69.3
+
 jobs:
   trivy-image:
     name: Trivy (Image scan - built container)
@@ -73,6 +78,7 @@ jobs:
         if: steps.check-secrets.outputs.available == 'true'
         uses: aquasecurity/trivy-action@c1824fd6edce30d7ab345a9989de00bbd46ef284 # 0.34.0
         with:
+          version: ${{ env.TRIVY_VERSION }}
           image-ref: mecfs-paperwork:${{ github.sha }}
           ignore-unfixed: true
           vuln-type: os,library
@@ -85,6 +91,7 @@ jobs:
         if: steps.check-secrets.outputs.available == 'true'
         uses: aquasecurity/trivy-action@c1824fd6edce30d7ab345a9989de00bbd46ef284 # 0.34.0
         with:
+          version: ${{ env.TRIVY_VERSION }}
           image-ref: mecfs-paperwork:${{ github.sha }}
           ignore-unfixed: true
           vuln-type: os,library
@@ -93,8 +100,8 @@ jobs:
           exit-code: 1
 
       - name: Upload Trivy SARIF (image)
-        if: always() && steps.check-secrets.outputs.available == 'true' && github.actor != 'dependabot[bot]'
-        uses: github/codeql-action/upload-sarif@ae9ef3a1d2e3413523c3741725c30064970cc0d4 # v3
+        if: always() && steps.check-secrets.outputs.available == 'true' && github.actor != 'dependabot[bot]' && hashFiles('trivy-image.sarif') != ''
+        uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v4.31.10
         with:
           sarif_file: trivy-image.sarif
 
@@ -112,6 +119,7 @@ jobs:
       - name: Trivy FS scan (report MEDIUM/HIGH/CRITICAL)
         uses: aquasecurity/trivy-action@c1824fd6edce30d7ab345a9989de00bbd46ef284 # 0.34.0
         with:
+          version: ${{ env.TRIVY_VERSION }}
           scan-type: fs
           scan-ref: .
           ignore-unfixed: true
@@ -124,6 +132,7 @@ jobs:
       - name: Trivy FS gate (HIGH+CRITICAL)
         uses: aquasecurity/trivy-action@c1824fd6edce30d7ab345a9989de00bbd46ef284 # 0.34.0
         with:
+          version: ${{ env.TRIVY_VERSION }}
           scan-type: fs
           scan-ref: .
           ignore-unfixed: true
@@ -133,7 +142,7 @@ jobs:
           exit-code: 1
 
       - name: Upload Trivy SARIF (fs)
-        if: always() && github.actor != 'dependabot[bot]'
-        uses: github/codeql-action/upload-sarif@ae9ef3a1d2e3413523c3741725c30064970cc0d4 # v3
+        if: always() && github.actor != 'dependabot[bot]' && hashFiles('trivy-fs.sarif') != ''
+        uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v4.31.10
         with:
           sarif_file: trivy-fs.sarif
