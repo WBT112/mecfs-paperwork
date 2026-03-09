@@ -1,4 +1,4 @@
-import type { FieldTemplateProps } from '@rjsf/utils';
+import { getUiOptions, type FieldTemplateProps } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
 import { isValidElement, type ReactNode } from 'react';
 import { isRecord } from './utils';
@@ -108,6 +108,7 @@ export function FormpackFieldTemplate(props: FormpackFieldTemplateProps) {
   const formData = formContext.formData ?? {};
   const t = formContext.t ?? defaultTranslator;
   const namespace = `formpack:${formContext.formpackId ?? 'doctor-letter'}`;
+  const uiOptions = getUiOptions(uiSchema);
   const schemaType = schema.type;
   const isContainerType =
     schemaType === 'object' ||
@@ -115,7 +116,10 @@ export function FormpackFieldTemplate(props: FormpackFieldTemplateProps) {
     (Array.isArray(schemaType) &&
       schemaType.some((type) => type === 'object' || type === 'array'));
   const shouldRenderLabel =
-    Boolean(label) && displayLabel !== false && !isContainerType;
+    Boolean(label) &&
+    displayLabel !== false &&
+    uiOptions.label !== false &&
+    !isContainerType;
   const shouldRenderHelp =
     !shouldRenderLabel || !shouldHideDuplicateHelp(label, help);
 

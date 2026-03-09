@@ -1070,11 +1070,15 @@ export default function FormpackDetailPage() {
               activeRecordExists={Boolean(activeRecord)}
               closeLabel={t('common.close')}
               emptyMessage={t('formpackFormNoActiveRecord')}
-              formClassName={
+              formClassName={[
+                'formpack-form',
+                `formpack-form--${manifest.id}`,
                 hasLetterLayout(formpackId)
-                  ? 'formpack-form formpack-form--doctor-letter'
-                  : 'formpack-form'
-              }
+                  ? 'formpack-form--doctor-letter'
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(' ')}
               formContentRef={formContentRef}
               formContext={formContext}
               formData={formData}

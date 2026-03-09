@@ -317,6 +317,9 @@ const PROFILE_SAVE_STORAGE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const PDF_EXPORT_CONTROLS_LABEL = 'pdf-export-controls';
 const PDF_SUCCESS_BUTTON_LABEL = 'pdf-success';
 const PDF_ERROR_BUTTON_LABEL = 'pdf-error';
+const DOCTOR_LETTER_FORMPACK_ID = 'doctor-letter';
+const DOCTOR_LETTER_ROUTE = `/formpacks/${DOCTOR_LETTER_FORMPACK_ID}`;
+const DOCTOR_LETTER_FORM_CLASS = 'formpack-form--doctor-letter';
 
 const mockFileText = (content: string) => {
   const descriptor = Object.getOwnPropertyDescriptor(File.prototype, 'text');
@@ -392,12 +395,14 @@ vi.mock('../../src/storage/formpackMeta', () => ({
 vi.mock('@rjsf/core', () => ({
   default: ({
     children,
+    className,
     formData,
     uiSchema,
     onChange,
     onSubmit,
   }: {
     children?: React.ReactNode;
+    className?: string;
     formData?: Record<string, unknown>;
     uiSchema?: Record<string, unknown>;
     onChange?: (event: { formData: Record<string, unknown> }) => void;
@@ -406,9 +411,10 @@ vi.mock('@rjsf/core', () => ({
       submitEvent: { preventDefault: () => void },
     ) => void;
   }) => (
-    <div>
+    <div data-testid="mock-rjsf-form" className={className}>
       <div data-testid="form-data">{JSON.stringify(formData)}</div>
       <div data-testid="ui-schema">{JSON.stringify(uiSchema)}</div>
+      {children}
       <button
         type="button"
         onClick={() => onChange?.({ formData: { field: 'value' } })}
@@ -519,7 +525,6 @@ vi.mock('@rjsf/core', () => ({
       <input id="root_request_selectedIndicationKey" />
       <input id="root_request_otherDrugName" />
       <input id="root_request_indicationFullyMetOrDoctorConfirms_0" />
-      {children}
     </div>
   ),
 }));
@@ -1002,6 +1007,41 @@ describe('FormpackDetailPage', () => {
     expect(
       await screen.findByText(PDF_EXPORT_CONTROLS_LABEL),
     ).toBeInTheDocument();
+  });
+
+  it('applies a formpack-specific CSS class for non-letter formpacks', async () => {
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    const form = await screen.findByTestId('mock-rjsf-form');
+
+    expect(form).toHaveClass('formpack-form', 'formpack-form--notfallpass');
+    expect(form).not.toHaveClass(DOCTOR_LETTER_FORM_CLASS);
+  });
+
+  it('adds the doctor-letter form CSS class for letter layouts', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: DOCTOR_LETTER_FORMPACK_ID,
+      exports: [],
+    } as FormpackManifest;
+
+    render(
+      <TestRouter initialEntries={[DOCTOR_LETTER_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    const form = await screen.findByTestId('mock-rjsf-form');
+
+    expect(form).toHaveClass('formpack-form', DOCTOR_LETTER_FORM_CLASS);
   });
 
   it('does not render PDF controls when pdf export is not declared', async () => {
@@ -2827,10 +2867,10 @@ describe('FormpackDetailPage', () => {
   });
 
   it('clears hidden doctor-letter decision fields on form change', async () => {
-    const doctorLetterRoute = '/formpacks/doctor-letter';
+    const doctorLetterRoute = DOCTOR_LETTER_ROUTE;
     formpackState.manifest = {
       ...formpackState.manifest,
-      id: 'doctor-letter',
+      id: DOCTOR_LETTER_FORMPACK_ID,
       titleKey: 'doctorLetterTitle',
       descriptionKey: 'doctorLetterDescription',
       exports: ['docx'],
@@ -2859,10 +2899,10 @@ describe('FormpackDetailPage', () => {
   });
 
   it('keeps doctor-letter decision data unchanged when no hidden fields need clearing', async () => {
-    const doctorLetterRoute = '/formpacks/doctor-letter';
+    const doctorLetterRoute = DOCTOR_LETTER_ROUTE;
     formpackState.manifest = {
       ...formpackState.manifest,
-      id: 'doctor-letter',
+      id: DOCTOR_LETTER_FORMPACK_ID,
       titleKey: 'doctorLetterTitle',
       descriptionKey: 'doctorLetterDescription',
       exports: ['docx'],

@@ -32,7 +32,7 @@ describe('buildPacingAmpelkartenPreset', () => {
         variant,
       });
       expect(preset.adult.cards.green.canDo.length).toBeGreaterThan(0);
-      expect(preset.child.cards.red.emoji).toBe('😴');
+      expect(preset.child.cards.red.canDo.length).toBeGreaterThan(0);
       expect(preset.notes.items.length).toBe(2);
     },
   );

@@ -64,7 +64,6 @@ describe('getPdfExportConfig', () => {
         child: {
           cards: {
             green: {
-              emoji: '😀',
               canDo: ['Short chat'],
               needHelp: [],
               visitRules: [],
@@ -73,7 +72,6 @@ describe('getPdfExportConfig', () => {
               thanks: 'Thanks',
             },
             yellow: {
-              emoji: '😐',
               canDo: ['Rest more'],
               needHelp: [],
               visitRules: [],
@@ -82,7 +80,6 @@ describe('getPdfExportConfig', () => {
               thanks: 'Thanks',
             },
             red: {
-              emoji: '😴',
               canDo: ['Please no calls'],
               needHelp: [],
               visitRules: [],

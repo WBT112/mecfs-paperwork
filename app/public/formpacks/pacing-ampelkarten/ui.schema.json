@@ -21,6 +21,7 @@
     "ui:title": "pacing-ampelkarten.section.adult.title",
     "ui:description": "pacing-ampelkarten.section.adult.description",
     "cards": {
+      "ui:title": "",
       "ui:order": ["green", "yellow", "red"],
       "green": {
         "ui:title": "pacing-ampelkarten.adult.cards.green.title",
@@ -217,11 +218,11 @@
     "ui:title": "pacing-ampelkarten.section.child.title",
     "ui:description": "pacing-ampelkarten.section.child.description",
     "cards": {
+      "ui:title": "",
       "ui:order": ["green", "yellow", "red"],
       "green": {
         "ui:title": "pacing-ampelkarten.child.cards.green.title",
         "ui:order": [
-          "emoji",
           "canDo",
           "needHelp",
           "visitRules",
@@ -229,10 +230,6 @@
           "hint",
           "thanks"
         ],
-        "emoji": {
-          "ui:title": "pacing-ampelkarten.child.cards.emoji.label",
-          "ui:help": "pacing-ampelkarten.child.cards.emoji.help"
-        },
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
           "ui:help": "pacing-ampelkarten.card.canDo.help",
@@ -289,7 +286,6 @@
       "yellow": {
         "ui:title": "pacing-ampelkarten.child.cards.yellow.title",
         "ui:order": [
-          "emoji",
           "canDo",
           "needHelp",
           "visitRules",
@@ -297,10 +293,6 @@
           "hint",
           "thanks"
         ],
-        "emoji": {
-          "ui:title": "pacing-ampelkarten.child.cards.emoji.label",
-          "ui:help": "pacing-ampelkarten.child.cards.emoji.help"
-        },
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
           "ui:help": "pacing-ampelkarten.card.canDo.help",
@@ -357,7 +349,6 @@
       "red": {
         "ui:title": "pacing-ampelkarten.child.cards.red.title",
         "ui:order": [
-          "emoji",
           "canDo",
           "needHelp",
           "visitRules",
@@ -365,10 +356,6 @@
           "hint",
           "thanks"
         ],
-        "emoji": {
-          "ui:title": "pacing-ampelkarten.child.cards.emoji.label",
-          "ui:help": "pacing-ampelkarten.child.cards.emoji.help"
-        },
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
           "ui:help": "pacing-ampelkarten.card.canDo.help",

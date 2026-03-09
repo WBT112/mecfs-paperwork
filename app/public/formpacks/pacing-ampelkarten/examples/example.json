@@ -77,7 +77,6 @@
   "child": {
     "cards": {
       "green": {
-        "emoji": "😀",
         "canDo": [
           "Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.",
           "Kurze Nachrichten lesen oder beantworten geht oft gut.",
@@ -98,7 +97,6 @@
         "thanks": "Danke, dass du so rücksichtsvoll bist. 💙"
       },
       "yellow": {
-        "emoji": "😐",
         "canDo": [
           "Heute gehen nur kurze Gespräche oder Nachrichten.",
           "Ich brauche viele Pausen und möchte mich zwischendurch hinlegen."
@@ -119,7 +117,6 @@
         "thanks": "Danke für Geduld und Verständnis. 💙"
       },
       "red": {
-        "emoji": "😴",
         "canDo": [
           "Heute brauche ich ganz viel Ruhe.",
           "Wenn überhaupt, dann nur ganz kurze Nachrichten statt Anrufen."

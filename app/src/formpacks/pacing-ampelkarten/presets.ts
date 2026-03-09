@@ -1,6 +1,5 @@
 type SupportedLocale = 'de' | 'en';
 type PacingAmpelkartenVariant = 'adult' | 'child';
-type CardColor = 'green' | 'yellow' | 'red';
 
 interface BaseCardPreset {
   canDo: string[];
@@ -9,10 +8,6 @@ interface BaseCardPreset {
   stimuli: string[];
   hint: string;
   thanks: string;
-}
-
-interface ChildCardPreset extends BaseCardPreset {
-  emoji: string;
 }
 
 interface VariantCardsPreset<TCard extends BaseCardPreset> {
@@ -33,7 +28,7 @@ interface PacingAmpelkartenPreset {
     cards: VariantCardsPreset<BaseCardPreset>;
   };
   child: {
-    cards: VariantCardsPreset<ChildCardPreset>;
+    cards: VariantCardsPreset<BaseCardPreset>;
   };
   notes: {
     title: string;
@@ -42,20 +37,6 @@ interface PacingAmpelkartenPreset {
 }
 
 type LocalePresetContent = Omit<PacingAmpelkartenPreset, 'meta'>;
-
-const CHILD_EMOJI_BY_COLOR: Record<CardColor, string> = {
-  green: '😀',
-  yellow: '😐',
-  red: '😴',
-};
-
-const createChildCard = (
-  color: CardColor,
-  card: BaseCardPreset,
-): ChildCardPreset => ({
-  ...card,
-  emoji: CHILD_EMOJI_BY_COLOR[color],
-});
 
 const DE_PRESET: LocalePresetContent = {
   sender: {
@@ -131,7 +112,7 @@ const DE_PRESET: LocalePresetContent = {
   },
   child: {
     cards: {
-      green: createChildCard('green', {
+      green: {
         canDo: [
           'Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.',
           'Kurze Nachrichten lesen oder beantworten geht oft gut.',
@@ -150,8 +131,8 @@ const DE_PRESET: LocalePresetContent = {
         ],
         hint: 'Heute ist ein guter Tag. Trotzdem helfen Pausen.',
         thanks: 'Danke, dass du so rücksichtsvoll bist. 💙',
-      }),
-      yellow: createChildCard('yellow', {
+      },
+      yellow: {
         canDo: [
           'Heute gehen nur kurze Gespräche oder Nachrichten.',
           'Ich brauche viele Pausen und möchte mich zwischendurch hinlegen.',
@@ -170,8 +151,8 @@ const DE_PRESET: LocalePresetContent = {
         ],
         hint: 'Heute ist ein vorsichtiger Tag. Bitte langsam und leise.',
         thanks: 'Danke für Geduld und Verständnis. 💙',
-      }),
-      red: createChildCard('red', {
+      },
+      red: {
         canDo: [
           'Heute brauche ich ganz viel Ruhe.',
           'Wenn überhaupt, dann nur ganz kurze Nachrichten statt Anrufen.',
@@ -190,7 +171,7 @@ const DE_PRESET: LocalePresetContent = {
         ],
         hint: 'Heute ist ein Ruhetag. Bitte nichts erwarten.',
         thanks: 'Danke, dass du mir Ruhe schenkst. 💙',
-      }),
+      },
     },
   },
   notes: {
@@ -276,7 +257,7 @@ const EN_PRESET: LocalePresetContent = {
   },
   child: {
     cards: {
-      green: createChildCard('green', {
+      green: {
         canDo: [
           'Today is a better day for a short chat or one small activity together.',
           'Short messages are usually okay.',
@@ -295,8 +276,8 @@ const EN_PRESET: LocalePresetContent = {
         ],
         hint: 'Today is a better day. I still need breaks.',
         thanks: 'Thank you for being so kind and careful. 💙',
-      }),
-      yellow: createChildCard('yellow', {
+      },
+      yellow: {
         canDo: [
           'Today I can only manage short chats or messages.',
           'I need lots of breaks and time to lie down quietly.',
@@ -315,8 +296,8 @@ const EN_PRESET: LocalePresetContent = {
         ],
         hint: 'Today is a careful day. Please go slowly and keep things quiet.',
         thanks: 'Thank you for being patient with me. 💙',
-      }),
-      red: createChildCard('red', {
+      },
+      red: {
         canDo: [
           'Today I need a lot of rest.',
           'If needed, please only send very short messages instead of calling.',
@@ -335,7 +316,7 @@ const EN_PRESET: LocalePresetContent = {
         ],
         hint: 'Today is a rest day. Please do not expect anything from me.',
         thanks: 'Thank you for helping me rest. 💙',
-      }),
+      },
     },
   },
   notes: {

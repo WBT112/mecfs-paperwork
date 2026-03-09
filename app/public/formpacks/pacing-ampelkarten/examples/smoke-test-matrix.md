@@ -22,6 +22,6 @@ Stand: 2026-03-09
 ## Manual spot checks
 
 1. Open the formpack in the app with DE locale and export PDF once in adult mode.
-2. Switch to child mode and verify the emoji titles and child wording in preview and PDF.
+2. Switch to child mode and verify the child wording in preview and PDF.
 3. Repeat one PDF export in EN locale and confirm that headings and card copy switch to English.
 4. Print preview both page 1 and page 2 and confirm the visual cut line placement.

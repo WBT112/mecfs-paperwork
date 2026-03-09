@@ -296,7 +296,6 @@ describe('formpacks/documentModel', () => {
       child: {
         cards: {
           green: {
-            emoji: '😀',
             canDo: ['Play a small game'],
             needHelp: ['Please remind me to rest'],
             visitRules: ['Only one friend'],
@@ -320,14 +319,14 @@ describe('formpacks/documentModel', () => {
       signature: 'Love, Alex',
     });
     expect(result.adult?.cards.green.canDo).toEqual(['Short chat']);
-    expect(result.child?.cards.green.emoji).toBe('😀');
+    expect(result.child?.cards.green.canDo).toEqual(['Play a small game']);
     expect(result.notes).toEqual({
       title: 'Notes',
       items: ['No doorbell'],
     });
   });
 
-  it('defaults pacing-ampelkarten variant to adult and omits emojis from adult cards', () => {
+  it('defaults pacing-ampelkarten variant to adult and omits unsupported child-only fields', () => {
     const result = buildDocumentModel('pacing-ampelkarten', 'en', {
       meta: {
         introAccepted: false,
@@ -342,7 +341,6 @@ describe('formpacks/documentModel', () => {
             stimuli: ['Dim light'],
             hint: 'One step at a time',
             thanks: 'Thanks for understanding',
-            emoji: '🦥',
           },
         },
       },
@@ -371,7 +369,6 @@ describe('formpacks/documentModel', () => {
       stimuli: [],
       hint: null,
       thanks: null,
-      emoji: null,
     });
     expect(result.notes).toEqual({
       title: 'Important',

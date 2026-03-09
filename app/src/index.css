@@ -1152,6 +1152,17 @@ body {
   font-size: 0.95rem;
 }
 
+.formpack-array-item--compact {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.formpack-array-item__header--actions-only {
+  justify-content: flex-end;
+}
+
 .formpack-array-item__content > fieldset {
   margin: 0;
   padding: 0;
@@ -1176,6 +1187,23 @@ body {
   color: var(--color-text-muted);
   font-size: 0.9rem;
   line-height: 1.4;
+}
+
+.formpack-form--pacing-ampelkarten fieldset#root {
+  padding: 0;
+  border: 0;
+}
+
+.formpack-form--pacing-ampelkarten fieldset#root > legend,
+.formpack-form--pacing-ampelkarten fieldset#root_adult_cards > legend,
+.formpack-form--pacing-ampelkarten fieldset#root_child_cards > legend {
+  display: none;
+}
+
+.formpack-form--pacing-ampelkarten fieldset#root_adult_cards,
+.formpack-form--pacing-ampelkarten fieldset#root_child_cards {
+  padding: 0;
+  border: 0;
 }
 
 .formpack-form__actions {

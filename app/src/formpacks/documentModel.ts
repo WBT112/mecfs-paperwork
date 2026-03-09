@@ -35,7 +35,6 @@ type PacingCardProjection = {
   stimuli: string[];
   hint: string | null;
   thanks: string | null;
-  emoji?: string | null;
 };
 
 export type DocumentModel = {
@@ -374,10 +373,7 @@ const projectStringList = (value: unknown): string[] =>
     .map((entry) => getStringValue(entry))
     .filter((entry): entry is string => Boolean(entry));
 
-const projectPacingCard = (
-  value: unknown,
-  includeEmoji: boolean,
-): PacingCardProjection => {
+const projectPacingCard = (value: unknown): PacingCardProjection => {
   const record = getRecordValue(value);
 
   return {
@@ -387,7 +383,6 @@ const projectPacingCard = (
     stimuli: projectStringList(record?.stimuli),
     hint: getStringValue(record?.hint),
     thanks: getStringValue(record?.thanks),
-    ...(includeEmoji ? { emoji: getStringValue(record?.emoji) } : {}),
   };
 };
 
@@ -414,16 +409,16 @@ const buildPacingAmpelkartenModel = (
     },
     adult: {
       cards: {
-        green: projectPacingCard(adultCards?.green, false),
-        yellow: projectPacingCard(adultCards?.yellow, false),
-        red: projectPacingCard(adultCards?.red, false),
+        green: projectPacingCard(adultCards?.green),
+        yellow: projectPacingCard(adultCards?.yellow),
+        red: projectPacingCard(adultCards?.red),
       },
     },
     child: {
       cards: {
-        green: projectPacingCard(childCards?.green, true),
-        yellow: projectPacingCard(childCards?.yellow, true),
-        red: projectPacingCard(childCards?.red, true),
+        green: projectPacingCard(childCards?.green),
+        yellow: projectPacingCard(childCards?.yellow),
+        red: projectPacingCard(childCards?.red),
       },
     },
     notes: {

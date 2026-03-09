@@ -123,15 +123,10 @@ const buildCard = (
   const basePath = `${variant}.cards.${color}`;
   const theme = getPacingCardTheme(color);
   const titleKey = `pacing-ampelkarten.${variant}.cards.${color}.title`;
-  const emojiValue = asTrimmedString(
-    getPathValue(formData, `${basePath}.emoji`),
-  );
-  const emoji =
-    variant === 'child' && emojiValue.length > 0 ? `${emojiValue} ` : '';
 
   return {
     color,
-    title: `${emoji}${t(titleKey, { defaultValue: titleKey })}`.trim(),
+    title: t(titleKey, { defaultValue: titleKey }),
     animalLabel: t(theme.animalLabelKey, {
       defaultValue: theme.animalLabelKey,
     }),

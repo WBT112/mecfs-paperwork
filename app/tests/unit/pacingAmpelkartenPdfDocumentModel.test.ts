@@ -65,7 +65,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     );
   });
 
-  it('builds English child cards with emoji titles and localized animal labels', () => {
+  it('builds English child cards with localized titles and animal labels', () => {
     const formData = buildPacingAmpelkartenPreset(
       'en',
       'child',
@@ -82,7 +82,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       | undefined;
 
     expect(templateData?.variant).toBe('child');
-    expect(templateData?.cards[0].title).toContain('😀');
     expect(templateData?.cards[0].title).toContain('good day');
     expect(templateData?.cards[0].animalLabel).toBe('Sloth');
     expect(templateData?.cards[2].animalLabel).toBe('Lion');

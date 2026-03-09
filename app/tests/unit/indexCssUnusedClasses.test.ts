@@ -22,6 +22,7 @@ const runtimeGeneratedAllowlist = new Set([
   'form-group',
   'formpack-detail__quota-banner--warning',
   'formpack-detail__quota-banner--error',
+  'formpack-form--pacing-ampelkarten',
 ]);
 
 const collectFiles = (directory: string): string[] => {

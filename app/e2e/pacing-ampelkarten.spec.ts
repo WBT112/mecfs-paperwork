@@ -131,9 +131,7 @@ test.describe('pacing ampelkarten', () => {
     const childVariantRadio = getChildVariantRadio(page);
     await childVariantRadio.check();
     await expect(childVariantRadio).toBeChecked();
-    await expect(page.locator('#root_child_cards_green_emoji')).toHaveValue(
-      '😀',
-    );
+    await expect(page.locator('#root_child_cards_green_emoji')).toHaveCount(0);
     await expect(page.locator('#root_child_cards_green_canDo_0')).toHaveValue(
       CHILD_CAN_DO_VALUE,
     );

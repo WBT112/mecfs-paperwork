@@ -28,7 +28,7 @@
       "$ref": "#/$defs/variantContent"
     },
     "child": {
-      "$ref": "#/$defs/variantContentWithEmoji"
+      "$ref": "#/$defs/variantContent"
     },
     "notes": {
       "type": "object",
@@ -76,36 +76,6 @@
       },
       "additionalProperties": false
     },
-    "adultCard": {
-      "$ref": "#/$defs/cardBase"
-    },
-    "childCard": {
-      "type": "object",
-      "properties": {
-        "emoji": {
-          "type": "string"
-        },
-        "canDo": {
-          "$ref": "#/$defs/textList"
-        },
-        "needHelp": {
-          "$ref": "#/$defs/textList"
-        },
-        "visitRules": {
-          "$ref": "#/$defs/textList"
-        },
-        "stimuli": {
-          "$ref": "#/$defs/textList"
-        },
-        "hint": {
-          "type": "string"
-        },
-        "thanks": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
     "variantContent": {
       "type": "object",
       "properties": {
@@ -113,34 +83,13 @@
           "type": "object",
           "properties": {
             "green": {
-              "$ref": "#/$defs/adultCard"
+              "$ref": "#/$defs/cardBase"
             },
             "yellow": {
-              "$ref": "#/$defs/adultCard"
+              "$ref": "#/$defs/cardBase"
             },
             "red": {
-              "$ref": "#/$defs/adultCard"
-            }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    "variantContentWithEmoji": {
-      "type": "object",
-      "properties": {
-        "cards": {
-          "type": "object",
-          "properties": {
-            "green": {
-              "$ref": "#/$defs/childCard"
-            },
-            "yellow": {
-              "$ref": "#/$defs/childCard"
-            },
-            "red": {
-              "$ref": "#/$defs/childCard"
+              "$ref": "#/$defs/cardBase"
             }
           },
           "additionalProperties": false
