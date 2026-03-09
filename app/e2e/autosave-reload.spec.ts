@@ -97,6 +97,79 @@ const readRecordById = async (
 ) => {
   return page.evaluate(
     async ({ dbName, storeName, id }) => {
+      const STORAGE_KEY_COOKIE_NAME = 'mecfs-paperwork.storage-key';
+      const STORAGE_ENCRYPTION_KIND = 'mecfs-paperwork-idb-encrypted';
+
+      const isRecord = (value: unknown): value is Record<string, unknown> =>
+        typeof value === 'object' && value !== null && !Array.isArray(value);
+
+      const fromBase64Url = (value: string): Uint8Array => {
+        const base64 = value
+          .replaceAll('-', '+')
+          .replaceAll('_', '/')
+          .padEnd(Math.ceil(value.length / 4) * 4, '=');
+        const binary = atob(base64);
+        return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      };
+
+      const getCookieValue = (name: string): string | null => {
+        const cookies = document.cookie ? document.cookie.split('; ') : [];
+        const prefix = `${name}=`;
+        for (const cookie of cookies) {
+          if (cookie.startsWith(prefix)) {
+            return cookie.slice(prefix.length);
+          }
+        }
+        return null;
+      };
+
+      const decodeRecordData = async (value: unknown) => {
+        if (!isRecord(value)) {
+          return value;
+        }
+
+        if (value.kind !== STORAGE_ENCRYPTION_KIND) {
+          return value;
+        }
+
+        const keyCookie = getCookieValue(STORAGE_KEY_COOKIE_NAME);
+        if (!keyCookie) {
+          return null;
+        }
+
+        try {
+          const key = await crypto.subtle.importKey(
+            'raw',
+            fromBase64Url(keyCookie),
+            { name: 'AES-GCM' },
+            false,
+            ['decrypt'],
+          );
+          const iv =
+            typeof value.iv === 'string' ? fromBase64Url(value.iv) : null;
+          const ciphertext =
+            typeof value.ciphertext === 'string'
+              ? fromBase64Url(value.ciphertext)
+              : null;
+          if (!iv || !ciphertext) {
+            return null;
+          }
+
+          const plainBuffer = await crypto.subtle.decrypt(
+            {
+              name: 'AES-GCM',
+              iv,
+              tagLength: 128,
+            },
+            key,
+            ciphertext,
+          );
+          return JSON.parse(new TextDecoder().decode(plainBuffer));
+        } catch {
+          return null;
+        }
+      };
+
       const openExistingDb = async () => {
         if (indexedDB.databases) {
           const databases = await indexedDB.databases();
@@ -137,7 +210,19 @@ const readRecordById = async (
           const store = tx.objectStore(storeName);
           const getReq = store.get(id);
           getReq.onerror = () => reject(getReq.error);
-          getReq.onsuccess = () => resolve(getReq.result ?? null);
+          getReq.onsuccess = async () => {
+            const result = getReq.result;
+            if (!isRecord(result)) {
+              resolve(result ?? null);
+              return;
+            }
+
+            const decodedData = await decodeRecordData(result.data);
+            resolve({
+              ...result,
+              data: decodedData,
+            });
+          };
         });
       } finally {
         db.close();
@@ -163,7 +248,7 @@ const openDraftsSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
     await expect(nameInput).toBeVisible();
@@ -214,7 +299,7 @@ const waitForNamePersisted = async (
     .poll(
       async () => {
         const record = await readRecordById(page, recordId);
-        return record?.data?.person?.name ?? '';
+        return record?.data?.person?.firstName ?? '';
       },
       { timeout: POLL_TIMEOUT, intervals: POLL_INTERVALS },
     )
@@ -240,7 +325,7 @@ test('autosave persists and reload does not create extra records', async ({
   await clickNewDraftIfNeeded(page);
   const recordId = await waitForActiveRecordId(page);
 
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   await expect(nameInput).toBeVisible();
 
   // Edit form
@@ -256,7 +341,7 @@ test('autosave persists and reload does not create extra records', async ({
   // Reload and verify no new record was created and value is restored
   await page.reload();
 
-  const nameInputAfter = page.locator('#root_person_name');
+  const nameInputAfter = page.locator('#root_person_firstName');
   await expect(nameInputAfter).toBeVisible();
   await expect(nameInputAfter).toHaveValue('Test User');
 

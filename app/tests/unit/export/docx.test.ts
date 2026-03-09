@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { buildDocxExportFilename } from '../../../src/export/docx';
+import {
+  buildDocxExportFilename,
+  ensureExportedAtIso,
+} from '../../../src/export/docx';
 
 const DEFAULT_DOCX_FILENAME = 'document-a4-20231027.docx';
+const FIXED_EXPORTED_AT_ISO = '2026-02-10T12:34:56.000Z';
 
 describe('buildDocxExportFilename', () => {
   const testDate = new Date('2023-10-27T10:00:00Z');
@@ -41,5 +45,32 @@ describe('buildDocxExportFilename', () => {
     expect(buildDocxExportFilename(undefined as any, 'a4', testDate)).toBe(
       DEFAULT_DOCX_FILENAME,
     );
+  });
+});
+
+describe('ensureExportedAtIso', () => {
+  it('sets exportedAtIso when missing', () => {
+    const context = { t: {}, patient: { firstName: 'Max' } };
+    const normalized = ensureExportedAtIso(
+      context,
+      new Date(FIXED_EXPORTED_AT_ISO),
+    );
+    expect(normalized).toMatchObject({
+      t: {},
+      patient: { firstName: 'Max' },
+      exportedAtIso: FIXED_EXPORTED_AT_ISO,
+    });
+  });
+
+  it('preserves existing exportedAtIso', () => {
+    const context = {
+      t: {},
+      exportedAtIso: '2025-01-01T00:00:00.000Z',
+    };
+    const normalized = ensureExportedAtIso(
+      context,
+      new Date(FIXED_EXPORTED_AT_ISO),
+    );
+    expect(normalized.exportedAtIso).toBe('2025-01-01T00:00:00.000Z');
   });
 });

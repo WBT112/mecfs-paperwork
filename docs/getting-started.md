@@ -1,9 +1,11 @@
 # Getting Started
 
 ## Privacy First
+
 - Do not include real patient data in this repo (issues, logs, screenshots, fixtures, exports).
 
 ## Local Development
+
 ```bash
 cd app
 npm ci
@@ -13,28 +15,44 @@ npm run dev
 Note: Formpacks are stored directly in `app/public/formpacks` (single source of truth).
 
 ## Quality Gates (Local)
+
 Run from `app/` (Node 24 + Playwright required):
+
 ```bash
 npm run format:check
 npm run lint
 npm run typecheck
+npm run duplication:check
 npm test
 npm run test:e2e
 npm run formpack:validate
 npm run build
 ```
 
+E2E profiles (local):
+
+```bash
+npm run test:e2e        # fast default: chromium + chromium-mobile
+npm run test:e2e:cross  # cross-browser sweep: firefox + webkit + webkit-mobile (soft-fail)
+npm run test:e2e:all    # fast + cross
+```
+
+The local quality-gate sequence uses `npm run test:e2e` as the default fast run.
+
 If E2E tests fail due to missing dependencies, install browser binaries:
+
 ```bash
 npx playwright install
 ```
 
 Optional coverage report:
+
 ```bash
 npm run test:coverage
 ```
 
 Optional one-command helper:
+
 ```bash
 npm run quality-gates
 ```
@@ -42,6 +60,7 @@ npm run quality-gates
 If you are temporarily on Node < 24, you can bypass the helper’s version check with `BYPASS_NODE_VERSION_CHECK=true`.
 
 ## Accessibility Baseline (Local)
+
 Run the baseline checks from `app/`:
 
 ```bash
@@ -52,7 +71,9 @@ npm run test:e2e:a11y
 Details and policy: `docs/a11y.md`.
 
 ## PowerShell Helper (Windows)
+
 The helper script automates the full suite of quality gates (including optional Docker checks):
+
 ```powershell
 . .\tools\run-quality-gates.ps1
 ```
@@ -71,7 +92,9 @@ Parameters:
 | `-KeepDockerRunning` | Keep containers running after checks | (not set) |
 
 ## Legal Content (Imprint & Privacy)
+
 Legal pages are sourced from repo-managed Markdown files:
+
 - `app/src/content/legal/imprint.md`
 - `app/src/content/legal/privacy.md`
 

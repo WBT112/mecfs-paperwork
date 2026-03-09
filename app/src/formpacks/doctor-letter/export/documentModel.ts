@@ -15,6 +15,24 @@ export type BuildDoctorLetterDocumentModelOptions = {
   exportedAt?: Date;
 };
 
+const PATIENT_FIELDS = [
+  'firstName',
+  'lastName',
+  'streetAndNumber',
+  'postalCode',
+  'city',
+] as const;
+
+const DOCTOR_FIELDS = [
+  'practice',
+  'title',
+  'gender',
+  'name',
+  'streetAndNumber',
+  'postalCode',
+  'city',
+] as const;
+
 const asOptionalText = (value: string | null | undefined): string | null => {
   if (typeof value !== 'string') {
     return null;
@@ -36,6 +54,29 @@ const buildRow = (label: string, value: string | null | undefined) => {
   return text ? ([label, text] as [string, string]) : null;
 };
 
+const buildSectionLabels = <Field extends string>(
+  t: (key: string, options?: { defaultValue?: string }) => string,
+  baseKey: string,
+  fields: readonly Field[],
+): Record<Field, string> =>
+  Object.fromEntries(
+    fields.map((field) => [
+      field,
+      t(`${baseKey}.${field}.label`, {
+        defaultValue: `${baseKey}.${field}.label`,
+      }),
+    ]),
+  ) as Record<Field, string>;
+
+const buildRows = <Field extends string>(
+  labels: Record<Field, string>,
+  values: Record<Field, string | null | undefined>,
+  fields: readonly Field[],
+): Array<[string, string]> =>
+  fields
+    .map((field) => buildRow(labels[field], values[field]))
+    .filter((row): row is [string, string] => Boolean(row));
+
 export const buildDoctorLetterDocumentModel = ({
   formData,
   locale,
@@ -45,44 +86,10 @@ export const buildDoctorLetterDocumentModel = ({
   const defaults = getDoctorLetterExportDefaults(locale);
   const t = i18n.getFixedT(locale, 'formpack:doctor-letter');
   const tApp = i18n.getFixedT(locale, 'app');
-  const label = (key: string) => t(key, { defaultValue: key });
-
-  const labelKeys = {
-    patient: {
-      firstName: 'doctor-letter.patient.firstName.label',
-      lastName: 'doctor-letter.patient.lastName.label',
-      streetAndNumber: 'doctor-letter.patient.streetAndNumber.label',
-      postalCode: 'doctor-letter.patient.postalCode.label',
-      city: 'doctor-letter.patient.city.label',
-    },
-    doctor: {
-      practice: 'doctor-letter.doctor.practice.label',
-      title: 'doctor-letter.doctor.title.label',
-      gender: 'doctor-letter.doctor.gender.label',
-      name: 'doctor-letter.doctor.name.label',
-      streetAndNumber: 'doctor-letter.doctor.streetAndNumber.label',
-      postalCode: 'doctor-letter.doctor.postalCode.label',
-      city: 'doctor-letter.doctor.city.label',
-    },
-  } as const;
 
   const labels = {
-    patient: {
-      firstName: label(labelKeys.patient.firstName),
-      lastName: label(labelKeys.patient.lastName),
-      streetAndNumber: label(labelKeys.patient.streetAndNumber),
-      postalCode: label(labelKeys.patient.postalCode),
-      city: label(labelKeys.patient.city),
-    },
-    doctor: {
-      practice: label(labelKeys.doctor.practice),
-      title: label(labelKeys.doctor.title),
-      gender: label(labelKeys.doctor.gender),
-      name: label(labelKeys.doctor.name),
-      streetAndNumber: label(labelKeys.doctor.streetAndNumber),
-      postalCode: label(labelKeys.doctor.postalCode),
-      city: label(labelKeys.doctor.city),
-    },
+    patient: buildSectionLabels(t, 'doctor-letter.patient', PATIENT_FIELDS),
+    doctor: buildSectionLabels(t, 'doctor-letter.doctor', DOCTOR_FIELDS),
   };
 
   const patient = {
@@ -127,22 +134,10 @@ export const buildDoctorLetterDocumentModel = ({
     defaultValue: 'Date',
   });
 
-  const patientRows = [
-    buildRow(labels.patient.firstName, patient.firstName),
-    buildRow(labels.patient.lastName, patient.lastName),
-    buildRow(labels.patient.streetAndNumber, patient.streetAndNumber),
-    buildRow(labels.patient.postalCode, patient.postalCode),
-    buildRow(labels.patient.city, patient.city),
-  ].filter((row): row is [string, string] => Boolean(row));
+  const patientRows = buildRows(labels.patient, patient, PATIENT_FIELDS);
 
   const doctorRows = [
-    buildRow(labels.doctor.practice, doctor.practice),
-    buildRow(labels.doctor.title, doctor.title),
-    buildRow(labels.doctor.gender, doctor.gender),
-    buildRow(labels.doctor.name, doctor.name),
-    buildRow(labels.doctor.streetAndNumber, doctor.streetAndNumber),
-    buildRow(labels.doctor.postalCode, doctor.postalCode),
-    buildRow(labels.doctor.city, doctor.city),
+    ...buildRows(labels.doctor, doctor, DOCTOR_FIELDS),
     buildRow(dateLabel, formattedDate),
   ].filter((row): row is [string, string] => Boolean(row));
 
@@ -166,7 +161,6 @@ export const buildDoctorLetterDocumentModel = ({
     dateLabel,
     formattedDate,
     exportedAtIso: exportedAt.toISOString(),
-    labels,
   };
 
   return {

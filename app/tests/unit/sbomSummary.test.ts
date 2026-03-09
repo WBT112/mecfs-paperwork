@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 const sbomSummary = (await import('../../../tools/sbom-summary.mjs')) as {
   buildSbomMarkdown: (options: {

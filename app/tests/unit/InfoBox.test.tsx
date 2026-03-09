@@ -14,7 +14,7 @@ describe('InfoBox', () => {
     expect(noteDiv).toBeInTheDocument();
   });
 
-  it('has proper ARIA attributes', () => {
+  it('announces content with aria-live polite for screen reader accessibility', () => {
     const { container } = render(<InfoBox message="Important note" />);
     const noteDiv = container.querySelector('[role="note"]');
     expect(noteDiv).toHaveAttribute('aria-live', 'polite');

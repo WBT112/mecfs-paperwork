@@ -111,6 +111,16 @@ describe('loadFormpackI18n', () => {
     expect(i18nMocks.addResourceBundle).not.toHaveBeenCalled();
   });
 
+  it('handles fetch errors without registering resources', async () => {
+    i18nMocks.hasResourceBundle.mockReturnValue(false);
+    const fetchSpy = vi.fn().mockRejectedValue(new Error('offline'));
+    vi.stubGlobal('fetch', fetchSpy);
+
+    await loadFormpackI18n(formpackId, localeDe);
+
+    expect(i18nMocks.addResourceBundle).not.toHaveBeenCalled();
+  });
+
   it('clears loaded formpack resource bundles for supported locales', () => {
     i18nMocks.hasResourceBundle.mockImplementation(
       (locale: string, ns: string) => locale === localeDe && ns === namespace,

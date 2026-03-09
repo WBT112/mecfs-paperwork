@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useConfirmationDialog } from '../components/useConfirmationDialog';
 import MarkdownRenderer from '../components/Markdown/MarkdownRenderer';
 import helpDe from '../content/help/help.md?raw';
 import helpEn from '../content/help/help.en.md?raw';
@@ -8,10 +9,12 @@ import {
   downloadDiagnosticsBundle,
   copyDiagnosticsToClipboard,
   resetAllLocalData,
+  type ServiceWorkerInfo,
+  type StorageHealthStatus,
+  useStorageHealth,
 } from '../lib/diagnostics';
-import { useStorageHealth } from '../lib/diagnostics/useStorageHealth';
-import type { StorageHealthStatus } from '../lib/diagnostics';
-import type { ServiceWorkerInfo } from '../lib/diagnostics/types';
+
+type EncryptionStatus = 'encrypted' | 'not_encrypted' | 'unknown';
 
 const formatBytes = (bytes: number): string => {
   if (bytes < 1024) return `${bytes} B`;
@@ -69,8 +72,43 @@ const fetchSwInfo = async (): Promise<ServiceWorkerInfo> => {
   }
 };
 
+const getEncryptionDataStatus = (status: EncryptionStatus): string => {
+  switch (status) {
+    case 'encrypted':
+      return 'available';
+    case 'not_encrypted':
+      return 'warning';
+    default:
+      return 'unknown';
+  }
+};
+
+const getServiceWorkerStateLabel = (
+  info: ServiceWorkerInfo,
+  t: (key: string) => string,
+): string => {
+  if (!info.registered) {
+    return t('swStatusNotRegistered');
+  }
+
+  const labels: Record<string, string> = {
+    activated: t('swStatusStateActivated'),
+    activating: t('swStatusStateActivating'),
+    installed: t('swStatusStateInstalled'),
+    installing: t('swStatusStateInstalling'),
+    redundant: t('swStatusStateRedundant'),
+  };
+
+  if (!info.state) {
+    return t('swStatusRegistered');
+  }
+
+  return labels[info.state] ?? info.state;
+};
+
 export default function HelpPage() {
   const { t, i18n } = useTranslation();
+  const { confirmationDialog, requestConfirmation } = useConfirmationDialog();
   const [copied, setCopied] = useState(false);
   const [diagState, setDiagState] = useState<
     'idle' | 'downloading' | 'downloaded' | 'copying' | 'copied' | 'failed'
@@ -139,7 +177,13 @@ export default function HelpPage() {
   }, []);
 
   const handleResetAllData = useCallback(async () => {
-    const confirmed = globalThis.confirm(t('resetAllConfirm'));
+    const confirmed = await requestConfirmation({
+      title: t('confirmationDialogTitle'),
+      message: t('resetAllConfirm'),
+      confirmLabel: t('resetAllButton'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    });
     if (!confirmed) return;
     setResetting(true);
     try {
@@ -147,7 +191,7 @@ export default function HelpPage() {
     } catch {
       setResetting(false);
     }
-  }, [t]);
+  }, [requestConfirmation, t]);
 
   const quotaDisplay = getQuotaDisplay(
     health.storageEstimate,
@@ -176,9 +220,38 @@ export default function HelpPage() {
 
   const idbDataStatus = health.indexedDbAvailable ? 'available' : 'unavailable';
 
-  const swStateLabel = swInfo.registered
-    ? (swInfo.state ?? t('swStatusRegistered'))
-    : t('swStatusNotRegistered');
+  const encryptionAtRest =
+    health.encryptionAtRest ??
+    ({
+      status: 'unknown',
+      keyCookiePresent: false,
+      keyCookieContext: 'unknown',
+      secureFlagVerifiable: false,
+    } as const);
+
+  const encryptionStatusLabel = (
+    {
+      encrypted: t('storageHealthEncryptionEncrypted'),
+      not_encrypted: t('storageHealthEncryptionNotEncrypted'),
+      unknown: t('storageHealthEncryptionUnknown'),
+    } as const
+  )[encryptionAtRest.status];
+
+  const encryptionDataStatus = getEncryptionDataStatus(encryptionAtRest.status);
+
+  const keyCookieLabel = encryptionAtRest.keyCookiePresent
+    ? t('storageHealthCookiePresent')
+    : t('storageHealthCookieMissing');
+
+  const keyCookieContextLabel = (
+    {
+      https: t('storageHealthCookieSecurityHttps'),
+      'non-https': t('storageHealthCookieSecurityNonHttps'),
+      unknown: t('storageHealthCookieSecurityUnknown'),
+    } as const
+  )[encryptionAtRest.keyCookieContext];
+
+  const swStateLabel = getServiceWorkerStateLabel(swInfo, t);
 
   const versionCopyLabel = copied
     ? t('versionInfoCopied')
@@ -263,6 +336,7 @@ export default function HelpPage() {
           <section
             className="help-page__storage-health"
             aria-label={t('storageHealthTitle')}
+            aria-busy={healthLoading}
             data-testid="storage-health"
           >
             <h4>{t('storageHealthTitle')}</h4>
@@ -283,11 +357,42 @@ export default function HelpPage() {
                     </dd>
                   </div>
                   <div>
+                    <dt>{t('storageHealthEncryption')}</dt>
+                    <dd
+                      data-testid="storage-health-encryption"
+                      data-status={encryptionDataStatus}
+                    >
+                      {encryptionStatusLabel}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t('storageHealthKeyCookie')}</dt>
+                    <dd
+                      data-testid="storage-health-key-cookie"
+                      data-status={
+                        encryptionAtRest.keyCookiePresent
+                          ? 'available'
+                          : 'unavailable'
+                      }
+                    >
+                      {keyCookieLabel}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{t('storageHealthCookieSecurity')}</dt>
+                    <dd
+                      data-testid="storage-health-cookie-security"
+                      data-status={encryptionAtRest.keyCookieContext}
+                    >
+                      {keyCookieContextLabel}
+                    </dd>
+                  </div>
+                  <div>
                     <dt>{t('storageHealthQuota')}</dt>
                     <dd data-testid="storage-health-quota">{quotaDisplay}</dd>
                   </div>
                   <div>
-                    <dt>Status</dt>
+                    <dt>{t('storageHealthStatusLabel')}</dt>
                     <dd
                       data-testid="storage-health-status"
                       data-status={health.status}
@@ -298,7 +403,7 @@ export default function HelpPage() {
                 </dl>
                 {health.status !== 'ok' && (
                   <output className="help-page__storage-guidance">
-                    {health.message}
+                    {t(health.message)}
                   </output>
                 )}
                 <button
@@ -342,6 +447,9 @@ export default function HelpPage() {
             data-testid="danger-zone"
           >
             <h4>{t('resetAllTitle')}</h4>
+            <p className="help-page__danger-zone-description" role="note">
+              {t('resetAllBackupHint')}
+            </p>
             <p className="help-page__danger-zone-description">
               {t('resetAllDescription')}
             </p>
@@ -357,6 +465,7 @@ export default function HelpPage() {
           </section>
         </section>
       </section>
+      {confirmationDialog}
     </section>
   );
 }

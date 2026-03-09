@@ -18,7 +18,8 @@ const baseExportPayload = {
   exportedAt: new Date('2024-01-01T12:00:00.000Z').toISOString(),
   data: {
     person: {
-      name: 'Valid Example',
+      firstName: 'Valid',
+      lastName: 'Example',
       birthDate: '1990-04-12',
     },
     contacts: [],
@@ -64,9 +65,7 @@ test('shows an error for invalid JSON imports', async ({ page }, testInfo) => {
   await triggerImport(page, invalidJsonPath);
 
   const error = page.locator('.app__error');
-  await expect(error).toHaveText(
-    /Ungültiges JSON|Invalid JSON|importInvalidJsonWithDetails/i,
-  );
+  await expect(error).toHaveText(/Ungültiges JSON|Invalid JSON/i);
   await expect(page.locator('.formpack-import__success')).toHaveCount(0);
 });
 
@@ -101,7 +100,7 @@ test('shows an error when schema validation fails', async ({
       ...baseExportPayload.data,
       person: {
         ...baseExportPayload.data.person,
-        invalidField: 'This field is not allowed by the schema',
+        firstName: 42,
       },
     },
   };

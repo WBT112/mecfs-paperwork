@@ -3,6 +3,7 @@ import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { createRequire } from 'node:module';
+import { availableParallelism } from 'node:os';
 import { execSync } from 'node:child_process';
 import { createPwaConfig } from './src/lib/pwaConfig';
 
@@ -79,6 +80,25 @@ const resolveBuildDate = (): string => {
 const APP_VERSION = resolveAppVersion();
 const BUILD_DATE = resolveBuildDate();
 
+const parsePositiveInt = (value: string | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const isCI = Boolean(process.env.CI);
+const defaultLocalVitestWorkers = Math.max(
+  2,
+  Math.min(10, Math.floor(availableParallelism() * 0.7)),
+);
+const configuredVitestWorkers = parsePositiveInt(
+  process.env.VITEST_MAX_WORKERS ?? process.env.VITEST_WORKERS,
+);
+const vitestMaxWorkers =
+  configuredVitestWorkers ?? (isCI ? 2 : defaultLocalVitestWorkers);
+
 const createConfig = (mode: string): AppConfig => ({
   define: {
     __APP_VERSION__: JSON.stringify(APP_VERSION),
@@ -141,45 +161,25 @@ const createConfig = (mode: string): AppConfig => ({
     cors: false,
   },
   build: {
+    // NOTE: The react-pdf stack must stay in a single lazy vendor chunk to
+    // avoid circular cross-chunk warnings. Size is enforced separately via the
+    // bundle budget test, so the generic Vite warning threshold can be higher.
+    chunkSizeWarningLimit: 1800,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (!id.includes('node_modules')) {
             return undefined;
           }
-          if (id.includes('@react-pdf/renderer')) {
-            return 'vendor-react-pdf-renderer';
-          }
           if (
-            id.includes('@react-pdf/layout') ||
-            id.includes('@react-pdf/textkit')
-          ) {
-            return 'vendor-react-pdf-layout';
-          }
-          if (id.includes('@react-pdf/font')) {
-            return 'vendor-react-pdf-font';
-          }
-          if (
-            id.includes('@react-pdf/image') ||
-            id.includes('@react-pdf/png-js')
-          ) {
-            return 'vendor-react-pdf-image';
-          }
-          if (id.includes('@react-pdf/primitives')) {
-            return 'vendor-react-pdf-primitives';
-          }
-          if (id.includes('@react-pdf/pdfkit')) {
-            return 'vendor-react-pdf-pdfkit';
-          }
-          if (id.includes('yoga-layout')) {
-            return 'vendor-react-pdf-yoga';
-          }
-          if (
+            id.includes('@react-pdf/') ||
+            id.includes('@react-pdf/png-js') ||
+            id.includes('yoga-layout') ||
             id.includes('fontkit') ||
             id.includes('/unicode-') ||
             id.includes('linebreak')
           ) {
-            return 'vendor-react-pdf-fontkit';
+            return 'vendor-react-pdf';
           }
           if (id.includes('@rjsf')) {
             return 'vendor-rjsf';
@@ -216,10 +216,10 @@ const createConfig = (mode: string): AppConfig => ({
     globals: true,
     environment: 'jsdom',
     setupFiles: './tests/setup/setup.ts',
+    maxWorkers: vitestMaxWorkers,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      all: true,
       include: ['src/**/*.{ts,tsx,mjs}'],
       exclude: [
         'src/**/*.d.ts',
@@ -228,13 +228,18 @@ const createConfig = (mode: string): AppConfig => ({
         'src/lib/diagnostics/types.ts',
         // Re-export barrels with no logic
         'src/lib/diagnostics/index.ts',
+        'src/formpacks/index.ts',
+        'src/pages/formpack-detail/components/index.ts',
+        'src/storage/index.ts',
+        // Type-only file with no runtime code
+        'src/pages/formpack-detail/components/sectionTypes.ts',
       ],
       thresholds: {
-        // Global coverage thresholds (CI enforced)
-        lines: 85,
-        branches: 75,
-        functions: 80,
-        statements: 85,
+        // Global coverage thresholds (CI enforced).
+        lines: 100,
+        branches: 100,
+        functions: 100,
+        statements: 100,
       },
     },
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],

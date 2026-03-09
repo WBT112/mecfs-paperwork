@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { applyArrayUiSchemaDefaults } from '../../src/lib/rjsfUiSchema';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';

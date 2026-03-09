@@ -1,3 +1,5 @@
+import { readLocalStorage, writeLocalStorage } from '../lib/safeLocalStorage';
+
 export const themeStorageKey = 'mecfs-paperwork.theme';
 
 export const themeModes = ['dark', 'light', 'system'] as const;
@@ -6,31 +8,21 @@ export type ThemeMode = (typeof themeModes)[number];
 
 export type ResolvedTheme = Exclude<ThemeMode, 'system'>;
 
-export const defaultThemeMode: ThemeMode = 'dark';
+export const defaultThemeMode: ThemeMode = 'system';
 
 export const isThemeMode = (value: string): value is ThemeMode =>
   themeModes.includes(value as ThemeMode);
 
 export const getStoredThemeMode = (): ThemeMode | null => {
-  try {
-    const storedValue = globalThis.localStorage.getItem(themeStorageKey);
-
-    if (storedValue && isThemeMode(storedValue)) {
-      return storedValue;
-    }
-  } catch {
-    return null;
+  const storedValue = readLocalStorage(themeStorageKey);
+  if (storedValue && isThemeMode(storedValue)) {
+    return storedValue;
   }
-
   return null;
 };
 
 export const setStoredThemeMode = (mode: ThemeMode): void => {
-  try {
-    globalThis.localStorage.setItem(themeStorageKey, mode);
-  } catch {
-    // Ignore storage failures to keep the offline UI responsive.
-  }
+  writeLocalStorage(themeStorageKey, mode);
 };
 
 export const getInitialThemeMode = (): ThemeMode =>

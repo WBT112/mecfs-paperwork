@@ -30,7 +30,7 @@ export const normalizeParagraphText = (
     const paragraphs = compactParagraphs(trimmed.split(marker));
     return {
       paragraphs,
-      text: paragraphs.length ? paragraphs.join('\n\n') : '',
+      text: paragraphs.join('\n\n'),
     };
   }
 
@@ -39,7 +39,7 @@ export const normalizeParagraphText = (
     const paragraphs = compactParagraphs(newlineParts);
     return {
       paragraphs,
-      text: paragraphs.length ? paragraphs.join('\n\n') : '',
+      text: paragraphs.join('\n\n'),
     };
   }
 

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   FORMPACK_META_ENTRY_KEYS,
+  PROFILE_ENTRY_KEYS,
   RECORD_ENTRY_KEYS,
   SNAPSHOT_ENTRY_KEYS,
   isFormpackMetaEntry,
+  isProfileEntry,
   isRecordEntry,
   isSnapshotEntry,
 } from '../../../src/storage/types';
@@ -30,6 +32,17 @@ const baseFormpackMetaEntry = {
   version: '1.0.0',
   hash: 'abc',
   updatedAt: '2026-02-02T03:00:00.000Z',
+};
+
+const baseProfileEntry = {
+  id: 'profile-1',
+  data: {
+    patient: { firstName: 'Max' },
+    doctor: { name: 'Dr. Ada' },
+    insurer: { name: 'Musterkasse' },
+  },
+  createdAt: '2026-02-02T03:00:00.000Z',
+  updatedAt: '2026-02-02T03:30:00.000Z',
 };
 
 describe('storage type helpers', () => {
@@ -65,6 +78,15 @@ describe('storage type helpers', () => {
     ]);
   });
 
+  it('exposes profile entry keys', () => {
+    expect(PROFILE_ENTRY_KEYS).toEqual([
+      'id',
+      'data',
+      'createdAt',
+      'updatedAt',
+    ]);
+  });
+
   it('validates record entries', () => {
     expect(isRecordEntry(baseRecordEntry)).toBe(true);
     expect(isRecordEntry({ ...baseRecordEntry, title: 'Example' })).toBe(true);
@@ -89,11 +111,22 @@ describe('storage type helpers', () => {
     expect(
       isFormpackMetaEntry({ ...baseFormpackMetaEntry, version: undefined }),
     ).toBe(true);
+    expect(isFormpackMetaEntry(null)).toBe(false);
     expect(isFormpackMetaEntry({ ...baseFormpackMetaEntry, hash: 123 })).toBe(
       false,
     );
     expect(
       isFormpackMetaEntry({ ...baseFormpackMetaEntry, updatedAt: [] }),
     ).toBe(false);
+  });
+
+  it('validates profile entries', () => {
+    expect(isProfileEntry(baseProfileEntry)).toBe(true);
+    expect(isProfileEntry({ ...baseProfileEntry, data: 'invalid' })).toBe(
+      false,
+    );
+    expect(isProfileEntry({ ...baseProfileEntry, createdAt: 123 })).toBe(false);
+    expect(isProfileEntry({ ...baseProfileEntry, updatedAt: 456 })).toBe(false);
+    expect(isProfileEntry(null)).toBe(false);
   });
 });

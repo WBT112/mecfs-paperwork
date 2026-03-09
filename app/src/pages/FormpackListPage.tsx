@@ -1,21 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { loadFormpackI18n } from '../i18n/formpack';
 import { useLocale } from '../i18n/useLocale';
-import { listFormpacks } from '../formpacks/loader';
-import { filterVisibleFormpacks } from '../formpacks/visibility';
-import type { FormpackManifest } from '../formpacks/types';
-import type { SupportedLocale } from '../i18n/locale';
-
-const loadFormpackTranslations = async (
-  manifests: FormpackManifest[],
-  locale: SupportedLocale,
-) => {
-  await Promise.all(
-    manifests.map((manifest) => loadFormpackI18n(manifest.id, locale)),
-  );
-};
+import {
+  buildTranslatedManifests,
+  CATEGORY_I18N_KEYS,
+  countGroupedFormpacks,
+  filterFormpacksByQuery,
+  groupFormpacksByCategory,
+  readResumeFormpackId,
+} from './formpack-list/formpackListHelpers';
+import { useFormpackCatalog } from './formpack-list/useFormpackCatalog';
 
 /**
  * Shows the registry of available formpacks.
@@ -23,70 +18,32 @@ const loadFormpackTranslations = async (
 export default function FormpackListPage() {
   const { t } = useTranslation();
   const { locale } = useLocale();
-  const [manifests, setManifests] = useState<FormpackManifest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isI18nReady, setIsI18nReady] = useState(false);
+  const [query, setQuery] = useState('');
+  const { manifests, isLoading, errorMessage, isI18nReady } =
+    useFormpackCatalog({
+      locale,
+      translate: t,
+    });
 
-  useEffect(() => {
-    let isActive = true;
+  const translated = useMemo(
+    () => (isI18nReady ? buildTranslatedManifests(manifests, t) : []),
+    [manifests, isI18nReady, t],
+  );
 
-    const loadManifests = async () => {
-      setIsLoading(true);
-      setErrorMessage(null);
+  const groups = useMemo(
+    () => groupFormpacksByCategory(filterFormpacksByQuery(translated, query)),
+    [translated, query],
+  );
+  const resultCount = useMemo(() => countGroupedFormpacks(groups), [groups]);
 
-      try {
-        const data = await listFormpacks();
-        if (!isActive) {
-          return;
-        }
-        setManifests(filterVisibleFormpacks(data));
-      } catch (error) {
-        if (!isActive) {
-          return;
-        }
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : t('formpackListErrorFallback'),
-        );
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    };
+  const resumeFormpack = useMemo(() => {
+    const resumeId = readResumeFormpackId();
+    if (!resumeId) {
+      return null;
+    }
 
-    loadManifests().catch(() => undefined);
-
-    return () => {
-      isActive = false;
-    };
-  }, [t]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const loadTranslations = async () => {
-      if (!manifests.length) {
-        setIsI18nReady(true);
-        return;
-      }
-
-      setIsI18nReady(false);
-      await loadFormpackTranslations(manifests, locale);
-
-      if (isActive) {
-        setIsI18nReady(true);
-      }
-    };
-
-    loadTranslations().catch(() => undefined);
-
-    return () => {
-      isActive = false;
-    };
-  }, [locale, manifests]);
+    return translated.find((item) => item.manifest.id === resumeId) ?? null;
+  }, [translated]);
 
   if (isLoading || !isI18nReady) {
     return (
@@ -114,36 +71,62 @@ export default function FormpackListPage() {
           <p className="app__subtitle">{t('formpackListDescription')}</p>
         </div>
       </div>
-      {manifests.length > 0 ? (
-        <div className="formpack-list">
-          {manifests.map((manifest) => {
-            const namespace = `formpack:${manifest.id}`;
-            const title = t(manifest.titleKey, {
-              ns: namespace,
-              defaultValue: manifest.titleKey,
-            });
-            const description = t(manifest.descriptionKey, {
-              ns: namespace,
-              defaultValue: manifest.descriptionKey,
-            });
-
-            return (
-              <Link
-                key={manifest.id}
-                className="formpack-card"
-                to={`/formpacks/${manifest.id}`}
-                aria-label={t('formpackOpenWithTitle', { title })}
-              >
-                <div>
-                  <h3>{title}</h3>
-                  <p className="formpack-card__description">{description}</p>
-                </div>
-                <div className="formpack-card__link">{t('formpackOpen')}</div>
-              </Link>
-            );
-          })}
-        </div>
-      ) : (
+      {resumeFormpack && (
+        <p>
+          <Link
+            className="app__button formpack-list__resume-link"
+            to={`/formpacks/${resumeFormpack.manifest.id}`}
+            aria-label={t('formpackOpenWithTitle', {
+              title: resumeFormpack.title,
+            })}
+          >
+            {t('formpackResumeLast')}
+          </Link>
+        </p>
+      )}
+      {manifests.length > 0 && (
+        <>
+          <input
+            type="search"
+            className="formpack-list__search"
+            placeholder={t('formpackSearchPlaceholder')}
+            aria-label={t('formpackSearchAriaLabel')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <output aria-live="polite" className="formpack-list__status">
+            {t('formpackSearchResultsStatus')} {resultCount}
+          </output>
+        </>
+      )}
+      {groups.length > 0 &&
+        groups.map(([category, items]) => (
+          <div key={category}>
+            <h3 className="formpack-list__category-heading">
+              {t(CATEGORY_I18N_KEYS[category])}
+            </h3>
+            <div className="formpack-list">
+              {items.map(({ manifest, title, description }) => (
+                <Link
+                  key={manifest.id}
+                  className="formpack-card"
+                  to={`/formpacks/${manifest.id}`}
+                  aria-label={t('formpackOpenWithTitle', { title })}
+                >
+                  <div>
+                    <h3>{title}</h3>
+                    <p className="formpack-card__description">{description}</p>
+                  </div>
+                  <div className="formpack-card__link">{t('formpackOpen')}</div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ))}
+      {groups.length === 0 && manifests.length > 0 && (
+        <p className="formpack-list__empty">{t('formpackSearchEmpty')}</p>
+      )}
+      {manifests.length === 0 && (
         <p className="formpack-records__empty">{t('formpackListEmpty')}</p>
       )}
     </section>

@@ -9,7 +9,7 @@ later. The export is offline-first and contains no telemetry.
 {
   "app": { "id": "mecfs-paperwork", "version": "0.1.0" },
   "formpack": { "id": "notfallpass", "version": "0.1.0" },
-  "record": { "id": "uuid", "name": "optional", "updatedAt": "2024-01-01T00:00:00.000Z" },
+  "record": { "id": "uuid", "title": "optional", "updatedAt": "2024-01-01T00:00:00.000Z", "locale": "de", "data": {} },
   "locale": "de",
   "exportedAt": "2024-01-02T00:00:00.000Z",
   "data": {},
@@ -27,11 +27,36 @@ later. The export is offline-first and contains no telemetry.
 ### Field notes
 - `app`: The app identifier and version that generated the export.
 - `formpack`: The formpack identifier and version used for the record.
-- `record`: Record metadata. `name` is optional.
+- `record`: Record metadata. `title` is the primary optional human-readable label.
+- `record.name`: Legacy import fallback only. Current exports write `record.title` instead.
 - `locale`: The locale stored with the record and used for exports.
 - `exportedAt`: ISO timestamp when the export was created.
 - `data`: Record form data (JSON object).
 - `revisions`: Optional snapshots captured for the record.
+
+## Optional encryption envelope
+
+JSON exports can optionally be password-encrypted. In this case, the file content
+is a versioned envelope instead of the plain schema shown above:
+
+```json
+{
+  "kind": "mecfs-paperwork-json-encrypted",
+  "version": 1,
+  "cipher": "AES-GCM",
+  "tagLength": 128,
+  "kdf": "PBKDF2",
+  "hash": "SHA-256",
+  "iterations": 310000,
+  "salt": "base64url",
+  "iv": "base64url",
+  "ciphertext": "base64url"
+}
+```
+
+- The encrypted payload contains the complete JSON export object.
+- Decryption requires the same password that was entered during export.
+- Without encryption enabled, exports remain plain JSON for maximum compatibility.
 
 ### Date formats
 - Fields marked as `format: "date"` in a formpack schema are expected to be
@@ -43,5 +68,5 @@ later. The export is offline-first and contains no telemetry.
 ## Filename format
 
 ```
-{formpackId}_{recordNameOrId}_{YYYY-MM-DD}_{locale}.json
+{formpackId}_{recordTitleOrId}_{YYYY-MM-DD}_{locale}.json
 ```

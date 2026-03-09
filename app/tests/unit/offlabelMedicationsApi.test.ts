@@ -1,0 +1,123 @@
+// @vitest-environment node
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  getMedicationDisplayName,
+  getMedicationSelectionName,
+  getMedicationIndications,
+  getVisibleMedicationKeys,
+  getVisibleMedicationOptions,
+  hasMultipleMedicationIndications,
+  isMedicationKey,
+  isMedicationVisible,
+  MEDICATIONS,
+  normalizeMedicationKey,
+  OFFLABEL_MEDICATION_KEYS,
+  resolveMedicationIndication,
+  resolveMedicationProfile,
+} from '../../src/formpacks/offlabel-antrag/medications';
+
+const LDN_MECFS_FATIGUE_KEY = 'ldn.mecfs_fatigue';
+const LDN_LONG_POST_COVID_FATIGUE_KEY = 'ldn.long_post_covid_fatigue';
+
+describe('offlabel medications API', () => {
+  const originalAgomelatinVisibility = MEDICATIONS.agomelatin.visibility;
+
+  afterEach(() => {
+    MEDICATIONS.agomelatin.visibility = originalAgomelatinVisibility;
+  });
+
+  it('validates medication keys and normalizes unknown values to other', () => {
+    expect(isMedicationKey('agomelatin')).toBe(true);
+    expect(isMedicationKey('not-a-key')).toBe(false);
+    expect(isMedicationKey(123)).toBe(false);
+
+    expect(normalizeMedicationKey('ivabradine')).toBe('ivabradine');
+    expect(normalizeMedicationKey('unknown')).toBe('other');
+    expect(normalizeMedicationKey(null)).toBe('other');
+  });
+
+  it('resolves profiles and display names for both locales', () => {
+    expect(resolveMedicationProfile('agomelatin').key).toBe('agomelatin');
+    expect(resolveMedicationProfile('invalid').key).toBe('other');
+
+    expect(getMedicationDisplayName('agomelatin', 'de')).toBe('Agomelatin');
+    expect(getMedicationDisplayName('agomelatin', 'en')).toBe('Agomelatine');
+    expect(getMedicationDisplayName('methylphenidate', 'de')).toBe(
+      'Methylphenidat',
+    );
+    expect(getMedicationDisplayName('methylphenidate', 'en')).toBe(
+      'Methylphenidate',
+    );
+    expect(getMedicationSelectionName('methylphenidate', 'de')).toBe(
+      'Methylphenidat (Medikinet, Ritalin)',
+    );
+    expect(getMedicationSelectionName('methylphenidate', 'en')).toBe(
+      'Methylphenidate (Medikinet, Ritalin)',
+    );
+  });
+
+  it('filters dev-only medications based on the dev visibility flag', () => {
+    MEDICATIONS.agomelatin.visibility = 'dev';
+
+    expect(isMedicationVisible('agomelatin', false)).toBe(false);
+    expect(isMedicationVisible('agomelatin', true)).toBe(true);
+
+    const publicKeys = getVisibleMedicationKeys(false);
+    const withDevKeys = getVisibleMedicationKeys(true);
+
+    expect(publicKeys).not.toContain('agomelatin');
+    expect(withDevKeys).toContain('agomelatin');
+    expect(withDevKeys).toEqual(
+      expect.arrayContaining([...OFFLABEL_MEDICATION_KEYS]),
+    );
+  });
+
+  it('builds visible medication options with default and explicit dev flags', () => {
+    MEDICATIONS.agomelatin.visibility = 'dev';
+
+    const defaultOptions = getVisibleMedicationOptions('de');
+    const devOptions = getVisibleMedicationOptions('en', true);
+
+    expect(defaultOptions.some((entry) => entry.key === 'agomelatin')).toBe(
+      false,
+    );
+    expect(devOptions.some((entry) => entry.key === 'agomelatin')).toBe(true);
+  });
+
+  it('returns indication options for known medication and empty list for unknown', () => {
+    const ldnIndications = getMedicationIndications('ldn', 'de');
+    const unknownIndications = getMedicationIndications('unknown', 'en');
+
+    expect(ldnIndications.length).toBeGreaterThan(1);
+    expect(ldnIndications.map((entry) => entry.key)).toEqual([
+      LDN_LONG_POST_COVID_FATIGUE_KEY,
+      LDN_MECFS_FATIGUE_KEY,
+    ]);
+    expect(typeof ldnIndications[0]?.label).toBe('string');
+    expect(unknownIndications).toEqual([]);
+  });
+
+  it('reports whether a profile has multiple indications', () => {
+    expect(hasMultipleMedicationIndications(MEDICATIONS.ldn)).toBe(true);
+    expect(hasMultipleMedicationIndications(MEDICATIONS.ivabradine)).toBe(
+      false,
+    );
+  });
+
+  it('resolves indication details with null, fallback, and explicit selection paths', () => {
+    expect(
+      resolveMedicationIndication(MEDICATIONS.other, 'x', 'de'),
+    ).toBeNull();
+
+    const fallback = resolveMedicationIndication(MEDICATIONS.ldn, 123, 'de');
+    expect(fallback?.key).toBe(LDN_MECFS_FATIGUE_KEY);
+
+    const explicit = resolveMedicationIndication(
+      MEDICATIONS.ldn,
+      LDN_LONG_POST_COVID_FATIGUE_KEY,
+      'en',
+    );
+    expect(explicit?.key).toBe(LDN_LONG_POST_COVID_FATIGUE_KEY);
+    expect(explicit?.diagnosisNominative).toContain('long/post-COVID');
+  });
+});

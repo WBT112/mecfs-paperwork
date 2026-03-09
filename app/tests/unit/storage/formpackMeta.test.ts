@@ -34,6 +34,14 @@ describe('storage/formpackMeta', () => {
     expect(mockDb.get).toHaveBeenCalledWith(FORMPACK_META_STORE, FORMPACK_ID);
   });
 
+  it('returns null when metadata is missing', async () => {
+    mockDb.get.mockResolvedValue(undefined);
+
+    const result = await getFormpackMeta(FORMPACK_ID);
+
+    expect(result).toBeNull();
+  });
+
   it('upserts metadata with generated timestamp fallback', async () => {
     const result = await upsertFormpackMeta({
       id: FORMPACK_ID,

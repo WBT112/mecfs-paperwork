@@ -1,5 +1,5 @@
 import { BlobProvider, pdf } from '@react-pdf/renderer';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { PdfExportPayload } from './PdfExportButton';
 import { downloadPdfExport } from './download';
 import { normalizePdfExportError } from './errors';
@@ -63,73 +63,117 @@ const PdfExportDownloadHandler = ({
 }: DownloadHandlerProps) => {
   const completedRef = useRef(false);
   const fallbackStartedRef = useRef(false);
+  const softTimeoutElapsedRef = useRef(false);
+  const providerStateRef = useRef({
+    blob,
+    url,
+    loading,
+    error,
+  });
+
+  providerStateRef.current = { blob, url, loading, error };
 
   useEffect(() => {
     completedRef.current = false;
     fallbackStartedRef.current = false;
+    softTimeoutElapsedRef.current = false;
   }, [requestKey]);
 
-  useEffect(() => {
-    const finalizeOnce = () => {
-      if (completedRef.current) {
-        return;
-      }
-      completedRef.current = true;
-      onDone();
-    };
+  const finalizeOnce = useCallback(() => {
+    completedRef.current = true;
+    onDone();
+  }, [onDone]);
 
-    const completeWithError = (errorValue: unknown) => {
+  const completeWithError = useCallback(
+    (errorValue: unknown) => {
       if (completedRef.current) {
         return;
       }
       onError?.(normalizePdfExportError(errorValue));
       finalizeOnce();
-    };
+    },
+    [finalizeOnce, onError],
+  );
 
-    const timeoutId = globalThis.setTimeout(() => {
-      if (completedRef.current || fallbackStartedRef.current) {
-        return;
-      }
+  const runFallback = useCallback(() => {
+    if (completedRef.current || fallbackStartedRef.current) {
+      return;
+    }
 
-      fallbackStartedRef.current = true;
+    fallbackStartedRef.current = true;
 
-      let pdfInstance;
-      try {
-        pdfInstance = pdf(payload.document);
-      } catch (fallbackError) {
-        completeWithError(fallbackError);
-        return;
-      }
+    let pdfInstance;
+    try {
+      pdfInstance = pdf(payload.document);
+    } catch (fallbackError) {
+      completeWithError(fallbackError);
+      return;
+    }
 
-      toBlobWithTimeout(pdfInstance)
-        .then((fallbackBlob) => {
-          if (completedRef.current) {
-            return;
-          }
-          try {
-            downloadPdfExport({
-              blob: fallbackBlob,
-              filename: payload.filename,
-            });
-            onSuccess?.();
-          } catch (downloadError) {
-            onError?.(normalizePdfExportError(downloadError));
-          } finally {
-            finalizeOnce();
-          }
-        })
-        .catch(completeWithError);
-    }, FALLBACK_TIMEOUT_MS);
-
-    return () => globalThis.clearTimeout(timeoutId);
+    toBlobWithTimeout(pdfInstance)
+      .then((fallbackBlob) => {
+        if (completedRef.current) {
+          return;
+        }
+        try {
+          downloadPdfExport({
+            blob: fallbackBlob,
+            filename: payload.filename,
+          });
+          onSuccess?.();
+        } catch (downloadError) {
+          onError?.(normalizePdfExportError(downloadError));
+        } finally {
+          finalizeOnce();
+        }
+      })
+      .catch(completeWithError);
   }, [
-    onDone,
+    completeWithError,
+    finalizeOnce,
     onError,
     onSuccess,
     payload.document,
     payload.filename,
-    requestKey,
   ]);
+
+  useEffect(() => {
+    const softTimeoutId = globalThis.setTimeout(() => {
+      softTimeoutElapsedRef.current = true;
+      const state = providerStateRef.current;
+      if (!state.loading && !state.blob && !state.url && !state.error) {
+        runFallback();
+      }
+    }, FALLBACK_TIMEOUT_MS);
+
+    const hardTimeoutId = globalThis.setTimeout(() => {
+      const state = providerStateRef.current;
+      if (!state.blob && !state.url && !state.error) {
+        runFallback();
+      }
+    }, FALLBACK_HARD_TIMEOUT_MS);
+
+    return () => {
+      globalThis.clearTimeout(softTimeoutId);
+      globalThis.clearTimeout(hardTimeoutId);
+    };
+  }, [requestKey, runFallback]);
+
+  useEffect(() => {
+    if (
+      completedRef.current ||
+      fallbackStartedRef.current ||
+      !softTimeoutElapsedRef.current ||
+      loading ||
+      blob ||
+      url ||
+      error
+    ) {
+      return;
+    }
+
+    runFallback();
+  }, [blob, error, loading, runFallback, url]);
 
   useEffect(() => {
     if (completedRef.current || !error) {
@@ -152,10 +196,9 @@ const PdfExportDownloadHandler = ({
     } catch (downloadError) {
       onError?.(normalizePdfExportError(downloadError));
     } finally {
-      completedRef.current = true;
-      onDone();
+      finalizeOnce();
     }
-  }, [blob, loading, onDone, onError, onSuccess, payload.filename, url]);
+  }, [blob, finalizeOnce, loading, onError, onSuccess, payload.filename, url]);
 
   return null;
 };

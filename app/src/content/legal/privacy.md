@@ -1,6 +1,6 @@
 # Datenschutzerklärung (Deutschland)
 
-_Stand: 2. Februar 2026_
+_Stand: 3. März 2026_
 
 Diese Datenschutzerklärung informiert über Art, Umfang und Zweck der Verarbeitung personenbezogener Daten beim Aufruf und bei der Nutzung der Webanwendung **mecfs-paperwork**. Sie gilt für die öffentlich bereitgestellte Instanz unter **mecfs-paperwork.de**. Wenn du die Software selbst hostest, bist du für die datenschutzrechtliche Einordnung und die Einhaltung der Pflichten verantwortlich.
 
@@ -24,7 +24,7 @@ E-Mail: info **(at)** mecfs-paperwork.de
 
 - **Kein Backend:** Der Betrieb erfolgt als statische Webanwendung (SPA) auf einem NGINX-Webserver.
 - **Keine Telemetrie/Analytics:** Es werden keine Tracking- oder Analyse-Dienste eingebunden.
-- **Keine Cookies durch die Anwendung:** Die Anwendung setzt keine Cookies zu Tracking- oder Marketingzwecken.
+- **Nur technisches Cookie:** Die Anwendung nutzt ein technisch notwendiges Cookie zur Speicherung eines lokalen Entschlüsselungs-Schlüssels für die lokale Datenablage. Es wird nicht zu Tracking- oder Marketingzwecken verwendet.
 - **Offline-first/PWA:** Die Anwendung kann statische Inhalte für den Offline-Betrieb lokal zwischenspeichern (Cache Storage / Service Worker). Es werden dabei keine Inhalte an den Betreiber übertragen.
 
 ## 3. Hosting und Server-Logfiles
@@ -64,7 +64,7 @@ Zur Datenminimierung und Pseudonymisierung werden u. a. folgende Maßnahmen besc
 
 - IP-Adressen werden nur **vollständig** erfasst, soweit dies für den ordnungsgemäßen Serverbetrieb erforderlich ist (z. B. Abwehr von Angriffen / Missbrauchserkennung).
 - Logdateien mit **unverfälschten** IP-Adressen werden automatisiert **rotiert**.
-- Bei länger gespeicherten IP-Adressen (z. B. für Statistikzwecke) erfolgt eine **Unkenntlichmachung** (Maskierung) eines Oktetts (IPv4) bzw. eines Hextetts (IPv6), sodass keine eindeutige Zuordnung zu einer Person mehr möglich ist.
+- Bei ausnahmsweise länger gespeicherten IP-Adressen (z. B. zur Abwehr oder Aufklärung konkreter Angriffe) erfolgt eine **Unkenntlichmachung** (Maskierung) eines Oktetts (IPv4) bzw. eines Hextetts (IPv6), sobald der Zweck dies zulässt.
 
 ### 3.6 Verarbeitung innerhalb EU/EWR und Drittlandtransfers
 
@@ -124,21 +124,32 @@ Die lokal gespeicherten Daten verbleiben in deinem Browser, bis du sie löschst 
 
 ### 4.4 Sicherheit des lokalen Browser‑Speichers
 
-- Keine automatische Verschlüsselung: Der lokale Browser-Speicher, den die Anwendung verwendet (z. B. IndexedDB, LocalStorage, Cache Storage), wird vom Browser bzw. von der Anwendung nicht automatisch verschlüsselt. Daten liegen daher standardmäßig unverschlüsselt auf deinem Gerät.
+- Standardmäßige lokale Verschlüsselung: Entwurfsdaten, Snapshots und gespeicherte Profildaten werden standardmäßig vor der Ablage in IndexedDB lokal verschlüsselt. Der dafür benötigte Schlüssel wird als technisches Cookie im Browserprofil gespeichert. Ohne diesen Schlüssel können bestehende lokale Daten nicht entschlüsselt werden.
 
-- Risiken: Personen mit Zugang zum gleichen Betriebssystem-Benutzerkonto oder Browserprofil, gestohlene oder kompromittierte Geräte, lokale Backups oder synchronisierte Browserprofile können auf diese Daten zugreifen.
+- Risiken: Personen mit Zugang zum gleichen Betriebssystem-Benutzerkonto oder Browserprofil, gestohlene oder kompromittierte Geräte, lokale Backups oder synchronisierte Browserprofile können weiterhin auf lokal gespeicherte Daten oder Schlüsselmaterial zugreifen.
 
 - Empfohlene Minderungsschritte:
   - Verwende ein separates Betriebssystem-Benutzerkonto oder ein eigenes Browserprofil für sensible Daten.
   - Schütze dein Gerät durch Betriebssystem-Verschlüsselung (z. B. BitLocker, FileVault), ein sicheres Passwort/PIN und automatische Sperre.
+  - Lösche Browser-Cookies und lokale Website-Daten nur bewusst: Wenn der Schlüssel-Cookie fehlt, sind lokal vorhandene verschlüsselte Daten nicht mehr lesbar.
   - Lösche nicht mehr benötigte lokale Daten über die App‑Funktion „Alle lokalen Daten löschen“ (sofern vorhanden) oder über die Browser‑Einstellungen (Website‑Daten löschen).
   - Vermeide die Nutzung gemeinsam genutzter Geräte/Browserprofile für sensible Gesundheitsdaten; exportiere bei Bedarf Daten und verwahre sie an einem sicheren Ort.
 
+### 4.5 Technisch notwendiges Cookie (Details)
+
+Für die lokale Entschlüsselung nutzt die Anwendung ein technisch notwendiges Cookie mit folgenden Parametern:
+
+- **Name:** `mecfs-paperwork.storage-key`
+- **Zweck:** Speicherung des lokalen Schlüssels für die Entschlüsselung bereits lokal abgelegter Daten (z. B. Entwürfe/Snapshots in IndexedDB)
+- **Speicherdauer:** bis zu 12 Monate (`Max-Age=31536000`), sofern nicht vorher durch Browser- oder App-Aktionen gelöscht
+- **Attribute:** `Path=/`, `SameSite=Strict`, `Secure` bei HTTPS-Verbindungen
+- **Kein Tracking:** Das Cookie dient ausschließlich der lokalen technischen Funktion und wird nicht für Reichweitenmessung, Profiling oder Marketing genutzt.
+
 ---
 
-## 5. Import/Export (JSON/DOCX)
+## 5. Import/Export (JSON/DOCX/PDF)
 
-Die Anwendung kann Inhalte in Dateien exportieren (z. B. JSON oder DOCX). Die Datei-Erstellung erfolgt **client-seitig** in deinem Browser. Der Betreiber erhält dabei **keine** Kopie.
+Die Anwendung kann Inhalte in Dateien exportieren (z. B. JSON, DOCX oder PDF). Die Datei-Erstellung erfolgt **client-seitig** in deinem Browser. Der Betreiber erhält dabei **keine** Kopie.
 
 **Hinweis:** Wenn du exportierte Dateien weitergibst oder in Cloud-Speichern ablegst, liegt die weitere Verarbeitung in deiner Verantwortung.
 
@@ -178,6 +189,7 @@ Die Anwendung kann Links zu externen Seiten enthalten (z. B. Repository auf GitH
 ## 9. Cookies, Tracking und Drittinhalte
 
 - Es werden **keine Tracking-Cookies** gesetzt.
+- Es wird ausschließlich ein **technisch notwendiges** Cookie für lokale Entschlüsselung verwendet (siehe Abschnitt 4.5).
 - Es werden **keine Analyse- oder Telemetrie-Dienste** eingebunden.
 - Es werden keine externen Schriftarten, CDNs oder Third-Party-Skripte aus der Anwendung heraus geladen (sofern du die App unverändert betreibst).
 

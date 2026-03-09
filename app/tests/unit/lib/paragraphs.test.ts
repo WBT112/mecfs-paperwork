@@ -74,6 +74,26 @@ describe('normalizeParagraphText', () => {
     });
   });
 
+  it('returns an empty payload when marker-only content compacts to no paragraphs', () => {
+    const result = normalizeParagraphText(
+      `${PARAGRAPH_MARKER}   ${PARAGRAPH_MARKER}`,
+    );
+
+    expect(result).toEqual({
+      paragraphs: [],
+      text: '',
+    });
+  });
+
+  it('returns an empty payload for whitespace-only input', () => {
+    const result = normalizeParagraphText(' \n\n   \r\n ');
+
+    expect(result).toEqual({
+      paragraphs: [],
+      text: '',
+    });
+  });
+
   it('handles CRLF around line break markers', () => {
     const result = normalizeParagraphText(`A\r\n${LINE_BREAK_MARKER}\r\nB`);
 

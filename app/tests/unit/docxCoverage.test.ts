@@ -14,6 +14,16 @@ const CONTACTS_NAME_PATH = 'contacts.0.name';
 const MEDICATIONS_PATH = 'medications';
 const RECORD_ID = 'record-1';
 const DOCX_LITERAL_DELIMITER = '§§DOCX_XML§§';
+const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
+const DOCTOR_LETTER_FORMPACK_ID = 'doctor-letter';
+const CASE_PARAGRAPHS_PATH = 'decision.caseParagraphs';
+const SINGLE_PARAGRAPH_TEXT = 'Only one paragraph';
+const DOCX_ASSETS_NOT_CONFIGURED_ERROR =
+  'DOCX export assets are not configured for this formpack.';
+const NO_DOCX_PACK_ID = 'pack-no-docx';
+const ARZT_PARAGRAPHS_PATH = 'arzt.paragraphs';
+const PART2_CONTENT = 'Part 2 content';
+const PACK_WORKER_SUCCESS_ID = 'pack-worker-success';
 
 type FetchHandler = {
   ok: boolean;
@@ -44,6 +54,8 @@ vi.mock('../../src/formpacks/loader', () => ({
 }));
 
 import {
+  applyDocxExportDefaults,
+  buildDocxExportFilename,
   createDocxReport,
   downloadDocxExport,
   exportDocx,
@@ -70,6 +82,7 @@ const buildFetchMock = (handlers: Record<string, FetchHandler | undefined>) =>
 
 describe('docx export coverage', () => {
   beforeEach(() => {
+    mocks.createReportMock.mockClear();
     mocks.createReportMock.mockResolvedValue(new Uint8Array([9, 9, 9]));
     mocks.getRecordMock.mockResolvedValue({
       id: RECORD_ID,
@@ -265,13 +278,11 @@ describe('docx export coverage', () => {
     const mapping = {
       version: 1,
       fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
-      loops: [
-        { var: 'decision.caseParagraphs', path: 'decision.caseParagraphs' },
-      ],
+      loops: [{ var: CASE_PARAGRAPHS_PATH, path: CASE_PARAGRAPHS_PATH }],
     };
 
     const fetchMock = buildFetchMock({
-      [`${FORMPACKS_BASE}/doctor-letter/${DOCX_MAPPING_PATH}`]: {
+      [`${FORMPACKS_BASE}/${DOCTOR_LETTER_FORMPACK_ID}/${DOCX_MAPPING_PATH}`]: {
         ok: true,
         json: async () => mapping,
       },
@@ -295,7 +306,7 @@ describe('docx export coverage', () => {
     };
 
     const context = await mapDocumentDataToTemplate(
-      'doctor-letter',
+      DOCTOR_LETTER_FORMPACK_ID,
       'a4',
       documentData,
       {
@@ -307,6 +318,99 @@ describe('docx export coverage', () => {
     expect(context).toMatchObject({
       decision: {
         caseParagraphs: ['One', '', 'Two'],
+      },
+    });
+  });
+
+  it('keeps a single doctor-letter case paragraph without inserting blank lines', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+      loops: [{ var: CASE_PARAGRAPHS_PATH, path: CASE_PARAGRAPHS_PATH }],
+    };
+
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/${DOCTOR_LETTER_FORMPACK_ID}/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: { name: PERSON_NAME, birthDate: null },
+      contacts: [],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+      decision: {
+        caseId: 3,
+        caseText: SINGLE_PARAGRAPH_TEXT,
+        caseParagraphs: [SINGLE_PARAGRAPH_TEXT],
+      },
+    };
+
+    const context = await mapDocumentDataToTemplate(
+      DOCTOR_LETTER_FORMPACK_ID,
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      },
+    );
+
+    expect(context).toMatchObject({
+      decision: {
+        caseParagraphs: [SINGLE_PARAGRAPH_TEXT],
+      },
+    });
+  });
+
+  it('ignores non-string i18n prefix values in mapping payloads', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+      i18n: {
+        prefix: 123,
+      },
+    };
+
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-i18n-prefix/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: { name: PERSON_NAME, birthDate: null },
+      contacts: [],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+    };
+
+    const context = await mapDocumentDataToTemplate(
+      'pack-i18n-prefix',
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      },
+    );
+
+    expect(context).toMatchObject({
+      person: {
+        name: PERSON_NAME,
       },
     });
   });
@@ -412,6 +516,36 @@ describe('docx export coverage', () => {
     ).rejects.toThrow('Unable to parse DOCX mapping JSON');
   });
 
+  it('surfaces non-Error mapping parse failures', async () => {
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-h-string/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => {
+          throw 'bad-json-string';
+        },
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: { name: null, birthDate: null },
+      contacts: [],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+    };
+
+    await expect(
+      mapDocumentDataToTemplate('pack-h-string', 'a4', documentData, {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      }),
+    ).rejects.toThrow('bad-json-string');
+  });
+
   it('rejects malformed mapping payload variants', async () => {
     const payloads = [
       'not-an-object',
@@ -448,6 +582,39 @@ describe('docx export coverage', () => {
         }),
       ).rejects.toThrow();
     }
+  });
+
+  it('rejects mappings without at least one valid field entry', async () => {
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-invalid-fields/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => ({
+          version: 1,
+          fields: [{ var: '', path: '' }],
+        }),
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: { name: null, birthDate: null },
+      contacts: [],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+    };
+
+    await expect(
+      mapDocumentDataToTemplate('pack-invalid-fields', 'a4', documentData, {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      }),
+    ).rejects.toThrow(
+      'DOCX mapping payload must contain at least one valid field mapping.',
+    );
   });
 
   it('caches mappings and schema lookups', async () => {
@@ -623,6 +790,184 @@ describe('docx export coverage', () => {
     expect(context).toMatchObject({ contacts: { invalid: '' } });
   });
 
+  it('handles non-record and item-segment uiSchema traversal branches', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: 'contacts.name', path: 'contacts.name' }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-ui-branches/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: { name: PERSON_NAME, birthDate: null },
+      contacts: [{ name: 'Sam', phone: null, relation: null }],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+    };
+
+    await mapDocumentDataToTemplate('pack-ui-branches', 'a4', documentData, {
+      mappingPath: DOCX_MAPPING_PATH,
+      locale: LOCALE_EN,
+      uiSchema: 'invalid' as unknown as UiSchema,
+    });
+
+    const context = await mapDocumentDataToTemplate(
+      'pack-ui-branches',
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+        uiSchema: {
+          contacts: {
+            items: {
+              name: { 'ui:title': 'Contact Name' },
+            },
+          },
+        },
+      },
+    );
+
+    expect(context).toMatchObject({ contacts: { name: '' } });
+  });
+
+  it('resolves common-prefixed enum labels through app namespace', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: 'translationField', path: 'translationField' }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-common-docx/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const schema: RJSFSchema = {
+      type: 'object',
+      properties: {
+        translationField: {
+          type: 'string',
+          enum: ['done'],
+        },
+      },
+    };
+    const uiSchema: UiSchema = {
+      translationField: {
+        'ui:enumNames': ['common.close'],
+      },
+    };
+
+    const documentData = {
+      diagnosisParagraphs: [],
+      person: { name: PERSON_NAME, birthDate: null },
+      contacts: [],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+      translationField: 'done',
+    } as unknown as DocumentModel;
+
+    const context = await mapDocumentDataToTemplate(
+      'pack-common-docx',
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+        schema,
+        uiSchema,
+      },
+    );
+
+    expect(context).toMatchObject({ translationField: 'Close' });
+  });
+
+  it('reuses override schema and uiSchema caches across repeated calls', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-override-repeat/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const schema: RJSFSchema = {
+      type: 'object',
+      properties: {
+        person: {
+          type: 'object',
+          properties: { name: { type: 'string' } },
+        },
+      },
+    };
+    const uiSchema: UiSchema = {
+      person: { name: { 'ui:title': 'Name' } },
+    };
+
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: { name: PERSON_NAME, birthDate: null },
+      contacts: [],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+    };
+
+    const schemaCallsBefore = mocks.loadFormpackSchemaMock.mock.calls.length;
+    const uiSchemaCallsBefore =
+      mocks.loadFormpackUiSchemaMock.mock.calls.length;
+
+    await mapDocumentDataToTemplate(
+      'pack-override-repeat',
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+        schema,
+        uiSchema,
+      },
+    );
+    await mapDocumentDataToTemplate(
+      'pack-override-repeat',
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+        schema,
+        uiSchema,
+      },
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(mocks.loadFormpackSchemaMock.mock.calls.length).toBe(
+      schemaCallsBefore,
+    );
+    expect(mocks.loadFormpackUiSchemaMock.mock.calls.length).toBe(
+      uiSchemaCallsBefore,
+    );
+  });
+
   it('normalizes primitive loop entries', async () => {
     const mapping = {
       version: 1,
@@ -706,6 +1051,30 @@ describe('docx export coverage', () => {
 
     expect(blob.type).toContain('application');
     expect(mocks.createReportMock).toHaveBeenCalled();
+
+    const createReportArgs = mocks.createReportMock.mock.calls.at(-1)?.[0] as {
+      additionalJsContext?: {
+        t: ((key: string) => string) & Record<string, unknown>;
+        formatDate: (value: string | null | undefined) => string;
+        formatPhone: (value: string | null | undefined) => string;
+      };
+    };
+    expect(createReportArgs.additionalJsContext?.t('missing.key')).toBe(
+      'missing.key',
+    );
+    expect(createReportArgs.additionalJsContext?.formatDate(null)).toBe('');
+    expect(
+      createReportArgs.additionalJsContext?.formatDate('not-a-valid-date'),
+    ).toBe('not-a-valid-date');
+    expect(
+      createReportArgs.additionalJsContext?.formatDate('2024-01-02T00:00:00Z'),
+    ).not.toBe('2024-01-02T00:00:00Z');
+    expect(createReportArgs.additionalJsContext?.formatPhone(undefined)).toBe(
+      '',
+    );
+    expect(
+      createReportArgs.additionalJsContext?.formatPhone('  +49 123  '),
+    ).toBe('+49 123');
   });
 
   it('handles export errors for missing templates and records', async () => {
@@ -745,6 +1114,883 @@ describe('docx export coverage', () => {
         manifest,
       }),
     ).rejects.toThrow('Unable to load the requested record.');
+
+    await expect(
+      exportDocx({
+        formpackId: 'pack-e',
+        recordId: RECORD_ID,
+        variant: 'a4',
+        locale: LOCALE_EN,
+        manifest: {
+          ...manifest,
+          docx: undefined,
+        },
+      }),
+    ).rejects.toThrow(DOCX_ASSETS_NOT_CONFIGURED_ERROR);
+  });
+
+  it('loads manifest when none is provided and rejects missing docx assets', async () => {
+    mocks.loadFormpackManifestMock.mockResolvedValueOnce({
+      id: NO_DOCX_PACK_ID,
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+    });
+
+    await expect(
+      exportDocx({
+        formpackId: NO_DOCX_PACK_ID,
+        recordId: RECORD_ID,
+        variant: 'a4',
+        locale: LOCALE_EN,
+      }),
+    ).rejects.toThrow(DOCX_ASSETS_NOT_CONFIGURED_ERROR);
+
+    expect(mocks.loadFormpackManifestMock).toHaveBeenCalledWith(
+      NO_DOCX_PACK_ID,
+    );
+  });
+
+  it('falls back to default filename segments when sanitized parts are empty', () => {
+    const filename = buildDocxExportFilename(
+      '///',
+      '' as unknown as 'a4' | 'wallet',
+      new Date('2026-02-28T00:00:00.000Z'),
+    );
+
+    expect(filename).toBe('document-export-20260228.docx');
+  });
+
+  it('uses default mapping path and normalizes undefined schema loaders to null', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-default-options/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    mocks.loadFormpackSchemaMock.mockResolvedValueOnce(undefined);
+    mocks.loadFormpackUiSchemaMock.mockResolvedValueOnce(undefined);
+
+    const documentData: DocumentModel = {
+      diagnosisParagraphs: [],
+      person: { name: PERSON_NAME, birthDate: null },
+      contacts: [],
+      diagnoses: { formatted: null },
+      symptoms: null,
+      medications: [],
+      allergies: null,
+      doctor: { name: null, phone: null },
+    };
+
+    const context = await mapDocumentDataToTemplate(
+      'pack-default-options',
+      'a4',
+      documentData,
+    );
+
+    expect(context).toMatchObject({
+      person: { name: PERSON_NAME },
+    });
+  });
+
+  it('falls back to deep-clone logic when structuredClone is unavailable', () => {
+    const originalStructuredClone = globalThis.structuredClone;
+    vi.stubGlobal('structuredClone', undefined);
+    try {
+      const normalized = applyDocxExportDefaults(
+        {
+          patient: { firstName: '' },
+          doctor: { name: '' },
+        },
+        DOCTOR_LETTER_FORMPACK_ID,
+        'de',
+      );
+
+      expect(
+        typeof (normalized as { patient: { firstName: string } }).patient
+          .firstName,
+      ).toBe('string');
+    } finally {
+      vi.stubGlobal('structuredClone', originalStructuredClone);
+    }
+  });
+
+  it('skips offlabel liability fallback when source paragraphs are missing or blank', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: ARZT_PARAGRAPHS_PATH, path: ARZT_PARAGRAPHS_PATH }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/${OFFLABEL_FORMPACK_ID}/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const withMissingLiability = {
+      arzt: {
+        paragraphs: ['Part 2'],
+        liabilityParagraphs: 'invalid',
+      },
+    } as unknown as DocumentModel;
+    const withBlankLiability = {
+      arzt: {
+        paragraphs: ['Part 2'],
+        liabilityParagraphs: ['   ', ''],
+      },
+    } as unknown as DocumentModel;
+
+    const contextWithoutArray = await mapDocumentDataToTemplate(
+      OFFLABEL_FORMPACK_ID,
+      'a4',
+      withMissingLiability,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      },
+    );
+    const contextWithBlankValues = await mapDocumentDataToTemplate(
+      OFFLABEL_FORMPACK_ID,
+      'a4',
+      withBlankLiability,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      },
+    );
+
+    expect(contextWithoutArray).toMatchObject({
+      arzt: { paragraphs: 'Part 2' },
+    });
+    expect(contextWithBlankValues).toMatchObject({
+      arzt: { paragraphs: 'Part 2' },
+    });
+  });
+
+  it('embeds offlabel liability fallback with heading and paragraph separator', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: ARZT_PARAGRAPHS_PATH, path: ARZT_PARAGRAPHS_PATH }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/${OFFLABEL_FORMPACK_ID}/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData = {
+      arzt: {
+        paragraphs: [PART2_CONTENT],
+        liabilityHeading: '  Liability Heading  ',
+        liabilityParagraphs: ['Liability one', 'Liability two'],
+      },
+    } as unknown as DocumentModel;
+
+    const context = await mapDocumentDataToTemplate(
+      OFFLABEL_FORMPACK_ID,
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      },
+    );
+
+    expect(context).toMatchObject({
+      arzt: {
+        paragraphs: `${PART2_CONTENT}, Liability Heading, Liability one, Liability two`,
+      },
+    });
+  });
+
+  it('embeds offlabel liability fallback when paragraph and heading values are invalid', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: ARZT_PARAGRAPHS_PATH, path: ARZT_PARAGRAPHS_PATH }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/${OFFLABEL_FORMPACK_ID}/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData = {
+      arzt: {
+        paragraphs: 'not-an-array',
+        liabilityHeading: 123,
+        liabilityParagraphs: [42, '  Valid liability  '],
+      },
+    } as unknown as DocumentModel;
+
+    const context = await mapDocumentDataToTemplate(
+      OFFLABEL_FORMPACK_ID,
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      },
+    );
+
+    expect(context).toMatchObject({
+      arzt: {
+        paragraphs: 'Valid liability',
+      },
+    });
+  });
+
+  it('coerces non-string part2 paragraph entries while embedding liability fallback', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: ARZT_PARAGRAPHS_PATH, path: ARZT_PARAGRAPHS_PATH }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/${OFFLABEL_FORMPACK_ID}/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const documentData = {
+      arzt: {
+        paragraphs: [PART2_CONTENT, 17],
+        liabilityHeading: '',
+        liabilityParagraphs: ['Liability content'],
+      },
+    } as unknown as DocumentModel;
+
+    const context = await mapDocumentDataToTemplate(
+      OFFLABEL_FORMPACK_ID,
+      'a4',
+      documentData,
+      {
+        mappingPath: DOCX_MAPPING_PATH,
+        locale: LOCALE_EN,
+      },
+    );
+
+    const paragraphs = (context as { arzt?: { paragraphs?: unknown } }).arzt
+      ?.paragraphs;
+    expect(typeof paragraphs).toBe('string');
+    expect(String(paragraphs)).toContain(PART2_CONTENT);
+    expect(String(paragraphs)).toContain('Liability content');
+  });
+
+  it('falls back to in-thread rendering when worker serialization fails', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const templateBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-worker-fallback/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-worker-fallback/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => templateBuffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const workerListeners = new Map<string, (event: MessageEvent) => void>();
+    class MockWorker {
+      addEventListener(type: string, listener: (event: MessageEvent) => void) {
+        workerListeners.set(type, listener);
+      }
+
+      postMessage(payload: { id: number }) {
+        workerListeners.get('message')?.({
+          data: { id: payload.id + 1, result: new Uint8Array([0]) },
+        } as MessageEvent);
+        workerListeners.get('messageerror')?.({
+          data: { id: payload.id },
+        } as MessageEvent);
+      }
+    }
+    vi.stubGlobal('Worker', MockWorker);
+
+    const manifest: FormpackManifest = {
+      id: 'pack-worker-fallback',
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: { a4: TEMPLATE_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const blob = await exportDocx({
+      formpackId: 'pack-worker-fallback',
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+
+    expect(blob.type).toContain('application');
+    expect(mocks.createReportMock).toHaveBeenCalled();
+  });
+
+  it('uses worker responses directly and reuses the worker instance', async () => {
+    vi.resetModules();
+    const { exportDocx: exportDocxFromFreshModule } =
+      await import('../../src/export/docx');
+
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const templateBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/${PACK_WORKER_SUCCESS_ID}/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/${PACK_WORKER_SUCCESS_ID}/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => templateBuffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const workerListeners = new Map<string, (event: MessageEvent) => void>();
+    const workerConstructed = vi.fn();
+
+    class MockWorker {
+      constructor() {
+        workerConstructed();
+      }
+
+      addEventListener(type: string, listener: (event: MessageEvent) => void) {
+        workerListeners.set(type, listener);
+      }
+
+      postMessage(payload: { id: number }) {
+        workerListeners.get('message')?.({
+          data: { id: payload.id, result: new Uint8Array([5, 6, 7]) },
+        } as MessageEvent);
+      }
+    }
+
+    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+
+    const manifest: FormpackManifest = {
+      id: PACK_WORKER_SUCCESS_ID,
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: { a4: TEMPLATE_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const firstBlob = await exportDocxFromFreshModule({
+      formpackId: PACK_WORKER_SUCCESS_ID,
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+    const secondBlob = await exportDocxFromFreshModule({
+      formpackId: PACK_WORKER_SUCCESS_ID,
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+
+    expect(firstBlob.type).toContain('application');
+    expect(secondBlob.type).toContain('application');
+    expect(workerConstructed).toHaveBeenCalledTimes(1);
+    expect(mocks.createReportMock).not.toHaveBeenCalled();
+  });
+
+  it('falls back when worker posts an error event', async () => {
+    vi.resetModules();
+    const { exportDocx: exportDocxFromFreshModule } =
+      await import('../../src/export/docx');
+
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const templateBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-worker-error/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-worker-error/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => templateBuffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const workerListeners = new Map<string, (event: MessageEvent) => void>();
+    class MockWorker {
+      addEventListener(type: string, listener: (event: MessageEvent) => void) {
+        workerListeners.set(type, listener);
+      }
+
+      postMessage() {
+        workerListeners.get('error')?.({} as MessageEvent);
+      }
+    }
+
+    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+
+    const manifest: FormpackManifest = {
+      id: 'pack-worker-error',
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: { a4: TEMPLATE_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const blob = await exportDocxFromFreshModule({
+      formpackId: 'pack-worker-error',
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+
+    expect(blob.type).toContain('application');
+    expect(mocks.createReportMock).toHaveBeenCalled();
+  });
+
+  it('falls back when worker returns an explicit error payload', async () => {
+    vi.resetModules();
+    const { exportDocx: exportDocxFromFreshModule } =
+      await import('../../src/export/docx');
+
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const templateBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-worker-message-error/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-worker-message-error/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => templateBuffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const workerListeners = new Map<string, (event: MessageEvent) => void>();
+    class MockWorker {
+      addEventListener(type: string, listener: (event: MessageEvent) => void) {
+        workerListeners.set(type, listener);
+      }
+
+      postMessage(payload: { id: number }) {
+        workerListeners.get('message')?.({
+          data: { id: payload.id, error: 'worker-side render error' },
+        } as MessageEvent);
+      }
+    }
+
+    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+
+    const manifest: FormpackManifest = {
+      id: 'pack-worker-message-error',
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: { a4: TEMPLATE_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const blob = await exportDocxFromFreshModule({
+      formpackId: 'pack-worker-message-error',
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+
+    expect(blob.type).toContain('application');
+    expect(mocks.createReportMock).toHaveBeenCalled();
+  });
+
+  it('falls back when worker postMessage throws', async () => {
+    vi.resetModules();
+    const { exportDocx: exportDocxFromFreshModule } =
+      await import('../../src/export/docx');
+
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const templateBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-worker-throw/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-worker-throw/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => templateBuffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    class MockWorker {
+      addEventListener() {
+        return undefined;
+      }
+
+      postMessage() {
+        throw new Error('cannot serialize worker payload');
+      }
+    }
+
+    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+
+    const manifest: FormpackManifest = {
+      id: 'pack-worker-throw',
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: { a4: TEMPLATE_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const blob = await exportDocxFromFreshModule({
+      formpackId: 'pack-worker-throw',
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+
+    expect(blob.type).toContain('application');
+    expect(mocks.createReportMock).toHaveBeenCalled();
+  });
+
+  it('falls back when worker postMessage throws a non-Error value', async () => {
+    vi.resetModules();
+    const { exportDocx: exportDocxFromFreshModule } =
+      await import('../../src/export/docx');
+
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const templateBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-worker-throw-string/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-worker-throw-string/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => templateBuffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    class MockWorker {
+      addEventListener() {
+        return undefined;
+      }
+
+      postMessage() {
+        throw 'unserializable';
+      }
+    }
+
+    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+
+    const manifest: FormpackManifest = {
+      id: 'pack-worker-throw-string',
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: { a4: TEMPLATE_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const blob = await exportDocxFromFreshModule({
+      formpackId: 'pack-worker-throw-string',
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+
+    expect(blob.type).toContain('application');
+    expect(mocks.createReportMock).toHaveBeenCalled();
+  });
+
+  it('uses an empty t-context when mapping overrides t with a non-record value', async () => {
+    vi.resetModules();
+    const { exportDocx: exportDocxFromFreshModule } =
+      await import('../../src/export/docx');
+
+    const mapping = {
+      version: 1,
+      fields: [{ var: 't', path: PERSON_NAME_PATH }],
+    };
+    const templateBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-nonrecord-t/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-nonrecord-t/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => templateBuffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    class MockWorker {
+      addEventListener() {
+        return undefined;
+      }
+
+      postMessage() {
+        throw new Error('force fallback');
+      }
+    }
+
+    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+
+    const manifest: FormpackManifest = {
+      id: 'pack-nonrecord-t',
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: { a4: TEMPLATE_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const blob = await exportDocxFromFreshModule({
+      formpackId: 'pack-nonrecord-t',
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+
+    expect(blob.type).toContain('application');
+    expect(mocks.createReportMock).toHaveBeenCalled();
+  });
+
+  it('falls back when worker emits a messageerror event in a fresh module instance', async () => {
+    vi.resetModules();
+    const { exportDocx: exportDocxFromFreshModule } =
+      await import('../../src/export/docx');
+
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const templateBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-worker-messageerror/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-worker-messageerror/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => templateBuffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const workerListeners = new Map<string, (event: MessageEvent) => void>();
+    class MockWorker {
+      addEventListener(type: string, listener: (event: MessageEvent) => void) {
+        workerListeners.set(type, listener);
+      }
+
+      postMessage(payload: { id: number }) {
+        workerListeners.get('messageerror')?.({
+          data: { id: payload.id },
+        } as MessageEvent);
+      }
+    }
+
+    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+
+    const manifest: FormpackManifest = {
+      id: 'pack-worker-messageerror',
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: { a4: TEMPLATE_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const blob = await exportDocxFromFreshModule({
+      formpackId: 'pack-worker-messageerror',
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+
+    expect(blob.type).toContain('application');
+    expect(mocks.createReportMock).toHaveBeenCalled();
+  });
+
+  it('ignores worker messages for unknown request ids before handling the current request', async () => {
+    vi.resetModules();
+    const { exportDocx: exportDocxFromFreshModule } =
+      await import('../../src/export/docx');
+
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const templateBuffer = new Uint8Array([1, 2, 3]).buffer;
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-worker-unknown-id/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-worker-unknown-id/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => templateBuffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const workerListeners = new Map<string, (event: MessageEvent) => void>();
+    class MockWorker {
+      addEventListener(type: string, listener: (event: MessageEvent) => void) {
+        workerListeners.set(type, listener);
+      }
+
+      postMessage(payload: { id: number }) {
+        workerListeners.get('message')?.({
+          data: { id: payload.id + 99, result: new Uint8Array([0]) },
+        } as MessageEvent);
+        workerListeners.get('message')?.({
+          data: { id: payload.id, result: new Uint8Array([1, 2, 3]) },
+        } as MessageEvent);
+      }
+    }
+
+    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+
+    const manifest: FormpackManifest = {
+      id: 'pack-worker-unknown-id',
+      version: '1.0.0',
+      titleKey: 'title',
+      descriptionKey: 'desc',
+      defaultLocale: LOCALE_EN,
+      locales: [LOCALE_EN],
+      exports: ['docx'],
+      visibility: 'public',
+      docx: {
+        templates: { a4: TEMPLATE_A4_PATH },
+        mapping: DOCX_MAPPING_PATH,
+      },
+    };
+
+    const blob = await exportDocxFromFreshModule({
+      formpackId: 'pack-worker-unknown-id',
+      recordId: RECORD_ID,
+      variant: 'a4',
+      locale: LOCALE_EN,
+      manifest,
+      schema: { type: 'object', properties: {} },
+      uiSchema: {},
+    });
+
+    expect(blob.type).toContain('application');
+    expect(mocks.createReportMock).not.toHaveBeenCalled();
   });
 
   it('preloads docx assets and caches schema placeholders', async () => {
@@ -777,6 +2023,66 @@ describe('docx export coverage', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it('preloads only mapping and a4 template when no wallet template exists', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-no-wallet/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-no-wallet/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => new Uint8Array([3]).buffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    await preloadDocxAssets('pack-no-wallet', {
+      templates: {
+        a4: TEMPLATE_A4_PATH,
+      },
+      mapping: DOCX_MAPPING_PATH,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('reuses preload placeholders and asset caches on repeated preload calls', async () => {
+    const mapping = {
+      version: 1,
+      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
+    };
+    const fetchMock = buildFetchMock({
+      [`${FORMPACKS_BASE}/pack-preload-repeat/${DOCX_MAPPING_PATH}`]: {
+        ok: true,
+        json: async () => mapping,
+      },
+      [`${FORMPACKS_BASE}/pack-preload-repeat/${TEMPLATE_A4_PATH}`]: {
+        ok: true,
+        arrayBuffer: async () => new Uint8Array([7]).buffer,
+      },
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    await preloadDocxAssets('pack-preload-repeat', {
+      templates: {
+        a4: TEMPLATE_A4_PATH,
+      },
+      mapping: DOCX_MAPPING_PATH,
+    });
+    await preloadDocxAssets('pack-preload-repeat', {
+      templates: {
+        a4: TEMPLATE_A4_PATH,
+      },
+      mapping: DOCX_MAPPING_PATH,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
   it('throws when template fetch fails', async () => {

@@ -42,10 +42,23 @@ describe('pdf document type helpers', () => {
 
   it('validates document blocks', () => {
     expect(isDocumentBlock(validModel.sections[0].blocks[0])).toBe(true);
+    expect(isDocumentBlock(null)).toBe(false);
     expect(isDocumentBlock({ type: 'paragraph', text: 123 })).toBe(false);
     expect(isDocumentBlock({ type: 'lineBreaks', lines: 'nope' })).toBe(false);
     expect(isDocumentBlock({ type: 'kvTable', rows: [['Key']] })).toBe(false);
     expect(isDocumentBlock({ type: 'bullets', items: [1, 2] })).toBe(false);
+  });
+
+  it('returns false for block types admitted by the runtime list but unsupported by the switch', () => {
+    const mutableTypes = DOCUMENT_BLOCK_TYPES as unknown as string[];
+    mutableTypes.push('legacy');
+
+    try {
+      expect(isDocumentBlockType('legacy')).toBe(true);
+      expect(isDocumentBlock({ type: 'legacy' })).toBe(false);
+    } finally {
+      mutableTypes.pop();
+    }
   });
 
   it('validates document sections', () => {
@@ -59,6 +72,7 @@ describe('pdf document type helpers', () => {
 
   it('validates document models', () => {
     expect(isDocumentModel(validModel)).toBe(true);
+    expect(isDocumentModel(null)).toBe(false);
     expect(isDocumentModel({ title: 42, sections: [] })).toBe(false);
     expect(isDocumentModel({ sections: [], meta: 'nope' })).toBe(false);
     expect(

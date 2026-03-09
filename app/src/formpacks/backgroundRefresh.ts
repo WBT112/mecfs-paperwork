@@ -120,11 +120,17 @@ const refreshSingleFormpack = async (formpackId: string): Promise<boolean> => {
     hash: signature.hash,
   });
 
-  return true;
+  // NOTE: First-time metadata bootstrap should not invalidate runtime caches.
+  // The active page load already fetched current assets for this revision.
+  return existing !== null;
 };
 
 let activeRefreshRun: Promise<FormpackRefreshResult> | null = null;
 
+/**
+ * Executes a single best-effort refresh cycle across all registered formpacks.
+ * Returns changed ids and never leaves stale in-memory refresh state behind.
+ */
 export const runFormpackBackgroundRefresh =
   async (): Promise<FormpackRefreshResult> => {
     if (activeRefreshRun) {
@@ -177,21 +183,34 @@ export const runFormpackBackgroundRefresh =
   };
 
 const runSafely = async (onUpdated?: (formpackIds: string[]) => void) => {
+  let result: Awaited<ReturnType<typeof runFormpackBackgroundRefresh>>;
   try {
-    const result = await runFormpackBackgroundRefresh();
-    if (result.updatedIds.length > 0) {
-      onUpdated?.(result.updatedIds);
-      globalThis.dispatchEvent(
-        new CustomEvent(FORMPACKS_UPDATED_EVENT, {
-          detail: { formpackIds: result.updatedIds },
-        }),
-      );
-    }
-  } catch {
-    // NOTE: Refresh errors must never break app startup.
+    result = await runFormpackBackgroundRefresh();
+  } catch (err) {
+    // Refresh errors must never break app startup or background scheduling.
+    // Log the error category for debugging without exposing user data.
+    console.error(
+      '[backgroundRefresh] Refresh failed:',
+      err instanceof Error ? err.message : String(err),
+    );
+    return;
   }
+  if (result.updatedIds.length === 0) {
+    return;
+  }
+
+  onUpdated?.(result.updatedIds);
+  globalThis.dispatchEvent(
+    new CustomEvent(FORMPACKS_UPDATED_EVENT, {
+      detail: { formpackIds: result.updatedIds },
+    }),
+  );
 };
 
+/**
+ * Starts periodic background refresh and returns a stop function.
+ * Intended to run once at app startup.
+ */
 export const startFormpackBackgroundRefresh = (
   options: FormpackRefreshOptions = {},
 ): (() => void) => {
@@ -201,10 +220,6 @@ export const startFormpackBackgroundRefresh = (
   let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   const scheduleInitialRun = () => {
-    if (stopped) {
-      return;
-    }
-
     const scheduler = globalThis as unknown as IdleScheduler;
 
     if (typeof scheduler.requestIdleCallback === 'function') {

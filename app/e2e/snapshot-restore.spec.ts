@@ -100,7 +100,7 @@ const openSnapshotsSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
     await expect(nameInput).toBeVisible();
@@ -209,14 +209,18 @@ for (const locale of locales) {
       const recordId = await waitForActiveRecordId(page);
       await waitForRecordById(page, recordId, { timeout: POLL_TIMEOUT });
 
-      const nameInput = page.locator('#root_person_name');
+      const nameInput = page.locator('#root_person_firstName');
       await expect(nameInput).toBeVisible({ timeout: POLL_TIMEOUT });
       // 1) Set initial value and wait for persistence
-      await fillTextInputStable(page, '#root_person_name', 'Alice Snapshot');
+      await fillTextInputStable(
+        page,
+        '#root_person_firstName',
+        'Alice Snapshot',
+      );
       await waitForRecordField(
         page,
         recordId,
-        (record) => record?.data?.person?.name ?? '',
+        (record) => record?.data?.person?.firstName ?? '',
         'Alice Snapshot',
         { timeout: POLL_TIMEOUT },
       );
@@ -229,11 +233,15 @@ for (const locale of locales) {
       await createSnapshot(page);
 
       // 3) Change value and persist
-      await fillTextInputStable(page, '#root_person_name', 'Bob After Change');
+      await fillTextInputStable(
+        page,
+        '#root_person_firstName',
+        'Bob After Change',
+      );
       await waitForRecordField(
         page,
         recordId,
-        (record) => record?.data?.person?.name ?? '',
+        (record) => record?.data?.person?.firstName ?? '',
         'Bob After Change',
         { timeout: POLL_TIMEOUT },
       );
@@ -247,7 +255,7 @@ for (const locale of locales) {
       await waitForRecordField(
         page,
         recordId,
-        (record) => record?.data?.person?.name ?? '',
+        (record) => record?.data?.person?.firstName ?? '',
         'Alice Snapshot',
         { timeout: POLL_TIMEOUT },
       );
@@ -267,7 +275,7 @@ for (const locale of locales) {
       await waitForRecordField(
         page,
         recordId,
-        (record) => record?.data?.person?.name ?? '',
+        (record) => record?.data?.person?.firstName ?? '',
         'Alice Snapshot',
         { timeout: POLL_TIMEOUT },
       );

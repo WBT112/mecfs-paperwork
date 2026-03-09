@@ -8,11 +8,7 @@ import {
   View,
 } from '@react-pdf/renderer';
 import type { DocumentBlock, DocumentModel } from '../types';
-import {
-  ensurePdfFontsRegistered,
-  PDF_FONT_FAMILY_SANS,
-  PDF_FONT_FAMILY_SERIF,
-} from '../fonts';
+import { ensurePdfFontsRegistered, PDF_FONT_FAMILY_SANS } from '../fonts';
 
 import annex1SchemaImg from '../../../assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg';
 import annex2GuideExcerptImg from '../../../assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png';
@@ -39,24 +35,6 @@ type DoctorLetterTemplateData = {
   };
   dateLabel?: string;
   formattedDate?: string;
-  labels?: {
-    patient?: {
-      firstName?: string;
-      lastName?: string;
-      streetAndNumber?: string;
-      postalCode?: string;
-      city?: string;
-    };
-    doctor?: {
-      practice?: string;
-      title?: string;
-      gender?: string;
-      name?: string;
-      streetAndNumber?: string;
-      postalCode?: string;
-      city?: string;
-    };
-  };
 };
 
 const styles = StyleSheet.create({
@@ -89,7 +67,7 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   subject: {
-    fontFamily: PDF_FONT_FAMILY_SERIF,
+    fontFamily: PDF_FONT_FAMILY_SANS,
     fontSize: 11,
     fontWeight: 700,
     marginBottom: 12,
@@ -98,7 +76,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   attachmentsTitle: {
-    fontFamily: PDF_FONT_FAMILY_SERIF,
+    fontFamily: PDF_FONT_FAMILY_SANS,
     fontWeight: 700,
     fontSize: 10,
     marginBottom: 4,
@@ -110,12 +88,21 @@ const styles = StyleSheet.create({
   paragraph: {
     marginBottom: 10,
   },
+  singleBlankLine: {
+    minHeight: 12,
+  },
+  threeBlankLines: {
+    minHeight: 36,
+  },
+  greetingLine: {
+    marginBottom: 0,
+  },
   signatureName: {
-    marginTop: 16,
+    marginTop: 0,
   },
   // Annex pages
   annexTitle: {
-    fontFamily: PDF_FONT_FAMILY_SERIF,
+    fontFamily: PDF_FONT_FAMILY_SANS,
     fontWeight: 700,
     textDecoration: 'underline',
     marginBottom: 12,
@@ -290,26 +277,11 @@ const TEMPLATE_COPY: Record<'de' | 'en', TemplateCopy> = {
 const getTemplateCopy = (locale: string): TemplateCopy =>
   locale.toLowerCase().startsWith('de') ? TEMPLATE_COPY.de : TEMPLATE_COPY.en;
 
+const normalizePdfLanguage = (locale: string): string =>
+  locale.toLowerCase().startsWith('de') ? 'de-DE' : 'en-US';
+
 const getSectionById = (model: DocumentModel, id: string) =>
   model.sections.find((section) => section.id === id);
-
-const isKvTableBlock = (
-  block: DocumentBlock,
-): block is Extract<DocumentBlock, { type: 'kvTable' }> =>
-  block.type === 'kvTable';
-
-const getKvTableRows = (model: DocumentModel, id: string) => {
-  const section = getSectionById(model, id);
-  const kvBlock = section?.blocks.find((block) => isKvTableBlock(block));
-  return kvBlock ? kvBlock.rows : [];
-};
-
-const getRowValue = (rows: Array<[string, string]>, label?: string) => {
-  if (!label) {
-    return undefined;
-  }
-  return rows.find((row) => row[0] === label)?.[1];
-};
 
 const formatPatientLine = (patient: {
   firstName?: string;
@@ -344,8 +316,7 @@ const buildSalutation = (
   },
   locale: string,
 ) => {
-  const title = doctor.title && doctor.title !== 'kein' ? doctor.title : '';
-  const full = [title, doctor.name].filter(Boolean).join(' ').trim();
+  const full = formatDoctorNameLine(doctor);
   const isGerman = locale.toLowerCase().startsWith('de');
   const suffix = full ? ` ${full}` : '';
 
@@ -358,40 +329,6 @@ const buildSalutation = (
   return isGerman ? 'Sehr geehrte Damen und Herren,' : 'Dear Sir or Madam,';
 };
 
-const resolvePatient = (
-  rows: Array<[string, string]>,
-  labelMap: DoctorLetterTemplateData['labels'] | undefined,
-  fallback: DoctorLetterTemplateData['patient'] | undefined,
-) => ({
-  firstName:
-    getRowValue(rows, labelMap?.patient?.firstName) ?? fallback?.firstName,
-  lastName:
-    getRowValue(rows, labelMap?.patient?.lastName) ?? fallback?.lastName,
-  streetAndNumber:
-    getRowValue(rows, labelMap?.patient?.streetAndNumber) ??
-    fallback?.streetAndNumber,
-  postalCode:
-    getRowValue(rows, labelMap?.patient?.postalCode) ?? fallback?.postalCode,
-  city: getRowValue(rows, labelMap?.patient?.city) ?? fallback?.city,
-});
-
-const resolveDoctor = (
-  rows: Array<[string, string]>,
-  labelMap: DoctorLetterTemplateData['labels'] | undefined,
-  fallback: DoctorLetterTemplateData['doctor'] | undefined,
-) => ({
-  practice: getRowValue(rows, labelMap?.doctor?.practice) ?? fallback?.practice,
-  title: getRowValue(rows, labelMap?.doctor?.title) ?? fallback?.title,
-  gender: getRowValue(rows, labelMap?.doctor?.gender) ?? fallback?.gender,
-  name: getRowValue(rows, labelMap?.doctor?.name) ?? fallback?.name,
-  streetAndNumber:
-    getRowValue(rows, labelMap?.doctor?.streetAndNumber) ??
-    fallback?.streetAndNumber,
-  postalCode:
-    getRowValue(rows, labelMap?.doctor?.postalCode) ?? fallback?.postalCode,
-  city: getRowValue(rows, labelMap?.doctor?.city) ?? fallback?.city,
-});
-
 export const DoctorLetterPdfDocument = ({
   model,
 }: {
@@ -402,7 +339,9 @@ export const DoctorLetterPdfDocument = ({
     | undefined;
 
   const locale = model.meta?.locale ?? 'de-DE';
+  const pdfLanguage = normalizePdfLanguage(locale);
   const copy = getTemplateCopy(locale);
+  const title = model.title?.trim() || copy.subject;
   const formattedDate =
     templateData?.formattedDate ??
     new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(
@@ -412,17 +351,11 @@ export const DoctorLetterPdfDocument = ({
     templateData?.dateLabel ??
     (locale.toLowerCase().startsWith('de') ? 'Datum' : 'Date');
 
-  const patientRows = getKvTableRows(model, 'patient');
-  const doctorRows = getKvTableRows(model, 'doctor');
-  const labelMap = templateData?.labels;
-
-  const patient = resolvePatient(patientRows, labelMap, templateData?.patient);
-  const doctor = resolveDoctor(doctorRows, labelMap, templateData?.doctor);
-
-  const resolvedDate =
-    getRowValue(doctorRows, resolvedDateLabel) ?? formattedDate;
+  const patient = templateData?.patient ?? {};
+  const doctor = templateData?.doctor ?? {};
 
   const pLine = formatPatientLine(patient);
+  const doctorNameLine = formatDoctorNameLine(doctor);
   const salutation = buildSalutation(doctor, locale);
   const signatureName = [patient.firstName, patient.lastName]
     .filter(Boolean)
@@ -438,18 +371,24 @@ export const DoctorLetterPdfDocument = ({
     .trim();
 
   return (
-    <Document>
+    <Document
+      title={title}
+      subject={copy.subject}
+      creator="mecfs-paperwork"
+      producer="@react-pdf/renderer"
+      keywords="ME/CFS, PDF, Doctor Letter"
+      language={pdfLanguage}
+      pageMode="useOutlines"
+    >
       {/* Page 1: Letter + attachments */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} bookmark={copy.subject}>
         {pLine ? <Text style={styles.headerPatientLine}>{pLine}</Text> : null}
         <View style={styles.hr} />
 
         <View style={styles.headerBlock}>
           <View style={styles.addressBlock}>
             {doctor.practice ? <Text>{doctor.practice}</Text> : null}
-            {formatDoctorNameLine(doctor) ? (
-              <Text>{formatDoctorNameLine(doctor)}</Text>
-            ) : null}
+            {doctorNameLine ? <Text>{doctorNameLine}</Text> : null}
             {doctor.streetAndNumber ? (
               <Text>{doctor.streetAndNumber}</Text>
             ) : null}
@@ -457,7 +396,7 @@ export const DoctorLetterPdfDocument = ({
           </View>
 
           <Text style={styles.dateLine}>
-            {resolvedDateLabel}: {resolvedDate}
+            {resolvedDateLabel}: {formattedDate}
           </Text>
         </View>
 
@@ -480,10 +419,15 @@ export const DoctorLetterPdfDocument = ({
           </Text>
         ))}
 
-        <Text style={styles.paragraph}>{copy.closingGreeting}</Text>
+        <View style={styles.singleBlankLine} />
+        <Text style={[styles.paragraph, styles.greetingLine]}>
+          {copy.closingGreeting}
+        </Text>
+        <View style={styles.threeBlankLines} />
 
         <Text style={styles.signatureName}>{signatureName}</Text>
 
+        <View style={styles.singleBlankLine} />
         <View style={styles.attachmentsBlock}>
           <Text style={styles.attachmentsTitle}>{copy.attachmentsTitle}</Text>
           {copy.attachmentsItems.map((item) => (
@@ -495,7 +439,7 @@ export const DoctorLetterPdfDocument = ({
       </Page>
 
       {/* Page 2: Annex 1 */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} bookmark={copy.annex1.title}>
         <Text style={styles.annexTitle}>{copy.annex1.title}</Text>
 
         <Image
@@ -514,7 +458,7 @@ export const DoctorLetterPdfDocument = ({
       </Page>
 
       {/* Page 3: Annex 2 */}
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} bookmark={copy.annex2.title}>
         <Text style={styles.annexTitle}>{copy.annex2.title}</Text>
         <Text style={styles.annexSubTitle}>{copy.annex2.subtitle}</Text>
         <Text style={styles.annexCaption}>

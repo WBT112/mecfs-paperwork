@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import TopbarActions from '../../src/components/TopbarActions';
@@ -7,11 +7,12 @@ import { TestRouter } from '../setup/testRouter';
 const SHARE_LINK_LABEL = 'Share formpack link';
 const SHARE_FALLBACK_TITLE = 'Share this link';
 const TEST_FORMPACK_PATH = '/formpacks/alpha';
+const FEEDBACK_LINK_LABEL = 'Send feedback via email';
 
 const translations: Record<string, string> = {
   topbarActionsLabel: 'Top bar actions',
   feedbackAction: 'Feedback',
-  feedbackAriaLabel: 'Send feedback via email',
+  feedbackAriaLabel: FEEDBACK_LINK_LABEL,
   feedbackSubject: 'mecfs-paperwork feedback: {{context}}',
   feedbackIntro: 'Please do not include any patient or health data.',
   feedbackDebugLabel: 'Debug info',
@@ -35,6 +36,11 @@ const translations: Record<string, string> = {
   'common.close': 'Close',
 };
 
+const versionMockState = vi.hoisted(() => ({
+  appVersion: 'abc1234',
+  buildDate: 'Feb 7, 2026, 12:00 PM',
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, string>) => {
@@ -48,8 +54,10 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('../../src/lib/version', () => ({
-  APP_VERSION: 'abc1234',
-  formatBuildDate: () => 'Feb 7, 2026, 12:00 PM',
+  get APP_VERSION() {
+    return versionMockState.appVersion;
+  },
+  formatBuildDate: () => versionMockState.buildDate,
 }));
 
 const renderActions = (route: string) =>
@@ -60,7 +68,11 @@ const renderActions = (route: string) =>
   );
 
 afterEach(() => {
+  versionMockState.appVersion = 'abc1234';
+  versionMockState.buildDate = 'Feb 7, 2026, 12:00 PM';
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
   Object.defineProperty(navigator, 'share', {
     value: undefined,
     configurable: true,
@@ -72,7 +84,7 @@ describe('TopbarActions', () => {
     renderActions(TEST_FORMPACK_PATH);
 
     const feedbackLink = screen.getByRole('link', {
-      name: 'Send feedback via email',
+      name: FEEDBACK_LINK_LABEL,
     });
     const href = feedbackLink.getAttribute('href');
     expect(href).toContain('mailto:info@mecfs-paperwork.de?');
@@ -147,6 +159,19 @@ describe('TopbarActions', () => {
     expect(screen.getByText('Copy the link below to share it.')).toBeVisible();
   });
 
+  it('shows manual copy fallback when clipboard API is unavailable', async () => {
+    vi.stubGlobal('navigator', {
+      share: undefined,
+    } as unknown as Navigator);
+
+    renderActions(TEST_FORMPACK_PATH);
+    fireEvent.click(screen.getByRole('button', { name: SHARE_LINK_LABEL }));
+
+    await waitFor(() => {
+      expect(screen.getByText(SHARE_FALLBACK_TITLE)).toBeVisible();
+    });
+  });
+
   it('closes the share fallback dialog and selects the URL on focus', async () => {
     Object.defineProperty(navigator, 'share', {
       value: undefined,
@@ -173,5 +198,66 @@ describe('TopbarActions', () => {
     expect(screen.queryByText(SHARE_FALLBACK_TITLE)).not.toBeInTheDocument();
 
     selectSpy.mockRestore();
+  });
+
+  it('closes the share fallback with Escape and restores focus', async () => {
+    Object.defineProperty(navigator, 'share', {
+      value: undefined,
+      configurable: true,
+    });
+    vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(
+      new Error('no clipboard'),
+    );
+
+    const user = userEvent.setup();
+    renderActions(TEST_FORMPACK_PATH);
+    const shareButton = screen.getByRole('button', { name: SHARE_LINK_LABEL });
+
+    await user.click(shareButton);
+    expect(screen.getByText(SHARE_FALLBACK_TITLE)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus();
+    });
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByText(SHARE_FALLBACK_TITLE)).not.toBeInTheDocument();
+    expect(shareButton).toHaveFocus();
+  });
+
+  it('uses custom feedback email and commit from environment when provided', () => {
+    vi.stubEnv('VITE_FEEDBACK_EMAIL', 'support@example.org');
+    vi.stubEnv('VITE_APP_COMMIT', 'commit-sha');
+
+    renderActions(TEST_FORMPACK_PATH);
+
+    const feedbackLink = screen.getByRole('link', {
+      name: FEEDBACK_LINK_LABEL,
+    });
+    const href = feedbackLink.getAttribute('href') ?? '';
+
+    expect(href).toContain('mailto:support@example.org?');
+
+    const query = href.split('?')[1] ?? '';
+    const params = new URLSearchParams(query);
+    expect(params.get('body')).toContain('Commit: commit-sha');
+  });
+
+  it('uses unknown fallbacks for app version and build date and omits them from feedback fields', () => {
+    versionMockState.appVersion = 'unknown';
+    versionMockState.buildDate = 'unknown';
+
+    renderActions(TEST_FORMPACK_PATH);
+
+    const feedbackLink = screen.getByRole('link', {
+      name: FEEDBACK_LINK_LABEL,
+    });
+    const href = feedbackLink.getAttribute('href') ?? '';
+    const query = href.split('?')[1] ?? '';
+    const params = new URLSearchParams(query);
+    const body = params.get('body') ?? '';
+
+    expect(body).not.toContain('App version:');
+    expect(body).not.toContain('Build date:');
   });
 });

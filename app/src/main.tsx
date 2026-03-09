@@ -8,6 +8,26 @@ import { applyTheme } from './theme/applyTheme';
 import { getInitialThemeMode } from './theme/theme';
 import { registerServiceWorker } from './pwa/register';
 import { installGlobalErrorListeners } from './lib/diagnostics';
+import { readLocalStorage } from './lib/safeLocalStorage';
+import {
+  USER_TIMING_NAMES,
+  startUserTiming,
+} from './lib/performance/userTiming';
+
+const LOCALE_STORAGE_KEY = 'mecfs-paperwork.locale';
+
+const applyInitialDocumentLocale = (): void => {
+  let locale = 'de';
+  const storedLocale = readLocalStorage(LOCALE_STORAGE_KEY);
+  if (storedLocale === 'de' || storedLocale === 'en') {
+    locale = storedLocale;
+  }
+
+  document.documentElement.lang = locale;
+  document.documentElement.dir = 'ltr';
+};
+
+applyInitialDocumentLocale();
 
 const rootElement = document.getElementById('root');
 
@@ -18,6 +38,7 @@ if (!rootElement) {
 applyTheme(getInitialThemeMode());
 registerServiceWorker();
 installGlobalErrorListeners();
+const appBootTiming = startUserTiming(USER_TIMING_NAMES.appBootTotal);
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
@@ -28,3 +49,13 @@ ReactDOM.createRoot(rootElement).render(
     </BrowserRouter>
   </React.StrictMode>,
 );
+
+if (typeof globalThis.requestAnimationFrame === 'function') {
+  globalThis.requestAnimationFrame(() => {
+    appBootTiming.end();
+  });
+} else {
+  globalThis.setTimeout(() => {
+    appBootTiming.end();
+  }, 0);
+}

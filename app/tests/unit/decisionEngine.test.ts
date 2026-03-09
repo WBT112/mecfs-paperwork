@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import {
   resolveDecisionTree,
@@ -215,6 +216,16 @@ describe('resolveDecisionTree', () => {
       expect(result.caseKey).toBe(CASE_0_KEY);
     });
 
+    it('resolves to Case 0 when Q1=true, Q2=true but Q3 is missing', () => {
+      const answers: DecisionAnswers = {
+        q1: 'yes',
+        q2: 'yes',
+      };
+      const result = resolveDecisionTree(answers);
+      expect(result.caseId).toBe(0);
+      expect(result.caseKey).toBe(CASE_0_KEY);
+    });
+
     it('resolves to Case 0 when Q1=true, Q2=true, Q3=true but no Q4 provided', () => {
       const answers: DecisionAnswers = {
         q1: 'yes',
@@ -242,6 +253,25 @@ describe('resolveDecisionTree', () => {
         q1: 'no',
         q6: 'yes',
         q7: 'yes',
+      };
+      const result = resolveDecisionTree(answers);
+      expect(result.caseId).toBe(0);
+      expect(result.caseKey).toBe(CASE_0_KEY);
+    });
+
+    it('resolves to Case 0 when Q1=false but Q6 is missing', () => {
+      const answers: DecisionAnswers = {
+        q1: 'no',
+      };
+      const result = resolveDecisionTree(answers);
+      expect(result.caseId).toBe(0);
+      expect(result.caseKey).toBe(CASE_0_KEY);
+    });
+
+    it('resolves to Case 0 when Q1=false, Q6=true but Q7 is missing', () => {
+      const answers: DecisionAnswers = {
+        q1: 'no',
+        q6: 'yes',
       };
       const result = resolveDecisionTree(answers);
       expect(result.caseId).toBe(0);

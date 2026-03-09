@@ -11,7 +11,7 @@ If you are running an older commit, please update and re-test before reporting.
 This project maintains two security/privacy artifacts to keep decisions reviewable and aligned with the actual codebase:
 
 - `docs/security/threat-model.md` — high-level threat model (scope, assets, trust boundaries, attack surface).  
-- `docs/security/security-review.md` — monthly security review log (high-level changes, supply-chain status, top risks, next steps).
+- `docs/security/security-review.md` — regular security review log (high-level changes, supply-chain status, top risks, next steps).
 
 Notes:
 - These documents intentionally avoid exploit-style details (no PoCs, no step-by-step attack instructions).

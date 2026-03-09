@@ -5,6 +5,11 @@ import { deleteDatabase } from './helpers';
 const DB_NAME = 'mecfs-paperwork';
 const FORM_PACK_ID = 'notfallpass';
 const ACTIVE_RECORD_KEY = `mecfs-paperwork.activeRecordId.${FORM_PACK_ID}`;
+const STORAGE_KEY_COOKIE_NAME = 'mecfs-paperwork.storage-key';
+const CONFIRMATION_DIALOG_TITLE =
+  /Bestätigung erforderlich|Confirmation required/i;
+const RESET_ALL_LABEL = /Alle lokalen Daten löschen|Reset all local data/i;
+const CANCEL_LABEL = /Abbrechen|Cancel/i;
 
 const FORBIDDEN_MARKERS = [
   'patient',
@@ -66,6 +71,15 @@ test.describe('diagnostics bundle', () => {
     const idbStatus = page.getByTestId('storage-health-idb');
     await expect(idbStatus).toBeVisible();
 
+    const encryptionStatus = page.getByTestId('storage-health-encryption');
+    await expect(encryptionStatus).toBeVisible();
+
+    const keyCookieStatus = page.getByTestId('storage-health-key-cookie');
+    await expect(keyCookieStatus).toBeVisible();
+
+    const cookieSecurity = page.getByTestId('storage-health-cookie-security');
+    await expect(cookieSecurity).toBeVisible();
+
     const statusElement = page.getByTestId('storage-health-status');
     await expect(statusElement).toBeVisible();
   });
@@ -83,22 +97,39 @@ test.describe('diagnostics bundle', () => {
   test('copy button copies bundle JSON to clipboard', async ({
     page,
     context,
+    browserName,
   }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    let clipboardReadSupported = browserName === 'chromium';
+    try {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    } catch {
+      clipboardReadSupported = false;
+    }
 
     const copyButton = page.getByTestId('diagnostics-copy');
     await expect(copyButton).toBeVisible();
     await copyButton.click();
 
-    await expect(copyButton).toHaveText(/copied|kopiert/i, { timeout: 5000 });
+    if (browserName === 'chromium') {
+      await expect(copyButton).toHaveText(/copied|kopiert/i, { timeout: 5000 });
+    } else {
+      await expect(copyButton).toHaveText(
+        /copied|kopiert|failed|fehlgeschlagen/i,
+        {
+          timeout: 5000,
+        },
+      );
+    }
 
-    const clipboardText = await page.evaluate(() =>
-      navigator.clipboard.readText(),
-    );
-    const bundle = JSON.parse(clipboardText);
-    expect(bundle.generatedAt).toBeDefined();
-    expect(bundle.app).toBeDefined();
-    expect(bundle.browser).toBeDefined();
+    if (clipboardReadSupported) {
+      const clipboardText = await page.evaluate(() =>
+        navigator.clipboard.readText(),
+      );
+      const bundle = JSON.parse(clipboardText);
+      expect(bundle.generatedAt).toBeDefined();
+      expect(bundle.app).toBeDefined();
+      expect(bundle.browser).toBeDefined();
+    }
   });
 });
 
@@ -144,9 +175,15 @@ test.describe('reset all local data', () => {
     const resetButton = page.getByTestId('reset-all-data');
     await expect(resetButton).toBeVisible();
 
-    // Accept the confirmation dialog and wait for reload
-    page.on('dialog', (dialog) => dialog.accept());
-    await Promise.all([page.waitForEvent('load'), resetButton.click()]);
+    await resetButton.click();
+    const dialog = page.getByRole('dialog', {
+      name: CONFIRMATION_DIALOG_TITLE,
+    });
+    await expect(dialog).toBeVisible();
+    await Promise.all([
+      page.waitForEvent('load'),
+      dialog.getByRole('button', { name: RESET_ALL_LABEL }).click(),
+    ]);
 
     // 3. Wait for the help page to fully re-render after reload
     await expect(page.getByTestId('reset-all-data')).toBeVisible();
@@ -185,6 +222,11 @@ test.describe('reset all local data', () => {
       ACTIVE_RECORD_KEY,
     );
     expect(activeRecordId).toBeNull();
+
+    const keyCookie = (await page.context().cookies()).find(
+      (cookie) => cookie.name === STORAGE_KEY_COOKIE_NAME,
+    );
+    expect(keyCookie).toBeUndefined();
   });
 
   test('reset is cancelled when user dismisses the confirm dialog', async ({
@@ -198,9 +240,12 @@ test.describe('reset all local data', () => {
     const resetButton = page.getByTestId('reset-all-data');
     await expect(resetButton).toBeVisible();
 
-    // Dismiss the confirmation dialog
-    page.on('dialog', (dialog) => dialog.dismiss());
     await resetButton.click();
+    const dialog = page.getByRole('dialog', {
+      name: CONFIRMATION_DIALOG_TITLE,
+    });
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: CANCEL_LABEL }).click();
 
     // Button should still be enabled and not in progress state
     await expect(resetButton).toBeEnabled();

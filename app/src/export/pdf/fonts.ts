@@ -38,10 +38,18 @@ const liberationSerifBoldItalic = new URL(
 ).toString();
 
 let fontsRegistered = false;
+let hyphenationRegistered = false;
 
 export const ensurePdfFontsRegistered = () => {
   if (fontsRegistered) {
     return;
+  }
+
+  if (!hyphenationRegistered) {
+    // Disable automatic hyphenation to avoid incorrect word splits
+    // in German text (e.g. "nachvol-lziehbar").
+    Font.registerHyphenationCallback((word) => [word]);
+    hyphenationRegistered = true;
   }
 
   Font.register({

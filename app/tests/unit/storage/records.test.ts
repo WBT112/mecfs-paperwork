@@ -6,6 +6,10 @@ import {
   listRecords,
   updateRecord,
 } from '../../../src/storage/records';
+import {
+  decodeStoredData,
+  encryptStorageData,
+} from '../../../src/storage/atRestEncryption';
 import { openStorage } from '../../../src/storage/db';
 
 const TEST_FORMPACK_ID = 'test-formpack';
@@ -13,6 +17,17 @@ const INITIAL_TIMESTAMP = '2023-01-01T00:00:00.000Z';
 
 vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
+}));
+
+vi.mock('../../../src/storage/atRestEncryption', () => ({
+  encryptStorageData: vi.fn(
+    async (data: Record<string, unknown>) =>
+      data as unknown as Awaited<ReturnType<typeof encryptStorageData>>,
+  ),
+  decodeStoredData: vi.fn(async (value: unknown) => ({
+    data: value as Record<string, unknown>,
+    shouldReencrypt: false,
+  })),
 }));
 
 describe('createRecord', () => {
@@ -50,15 +65,24 @@ describe('createRecord', () => {
 describe('getRecord', () => {
   const mockDb = {
     get: vi.fn(),
+    put: vi.fn(),
   };
 
   beforeEach(() => {
     vi.mocked(openStorage).mockResolvedValue(mockDb as any);
     mockDb.get.mockClear();
+    mockDb.put.mockReset();
+    mockDb.put.mockResolvedValue(undefined);
+    mockDb.put.mockClear();
+    vi.mocked(decodeStoredData).mockReset();
+    vi.mocked(decodeStoredData).mockImplementation(async (value: unknown) => ({
+      data: value as Record<string, unknown>,
+      shouldReencrypt: false,
+    }));
   });
 
   it('should return the record if found', async () => {
-    const record = { id: '1', name: 'Test' };
+    const record = { id: '1', data: { name: 'Test' }, name: 'Test' };
     mockDb.get.mockResolvedValue(record);
     const result = await getRecord('1');
     expect(result).toEqual(record);
@@ -70,16 +94,43 @@ describe('getRecord', () => {
     const result = await getRecord('1');
     expect(result).toBeNull();
   });
+
+  it('re-encrypts migrated payloads in the background', async () => {
+    const migratedData = { id: '1', migrated: true };
+    mockDb.get.mockResolvedValue({ id: '1', data: { legacy: true } });
+    vi.mocked(decodeStoredData).mockResolvedValueOnce({
+      data: migratedData,
+      shouldReencrypt: true,
+    });
+
+    const result = await getRecord('1');
+
+    expect(result).toEqual({
+      id: '1',
+      data: migratedData,
+    });
+    expect(mockDb.put).toHaveBeenCalledWith('records', {
+      id: '1',
+      data: migratedData,
+    });
+  });
 });
 
 describe('listRecords', () => {
   const mockDb = {
     getAllFromIndex: vi.fn(),
+    put: vi.fn(),
   };
 
   beforeEach(() => {
     vi.mocked(openStorage).mockResolvedValue(mockDb as any);
     mockDb.getAllFromIndex.mockClear();
+    mockDb.put.mockClear();
+    vi.mocked(decodeStoredData).mockReset();
+    vi.mocked(decodeStoredData).mockImplementation(async (value: unknown) => ({
+      data: value as Record<string, unknown>,
+      shouldReencrypt: false,
+    }));
   });
 
   it('should return a sorted list of records', async () => {
@@ -102,18 +153,48 @@ describe('listRecords', () => {
     const result = await listRecords(TEST_FORMPACK_ID);
     expect(result).toEqual([]);
   });
+
+  it('re-encrypts migrated list entries and suppresses background write failures', async () => {
+    const migratedData = { decrypted: 'value' };
+    const entry = {
+      id: '1',
+      data: { legacy: true },
+      updatedAt: INITIAL_TIMESTAMP,
+    };
+    mockDb.getAllFromIndex.mockResolvedValue([entry]);
+    vi.mocked(decodeStoredData).mockResolvedValueOnce({
+      data: migratedData,
+      shouldReencrypt: true,
+    });
+    vi.mocked(encryptStorageData).mockResolvedValueOnce(
+      migratedData as unknown as Awaited<ReturnType<typeof encryptStorageData>>,
+    );
+    mockDb.put.mockRejectedValueOnce(new Error('background write failed'));
+
+    const result = await listRecords(TEST_FORMPACK_ID);
+
+    expect(result).toEqual([
+      {
+        ...entry,
+        data: migratedData,
+      },
+    ]);
+    expect(mockDb.put).toHaveBeenCalledWith('records', {
+      ...entry,
+      data: migratedData,
+    });
+  });
 });
 
 describe('updateRecord', () => {
-  const mockDb = {
-    get: vi.fn(),
-    put: vi.fn(),
-  };
+  let mockDb: { get: Mock; put: Mock };
 
   beforeEach(() => {
+    mockDb = {
+      get: vi.fn(),
+      put: vi.fn(),
+    };
     vi.mocked(openStorage).mockResolvedValue(mockDb as any);
-    mockDb.get.mockClear();
-    mockDb.put.mockClear();
   });
 
   it('should update the record and timestamps', async () => {
@@ -139,6 +220,7 @@ describe('updateRecord', () => {
     expect(result?.locale).toBe(updates.locale);
     expect(result?.createdAt).toBe(existingRecord.createdAt);
     expect(result?.updatedAt).not.toBe(existingRecord.updatedAt);
+    expect(mockDb.get).toHaveBeenCalledWith('records', '1');
     expect(mockDb.put).toHaveBeenCalledWith('records', result);
   });
 
@@ -147,6 +229,24 @@ describe('updateRecord', () => {
     const result = await updateRecord('1', {});
     expect(result).toBeNull();
     expect(mockDb.put).not.toHaveBeenCalled();
+  });
+
+  it('should keep existing data and locale when partial updates omit them', async () => {
+    const existingRecord = {
+      id: '1',
+      data: { a: 1 },
+      title: 'Old Title',
+      locale: 'en',
+      createdAt: INITIAL_TIMESTAMP,
+      updatedAt: INITIAL_TIMESTAMP,
+    };
+    mockDb.get.mockResolvedValue(existingRecord);
+
+    const result = await updateRecord('1', { title: 'Renamed' });
+
+    expect(result?.title).toBe('Renamed');
+    expect(result?.data).toEqual(existingRecord.data);
+    expect(result?.locale).toBe(existingRecord.locale);
   });
 });
 

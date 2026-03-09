@@ -27,7 +27,8 @@ const normalizePollOptions = (options?: PollOptions) => {
 
 export type StoredRecordData = {
   person?: {
-    name?: string;
+    firstName?: string;
+    lastName?: string;
     birthDate?: string;
     [key: string]: unknown;
   };
@@ -69,6 +70,87 @@ const readRecordById = async (
 ): Promise<StoredRecord | null> => {
   return page.evaluate(
     async ({ dbName, storeName, recordId }) => {
+      const STORAGE_KEY_COOKIE_NAME = 'mecfs-paperwork.storage-key';
+      const STORAGE_ENCRYPTION_KIND = 'mecfs-paperwork-idb-encrypted';
+      const AES_GCM_TAG_LENGTH = 128;
+
+      const isRecord = (value: unknown): value is Record<string, unknown> =>
+        typeof value === 'object' && value !== null && !Array.isArray(value);
+
+      const fromBase64Url = (value: string): Uint8Array => {
+        const base64 = value
+          .replaceAll('-', '+')
+          .replaceAll('_', '/')
+          .padEnd(Math.ceil(value.length / 4) * 4, '=');
+        const binary = atob(base64);
+        return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      };
+
+      const getCookieValue = (name: string): string | null => {
+        const cookies = document.cookie ? document.cookie.split('; ') : [];
+        const prefix = `${name}=`;
+        for (const cookie of cookies) {
+          if (cookie.startsWith(prefix)) {
+            return cookie.slice(prefix.length);
+          }
+        }
+        return null;
+      };
+
+      const decodeRecordData = async (
+        data: unknown,
+      ): Promise<Record<string, unknown> | undefined | null> => {
+        if (data === undefined) {
+          return undefined;
+        }
+
+        if (!isRecord(data)) {
+          return null;
+        }
+
+        if (data.kind !== STORAGE_ENCRYPTION_KIND) {
+          return data;
+        }
+
+        const keyCookie = getCookieValue(STORAGE_KEY_COOKIE_NAME);
+        if (!keyCookie) {
+          return null;
+        }
+
+        try {
+          const key = await crypto.subtle.importKey(
+            'raw',
+            fromBase64Url(keyCookie),
+            { name: 'AES-GCM' },
+            false,
+            ['decrypt'],
+          );
+          const iv =
+            typeof data.iv === 'string' ? fromBase64Url(data.iv) : null;
+          const ciphertext =
+            typeof data.ciphertext === 'string'
+              ? fromBase64Url(data.ciphertext)
+              : null;
+          if (!iv || !ciphertext) {
+            return null;
+          }
+
+          const plainBuffer = await crypto.subtle.decrypt(
+            {
+              name: 'AES-GCM',
+              iv,
+              tagLength: AES_GCM_TAG_LENGTH,
+            },
+            key,
+            ciphertext,
+          );
+          const parsed = JSON.parse(new TextDecoder().decode(plainBuffer));
+          return isRecord(parsed) ? parsed : null;
+        } catch {
+          return null;
+        }
+      };
+
       const hasAnyActiveRecordId = (): boolean => {
         try {
           for (let i = 0; i < localStorage.length; i++) {
@@ -143,56 +225,50 @@ const readRecordById = async (
 
       const db = await openExistingDb();
       if (!db) return null;
+
       try {
-        const tx = db.transaction(storeName, 'readonly');
-        const store = tx.objectStore(storeName);
-
-        return await new Promise((resolve) => {
-          let result: any = null;
-
-          const cleanup = () => {
+        const entry = await new Promise<Record<string, unknown> | null>(
+          (resolve) => {
             try {
-              db.close();
+              const tx = db.transaction(storeName, 'readonly');
+              const store = tx.objectStore(storeName);
+              const getReq = store.get(recordId);
+              getReq.onsuccess = () => {
+                const result = getReq.result;
+                resolve(
+                  isRecord(result) ? (result as Record<string, unknown>) : null,
+                );
+              };
+              getReq.onerror = () => {
+                resolve(null);
+              };
             } catch {
-              // ignore
+              resolve(null);
             }
-          };
+          },
+        );
 
-          tx.oncomplete = () => {
-            cleanup();
-            resolve(result ?? null);
-          };
+        if (!entry) {
+          return null;
+        }
 
-          tx.onabort = () => {
-            cleanup();
-            resolve(null);
-          };
+        const decodedData = await decodeRecordData(entry.data);
+        if (entry.data !== undefined && decodedData === null) {
+          return null;
+        }
 
-          tx.onerror = () => {
-            cleanup();
-            resolve(null);
-          };
-
-          try {
-            const getReq = store.get(recordId);
-            getReq.onsuccess = () => {
-              result = getReq.result ?? null;
-            };
-            getReq.onerror = () => {
-              result = null;
-            };
-          } catch {
-            cleanup();
-            resolve(null);
-          }
-        });
+        return {
+          ...entry,
+          data: decodedData ?? undefined,
+        };
       } catch {
+        return null;
+      } finally {
         try {
           db.close();
         } catch {
           // ignore
         }
-        return null;
       }
     },
     { dbName: DB_NAME, storeName: STORE_NAME_RECORDS, recordId },

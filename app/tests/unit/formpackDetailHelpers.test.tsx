@@ -1,0 +1,1030 @@
+import { renderToStaticMarkup } from 'react-dom/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { RJSFSchema, UiSchema } from '@rjsf/utils';
+
+const mocked = vi.hoisted(() => ({
+  isCompletedCase0Path: vi.fn(),
+  isFormpackVisible: vi.fn(),
+  isMedicationKey: vi.fn(),
+  loadFormpackI18n: vi.fn(),
+  loadFormpackManifest: vi.fn(),
+  loadFormpackSchema: vi.fn(),
+  loadFormpackUiSchema: vi.fn(),
+  normalizeDecisionAnswers: vi.fn(),
+  resolveDecisionTree: vi.fn(),
+  resolveMedicationProfile: vi.fn(),
+  getMedicationIndications: vi.fn(),
+  getVisibleMedicationKeys: vi.fn(),
+  getVisibleMedicationOptions: vi.fn(),
+}));
+
+vi.mock('../../src/i18n/formpack', () => ({
+  loadFormpackI18n: mocked.loadFormpackI18n,
+}));
+
+vi.mock('../../src/formpacks/doctor-letter/decisionAnswers', () => ({
+  isCompletedCase0Path: mocked.isCompletedCase0Path,
+  normalizeDecisionAnswers: mocked.normalizeDecisionAnswers,
+}));
+
+vi.mock('../../src/formpacks/offlabel-antrag/medications', () => ({
+  getMedicationIndications: mocked.getMedicationIndications,
+  getVisibleMedicationKeys: mocked.getVisibleMedicationKeys,
+  getVisibleMedicationOptions: mocked.getVisibleMedicationOptions,
+  isMedicationKey: mocked.isMedicationKey,
+  resolveMedicationProfile: mocked.resolveMedicationProfile,
+}));
+
+vi.mock('../../src/formpacks', async (importOriginal) => {
+  const original = await importOriginal<typeof import('../../src/formpacks')>();
+  return {
+    ...original,
+    isFormpackVisible: mocked.isFormpackVisible,
+    loadFormpackManifest: mocked.loadFormpackManifest,
+    loadFormpackSchema: mocked.loadFormpackSchema,
+    loadFormpackUiSchema: mocked.loadFormpackUiSchema,
+    resolveDecisionTree: mocked.resolveDecisionTree,
+  };
+});
+
+import { doctorLetterHelpers } from '../../src/pages/formpack-detail/helpers/doctorLetterHelpers';
+import { formpackAssetHelpers } from '../../src/pages/formpack-detail/helpers/formpackAssetHelpers';
+import { FormpackLoaderError } from '../../src/formpacks';
+import { hasLetterLayout } from '../../src/formpacks/layout';
+import { mergeDummyPatch } from '../../src/lib/devDummyFill';
+import { offlabelFormHelpers } from '../../src/pages/formpack-detail/helpers/offlabelFormHelpers';
+import { offlabelPreviewHelpers } from '../../src/pages/formpack-detail/helpers/offlabelPreviewHelpers';
+import { previewHelpers } from '../../src/pages/formpack-detail/helpers/previewHelpers';
+
+const detail = {
+  ...doctorLetterHelpers,
+  ...formpackAssetHelpers,
+  ...offlabelFormHelpers,
+  ...offlabelPreviewHelpers,
+  ...previewHelpers,
+  hasLetterLayout,
+  mergeDummyPatch,
+};
+
+const TEST_MED_A = 'med-a';
+const TEST_INDICATION_A = 'indication-a';
+const TEST_INDICATION_B = 'indication-b';
+const TEST_NOT_BOOLEAN = 'not-boolean';
+const DECISION_CASE_PARAGRAPHS_PATH = 'decision.caseParagraphs';
+const DECISION_CASE_TEXT_PATH = 'decision.caseText';
+
+describe('formpack detail helpers', () => {
+  beforeEach(() => {
+    mocked.isCompletedCase0Path.mockReset();
+    mocked.isFormpackVisible.mockReset();
+    mocked.isMedicationKey.mockReset();
+    mocked.loadFormpackI18n.mockReset();
+    mocked.loadFormpackManifest.mockReset();
+    mocked.loadFormpackSchema.mockReset();
+    mocked.loadFormpackUiSchema.mockReset();
+    mocked.normalizeDecisionAnswers.mockReset();
+    mocked.resolveDecisionTree.mockReset();
+    mocked.resolveMedicationProfile.mockReset();
+    mocked.getMedicationIndications.mockReset();
+    mocked.getVisibleMedicationKeys.mockReset();
+    mocked.getVisibleMedicationOptions.mockReset();
+  });
+
+  it('loads formpack assets and returns not-found for invisible formpacks', async () => {
+    mocked.loadFormpackManifest.mockResolvedValue({
+      id: 'x',
+      visibility: 'dev',
+    });
+    mocked.isFormpackVisible.mockReturnValue(false);
+
+    const result = await detail.loadFormpackAssets('x', 'de', (key) => key);
+
+    expect(result).toEqual({
+      manifest: null,
+      schema: null,
+      uiSchema: null,
+      errorMessage: 'formpackNotFound',
+    });
+    expect(mocked.loadFormpackI18n).not.toHaveBeenCalled();
+  });
+
+  it('loads schema and ui schema for visible formpacks', async () => {
+    mocked.loadFormpackManifest.mockResolvedValue({
+      id: 'x',
+      visibility: 'public',
+    });
+    mocked.isFormpackVisible.mockReturnValue(true);
+    mocked.loadFormpackSchema.mockResolvedValue({ type: 'object' });
+    mocked.loadFormpackUiSchema.mockResolvedValue({});
+    mocked.loadFormpackI18n.mockResolvedValue(undefined);
+
+    const result = await detail.loadFormpackAssets('x', 'de', (key) => key);
+
+    expect(result.errorMessage).toBeNull();
+    expect(result.manifest).toMatchObject({ id: 'x' });
+    expect(mocked.loadFormpackI18n).toHaveBeenCalledWith('x', 'de');
+  });
+
+  it('maps loader errors and generic errors to translated messages', () => {
+    const loaderError = new FormpackLoaderError('schema_invalid', 'boom');
+    expect(detail.buildErrorMessage(loaderError, (key) => key)).toBe(
+      'formpackSchemaInvalid',
+    );
+    const unknownLoaderError = new FormpackLoaderError('schema_invalid', 'x');
+    (unknownLoaderError as unknown as { code: string }).code =
+      'unknown_loader_code';
+    expect(detail.buildErrorMessage(unknownLoaderError, (key) => key)).toBe(
+      'formpackLoadError',
+    );
+    expect(detail.buildErrorMessage(new Error('plain'), (key) => key)).toBe(
+      'formpackLoadError',
+    );
+    expect(detail.buildErrorMessage(123, (key) => key)).toBe(
+      'formpackLoadError',
+    );
+  });
+
+  it('detects json encryption runtime errors and envelopes', () => {
+    expect(detail.isJsonEncryptionRuntimeError(null)).toBe(false);
+    expect(
+      detail.isJsonEncryptionRuntimeError({
+        name: 'JsonEncryptionError',
+        code: 'decrypt_failed',
+      }),
+    ).toBe(true);
+    expect(detail.tryParseEncryptedEnvelope('')).toBeNull();
+    expect(detail.tryParseEncryptedEnvelope('123')).toBeNull();
+    expect(detail.tryParseEncryptedEnvelope('not-json')).toBeNull();
+    expect(detail.tryParseEncryptedEnvelope('{"kind":"x"}')).toBeNull();
+    expect(
+      detail.tryParseEncryptedEnvelope(
+        '{"kind":"mecfs-paperwork-json-encrypted","cipher":"AES-GCM"}',
+      ),
+    ).toMatchObject({ kind: 'mecfs-paperwork-json-encrypted' });
+  });
+
+  it('loads the json encryption module on demand', async () => {
+    const module = await detail.loadJsonEncryptionModule();
+    expect(module).toHaveProperty('encryptJsonWithPassword');
+    expect(module).toHaveProperty('decryptJsonWithPassword');
+  });
+
+  it('handles decision visibility and case-0 hiding logic', () => {
+    const decisionUi: Record<string, unknown> = {};
+    const visibility: Parameters<typeof detail.applyFieldVisibility>[1] = {
+      q1: true,
+      q2: false,
+      q3: true,
+      q4: false,
+      q5: true,
+      q6: false,
+      q7: true,
+      q8: false,
+      resolvedCaseText: true,
+    };
+    detail.applyFieldVisibility(decisionUi, visibility);
+    expect((decisionUi.q2 as Record<string, unknown>)['ui:widget']).toBe(
+      'hidden',
+    );
+    expect((decisionUi.q4 as Record<string, unknown>)['ui:widget']).toBe(
+      'hidden',
+    );
+
+    mocked.normalizeDecisionAnswers.mockReturnValue({});
+    mocked.resolveDecisionTree.mockReturnValue({ caseId: 1 });
+    expect(detail.shouldHideCase0Result({} as never)).toBe(false);
+    mocked.resolveDecisionTree.mockReturnValue({ caseId: 0 });
+    mocked.isCompletedCase0Path.mockReturnValue(true);
+    expect(detail.shouldHideCase0Result({} as never)).toBe(false);
+    mocked.isCompletedCase0Path.mockReturnValue(false);
+    expect(detail.shouldHideCase0Result({} as never)).toBe(true);
+
+    const existingDecisionUi = {
+      q2: {},
+    } as Record<string, unknown>;
+    detail.applyFieldVisibility(existingDecisionUi, visibility);
+    expect(
+      (existingDecisionUi.q2 as Record<string, unknown>)['ui:widget'],
+    ).toBe('hidden');
+
+    const baseUiSchema: UiSchema = {
+      decision: {
+        q2: {},
+        resolvedCaseText: {},
+      },
+    };
+    mocked.resolveDecisionTree.mockReturnValue({ caseId: 0 });
+    mocked.isCompletedCase0Path.mockReturnValue(false);
+
+    const conditionalUiSchema = detail.buildDoctorLetterConditionalUiSchema(
+      baseUiSchema,
+      { q1: 'yes' },
+    );
+    expect(conditionalUiSchema).not.toBe(baseUiSchema);
+    expect(
+      (
+        (conditionalUiSchema.decision as Record<string, unknown>)
+          .resolvedCaseText as Record<string, unknown>
+      )['ui:widget'],
+    ).toBe('hidden');
+
+    const passthroughUiSchema = detail.buildDoctorLetterConditionalUiSchema(
+      { summary: {} },
+      null,
+    );
+    expect(passthroughUiSchema).toEqual({ summary: {} });
+  });
+
+  it('merges dummy patches and normalizes offlabel request variants', () => {
+    expect(detail.toStringArray(['a', 1, 'b'])).toEqual(['a', 'b']);
+    expect(detail.hasSameStringArray(['a'], ['a'])).toBe(true);
+    expect(detail.hasSameStringArray(['a'], ['b'])).toBe(false);
+    expect(detail.mergeDummyPatch({ a: 1 }, undefined)).toEqual({ a: 1 });
+    expect(detail.mergeDummyPatch({ a: 1 }, { b: 2 })).toEqual({ a: 1, b: 2 });
+    expect(detail.mergeDummyPatch({ a: 1 }, ['x'])).toEqual(['x']);
+
+    mocked.getVisibleMedicationKeys.mockReturnValue([TEST_MED_A, 'other']);
+    mocked.isMedicationKey.mockImplementation(
+      (value: unknown) => value === TEST_MED_A,
+    );
+    mocked.resolveMedicationProfile.mockReturnValue({
+      isOther: false,
+      indications: [{ key: TEST_INDICATION_A }],
+    });
+    expect(
+      detail.normalizeOfflabelRequest(
+        { drug: TEST_MED_A, selectedIndicationKey: 'missing' },
+        false,
+      ),
+    ).toMatchObject({
+      drug: TEST_MED_A,
+      selectedIndicationKey: TEST_INDICATION_A,
+    });
+
+    mocked.resolveMedicationProfile.mockReturnValue({
+      isOther: false,
+      indications: [{ key: TEST_INDICATION_A }, { key: TEST_INDICATION_B }],
+    });
+    expect(
+      detail.normalizeOfflabelRequest(
+        {
+          drug: TEST_MED_A,
+          selectedIndicationKey: 'missing',
+          indicationFullyMetOrDoctorConfirms: 'yes',
+          applySection2Abs1a: true,
+        },
+        false,
+      ),
+    ).toMatchObject({
+      drug: TEST_MED_A,
+      selectedIndicationKey: '',
+    });
+
+    expect(
+      detail.normalizeOfflabelRequest(
+        {
+          drug: TEST_MED_A,
+          selectedIndicationKey: TEST_INDICATION_B,
+          indicationFullyMetOrDoctorConfirms: 'no',
+          applySection2Abs1a: true,
+        },
+        false,
+      ),
+    ).toMatchObject({
+      drug: TEST_MED_A,
+      selectedIndicationKey: TEST_INDICATION_B,
+      indicationFullyMetOrDoctorConfirms: 'no',
+      applySection2Abs1a: true,
+    });
+
+    mocked.resolveMedicationProfile.mockReturnValue({
+      isOther: true,
+      indications: [{ key: 'ignored' }],
+    });
+    expect(
+      detail.normalizeOfflabelRequest(
+        { drug: TEST_MED_A, selectedIndicationKey: 'ignored', other: true },
+        false,
+      ),
+    ).toMatchObject({
+      drug: TEST_MED_A,
+      other: true,
+    });
+  });
+
+  it('builds dynamic offlabel schema enums and keeps unchanged schemas intact', () => {
+    mocked.getVisibleMedicationKeys.mockReturnValue(['med-a', 'other']);
+    mocked.getVisibleMedicationOptions.mockReturnValue([
+      { key: 'med-a', label: 'Med A' },
+      { key: 'other', label: 'Other' },
+    ]);
+    mocked.getMedicationIndications.mockReturnValue([
+      { key: 'k1', label: 'K1' },
+      { key: 'k2', label: 'K2' },
+    ]);
+    mocked.isMedicationKey.mockImplementation(
+      (value: unknown) => value === 'med-a',
+    );
+    mocked.resolveMedicationProfile.mockReturnValue({
+      isOther: false,
+      indications: [{ key: 'k1' }, { key: 'k2' }],
+    });
+
+    const schema = {
+      type: 'object',
+      properties: {
+        request: {
+          type: 'object',
+          properties: {
+            drug: { type: 'string', enum: ['med-a'] },
+            selectedIndicationKey: { type: 'string', enum: ['old'] },
+          },
+        },
+      },
+    } as RJSFSchema;
+
+    const next = detail.buildOfflabelFormSchema(
+      schema,
+      { request: { drug: 'med-a' } },
+      false,
+    );
+    expect(next).not.toBe(schema);
+    const requestNode = (next.properties as Record<string, unknown>)
+      .request as {
+      properties: Record<string, unknown>;
+    };
+    expect((requestNode.properties.drug as { enum: string[] }).enum).toEqual([
+      'med-a',
+      'other',
+    ]);
+    expect(
+      (requestNode.properties.selectedIndicationKey as { enum: string[] }).enum,
+    ).toEqual(['k1', 'k2']);
+
+    mocked.resolveMedicationProfile.mockReturnValueOnce({
+      isOther: true,
+      indications: [],
+    });
+    mocked.getMedicationIndications.mockReturnValueOnce([]);
+    const schemaWithExistingIndicationEnum = {
+      type: 'object',
+      properties: {
+        request: {
+          type: 'object',
+          properties: {
+            drug: { type: 'string', enum: ['med-a', 'other'] },
+            selectedIndicationKey: {
+              type: 'string',
+              enum: ['kept-indication'],
+            },
+          },
+        },
+      },
+    } as RJSFSchema;
+    const schemaWithoutSelectedDrug = detail.buildOfflabelFormSchema(
+      schemaWithExistingIndicationEnum,
+      { request: {} },
+      false,
+    );
+    const requestNodeWithoutSelectedDrug = (
+      schemaWithoutSelectedDrug.properties as Record<string, unknown>
+    ).request as {
+      properties: Record<string, unknown>;
+    };
+    expect(
+      (
+        requestNodeWithoutSelectedDrug.properties.selectedIndicationKey as {
+          enum: string[];
+        }
+      ).enum,
+    ).toEqual(['kept-indication']);
+
+    expect(
+      detail.buildOfflabelFormSchema(
+        { type: 'object' } as RJSFSchema,
+        { request: {} },
+        false,
+      ),
+    ).toEqual({ type: 'object' });
+
+    const unchangedSchema = {
+      type: 'object',
+      properties: {
+        request: {
+          type: 'object',
+          properties: {
+            drug: { type: 'string', enum: ['med-a', 'other'] },
+            selectedIndicationKey: { type: 'string', enum: ['k1', 'k2'] },
+          },
+        },
+      },
+    } as RJSFSchema;
+    expect(
+      detail.buildOfflabelFormSchema(
+        unchangedSchema,
+        { request: { drug: 'med-a' } },
+        false,
+      ),
+    ).toBe(unchangedSchema);
+
+    expect(
+      detail.buildOfflabelFormSchema(
+        {
+          type: 'object',
+          properties: {
+            request: {
+              type: 'object',
+              properties: {
+                drug: { type: 'string' },
+                selectedIndicationKey: null,
+              },
+            },
+          },
+        } as unknown as RJSFSchema,
+        { request: {} },
+        false,
+      ),
+    ).toMatchObject({
+      type: 'object',
+    });
+
+    const structuredCloneSpy = vi
+      .spyOn(globalThis, 'structuredClone')
+      .mockReturnValueOnce({} as RJSFSchema)
+      .mockReturnValueOnce({
+        type: 'object',
+        properties: {},
+      } as RJSFSchema)
+      .mockReturnValueOnce({
+        type: 'object',
+        properties: {
+          request: { type: 'object', properties: {} },
+        },
+      } as RJSFSchema);
+    try {
+      expect(
+        detail.buildOfflabelFormSchema(
+          schema,
+          { request: { drug: 'med-a' } },
+          false,
+        ),
+      ).toBe(schema);
+      expect(
+        detail.buildOfflabelFormSchema(
+          schema,
+          { request: { drug: 'med-a' } },
+          false,
+        ),
+      ).toBe(schema);
+      expect(
+        detail.buildOfflabelFormSchema(
+          schema,
+          { request: { drug: 'med-a' } },
+          false,
+        ),
+      ).toBe(schema);
+    } finally {
+      structuredCloneSpy.mockRestore();
+    }
+  });
+
+  it('orders keys, labels, and paths for preview rendering', () => {
+    expect(
+      detail.getOrderedKeys(
+        { type: 'object', properties: { b: {}, a: {} } } as RJSFSchema,
+        { 'ui:order': ['a', '*'] } as UiSchema,
+        { c: 1 },
+      ),
+    ).toEqual(['a', 'b', 'c']);
+    expect(
+      detail.getUiSchemaNode({ foo: { 'ui:title': 'Foo' } }, 'foo'),
+    ).toEqual({ 'ui:title': 'Foo' });
+    expect(
+      detail.getItemSchema({ items: [{ type: 'string' }] } as RJSFSchema),
+    ).toBeDefined();
+    expect(
+      detail.getItemUiSchema({
+        items: [{ 'ui:title': 'x' }],
+      } as unknown as UiSchema),
+    ).toEqual({ 'ui:title': 'x' });
+    expect(detail.buildFieldPath('child', 'parent')).toBe('parent.child');
+    expect(detail.normalizeParagraphs([' x ', null, ''])).toEqual(['x']);
+    expect(detail.normalizeParagraphs(null)).toEqual([]);
+    expect(detail.getLabel('fallback', undefined, undefined)).toBe('fallback');
+    expect(
+      detail.getLabel(
+        'fallback',
+        { title: 'Schema title' } as RJSFSchema,
+        undefined,
+      ),
+    ).toBe('Schema title');
+  });
+
+  it('covers offlabel schema and ordering fallback branches', () => {
+    expect(
+      detail.getOrderedKeys(
+        { type: 'object', properties: { a: {}, b: {} } } as RJSFSchema,
+        { 'ui:order': ['missing', 'b'] } as UiSchema,
+        {},
+      ),
+    ).toEqual(['missing', 'b', 'a']);
+    expect(
+      detail.getOrderedKeys(
+        { type: 'object', properties: { a: {}, b: {} } } as RJSFSchema,
+        { 'ui:order': ['missing', '*'] } as UiSchema,
+        {},
+      ),
+    ).toEqual(['a', 'b']);
+
+    expect(
+      detail.buildOfflabelFormSchema(
+        {
+          type: 'object',
+          properties: {
+            request: { type: 'object' },
+          },
+        } as unknown as RJSFSchema,
+        { request: {} },
+        false,
+      ),
+    ).toMatchObject({
+      type: 'object',
+    });
+
+    mocked.getVisibleMedicationKeys.mockReturnValue([TEST_MED_A]);
+    mocked.isMedicationKey.mockImplementation(
+      (value: unknown) => value === TEST_MED_A,
+    );
+    mocked.resolveMedicationProfile.mockReturnValue({
+      isOther: false,
+      indications: [{ key: TEST_INDICATION_A }, { key: TEST_INDICATION_B }],
+    });
+    expect(
+      detail.normalizeOfflabelRequest(
+        {
+          drug: TEST_MED_A,
+          selectedIndicationKey: TEST_INDICATION_A,
+          applySection2Abs1a: true,
+        },
+        false,
+      ),
+    ).toEqual({
+      drug: TEST_MED_A,
+      selectedIndicationKey: TEST_INDICATION_A,
+      applySection2Abs1a: true,
+    });
+  });
+
+  it('renders offlabel preview blocks and documents', () => {
+    expect(
+      detail.getOfflabelPreviewBlockKey('doc', { kind: 'pageBreak' }),
+    ).toBe('doc-pageBreak');
+    const headingMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderOfflabelPreviewBlock('doc', {
+          kind: 'heading',
+          text: 'H',
+        })}
+      </>,
+    );
+    expect(headingMarkup).toContain('<h3>H</h3>');
+    const listMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderOfflabelPreviewBlock('doc', {
+          kind: 'list',
+          items: ['a', 'b'],
+        })}
+      </>,
+    );
+    expect(listMarkup).toContain('<li>a</li>');
+    expect(
+      detail.renderOfflabelPreviewBlock('doc', { kind: 'list', items: [] }),
+    ).toBeNull();
+    expect(
+      detail.renderOfflabelPreviewBlock('doc', { kind: 'pageBreak' }),
+    ).toBeNull();
+
+    const docMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderOfflabelPreviewDocument({
+          id: 'part1',
+          title: 't',
+          blocks: [{ kind: 'paragraph', text: 'P' }],
+        })}
+      </>,
+    );
+    expect(docMarkup).toContain('<p>P</p>');
+
+    const untouchedDoc = {
+      id: 'part1' as const,
+      title: 'Part 1',
+      blocks: [{ kind: 'paragraph' as const, text: 'Body' }],
+    };
+    expect(detail.stripOfflabelPart2ConsentFromPreview(untouchedDoc)).toBe(
+      untouchedDoc,
+    );
+
+    const part2WithoutConsent = {
+      id: 'part2' as const,
+      title: 'Part 2',
+      blocks: [{ kind: 'paragraph' as const, text: 'Body' }],
+    };
+    expect(
+      detail.stripOfflabelPart2ConsentFromPreview(part2WithoutConsent),
+    ).toBe(part2WithoutConsent);
+
+    expect(
+      detail.stripOfflabelPart2ConsentFromPreview({
+        id: 'part2',
+        title: 'Part 2',
+        blocks: [
+          { kind: 'paragraph', text: 'Body' },
+          {
+            kind: 'heading',
+            text: 'Aufklärung und Einwilligung zum Off-Label-Use: More',
+          },
+          { kind: 'paragraph', text: 'Consent' },
+        ] as const,
+      }).blocks,
+    ).toEqual([{ kind: 'paragraph', text: 'Body' }]);
+  });
+
+  it('builds decision preview context and array/object previews', () => {
+    const paragraphs = detail.getDecisionParagraphsForEntry(
+      'line one\n\nline two',
+      [],
+    );
+    expect(paragraphs).toEqual(['line one', 'line two']);
+    expect(detail.getDecisionParagraphsForEntry(42, [])).toEqual([]);
+    expect(detail.hasDecisionCaseText({ resolvedCaseText: 'x' })).toBe(true);
+    expect(
+      detail.getDecisionVisibleKeys(['a', 'caseParagraphs'], ['x'], true),
+    ).toEqual(['a']);
+    expect(
+      detail.getDecisionVisibleKeys(['a', 'caseParagraphs'], [], false),
+    ).toEqual(['a', 'caseParagraphs']);
+    expect(
+      detail.resolveDecisionCaseTextValue('x', 'other.path', ['P1']),
+    ).toBeNull();
+    expect(
+      detail.resolveDecisionCaseTextValue('x', DECISION_CASE_TEXT_PATH, ['P1']),
+    ).not.toBeNull();
+    expect(
+      detail.resolveDecisionCaseTextValue(
+        { value: 'x' },
+        DECISION_CASE_TEXT_PATH,
+        [],
+      ),
+    ).toBeNull();
+
+    const context = detail.buildDecisionPreviewContext(
+      {
+        caseParagraphs: ['P1'],
+        caseText: 'x',
+      },
+      'decision',
+      ['caseText', 'caseParagraphs'],
+      (entry) => String(entry),
+    );
+    expect(context.visibleKeys).toEqual(['caseText']);
+    expect(
+      renderToStaticMarkup(
+        <>
+          {context.resolveValue(
+            'ignored',
+            undefined,
+            undefined,
+            DECISION_CASE_TEXT_PATH,
+          )}
+        </>,
+      ),
+    ).toContain('P1');
+    expect(
+      context.resolveValue('ignored', undefined, undefined, 'other.path'),
+    ).toBe('ignored');
+
+    const objectMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewObject({ a: 'x' }, undefined, undefined, 'Label')}
+      </>,
+    );
+    expect(objectMarkup).toContain('Label');
+    expect(detail.renderPreviewObject({}, undefined, undefined)).toBeNull();
+    const arrayMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewArray(
+          ['x', 'y'],
+          undefined,
+          undefined,
+          'List',
+          (entry) => String(entry),
+        )}
+      </>,
+    );
+    expect(arrayMarkup).toContain('<li>x</li>');
+    expect(detail.renderPreviewArray([], undefined, undefined)).toBeNull();
+
+    const paragraphArrayMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewArray(
+          ['P1', 'P2'],
+          undefined,
+          undefined,
+          'Decision',
+          undefined,
+          DECISION_CASE_PARAGRAPHS_PATH,
+          'decision',
+        )}
+      </>,
+    );
+    expect(paragraphArrayMarkup).toContain('P1');
+
+    const nonStringArrayMarkup = renderToStaticMarkup(
+      <>{detail.renderPreviewArray([null, undefined], undefined, undefined)}</>,
+    );
+    expect(nonStringArrayMarkup).toBe('');
+
+    const nestedObjectPreview = detail.buildPreviewEntry({
+      entry: { nested: 'value' },
+      key: 'entry',
+      childSchema: { type: 'object' } as RJSFSchema,
+      childUi: {} as UiSchema,
+      childLabel: 'Entry',
+      resolveValue: (value) => String(value),
+      fieldPath: 'root.entry',
+      sectionKey: 'root',
+    });
+    expect(nestedObjectPreview?.type).toBe('nested');
+
+    const fallbackArrayMarkup = renderToStaticMarkup(
+      <>{detail.renderPreviewArray(['alpha'], undefined, undefined)}</>,
+    );
+    expect(fallbackArrayMarkup).toContain('alpha');
+
+    expect(
+      detail.buildPreviewEntry({
+        entry: [],
+        key: 'empty-array',
+        childSchema: { type: 'array' } as RJSFSchema,
+        childUi: {} as UiSchema,
+        childLabel: 'Empty array',
+        resolveValue: (value) => String(value),
+        fieldPath: 'root.emptyArray',
+        sectionKey: 'root',
+      }),
+    ).toBeNull();
+
+    expect(
+      detail.buildPreviewEntry({
+        entry: {},
+        key: 'empty-object',
+        childSchema: { type: 'object', properties: {} } as RJSFSchema,
+        childUi: {} as UiSchema,
+        childLabel: 'Empty object',
+        resolveValue: (value) => String(value),
+        fieldPath: 'root.emptyObject',
+        sectionKey: 'root',
+      }),
+    ).toBeNull();
+
+    const nestedNullsMarkup = renderToStaticMarkup(
+      <>{detail.renderPreviewArray([[], {}], undefined, undefined)}</>,
+    );
+    expect(nestedNullsMarkup).toBe('');
+
+    const nestedArrayPreview = detail.buildPreviewEntry({
+      entry: ['nested'],
+      key: 'array',
+      childSchema: { type: 'array', items: { type: 'string' } } as RJSFSchema,
+      childUi: {} as UiSchema,
+      childLabel: 'Array',
+      resolveValue: (value) => String(value),
+      fieldPath: 'root.array',
+      sectionKey: 'root',
+    });
+    expect(nestedArrayPreview?.type).toBe('nested');
+
+    const mixedNestedMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewArray(
+          [['alpha'], { nested: 'beta' }],
+          undefined,
+          undefined,
+          undefined,
+          (value) => String(value),
+        )}
+      </>,
+    );
+    expect(mixedNestedMarkup).toContain('alpha');
+    expect(mixedNestedMarkup).toContain('beta');
+
+    const objectOnlyNestedMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewObject(
+          { nested: { value: 'x' } },
+          {
+            type: 'object',
+            properties: {
+              nested: {
+                type: 'object',
+                properties: {
+                  value: { type: 'string', title: 'Value' },
+                },
+              },
+            },
+          } as RJSFSchema,
+          {
+            nested: {
+              value: { 'ui:title': 'Value' },
+            },
+          } as UiSchema,
+        )}
+      </>,
+    );
+    expect(objectOnlyNestedMarkup).toContain('Value');
+
+    const paragraphArrayWithoutLabel = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewArray(
+          ['P1'],
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          DECISION_CASE_PARAGRAPHS_PATH,
+          'decision',
+        )}
+      </>,
+    );
+    expect(paragraphArrayWithoutLabel).toContain('P1');
+    expect(paragraphArrayWithoutLabel).not.toContain('<h4>');
+
+    const emptyParagraphArrayMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewArray(
+          [' ', null],
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          DECISION_CASE_PARAGRAPHS_PATH,
+          'decision',
+        )}
+      </>,
+    );
+    expect(emptyParagraphArrayMarkup).toBe('');
+
+    const objectWithHiddenEntryMarkup = renderToStaticMarkup(
+      <>
+        {detail.renderPreviewObject(
+          { hidden: '', shown: 'value' },
+          undefined,
+          undefined,
+          'Section',
+        )}
+      </>,
+    );
+    expect(objectWithHiddenEntryMarkup).toContain('shown');
+  });
+
+  it('exposes static helpers for letter layout detection', () => {
+    expect(detail.hasLetterLayout('doctor-letter')).toBe(true);
+    expect(detail.hasLetterLayout('offlabel-antrag')).toBe(true);
+    expect(detail.hasLetterLayout('notfallpass')).toBe(false);
+  });
+
+  it('maps import and encryption errors to localized keys', () => {
+    const t = (key: string) => key;
+    expect(detail.resolveImportErrorMessage({ code: 'invalid_json' }, t)).toBe(
+      'importInvalidJson',
+    );
+    expect(
+      detail.resolveImportErrorMessage(
+        { code: 'invalid_json', message: 'Bad token' },
+        t,
+      ),
+    ).toBe('importInvalidJsonWithDetails');
+    expect(
+      detail.resolveImportErrorMessage({ code: 'unknown_formpack' }, t),
+    ).toBe('importUnknownFormpack');
+    expect(
+      detail.resolveImportErrorMessage({ code: 'schema_mismatch' }, t),
+    ).toBe('importSchemaMismatch');
+    expect(
+      detail.resolveImportErrorMessage({ code: 'formpack_mismatch' }, t),
+    ).toBe('importFormpackMismatch');
+    expect(
+      detail.resolveImportErrorMessage({ code: 'invalid_revisions' }, t),
+    ).toBe('importInvalidRevisions');
+    expect(
+      detail.resolveImportErrorMessage({ code: 'unsupported_locale' }, t),
+    ).toBe('importUnsupportedLocale');
+    expect(detail.resolveImportErrorMessage({ code: 'other' }, t)).toBe(
+      'importInvalidPayload',
+    );
+
+    expect(
+      detail.resolveJsonEncryptionErrorMessage(
+        { name: 'JsonEncryptionError', code: 'crypto_unsupported' },
+        'import',
+        t,
+      ),
+    ).toBe('jsonEncryptionUnsupported');
+    expect(
+      detail.resolveJsonEncryptionErrorMessage(
+        { name: 'JsonEncryptionError', code: 'decrypt_failed' },
+        'import',
+        t,
+      ),
+    ).toBe('importPasswordInvalid');
+    expect(
+      detail.resolveJsonEncryptionErrorMessage(
+        { name: 'JsonEncryptionError', code: 'invalid_envelope' },
+        'import',
+        t,
+      ),
+    ).toBe('importEncryptedPayloadInvalid');
+    expect(
+      detail.resolveJsonEncryptionErrorMessage(new Error('x'), 'export', t),
+    ).toBe('formpackJsonExportError');
+    expect(
+      detail.resolveJsonEncryptionErrorMessage(new Error('x'), 'import', t),
+    ).toBe('importInvalidJson');
+  });
+
+  it('extracts form action ids from click targets', () => {
+    const action = 'docx-export';
+    expect(detail.getActionButtonDataAction(null)).toBeNull();
+    const div = document.createElement('div');
+    expect(detail.getActionButtonDataAction(div)).toBeNull();
+    const button = document.createElement('button');
+    button.className = 'app__button';
+    button.dataset.action = action;
+    const span = document.createElement('span');
+    span.textContent = 'reset';
+    button.appendChild(span);
+    expect(detail.getActionButtonDataAction(span)).toBe(action);
+    expect(detail.getActionButtonDataAction(span.firstChild)).toBe(action);
+
+    const detachedText = document.createTextNode('detached');
+    expect(detail.getActionButtonDataAction(detachedText)).toBeNull();
+
+    const buttonWithoutAction = document.createElement('button');
+    buttonWithoutAction.className = 'app__button';
+    expect(detail.getActionButtonDataAction(buttonWithoutAction)).toBe('');
+  });
+
+  it('covers offlabel normalization fallback branches for section 2 flag handling', () => {
+    mocked.getVisibleMedicationKeys.mockReturnValue([TEST_MED_A, 'other']);
+    mocked.isMedicationKey.mockImplementation(
+      (value: unknown) => value === TEST_MED_A,
+    );
+    mocked.resolveMedicationProfile.mockReturnValue({
+      isOther: false,
+      indications: [{ key: TEST_INDICATION_A }, { key: TEST_INDICATION_B }],
+    });
+
+    expect(
+      detail.normalizeOfflabelRequest(
+        {
+          drug: TEST_MED_A,
+          selectedIndicationKey: TEST_INDICATION_A,
+          applySection2Abs1a: TEST_NOT_BOOLEAN,
+        },
+        false,
+      ),
+    ).toMatchObject({
+      drug: TEST_MED_A,
+      selectedIndicationKey: TEST_INDICATION_A,
+    });
+
+    expect(
+      detail.normalizeOfflabelRequest(
+        {
+          drug: TEST_MED_A,
+          selectedIndicationKey: TEST_INDICATION_A,
+          indicationFullyMetOrDoctorConfirms: 'yes',
+          applySection2Abs1a: TEST_NOT_BOOLEAN,
+        },
+        false,
+      ),
+    ).toMatchObject({
+      drug: TEST_MED_A,
+      selectedIndicationKey: TEST_INDICATION_A,
+      indicationFullyMetOrDoctorConfirms: 'yes',
+    });
+    expect(
+      detail.normalizeOfflabelRequest(
+        {
+          drug: TEST_MED_A,
+          selectedIndicationKey: TEST_INDICATION_A,
+          indicationFullyMetOrDoctorConfirms: 'yes',
+          applySection2Abs1a: TEST_NOT_BOOLEAN,
+        },
+        false,
+      ),
+    ).not.toHaveProperty('applySection2Abs1a');
+
+    expect(detail.toStringArray('not-an-array')).toEqual([]);
+  });
+});

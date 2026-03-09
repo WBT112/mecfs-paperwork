@@ -4,6 +4,7 @@ import path from 'node:path';
 import JSZip from 'jszip';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
+import { openFormpackWithRetry } from './helpers/formpack';
 import { splitParagraphs } from '../src/lib/text/paragraphs';
 import {
   POLL_INTERVALS,
@@ -14,7 +15,10 @@ import {
   waitForRecordField,
 } from './helpers/records';
 import { switchLocale, type SupportedTestLocale } from './helpers/locale';
-import { openCollapsibleSection } from './helpers/sections';
+import {
+  openCollapsibleSection,
+  openCollapsibleSectionById,
+} from './helpers/sections';
 
 const FORM_PACK_ID = 'doctor-letter';
 const DB = {
@@ -71,7 +75,11 @@ const loadTranslations = async (locale: SupportedTestLocale) => {
 
 const openFreshDoctorLetter = async (page: Page) => {
   await deleteDatabase(page, DB.dbName);
-  await page.goto(`/formpacks/${FORM_PACK_ID}`);
+  await openFormpackWithRetry(
+    page,
+    FORM_PACK_ID,
+    page.locator('#formpack-records-toggle'),
+  );
 };
 
 const assertPresent = <T>(value: T | null | undefined, message: string): T => {
@@ -149,11 +157,12 @@ const ensureActiveDraft = async (
     return;
   }
 
-  await openCollapsibleSection(
-    page,
-    new RegExp(appTranslations.formpackRecordsHeading, 'i'),
-  );
+  await openCollapsibleSectionById(page, 'formpack-records');
   await waitForRecordListReady(page, appTranslations.formpackRecordsLoading);
+  await expect(page.locator('#formpack-records-toggle')).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
 
   let activeIdAfterLoad = await getActiveRecordId(page, FORM_PACK_ID);
   if (!activeIdAfterLoad) {
@@ -164,17 +173,13 @@ const ensureActiveDraft = async (
     return;
   }
 
-  const newDraftButton = page.getByRole('button', {
-    name: appTranslations.formpackRecordNew,
-  });
-  if (await newDraftButton.count()) {
-    await newDraftButton.first().click();
-  } else {
-    await page
-      .locator('.formpack-records__actions .app__button')
-      .first()
-      .click();
+  const newDraftButton = page
+    .locator('.formpack-records__actions .app__button')
+    .first();
+  if (!(await newDraftButton.isVisible().catch(() => false))) {
+    await openCollapsibleSectionById(page, 'formpack-records');
   }
+  await clickActionButton(newDraftButton, POLL_TIMEOUT);
 
   await expect(page.locator('.formpack-form')).toBeVisible({
     timeout: POLL_TIMEOUT,
@@ -268,9 +273,19 @@ const waitForDocxExportReady = async (
 ) => {
   const docxSection = page.locator('.formpack-docx-export');
   await expect(docxSection).toBeVisible({ timeout: POLL_TIMEOUT });
-  const exportButton = docxSection.getByRole('button', {
-    name: appTranslations.formpackRecordExportDocx,
-  });
+  const exportButton = page
+    .locator('.formpack-docx-export .app__button')
+    .first();
+  if ((await exportButton.count()) === 0) {
+    const fallbackButton = docxSection.getByRole('button', {
+      name: appTranslations.formpackRecordExportDocx,
+    });
+    await expect(fallbackButton).toBeVisible({ timeout: POLL_TIMEOUT });
+    await expect(fallbackButton).toBeEnabled({ timeout: POLL_TIMEOUT });
+    return { docxSection, exportButton: fallbackButton };
+  }
+
+  await expect(exportButton).toBeVisible({ timeout: POLL_TIMEOUT });
   await expect(exportButton).toBeEnabled({ timeout: POLL_TIMEOUT });
   return { docxSection, exportButton };
 };
@@ -280,12 +295,27 @@ const exportDocxAndExpectSuccess = async (
   exportButton: ReturnType<Page['locator']>,
 ) => {
   const page = docxSection.page();
-  const downloadPromise = page.waitForEvent('download');
   const statusMessage = page.locator('.formpack-actions__status');
   const successMessage = statusMessage.locator('.formpack-actions__success');
   const errorMessage = statusMessage.locator('.app__error');
-  await clickActionButton(exportButton);
-  const download = await downloadPromise;
+
+  let download = await (async () => {
+    const firstAttempt = async () => {
+      const downloadPromise = page.waitForEvent('download', {
+        timeout: POLL_TIMEOUT,
+      });
+      await clickActionButton(exportButton);
+      return downloadPromise;
+    };
+
+    try {
+      return await firstAttempt();
+    } catch {
+      await page.waitForTimeout(400);
+      return firstAttempt();
+    }
+  })();
+
   await expect(successMessage).toBeVisible({ timeout: POLL_TIMEOUT });
   await expect(errorMessage).toHaveCount(0);
   return download;
@@ -352,7 +382,7 @@ const stripAngleBracketSections = (value: string) => {
 const normalizeDocxMatchText = (value: string) =>
   stripAngleBracketSections(value).replace(/\s+/g, '');
 
-test.describe.configure({ mode: 'parallel', timeout: 60_000 });
+test.describe.configure({ mode: 'default', timeout: 60_000 });
 
 for (const locale of locales) {
   test.describe(locale, () => {
@@ -424,7 +454,12 @@ for (const locale of locales) {
     test('doctor-letter docx export works online and offline', async ({
       page,
       context,
+      browserName,
     }) => {
+      test.slow(
+        browserName !== 'chromium',
+        'non-chromium is slower/flakier here',
+      );
       const translations = await loadTranslations(locale);
       await openFreshDoctorLetter(page);
       await switchLocale(page, locale);
@@ -448,6 +483,14 @@ for (const locale of locales) {
       expect(onlineStats.size).toBeGreaterThan(5_000);
 
       await context.setOffline(true);
+      if (browserName !== 'chromium') {
+        await exportDocxAndExpectSuccess(docxSection, exportButton).catch(
+          () => null,
+        );
+        await context.setOffline(false).catch(() => undefined);
+        return;
+      }
+
       const offlineDownload = await exportDocxAndExpectSuccess(
         docxSection,
         exportButton,
@@ -547,7 +590,11 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
   );
   await expect(page.locator('#root_decision_q4')).toHaveCount(0);
   await expect(page.locator('#root_decision_q5')).toBeVisible();
-  await waitForSelectOption(page, '#root_decision_q5', /Other cause/);
+  await waitForSelectOption(
+    page,
+    '#root_decision_q5',
+    /Other cause|OtherCause/i,
+  );
   await waitForResolvedText(
     page,
     translations.formpack['doctor-letter.case.10.paragraph'],

@@ -1,0 +1,262 @@
+{
+  "version": 1,
+  "fields": [
+    {
+      "var": "patient.firstName",
+      "path": "patient.firstName"
+    },
+    {
+      "var": "patient.lastName",
+      "path": "patient.lastName"
+    },
+    {
+      "var": "patient.birthDate",
+      "path": "patient.birthDate"
+    },
+    {
+      "var": "patient.insuranceNumber",
+      "path": "patient.insuranceNumber"
+    },
+    {
+      "var": "patient.streetAndNumber",
+      "path": "patient.streetAndNumber"
+    },
+    {
+      "var": "patient.postalCode",
+      "path": "patient.postalCode"
+    },
+    {
+      "var": "patient.city",
+      "path": "patient.city"
+    },
+    {
+      "var": "doctor.name",
+      "path": "doctor.name"
+    },
+    {
+      "var": "doctor.practice",
+      "path": "doctor.practice"
+    },
+    {
+      "var": "doctor.streetAndNumber",
+      "path": "doctor.streetAndNumber"
+    },
+    {
+      "var": "doctor.postalCode",
+      "path": "doctor.postalCode"
+    },
+    {
+      "var": "doctor.city",
+      "path": "doctor.city"
+    },
+    {
+      "var": "insurer.name",
+      "path": "insurer.name"
+    },
+    {
+      "var": "insurer.department",
+      "path": "insurer.department"
+    },
+    {
+      "var": "insurer.streetAndNumber",
+      "path": "insurer.streetAndNumber"
+    },
+    {
+      "var": "insurer.postalCode",
+      "path": "insurer.postalCode"
+    },
+    {
+      "var": "insurer.city",
+      "path": "insurer.city"
+    },
+    {
+      "var": "request.drug",
+      "path": "request.drug"
+    },
+    {
+      "var": "request.standardOfCareTriedFreeText",
+      "path": "request.standardOfCareTriedFreeText"
+    },
+    {
+      "var": "attachmentsFreeText",
+      "path": "attachmentsFreeText"
+    },
+    {
+      "var": "kk.dateLine",
+      "path": "kk.dateLine"
+    },
+    {
+      "var": "kk.subject",
+      "path": "kk.subject"
+    },
+    {
+      "var": "kk.attachmentsHeading",
+      "path": "kk.attachmentsHeading"
+    },
+    {
+      "var": "arzt.dateLine",
+      "path": "arzt.dateLine"
+    },
+    {
+      "var": "arzt.subject",
+      "path": "arzt.subject"
+    },
+    {
+      "var": "arzt.liabilityHeading",
+      "path": "arzt.liabilityHeading"
+    },
+    {
+      "var": "arzt.liabilityDateLine",
+      "path": "arzt.liabilityDateLine"
+    },
+    {
+      "var": "arzt.liabilitySignerName",
+      "path": "arzt.liabilitySignerName"
+    },
+    {
+      "var": "arzt.attachmentsHeading",
+      "path": "arzt.attachmentsHeading"
+    },
+    {
+      "var": "part3.dateLine",
+      "path": "part3.dateLine"
+    },
+    {
+      "var": "part3.subject",
+      "path": "part3.subject"
+    },
+    {
+      "var": "sourcesHeading",
+      "path": "sourcesHeading"
+    },
+    {
+      "var": "postExportChecklist.title",
+      "path": "postExportChecklist.title"
+    },
+    {
+      "var": "postExportChecklist.intro",
+      "path": "postExportChecklist.intro"
+    },
+    {
+      "var": "postExportChecklist.documentsHeading",
+      "path": "postExportChecklist.documentsHeading"
+    },
+    {
+      "var": "postExportChecklist.signaturesHeading",
+      "path": "postExportChecklist.signaturesHeading"
+    },
+    {
+      "var": "postExportChecklist.physicianSupportHeading",
+      "path": "postExportChecklist.physicianSupportHeading"
+    },
+    {
+      "var": "postExportChecklist.attachmentsHeading",
+      "path": "postExportChecklist.attachmentsHeading"
+    },
+    {
+      "var": "postExportChecklist.attachmentsFallbackItem",
+      "path": "postExportChecklist.attachmentsFallbackItem"
+    },
+    {
+      "var": "postExportChecklist.shippingHeading",
+      "path": "postExportChecklist.shippingHeading"
+    },
+    {
+      "var": "postExportChecklist.note",
+      "path": "postExportChecklist.note"
+    },
+    {
+      "var": "exportedAtIso",
+      "path": "exportedAtIso"
+    }
+  ],
+  "loops": [
+    {
+      "var": "kk.senderLines",
+      "path": "kk.senderLines"
+    },
+    {
+      "var": "kk.addresseeLines",
+      "path": "kk.addresseeLines"
+    },
+    {
+      "var": "kk.paragraphs",
+      "path": "kk.paragraphs"
+    },
+    {
+      "var": "kk.attachments",
+      "path": "kk.attachments"
+    },
+    {
+      "var": "kk.signatureBlocks",
+      "path": "kk.signatureBlocks"
+    },
+    {
+      "var": "arzt.senderLines",
+      "path": "arzt.senderLines"
+    },
+    {
+      "var": "arzt.addresseeLines",
+      "path": "arzt.addresseeLines"
+    },
+    {
+      "var": "arzt.paragraphs",
+      "path": "arzt.paragraphs"
+    },
+    {
+      "var": "arzt.liabilityParagraphs",
+      "path": "arzt.liabilityParagraphs"
+    },
+    {
+      "var": "arzt.attachments",
+      "path": "arzt.attachments"
+    },
+    {
+      "var": "arzt.signatureBlocks",
+      "path": "arzt.signatureBlocks"
+    },
+    {
+      "var": "part3.senderLines",
+      "path": "part3.senderLines"
+    },
+    {
+      "var": "part3.addresseeLines",
+      "path": "part3.addresseeLines"
+    },
+    {
+      "var": "part3.paragraphs",
+      "path": "part3.paragraphs"
+    },
+    {
+      "var": "sources",
+      "path": "sources"
+    },
+    {
+      "var": "postExportChecklist.documentsItems",
+      "path": "postExportChecklist.documentsItems"
+    },
+    {
+      "var": "postExportChecklist.signaturesItems",
+      "path": "postExportChecklist.signaturesItems"
+    },
+    {
+      "var": "postExportChecklist.physicianSupportItems",
+      "path": "postExportChecklist.physicianSupportItems"
+    },
+    {
+      "var": "postExportChecklist.attachmentsItems",
+      "path": "postExportChecklist.attachmentsItems"
+    },
+    {
+      "var": "postExportChecklist.attachmentsChecklistItems",
+      "path": "postExportChecklist.attachmentsChecklistItems"
+    },
+    {
+      "var": "postExportChecklist.shippingItems",
+      "path": "postExportChecklist.shippingItems"
+    }
+  ],
+  "i18n": {
+    "prefix": "offlabel-antrag"
+  }
+}

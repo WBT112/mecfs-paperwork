@@ -38,8 +38,8 @@ describe('theme utilities', () => {
     window.localStorage.clear();
   });
 
-  it('defaults to dark when no stored theme is available', () => {
-    expect(getInitialThemeMode()).toBe('dark');
+  it('defaults to system when no stored theme is available', () => {
+    expect(getInitialThemeMode()).toBe('system');
   });
 
   it('validates supported theme modes', () => {
@@ -53,6 +53,12 @@ describe('theme utilities', () => {
     setStoredThemeMode('light');
 
     expect(window.localStorage.getItem(themeStorageKey)).toBe('light');
+  });
+
+  it('reads a valid stored theme mode', () => {
+    window.localStorage.setItem(themeStorageKey, 'dark');
+
+    expect(getStoredThemeMode()).toBe('dark');
   });
 
   it('ignores invalid stored theme values', () => {
@@ -113,5 +119,22 @@ describe('theme utilities', () => {
     window.matchMedia = undefined as unknown as typeof window.matchMedia;
 
     expect(getThemeMediaQuery()).toBeNull();
+  });
+
+  it('returns the resolved theme when document is unavailable', () => {
+    const originalDocument = globalThis.document;
+    Object.defineProperty(globalThis, 'document', {
+      value: undefined,
+      configurable: true,
+    });
+
+    try {
+      expect(applyTheme('light')).toBe('light');
+    } finally {
+      Object.defineProperty(globalThis, 'document', {
+        value: originalDocument,
+        configurable: true,
+      });
+    }
   });
 });

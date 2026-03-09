@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import './formpackListPage.mockSetup';
 import FormpackListPage from '../../src/pages/FormpackListPage';
 import { TestRouter } from '../setup/testRouter';
 import { listFormpacks } from '../../src/formpacks/loader';
@@ -9,39 +10,12 @@ vi.mock('../../src/formpacks/loader', () => ({
   listFormpacks: vi.fn(),
 }));
 
-vi.mock('../../src/i18n/formpack', () => ({
-  loadFormpackI18n: vi.fn().mockResolvedValue(undefined),
-}));
-
-vi.mock('../../src/formpacks/visibility', () => ({
-  filterVisibleFormpacks: vi.fn((data: unknown): unknown[] =>
-    Array.isArray(data) ? data : [],
-  ),
-}));
-
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: { language: 'de' },
-  }),
-  initReactI18next: {
-    type: '3rdParty',
-    init: () => undefined,
-  },
-}));
-
-vi.mock('../../src/i18n/useLocale', () => ({
-  useLocale: () => ({
-    locale: 'de',
-  }),
-}));
-
 describe('FormpackListPage Error State', () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  it('renders an error message when formpacks fail to load', async () => {
+  it('renders the translated fallback when formpacks fail to load', async () => {
     const errorMessage = 'Failed to load formpacks';
     vi.mocked(listFormpacks).mockRejectedValue(new Error(errorMessage));
 
@@ -58,8 +32,28 @@ describe('FormpackListPage Error State', () => {
       expect(screen.queryByText('formpackLoading')).not.toBeInTheDocument();
     });
 
-    // Check for error message
-    expect(await screen.findByText(errorMessage)).toBeInTheDocument();
+    // Check for fallback message
+    expect(
+      await screen.findByText('formpackListErrorFallback'),
+    ).toBeInTheDocument();
     expect(screen.getByText('formpackListTitle')).toBeInTheDocument();
+  });
+
+  it('uses translated fallback when loader rejects with a non-Error value', async () => {
+    vi.mocked(listFormpacks).mockRejectedValue('failed');
+
+    render(
+      <TestRouter initialEntries={['/']}>
+        <Routes>
+          <Route path="/" element={<FormpackListPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('formpackLoading')).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByText('formpackListErrorFallback')).toBeInTheDocument();
   });
 });

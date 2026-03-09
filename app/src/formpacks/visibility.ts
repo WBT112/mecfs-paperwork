@@ -10,7 +10,10 @@ export const getShowDevFormpacks = (
   override: string | undefined = env.VITE_SHOW_DEV_FORMPACKS,
 ): boolean => isDev || override === 'true';
 
-export const getDevUiEnabled = (isDev: boolean = env.DEV): boolean => isDev;
+export const getDevUiEnabled = (
+  isDev: boolean = env.DEV,
+  override: string | undefined = env.VITE_SHOW_DEV_FORMPACKS,
+): boolean => isDev || override === 'true';
 
 export const isDevUiEnabled = getDevUiEnabled();
 

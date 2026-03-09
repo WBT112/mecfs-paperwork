@@ -112,6 +112,12 @@ describe('useTheme', () => {
     expect(document.documentElement.dataset.theme).toBe('light');
   });
 
+  it('defaults to system mode when no stored theme is available', () => {
+    render(<ThemeHarness />);
+
+    expect(screen.getByTestId('mode')).toHaveTextContent('system');
+  });
+
   it('persists updates when the user switches modes', async () => {
     const user = userEvent.setup();
     render(<ThemeHarness />);

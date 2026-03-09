@@ -1,6 +1,6 @@
 {
   "id": "doctor-letter",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "defaultLocale": "de",
   "locales": [
     "de",
@@ -18,6 +18,10 @@
       "a4": "templates/a4.docx"
     },
     "mapping": "docx/mapping.json"
+  },
+  "meta": {
+    "category": "doctor",
+    "keywords": ["arztbrief", "icd", "kodierung", "arzt", "praxis", "mecfs"]
   },
   "ui": {
     "infoBoxes": [

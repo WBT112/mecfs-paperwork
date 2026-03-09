@@ -1,5 +1,5 @@
-import { Suspense, lazy } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Suspense, lazy, useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 const FormpackDetailPage = lazy(() => import('./pages/FormpackDetailPage'));
@@ -17,9 +17,24 @@ const RouteFallback = () => {
   );
 };
 
+const ScrollToTop = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash) {
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname, location.search, location.hash]);
+
+  return null;
+};
+
 export default function AppRoutes() {
   return (
     <Suspense fallback={<RouteFallback />}>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Navigate to="/formpacks" replace />} />
         <Route path="/formpacks" element={<FormpackListPage />} />

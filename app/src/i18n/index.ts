@@ -22,7 +22,17 @@ try {
     supportedLngs: supportedLocales,
     defaultNS: 'app',
     interpolation: {
+      // SECURITY: React's JSX auto-escapes interpolated values, so i18next
+      // escaping is redundant for rendered UI. However, this means user data
+      // must NEVER be passed as interpolation values to t() — only static
+      // keys and translation-defined defaults are safe here.
       escapeValue: false,
+    },
+    react: {
+      // NOTE: Formpack translations are added at runtime via addResourceBundle.
+      // Binding to store events ensures components rerender immediately after
+      // locale-switch loads without requiring a page refresh.
+      bindI18nStore: 'added removed',
     },
   });
 } catch {

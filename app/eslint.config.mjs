@@ -9,6 +9,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import sonarjs from 'eslint-plugin-sonarjs';
+import tsdoc from 'eslint-plugin-tsdoc';
 import unicorn from 'eslint-plugin-unicorn';
 
 const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
@@ -141,6 +142,7 @@ export default [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
+      'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
 
       ...reactHooks.configs.recommended.rules,
 
@@ -149,14 +151,31 @@ export default [
 
       'react-refresh/only-export-components': [
         'warn',
-        { allowConstantExport: true },
+        {
+          allowConstantExport: true,
+          allowExportNames: ['__formpackDetailTestUtils'],
+        },
       ],
+    },
+  },
+
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: {
+      tsdoc,
+    },
+    rules: {
+      'tsdoc/syntax': 'error',
     },
   },
 
   {
     files: ['src/**/*.{tsx,jsx}'],
     ...jsxA11y.flatConfigs.recommended,
+    rules: {
+      ...(jsxA11y.flatConfigs.recommended.rules ?? {}),
+      'jsx-a11y/label-has-associated-control': 'error',
+    },
   },
 
   {
@@ -176,14 +195,24 @@ export default [
         'error',
         { prefer: 'type-imports', fixStyle: 'separate-type-imports' },
       ],
+      'no-nested-ternary': 'error',
       '@typescript-eslint/no-shadow': 'error',
       'react/no-array-index-key': 'error',
       'react/jsx-no-useless-fragment': 'error',
       'react-hooks/exhaustive-deps': 'error',
       'unicorn/prefer-global-this': 'error',
+      'unicorn/prefer-includes': 'error',
+      'unicorn/prefer-at': 'error',
+      'unicorn/prefer-code-point': 'error',
+      'unicorn/prefer-array-index-of': 'error',
+      'unicorn/prefer-string-replace-all': 'error',
       'unicorn/no-array-callback-reference': 'error',
+      'unicorn/no-thenable': 'error',
+      'unicorn/no-typeof-undefined': 'error',
+      'unicorn/no-negated-condition': 'error',
       'unicorn/prefer-single-call': 'error',
       'unicorn/prefer-optional-catch-binding': 'error',
+      'prefer-object-has-own': 'error',
       'no-restricted-syntax': [
         'error',
         {
@@ -191,6 +220,12 @@ export default [
             "JSXAttribute[name.name='role'][value.type='Literal'][value.value='status']",
           message:
             'Use <output> instead of the "status" role to ensure accessibility across all devices.',
+        },
+        {
+          selector:
+            "JSXAttribute[name.name='role'][value.type='Literal'][value.value='dialog']",
+          message:
+            'Use <dialog> instead of the "dialog" role to ensure accessibility across all devices.',
         },
       ],
     },
@@ -213,9 +248,11 @@ export default [
       '@typescript-eslint/no-unnecessary-type-assertion': 'error',
       '@typescript-eslint/no-unnecessary-condition': 'error',
       '@typescript-eslint/no-unnecessary-boolean-literal-compare': 'error',
+      '@typescript-eslint/no-redundant-type-constituents': 'error',
       '@typescript-eslint/no-unnecessary-type-arguments': 'error',
       '@typescript-eslint/no-unnecessary-type-constraint': 'error',
       '@typescript-eslint/no-unnecessary-type-parameters': 'error',
+      '@typescript-eslint/prefer-optional-chain': 'error',
       '@typescript-eslint/await-thenable': 'error',
       '@typescript-eslint/prefer-promise-reject-errors': 'error',
       '@typescript-eslint/no-deprecated': 'error',
@@ -242,6 +279,27 @@ export default [
       ...sonarjsAllRules,
       'sonarjs/cognitive-complexity': ['error', 15],
       'sonarjs/duplicates-in-character-class': 'error',
+      'sonarjs/prefer-regexp-exec': 'error',
+    },
+  },
+
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: {
+      sonarjs,
+    },
+    rules: {
+      'sonarjs/no-nested-functions': ['error', { threshold: 4 }],
+    },
+  },
+
+  {
+    files: ['tests/**/*.{ts,tsx}'],
+    plugins: {
+      sonarjs,
+    },
+    rules: {
+      'sonarjs/assertions-in-tests': 'error',
     },
   },
 ];

@@ -1,6 +1,6 @@
 /**
- * @file Contains the core logic for exporting data to DOCX format.
- * It handles DOCX template loading, data mapping, and report generation.
+ * Contains the core logic for exporting data to DOCX format.
+ * Handles DOCX template loading, data mapping, and report generation.
  */
 
 import { createReport } from 'docx-templates/lib/browser.js';
@@ -12,6 +12,8 @@ import {
   getDoctorLetterExportDefaults,
   hasDoctorLetterDecisionAnswers,
 } from './doctorLetterDefaults';
+import { getOfflabelAntragExportDefaults } from './offlabelAntragDefaults';
+import { getNotfallpassExportDefaults } from './notfallpassDefaults';
 import {
   loadFormpackManifest,
   loadFormpackSchema,
@@ -28,8 +30,14 @@ import {
 } from './downloadUtils';
 import { getRecord } from '../storage/records';
 import { isRecord, getFirstItem } from '../lib/utils';
+import { getPathValue, setPathValueMutableSafe } from '../lib/pathAccess';
 import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { buildI18nContext } from './buildI18nContext';
+import {
+  DOCTOR_LETTER_FORMPACK_ID,
+  NOTFALLPASS_FORMPACK_ID,
+  OFFLABEL_ANTRAG_FORMPACK_ID,
+} from '../formpacks/formpackIds';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
 export type DocxTemplateId = 'a4' | 'wallet';
@@ -83,7 +91,7 @@ const assertTemplateAllowed = (
   formpackId: string,
   templateId: DocxTemplateId,
 ) => {
-  if (templateId === 'wallet' && formpackId !== 'notfallpass') {
+  if (templateId === 'wallet' && formpackId !== NOTFALLPASS_FORMPACK_ID) {
     throw new Error(
       'Wallet DOCX export is only supported for the notfallpass formpack.',
     );
@@ -94,6 +102,7 @@ const DOCX_MIME =
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const DOCX_CMD_DELIMITER: [string, string] = ['{{', '}}'];
 const DOCX_LITERAL_DELIMITER = '§§DOCX_XML§§';
+const DOCTOR_NAME_PATH = 'doctor.name';
 // Session cache keeps DOCX assets available when the app is offline.
 const docxMappingCache = new Map<string, DocxMapping>();
 const docxTemplateCache = new Map<string, Uint8Array>();
@@ -185,12 +194,12 @@ const parseDocxMapping = (payload: unknown): DocxMapping => {
 const buildDocxAdditionalContext = (
   formpackId: string,
   locale: SupportedLocale,
-  i18nContext?: { t: Record<string, unknown> },
+  i18nContext: { t: Record<string, unknown> },
 ): DocxAdditionalContext => {
   const t = i18n.getFixedT(locale, `formpack:${formpackId}`);
   const tFn = ((key: string) =>
     t(key, { defaultValue: key })) as DocxAdditionalContext['t'];
-  const tContext = i18nContext?.t ?? buildI18nContext(formpackId, locale).t;
+  const tContext = i18nContext.t;
   Object.assign(tFn, tContext);
 
   const formatDate = (value: string | null | undefined): string => {
@@ -221,9 +230,8 @@ const coerceDocxError = (error: unknown): Error | null => {
     return error;
   }
 
-  if (Array.isArray(error)) {
-    const first = error.find((entry) => entry instanceof Error);
-    return first ?? null;
+  if (Array.isArray(error) && error.length > 0) {
+    return coerceDocxError(error[0]);
   }
 
   if (isRecord(error) && typeof error.message === 'string') {
@@ -285,67 +293,6 @@ export const getDocxErrorKey = (error: unknown): DocxErrorKey => {
   }
 };
 
-const getPathValue = (source: unknown, path: string): unknown => {
-  if (!path) {
-    return undefined;
-  }
-
-  return path.split('.').reduce<unknown>((current, segment) => {
-    if (!isRecord(current) && !Array.isArray(current)) {
-      return undefined;
-    }
-
-    if (isRecord(current)) {
-      return current[segment];
-    }
-
-    // Array access via numeric segments.
-    const index = Number(segment);
-    if (Number.isNaN(index)) {
-      return undefined;
-    }
-    return current[index];
-  }, source);
-};
-
-const isSafePathSegment = (segment: string): boolean =>
-  segment !== '__proto__' &&
-  segment !== 'constructor' &&
-  segment !== 'prototype';
-
-const setPathValue = (
-  target: Record<string, unknown>,
-  path: string,
-  value: unknown,
-) => {
-  if (!path || path.trim().length === 0) {
-    return;
-  }
-
-  const segments = path.split('.');
-  let cursor: Record<string, unknown> = target;
-
-  segments.forEach((segment, index) => {
-    if (!isSafePathSegment(segment)) {
-      // Prevent prototype pollution via dangerous keys.
-      return;
-    }
-
-    const isLeaf = index === segments.length - 1;
-
-    if (isLeaf) {
-      cursor[segment] = value;
-      return;
-    }
-
-    if (!isRecord(cursor[segment])) {
-      cursor[segment] = {};
-    }
-
-    cursor = cursor[segment] as Record<string, unknown>;
-  });
-};
-
 const isEmptyTemplateValue = (value: unknown): boolean =>
   typeof value !== 'string' || value.trim().length === 0;
 
@@ -381,10 +328,93 @@ const applyDefaultForPath = (
 ): void => {
   const current = getPathValue(context, path);
   if (isEmptyTemplateValue(current)) {
-    setPathValue(context, path, fallback);
+    setPathValueMutableSafe(context, path, fallback);
   }
 };
 
+type PathFallbackEntry = readonly [path: string, fallback: string];
+
+const applyDefaultsForPaths = (
+  context: DocxTemplateContext,
+  entries: readonly PathFallbackEntry[],
+): void => {
+  entries.forEach(([path, fallback]) => {
+    applyDefaultForPath(context, path, fallback);
+  });
+};
+
+const hasMappedPath = (mapping: DocxMapping, path: string): boolean =>
+  mapping.fields.some((field) => field.path === path) ||
+  Boolean(mapping.loops?.some((loop) => loop.path === path));
+
+const shouldEmbedOfflabelLiabilityFallback = (
+  formpackId: string,
+  mapping: DocxMapping,
+): boolean => {
+  if (formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID) {
+    return false;
+  }
+  return !hasMappedPath(mapping, 'arzt.liabilityParagraphs');
+};
+
+const appendOfflabelLiabilityFallbackToPart2 = (
+  documentData: DocumentModel,
+  formpackId: string,
+  mapping: DocxMapping,
+): DocumentModel => {
+  if (!shouldEmbedOfflabelLiabilityFallback(formpackId, mapping)) {
+    return documentData;
+  }
+
+  const liabilityParagraphsRaw = getPathValue(
+    documentData,
+    'arzt.liabilityParagraphs',
+  );
+  if (
+    !Array.isArray(liabilityParagraphsRaw) ||
+    liabilityParagraphsRaw.length < 1
+  ) {
+    return documentData;
+  }
+
+  const liabilityParagraphs = liabilityParagraphsRaw
+    .map((entry) => (typeof entry === 'string' ? entry.trim() : ''))
+    .filter((entry) => entry.length > 0);
+  if (liabilityParagraphs.length < 1) {
+    return documentData;
+  }
+
+  const part2ParagraphsRaw = getPathValue(documentData, 'arzt.paragraphs');
+  const part2Paragraphs = Array.isArray(part2ParagraphsRaw)
+    ? part2ParagraphsRaw.map((entry) =>
+        typeof entry === 'string' ? entry : '',
+      )
+    : [];
+  const liabilityHeading = getPathValue(documentData, 'arzt.liabilityHeading');
+  const liabilityHeadingText =
+    typeof liabilityHeading === 'string' ? liabilityHeading.trim() : '';
+  const mergedPart2Paragraphs = [...part2Paragraphs];
+  if (mergedPart2Paragraphs.length > 0 && mergedPart2Paragraphs.at(-1) !== '') {
+    mergedPart2Paragraphs.push('');
+  }
+  if (liabilityHeadingText.length > 0) {
+    mergedPart2Paragraphs.push(liabilityHeadingText, '');
+  }
+  mergedPart2Paragraphs.push(...liabilityParagraphs);
+
+  const clonedDocumentData = cloneTemplateValue(documentData) as DocumentModel;
+  setPathValueMutableSafe(
+    clonedDocumentData as unknown as Record<string, unknown>,
+    'arzt.paragraphs',
+    mergedPart2Paragraphs,
+  );
+  return clonedDocumentData;
+};
+
+/**
+ * Applies locale-specific fallback text for fields that must not remain empty in exports.
+ * Invariant: user-provided values always win; defaults only fill missing or blank fields.
+ */
 export const applyDocxExportDefaults = (
   context: DocxTemplateContext,
   formpackId: string,
@@ -392,60 +422,103 @@ export const applyDocxExportDefaults = (
   sourceData?: Record<string, unknown>,
 ): DocxTemplateContext => {
   const normalized = cloneTemplateContext(context);
-  if (formpackId !== 'doctor-letter') {
+  if (
+    formpackId !== DOCTOR_LETTER_FORMPACK_ID &&
+    formpackId !== NOTFALLPASS_FORMPACK_ID &&
+    formpackId !== OFFLABEL_ANTRAG_FORMPACK_ID
+  ) {
     return normalized;
   }
 
-  const defaults = getDoctorLetterExportDefaults(locale);
+  if (formpackId === DOCTOR_LETTER_FORMPACK_ID) {
+    const defaults = getDoctorLetterExportDefaults(locale);
+    applyDefaultsForPaths(normalized, [
+      ['patient.firstName', defaults.patient.firstName],
+      ['patient.lastName', defaults.patient.lastName],
+      ['patient.streetAndNumber', defaults.patient.streetAndNumber],
+      ['patient.postalCode', defaults.patient.postalCode],
+      ['patient.city', defaults.patient.city],
+      [DOCTOR_NAME_PATH, defaults.doctor.name],
+      ['doctor.streetAndNumber', defaults.doctor.streetAndNumber],
+      ['doctor.postalCode', defaults.doctor.postalCode],
+      ['doctor.city', defaults.doctor.city],
+    ]);
 
-  applyDefaultForPath(
-    normalized,
-    'patient.firstName',
-    defaults.patient.firstName,
-  );
-  applyDefaultForPath(
-    normalized,
-    'patient.lastName',
-    defaults.patient.lastName,
-  );
-  applyDefaultForPath(
-    normalized,
-    'patient.streetAndNumber',
-    defaults.patient.streetAndNumber,
-  );
-  applyDefaultForPath(
-    normalized,
-    'patient.postalCode',
-    defaults.patient.postalCode,
-  );
-  applyDefaultForPath(normalized, 'patient.city', defaults.patient.city);
+    const shouldApplyDecisionFallback =
+      !sourceData || !hasDoctorLetterDecisionAnswers(sourceData);
+    if (shouldApplyDecisionFallback) {
+      setPathValueMutableSafe(
+        normalized,
+        'decision.caseText',
+        defaults.decision.fallbackCaseText,
+      );
+      setPathValueMutableSafe(normalized, 'decision.caseParagraphs', [
+        defaults.decision.fallbackCaseText,
+      ]);
+    }
+  }
 
-  applyDefaultForPath(normalized, 'doctor.name', defaults.doctor.name);
-  applyDefaultForPath(
-    normalized,
-    'doctor.streetAndNumber',
-    defaults.doctor.streetAndNumber,
-  );
-  applyDefaultForPath(
-    normalized,
-    'doctor.postalCode',
-    defaults.doctor.postalCode,
-  );
-  applyDefaultForPath(normalized, 'doctor.city', defaults.doctor.city);
-
-  const shouldApplyDecisionFallback =
-    !sourceData || !hasDoctorLetterDecisionAnswers(sourceData);
-  if (shouldApplyDecisionFallback) {
-    setPathValue(
-      normalized,
-      'decision.caseText',
-      defaults.decision.fallbackCaseText,
-    );
-    setPathValue(normalized, 'decision.caseParagraphs', [
-      defaults.decision.fallbackCaseText,
+  if (formpackId === NOTFALLPASS_FORMPACK_ID) {
+    const defaults = getNotfallpassExportDefaults(locale);
+    applyDefaultsForPaths(normalized, [
+      ['person.name', defaults.person.name],
+      ['person.birthDate', defaults.person.birthDate],
+      ['diagnoses.formatted', defaults.diagnoses.formatted],
+      ['symptoms', defaults.symptoms],
+      ['allergies', defaults.allergies],
+      [DOCTOR_NAME_PATH, defaults.doctor.name],
+      ['doctor.phone', defaults.doctor.phone],
     ]);
   }
 
+  if (formpackId === OFFLABEL_ANTRAG_FORMPACK_ID) {
+    const defaults = getOfflabelAntragExportDefaults(locale);
+    applyDefaultsForPaths(normalized, [
+      ['patient.firstName', defaults.patient.firstName],
+      ['patient.lastName', defaults.patient.lastName],
+      ['patient.birthDate', defaults.patient.birthDate],
+      ['patient.insuranceNumber', defaults.patient.insuranceNumber],
+      ['patient.streetAndNumber', defaults.patient.streetAndNumber],
+      ['patient.postalCode', defaults.patient.postalCode],
+      ['patient.city', defaults.patient.city],
+      ['doctor.practice', defaults.doctor.practice],
+      [DOCTOR_NAME_PATH, defaults.doctor.name],
+      ['doctor.streetAndNumber', defaults.doctor.streetAndNumber],
+      ['doctor.postalCode', defaults.doctor.postalCode],
+      ['doctor.city', defaults.doctor.city],
+      ['insurer.name', defaults.insurer.name],
+      ['insurer.department', defaults.insurer.department],
+      ['insurer.streetAndNumber', defaults.insurer.streetAndNumber],
+      ['insurer.postalCode', defaults.insurer.postalCode],
+      ['insurer.city', defaults.insurer.city],
+      ['request.drug', defaults.request.drug],
+      ['request.selectedIndicationKey', defaults.request.selectedIndicationKey],
+      [
+        'request.standardOfCareTriedFreeText',
+        defaults.request.standardOfCareTriedFreeText,
+      ],
+      ['attachmentsFreeText', defaults.attachmentsFreeText],
+    ]);
+  }
+
+  return normalized;
+};
+
+/**
+ * Guarantees a stable `exportedAtIso` value in the template context.
+ */
+export const ensureExportedAtIso = (
+  context: DocxTemplateContext,
+  exportedAt: Date = new Date(),
+): DocxTemplateContext => {
+  const normalized = cloneTemplateContext(context);
+  if (getPathValue(normalized, 'exportedAtIso') === undefined) {
+    setPathValueMutableSafe(
+      normalized,
+      'exportedAtIso',
+      exportedAt.toISOString(),
+    );
+  }
   return normalized;
 };
 
@@ -463,7 +536,7 @@ type TemplateValueResolver = (
 
 const normalizeFieldValue = (
   value: unknown,
-  resolveValue?: TemplateValueResolver,
+  resolveValue: TemplateValueResolver,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
   fieldPath?: string,
@@ -472,49 +545,32 @@ const normalizeFieldValue = (
     return '';
   }
 
-  if (resolveValue) {
-    return encodeDocxLineBreaks(
-      resolveValue(value, schemaNode, uiNode, fieldPath),
-    );
-  }
-
-  if (typeof value === 'number' || typeof value === 'boolean') {
-    return encodeDocxLineBreaks(String(value));
-  }
-
-  return '';
+  return encodeDocxLineBreaks(
+    resolveValue(value, schemaNode, uiNode, fieldPath),
+  );
 };
 
 const normalizePrimitive = (
   entry: unknown,
-  resolveValue?: TemplateValueResolver,
+  resolveValue: TemplateValueResolver,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
   fieldPath?: string,
 ): string | null => {
-  if (entry === null || entry === undefined) {
-    return null;
-  }
   if (typeof entry === 'string') {
     return encodeDocxLineBreaks(entry);
   }
-  if (resolveValue) {
-    return encodeDocxLineBreaks(
-      resolveValue(entry, schemaNode, uiNode, fieldPath),
-    );
-  }
-  if (typeof entry === 'number' || typeof entry === 'boolean') {
-    return encodeDocxLineBreaks(String(entry));
-  }
-  return null;
+  return encodeDocxLineBreaks(
+    resolveValue(entry, schemaNode, uiNode, fieldPath),
+  );
 };
 
 const normalizeLoopRecord = (
   entry: Record<string, unknown>,
-  resolveValue?: TemplateValueResolver,
+  resolveValue: TemplateValueResolver,
+  fieldPath: string,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
-  fieldPath?: string,
 ): Record<string, unknown> => {
   const normalized: Record<string, unknown> = {};
   const schemaProps =
@@ -528,7 +584,7 @@ const normalizeLoopRecord = (
   Object.entries(entry)
     .sort(([a], [b]) => a.localeCompare(b))
     .forEach(([key, value]) => {
-      const nextPath = fieldPath ? `${fieldPath}.${key}` : key;
+      const nextPath = `${fieldPath}.${key}`;
       normalized[key] = normalizeFieldValue(
         value,
         resolveValue,
@@ -542,10 +598,10 @@ const normalizeLoopRecord = (
 
 const normalizeLoopEntry = (
   entry: unknown,
-  resolveValue?: TemplateValueResolver,
+  resolveValue: TemplateValueResolver,
+  fieldPath: string,
   schemaNode?: RJSFSchema,
   uiNode?: UiSchema,
-  fieldPath?: string,
 ): unknown => {
   if (entry === null || entry === undefined) {
     return null;
@@ -555,9 +611,9 @@ const normalizeLoopEntry = (
     return normalizeLoopRecord(
       entry,
       resolveValue,
+      fieldPath,
       schemaNode,
       uiNode,
-      fieldPath,
     );
   }
 
@@ -658,7 +714,10 @@ const addBlankLinesBetweenDoctorLetterParagraphs = (
   path: string,
   entries: unknown[],
 ): unknown[] => {
-  if (formpackId !== 'doctor-letter' || path !== 'decision.caseParagraphs') {
+  if (
+    formpackId !== DOCTOR_LETTER_FORMPACK_ID ||
+    path !== 'decision.caseParagraphs'
+  ) {
     return entries;
   }
 
@@ -789,11 +848,16 @@ export const mapDocumentDataToTemplate = async (
     cachedUiSchema ?? loadDocxUiSchema(formpackId),
   ]);
   if (!docxSchemaCache.has(formpackId)) {
-    docxSchemaCache.set(formpackId, schema ?? null);
+    docxSchemaCache.set(formpackId, schema);
   }
   if (!docxUiSchemaCache.has(formpackId)) {
-    docxUiSchemaCache.set(formpackId, uiSchema ?? null);
+    docxUiSchemaCache.set(formpackId, uiSchema);
   }
+  const mappedDocumentData = appendOfflabelLiabilityFallbackToPart2(
+    documentData,
+    formpackId,
+    mapping,
+  );
   const resolveValue = (
     value: unknown,
     schemaNode?: RJSFSchema,
@@ -820,17 +884,17 @@ export const mapDocumentDataToTemplate = async (
     const fieldSchema = getSchemaNodeForPath(schema, field.path);
     const fieldUiSchema = getUiSchemaNodeForPath(uiSchema, field.path);
     const value = normalizeFieldValue(
-      getPathValue(documentData, field.path),
+      getPathValue(mappedDocumentData, field.path),
       resolveValue,
       fieldSchema,
       fieldUiSchema,
       field.path,
     );
-    setPathValue(context, field.var, value);
+    setPathValueMutableSafe(context, field.var, value);
   });
 
   mapping.loops?.forEach((loop) => {
-    const value = getPathValue(documentData, loop.path);
+    const value = getPathValue(mappedDocumentData, loop.path);
     const loopSchema = getSchemaNodeForPath(schema, loop.path);
     const loopUiSchema = getUiSchemaNodeForPath(uiSchema, loop.path);
     const itemSchema = getArrayItemSchema(loopSchema);
@@ -841,9 +905,9 @@ export const mapDocumentDataToTemplate = async (
             normalizeLoopEntry(
               entry,
               resolveValue,
+              loop.path,
               itemSchema,
               itemUiSchema,
-              loop.path,
             ),
           )
           .filter((entry) => entry !== null && entry !== undefined)
@@ -853,7 +917,7 @@ export const mapDocumentDataToTemplate = async (
       loop.path,
       entries,
     );
-    setPathValue(context, loop.var, normalizedEntries);
+    setPathValueMutableSafe(context, loop.var, normalizedEntries);
   });
 
   return context;
@@ -907,6 +971,13 @@ export const buildDocxExportFilename = (
 /**
  * Generates a DOCX report from a template and context.
  *
+ * SECURITY: docx-templates uses eval() internally for template expressions.
+ * Template files (.docx) are bundled and not user-supplied, so the eval scope
+ * is controlled. The `data` context contains user form values — these are safe
+ * because they are inserted via INS commands (string interpolation), not
+ * executed as code. Do NOT set `noSandbox: true` or allow user-supplied
+ * template files.
+ *
  * Note: createReport can throw (template errors, missing placeholders, invalid loops).
  */
 export const createDocxReport = async (
@@ -923,6 +994,98 @@ export const createDocxReport = async (
     processLineBreaks: true,
     additionalJsContext,
     failFast,
+  });
+};
+
+let docxWorker: Worker | null = null;
+let workerRequestId = 0;
+let workerFailed = false;
+type DocxWorkerResponse =
+  | { id: number; result: Uint8Array }
+  | { id: number; error: string };
+type PendingWorkerRequest = {
+  resolve: (result: Uint8Array) => void;
+  reject: (error: Error) => void;
+};
+const pendingWorkerRequests = new Map<number, PendingWorkerRequest>();
+
+const rejectPendingWorkerRequests = (message: string): void => {
+  const pending = [...pendingWorkerRequests.values()];
+  pendingWorkerRequests.clear();
+  for (const request of pending) {
+    request.reject(new Error(message));
+  }
+};
+
+const getDocxWorker = (): Worker | null => {
+  if (workerFailed) return null;
+  if (docxWorker) return docxWorker;
+  try {
+    docxWorker = new Worker(new URL('./docxReportWorker.ts', import.meta.url), {
+      type: 'module',
+    });
+    docxWorker.addEventListener(
+      'message',
+      (event: MessageEvent<DocxWorkerResponse>) => {
+        const request = pendingWorkerRequests.get(event.data.id);
+        if (!request) return;
+        pendingWorkerRequests.delete(event.data.id);
+        if ('error' in event.data) {
+          request.reject(new Error(event.data.error));
+          return;
+        }
+        request.resolve(new Uint8Array(event.data.result));
+      },
+    );
+    docxWorker.addEventListener('error', () => {
+      workerFailed = true;
+      rejectPendingWorkerRequests('DOCX worker failed.');
+      docxWorker = null;
+    });
+    docxWorker.addEventListener('messageerror', () => {
+      workerFailed = true;
+      rejectPendingWorkerRequests(
+        'DOCX worker message could not be deserialized.',
+      );
+      docxWorker = null;
+    });
+    return docxWorker;
+  } catch {
+    workerFailed = true;
+    rejectPendingWorkerRequests('DOCX worker could not be created.');
+    return null;
+  }
+};
+
+const createDocxReportInWorker = (
+  template: Uint8Array,
+  data: DocxTemplateContext,
+  tContext: Record<string, unknown>,
+  locale: string,
+  failFast: boolean,
+): Promise<Uint8Array> => {
+  const worker = getDocxWorker();
+  if (!worker) return Promise.reject(new Error('Worker unavailable'));
+
+  return new Promise((resolve, reject) => {
+    const id = ++workerRequestId;
+    pendingWorkerRequests.set(id, { resolve, reject });
+    try {
+      worker.postMessage({
+        id,
+        template,
+        data,
+        cmdDelimiter: DOCX_CMD_DELIMITER,
+        literalXmlDelimiter: DOCX_LITERAL_DELIMITER,
+        processLineBreaks: true,
+        failFast,
+        tContext,
+        locale,
+      });
+    } catch (error) {
+      pendingWorkerRequests.delete(id);
+      reject(error instanceof Error ? error : new Error(String(error)));
+    }
   });
 };
 
@@ -965,14 +1128,18 @@ export const exportDocx = async ({
   uiSchema,
 }: ExportDocxOptions): Promise<Blob> => {
   const manifest = manifestOverride ?? (await loadFormpackManifest(formpackId));
-  if (!manifest.docx) {
-    throw new Error('DOCX export assets are not configured for this formpack.');
-  }
+  const docxConfig =
+    manifest.docx ??
+    (() => {
+      throw new Error(
+        'DOCX export assets are not configured for this formpack.',
+      );
+    })();
 
   const templatePath =
     variant === 'wallet'
-      ? manifest.docx.templates.wallet
-      : manifest.docx.templates.a4;
+      ? docxConfig.templates.wallet
+      : docxConfig.templates.a4;
 
   if (!templatePath) {
     throw new Error(`DOCX template for ${variant} is not available.`);
@@ -987,7 +1154,7 @@ export const exportDocx = async ({
   const [template, templateContext] = await Promise.all([
     loadDocxTemplate(formpackId, templatePath),
     mapDocumentDataToTemplate(formpackId, variant, documentModel, {
-      mappingPath: manifest.docx.mapping,
+      mappingPath: docxConfig.mapping,
       locale,
       schema,
       uiSchema,
@@ -999,14 +1166,27 @@ export const exportDocx = async ({
     locale,
     record.data,
   );
+  const contextWithExportDate = ensureExportedAtIso(normalizedContext);
+  const tContext = isRecord(contextWithExportDate.t)
+    ? contextWithExportDate.t
+    : {};
 
-  const report = await createDocxReport(
-    template,
-    normalizedContext,
-    buildDocxAdditionalContext(formpackId, locale, {
-      t: isRecord(normalizedContext.t) ? normalizedContext.t : {},
-    }),
-  );
+  let report: Uint8Array;
+  try {
+    report = await createDocxReportInWorker(
+      template,
+      contextWithExportDate,
+      tContext,
+      locale,
+      true,
+    );
+  } catch {
+    report = await createDocxReport(
+      template,
+      contextWithExportDate,
+      buildDocxAdditionalContext(formpackId, locale, { t: tContext }),
+    );
+  }
 
   return new Blob([new Uint8Array(report)], { type: DOCX_MIME });
 };

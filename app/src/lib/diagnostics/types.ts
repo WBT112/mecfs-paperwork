@@ -1,11 +1,20 @@
 export type StorageHealthStatus = 'ok' | 'warning' | 'error';
 
+export type StorageEncryptionStatus = 'encrypted' | 'not_encrypted' | 'unknown';
+export type StorageKeyCookieContext = 'https' | 'non-https' | 'unknown';
+
 export type StorageHealthInfo = {
   indexedDbAvailable: boolean;
   storageEstimate: {
     supported: boolean;
     usage?: number;
     quota?: number;
+  };
+  encryptionAtRest?: {
+    status: StorageEncryptionStatus;
+    keyCookiePresent: boolean;
+    keyCookieContext: StorageKeyCookieContext;
+    secureFlagVerifiable: false;
   };
   status: StorageHealthStatus;
   message: string;
@@ -33,6 +42,17 @@ export type FormpackMetaInfo = {
   versionOrHash: string;
 };
 
+export type PerformanceMeasureInfo = {
+  name: string;
+  durationMs: number;
+  startTimeMs: number;
+};
+
+export type PerformanceInfo = {
+  supported: boolean;
+  measures: PerformanceMeasureInfo[];
+};
+
 export type DiagnosticsBundle = {
   generatedAt: string;
   app: {
@@ -58,5 +78,6 @@ export type DiagnosticsBundle = {
   };
   storageHealth: StorageHealthInfo;
   formpacks: FormpackMetaInfo[];
+  performance: PerformanceInfo;
   errors: string[];
 };

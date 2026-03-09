@@ -6,9 +6,11 @@ import type {
   FormpackExportType,
   FormpackManifest,
   FormpackManifestPayload,
+  FormpackMeta,
   FormpackUiConfig,
   FormpackVisibility,
 } from './types';
+import { isFormpackCategory } from './types';
 
 export type FormpackLoaderErrorCode =
   | 'not_found'
@@ -41,6 +43,7 @@ const buildSchemaPath = (formpackId: string) =>
   `/formpacks/${formpackId}/schema.json`;
 const buildUiSchemaPath = (formpackId: string) =>
   `/formpacks/${formpackId}/ui.schema.json`;
+const FORMPACK_ID_SET = new Set<string>(FORMPACK_IDS);
 
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
@@ -201,6 +204,44 @@ const parseDocxManifest = (
   };
 };
 
+const parseManifestMeta = (value: unknown): FormpackMeta | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const category = isFormpackCategory(value.category)
+    ? value.category
+    : undefined;
+  const keywords = isStringArray(value.keywords) ? value.keywords : undefined;
+
+  if (!category && !keywords) {
+    return undefined;
+  }
+
+  return {
+    ...(category ? { category } : {}),
+    ...(keywords ? { keywords } : {}),
+  };
+};
+
+const assertKnownFormpackId = (
+  formpackId: string,
+  errorCode: FormpackLoaderErrorCode,
+): void => {
+  if (FORMPACK_ID_SET.has(formpackId)) {
+    return;
+  }
+
+  throw new FormpackLoaderError(
+    errorCode,
+    'The requested formpack id is not registered.',
+  );
+};
+
+/**
+ * Parses and validates a manifest payload into a strongly-typed runtime manifest.
+ * Throws `FormpackLoaderError` for all contract violations.
+ */
 export const parseManifest = (
   payload: FormpackManifestPayload,
   formpackId: string,
@@ -213,6 +254,7 @@ export const parseManifest = (
   const docx = parseDocxManifest(payload.docx, formpackId);
   const requiresDocx = exports.includes('docx');
   const visibility = getValidatedVisibility(payload);
+  const meta = parseManifestMeta(payload.meta);
 
   if (requiresDocx && !docx) {
     throw new FormpackLoaderError(
@@ -234,6 +276,7 @@ export const parseManifest = (
     ui: isRecord(payload.ui)
       ? (payload.ui as unknown as FormpackUiConfig)
       : undefined,
+    meta,
   };
 };
 
@@ -260,6 +303,8 @@ export const clearFormpackCaches = (): void => {
 export const loadFormpackManifest = async (
   formpackId: string,
 ): Promise<FormpackManifest> => {
+  assertKnownFormpackId(formpackId, 'not_found');
+
   const cached = manifestCache.get(formpackId);
   if (cached) {
     return cached;
@@ -374,24 +419,28 @@ const loadFormpackJsonResource = async (
  */
 export const loadFormpackSchema = async (
   formpackId: string,
-): Promise<Record<string, unknown>> =>
-  loadFormpackJsonResource(buildSchemaPath(formpackId), {
+): Promise<Record<string, unknown>> => {
+  assertKnownFormpackId(formpackId, 'schema_not_found');
+  return loadFormpackJsonResource(buildSchemaPath(formpackId), {
     notFoundCode: 'schema_not_found',
     invalidCode: 'schema_invalid',
     unavailableCode: 'schema_unavailable',
   });
+};
 
 /**
  * Fetches the UI schema for a formpack.
  */
 export const loadFormpackUiSchema = async (
   formpackId: string,
-): Promise<Record<string, unknown>> =>
-  loadFormpackJsonResource(buildUiSchemaPath(formpackId), {
+): Promise<Record<string, unknown>> => {
+  assertKnownFormpackId(formpackId, 'ui_schema_not_found');
+  return loadFormpackJsonResource(buildUiSchemaPath(formpackId), {
     notFoundCode: 'ui_schema_not_found',
     invalidCode: 'ui_schema_invalid',
     unavailableCode: 'ui_schema_unavailable',
   });
+};
 
 /**
  * Loads all formpacks declared in the static registry.

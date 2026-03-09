@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 
 type CollapsibleSectionProps = {
   id: string;
@@ -20,38 +20,9 @@ export default memo(function CollapsibleSection(
     }),
     [id],
   );
-  const keyDownHandledRef = useRef(false);
-
   const handleClick = useCallback(() => {
     setIsOpen((prev) => !prev);
   }, []);
-
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (
-        (event.code === 'Space' || event.code === 'Enter') &&
-        !keyDownHandledRef.current
-      ) {
-        keyDownHandledRef.current = true;
-        event.preventDefault();
-        setIsOpen((prev) => !prev);
-      }
-    },
-    [],
-  );
-
-  const handleKeyUp = useCallback(
-    (event: React.KeyboardEvent<HTMLButtonElement>) => {
-      if (!(event.code === 'Space' || event.code === 'Enter')) return;
-      if (keyDownHandledRef.current) {
-        keyDownHandledRef.current = false;
-        return;
-      }
-      event.preventDefault();
-      setIsOpen((prev) => !prev);
-    },
-    [],
-  );
 
   return (
     <section className={className}>
@@ -61,11 +32,8 @@ export default memo(function CollapsibleSection(
           id={ids.toggle}
           className="collapsible-section__toggle"
           aria-expanded={isOpen}
-          aria-pressed={isOpen}
           aria-controls={ids.content}
           onClick={handleClick}
-          onKeyDown={handleKeyDown}
-          onKeyUp={handleKeyUp}
         >
           <span className="collapsible-section__title">{title}</span>
           <span className="collapsible-section__icon" aria-hidden="true" />

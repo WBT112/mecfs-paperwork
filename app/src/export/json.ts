@@ -2,8 +2,10 @@ import appPackage from '../../package.json';
 import type { RJSFSchema } from '@rjsf/utils';
 import type { SupportedLocale } from '../i18n/locale';
 import type { FormpackManifest } from '../formpacks/types';
+import type { JsonEncryptionEnvelope } from '../lib/jsonEncryption';
 import type { RecordEntry, SnapshotEntry } from '../storage/types';
 import { isRecord } from '../lib/utils';
+import { downloadBlobExport } from './downloadUtils';
 
 const APP_ID = 'mecfs-paperwork';
 const { version: appVersion } = appPackage as { version?: string };
@@ -21,7 +23,7 @@ export type JsonExportPayload = {
   formpack: { id: string; version: string };
   record: {
     id: string;
-    name?: string;
+    title?: string;
     updatedAt: string;
     locale: SupportedLocale;
     data: Record<string, unknown>;
@@ -31,6 +33,8 @@ export type JsonExportPayload = {
   data: Record<string, unknown>;
   revisions?: JsonExportRevision[];
 };
+
+export type JsonDownloadPayload = JsonExportPayload | JsonEncryptionEnvelope;
 
 export type JsonExportOptions = {
   formpack: Pick<FormpackManifest, 'id' | 'version'>;
@@ -183,7 +187,7 @@ export const buildJsonExportPayload = (
     formpack: { id: options.formpack.id, version: options.formpack.version },
     record: {
       id: options.record.id,
-      name: options.record.title,
+      title: options.record.title,
       updatedAt: options.record.updatedAt,
       locale: options.locale,
       data: normalizedData,
@@ -215,30 +219,27 @@ const formatExportDate = (value: string): string => {
  * Build the JSON export filename.
  */
 export const buildJsonExportFilename = (payload: JsonExportPayload): string => {
-  const recordName = payload.record.name
-    ? sanitizeFilenameSegment(payload.record.name)
+  const recordTitle = payload.record.title
+    ? sanitizeFilenameSegment(payload.record.title)
     : payload.record.id;
   const date = formatExportDate(payload.exportedAt);
-  return `${payload.formpack.id}_${recordName}_${date}_${payload.locale}.json`;
+  return `${payload.formpack.id}_${recordTitle}_${date}_${payload.locale}.json`;
 };
 
 /**
  * Trigger a download for the JSON export payload.
  */
 export const downloadJsonExport = (
-  payload: JsonExportPayload,
+  payload: JsonDownloadPayload,
   filename: string,
 ): void => {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: 'application/json',
+  downloadBlobExport({
+    blob: new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json',
+    }),
+    filename,
+    mimeType: 'application/json',
+    defaultExtension: '.json',
+    errorMessage: 'JSON export could not be generated.',
   });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noopener';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 0);
 };

@@ -4,11 +4,12 @@ import { translateUiSchema } from '../../../src/i18n/rjsf';
 import { describe, expect, it, vi } from 'vitest';
 
 describe('translateUiSchema', () => {
-  it('translates ui:title, ui:description, and ui:help values', () => {
+  it('translates ui:title, ui:description, ui:help, and ui:placeholder values', () => {
     const uiSchema = {
       'ui:title': 't:title',
       'ui:description': 't:description',
       'ui:help': 't:help',
+      'ui:placeholder': 't:placeholder',
       nested: {
         'ui:title': 't:nested.title',
       },
@@ -19,6 +20,7 @@ describe('translateUiSchema', () => {
       'ui:title': 'translated:title',
       'ui:description': 'translated:description',
       'ui:help': 'translated:help',
+      'ui:placeholder': 'translated:placeholder',
       nested: {
         'ui:title': 'translated:nested.title',
       },
@@ -34,6 +36,10 @@ describe('translateUiSchema', () => {
     expect(t).toHaveBeenCalledWith('help', {
       ns: 'test',
       defaultValue: 'help',
+    });
+    expect(t).toHaveBeenCalledWith('placeholder', {
+      ns: 'test',
+      defaultValue: 'placeholder',
     });
     expect(t).toHaveBeenCalledWith('nested.title', {
       ns: 'test',

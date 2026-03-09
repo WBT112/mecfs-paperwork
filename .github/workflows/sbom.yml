@@ -3,8 +3,19 @@ name: SBOM
 on:
   push:
     branches: [main]
-  pull_request:
+    paths:
+      - "Dockerfile"
+      - "app/**"
+      - "**/package.json"
+      - "**/package-lock.json"
+      - "tools/sbom-summary.mjs"
+      - "tools/grype-summary.mjs"
+      - ".github/workflows/sbom.yml"
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -16,10 +27,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version: 24
 
@@ -35,13 +48,8 @@ jobs:
             echo "available=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Notice (PRs without secrets)
-        if: steps.check-secrets.outputs.available != 'true' && github.event_name == 'pull_request'
-        run: |
-          echo "::notice::Skipping container image SBOM because DHI registry credentials are not available on pull_request events."
-
       - name: Notice (events without secrets)
-        if: steps.check-secrets.outputs.available != 'true' && github.event_name != 'pull_request'
+        if: steps.check-secrets.outputs.available != 'true'
         run: |
           echo "::notice::Skipping container image SBOM because DHI registry credentials are not available."
 
@@ -69,7 +77,7 @@ jobs:
         run: docker build --pull -t mecfs-paperwork:${{ github.sha }} .
 
       - name: Generate workspace SBOM (CycloneDX)
-        uses: anchore/sbom-action@v0.15.11
+        uses: anchore/sbom-action@7ccf588e3cf3cc2611714c2eeae48550fbc17552 # v0.15.11
         with:
           path: .
           format: cyclonedx-json
@@ -77,7 +85,7 @@ jobs:
           upload-artifact: false
 
       - name: Generate workspace SBOM (SPDX)
-        uses: anchore/sbom-action@v0.15.11
+        uses: anchore/sbom-action@7ccf588e3cf3cc2611714c2eeae48550fbc17552 # v0.15.11
         with:
           path: .
           format: spdx-json
@@ -86,7 +94,7 @@ jobs:
 
       - name: Generate image SBOM (CycloneDX)
         if: steps.check-secrets.outputs.available == 'true'
-        uses: anchore/sbom-action@v0.15.11
+        uses: anchore/sbom-action@7ccf588e3cf3cc2611714c2eeae48550fbc17552 # v0.15.11
         with:
           image: mecfs-paperwork:${{ github.sha }}
           format: cyclonedx-json
@@ -95,7 +103,7 @@ jobs:
 
       - name: Generate image SBOM (SPDX)
         if: steps.check-secrets.outputs.available == 'true'
-        uses: anchore/sbom-action@v0.15.11
+        uses: anchore/sbom-action@7ccf588e3cf3cc2611714c2eeae48550fbc17552 # v0.15.11
         with:
           image: mecfs-paperwork:${{ github.sha }}
           format: spdx-json
@@ -119,7 +127,7 @@ jobs:
         run: cat sbom-summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Grype scan (workspace SBOM)
-        uses: anchore/scan-action@v6
+        uses: anchore/scan-action@7037fa011853d5a11690026fb85feee79f4c946c # v7
         with:
           sbom: sbom.workspace.cdx.json
           output-format: json
@@ -134,7 +142,7 @@ jobs:
 
       - name: Upload SBOM artifacts
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: sbom-workspace
           path: |
@@ -147,7 +155,7 @@ jobs:
 
       - name: Upload image SBOM artifacts
         if: always() && steps.check-secrets.outputs.available == 'true'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: sbom-image
           path: |

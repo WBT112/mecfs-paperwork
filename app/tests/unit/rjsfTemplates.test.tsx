@@ -53,4 +53,34 @@ describe('formpackTemplates', () => {
 
     expect(getByTestId('custom-desc')).toBeInTheDocument();
   });
+
+  it('returns null for empty description content', () => {
+    const DescriptionFieldTemplate =
+      formpackTemplates.DescriptionFieldTemplate as ComponentType<DescriptionFieldProps>;
+    const { container } = render(
+      <DescriptionFieldTemplate
+        id="field-description-empty"
+        description=""
+        schema={schema}
+        registry={registry}
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('returns null for empty help content', () => {
+    const HelpFieldTemplate =
+      formpackTemplates.FieldHelpTemplate as ComponentType<FieldHelpProps>;
+    const { container } = render(
+      <HelpFieldTemplate
+        fieldPathId={{ $id: 'field-help-empty', path: ['help'] }}
+        help=""
+        schema={schema}
+        registry={registry}
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
 });

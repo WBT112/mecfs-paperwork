@@ -1,10 +1,18 @@
 import { collectDiagnosticsBundle } from './collectors';
+import { redactObject } from './redact';
 import type { DiagnosticsBundle } from './types';
 
 const BUNDLE_FILENAME = 'mecfs-support-bundle.json';
 
+const redactDiagnosticsBundle = (
+  bundle: DiagnosticsBundle,
+): DiagnosticsBundle =>
+  redactObject(
+    bundle as unknown as Record<string, unknown>,
+  ) as DiagnosticsBundle;
+
 export const generateDiagnosticsBundle = async (): Promise<DiagnosticsBundle> =>
-  collectDiagnosticsBundle();
+  redactDiagnosticsBundle(await collectDiagnosticsBundle());
 
 export const downloadDiagnosticsBundle = async (): Promise<void> => {
   const bundle = await generateDiagnosticsBundle();

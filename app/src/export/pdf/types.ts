@@ -74,9 +74,10 @@ export const isDocumentBlock = (value: unknown): value is DocumentBlock => {
       return isStringArray(value.items);
     case 'kvTable':
       return isKvRows(value.rows);
-    default:
-      return false;
   }
+
+  // Fallback for unexpected `type` values to keep return type consistent.
+  return false;
 };
 
 export const isDocumentSection = (value: unknown): value is DocumentSection => {

@@ -2,6 +2,13 @@ name: E2E (Playwright)
 
 on:
   pull_request:
+    paths:
+      - "app/**"
+      - ".github/workflows/e2e.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -27,10 +34,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
         with:
           node-version: 24
           cache: npm
@@ -38,11 +47,11 @@ jobs:
 
       - name: Install dependencies
         working-directory: app
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --fund=false
 
       - name: Install Playwright browsers
         working-directory: app
-        run: npx playwright install --with-deps chromium firefox webkit
+        run: npx playwright install --with-deps ${{ matrix.browser }}
 
       - name: Run Playwright tests (${{ matrix.browser }})
         working-directory: app
@@ -59,9 +68,9 @@ jobs:
           fi
           exit $status
 
-      - name: Upload Playwright report (always)
-        if: always()
-        uses: actions/upload-artifact@v6
+      - name: Upload Playwright report
+        if: failure() || matrix.browser == 'chromium'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: playwright-report-${{ matrix.browser }}
           path: |

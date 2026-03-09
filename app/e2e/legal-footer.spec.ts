@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { getSponsorUrl } from '../src/lib/funding';
-import { DEFAULT_REPO_URL } from '../src/lib/repo';
+import { DEFAULT_REPO_URL } from '../src/lib/repoUrl';
 
 test('footer navigation reaches legal pages and exposes the GitHub link', async ({
   page,

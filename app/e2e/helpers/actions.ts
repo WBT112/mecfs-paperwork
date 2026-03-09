@@ -11,14 +11,14 @@ export const clickActionButton = async (
   button: Locator,
   timeout: number = 20_000,
 ) => {
-  await expect(button).toBeVisible({ timeout });
-  await expect(button).toBeEnabled({ timeout });
-
-  const perAttemptTimeout = Math.max(2_000, Math.floor(timeout / 3));
+  const maxAttempts = 4;
+  const perAttemptTimeout = Math.max(2_000, Math.floor(timeout / maxAttempts));
   let lastError: unknown = null;
 
-  for (let attempt = 1; attempt <= 3; attempt += 1) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
+      await expect(button).toBeVisible({ timeout: perAttemptTimeout });
+      await expect(button).toBeEnabled({ timeout: perAttemptTimeout });
       await button.click({ timeout: perAttemptTimeout });
       return;
     } catch (error) {
@@ -26,14 +26,6 @@ export const clickActionButton = async (
       // Retry backoff: brief pause before re-attempting click on flaky re-rendered buttons
       await button.page().waitForTimeout(150 * attempt);
     }
-  }
-
-  await button.focus();
-  try {
-    await button.press('Enter', { timeout: perAttemptTimeout });
-    return;
-  } catch (error) {
-    lastError = error;
   }
 
   throw lastError;

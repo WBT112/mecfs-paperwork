@@ -4,13 +4,16 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import App from '../../src/App';
 
+const LANGUAGE_LABEL = 'Language';
+const APP_SUBTITLE = 'Offline-first paperwork helper';
+
 const setLocale = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const startFormpackBackgroundRefresh = vi.hoisted(() => vi.fn(() => vi.fn()));
 
 const translations: Record<string, string> = {
   appTitle: 'ME/CFS Paperwork',
-  appSubtitle: 'Offline-first paperwork helper',
-  languageLabel: 'Language',
+  appSubtitle: APP_SUBTITLE,
+  languageLabel: LANGUAGE_LABEL,
   'languageOptions.de': 'Deutsch',
   'languageOptions.en': 'English',
 };
@@ -66,11 +69,9 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: 'ME/CFS Paperwork' }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText('Offline-first paperwork helper'),
-    ).toBeInTheDocument();
+    expect(screen.getByText(APP_SUBTITLE)).toBeInTheDocument();
 
-    const select = screen.getByLabelText('Language');
+    const select = screen.getByLabelText(LANGUAGE_LABEL);
     expect(select).toHaveValue('de');
 
     await user.selectOptions(select, 'en');
@@ -89,5 +90,23 @@ describe('App', () => {
     );
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('swallows locale update errors and keeps rendering', async () => {
+    setLocale.mockRejectedValueOnce(new Error('cannot persist locale'));
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>,
+    );
+
+    await user.selectOptions(screen.getByLabelText(LANGUAGE_LABEL), 'en');
+
+    await waitFor(() => {
+      expect(setLocale).toHaveBeenCalledWith('en');
+    });
+    expect(screen.getByText(APP_SUBTITLE)).toBeVisible();
   });
 });

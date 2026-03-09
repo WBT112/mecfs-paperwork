@@ -47,6 +47,79 @@ const readRecordById = async (
 ) => {
   return page.evaluate(
     async ({ dbName, storeName, id }) => {
+      const STORAGE_KEY_COOKIE_NAME = 'mecfs-paperwork.storage-key';
+      const STORAGE_ENCRYPTION_KIND = 'mecfs-paperwork-idb-encrypted';
+
+      const isRecord = (value: unknown): value is Record<string, unknown> =>
+        typeof value === 'object' && value !== null && !Array.isArray(value);
+
+      const fromBase64Url = (value: string): Uint8Array => {
+        const base64 = value
+          .replaceAll('-', '+')
+          .replaceAll('_', '/')
+          .padEnd(Math.ceil(value.length / 4) * 4, '=');
+        const binary = atob(base64);
+        return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      };
+
+      const getCookieValue = (name: string): string | null => {
+        const cookies = document.cookie ? document.cookie.split('; ') : [];
+        const prefix = `${name}=`;
+        for (const cookie of cookies) {
+          if (cookie.startsWith(prefix)) {
+            return cookie.slice(prefix.length);
+          }
+        }
+        return null;
+      };
+
+      const decodeRecordData = async (value: unknown) => {
+        if (!isRecord(value)) {
+          return value;
+        }
+
+        if (value.kind !== STORAGE_ENCRYPTION_KIND) {
+          return value;
+        }
+
+        const keyCookie = getCookieValue(STORAGE_KEY_COOKIE_NAME);
+        if (!keyCookie) {
+          return null;
+        }
+
+        try {
+          const key = await crypto.subtle.importKey(
+            'raw',
+            fromBase64Url(keyCookie),
+            { name: 'AES-GCM' },
+            false,
+            ['decrypt'],
+          );
+          const iv =
+            typeof value.iv === 'string' ? fromBase64Url(value.iv) : null;
+          const ciphertext =
+            typeof value.ciphertext === 'string'
+              ? fromBase64Url(value.ciphertext)
+              : null;
+          if (!iv || !ciphertext) {
+            return null;
+          }
+
+          const plainBuffer = await crypto.subtle.decrypt(
+            {
+              name: 'AES-GCM',
+              iv,
+              tagLength: 128,
+            },
+            key,
+            ciphertext,
+          );
+          return JSON.parse(new TextDecoder().decode(plainBuffer));
+        } catch {
+          return null;
+        }
+      };
+
       const openExistingDb = async () => {
         if (indexedDB.databases) {
           const databases = await indexedDB.databases();
@@ -87,7 +160,19 @@ const readRecordById = async (
           const store = tx.objectStore(storeName);
           const getReq = store.get(id);
           getReq.onerror = () => reject(getReq.error);
-          getReq.onsuccess = () => resolve(getReq.result ?? null);
+          getReq.onsuccess = async () => {
+            const result = getReq.result;
+            if (!isRecord(result)) {
+              resolve(result ?? null);
+              return;
+            }
+
+            const decodedData = await decodeRecordData(result.data);
+            resolve({
+              ...result,
+              data: decodedData,
+            });
+          };
         });
       } finally {
         db.close();
@@ -104,7 +189,7 @@ const waitForNamePersisted = async (page: Page, expected: string) => {
         const activeId = await getActiveRecordId(page);
         if (!activeId) return '';
         const record = await readRecordById(page, activeId);
-        return record?.data?.person?.name ?? '';
+        return record?.data?.person?.firstName ?? '';
       },
       { timeout: AUTOSAVE_TIMEOUT_MS, intervals: POLL_INTERVALS },
     )
@@ -127,7 +212,7 @@ const openDraftsSection = async (page: Page) => {
 };
 
 const clickNewDraftIfNeeded = async (page: Page) => {
-  const nameInput = page.locator('#root_person_name');
+  const nameInput = page.locator('#root_person_firstName');
   const existingActiveId = await getActiveRecordId(page);
   if (existingActiveId) {
     await expect(nameInput).toBeVisible();
@@ -171,7 +256,7 @@ test.describe('reset form', () => {
 
     await clickNewDraftIfNeeded(page);
 
-    const nameInput = page.locator('#root_person_name');
+    const nameInput = page.locator('#root_person_firstName');
     await waitForActiveRecordId(page);
     await fillTextInputStable(page, nameInput, 'Test Person', POLL_TIMEOUT);
     await waitForNamePersisted(page, 'Test Person');

@@ -26,6 +26,7 @@ yarn-error.log*
 # Playwright
 playwright-report/
 test-results/
+**/schema-mismatch.json
 
 #Secrets
 secrets

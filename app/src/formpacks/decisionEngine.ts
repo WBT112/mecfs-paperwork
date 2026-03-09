@@ -132,14 +132,14 @@ const resolveQ1False = (answers: DecisionAnswers): DecisionResult | null => {
  * decision tree specification.
  *
  * Decision tree flow:
- * Q1 (full ME/CFS) -> YES: Q2, NO: Q6
- * Q2 (cause known) -> YES: Q3, NO: Case 11
- * Q3 (after infection) -> YES: Q4, NO: Q5
- * Q4 (which infection) -> EBV: Case 1, Influenza: Case 2, COVID-19: Case 3, Other: Case 9
- * Q5 (other cause) -> COVID-19 vaccination: Case 4, Fluoroquinolones: Case 14, Other: Case 10
- * Q6 (chronic fatigue) -> YES: Q7, NO: Case 0
- * Q7 (PEM) -> YES: Q8, NO: Case 0
- * Q8 (cause) -> No known: Case 12, EBV: Case 5, Influenza: Case 6, COVID-19: Case 7, Vaccination: Case 8, Other: Case 13
+ * Q1 (full ME/CFS): YES to Q2, NO to Q6
+ * Q2 (cause known): YES to Q3, NO to Case 11
+ * Q3 (after infection): YES to Q4, NO to Q5
+ * Q4 (which infection): EBV Case 1, Influenza Case 2, COVID-19 Case 3, Other Case 9
+ * Q5 (other cause): COVID-19 vaccination Case 4, Fluoroquinolones Case 14, Other Case 10
+ * Q6 (chronic fatigue): YES to Q7, NO to Case 0
+ * Q7 (PEM): YES to Q8, NO to Case 0
+ * Q8 (cause): No known Case 12, EBV Case 5, Influenza Case 6, COVID-19 Case 7, Vaccination Case 8, Other Case 13
  */
 export const resolveDecisionTree = (
   answers: DecisionAnswers,
