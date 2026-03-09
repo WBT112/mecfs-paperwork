@@ -43,6 +43,12 @@ const runGate = (gate) =>
       stdio: 'inherit',
       shell: process.platform === 'win32',
     });
+    child.on('error', (err) => {
+      console.error(
+        `\n${C_RED}❌ ${gate.name} failed to start: ${err.message}${C_RESET}`,
+      );
+      resolve({ name: gate.name, success: false, code: 1 });
+    });
     child.on('close', (code) => {
       resolve({
         name: gate.name,

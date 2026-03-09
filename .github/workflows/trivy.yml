@@ -3,6 +3,8 @@ name: Security - Trivy
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
   schedule:
     - cron: "30 3 * * 1" # montags 03:30 UTC
   workflow_dispatch:
@@ -99,8 +101,8 @@ jobs:
   trivy-fs:
     name: Trivy (FS scan - repo)
     runs-on: ubuntu-latest
-    needs: [trivy-image]
-    if: ${{ always() && needs.trivy-image.result != 'skipped' }}
+    # NOTE: FS scan is independent of the image scan and runs on all triggers,
+    # including pull_request (which does not require registry secrets).
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
