@@ -36,6 +36,11 @@
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
           "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -45,6 +50,11 @@
         "needHelp": {
           "ui:title": "pacing-ampelkarten.card.needHelp.label",
           "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -54,6 +64,11 @@
         "visitRules": {
           "ui:title": "pacing-ampelkarten.card.visitRules.label",
           "ui:help": "pacing-ampelkarten.card.visitRules.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -63,6 +78,11 @@
         "stimuli": {
           "ui:title": "pacing-ampelkarten.card.stimuli.label",
           "ui:help": "pacing-ampelkarten.card.stimuli.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -99,6 +119,11 @@
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
           "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -108,6 +133,11 @@
         "needHelp": {
           "ui:title": "pacing-ampelkarten.card.needHelp.label",
           "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -117,6 +147,11 @@
         "visitRules": {
           "ui:title": "pacing-ampelkarten.card.visitRules.label",
           "ui:help": "pacing-ampelkarten.card.visitRules.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -126,6 +161,11 @@
         "stimuli": {
           "ui:title": "pacing-ampelkarten.card.stimuli.label",
           "ui:help": "pacing-ampelkarten.card.stimuli.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -162,6 +202,11 @@
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
           "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -171,6 +216,11 @@
         "needHelp": {
           "ui:title": "pacing-ampelkarten.card.needHelp.label",
           "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -180,6 +230,11 @@
         "visitRules": {
           "ui:title": "pacing-ampelkarten.card.visitRules.label",
           "ui:help": "pacing-ampelkarten.card.visitRules.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -189,6 +244,11 @@
         "stimuli": {
           "ui:title": "pacing-ampelkarten.card.stimuli.label",
           "ui:help": "pacing-ampelkarten.card.stimuli.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -233,6 +293,11 @@
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
           "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -242,6 +307,11 @@
         "needHelp": {
           "ui:title": "pacing-ampelkarten.card.needHelp.label",
           "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -251,6 +321,11 @@
         "visitRules": {
           "ui:title": "pacing-ampelkarten.card.visitRules.label",
           "ui:help": "pacing-ampelkarten.card.visitRules.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -260,6 +335,11 @@
         "stimuli": {
           "ui:title": "pacing-ampelkarten.card.stimuli.label",
           "ui:help": "pacing-ampelkarten.card.stimuli.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
           "ui:options": {
             "addable": true,
             "orderable": false,
@@ -422,6 +502,11 @@
     "items": {
       "ui:title": "pacing-ampelkarten.notes.items.label",
       "ui:help": "pacing-ampelkarten.notes.items.help",
+      "items": {
+        "ui:options": {
+          "label": false
+        }
+      },
       "ui:options": {
         "addable": true,
         "orderable": false,

@@ -19,6 +19,7 @@ import { createAsyncGuard, ignoreAsyncError } from '../lib/asyncGuard';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
+import { mergePacingFormData } from '../formpacks/pacing-ampelkarten/formData';
 import { buildPacingAmpelkartenPreset } from '../formpacks/pacing-ampelkarten/presets';
 import { buildPacingVariantUiSchema } from '../formpacks/pacing-ampelkarten/variantUiSchema';
 import {
@@ -593,9 +594,12 @@ export default function FormpackDetailPage() {
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = useCallback(
     (event) => {
       const incomingData = event.formData as FormDataState;
-      let nextData: FormDataState = handleOfflabelFormChange({
-        ...incomingData,
-      });
+      let nextData: FormDataState =
+        formpackId === PACING_AMPELKARTEN_FORMPACK_ID
+          ? mergePacingFormData(formData, incomingData, locale)
+          : { ...incomingData };
+
+      nextData = handleOfflabelFormChange(nextData);
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
       if (
@@ -621,7 +625,7 @@ export default function FormpackDetailPage() {
 
       setFormData(nextData);
     },
-    [formpackId, handleOfflabelFormChange, setFormData],
+    [formData, formpackId, handleOfflabelFormChange, locale, setFormData],
   );
 
   // Resolve decision tree after formData changes (for doctor-letter only)

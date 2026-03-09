@@ -17,6 +17,7 @@ import type { FormpackManifest } from '../../src/formpacks/types';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import type { RecordEntry, SnapshotEntry } from '../../src/storage/types';
 import type { OfflabelRenderedDocument } from '../../src/formpacks/offlabel-antrag/content/buildOfflabelDocuments';
+import pacingAmpelkartenUiSchema from '../../public/formpacks/pacing-ampelkarten/ui.schema.json';
 
 const testConstants = vi.hoisted(() => ({
   FORMPACK_ID: 'notfallpass',
@@ -147,6 +148,8 @@ const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
 const PACING_AMPELKARTEN_FORMPACK_ID = 'pacing-ampelkarten';
 const PACING_INTRO_ACCEPTED_PATH = 'meta.introAccepted';
 const PACING_DE_GREEN_TEXT = 'Kurze Gespräche sind möglich';
+const PACING_DE_CHILD_GREEN_TEXT =
+  'Heute ist ein guter Tag für kurze Gespräche';
 const INTRO_ACCEPTED_JSON_FRAGMENT = '"introAccepted":true';
 const CHILD_VARIANT_JSON_FRAGMENT = '"variant":"child"';
 const OFFLABEL_OTHER_KEY = 'other';
@@ -510,6 +513,48 @@ vi.mock('@rjsf/core', () => ({
         }
       >
         trigger-pacing-adult
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onChange?.({
+            formData: {
+              meta: {
+                ...((formData?.meta as Record<string, unknown> | undefined) ??
+                  {}),
+                variant: 'adult',
+              },
+              adult:
+                (formData?.adult as Record<string, unknown> | undefined) ?? {},
+              notes:
+                (formData?.notes as Record<string, unknown> | undefined) ?? {},
+              sender:
+                (formData?.sender as Record<string, unknown> | undefined) ?? {},
+            },
+          })
+        }
+      >
+        trigger-pacing-adult-visible-only
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onChange?.({
+            formData: {
+              meta: {
+                ...((formData?.meta as Record<string, unknown> | undefined) ??
+                  {}),
+                variant: 'child',
+              },
+              notes:
+                (formData?.notes as Record<string, unknown> | undefined) ?? {},
+              sender:
+                (formData?.sender as Record<string, unknown> | undefined) ?? {},
+            },
+          })
+        }
+      >
+        trigger-pacing-child-visible-only
       </button>
       <button
         type="button"
@@ -1691,6 +1736,77 @@ describe('FormpackDetailPage', () => {
     );
     expect(switchedUiSchema.adult?.[uiWidgetKey]).toBe('hidden');
     expect(switchedUiSchema.child?.[uiWidgetKey]).toBeUndefined();
+  });
+
+  it('keeps child presets available when adult-only changes omit the hidden section', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'trigger-pacing-adult-visible-only' }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'trigger-pacing-child-visible-only' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        CHILD_VARIANT_JSON_FRAGMENT,
+      ),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      PACING_DE_CHILD_GREEN_TEXT,
+    );
+  });
+
+  it('hides primitive pacing array item labels via ui schema options', async () => {
+    expect(
+      pacingAmpelkartenUiSchema.adult.cards.green.visitRules.items['ui:options']
+        .label,
+    ).toBe(false);
+    expect(
+      pacingAmpelkartenUiSchema.child.cards.green.canDo.items['ui:options']
+        .label,
+    ).toBe(false);
+    expect(
+      pacingAmpelkartenUiSchema.notes.items.items['ui:options'].label,
+    ).toBe(false);
   });
 
   it('preserves existing pacing data when the intro gate is accepted later', async () => {
