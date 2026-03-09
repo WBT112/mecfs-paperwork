@@ -15,7 +15,7 @@ import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/previewValue';
 import { isRecord } from '../lib/utils';
 import { buildRandomDummyPatch, mergeDummyPatch } from '../lib/devDummyFill';
-import { createAsyncGuard } from '../lib/asyncGuard';
+import { createAsyncGuard, ignoreAsyncError } from '../lib/asyncGuard';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
@@ -90,9 +90,6 @@ const FOCUS_RETRY_DELAY_MS = 50;
 const FOCUS_RETRY_ATTEMPTS = 30;
 
 const showDevMedicationOptions = isFormpackVisible({ visibility: 'dev' });
-const ignoreAsyncError = (): void => {
-  // Intentionally ignore async follow-up errors to keep UI flows resilient.
-};
 
 /**
  * Shows formpack metadata with translations loaded for the active locale.

@@ -37,3 +37,18 @@ export const createAsyncGuard = (): AsyncGuard => {
     },
   };
 };
+
+/**
+ * Consumes deliberately ignored async errors to avoid unhandled rejection noise
+ * in fire-and-forget UI flows.
+ *
+ * @param _error - Rejected async value that is intentionally ignored.
+ * @returns Void.
+ * @remarks
+ * RATIONALE: Some UI follow-up work should never block the primary interaction
+ * path. Centralizing the no-op handler keeps coverage deterministic and avoids
+ * repeating inline ignore callbacks across components.
+ */
+export const ignoreAsyncError = (_error: unknown): void => {
+  // Intentionally empty.
+};
