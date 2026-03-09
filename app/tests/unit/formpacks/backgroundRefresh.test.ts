@@ -789,4 +789,95 @@ describe('formpacks/backgroundRefresh', () => {
       eventListener as EventListener,
     );
   });
+
+  it('logs thrown Error instances from scheduled refresh failures without rethrowing', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    installFetchMock();
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.0',
+      version: '1.0.0',
+      hash: 'old-hash',
+      updatedAt: UPDATED_AT,
+    });
+    clearFormpackCaches.mockImplementation(() => {
+      throw new Error('cache-fail');
+    });
+
+    let idleCallback:
+      | ((deadline: {
+          didTimeout: boolean;
+          timeRemaining: () => number;
+        }) => void)
+      | null = null;
+    vi.stubGlobal(
+      'requestIdleCallback',
+      vi.fn((callback: typeof idleCallback) => {
+        idleCallback = callback;
+        return 808;
+      }),
+    );
+    vi.stubGlobal('cancelIdleCallback', vi.fn());
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    const stop = startFormpackBackgroundRefresh({ intervalMs: 60_000 });
+
+    expect(idleCallback).toBeTypeOf('function');
+    idleCallback!({
+      didTimeout: false,
+      timeRemaining: () => 10,
+    });
+    await vi.waitFor(() => {
+      expect(consoleError).toHaveBeenCalledWith(
+        '[backgroundRefresh] Refresh failed:',
+        'cache-fail',
+      );
+    });
+
+    stop();
+  });
+
+  it('logs non-Error refresh failures via string coercion without rethrowing', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+
+    installFetchMock();
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      versionOrHash: '1.0.0',
+      version: '1.0.0',
+      hash: 'old-hash',
+      updatedAt: UPDATED_AT,
+    });
+    clearFormpackCaches.mockImplementation(() => {
+      throw 'plain-failure';
+    });
+
+    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    vi.useFakeTimers();
+    const stop = startFormpackBackgroundRefresh({ intervalMs: 60_000 });
+
+    await vi.advanceTimersByTimeAsync(1_600);
+    await vi.waitFor(() => {
+      expect(consoleError).toHaveBeenCalledWith(
+        '[backgroundRefresh] Refresh failed:',
+        'plain-failure',
+      );
+    });
+
+    stop();
+  });
 });

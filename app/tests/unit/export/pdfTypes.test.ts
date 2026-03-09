@@ -49,6 +49,18 @@ describe('pdf document type helpers', () => {
     expect(isDocumentBlock({ type: 'bullets', items: [1, 2] })).toBe(false);
   });
 
+  it('returns false for block types admitted by the runtime list but unsupported by the switch', () => {
+    const mutableTypes = DOCUMENT_BLOCK_TYPES as unknown as string[];
+    mutableTypes.push('legacy');
+
+    try {
+      expect(isDocumentBlockType('legacy')).toBe(true);
+      expect(isDocumentBlock({ type: 'legacy' })).toBe(false);
+    } finally {
+      mutableTypes.pop();
+    }
+  });
+
   it('validates document sections', () => {
     expect(isDocumentSection(validModel.sections[0])).toBe(true);
     expect(isDocumentSection({ id: 123, heading: 'Heading', blocks: [] })).toBe(
