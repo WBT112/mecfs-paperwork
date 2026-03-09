@@ -19,6 +19,8 @@ import { createAsyncGuard, ignoreAsyncError } from '../lib/asyncGuard';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
+import { buildPacingAmpelkartenPreset } from '../formpacks/pacing-ampelkarten/presets';
+import { buildPacingVariantUiSchema } from '../formpacks/pacing-ampelkarten/variantUiSchema';
 import {
   FORMPACKS_UPDATED_EVENT,
   DOCTOR_LETTER_FORMPACK_ID,
@@ -88,8 +90,17 @@ const FORM_PRIMARY_FOCUS_SELECTOR =
 const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
 const FOCUS_RETRY_DELAY_MS = 50;
 const FOCUS_RETRY_ATTEMPTS = 30;
+const PACING_AMPELKARTEN_FORMPACK_ID = 'pacing-ampelkarten';
 
 const showDevMedicationOptions = isFormpackVisible({ visibility: 'dev' });
+
+const resolvePacingPresetVariant = (value: unknown): 'adult' | 'child' =>
+  value === 'child' ? 'child' : 'adult';
+
+const isPacingPresetContentEmpty = (value: FormDataState): boolean => {
+  const { meta: _meta, ...content } = value;
+  return !hasPreviewValue(content);
+};
 
 /**
  * Shows formpack metadata with translations loaded for the active locale.
@@ -355,6 +366,10 @@ export default function FormpackDetailPage() {
       return offlabelUiSchema;
     }
 
+    if (formpackId === PACING_AMPELKARTEN_FORMPACK_ID) {
+      return buildPacingVariantUiSchema(normalizedUiSchema, formData);
+    }
+
     if (formpackId !== DOCTOR_LETTER_FORMPACK_ID) {
       return normalizedUiSchema;
     }
@@ -362,7 +377,13 @@ export default function FormpackDetailPage() {
       normalizedUiSchema,
       decisionData,
     );
-  }, [decisionData, formpackId, normalizedUiSchema, offlabelUiSchema]);
+  }, [
+    decisionData,
+    formData,
+    formpackId,
+    normalizedUiSchema,
+    offlabelUiSchema,
+  ]);
 
   const handleApplyDummyData = useCallback(() => {
     const patch = buildRandomDummyPatch(formSchema, conditionalUiSchema);
@@ -697,10 +718,37 @@ export default function FormpackDetailPage() {
 
   const handleAcceptIntroGate = useCallback(() => {
     setPendingIntroFocus(true);
-    setFormData((current) =>
-      setPathValueImmutable(current, introGateConfig!.acceptedFieldPath, true),
-    );
-  }, [introGateConfig]);
+    setFormData((current) => {
+      if (formpackId === PACING_AMPELKARTEN_FORMPACK_ID) {
+        const sourceData =
+          isPacingPresetContentEmpty(current) && isRecord(activeRecord?.data)
+            ? (activeRecord.data as FormDataState)
+            : current;
+        const variant = resolvePacingPresetVariant(
+          getPathValue(sourceData, 'meta.variant'),
+        );
+        const nextFormData: FormDataState = isPacingPresetContentEmpty(
+          sourceData,
+        )
+          ? (buildPacingAmpelkartenPreset(
+              locale === 'en' ? 'en' : 'de',
+              variant,
+            ) as unknown as FormDataState)
+          : sourceData;
+        return setPathValueImmutable(
+          nextFormData,
+          introGateConfig!.acceptedFieldPath,
+          true,
+        );
+      }
+
+      return setPathValueImmutable(
+        current,
+        introGateConfig!.acceptedFieldPath,
+        true,
+      );
+    });
+  }, [activeRecord, formpackId, introGateConfig, locale]);
 
   useEffect(() => {
     if (!pendingIntroFocus || isIntroGateVisible) {

@@ -15,12 +15,14 @@ const TEST_FORMPACK_ID = 'test-formpack';
 const DOCTOR_LETTER_ID = 'doctor-letter';
 const NOTFALLPASS_ID = 'notfallpass';
 const OFFLABEL_ANTRAG_ID = 'offlabel-antrag';
+const PACING_AMPELKARTEN_ID = 'pacing-ampelkarten';
 const DOCX_A4_PATH = 'docx/a4.docx';
 const DOCX_WALLET_PATH = 'docx/wallet.docx';
 const DOCX_MAPPING_PATH = 'docx/mapping.json';
 const MANIFEST_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/manifest.json`;
 const MANIFEST_PATH_NOTFALLPASS = `/formpacks/${NOTFALLPASS_ID}/manifest.json`;
 const MANIFEST_PATH_OFFLABEL = `/formpacks/${OFFLABEL_ANTRAG_ID}/manifest.json`;
+const MANIFEST_PATH_PACING = `/formpacks/${PACING_AMPELKARTEN_ID}/manifest.json`;
 const SCHEMA_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/schema.json`;
 const UI_SCHEMA_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/ui.schema.json`;
 const UNKNOWN_FORMPACK_ID = 'unknown-formpack';
@@ -613,6 +615,13 @@ describe('formpack loader fetches', () => {
         ok: true,
         json: async () => manifestFor(OFFLABEL_ANTRAG_ID),
       },
+      [MANIFEST_PATH_PACING]: {
+        ok: true,
+        json: async () => ({
+          ...manifestFor(PACING_AMPELKARTEN_ID),
+          visibility: 'dev',
+        }),
+      },
     });
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
@@ -621,6 +630,11 @@ describe('formpack loader fetches', () => {
       DOCTOR_LETTER_ID,
       NOTFALLPASS_ID,
       OFFLABEL_ANTRAG_ID,
+      PACING_AMPELKARTEN_ID,
     ]);
+    expect(
+      manifests.find((manifest) => manifest.id === PACING_AMPELKARTEN_ID)
+        ?.visibility,
+    ).toBe('dev');
   });
 });

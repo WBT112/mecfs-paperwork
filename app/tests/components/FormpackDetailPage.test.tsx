@@ -140,7 +140,15 @@ const mutableRjsfFormDataState = vi.hoisted(() => ({
     field: 'value-0',
   } as Record<string, unknown>,
 }));
+const localeState = vi.hoisted(() => ({
+  locale: 'de' as 'de' | 'en',
+}));
 const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
+const PACING_AMPELKARTEN_FORMPACK_ID = 'pacing-ampelkarten';
+const PACING_INTRO_ACCEPTED_PATH = 'meta.introAccepted';
+const PACING_DE_GREEN_TEXT = 'Kurze Gespräche sind möglich';
+const INTRO_ACCEPTED_JSON_FRAGMENT = '"introAccepted":true';
+const CHILD_VARIANT_JSON_FRAGMENT = '"variant":"child"';
 const OFFLABEL_OTHER_KEY = 'other';
 const OFFLABEL_CHANGE_TRIGGER_LABEL = 'trigger-offlabel-change';
 const LEGACY_INDICATION_KEY = 'legacy-indication';
@@ -160,6 +168,18 @@ const INTRO_GATE_CONFIG = {
   checkboxLabelKey: INTRO_CHECKBOX_KEY,
   startButtonLabelKey: INTRO_START_KEY,
   reopenButtonLabelKey: INTRO_REOPEN_KEY,
+};
+
+const parsePacingUiSchema = (
+  element: HTMLElement,
+): Partial<Record<'adult' | 'child', Record<string, unknown>>> => {
+  const uiSchemaText = element.textContent;
+  if (!uiSchemaText) {
+    throw new Error('Expected rendered UI schema JSON');
+  }
+  return JSON.parse(uiSchemaText) as Partial<
+    Record<'adult' | 'child', Record<string, unknown>>
+  >;
 };
 
 const offlabelPreviewState = vi.hoisted(() => ({
@@ -373,11 +393,13 @@ vi.mock('@rjsf/core', () => ({
   default: ({
     children,
     formData,
+    uiSchema,
     onChange,
     onSubmit,
   }: {
     children?: React.ReactNode;
     formData?: Record<string, unknown>;
+    uiSchema?: Record<string, unknown>;
     onChange?: (event: { formData: Record<string, unknown> }) => void;
     onSubmit?: (
       event: { formData: Record<string, unknown> },
@@ -386,6 +408,7 @@ vi.mock('@rjsf/core', () => ({
   }) => (
     <div>
       <div data-testid="form-data">{JSON.stringify(formData)}</div>
+      <div data-testid="ui-schema">{JSON.stringify(uiSchema)}</div>
       <button
         type="button"
         onClick={() => onChange?.({ formData: { field: 'value' } })}
@@ -451,6 +474,40 @@ vi.mock('@rjsf/core', () => ({
       <button
         type="button"
         onClick={() =>
+          onChange?.({
+            formData: {
+              ...(formData ?? {}),
+              meta: {
+                ...((formData?.meta as Record<string, unknown> | undefined) ??
+                  {}),
+                variant: 'child',
+              },
+            },
+          })
+        }
+      >
+        trigger-pacing-child
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onChange?.({
+            formData: {
+              ...(formData ?? {}),
+              meta: {
+                ...((formData?.meta as Record<string, unknown> | undefined) ??
+                  {}),
+                variant: 'adult',
+              },
+            },
+          })
+        }
+      >
+        trigger-pacing-adult
+      </button>
+      <button
+        type="button"
+        onClick={() =>
           onSubmit?.(
             { formData: { submitted: true } },
             { preventDefault: () => undefined },
@@ -473,7 +530,7 @@ vi.mock('../../src/i18n/formpack', () => ({
 
 vi.mock('../../src/i18n/useLocale', () => ({
   useLocale: () => ({
-    locale: 'de',
+    locale: localeState.locale,
     setLocale: storageState.setLocale,
   }),
 }));
@@ -648,7 +705,7 @@ const mockT = (key: string, options?: { ns?: string; message?: string }) => {
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: mockT,
-    i18n: { language: 'de' },
+    i18n: { language: localeState.locale },
   }),
   initReactI18next: {
     type: '3rdParty',
@@ -703,6 +760,7 @@ describe('FormpackDetailPage', () => {
     diagnosticsState.resetAllLocalData.mockResolvedValue(undefined);
     visibilityState.isDevUiEnabled = true;
     visibilityState.isFormpackVisibleOverride = null;
+    localeState.locale = 'de';
     mutableRjsfFormDataState.counter = 0;
     mutableRjsfFormDataState.data = {
       field: 'value-0',
@@ -1370,6 +1428,343 @@ describe('FormpackDetailPage', () => {
           screen.getByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
         ).toHaveFocus(),
       { timeout: 4_000 },
+    );
+  });
+
+  it('fills pacing presets in German when the intro gate is accepted', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        PACING_DE_GREEN_TEXT,
+      ),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      '"variant":"adult"',
+    );
+  });
+
+  it('fills pacing presets in English when the intro gate is accepted', async () => {
+    localeState.locale = 'en';
+    const introRecord = {
+      ...record,
+      locale: 'en' as const,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        'Short conversations are possible',
+      ),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
+    );
+  });
+
+  it('uses the stored pacing variant when presets are injected from record data', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {
+        meta: {
+          introAccepted: false,
+          variant: 'child',
+        },
+      },
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        'Heute ist ein guter Tag für kurze Gespräche',
+      ),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      CHILD_VARIANT_JSON_FRAGMENT,
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
+    );
+  });
+
+  it('switches the pacing form UI between adult and child sections', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    const uiWidgetKey = 'ui:widget';
+    const initialUiSchema = parsePacingUiSchema(
+      screen.getByTestId('ui-schema'),
+    );
+    expect(initialUiSchema.adult?.[uiWidgetKey]).toBeUndefined();
+    expect(initialUiSchema.child?.[uiWidgetKey]).toBe('hidden');
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'trigger-pacing-child' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        CHILD_VARIANT_JSON_FRAGMENT,
+      ),
+    );
+    const switchedUiSchema = parsePacingUiSchema(
+      screen.getByTestId('ui-schema'),
+    );
+    expect(switchedUiSchema.adult?.[uiWidgetKey]).toBe('hidden');
+    expect(switchedUiSchema.child?.[uiWidgetKey]).toBeUndefined();
+  });
+
+  it('preserves existing pacing data when the intro gate is accepted later', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {
+        meta: {
+          introAccepted: false,
+          variant: 'child',
+        },
+        adult: {
+          cards: {
+            green: {
+              canDo: ['Existing adult content'],
+            },
+          },
+        },
+      },
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      'Existing adult content',
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      '"variant":"child"',
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
+    );
+    expect(screen.getByTestId('form-data')).not.toHaveTextContent(
+      PACING_DE_GREEN_TEXT,
+    );
+  });
+
+  it('falls back to current pacing data when stored record data is not a record', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: [] as unknown as Record<string, unknown>,
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      PACING_DE_GREEN_TEXT,
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      '"variant":"adult"',
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
     );
   });
 

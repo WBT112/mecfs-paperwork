@@ -65,6 +65,7 @@ import FormpackExportActions from '../../../src/pages/formpack-detail/components
 import FormpackFormPanel from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
 import FormpackToolsSection from '../../../src/pages/formpack-detail/components/FormpackToolsSection';
 import type { FormpackFormPanelProps } from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
+import type { FormpackManifest } from '../../../src/formpacks/types';
 import * as formpackDetailComponents from '../../../src/pages/formpack-detail/components';
 
 const DummyForm = ({
@@ -90,6 +91,12 @@ const INTRO_TEXTS = {
   startButtonLabel: 'Start',
   reopenButtonLabel: 'Reopen',
 } as const;
+
+const DOCX_MAPPING_PATH = '/mapping.json';
+const DOCX_A4_TEMPLATE_PATH = '/a4.docx';
+const DOCX_WALLET_TEMPLATE_PATH = '/wallet.docx';
+const DEFAULT_LOCALES = ['de', 'en'] as const;
+const PACING_FORMPACK_ID = 'pacing-ampelkarten';
 
 const TOOL_SECTION_PROPS = {
   heading: 'Tools',
@@ -177,6 +184,64 @@ const createFormPanelProps = (
   validator: {} as never,
   ...overrides,
 });
+
+type ExportActionOverrides = Partial<
+  React.ComponentProps<typeof FormpackExportActions>
+>;
+
+const createManifest = (
+  overrides: Partial<FormpackManifest> = {},
+): FormpackManifest => ({
+  id: 'doctor-letter',
+  version: '1.0.0',
+  titleKey: 'title',
+  descriptionKey: 'description',
+  defaultLocale: 'de',
+  locales: [...DEFAULT_LOCALES],
+  exports: ['docx'],
+  visibility: 'public',
+  docx: {
+    templates: { a4: DOCX_A4_TEMPLATE_PATH },
+    mapping: DOCX_MAPPING_PATH,
+  },
+  ...overrides,
+});
+
+const createExportActionProps = (
+  overrides: ExportActionOverrides = {},
+): React.ComponentProps<typeof FormpackExportActions> => ({
+  PdfExportControlsComponent: DummyPdfControls as never,
+  docxError: null,
+  docxSuccess: null,
+  docxTemplateId: 'a4',
+  docxTemplateOptions: [{ id: 'a4', label: 'A4' }],
+  encryptJsonExport: false,
+  formData: {},
+  formpackId: 'doctor-letter',
+  handleExportDocx: vi.fn(),
+  handleExportJson: vi.fn(),
+  handlePdfExportError: vi.fn(),
+  handlePdfExportSuccess: vi.fn(),
+  isDocxExporting: false,
+  jsonExportError: null,
+  jsonExportPassword: '',
+  jsonExportPasswordConfirm: '',
+  manifest: createManifest(),
+  offlabelOutputLocale: 'de',
+  pdfError: null,
+  pdfSuccess: null,
+  secondaryActions: null,
+  setDocxTemplateId: vi.fn(),
+  setEncryptJsonExport: vi.fn(),
+  setJsonExportPassword: vi.fn(),
+  setJsonExportPasswordConfirm: vi.fn(),
+  storageBlocked: false,
+  t: (key) => key,
+  ...overrides,
+});
+
+const renderExportActions = (overrides: ExportActionOverrides = {}) =>
+  render(<FormpackExportActions {...createExportActionProps(overrides)} />);
 
 describe('formpack detail subcomponents', () => {
   it('re-exports the page-local component entrypoints through the barrel', () => {
@@ -307,53 +372,26 @@ describe('formpack detail subcomponents', () => {
   });
 
   it('renders export controls and status messages', () => {
-    render(
-      <FormpackExportActions
-        PdfExportControlsComponent={DummyPdfControls as never}
-        docxError="docx-error"
-        docxSuccess="docx-success"
-        docxTemplateId="a4"
-        docxTemplateOptions={[
-          { id: 'a4', label: 'A4' },
-          { id: 'wallet', label: 'Wallet' },
-        ]}
-        encryptJsonExport
-        formData={{}}
-        formpackId="offlabel-antrag"
-        handleExportDocx={vi.fn()}
-        handleExportJson={vi.fn()}
-        handlePdfExportError={vi.fn()}
-        handlePdfExportSuccess={vi.fn()}
-        isDocxExporting={false}
-        jsonExportError="json-error"
-        jsonExportPassword="secret"
-        jsonExportPasswordConfirm="secret"
-        manifest={{
-          id: 'offlabel-antrag',
-          version: '1.0.0',
-          titleKey: 'title',
-          descriptionKey: 'description',
-          defaultLocale: 'de',
-          locales: ['de', 'en'],
-          exports: ['docx', 'json', 'pdf'],
-          visibility: 'public',
-          docx: {
-            templates: { a4: '/a4.docx' },
-            mapping: '/mapping.json',
-          },
-        }}
-        offlabelOutputLocale="de"
-        pdfError="pdf-error"
-        pdfSuccess="pdf-success"
-        secondaryActions={<button type="button">Reset</button>}
-        setDocxTemplateId={vi.fn()}
-        setEncryptJsonExport={vi.fn()}
-        setJsonExportPassword={vi.fn()}
-        setJsonExportPasswordConfirm={vi.fn()}
-        storageBlocked={false}
-        t={(key) => key}
-      />,
-    );
+    renderExportActions({
+      docxError: 'docx-error',
+      docxSuccess: 'docx-success',
+      docxTemplateOptions: [
+        { id: 'a4', label: 'A4' },
+        { id: 'wallet', label: 'Wallet' },
+      ],
+      encryptJsonExport: true,
+      formpackId: 'offlabel-antrag',
+      jsonExportError: 'json-error',
+      jsonExportPassword: 'secret',
+      jsonExportPasswordConfirm: 'secret',
+      manifest: createManifest({
+        id: 'offlabel-antrag',
+        exports: ['docx', 'json', 'pdf'],
+      }),
+      pdfError: 'pdf-error',
+      pdfSuccess: 'pdf-success',
+      secondaryActions: <button type="button">Reset</button>,
+    });
 
     expect(
       screen.getByRole('button', { name: 'formpackRecordExportDocx' }),
@@ -370,5 +408,139 @@ describe('formpack detail subcomponents', () => {
     expect(screen.getByText('json-error')).toBeInTheDocument();
     expect(screen.getByText('pdf-error')).toBeInTheDocument();
     expect(screen.getByText('pdf-success')).toBeInTheDocument();
+  });
+
+  it('renders standalone PDF controls when a formpack has no DOCX export', () => {
+    renderExportActions({
+      docxTemplateOptions: [],
+      formpackId: PACING_FORMPACK_ID,
+      manifest: createManifest({
+        id: PACING_FORMPACK_ID,
+        exports: ['json', 'pdf'],
+        docx: undefined,
+      }),
+    });
+
+    expect(
+      screen.queryByRole('button', { name: 'formpackRecordExportDocx' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'formpackRecordExportPdf' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'formpackRecordExportJson' }),
+    ).toBeInTheDocument();
+  });
+
+  it('hides the primary export row when docx is declared without usable templates', () => {
+    renderExportActions({
+      docxTemplateOptions: [],
+      manifest: createManifest({ exports: ['docx'] }),
+    });
+
+    expect(
+      screen.queryByRole('button', { name: 'formpackRecordExportDocx' }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('.formpack-pdf-export')).toBeNull();
+    expect(
+      document.querySelector('.formpack-actions__group--export'),
+    ).toBeEmptyDOMElement();
+  });
+
+  it('renders DOCX-only controls without PDF wrapper when pdf export is absent', () => {
+    renderExportActions({
+      isDocxExporting: true,
+      manifest: createManifest({ exports: ['docx'] }),
+    });
+
+    const docxButton = screen.getByRole('button', {
+      name: 'formpackDocxExportInProgress',
+    });
+    expect(docxButton).toBeDisabled();
+    expect(
+      document.querySelector('.formpack-docx-export--single-template'),
+    ).not.toBeNull();
+    expect(
+      document.querySelector('.formpack-docx-export__buttons--single-action'),
+    ).not.toBeNull();
+    expect(document.querySelector('.formpack-pdf-export')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'formpackRecordExportJson' }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('.formpack-actions__status')).toBeNull();
+  });
+
+  it('updates template selection and encrypted json password fields', () => {
+    const setDocxTemplateId = vi.fn();
+    const setEncryptJsonExport = vi.fn();
+    const setJsonExportPassword = vi.fn();
+    const setJsonExportPasswordConfirm = vi.fn();
+
+    renderExportActions({
+      docxTemplateOptions: [
+        { id: 'a4', label: 'A4' },
+        { id: 'wallet', label: 'Wallet' },
+      ],
+      encryptJsonExport: true,
+      jsonExportPassword: 'old-secret',
+      jsonExportPasswordConfirm: 'old-confirm',
+      manifest: createManifest({
+        exports: ['docx', 'json'],
+        docx: {
+          templates: {
+            a4: DOCX_A4_TEMPLATE_PATH,
+            wallet: DOCX_WALLET_TEMPLATE_PATH,
+          },
+          mapping: DOCX_MAPPING_PATH,
+        },
+      }),
+      setDocxTemplateId,
+      setEncryptJsonExport,
+      setJsonExportPassword,
+      setJsonExportPasswordConfirm,
+    });
+
+    fireEvent.change(screen.getByLabelText('formpackDocxTemplateLabel'), {
+      target: { value: 'wallet' },
+    });
+    expect(setDocxTemplateId).toHaveBeenCalledWith('wallet');
+
+    fireEvent.click(
+      screen.getByLabelText('formpackJsonExportEncryptionToggle'),
+    );
+    expect(setEncryptJsonExport).toHaveBeenCalledWith(false);
+
+    fireEvent.change(screen.getByLabelText('formpackJsonExportPasswordLabel'), {
+      target: { value: 'new-secret' },
+    });
+    expect(setJsonExportPassword).toHaveBeenCalledWith('new-secret');
+
+    fireEvent.change(
+      screen.getByLabelText('formpackJsonExportPasswordConfirmLabel'),
+      {
+        target: { value: 'new-confirm' },
+      },
+    );
+    expect(setJsonExportPasswordConfirm).toHaveBeenCalledWith('new-confirm');
+  });
+
+  it('omits secondary export actions and status area when json export and messages are absent', () => {
+    renderExportActions({
+      docxTemplateOptions: [],
+      formpackId: PACING_FORMPACK_ID,
+      manifest: createManifest({
+        id: PACING_FORMPACK_ID,
+        exports: ['pdf'],
+        docx: undefined,
+      }),
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'formpackRecordExportPdf' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'formpackRecordExportJson' }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('.formpack-actions__status')).toBeNull();
   });
 });

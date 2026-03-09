@@ -59,6 +59,7 @@
     "@rjsf/validator-ajv8": "^6.3.1",
     "ajv": "^8.18.0",
     "ajv-formats": "^2.1.1",
+    "buffer": "^6.0.3",
     "docx-templates": "^4.15.0",
     "events": "^3.3.0",
     "i18next": "^23.12.0",

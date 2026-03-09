@@ -7,6 +7,7 @@ import {
   DOCTOR_LETTER_FORMPACK_ID,
   NOTFALLPASS_FORMPACK_ID,
   OFFLABEL_ANTRAG_FORMPACK_ID,
+  PACING_AMPELKARTEN_FORMPACK_ID,
 } from './formpackIds';
 import {
   formatBirthDate,
@@ -25,6 +26,16 @@ type DiagnosisFlags = {
   meCfs?: boolean;
   pots?: boolean;
   longCovid?: boolean;
+};
+
+type PacingCardProjection = {
+  canDo: string[];
+  needHelp: string[];
+  visitRules: string[];
+  stimuli: string[];
+  hint: string | null;
+  thanks: string | null;
+  emoji?: string | null;
 };
 
 export type DocumentModel = {
@@ -89,6 +100,31 @@ export type DocumentModel = {
   };
   attachmentsFreeText?: string | null;
   attachments?: {
+    items: string[];
+  };
+  meta?: {
+    introAccepted?: boolean;
+    variant?: 'adult' | 'child';
+  };
+  sender?: {
+    signature: string | null;
+  };
+  adult?: {
+    cards: {
+      green: PacingCardProjection;
+      yellow: PacingCardProjection;
+      red: PacingCardProjection;
+    };
+  };
+  child?: {
+    cards: {
+      green: PacingCardProjection;
+      yellow: PacingCardProjection;
+      red: PacingCardProjection;
+    };
+  };
+  notes?: {
+    title: string | null;
     items: string[];
   };
   kk?: OffLabelLetterSection;
@@ -333,6 +369,70 @@ const buildOfflabelAntragModel = (
   };
 };
 
+const projectStringList = (value: unknown): string[] =>
+  getArrayValue(value)
+    .map((entry) => getStringValue(entry))
+    .filter((entry): entry is string => Boolean(entry));
+
+const projectPacingCard = (
+  value: unknown,
+  includeEmoji: boolean,
+): PacingCardProjection => {
+  const record = getRecordValue(value);
+
+  return {
+    canDo: projectStringList(record?.canDo),
+    needHelp: projectStringList(record?.needHelp),
+    visitRules: projectStringList(record?.visitRules),
+    stimuli: projectStringList(record?.stimuli),
+    hint: getStringValue(record?.hint),
+    thanks: getStringValue(record?.thanks),
+    ...(includeEmoji ? { emoji: getStringValue(record?.emoji) } : {}),
+  };
+};
+
+const buildPacingAmpelkartenModel = (
+  formData: Record<string, unknown>,
+  _locale: SupportedLocale,
+  baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
+): DocumentModel => {
+  const meta = getRecordValue(formData.meta);
+  const sender = getRecordValue(formData.sender);
+  const adultCards = getRecordValue(getRecordValue(formData.adult)?.cards);
+  const childCards = getRecordValue(getRecordValue(formData.child)?.cards);
+  const notes = getRecordValue(formData.notes);
+
+  return {
+    diagnosisParagraphs: [],
+    ...baseModel,
+    meta: {
+      introAccepted: meta?.introAccepted === true,
+      variant: meta?.variant === 'child' ? 'child' : 'adult',
+    },
+    sender: {
+      signature: getStringValue(sender?.signature),
+    },
+    adult: {
+      cards: {
+        green: projectPacingCard(adultCards?.green, false),
+        yellow: projectPacingCard(adultCards?.yellow, false),
+        red: projectPacingCard(adultCards?.red, false),
+      },
+    },
+    child: {
+      cards: {
+        green: projectPacingCard(childCards?.green, true),
+        yellow: projectPacingCard(childCards?.yellow, true),
+        red: projectPacingCard(childCards?.red, true),
+      },
+    },
+    notes: {
+      title: getStringValue(notes?.title),
+      items: projectStringList(notes?.items),
+    },
+  };
+};
+
 const withEmptyDiagnosis = (
   model: Omit<DocumentModel, 'diagnosisParagraphs'>,
 ): DocumentModel => ({ diagnosisParagraphs: [], ...model });
@@ -347,6 +447,7 @@ const FORMPACK_MODEL_BUILDERS: Partial<Record<string, ModelBuilder>> = {
   [DOCTOR_LETTER_FORMPACK_ID]: buildDoctorLetterModel,
   [NOTFALLPASS_FORMPACK_ID]: buildNotfallpassModel,
   [OFFLABEL_ANTRAG_FORMPACK_ID]: buildOfflabelAntragModel,
+  [PACING_AMPELKARTEN_FORMPACK_ID]: buildPacingAmpelkartenModel,
 };
 
 /**

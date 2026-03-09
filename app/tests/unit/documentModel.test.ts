@@ -271,4 +271,111 @@ describe('formpacks/documentModel', () => {
     expect(result.exportBundle?.part2.attachments).toEqual([]);
     expect(result.exportBundle?.part2.attachmentsHeading).toBe('');
   });
+
+  it('builds pacing-ampelkarten model with export-ready adult and child cards', () => {
+    const result = buildDocumentModel('pacing-ampelkarten', 'en', {
+      meta: {
+        introAccepted: true,
+        variant: 'child',
+      },
+      sender: {
+        signature: 'Love, Alex',
+      },
+      adult: {
+        cards: {
+          green: {
+            canDo: ['Short chat'],
+            needHelp: ['Shopping'],
+            visitRules: ['Please ask first'],
+            stimuli: ['Low noise'],
+            hint: 'Pacing helps',
+            thanks: 'Thank you',
+          },
+        },
+      },
+      child: {
+        cards: {
+          green: {
+            emoji: '😀',
+            canDo: ['Play a small game'],
+            needHelp: ['Please remind me to rest'],
+            visitRules: ['Only one friend'],
+            stimuli: ['Quiet voices'],
+            hint: 'Good day',
+            thanks: 'Thanks',
+          },
+        },
+      },
+      notes: {
+        title: 'Notes',
+        items: ['No doorbell'],
+      },
+    });
+
+    expect(result.meta).toEqual({
+      introAccepted: true,
+      variant: 'child',
+    });
+    expect(result.sender).toEqual({
+      signature: 'Love, Alex',
+    });
+    expect(result.adult?.cards.green.canDo).toEqual(['Short chat']);
+    expect(result.child?.cards.green.emoji).toBe('😀');
+    expect(result.notes).toEqual({
+      title: 'Notes',
+      items: ['No doorbell'],
+    });
+  });
+
+  it('defaults pacing-ampelkarten variant to adult and omits emojis from adult cards', () => {
+    const result = buildDocumentModel('pacing-ampelkarten', 'en', {
+      meta: {
+        introAccepted: false,
+        variant: 'unexpected',
+      },
+      adult: {
+        cards: {
+          green: {
+            canDo: ['Slow walk', '', null],
+            needHelp: ['Cooking'],
+            visitRules: ['Please text first'],
+            stimuli: ['Dim light'],
+            hint: 'One step at a time',
+            thanks: 'Thanks for understanding',
+            emoji: '🦥',
+          },
+        },
+      },
+      notes: {
+        title: 'Important',
+        items: ['Keep visits short', '', null],
+      },
+    });
+
+    expect(result.meta).toEqual({
+      introAccepted: false,
+      variant: 'adult',
+    });
+    expect(result.adult?.cards.green).toEqual({
+      canDo: ['Slow walk'],
+      needHelp: ['Cooking'],
+      visitRules: ['Please text first'],
+      stimuli: ['Dim light'],
+      hint: 'One step at a time',
+      thanks: 'Thanks for understanding',
+    });
+    expect(result.child?.cards.green).toEqual({
+      canDo: [],
+      needHelp: [],
+      visitRules: [],
+      stimuli: [],
+      hint: null,
+      thanks: null,
+      emoji: null,
+    });
+    expect(result.notes).toEqual({
+      title: 'Important',
+      items: ['Keep visits short'],
+    });
+  });
 });

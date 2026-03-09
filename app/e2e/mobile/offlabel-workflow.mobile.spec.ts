@@ -434,7 +434,11 @@ const openFormpackForLayoutAudit = async (page: Page, formpackId: string) => {
   );
 
   const formLocator = page.locator('.formpack-form');
-  if (formpackId === FORM_PACK_ID) {
+  const introGate = page.locator('.formpack-intro-gate');
+  if (await introGate.isVisible().catch(() => false)) {
+    await introGate.locator('input[type="checkbox"]').check();
+    await introGate.locator('button:not([disabled])').click();
+  } else if (formpackId === FORM_PACK_ID) {
     await acceptIntroGate(page);
   }
 

@@ -60,11 +60,12 @@ const main = async () => {
       break;
     }
 
-    if (
-      !shouldRetry(lastResult.code, lastResult.output) ||
-      attempt === MAX_ATTEMPTS
-    ) {
+    if (!shouldRetry(lastResult.code, lastResult.output)) {
       process.exit(lastResult.code);
+    }
+
+    if (attempt === MAX_ATTEMPTS) {
+      break;
     }
 
     console.warn(
@@ -72,12 +73,22 @@ const main = async () => {
     );
   }
 
-  if (lastResult.code !== 0) {
+  const isGlobalThresholdFailure = RETRYABLE_THRESHOLD_FAILURE.test(
+    lastResult.output,
+  );
+
+  if (lastResult.code !== 0 && (!isChangedMode || !isGlobalThresholdFailure)) {
     process.exit(lastResult.code);
   }
 
   if (!isChangedMode) {
     return;
+  }
+
+  if (lastResult.code !== 0 && isGlobalThresholdFailure) {
+    console.warn(
+      `${C_YELLOW}Continuing after repeated global V8 coverage-threshold failure because --changed mode enforces 100% on each changed file separately.${C_RESET}`,
+    );
   }
 
   const changedCoverageResult = await runCommand('node', [
