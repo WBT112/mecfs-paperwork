@@ -400,6 +400,7 @@ vi.mock('@rjsf/core', () => ({
     children,
     className,
     formData,
+    templates,
     uiSchema,
     onChange,
     onSubmit,
@@ -407,6 +408,9 @@ vi.mock('@rjsf/core', () => ({
     children?: React.ReactNode;
     className?: string;
     formData?: Record<string, unknown>;
+    templates?: {
+      FieldTemplate?: unknown;
+    };
     uiSchema?: Record<string, unknown>;
     onChange?: (event: { formData: Record<string, unknown> }) => void;
     onSubmit?: (
@@ -417,6 +421,9 @@ vi.mock('@rjsf/core', () => ({
     <div data-testid="mock-rjsf-form" className={className}>
       <div data-testid="form-data">{JSON.stringify(formData)}</div>
       <div data-testid="ui-schema">{JSON.stringify(uiSchema)}</div>
+      <div data-testid="has-field-template">
+        {String(Boolean(templates?.FieldTemplate))}
+      </div>
       {children}
       <button
         type="button"
@@ -1067,6 +1074,20 @@ describe('FormpackDetailPage', () => {
 
     expect(form).toHaveClass('formpack-form', 'formpack-form--notfallpass');
     expect(form).not.toHaveClass(DOCTOR_LETTER_FORM_CLASS);
+  });
+
+  it('passes the custom field template to RJSF even without info boxes', async () => {
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(await screen.findByTestId('has-field-template')).toHaveTextContent(
+      'true',
+    );
   });
 
   it('adds the doctor-letter form CSS class for letter layouts', async () => {

@@ -15,7 +15,11 @@ import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/previewValue';
 import { isRecord } from '../lib/utils';
 import { buildRandomDummyPatch, mergeDummyPatch } from '../lib/devDummyFill';
-import { createAsyncGuard, ignoreAsyncError } from '../lib/asyncGuard';
+import {
+  createAsyncGuard,
+  ignoreAsyncError,
+  runIfActive,
+} from '../lib/asyncGuard';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
@@ -250,9 +254,7 @@ export default function FormpackDetailPage() {
 
     const refreshMeta = async () => {
       const next = await getFormpackMeta(currentFormpackId);
-      if (guard.isActive()) {
-        setFormpackMeta(next);
-      }
+      runIfActive(guard, () => setFormpackMeta(next));
     };
 
     const handleUpdated = (event: Event) => {
@@ -803,16 +805,15 @@ export default function FormpackDetailPage() {
     pendingOfflabelFocusSelector,
   ]);
 
-  // Use custom field template for formpacks that provide InfoBoxes.
-  const templates = useMemo(() => {
-    if ((manifest?.ui?.infoBoxes?.length ?? 0) > 0) {
-      return {
-        ...formpackTemplates,
-        FieldTemplate: FormpackFieldTemplate,
-      };
-    }
-    return formpackTemplates;
-  }, [manifest?.ui?.infoBoxes]);
+  // Always use the custom field template so hidden conditional sections are
+  // removed from the DOM even for formpacks without InfoBoxes.
+  const templates = useMemo(
+    () => ({
+      ...formpackTemplates,
+      FieldTemplate: FormpackFieldTemplate,
+    }),
+    [],
+  );
   const previewUiSchema =
     conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
   const jsonPreview = useMemo(
