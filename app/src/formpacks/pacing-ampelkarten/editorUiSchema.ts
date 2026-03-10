@@ -69,8 +69,34 @@ const showNode = (value: unknown): UiSchema => {
 const getRecordValue = (value: unknown, key: string): unknown =>
   isRecord(value) ? value[key] : {};
 
+const normalizeArrayItemUiSchema = (value: unknown): UiSchema => {
+  const field = showNode(value);
+  const itemSchema = isRecord(field.items) ? { ...field.items } : {};
+  const itemOptions = isRecord(itemSchema['ui:options'])
+    ? { ...itemSchema['ui:options'] }
+    : {};
+
+  return {
+    ...field,
+    items: {
+      ...itemSchema,
+      'ui:options': {
+        ...itemOptions,
+        label: false,
+      },
+      'ui:title': '',
+    },
+  };
+};
+
 const stripFieldHelp = (value: unknown): UiSchema => {
   const field = showNode(value);
+  delete field['ui:help'];
+  return field;
+};
+
+const stripListFieldHelp = (value: unknown): UiSchema => {
+  const field = normalizeArrayItemUiSchema(value);
   delete field['ui:help'];
   return field;
 };
@@ -79,10 +105,19 @@ const buildSecondaryCardField = (
   card: unknown,
   key: string,
   expanded: boolean,
-) =>
-  expanded
-    ? stripFieldHelp(getRecordValue(card, key))
-    : hideNode(getRecordValue(card, key));
+): UiSchema => {
+  const fieldValue = getRecordValue(card, key);
+
+  if (!expanded) {
+    return hideNode(fieldValue);
+  }
+
+  if (key === 'visitRules' || key === 'stimuli') {
+    return stripListFieldHelp(fieldValue);
+  }
+
+  return stripFieldHelp(fieldValue);
+};
 
 const isCardStep = (step: PacingEditorStepId): step is PacingEditorCardColor =>
   CARD_STEP_IDS.includes(step as PacingEditorCardColor);
@@ -124,8 +159,8 @@ const buildCardStepUiSchema = (
     'ui:title': '',
     'ui:description': '',
     'ui:order': [...PRIMARY_CARD_FIELDS, ...SECONDARY_CARD_FIELDS],
-    canDo: stripFieldHelp(getRecordValue(card, 'canDo')),
-    needHelp: stripFieldHelp(getRecordValue(card, 'needHelp')),
+    canDo: stripListFieldHelp(getRecordValue(card, 'canDo')),
+    needHelp: stripListFieldHelp(getRecordValue(card, 'needHelp')),
     hint: stripFieldHelp(getRecordValue(card, 'hint')),
     visitRules: buildSecondaryCardField(card, 'visitRules', expanded),
     stimuli: buildSecondaryCardField(card, 'stimuli', expanded),
@@ -177,6 +212,9 @@ const buildNotesStepUiSchema = (uiSchema: UiSchema): UiSchema => ({
   notes: {
     ...showNode(uiSchema.notes),
     'ui:description': '',
+    items: stripListFieldHelp(
+      isRecord(uiSchema.notes) ? uiSchema.notes.items : {},
+    ),
   },
   sender: {
     ...showNode(uiSchema.sender),

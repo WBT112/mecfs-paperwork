@@ -675,7 +675,6 @@ body {
   gap: 2rem;
 }
 
-.formpack-detail__assets,
 .formpack-detail__form {
   display: grid;
   gap: 1.5rem;
@@ -1213,6 +1212,12 @@ body {
   --pacing-yellow-soft: #fff7dd;
   --pacing-red: #9a3d3d;
   --pacing-red-soft: #fff0ef;
+  --pacing-variant: #2f5ca8;
+  --pacing-variant-soft: #eef3ff;
+  --pacing-notes: #7b5e1f;
+  --pacing-notes-soft: #f9f1dd;
+  --pacing-preview: #5b4f99;
+  --pacing-preview-soft: #f0edff;
   display: grid;
   gap: 1rem;
 }
@@ -1268,28 +1273,52 @@ body {
 }
 
 .pacing-editor__step {
+  --pacing-step-accent: var(--pacing-variant);
+  --pacing-step-soft: var(--pacing-variant-soft);
+  --pacing-step-text: #21457f;
   display: grid;
   gap: 0.25rem;
   justify-items: start;
   min-height: 64px;
   padding: 0.8rem 0.9rem;
-  border: 1px solid var(--color-border-subtle);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--pacing-step-accent) 24%,
+      var(--color-border-subtle)
+    );
   border-radius: 14px;
-  background: var(--color-surface-subtle);
-  color: var(--color-text);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-soft) 88%, white),
+    color-mix(in srgb, var(--pacing-step-soft) 48%, var(--color-surface))
+  );
+  color: var(--pacing-step-text);
   text-align: left;
 }
 
 .pacing-editor__step:hover {
-  border-color: var(--color-border);
-  background: var(--color-surface);
+  border-color: color-mix(
+    in srgb,
+    var(--pacing-step-accent) 38%,
+    var(--color-border)
+  );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-soft) 96%, white),
+    color-mix(in srgb, var(--pacing-step-soft) 65%, var(--color-surface))
+  );
 }
 
 .pacing-editor__step--current {
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 8%, white);
+  border-color: color-mix(in srgb, var(--pacing-step-accent) 52%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-accent) 18%, white),
+    color-mix(in srgb, var(--pacing-step-soft) 72%, white)
+  );
   box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--color-primary) 18%, white);
+    color-mix(in srgb, var(--pacing-step-accent) 24%, white);
 }
 
 .pacing-editor__step-index {
@@ -1300,15 +1329,21 @@ body {
   height: 1.65rem;
   border-radius: 999px;
   background: var(--color-surface);
-  border: 1px solid var(--color-border-subtle);
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--pacing-step-accent) 24%,
+      var(--color-border-subtle)
+    );
   font-size: 0.82rem;
   font-weight: 700;
+  color: var(--pacing-step-text);
 }
 
 .pacing-editor__step--current .pacing-editor__step-index {
   border-color: transparent;
-  background: var(--color-primary);
-  color: var(--color-primary-contrast);
+  background: var(--pacing-step-accent);
+  color: #fff;
 }
 
 .pacing-editor__step-label {
@@ -1318,35 +1353,22 @@ body {
 }
 
 .pacing-editor__step-header {
+  --pacing-header-accent: var(--pacing-variant);
+  --pacing-header-soft: var(--pacing-variant-soft);
+  --pacing-header-dark-base: #0d111b;
+  --pacing-header-text: var(--color-text-strong);
+  --pacing-header-dark-text: var(--color-text-strong);
   display: grid;
   gap: 0.4rem;
   padding: 1rem 1.1rem;
   border-radius: 18px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--color-surface-subtle) 70%, white),
-    var(--color-surface)
-  );
-  border: 1px solid var(--color-border-subtle);
+  border: 1px solid color-mix(in srgb, var(--pacing-header-accent) 30%, white);
+  background: linear-gradient(180deg, var(--pacing-header-soft), white);
+  color: var(--pacing-header-text);
 }
 
 .pacing-editor__step-header h4 {
   margin: 0;
-}
-
-.pacing-editor__step-header--green {
-  border-color: color-mix(in srgb, var(--pacing-green) 30%, white);
-  background: linear-gradient(180deg, var(--pacing-green-soft), white);
-}
-
-.pacing-editor__step-header--yellow {
-  border-color: color-mix(in srgb, var(--pacing-yellow) 30%, white);
-  background: linear-gradient(180deg, var(--pacing-yellow-soft), white);
-}
-
-.pacing-editor__step-header--red {
-  border-color: color-mix(in srgb, var(--pacing-red) 30%, white);
-  background: linear-gradient(180deg, var(--pacing-red-soft), white);
 }
 
 .pacing-editor__eyebrow {
@@ -1372,27 +1394,98 @@ body {
 }
 
 .pacing-editor__card-badge {
+  --pacing-badge-accent: var(--pacing-variant);
+  --pacing-badge-dark-base: #121722;
+  --pacing-badge-text: var(--pacing-variant);
+  --pacing-badge-dark-text: #eef4ff;
   display: inline-flex;
   align-items: center;
   padding: 0.3rem 0.7rem;
   border-radius: 999px;
   font-size: 0.85rem;
   font-weight: 700;
+  background: color-mix(in srgb, var(--pacing-badge-accent) 14%, white);
+  color: var(--pacing-badge-text);
 }
 
-.pacing-editor__card-badge--green {
-  background: color-mix(in srgb, var(--pacing-green) 14%, white);
-  color: var(--pacing-green);
+:root[data-theme='dark'] .pacing-editor__step {
+  border-color: color-mix(
+    in srgb,
+    var(--pacing-step-accent) 36%,
+    var(--color-border)
+  );
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-accent) 20%, #131313),
+    color-mix(in srgb, var(--pacing-step-soft) 8%, var(--color-surface))
+  );
+  color: var(--color-text-strong);
 }
 
-.pacing-editor__card-badge--yellow {
-  background: color-mix(in srgb, var(--pacing-yellow) 14%, white);
-  color: #6f5200;
+:root[data-theme='dark'] .pacing-editor__step:hover {
+  border-color: color-mix(in srgb, var(--pacing-step-accent) 48%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-accent) 27%, #151515),
+    color-mix(in srgb, var(--pacing-step-soft) 14%, var(--color-surface))
+  );
 }
 
-.pacing-editor__card-badge--red {
-  background: color-mix(in srgb, var(--pacing-red) 14%, white);
-  color: var(--pacing-red);
+:root[data-theme='dark'] .pacing-editor__step--current {
+  border-color: color-mix(in srgb, var(--pacing-step-accent) 60%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-accent) 34%, #151515),
+    color-mix(in srgb, var(--pacing-step-soft) 18%, var(--color-surface))
+  );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-step-accent) 46%, white);
+}
+
+:root[data-theme='dark'] .pacing-editor__step-index {
+  border-color: color-mix(
+    in srgb,
+    var(--pacing-step-accent) 44%,
+    var(--color-border)
+  );
+  background: color-mix(in srgb, var(--pacing-step-accent) 18%, #161616);
+  color: var(--color-text-strong);
+}
+
+:root[data-theme='dark'] .pacing-editor__step-header {
+  border-color: color-mix(
+    in srgb,
+    var(--pacing-header-accent) 58%,
+    var(--color-border)
+  );
+  background: linear-gradient(
+    180deg,
+    color-mix(
+      in srgb,
+      var(--pacing-header-accent) 38%,
+      var(--pacing-header-dark-base)
+    ),
+    color-mix(in srgb, var(--pacing-header-accent) 16%, var(--color-surface))
+  );
+}
+
+:root[data-theme='dark'] .pacing-editor__step-header .pacing-editor__eyebrow,
+:root[data-theme='dark']
+  .pacing-editor__step-header
+  .pacing-editor__description,
+:root[data-theme='dark'] .pacing-editor__step-header h4 {
+  color: var(--pacing-header-dark-text);
+}
+
+:root[data-theme='dark'] .pacing-editor__card-badge {
+  border: 1px solid transparent;
+  background: color-mix(
+    in srgb,
+    var(--pacing-badge-accent) 34%,
+    var(--pacing-badge-dark-base)
+  );
+  border-color: color-mix(in srgb, var(--pacing-badge-accent) 54%, white);
+  color: var(--pacing-badge-dark-text);
 }
 
 .pacing-editor .formpack-form--pacing-ampelkarten {
@@ -1404,23 +1497,13 @@ body {
   margin-bottom: 0;
 }
 
-.pacing-editor .formpack-form--pacing-ampelkarten > fieldset,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_meta,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_notes,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_sender,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_adult,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_child {
+.pacing-editor .formpack-form--pacing-ampelkarten > fieldset {
   padding: 0;
   margin: 0;
   border: 0;
 }
 
-.pacing-editor .formpack-form--pacing-ampelkarten > fieldset > legend,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_meta > legend,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_notes > legend,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_sender > legend,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_adult > legend,
-.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_child > legend {
+.pacing-editor .formpack-form--pacing-ampelkarten > fieldset > legend {
   display: none;
 }
 
@@ -1553,6 +1636,24 @@ body {
   margin-bottom: 1rem;
 }
 
+.formpack-utility-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.formpack-utility-row .formpack-intro__reopen {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.formpack-utility-row .profile-quickfill {
+  flex: 1 1 34rem;
+  margin-bottom: 0;
+}
+
 .profile-quickfill {
   display: flex;
   flex-wrap: wrap;
@@ -1563,6 +1664,10 @@ body {
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
   background: var(--color-surface);
+}
+
+.profile-quickfill .app__button {
+  min-height: 40px;
 }
 
 .profile-quickfill__save {
@@ -1591,6 +1696,15 @@ body {
 }
 
 @media (max-width: 640px) {
+  .formpack-utility-row {
+    align-items: stretch;
+  }
+
+  .formpack-utility-row .formpack-intro__reopen,
+  .formpack-utility-row .profile-quickfill {
+    flex: 1 1 100%;
+  }
+
   .pacing-editor__utility-row {
     align-items: stretch;
   }
@@ -1610,6 +1724,10 @@ body {
 
   .pacing-editor__step-buttons .app__button {
     flex: 1 1 0;
+  }
+
+  .profile-quickfill {
+    align-items: stretch;
   }
 }
 
@@ -1827,7 +1945,7 @@ body {
 
 /* Polished export action bar: make buttons fill their grid cells consistently. */
 .formpack-docx-export__buttons .app__button,
-.formpack-docx-export__buttons .formpack-pdf-export .app__button,
+.formpack-pdf-export .app__button,
 .formpack-actions__group--secondary .app__button {
   width: 100%;
 }

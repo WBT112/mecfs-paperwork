@@ -54,7 +54,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(model.sections[0].heading).toBe('Grün - heute geht etwas');
     expect(model.sections[3].heading).toBe('Notizen / individuelle Regeln');
     expect(templateData?.variant).toBe('adult');
-    expect(templateData?.cards[0].animalLabel).toBe('Faultier');
+    expect(templateData?.cards[0].animalLabel).toBe('Löwe');
     expect(templateData?.cards[0].imageSrc).toMatch(/^data:image\/png;base64,/);
     expect(templateData?.cards[0].sectionLabelColor).toBe('#245a35');
     expect(templateData?.cards[0].sections[0].label).toBe(
@@ -83,8 +83,8 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
 
     expect(templateData?.variant).toBe('child');
     expect(templateData?.cards[0].title).toContain('good day');
-    expect(templateData?.cards[0].animalLabel).toBe('Sloth');
-    expect(templateData?.cards[2].animalLabel).toBe('Lion');
+    expect(templateData?.cards[0].animalLabel).toBe('Lion');
+    expect(templateData?.cards[2].animalLabel).toBe('Sloth');
     expect(templateData?.cards[1].imageAlt).toBe(
       'Panda card with a careful yellow background',
     );
@@ -143,7 +143,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(model.sections[0].blocks).toEqual([
       {
         type: 'paragraph',
-        text: 'Sloth',
+        text: 'Lion',
       },
       {
         type: 'paragraph',

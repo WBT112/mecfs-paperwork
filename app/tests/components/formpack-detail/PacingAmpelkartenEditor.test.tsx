@@ -223,4 +223,40 @@ describe('PacingAmpelkartenEditor', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('preview-body')).toBeInTheDocument();
   });
+
+  it('assigns pacing-specific tone classes to each navigation step', () => {
+    render(<PacingAmpelkartenEditor {...createProps()} />);
+
+    const variantStep = screen.getByRole('button', {
+      name: /pacing-ampelkarten\.editor\.steps\.variant\.label/,
+    });
+    const greenStep = screen.getByRole('button', {
+      name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+    });
+    const yellowStep = screen.getByRole('button', {
+      name: /pacing-ampelkarten\.editor\.steps\.yellow\.label/,
+    });
+    const redStep = screen.getByRole('button', {
+      name: /pacing-ampelkarten\.editor\.steps\.red\.label/,
+    });
+    const notesStep = screen.getByRole('button', {
+      name: /pacing-ampelkarten\.editor\.steps\.notes\.label/,
+    });
+    const previewStep = screen.getByRole('button', {
+      name: /pacing-ampelkarten\.editor\.steps\.preview\.label/,
+    });
+
+    expect(variantStep).toHaveClass('pacing-editor__step--variant');
+    expect(greenStep).toHaveClass('pacing-editor__step--green');
+    expect(yellowStep).toHaveClass('pacing-editor__step--yellow');
+    expect(redStep).toHaveClass('pacing-editor__step--red');
+    expect(notesStep).toHaveClass('pacing-editor__step--notes');
+    expect(previewStep).toHaveClass('pacing-editor__step--preview');
+    expect(greenStep).toHaveStyle({
+      '--pacing-step-accent': 'var(--pacing-green)',
+    });
+    expect(redStep).toHaveStyle({
+      '--pacing-step-accent': 'var(--pacing-red)',
+    });
+  });
 });

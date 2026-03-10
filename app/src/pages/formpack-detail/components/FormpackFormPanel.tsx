@@ -159,6 +159,7 @@ export default function FormpackFormPanel({
   return (
     <div ref={formContentRef}>
       <FormpackIntroUtilityRow
+        containerClassName="formpack-utility-row"
         profileClassName="profile-quickfill"
         introButtonWrapperClassName="formpack-intro__reopen"
         {...introUtilityProps}

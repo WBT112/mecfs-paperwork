@@ -1304,6 +1304,30 @@ describe('FormpackDetailPage', () => {
     }
   });
 
+  it('renders dev metadata after the tools group', async () => {
+    visibilityState.isDevUiEnabled = true;
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    const toolsHeading = await screen.findByRole('heading', {
+      name: 'formpackToolsHeading',
+    });
+    const detailsHeading = await screen.findByRole('heading', {
+      name: 'formpackDetailsHeading',
+    });
+
+    expect(
+      toolsHeading.compareDocumentPosition(detailsHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
   it('defaults to collapsed drafts, import, history, and preview', async () => {
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>

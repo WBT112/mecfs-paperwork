@@ -1049,28 +1049,6 @@ export default function FormpackDetailPage() {
         className="formpack-detail"
         onClickCapture={handleActionClickCapture}
       >
-        <div className="formpack-detail__assets">
-          <DevMetadataPanel
-            show={showDevSections}
-            manifest={manifest}
-            labels={{
-              detailsHeading: t('formpackDetailsHeading'),
-              idLabel: t('formpackId'),
-              versionLabel: t('formpackVersion'),
-              defaultLocaleLabel: t('formpackDefaultLocale'),
-              localesLabel: t('formpackLocales'),
-              exportsHeading: t('formpackExportsHeading'),
-              exportsLabel: t('formpackExports'),
-              docxHeading: t('formpackDocxHeading'),
-              docxTemplateA4: t('formpackDocxTemplateA4'),
-              docxTemplateWallet: t('formpackDocxTemplateWallet'),
-              docxTemplateWalletUnavailable: t(
-                'formpackDocxTemplateWalletUnavailable',
-              ),
-              docxMapping: t('formpackDocxMapping'),
-            }}
-          />
-        </div>
         <div className="formpack-detail__form">
           <FormContentSection title={t('formpackFormHeading')}>
             {isPacingAmpelkarten ? (
@@ -1282,6 +1260,26 @@ export default function FormpackDetailPage() {
               <pre className="formpack-preview">{getJsonPreviewContent()}</pre>
             </div>
           )}
+          <DevMetadataPanel
+            show={showDevSections}
+            manifest={manifest}
+            labels={{
+              detailsHeading: t('formpackDetailsHeading'),
+              idLabel: t('formpackId'),
+              versionLabel: t('formpackVersion'),
+              defaultLocaleLabel: t('formpackDefaultLocale'),
+              localesLabel: t('formpackLocales'),
+              exportsHeading: t('formpackExportsHeading'),
+              exportsLabel: t('formpackExports'),
+              docxHeading: t('formpackDocxHeading'),
+              docxTemplateA4: t('formpackDocxTemplateA4'),
+              docxTemplateWallet: t('formpackDocxTemplateWallet'),
+              docxTemplateWalletUnavailable: t(
+                'formpackDocxTemplateWalletUnavailable',
+              ),
+              docxMapping: t('formpackDocxMapping'),
+            }}
+          />
         </div>
       </div>
       <p className="formpack-detail__version-meta" aria-live="polite">

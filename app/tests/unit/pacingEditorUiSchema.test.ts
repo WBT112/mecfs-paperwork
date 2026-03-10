@@ -8,6 +8,11 @@ import type { UiSchema } from '@rjsf/utils';
 
 type UiFieldView = {
   'ui:widget'?: string;
+  'ui:title'?: string;
+  'ui:options'?: {
+    label?: boolean;
+  };
+  items?: UiFieldView;
 };
 
 type CardView = UiFieldView & {
@@ -102,6 +107,34 @@ describe('buildPacingEditorUiSchema', () => {
     expect(view.child?.cards?.red?.['ui:widget']).toBe(hiddenWidget);
   });
 
+  it('clears technical item titles for list inputs in the editor flow', () => {
+    const cardStep = asPacingSchemaView(
+      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'green', {}),
+    );
+    const yellowStep = asPacingSchemaView(
+      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'yellow', {}),
+    );
+    const redStep = asPacingSchemaView(
+      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'red', {}),
+    );
+    const notesStep = asPacingSchemaView(
+      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'notes', {}),
+    );
+
+    expect(cardStep.child?.cards?.green?.canDo?.items?.['ui:title']).toBe('');
+    expect(cardStep.child?.cards?.green?.canDo?.items?.['ui:options']?.label).toBe(
+      false,
+    );
+    expect(
+      yellowStep.child?.cards?.yellow?.canDo?.items?.['ui:options']?.label,
+    ).toBe(false);
+    expect(redStep.child?.cards?.red?.canDo?.items?.['ui:options']?.label).toBe(
+      false,
+    );
+    expect(notesStep.notes?.items?.items?.['ui:title']).toBe('');
+    expect(notesStep.notes?.items?.items?.['ui:options']?.label).toBe(false);
+  });
+
   it('reveals secondary card sections when expanded for the current color', () => {
     const expanded: PacingEditorSecondarySectionState = { green: true };
     const view = asPacingSchemaView(
@@ -111,6 +144,8 @@ describe('buildPacingEditorUiSchema', () => {
     expect(view.child?.cards?.green?.visitRules?.['ui:widget']).toBeUndefined();
     expect(view.child?.cards?.green?.stimuli?.['ui:widget']).toBeUndefined();
     expect(view.child?.cards?.green?.thanks?.['ui:widget']).toBe('textarea');
+    expect(view.child?.cards?.green?.visitRules?.items?.['ui:title']).toBe('');
+    expect(view.child?.cards?.green?.stimuli?.items?.['ui:title']).toBe('');
   });
 
   it('defaults missing variants to the adult branch on card steps', () => {
@@ -169,5 +204,53 @@ describe('buildPacingEditorUiSchema', () => {
     );
 
     expect(result).toBe(asUiSchema);
+  });
+
+  it('recreates hidden list item schema defaults when an array field has no item ui schema', () => {
+    const childSection = asUiSchema.child as Record<string, unknown>;
+    const childCards = childSection.cards as Record<string, unknown>;
+    const greenCard = childCards.green as Record<string, unknown>;
+    const canDoField = greenCard.canDo as Record<string, unknown>;
+    const schemaWithoutItemUi = {
+      ...asUiSchema,
+      child: {
+        ...childSection,
+        cards: {
+          ...childCards,
+          green: {
+            ...greenCard,
+            canDo: Object.fromEntries(
+              Object.entries(canDoField).filter(([key]) => key !== 'items'),
+            ),
+          },
+        },
+      },
+    } as UiSchema;
+
+    const view = asPacingSchemaView(
+      buildPacingEditorUiSchema(schemaWithoutItemUi, baseFormData, 'green', {}),
+    );
+
+    expect(view.child?.cards?.green?.canDo?.items?.['ui:title']).toBe('');
+  });
+
+  it('falls back to empty meta and notes sections when the ui schema shape is incomplete', () => {
+    const incompleteSchema = {
+      ...asUiSchema,
+      meta: undefined,
+      notes: undefined,
+    } as unknown as UiSchema;
+
+    const variantView = asPacingSchemaView(
+      buildPacingEditorUiSchema(incompleteSchema, baseFormData, 'variant', {}),
+    );
+    const notesView = asPacingSchemaView(
+      buildPacingEditorUiSchema(incompleteSchema, baseFormData, 'notes', {}),
+    );
+
+    expect(variantView.meta?.variant?.['ui:widget']).toBeUndefined();
+    expect(variantView.meta?.introAccepted?.['ui:widget']).toBe(hiddenWidget);
+    expect(notesView.notes?.['ui:widget']).toBeUndefined();
+    expect(notesView.notes?.items?.items?.['ui:title']).toBe('');
   });
 });

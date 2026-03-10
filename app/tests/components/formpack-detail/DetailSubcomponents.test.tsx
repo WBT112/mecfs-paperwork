@@ -63,6 +63,7 @@ vi.mock('../../../src/pages/formpack-detail/components/SnapshotsPanel', () => ({
 import FormpackDocumentPreviewContent from '../../../src/pages/formpack-detail/components/FormpackDocumentPreviewContent';
 import FormpackExportActions from '../../../src/pages/formpack-detail/components/FormpackExportActions';
 import FormpackFormPanel from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
+import FormpackIntroUtilityRow from '../../../src/pages/formpack-detail/components/FormpackIntroUtilityRow';
 import FormpackToolsSection from '../../../src/pages/formpack-detail/components/FormpackToolsSection';
 import PacingAmpelkartenEditor from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
 import type { FormpackFormPanelProps } from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
@@ -98,6 +99,7 @@ const DOCX_A4_TEMPLATE_PATH = '/a4.docx';
 const DOCX_WALLET_TEMPLATE_PATH = '/wallet.docx';
 const DEFAULT_LOCALES = ['de', 'en'] as const;
 const PACING_FORMPACK_ID = 'pacing-ampelkarten';
+const FORMPACK_UTILITY_ROW_SELECTOR = '.formpack-utility-row';
 
 const TOOL_SECTION_PROPS = {
   heading: 'Tools',
@@ -377,6 +379,98 @@ describe('formpack detail subcomponents', () => {
     expect(screen.getByText('Records')).toBeInTheDocument();
     expect(screen.getByText('Import')).toBeInTheDocument();
     expect(screen.getByText('Snapshots')).toBeInTheDocument();
+  });
+
+  it('wraps intro and profile actions in a shared utility row for stable layout', () => {
+    render(
+      <FormpackFormPanel
+        {...createFormPanelProps({
+          introGateEnabled: true,
+          introTexts: INTRO_TEXTS,
+          profileHasSavedData: true,
+          showDevSections: true,
+        })}
+      />,
+    );
+
+    const reopenButton = screen.getByRole('button', { name: 'Reopen' });
+    const utilityRow = reopenButton.closest(FORMPACK_UTILITY_ROW_SELECTOR);
+
+    expect(utilityRow).not.toBeNull();
+    expect(utilityRow).toContainElement(
+      screen.getByRole('checkbox', { name: 'Save' }),
+    );
+    expect(utilityRow).toContainElement(
+      screen.getByRole('button', { name: 'Apply' }),
+    );
+    expect(utilityRow).toContainElement(
+      screen.getByRole('button', { name: 'Dummy' }),
+    );
+  });
+
+  it('renders intro and profile controls without layout wrappers when none are provided', () => {
+    render(
+      <FormpackIntroUtilityRow
+        introGateEnabled
+        introReopenLabel="Reopen"
+        onApplyDummyData={vi.fn()}
+        onApplyProfile={vi.fn()}
+        onOpenIntroModal={vi.fn()}
+        onProfileSaveToggle={vi.fn()}
+        profileApplyDummyLabel="Dummy"
+        profileApplyLabel="Apply"
+        profileClassName="profile-quickfill"
+        profileHasSavedData={false}
+        profileSaveEnabled={false}
+        profileStatus="profile-error"
+        profileStatusSuccessText="profileApplySuccess"
+        profileToggleLabel="Save"
+        showDevSections={false}
+      />,
+    );
+
+    expect(document.querySelector(FORMPACK_UTILITY_ROW_SELECTOR)).toBeNull();
+    expect(document.querySelector('.formpack-intro__reopen')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Reopen' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: 'Dummy' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('profile-error')).toBeInTheDocument();
+  });
+
+  it('can render only profile actions inside a provided wrapper when intro controls are absent', () => {
+    render(
+      <FormpackIntroUtilityRow
+        containerClassName="formpack-utility-row"
+        introGateEnabled={false}
+        onApplyDummyData={vi.fn()}
+        onApplyProfile={vi.fn()}
+        onOpenIntroModal={vi.fn()}
+        onProfileSaveToggle={vi.fn()}
+        profileApplyDummyLabel="Dummy"
+        profileApplyLabel="Apply"
+        profileClassName="profile-quickfill"
+        profileHasSavedData
+        profileSaveEnabled
+        profileStatus="profileApplySuccess"
+        profileStatusSuccessText="profileApplySuccess"
+        profileToggleLabel="Save"
+        showDevSections
+      />,
+    );
+
+    const utilityRow = document.querySelector(FORMPACK_UTILITY_ROW_SELECTOR);
+    expect(utilityRow).not.toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Reopen' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Dummy' })).toBeInTheDocument();
+    expect(screen.getByText('profileApplySuccess')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
   });
 
   it('renders export controls and status messages', () => {

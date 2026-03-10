@@ -47,4 +47,19 @@ describe('pacing card theme helpers', () => {
       sectionLabelColor: '#943a23',
     });
   });
+
+  it('maps lion to green and sloth to red assets', async () => {
+    const { getPacingCardTheme } =
+      await import('../../src/formpacks/pacing-ampelkarten/export/cardTheme');
+
+    expect(getPacingCardTheme('green').imageSrc).not.toBe(
+      getPacingCardTheme('red').imageSrc,
+    );
+    expect(getPacingCardTheme('green').animalLabelKey).toBe(
+      'pacing-ampelkarten.card.animal.green',
+    );
+    expect(getPacingCardTheme('red').animalLabelKey).toBe(
+      'pacing-ampelkarten.card.animal.red',
+    );
+  });
 });

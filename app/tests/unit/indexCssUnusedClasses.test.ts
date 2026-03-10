@@ -83,3 +83,39 @@ it('styles help page storage status "ok" in the same success color as "available
     /\.help-page__storage-details dd\[data-status='available'\],\s*\.help-page__storage-details dd\[data-status='ok'\]\s*\{\s*color:\s*var\(--color-success\);/m,
   );
 });
+
+it('adds dedicated dark-theme pacing editor overrides for readable colored headers', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+
+  expect(cssSource).toContain(
+    ":root[data-theme='dark'] .pacing-editor__step-header {",
+  );
+  expect(cssSource).toContain('--pacing-header-accent: var(--pacing-variant);');
+  expect(cssSource).toContain(
+    '--pacing-header-soft: var(--pacing-variant-soft);',
+  );
+  expect(cssSource).toContain(
+    ":root[data-theme='dark'] .pacing-editor__card-badge {",
+  );
+  expect(cssSource).toContain('--pacing-badge-accent: var(--pacing-variant);');
+  expect(cssSource).toContain('--pacing-badge-dark-text: #eef4ff;');
+});
+
+it('defines dedicated pacing step tones for all six editor navigation buttons', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+
+  expect(cssSource).toContain('.pacing-editor__step {');
+  expect(cssSource).toContain('--pacing-step-accent: var(--pacing-variant);');
+  expect(cssSource).toContain(
+    '--pacing-step-soft: var(--pacing-variant-soft);',
+  );
+  expect(cssSource).toContain('--pacing-step-text: #21457f;');
+});
+
+it('keeps standalone pdf export buttons as wide as other primary action buttons', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+
+  expect(cssSource).toMatch(
+    /\.formpack-pdf-export \.app__button,\s*\.formpack-actions__group--secondary \.app__button \{\s*width:\s*100%;/m,
+  );
+});

@@ -4,6 +4,7 @@ import {
   useMemo,
   useState,
   type ChangeEventHandler,
+  type CSSProperties,
   type ComponentType,
   type ReactNode,
   type RefObject,
@@ -39,10 +40,103 @@ const STEP_HEADER_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
   yellow: 'pacing-editor__step-header--yellow',
   red: 'pacing-editor__step-header--red',
 };
+const STEP_HEADER_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
+  variant: 'pacing-editor__step-header--variant',
+  green: 'pacing-editor__step-header--green',
+  yellow: 'pacing-editor__step-header--yellow',
+  red: 'pacing-editor__step-header--red',
+  notes: 'pacing-editor__step-header--notes',
+  preview: 'pacing-editor__step-header--preview',
+};
 const CARD_BADGE_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
   green: 'pacing-editor__card-badge--green',
   yellow: 'pacing-editor__card-badge--yellow',
   red: 'pacing-editor__card-badge--red',
+};
+const STEP_BUTTON_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
+  variant: 'pacing-editor__step--variant',
+  green: 'pacing-editor__step--green',
+  yellow: 'pacing-editor__step--yellow',
+  red: 'pacing-editor__step--red',
+  notes: 'pacing-editor__step--notes',
+  preview: 'pacing-editor__step--preview',
+};
+
+const buildToneStyle = (
+  accent: string,
+  soft: string,
+  options: {
+    badgeDarkBase: string;
+    badgeText: string;
+    badgeDarkText: string;
+    headerDarkBase: string;
+    stepText: string;
+  },
+): CSSProperties =>
+  ({
+    '--pacing-step-accent': accent,
+    '--pacing-step-soft': soft,
+    '--pacing-step-text': options.stepText,
+    '--pacing-header-accent': accent,
+    '--pacing-header-soft': soft,
+    '--pacing-header-dark-base': options.headerDarkBase,
+    '--pacing-badge-accent': accent,
+    '--pacing-badge-dark-base': options.badgeDarkBase,
+    '--pacing-badge-text': options.badgeText,
+    '--pacing-badge-dark-text': options.badgeDarkText,
+  }) as CSSProperties;
+
+const STEP_TONE_STYLE_BY_STEP: Record<PacingEditorStepId, CSSProperties> = {
+  variant: buildToneStyle(
+    'var(--pacing-variant)',
+    'var(--pacing-variant-soft)',
+    {
+      badgeDarkBase: '#121722',
+      badgeText: 'var(--pacing-variant)',
+      badgeDarkText: '#eef4ff',
+      headerDarkBase: '#0d111b',
+      stepText: '#21457f',
+    },
+  ),
+  green: buildToneStyle('var(--pacing-green)', 'var(--pacing-green-soft)', {
+    badgeDarkBase: '#101611',
+    badgeText: 'var(--pacing-green)',
+    badgeDarkText: '#e6fff0',
+    headerDarkBase: '#0f1712',
+    stepText: '#22553a',
+  }),
+  yellow: buildToneStyle('var(--pacing-yellow)', 'var(--pacing-yellow-soft)', {
+    badgeDarkBase: '#17130b',
+    badgeText: '#6f5200',
+    badgeDarkText: '#fff2bf',
+    headerDarkBase: '#171309',
+    stepText: '#5f4800',
+  }),
+  red: buildToneStyle('var(--pacing-red)', 'var(--pacing-red-soft)', {
+    badgeDarkBase: '#170f10',
+    badgeText: 'var(--pacing-red)',
+    badgeDarkText: '#ffe8e6',
+    headerDarkBase: '#190f10',
+    stepText: '#7f3131',
+  }),
+  notes: buildToneStyle('var(--pacing-notes)', 'var(--pacing-notes-soft)', {
+    badgeDarkBase: '#17130b',
+    badgeText: 'var(--pacing-notes)',
+    badgeDarkText: '#fff2bf',
+    headerDarkBase: '#171309',
+    stepText: '#62491a',
+  }),
+  preview: buildToneStyle(
+    'var(--pacing-preview)',
+    'var(--pacing-preview-soft)',
+    {
+      badgeDarkBase: '#121722',
+      badgeText: 'var(--pacing-preview)',
+      badgeDarkText: '#eef4ff',
+      headerDarkBase: '#12101b',
+      stepText: '#4c4381',
+    },
+  ),
 };
 
 const resolveVariant = (value: unknown): PacingVariant =>
@@ -229,7 +323,10 @@ export default function PacingAmpelkartenEditor({
   const renderStepHeader = () => {
     if (currentStep === 'preview') {
       return (
-        <div className="pacing-editor__step-header">
+        <div
+          className={`pacing-editor__step-header ${STEP_HEADER_CLASS_BY_STEP[currentStep]}`}
+          style={STEP_TONE_STYLE_BY_STEP[currentStep]}
+        >
           <p className="pacing-editor__eyebrow">
             {tFormpack(getStepTranslationKey(currentStep))}
           </p>
@@ -245,6 +342,7 @@ export default function PacingAmpelkartenEditor({
       return (
         <div
           className={`pacing-editor__step-header ${STEP_HEADER_CLASS_BY_COLOR[currentCardStep]}`}
+          style={STEP_TONE_STYLE_BY_STEP[currentCardStep]}
         >
           <p className="pacing-editor__eyebrow">
             {tFormpack(getStepTranslationKey(currentStep))}
@@ -252,6 +350,7 @@ export default function PacingAmpelkartenEditor({
           <div className="pacing-editor__card-heading">
             <span
               className={`pacing-editor__card-badge ${CARD_BADGE_CLASS_BY_COLOR[currentCardStep]}`}
+              style={STEP_TONE_STYLE_BY_STEP[currentCardStep]}
             >
               {currentAnimalLabel}
             </span>
@@ -265,7 +364,10 @@ export default function PacingAmpelkartenEditor({
     }
 
     return (
-      <div className="pacing-editor__step-header">
+      <div
+        className={`pacing-editor__step-header ${STEP_HEADER_CLASS_BY_STEP[currentStep]}`}
+        style={STEP_TONE_STYLE_BY_STEP[currentStep]}
+      >
         <p className="pacing-editor__eyebrow">
           {tFormpack(getStepTranslationKey(currentStep))}
         </p>
@@ -288,11 +390,14 @@ export default function PacingAmpelkartenEditor({
           <button
             key={step}
             type="button"
-            className={
-              isCurrent
-                ? 'pacing-editor__step pacing-editor__step--current'
-                : 'pacing-editor__step'
-            }
+            className={[
+              'pacing-editor__step',
+              STEP_BUTTON_CLASS_BY_STEP[step],
+              isCurrent ? 'pacing-editor__step--current' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+            style={STEP_TONE_STYLE_BY_STEP[step]}
             aria-current={isCurrent ? 'step' : undefined}
             onClick={() => setCurrentStep(step)}
           >
