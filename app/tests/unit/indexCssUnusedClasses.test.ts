@@ -18,11 +18,17 @@ const sourceExtensions = new Set([
 ]);
 const runtimeGeneratedAllowlist = new Set([
   'btn',
+  'field-array',
   'field-radio-group',
   'form-group',
   'formpack-detail__quota-banner--warning',
   'formpack-detail__quota-banner--error',
   'formpack-form--pacing-ampelkarten',
+  'pacing-editor__utility__error',
+  'pacing-editor__utility__save',
+  'pacing-editor__utility__success',
+  'profile-quickfill__error',
+  'profile-quickfill__save',
 ]);
 
 const collectFiles = (directory: string): string[] => {

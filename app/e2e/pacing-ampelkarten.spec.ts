@@ -14,14 +14,12 @@ import {
   openFormpackWithRetry,
 } from './helpers/formpack';
 import { getActiveRecordId, waitForRecordField } from './helpers/records';
-import { openCollapsibleSectionById } from './helpers/sections';
 
 const FORM_PACK_ID = 'pacing-ampelkarten';
 const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 20_000;
 const INTRO_CHECKBOX_LABEL =
   /Ich habe verstanden, wie die Karten bearbeitet, gedruckt und ausgeschnitten werden|I understand how to edit, print, and cut the cards/i;
-const ADULT_CAN_DO_VALUE = 'Kurze Gespräche sind möglich (ca. 10-20 Minuten).';
 const CHILD_CAN_DO_VALUE =
   'Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.';
 const CUSTOM_CHILD_HINT = 'Heute helfen nur ruhige Vorlese-Minuten.';
@@ -66,6 +64,13 @@ const getAdultVariantRadio = (page: Page) =>
 
 const getChildVariantRadio = (page: Page) =>
   page.getByLabel(CHILD_VARIANT_LABEL);
+
+const continueToNextStep = async (page: Page) => {
+  await clickActionButton(
+    page.getByRole('button', { name: /^(weiter|continue)$/i }),
+    POLL_TIMEOUT,
+  );
+};
 
 const triggerExportAndWaitCompletion = async (
   page: Page,
@@ -118,23 +123,36 @@ test.describe('pacing ampelkarten', () => {
 
     const adultVariantRadio = getAdultVariantRadio(page);
     await expect(adultVariantRadio).toBeChecked();
-    await expect(page.locator('#root_adult_cards_green_canDo_0')).toHaveValue(
-      ADULT_CAN_DO_VALUE,
-    );
-
-    await openCollapsibleSectionById(page, 'formpack-document-preview');
-    const preview = page.locator(
-      '#formpack-document-preview-content .formpack-document-preview',
-    );
-    await expect(preview).toContainText(ADULT_CAN_DO_VALUE);
+    await expect(page.locator('.formpack-pdf-export')).toHaveCount(0);
+    await expect(
+      page.locator(
+        '#formpack-document-preview-content .formpack-document-preview',
+      ),
+    ).toHaveCount(0);
 
     const childVariantRadio = getChildVariantRadio(page);
     await childVariantRadio.check();
     await expect(childVariantRadio).toBeChecked();
-    await expect(page.locator('#root_child_cards_green_emoji')).toHaveCount(0);
+
+    await continueToNextStep(page);
+
     await expect(page.locator('#root_child_cards_green_canDo_0')).toHaveValue(
       CHILD_CAN_DO_VALUE,
     );
+    await expect(page.locator('#root_child_cards_green_emoji')).toHaveCount(0);
+    await expect(page.locator('.formpack-pdf-export')).toHaveCount(0);
+
+    await continueToNextStep(page);
+    await continueToNextStep(page);
+    await continueToNextStep(page);
+    await continueToNextStep(page);
+
+    const preview = page.locator(
+      '#formpack-document-preview-content .formpack-document-preview',
+    );
+    await expect(page.locator('.formpack-pdf-export')).toBeVisible({
+      timeout: POLL_TIMEOUT,
+    });
     await expect(preview).toContainText(CHILD_CAN_DO_VALUE);
   });
 
@@ -151,6 +169,7 @@ test.describe('pacing ampelkarten', () => {
     await acceptIntroAndOpenForm(page);
 
     await getChildVariantRadio(page).check();
+    await continueToNextStep(page);
 
     await fillTextInputStable(
       page,
@@ -158,6 +177,9 @@ test.describe('pacing ampelkarten', () => {
       CUSTOM_CHILD_HINT,
       POLL_TIMEOUT,
     );
+    await continueToNextStep(page);
+    await continueToNextStep(page);
+    await continueToNextStep(page);
     await fillTextInputStable(
       page,
       page.locator('#root_notes_title'),
@@ -170,6 +192,7 @@ test.describe('pacing ampelkarten', () => {
       CUSTOM_SIGNATURE,
       POLL_TIMEOUT,
     );
+    await continueToNextStep(page);
 
     const recordId = await getActiveRecordId(page, FORM_PACK_ID);
     expect(recordId).not.toBeNull();
@@ -208,7 +231,7 @@ test.describe('pacing ampelkarten', () => {
 
     const pdfSection = page.locator('.formpack-pdf-export');
     await expect(pdfSection).toBeVisible({ timeout: POLL_TIMEOUT });
-    const statusRoot = page.locator('.formpack-form__actions');
+    const statusRoot = page.locator('.pacing-editor__export-panel');
 
     const exportButton = pdfSection.getByRole('button', {
       name: /pdf exportieren|export pdf/i,

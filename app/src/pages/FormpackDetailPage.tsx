@@ -25,7 +25,6 @@ import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
 import { mergePacingFormData } from '../formpacks/pacing-ampelkarten/formData';
 import { buildPacingAmpelkartenPreset } from '../formpacks/pacing-ampelkarten/presets';
-import { buildPacingVariantUiSchema } from '../formpacks/pacing-ampelkarten/variantUiSchema';
 import {
   FORMPACKS_UPDATED_EVENT,
   DOCTOR_LETTER_FORMPACK_ID,
@@ -60,6 +59,7 @@ import {
   FormpackExportActions,
   FormpackFormPanel,
   FormpackToolsSection,
+  PacingAmpelkartenEditor,
   QuotaBanner,
 } from './formpack-detail/components';
 import { doctorLetterHelpers } from './formpack-detail/helpers/doctorLetterHelpers';
@@ -139,6 +139,12 @@ export default function FormpackDetailPage() {
   const handleLoadedFormpackChange = useCallback(() => {
     setFormData({});
     setIsIntroModalOpen(false);
+  }, []);
+  const handleCloseIntroModal = useCallback(() => {
+    setIsIntroModalOpen(false);
+  }, []);
+  const handleOpenIntroModal = useCallback(() => {
+    setIsIntroModalOpen(true);
   }, []);
   const { errorMessage, isLoading, manifest, schema, uiSchema } =
     useFormpackLoader({
@@ -369,10 +375,6 @@ export default function FormpackDetailPage() {
       return offlabelUiSchema;
     }
 
-    if (formpackId === PACING_AMPELKARTEN_FORMPACK_ID) {
-      return buildPacingVariantUiSchema(normalizedUiSchema, formData);
-    }
-
     if (formpackId !== DOCTOR_LETTER_FORMPACK_ID) {
       return normalizedUiSchema;
     }
@@ -380,13 +382,7 @@ export default function FormpackDetailPage() {
       normalizedUiSchema,
       decisionData,
     );
-  }, [
-    decisionData,
-    formData,
-    formpackId,
-    normalizedUiSchema,
-    offlabelUiSchema,
-  ]);
+  }, [decisionData, formpackId, normalizedUiSchema, offlabelUiSchema]);
 
   const handleApplyDummyData = useCallback(() => {
     const patch = buildRandomDummyPatch(formSchema, conditionalUiSchema);
@@ -1006,6 +1002,14 @@ export default function FormpackDetailPage() {
 
   const currentQuotaStatus =
     storageHealth.status === 'ok' ? null : storageHealth.status;
+  const isPacingAmpelkarten = formpackId === PACING_AMPELKARTEN_FORMPACK_ID;
+  const formClassNames = ['formpack-form', `formpack-form--${manifest.id}`];
+
+  if (hasLetterLayout(formpackId)) {
+    formClassNames.push('formpack-form--doctor-letter');
+  }
+
+  const formClassName = formClassNames.join(' ');
 
   return (
     <section className="app__card">
@@ -1069,65 +1073,103 @@ export default function FormpackDetailPage() {
         </div>
         <div className="formpack-detail__form">
           <FormContentSection title={t('formpackFormHeading')}>
-            <FormpackFormPanel
-              FormComponent={LazyForm}
-              actions={exportActions}
-              activeRecordExists={Boolean(activeRecord)}
-              closeLabel={t('common.close')}
-              emptyMessage={t('formpackFormNoActiveRecord')}
-              formClassName={[
-                'formpack-form',
-                `formpack-form--${manifest.id}`,
-                hasLetterLayout(formpackId)
-                  ? 'formpack-form--doctor-letter'
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              formContentRef={formContentRef}
-              formContext={formContext}
-              formData={formData}
-              formSchema={formSchema}
-              introGateEnabled={Boolean(introGateConfig?.enabled)}
-              introTexts={introTexts}
-              isIntroGateVisible={isIntroGateVisible}
-              isIntroModalOpen={isIntroModalOpen}
-              loadingLabel={t('formpackLoading')}
-              onApplyDummyData={handleApplyDummyData}
-              onApplyProfile={handleApplyProfile}
-              onCloseIntroModal={() => setIsIntroModalOpen(false)}
-              onConfirmIntroGate={handleAcceptIntroGate}
-              onFormChange={handleFormChange}
-              onFormSubmit={handleFormSubmit}
-              onOpenIntroModal={() => setIsIntroModalOpen(true)}
-              onProfileSaveToggle={handleProfileSaveToggle}
-              profileApplyDummyLabel={t('profileApplyDummyButton')}
-              profileApplyLabel={t('profileApplyButton')}
-              profileHasSavedData={profileHasSavedData}
-              profileSaveEnabled={profileSaveEnabled}
-              profileStatus={profileStatus}
-              profileStatusSuccessText={t('profileApplySuccess')}
-              profileToggleLabel={t('profileSaveCheckbox')}
-              showDevSections={showDevSections}
-              templates={templates}
-              uiSchema={conditionalUiSchema}
-              validator={validator}
-            />
+            {isPacingAmpelkarten ? (
+              <PacingAmpelkartenEditor
+                FormComponent={LazyForm}
+                activeRecordExists={Boolean(activeRecord)}
+                closeLabel={t('common.close')}
+                documentPreview={documentPreview}
+                emptyMessage={t('formpackFormNoActiveRecord')}
+                emptyPreviewLabel={t('formpackDocumentPreviewEmpty')}
+                exportActions={exportActions}
+                formClassName={formClassName}
+                formContentRef={formContentRef}
+                formContext={formContext}
+                formData={formData}
+                formSchema={formSchema}
+                hasDocumentContent={hasDocumentContent}
+                introGateEnabled={Boolean(introGateConfig?.enabled)}
+                introTexts={introTexts}
+                isIntroGateVisible={isIntroGateVisible}
+                isIntroModalOpen={isIntroModalOpen}
+                loadingLabel={t('formpackLoading')}
+                onApplyDummyData={handleApplyDummyData}
+                onApplyProfile={handleApplyProfile}
+                onCloseIntroModal={handleCloseIntroModal}
+                onConfirmIntroGate={handleAcceptIntroGate}
+                onFormChange={handleFormChange}
+                onFormSubmit={handleFormSubmit}
+                onOpenIntroModal={handleOpenIntroModal}
+                onProfileSaveToggle={handleProfileSaveToggle}
+                profileApplyDummyLabel={t('profileApplyDummyButton')}
+                profileApplyLabel={t('profileApplyButton')}
+                profileHasSavedData={profileHasSavedData}
+                profileSaveEnabled={profileSaveEnabled}
+                profileStatus={profileStatus}
+                profileStatusSuccessText={t('profileApplySuccess')}
+                profileToggleLabel={t('profileSaveCheckbox')}
+                showDevSections={showDevSections}
+                t={t}
+                tFormpack={tFormpack}
+                templates={templates}
+                uiSchema={conditionalUiSchema}
+                validator={validator}
+              />
+            ) : (
+              <FormpackFormPanel
+                FormComponent={LazyForm}
+                actions={exportActions}
+                activeRecordExists={Boolean(activeRecord)}
+                closeLabel={t('common.close')}
+                emptyMessage={t('formpackFormNoActiveRecord')}
+                formClassName={formClassName}
+                formContentRef={formContentRef}
+                formContext={formContext}
+                formData={formData}
+                formSchema={formSchema}
+                introGateEnabled={Boolean(introGateConfig?.enabled)}
+                introTexts={introTexts}
+                isIntroGateVisible={isIntroGateVisible}
+                isIntroModalOpen={isIntroModalOpen}
+                loadingLabel={t('formpackLoading')}
+                onApplyDummyData={handleApplyDummyData}
+                onApplyProfile={handleApplyProfile}
+                onCloseIntroModal={handleCloseIntroModal}
+                onConfirmIntroGate={handleAcceptIntroGate}
+                onFormChange={handleFormChange}
+                onFormSubmit={handleFormSubmit}
+                onOpenIntroModal={handleOpenIntroModal}
+                onProfileSaveToggle={handleProfileSaveToggle}
+                profileApplyDummyLabel={t('profileApplyDummyButton')}
+                profileApplyLabel={t('profileApplyButton')}
+                profileHasSavedData={profileHasSavedData}
+                profileSaveEnabled={profileSaveEnabled}
+                profileStatus={profileStatus}
+                profileStatusSuccessText={t('profileApplySuccess')}
+                profileToggleLabel={t('profileSaveCheckbox')}
+                showDevSections={showDevSections}
+                templates={templates}
+                uiSchema={conditionalUiSchema}
+                validator={validator}
+              />
+            )}
           </FormContentSection>
-          <DocumentPreviewPanel
-            title={t('formpackDocumentPreviewHeading')}
-            isIntroGateVisible={isIntroGateVisible}
-          >
-            <FormpackDocumentPreviewContent
-              documentPreview={documentPreview}
-              emptyLabel={t('formpackDocumentPreviewEmpty')}
-              formpackId={formpackId}
-              hasDocumentContent={hasDocumentContent}
-              offlabelPreviewDocuments={offlabelPreviewDocuments}
-              onSelectOfflabelPreview={setSelectedOfflabelPreviewId}
-              selectedOfflabelPreviewId={selectedOfflabelPreviewId}
-            />
-          </DocumentPreviewPanel>
+          {isPacingAmpelkarten ? null : (
+            <DocumentPreviewPanel
+              title={t('formpackDocumentPreviewHeading')}
+              isIntroGateVisible={isIntroGateVisible}
+            >
+              <FormpackDocumentPreviewContent
+                documentPreview={documentPreview}
+                emptyLabel={t('formpackDocumentPreviewEmpty')}
+                formpackId={formpackId}
+                hasDocumentContent={hasDocumentContent}
+                offlabelPreviewDocuments={offlabelPreviewDocuments}
+                onSelectOfflabelPreview={setSelectedOfflabelPreviewId}
+                selectedOfflabelPreviewId={selectedOfflabelPreviewId}
+              />
+            </DocumentPreviewPanel>
+          )}
           <FormpackToolsSection
             heading={t('formpackToolsHeading')}
             recordsPanelProps={{

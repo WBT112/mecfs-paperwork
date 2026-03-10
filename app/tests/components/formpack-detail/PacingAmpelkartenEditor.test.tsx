@@ -1,0 +1,226 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import PacingAmpelkartenEditor from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
+import pacingUiSchema from '../../../public/formpacks/pacing-ampelkarten/ui.schema.json';
+import type { PacingAmpelkartenEditorProps } from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
+
+type CardFieldView = {
+  'ui:widget'?: string;
+};
+
+type CardView = CardFieldView & {
+  canDo?: CardFieldView;
+  visitRules?: CardFieldView;
+};
+
+type VariantView = CardFieldView & {
+  cards?: {
+    green?: CardView;
+  };
+};
+
+type EditorUiSchemaView = {
+  meta?: CardFieldView;
+  adult?: VariantView;
+  child?: VariantView;
+};
+
+const MOCK_RJSF_FORM_TEST_ID = 'mock-rjsf-form';
+const PREVIEW_HEADING_KEY = 'formpackDocumentPreviewHeading';
+
+const DummyForm = ({
+  children,
+  className,
+  uiSchema,
+}: {
+  children?: React.ReactNode;
+  className?: string;
+  uiSchema?: unknown;
+}) => (
+  <div data-testid={MOCK_RJSF_FORM_TEST_ID} className={className}>
+    <div data-testid="ui-schema">{JSON.stringify(uiSchema)}</div>
+    {children}
+  </div>
+);
+
+const introTexts = {
+  title: 'Intro title',
+  body: 'Intro body',
+  checkboxLabel: 'Accept',
+  reopenButtonLabel: 'Hinweise anzeigen',
+  startButtonLabel: 'Weiter',
+} as const;
+
+const defaultEditorActions = {
+  onApplyDummyData: vi.fn(),
+  onApplyProfile: vi.fn(),
+  onCloseIntroModal: vi.fn(),
+  onConfirmIntroGate: vi.fn(),
+  onFormChange: vi.fn(),
+  onFormSubmit: vi.fn(),
+  onOpenIntroModal: vi.fn(),
+  onProfileSaveToggle: vi.fn(),
+};
+
+const createProps = (
+  overrides: Partial<PacingAmpelkartenEditorProps> = {},
+): PacingAmpelkartenEditorProps => ({
+  FormComponent: DummyForm as never,
+  activeRecordExists: true,
+  closeLabel: 'Schließen',
+  documentPreview: <div>preview-body</div>,
+  emptyMessage: 'No record',
+  emptyPreviewLabel: 'empty-preview',
+  exportActions: <div>export-actions</div>,
+  formClassName: 'formpack-form formpack-form--pacing-ampelkarten',
+  formContentRef: { current: null },
+  formContext: { t: ((key: string) => key) as never },
+  formData: {
+    meta: { variant: 'adult' },
+    adult: { cards: { green: { canDo: ['Adult green'] } } },
+    child: { cards: { green: { canDo: ['Child green'] } } },
+    notes: { title: 'Rules' },
+    sender: { signature: 'Family' },
+  },
+  formSchema: { type: 'object', properties: {} },
+  hasDocumentContent: true,
+  introGateEnabled: true,
+  introTexts,
+  isIntroGateVisible: false,
+  isIntroModalOpen: false,
+  loadingLabel: 'Loading',
+  profileApplyDummyLabel: 'Dummy',
+  profileApplyLabel: 'Apply',
+  profileHasSavedData: true,
+  profileSaveEnabled: false,
+  profileStatus: null,
+  profileStatusSuccessText: 'success',
+  profileToggleLabel: 'Save profile',
+  showDevSections: false,
+  t: (key) => key,
+  tFormpack: (key) => key,
+  templates: {},
+  uiSchema: pacingUiSchema,
+  validator: {} as never,
+  ...defaultEditorActions,
+  ...overrides,
+});
+
+const parseRenderedUiSchema = (): EditorUiSchemaView => {
+  const uiSchemaText = screen.getByTestId('ui-schema').textContent;
+  if (!uiSchemaText) {
+    throw new Error('Expected rendered ui schema');
+  }
+  return JSON.parse(uiSchemaText) as EditorUiSchemaView;
+};
+
+describe('PacingAmpelkartenEditor', () => {
+  it('renders the empty state when no active record exists', () => {
+    render(
+      <PacingAmpelkartenEditor
+        {...createProps({ activeRecordExists: false })}
+      />,
+    );
+
+    expect(screen.getByText('No record')).toBeInTheDocument();
+  });
+
+  it('renders the intro gate before the editor flow', () => {
+    render(
+      <PacingAmpelkartenEditor
+        {...createProps({ isIntroGateVisible: true })}
+      />,
+    );
+
+    expect(screen.getByText('Intro title')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId(MOCK_RJSF_FORM_TEST_ID),
+    ).not.toBeInTheDocument();
+  });
+
+  it('returns null while required form dependencies are missing', () => {
+    const { container } = render(
+      <PacingAmpelkartenEditor {...createProps({ validator: null })} />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('keeps preview hidden until the final step and reveals optional sections on demand', async () => {
+    render(<PacingAmpelkartenEditor {...createProps()} />);
+
+    expect(screen.getByTestId(MOCK_RJSF_FORM_TEST_ID)).toBeInTheDocument();
+    expect(screen.queryByText('export-actions')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('formpackDocumentPreviewHeading'),
+    ).not.toBeInTheDocument();
+
+    const initialSchema = parseRenderedUiSchema();
+    expect(initialSchema.meta?.['ui:widget']).toBeUndefined();
+    expect(initialSchema.adult?.['ui:widget']).toBe('hidden');
+    expect(initialSchema.child?.['ui:widget']).toBe('hidden');
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
+    );
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'pacing-ampelkarten.adult.cards.green.title',
+      }),
+    ).toBeInTheDocument();
+
+    const collapsedSchema = parseRenderedUiSchema();
+    expect(collapsedSchema.adult?.cards?.green?.visitRules?.['ui:widget']).toBe(
+      'hidden',
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'pacing-ampelkarten.editor.secondary.show',
+      }),
+    );
+
+    const expandedSchema = parseRenderedUiSchema();
+    expect(
+      expandedSchema.adult?.cards?.green?.visitRules?.['ui:widget'],
+    ).toBeUndefined();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'pacing-ampelkarten.editor.navigation.next',
+      }),
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'pacing-ampelkarten.editor.navigation.previous',
+      }),
+    );
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'pacing-ampelkarten.adult.cards.green.title',
+      }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.preview\.label/,
+      }),
+    );
+
+    expect(
+      screen.queryByTestId(MOCK_RJSF_FORM_TEST_ID),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('export-actions')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: PREVIEW_HEADING_KEY }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('preview-body')).toBeInTheDocument();
+  });
+});

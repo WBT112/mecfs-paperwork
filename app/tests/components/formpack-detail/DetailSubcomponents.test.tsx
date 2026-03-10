@@ -64,6 +64,7 @@ import FormpackDocumentPreviewContent from '../../../src/pages/formpack-detail/c
 import FormpackExportActions from '../../../src/pages/formpack-detail/components/FormpackExportActions';
 import FormpackFormPanel from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
 import FormpackToolsSection from '../../../src/pages/formpack-detail/components/FormpackToolsSection';
+import PacingAmpelkartenEditor from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
 import type { FormpackFormPanelProps } from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
 import type { FormpackManifest } from '../../../src/formpacks/types';
 import * as formpackDetailComponents from '../../../src/pages/formpack-detail/components';
@@ -145,6 +146,17 @@ const TOOL_SECTION_PROPS = {
   } as never,
 } as const;
 
+const formPanelActionProps = {
+  onApplyDummyData: vi.fn(),
+  onApplyProfile: vi.fn(),
+  onCloseIntroModal: vi.fn(),
+  onConfirmIntroGate: vi.fn(),
+  onFormChange: vi.fn(),
+  onFormSubmit: vi.fn(),
+  onOpenIntroModal: vi.fn(),
+  onProfileSaveToggle: vi.fn(),
+};
+
 const createFormPanelProps = (
   overrides: Partial<FormpackFormPanelProps> = {},
 ): FormpackFormPanelProps => ({
@@ -163,14 +175,6 @@ const createFormPanelProps = (
   isIntroGateVisible: false,
   isIntroModalOpen: false,
   loadingLabel: 'Loading',
-  onApplyDummyData: vi.fn(),
-  onApplyProfile: vi.fn(),
-  onCloseIntroModal: vi.fn(),
-  onConfirmIntroGate: vi.fn(),
-  onFormChange: vi.fn(),
-  onFormSubmit: vi.fn(),
-  onOpenIntroModal: vi.fn(),
-  onProfileSaveToggle: vi.fn(),
   profileApplyDummyLabel: 'Dummy',
   profileApplyLabel: 'Apply',
   profileHasSavedData: false,
@@ -182,6 +186,7 @@ const createFormPanelProps = (
   templates: {},
   uiSchema: {},
   validator: {} as never,
+  ...formPanelActionProps,
   ...overrides,
 });
 
@@ -266,6 +271,9 @@ describe('formpack detail subcomponents', () => {
     );
     expect(formpackDetailComponents.FormpackToolsSection).toBe(
       FormpackToolsSection,
+    );
+    expect(formpackDetailComponents.PacingAmpelkartenEditor).toBe(
+      PacingAmpelkartenEditor,
     );
   });
 

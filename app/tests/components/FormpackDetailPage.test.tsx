@@ -175,13 +175,13 @@ const INTRO_GATE_CONFIG = {
 
 const parsePacingUiSchema = (
   element: HTMLElement,
-): Partial<Record<'adult' | 'child', Record<string, unknown>>> => {
+): Partial<Record<'meta' | 'adult' | 'child', Record<string, unknown>>> => {
   const uiSchemaText = element.textContent;
   if (!uiSchemaText) {
     throw new Error('Expected rendered UI schema JSON');
   }
   return JSON.parse(uiSchemaText) as Partial<
-    Record<'adult' | 'child', Record<string, unknown>>
+    Record<'meta' | 'adult' | 'child', Record<string, unknown>>
   >;
 };
 
@@ -320,6 +320,7 @@ const PROFILE_SAVE_STORAGE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const PDF_EXPORT_CONTROLS_LABEL = 'pdf-export-controls';
 const PDF_SUCCESS_BUTTON_LABEL = 'pdf-success';
 const PDF_ERROR_BUTTON_LABEL = 'pdf-error';
+const MOCK_RJSF_FORM_TEST_ID = 'mock-rjsf-form';
 const DOCTOR_LETTER_FORMPACK_ID = 'doctor-letter';
 const DOCTOR_LETTER_ROUTE = `/formpacks/${DOCTOR_LETTER_FORMPACK_ID}`;
 const DOCTOR_LETTER_FORM_CLASS = 'formpack-form--doctor-letter';
@@ -418,7 +419,7 @@ vi.mock('@rjsf/core', () => ({
       submitEvent: { preventDefault: () => void },
     ) => void;
   }) => (
-    <div data-testid="mock-rjsf-form" className={className}>
+    <div data-testid={MOCK_RJSF_FORM_TEST_ID} className={className}>
       <div data-testid="form-data">{JSON.stringify(formData)}</div>
       <div data-testid="ui-schema">{JSON.stringify(uiSchema)}</div>
       <div data-testid="has-field-template">
@@ -1070,7 +1071,7 @@ describe('FormpackDetailPage', () => {
       </TestRouter>,
     );
 
-    const form = await screen.findByTestId('mock-rjsf-form');
+    const form = await screen.findByTestId(MOCK_RJSF_FORM_TEST_ID);
 
     expect(form).toHaveClass('formpack-form', 'formpack-form--notfallpass');
     expect(form).not.toHaveClass(DOCTOR_LETTER_FORM_CLASS);
@@ -1105,7 +1106,7 @@ describe('FormpackDetailPage', () => {
       </TestRouter>,
     );
 
-    const form = await screen.findByTestId('mock-rjsf-form');
+    const form = await screen.findByTestId(MOCK_RJSF_FORM_TEST_ID);
 
     expect(form).toHaveClass('formpack-form', DOCTOR_LETTER_FORM_CLASS);
   });
@@ -1548,6 +1549,7 @@ describe('FormpackDetailPage', () => {
     formpackState.manifest = {
       ...formpackState.manifest,
       id: PACING_AMPELKARTEN_FORMPACK_ID,
+      exports: ['pdf', 'json'],
       ui: {
         introGate: {
           ...INTRO_GATE_CONFIG,
@@ -1602,6 +1604,7 @@ describe('FormpackDetailPage', () => {
     formpackState.manifest = {
       ...formpackState.manifest,
       id: PACING_AMPELKARTEN_FORMPACK_ID,
+      exports: ['pdf', 'json'],
       ui: {
         introGate: {
           ...INTRO_GATE_CONFIG,
@@ -1697,7 +1700,7 @@ describe('FormpackDetailPage', () => {
     );
   });
 
-  it('switches the pacing form UI between adult and child sections', async () => {
+  it('starts pacing on the variant step and switches to the matching card step variant', async () => {
     const introRecord = {
       ...record,
       formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
@@ -1740,11 +1743,20 @@ describe('FormpackDetailPage', () => {
     const initialUiSchema = parsePacingUiSchema(
       screen.getByTestId('ui-schema'),
     );
-    expect(initialUiSchema.adult?.[uiWidgetKey]).toBeUndefined();
+    expect(initialUiSchema.meta?.[uiWidgetKey]).toBeUndefined();
+    expect(initialUiSchema.adult?.[uiWidgetKey]).toBe('hidden');
     expect(initialUiSchema.child?.[uiWidgetKey]).toBe('hidden');
+    expect(
+      screen.queryByText(PDF_EXPORT_CONTROLS_LABEL),
+    ).not.toBeInTheDocument();
 
     await userEvent.click(
       screen.getByRole('button', { name: 'trigger-pacing-child' }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
     );
 
     await waitFor(() =>
@@ -1757,6 +1769,19 @@ describe('FormpackDetailPage', () => {
     );
     expect(switchedUiSchema.adult?.[uiWidgetKey]).toBe('hidden');
     expect(switchedUiSchema.child?.[uiWidgetKey]).toBeUndefined();
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.preview\.label/,
+      }),
+    );
+    expect(
+      screen.queryByTestId(MOCK_RJSF_FORM_TEST_ID),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'formpackDocumentPreviewHeading',
+      }),
+    ).toBeInTheDocument();
   });
 
   it('keeps child presets available when adult-only changes omit the hidden section', async () => {
@@ -1892,6 +1917,68 @@ describe('FormpackDetailPage', () => {
     );
     expect(screen.getByTestId('form-data')).not.toHaveTextContent(
       PACING_DE_GREEN_TEXT,
+    );
+  });
+
+  it('routes draft deletion and snapshot actions through the detail-page callbacks', async () => {
+    const secondRecord = {
+      ...record,
+      id: 'record-2',
+      title: 'Second',
+      updatedAt: new Date().toISOString(),
+    };
+    const snapshot: SnapshotEntry = {
+      id: 'snapshot-1',
+      recordId: record.id,
+      label: 'Snapshot',
+      createdAt: new Date().toISOString(),
+      data: { field: 'snapshot' },
+    };
+    storageState.records = [record, secondRecord];
+    storageState.activeRecord = record;
+    storageState.snapshots = [snapshot];
+    storageState.deleteRecord.mockResolvedValue(true);
+    storageState.clearSnapshots.mockResolvedValue(1);
+    storageState.loadSnapshot.mockResolvedValue(snapshot);
+    storageState.updateActiveRecord.mockResolvedValue({
+      ...record,
+      data: snapshot.data,
+    });
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openSection(sectionLabels.records);
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackRecordDelete' }),
+    );
+    await confirmDialog('formpackRecordDeleteConfirm', 'formpackRecordDelete');
+    await waitFor(() =>
+      expect(storageState.deleteRecord).toHaveBeenCalledWith(secondRecord.id),
+    );
+
+    await openSection(sectionLabels.snapshots);
+    await userEvent.click(await screen.findByText('formpackSnapshotRestore'));
+    await waitFor(() =>
+      expect(storageState.updateActiveRecord).toHaveBeenCalledWith(record.id, {
+        data: snapshot.data,
+      }),
+    );
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackSnapshotsClearAll' }),
+    );
+    await confirmDialog(
+      'formpackSnapshotsClearAllConfirm',
+      'formpackSnapshotsClearAll',
+    );
+    await waitFor(() =>
+      expect(storageState.clearSnapshots).toHaveBeenCalledWith(),
     );
   });
 

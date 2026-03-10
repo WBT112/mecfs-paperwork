@@ -1206,6 +1206,265 @@ body {
   border: 0;
 }
 
+.pacing-editor {
+  --pacing-green: #2f7c4f;
+  --pacing-green-soft: #eef7f0;
+  --pacing-yellow: #8f6b00;
+  --pacing-yellow-soft: #fff7dd;
+  --pacing-red: #9a3d3d;
+  --pacing-red-soft: #fff0ef;
+  display: grid;
+  gap: 1rem;
+}
+
+.pacing-editor__utility-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pacing-editor__utility {
+  display: flex;
+  flex: 1 1 30rem;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.pacing-editor__utility .app__button {
+  min-height: 40px;
+}
+
+.pacing-editor__utility-row > .app__button {
+  min-height: 40px;
+}
+
+.pacing-editor__utility__save {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.pacing-editor__utility__success {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.pacing-editor__utility__error {
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.pacing-editor__steps {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.pacing-editor__step {
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+  min-height: 64px;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 14px;
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
+  text-align: left;
+}
+
+.pacing-editor__step:hover {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+
+.pacing-editor__step--current {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, white);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--color-primary) 18%, white);
+}
+
+.pacing-editor__step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.pacing-editor__step--current .pacing-editor__step-index {
+  border-color: transparent;
+  background: var(--color-primary);
+  color: var(--color-primary-contrast);
+}
+
+.pacing-editor__step-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.pacing-editor__step-header {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface-subtle) 70%, white),
+    var(--color-surface)
+  );
+  border: 1px solid var(--color-border-subtle);
+}
+
+.pacing-editor__step-header h4 {
+  margin: 0;
+}
+
+.pacing-editor__step-header--green {
+  border-color: color-mix(in srgb, var(--pacing-green) 30%, white);
+  background: linear-gradient(180deg, var(--pacing-green-soft), white);
+}
+
+.pacing-editor__step-header--yellow {
+  border-color: color-mix(in srgb, var(--pacing-yellow) 30%, white);
+  background: linear-gradient(180deg, var(--pacing-yellow-soft), white);
+}
+
+.pacing-editor__step-header--red {
+  border-color: color-mix(in srgb, var(--pacing-red) 30%, white);
+  background: linear-gradient(180deg, var(--pacing-red-soft), white);
+}
+
+.pacing-editor__eyebrow {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.pacing-editor__description {
+  margin: 0;
+  max-width: 65ch;
+  color: var(--color-text-muted);
+}
+
+.pacing-editor__card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.pacing-editor__card-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.pacing-editor__card-badge--green {
+  background: color-mix(in srgb, var(--pacing-green) 14%, white);
+  color: var(--pacing-green);
+}
+
+.pacing-editor__card-badge--yellow {
+  background: color-mix(in srgb, var(--pacing-yellow) 14%, white);
+  color: #6f5200;
+}
+
+.pacing-editor__card-badge--red {
+  background: color-mix(in srgb, var(--pacing-red) 14%, white);
+  color: var(--pacing-red);
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .form-group {
+  margin-bottom: 0;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten > fieldset,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_meta,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_notes,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_sender,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_adult,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_child {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten > fieldset > legend,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_meta > legend,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_notes > legend,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_sender > legend,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_adult > legend,
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset#root_child > legend {
+  display: none;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .field-array {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .field-radio-group {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten textarea,
+.pacing-editor .formpack-form--pacing-ampelkarten input[type='text'] {
+  background: color-mix(in srgb, var(--color-surface-subtle) 65%, white);
+}
+
+.pacing-editor__actions {
+  margin-top: 0.25rem;
+}
+
+.pacing-editor__step-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.pacing-editor__preview-step {
+  display: grid;
+  gap: 1rem;
+}
+
+.pacing-editor__export-panel,
+.pacing-editor__preview-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pacing-editor__preview-panel h5 {
+  margin: 0;
+}
+
 .formpack-form__actions {
   display: flex;
   flex-direction: column;
@@ -1323,6 +1582,35 @@ body {
 .profile-quickfill__error {
   font-size: 0.85rem;
   color: var(--color-danger);
+}
+
+@media (max-width: 900px) {
+  .pacing-editor__steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .pacing-editor__utility-row {
+    align-items: stretch;
+  }
+
+  .pacing-editor__utility {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pacing-editor__steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pacing-editor__step-buttons {
+    justify-content: stretch;
+  }
+
+  .pacing-editor__step-buttons .app__button {
+    flex: 1 1 0;
+  }
 }
 
 .formpack-intro-gate {
