@@ -8,11 +8,9 @@ If you are running an older commit, please update and re-test before reporting.
 
 ## Security artifacts
 
-This project maintains four security/privacy artifacts to keep decisions reviewable and aligned with the actual codebase:
+This project maintains two security/privacy artifacts to keep decisions reviewable and aligned with the actual codebase:
 
 - `docs/security/threat-model.md` — high-level threat model (scope, assets, trust boundaries, attack surface).
-- `docs/security/encryption.md` — architecture and limits of local storage and export encryption.
-- `docs/security/server-headers.md` — purpose and configuration of HTTP security headers.
 - `docs/security/security-review.md` — regular security review log (high-level changes, supply-chain status, top risks, next steps).
 
 Notes:
