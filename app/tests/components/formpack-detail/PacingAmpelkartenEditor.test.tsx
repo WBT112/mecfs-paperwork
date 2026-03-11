@@ -12,12 +12,15 @@ type CardFieldView = {
 
 type CardView = CardFieldView & {
   canDo?: CardFieldView;
-  visitRules?: CardFieldView;
+  needHelp?: CardFieldView;
+  hint?: CardFieldView;
 };
 
 type VariantView = CardFieldView & {
   cards?: {
     green?: CardView;
+    yellow?: CardView;
+    red?: CardView;
   };
 };
 
@@ -29,6 +32,8 @@ type EditorUiSchemaView = {
 
 const MOCK_RJSF_FORM_TEST_ID = 'mock-rjsf-form';
 const PREVIEW_HEADING_KEY = 'formpackDocumentPreviewHeading';
+const PAGE_WARNING_TITLE_KEY = 'pacing-ampelkarten.editor.pageWarning.title';
+const PAGE_WARNING_BODY_KEY = 'pacing-ampelkarten.editor.pageWarning.body';
 
 const DummyForm = ({
   children,
@@ -81,7 +86,6 @@ const createProps = (
     meta: { variant: 'adult' },
     adult: { cards: { green: { canDo: ['Adult green'] } } },
     child: { cards: { green: { canDo: ['Child green'] } } },
-    notes: { title: 'Rules' },
     sender: { signature: 'Family' },
   },
   formSchema: { type: 'object', properties: {} },
@@ -148,7 +152,7 @@ describe('PacingAmpelkartenEditor', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('keeps preview hidden until the final step and reveals optional sections on demand', async () => {
+  it('keeps preview hidden until the final step', async () => {
     render(<PacingAmpelkartenEditor {...createProps()} />);
 
     expect(screen.getByTestId(MOCK_RJSF_FORM_TEST_ID)).toBeInTheDocument();
@@ -174,39 +178,16 @@ describe('PacingAmpelkartenEditor', () => {
       }),
     ).toBeInTheDocument();
 
-    const collapsedSchema = parseRenderedUiSchema();
-    expect(collapsedSchema.adult?.cards?.green?.visitRules?.['ui:widget']).toBe(
-      'hidden',
-    );
-
-    await userEvent.click(
-      screen.getByRole('button', {
-        name: 'pacing-ampelkarten.editor.secondary.show',
-      }),
-    );
-
-    const expandedSchema = parseRenderedUiSchema();
+    const greenSchema = parseRenderedUiSchema();
     expect(
-      expandedSchema.adult?.cards?.green?.visitRules?.['ui:widget'],
+      greenSchema.adult?.cards?.green?.canDo?.['ui:widget'],
     ).toBeUndefined();
-
-    await userEvent.click(
-      screen.getByRole('button', {
-        name: 'pacing-ampelkarten.editor.navigation.next',
-      }),
-    );
-
-    await userEvent.click(
-      screen.getByRole('button', {
-        name: 'pacing-ampelkarten.editor.navigation.previous',
-      }),
-    );
-
     expect(
-      screen.getByRole('heading', {
-        name: 'pacing-ampelkarten.adult.cards.green.title',
-      }),
-    ).toBeInTheDocument();
+      greenSchema.adult?.cards?.green?.needHelp?.['ui:widget'],
+    ).toBeUndefined();
+    expect(greenSchema.adult?.cards?.green?.hint?.['ui:widget']).toBe(
+      'textarea',
+    );
 
     await userEvent.click(
       screen.getByRole('button', {
@@ -239,9 +220,6 @@ describe('PacingAmpelkartenEditor', () => {
     const redStep = screen.getByRole('button', {
       name: /pacing-ampelkarten\.editor\.steps\.red\.label/,
     });
-    const notesStep = screen.getByRole('button', {
-      name: /pacing-ampelkarten\.editor\.steps\.notes\.label/,
-    });
     const previewStep = screen.getByRole('button', {
       name: /pacing-ampelkarten\.editor\.steps\.preview\.label/,
     });
@@ -250,7 +228,6 @@ describe('PacingAmpelkartenEditor', () => {
     expect(greenStep).toHaveClass('pacing-editor__step--green');
     expect(yellowStep).toHaveClass('pacing-editor__step--yellow');
     expect(redStep).toHaveClass('pacing-editor__step--red');
-    expect(notesStep).toHaveClass('pacing-editor__step--notes');
     expect(previewStep).toHaveClass('pacing-editor__step--preview');
     expect(greenStep).toHaveStyle({
       '--pacing-step-accent': 'var(--pacing-green)',
@@ -258,5 +235,85 @@ describe('PacingAmpelkartenEditor', () => {
     expect(redStep).toHaveStyle({
       '--pacing-step-accent': 'var(--pacing-red)',
     });
+  });
+
+  it('shows the page-fit warning on card steps with too many entries', async () => {
+    const longItems = ['1', '2', '3', '4', '5'];
+
+    render(
+      <PacingAmpelkartenEditor
+        {...createProps({
+          formData: {
+            meta: { variant: 'adult' },
+            adult: {
+              cards: {
+                green: {
+                  canDo: longItems,
+                  needHelp: ['6', '7', '8', '9'],
+                  hint: 'Kurz.',
+                },
+              },
+            },
+          },
+        })}
+      />,
+    );
+
+    expect(screen.queryByText(PAGE_WARNING_TITLE_KEY)).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
+    );
+
+    expect(screen.getByText(PAGE_WARNING_TITLE_KEY)).toBeInTheDocument();
+    expect(screen.getByText(PAGE_WARNING_BODY_KEY)).toBeInTheDocument();
+  });
+
+  it('keeps the page-fit warning hidden for compact card content', async () => {
+    render(<PacingAmpelkartenEditor {...createProps()} />);
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
+    );
+
+    expect(screen.queryByText(PAGE_WARNING_TITLE_KEY)).not.toBeInTheDocument();
+  });
+
+  it('moves through the flow with the previous and next action buttons', async () => {
+    render(<PacingAmpelkartenEditor {...createProps()} />);
+
+    expect(
+      screen.queryByRole('button', {
+        name: 'pacing-ampelkarten.editor.navigation.previous',
+      }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'pacing-ampelkarten.editor.navigation.next',
+      }),
+    );
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'pacing-ampelkarten.adult.cards.green.title',
+      }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'pacing-ampelkarten.editor.navigation.previous',
+      }),
+    );
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'pacing-ampelkarten.editor.variant.title',
+      }),
+    ).toBeInTheDocument();
   });
 });

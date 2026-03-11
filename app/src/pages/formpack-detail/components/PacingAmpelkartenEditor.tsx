@@ -19,9 +19,9 @@ import {
   buildPacingEditorUiSchema,
   PACING_EDITOR_STEP_IDS,
   type PacingEditorCardColor,
-  type PacingEditorSecondarySectionState,
   type PacingEditorStepId,
 } from '../../../formpacks/pacing-ampelkarten/editorUiSchema';
+import { assessPacingCardPageOverflow } from '../../../formpacks/pacing-ampelkarten/pageOverflowWarning';
 import type { FormpackFormContext } from '../../../lib/rjsfTemplates';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
@@ -45,7 +45,6 @@ const STEP_HEADER_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
   green: 'pacing-editor__step-header--green',
   yellow: 'pacing-editor__step-header--yellow',
   red: 'pacing-editor__step-header--red',
-  notes: 'pacing-editor__step-header--notes',
   preview: 'pacing-editor__step-header--preview',
 };
 const CARD_BADGE_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
@@ -58,7 +57,6 @@ const STEP_BUTTON_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
   green: 'pacing-editor__step--green',
   yellow: 'pacing-editor__step--yellow',
   red: 'pacing-editor__step--red',
-  notes: 'pacing-editor__step--notes',
   preview: 'pacing-editor__step--preview',
 };
 
@@ -118,13 +116,6 @@ const STEP_TONE_STYLE_BY_STEP: Record<PacingEditorStepId, CSSProperties> = {
     badgeDarkText: '#ffe8e6',
     headerDarkBase: '#190f10',
     stepText: '#7f3131',
-  }),
-  notes: buildToneStyle('var(--pacing-notes)', 'var(--pacing-notes-soft)', {
-    badgeDarkBase: '#17130b',
-    badgeText: 'var(--pacing-notes)',
-    badgeDarkText: '#fff2bf',
-    headerDarkBase: '#171309',
-    stepText: '#62491a',
   }),
   preview: buildToneStyle(
     'var(--pacing-preview)',
@@ -261,8 +252,6 @@ export default function PacingAmpelkartenEditor({
   validator,
 }: Readonly<PacingAmpelkartenEditorProps>) {
   const [currentStep, setCurrentStep] = useState<PacingEditorStepId>('variant');
-  const [expandedSecondarySections, setExpandedSecondarySections] =
-    useState<PacingEditorSecondarySectionState>({});
 
   const introUtilityProps = {
     introGateEnabled,
@@ -287,7 +276,6 @@ export default function PacingAmpelkartenEditor({
   useEffect(() => {
     if (isIntroGateVisible || !activeRecordExists) {
       setCurrentStep('variant');
-      setExpandedSecondarySections({});
     }
   }, [activeRecordExists, isIntroGateVisible]);
 
@@ -300,13 +288,8 @@ export default function PacingAmpelkartenEditor({
       return null;
     }
 
-    return buildPacingEditorUiSchema(
-      uiSchema,
-      formData,
-      currentStep,
-      expandedSecondarySections,
-    );
-  }, [currentStep, expandedSecondarySections, formData, uiSchema]);
+    return buildPacingEditorUiSchema(uiSchema, formData, currentStep);
+  }, [currentStep, formData, uiSchema]);
 
   const currentCardTitle =
     currentCardStep === null
@@ -319,6 +302,12 @@ export default function PacingAmpelkartenEditor({
     currentCardStep === null
       ? null
       : tFormpack(`pacing-ampelkarten.card.animal.${currentCardStep}`);
+  const currentCardOverflowAssessment =
+    currentCardStep === null
+      ? null
+      : assessPacingCardPageOverflow(
+          getPathValue(formData, `${variant}.cards.${currentCardStep}`),
+        );
 
   const renderStepHeader = () => {
     if (currentStep === 'preview') {
@@ -413,22 +402,6 @@ export default function PacingAmpelkartenEditor({
 
   const renderStepActions = () => (
     <div className="formpack-form__actions pacing-editor__actions">
-      {currentCardStep !== null && (
-        <button
-          type="button"
-          className="app__button"
-          onClick={() =>
-            setExpandedSecondarySections((current) => ({
-              ...current,
-              [currentCardStep]: current[currentCardStep] !== true,
-            }))
-          }
-        >
-          {expandedSecondarySections[currentCardStep]
-            ? tFormpack('pacing-ampelkarten.editor.secondary.hide')
-            : tFormpack('pacing-ampelkarten.editor.secondary.show')}
-        </button>
-      )}
       <div className="pacing-editor__step-buttons">
         {currentStepIndex > 0 && (
           <button
@@ -490,6 +463,16 @@ export default function PacingAmpelkartenEditor({
       />
       {renderStepNavigation()}
       {renderStepHeader()}
+      {currentCardOverflowAssessment?.shouldWarn ? (
+        <output className="pacing-editor__page-warning" aria-live="polite">
+          <p className="pacing-editor__page-warning-title">
+            {tFormpack('pacing-ampelkarten.editor.pageWarning.title')}
+          </p>
+          <p className="pacing-editor__page-warning-body">
+            {tFormpack('pacing-ampelkarten.editor.pageWarning.body')}
+          </p>
+        </output>
+      ) : null}
 
       {currentStep === 'preview' ? (
         <div className={`${formClassName} pacing-editor__preview-step`}>

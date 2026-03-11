@@ -1188,23 +1188,6 @@ body {
   line-height: 1.4;
 }
 
-.formpack-form--pacing-ampelkarten fieldset#root {
-  padding: 0;
-  border: 0;
-}
-
-.formpack-form--pacing-ampelkarten fieldset#root > legend,
-.formpack-form--pacing-ampelkarten fieldset#root_adult_cards > legend,
-.formpack-form--pacing-ampelkarten fieldset#root_child_cards > legend {
-  display: none;
-}
-
-.formpack-form--pacing-ampelkarten fieldset#root_adult_cards,
-.formpack-form--pacing-ampelkarten fieldset#root_child_cards {
-  padding: 0;
-  border: 0;
-}
-
 .pacing-editor {
   --pacing-green: #2f7c4f;
   --pacing-green-soft: #eef7f0;
@@ -1214,8 +1197,6 @@ body {
   --pacing-red-soft: #fff0ef;
   --pacing-variant: #2f5ca8;
   --pacing-variant-soft: #eef3ff;
-  --pacing-notes: #7b5e1f;
-  --pacing-notes-soft: #f9f1dd;
   --pacing-preview: #5b4f99;
   --pacing-preview-soft: #f0edff;
   display: grid;
@@ -1268,7 +1249,7 @@ body {
 
 .pacing-editor__steps {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -1406,6 +1387,40 @@ body {
   font-weight: 700;
   background: color-mix(in srgb, var(--pacing-badge-accent) 14%, white);
   color: var(--pacing-badge-text);
+}
+
+.pacing-editor__page-warning {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, #b86a00 38%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff1cc 88%, white),
+    color-mix(in srgb, #fff7df 60%, var(--color-surface))
+  );
+  color: #6c4300;
+}
+
+.pacing-editor__page-warning-title,
+.pacing-editor__page-warning-body {
+  margin: 0;
+}
+
+.pacing-editor__page-warning-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+:root[data-theme='dark'] .pacing-editor__page-warning {
+  border-color: color-mix(in srgb, #f0b24d 65%, var(--color-border));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #d08a17 26%, #1a1510),
+    color-mix(in srgb, #d08a17 12%, var(--color-surface))
+  );
+  color: #ffe7ba;
 }
 
 :root[data-theme='dark'] .pacing-editor__step {

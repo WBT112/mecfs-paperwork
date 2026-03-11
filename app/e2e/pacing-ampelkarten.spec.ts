@@ -23,8 +23,6 @@ const INTRO_CHECKBOX_LABEL =
 const CHILD_CAN_DO_VALUE =
   'Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.';
 const CUSTOM_CHILD_HINT = 'Heute helfen nur ruhige Vorlese-Minuten.';
-const CUSTOM_NOTES_TITLE = 'Familienregeln für Crash-Tage';
-const CUSTOM_SIGNATURE = 'Deine Familie';
 const ADULT_VARIANT_LABEL = /Für Erwachsene|For adults/i;
 const CHILD_VARIANT_LABEL = /Kindermodus|Child mode/i;
 
@@ -145,7 +143,6 @@ test.describe('pacing ampelkarten', () => {
     await continueToNextStep(page);
     await continueToNextStep(page);
     await continueToNextStep(page);
-    await continueToNextStep(page);
 
     const preview = page.locator(
       '#formpack-document-preview-content .formpack-document-preview',
@@ -180,19 +177,6 @@ test.describe('pacing ampelkarten', () => {
     await continueToNextStep(page);
     await continueToNextStep(page);
     await continueToNextStep(page);
-    await fillTextInputStable(
-      page,
-      page.locator('#root_notes_title'),
-      CUSTOM_NOTES_TITLE,
-      POLL_TIMEOUT,
-    );
-    await fillTextInputStable(
-      page,
-      page.locator('#root_sender_signature'),
-      CUSTOM_SIGNATURE,
-      POLL_TIMEOUT,
-    );
-    await continueToNextStep(page);
 
     const recordId = await getActiveRecordId(page, FORM_PACK_ID);
     expect(recordId).not.toBeNull();
@@ -212,20 +196,6 @@ test.describe('pacing ampelkarten', () => {
       recordId,
       (record) => record?.data?.child?.cards?.green?.hint,
       CUSTOM_CHILD_HINT,
-      { timeout: POLL_TIMEOUT },
-    );
-    await waitForRecordField(
-      page,
-      recordId,
-      (record) => record?.data?.notes?.title,
-      CUSTOM_NOTES_TITLE,
-      { timeout: POLL_TIMEOUT },
-    );
-    await waitForRecordField(
-      page,
-      recordId,
-      (record) => record?.data?.sender?.signature,
-      CUSTOM_SIGNATURE,
       { timeout: POLL_TIMEOUT },
     );
 
@@ -277,16 +247,6 @@ test.describe('pacing ampelkarten', () => {
         '#formpack-document-preview-content .formpack-document-preview',
       ),
     ).toContainText(CUSTOM_CHILD_HINT);
-    await expect(
-      page.locator(
-        '#formpack-document-preview-content .formpack-document-preview',
-      ),
-    ).toContainText(CUSTOM_NOTES_TITLE);
-    await expect(
-      page.locator(
-        '#formpack-document-preview-content .formpack-document-preview',
-      ),
-    ).toContainText(CUSTOM_SIGNATURE);
     await expect(page.locator('.formpack-form')).toContainText(
       CUSTOM_CHILD_HINT,
     );
