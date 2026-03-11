@@ -122,9 +122,9 @@ describe('buildPacingEditorUiSchema', () => {
     );
 
     expect(cardStep.child?.cards?.green?.canDo?.items?.['ui:title']).toBe('');
-    expect(cardStep.child?.cards?.green?.canDo?.items?.['ui:options']?.label).toBe(
-      false,
-    );
+    expect(
+      cardStep.child?.cards?.green?.canDo?.items?.['ui:options']?.label,
+    ).toBe(false);
     expect(
       yellowStep.child?.cards?.yellow?.canDo?.items?.['ui:options']?.label,
     ).toBe(false);
