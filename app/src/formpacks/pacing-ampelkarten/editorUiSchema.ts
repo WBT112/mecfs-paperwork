@@ -12,38 +12,21 @@ export type PacingEditorStepId =
   | 'green'
   | 'yellow'
   | 'red'
-  | 'notes'
   | 'preview';
-
-/**
- * Supported card colors in the pacing editor.
- */
-export type PacingEditorCardColor = 'green' | 'yellow' | 'red';
-
-/**
- * Secondary card sections that are collapsed by default in the pacing editor.
- */
-export type PacingEditorSecondarySectionState = Partial<
-  Record<PacingEditorCardColor, boolean>
->;
 
 export const PACING_EDITOR_STEP_IDS: readonly PacingEditorStepId[] = [
   'variant',
   'green',
   'yellow',
   'red',
-  'notes',
   'preview',
 ] as const;
 
-const CARD_STEP_IDS: readonly PacingEditorCardColor[] = [
-  'green',
-  'yellow',
-  'red',
-] as const;
+const CARD_STEP_IDS = ['green', 'yellow', 'red'] as const;
+
+export type PacingEditorCardColor = (typeof CARD_STEP_IDS)[number];
 
 const PRIMARY_CARD_FIELDS = ['canDo', 'needHelp', 'hint'] as const;
-const SECONDARY_CARD_FIELDS = ['visitRules', 'stimuli', 'thanks'] as const;
 
 const resolveVariant = (value: unknown): PacingVariant =>
   value === 'child' ? 'child' : 'adult';
@@ -101,30 +84,12 @@ const stripListFieldHelp = (value: unknown): UiSchema => {
   return field;
 };
 
-const buildSecondaryCardField = (
-  card: unknown,
-  key: string,
-  expanded: boolean,
-): UiSchema => {
-  const fieldValue = getRecordValue(card, key);
-
-  if (!expanded) {
-    return hideNode(fieldValue);
-  }
-
-  if (key === 'visitRules' || key === 'stimuli') {
-    return stripListFieldHelp(fieldValue);
-  }
-
-  return stripFieldHelp(fieldValue);
-};
-
 const isCardStep = (step: PacingEditorStepId): step is PacingEditorCardColor =>
   CARD_STEP_IDS.includes(step as PacingEditorCardColor);
 
 const buildVariantStepUiSchema = (uiSchema: UiSchema): UiSchema => ({
   ...uiSchema,
-  'ui:order': ['meta', 'adult', 'child', 'notes', 'sender'],
+  'ui:order': ['meta', 'adult', 'child', 'sender'],
   meta: {
     ...showNode(uiSchema.meta),
     'ui:title': '',
@@ -138,7 +103,6 @@ const buildVariantStepUiSchema = (uiSchema: UiSchema): UiSchema => ({
   },
   adult: hideNode(uiSchema.adult),
   child: hideNode(uiSchema.child),
-  notes: hideNode(uiSchema.notes),
   sender: hideNode(uiSchema.sender),
 });
 
@@ -146,7 +110,6 @@ const buildCardStepUiSchema = (
   activeCards: UiSchema,
   step: PacingEditorCardColor,
   color: PacingEditorCardColor,
-  expanded: boolean,
 ): UiSchema => {
   const card: unknown = activeCards[color];
 
@@ -158,13 +121,10 @@ const buildCardStepUiSchema = (
     ...showNode(card),
     'ui:title': '',
     'ui:description': '',
-    'ui:order': [...PRIMARY_CARD_FIELDS, ...SECONDARY_CARD_FIELDS],
+    'ui:order': [...PRIMARY_CARD_FIELDS],
     canDo: stripListFieldHelp(getRecordValue(card, 'canDo')),
     needHelp: stripListFieldHelp(getRecordValue(card, 'needHelp')),
     hint: stripFieldHelp(getRecordValue(card, 'hint')),
-    visitRules: buildSecondaryCardField(card, 'visitRules', expanded),
-    stimuli: buildSecondaryCardField(card, 'stimuli', expanded),
-    thanks: buildSecondaryCardField(card, 'thanks', expanded),
   };
 };
 
@@ -172,20 +132,17 @@ const buildCardVariantUiSchema = (
   uiSchema: UiSchema,
   formData: Record<string, unknown>,
   step: PacingEditorCardColor,
-  expandedSecondarySections: PacingEditorSecondarySectionState,
 ): UiSchema => {
   const variant = resolveVariant(getPathValue(formData, 'meta.variant'));
   const inactiveVariant = variant === 'adult' ? 'child' : 'adult';
   const activeSection = showNode(uiSchema[variant]);
   const activeCards = showNode(activeSection.cards);
-  const expanded = expandedSecondarySections[step] === true;
 
   return {
     ...uiSchema,
-    'ui:order': ['meta', 'adult', 'child', 'notes', 'sender'],
+    'ui:order': ['meta', 'adult', 'child', 'sender'],
     meta: hideNode(uiSchema.meta),
     [inactiveVariant]: hideNode(uiSchema[inactiveVariant]),
-    notes: hideNode(uiSchema.notes),
     sender: hideNode(uiSchema.sender),
     [variant]: {
       ...activeSection,
@@ -195,32 +152,13 @@ const buildCardVariantUiSchema = (
         ...activeCards,
         'ui:title': '',
         'ui:order': [...CARD_STEP_IDS],
-        green: buildCardStepUiSchema(activeCards, step, 'green', expanded),
-        yellow: buildCardStepUiSchema(activeCards, step, 'yellow', expanded),
-        red: buildCardStepUiSchema(activeCards, step, 'red', expanded),
+        green: buildCardStepUiSchema(activeCards, step, 'green'),
+        yellow: buildCardStepUiSchema(activeCards, step, 'yellow'),
+        red: buildCardStepUiSchema(activeCards, step, 'red'),
       },
     },
   };
 };
-
-const buildNotesStepUiSchema = (uiSchema: UiSchema): UiSchema => ({
-  ...uiSchema,
-  'ui:order': ['notes', 'sender', 'meta', 'adult', 'child'],
-  meta: hideNode(uiSchema.meta),
-  adult: hideNode(uiSchema.adult),
-  child: hideNode(uiSchema.child),
-  notes: {
-    ...showNode(uiSchema.notes),
-    'ui:description': '',
-    items: stripListFieldHelp(
-      isRecord(uiSchema.notes) ? uiSchema.notes.items : {},
-    ),
-  },
-  sender: {
-    ...showNode(uiSchema.sender),
-    'ui:description': '',
-  },
-});
 
 /**
  * Filters the translated pacing UI schema down to the currently active editor step.
@@ -228,7 +166,6 @@ const buildNotesStepUiSchema = (uiSchema: UiSchema): UiSchema => ({
  * @param uiSchema - The translated and array-normalized pacing UI schema.
  * @param formData - Current pacing form data.
  * @param step - Active editor step identifier.
- * @param expandedSecondarySections - Local UI state for optional secondary card sections.
  * @returns A UI schema that only exposes the fields needed for the current step.
  * @remarks
  * RATIONALE: The editor keeps the persisted data model unchanged and reduces
@@ -239,23 +176,14 @@ export const buildPacingEditorUiSchema = (
   uiSchema: UiSchema,
   formData: Record<string, unknown>,
   step: PacingEditorStepId,
-  expandedSecondarySections: PacingEditorSecondarySectionState,
+  _unusedTranslator?: unknown,
 ): UiSchema => {
   if (step === 'variant') {
     return buildVariantStepUiSchema(uiSchema);
   }
 
   if (isCardStep(step)) {
-    return buildCardVariantUiSchema(
-      uiSchema,
-      formData,
-      step,
-      expandedSecondarySections,
-    );
-  }
-
-  if (step === 'notes') {
-    return buildNotesStepUiSchema(uiSchema);
+    return buildCardVariantUiSchema(uiSchema, formData, step);
   }
 
   return uiSchema;

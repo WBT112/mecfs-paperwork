@@ -35,16 +35,19 @@ const CARD_STEPS: readonly PacingEditorCardColor[] = [
   'yellow',
   'red',
 ] as const;
+const PACING_PREVIEW_ACCENT = 'var(--pacing-preview)';
+const PACING_PREVIEW_SOFT = 'var(--pacing-preview-soft)';
 const STEP_HEADER_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
   green: 'pacing-editor__step-header--green',
   yellow: 'pacing-editor__step-header--yellow',
   red: 'pacing-editor__step-header--red',
 };
-const STEP_HEADER_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
+const STEP_HEADER_CLASS_BY_STEP: Record<string, string> = {
   variant: 'pacing-editor__step-header--variant',
   green: 'pacing-editor__step-header--green',
   yellow: 'pacing-editor__step-header--yellow',
   red: 'pacing-editor__step-header--red',
+  notes: 'pacing-editor__step-header--preview',
   preview: 'pacing-editor__step-header--preview',
 };
 const CARD_BADGE_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
@@ -52,11 +55,12 @@ const CARD_BADGE_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
   yellow: 'pacing-editor__card-badge--yellow',
   red: 'pacing-editor__card-badge--red',
 };
-const STEP_BUTTON_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
+const STEP_BUTTON_CLASS_BY_STEP: Record<string, string> = {
   variant: 'pacing-editor__step--variant',
   green: 'pacing-editor__step--green',
   yellow: 'pacing-editor__step--yellow',
   red: 'pacing-editor__step--red',
+  notes: 'pacing-editor__step--preview',
   preview: 'pacing-editor__step--preview',
 };
 
@@ -84,7 +88,7 @@ const buildToneStyle = (
     '--pacing-badge-dark-text': options.badgeDarkText,
   }) as CSSProperties;
 
-const STEP_TONE_STYLE_BY_STEP: Record<PacingEditorStepId, CSSProperties> = {
+const STEP_TONE_STYLE_BY_STEP: Record<string, CSSProperties> = {
   variant: buildToneStyle(
     'var(--pacing-variant)',
     'var(--pacing-variant-soft)',
@@ -117,18 +121,30 @@ const STEP_TONE_STYLE_BY_STEP: Record<PacingEditorStepId, CSSProperties> = {
     headerDarkBase: '#190f10',
     stepText: '#7f3131',
   }),
-  preview: buildToneStyle(
-    'var(--pacing-preview)',
-    'var(--pacing-preview-soft)',
-    {
-      badgeDarkBase: '#121722',
-      badgeText: 'var(--pacing-preview)',
-      badgeDarkText: '#eef4ff',
-      headerDarkBase: '#12101b',
-      stepText: '#4c4381',
-    },
-  ),
+  preview: buildToneStyle(PACING_PREVIEW_ACCENT, PACING_PREVIEW_SOFT, {
+    badgeDarkBase: '#121722',
+    badgeText: PACING_PREVIEW_ACCENT,
+    badgeDarkText: '#eef4ff',
+    headerDarkBase: '#12101b',
+    stepText: '#4c4381',
+  }),
+  notes: buildToneStyle(PACING_PREVIEW_ACCENT, PACING_PREVIEW_SOFT, {
+    badgeDarkBase: '#121722',
+    badgeText: PACING_PREVIEW_ACCENT,
+    badgeDarkText: '#eef4ff',
+    headerDarkBase: '#12101b',
+    stepText: '#4c4381',
+  }),
 };
+
+const getStepHeaderClass = (step: PacingEditorStepId): string =>
+  STEP_HEADER_CLASS_BY_STEP[step];
+
+const getStepButtonClass = (step: PacingEditorStepId): string =>
+  STEP_BUTTON_CLASS_BY_STEP[step];
+
+const getStepToneStyle = (step: PacingEditorStepId): CSSProperties =>
+  STEP_TONE_STYLE_BY_STEP[step];
 
 const resolveVariant = (value: unknown): PacingVariant =>
   value === 'child' ? 'child' : 'adult';
@@ -288,8 +304,13 @@ export default function PacingAmpelkartenEditor({
       return null;
     }
 
-    return buildPacingEditorUiSchema(uiSchema, formData, currentStep);
-  }, [currentStep, formData, uiSchema]);
+    return buildPacingEditorUiSchema(
+      uiSchema,
+      formData,
+      currentStep,
+      tFormpack,
+    );
+  }, [currentStep, formData, tFormpack, uiSchema]);
 
   const currentCardTitle =
     currentCardStep === null
@@ -313,8 +334,8 @@ export default function PacingAmpelkartenEditor({
     if (currentStep === 'preview') {
       return (
         <div
-          className={`pacing-editor__step-header ${STEP_HEADER_CLASS_BY_STEP[currentStep]}`}
-          style={STEP_TONE_STYLE_BY_STEP[currentStep]}
+          className={`pacing-editor__step-header ${getStepHeaderClass(currentStep)}`}
+          style={getStepToneStyle(currentStep)}
         >
           <p className="pacing-editor__eyebrow">
             {tFormpack(getStepTranslationKey(currentStep))}
@@ -331,7 +352,7 @@ export default function PacingAmpelkartenEditor({
       return (
         <div
           className={`pacing-editor__step-header ${STEP_HEADER_CLASS_BY_COLOR[currentCardStep]}`}
-          style={STEP_TONE_STYLE_BY_STEP[currentCardStep]}
+          style={getStepToneStyle(currentCardStep)}
         >
           <p className="pacing-editor__eyebrow">
             {tFormpack(getStepTranslationKey(currentStep))}
@@ -339,7 +360,7 @@ export default function PacingAmpelkartenEditor({
           <div className="pacing-editor__card-heading">
             <span
               className={`pacing-editor__card-badge ${CARD_BADGE_CLASS_BY_COLOR[currentCardStep]}`}
-              style={STEP_TONE_STYLE_BY_STEP[currentCardStep]}
+              style={getStepToneStyle(currentCardStep)}
             >
               {currentAnimalLabel}
             </span>
@@ -354,8 +375,8 @@ export default function PacingAmpelkartenEditor({
 
     return (
       <div
-        className={`pacing-editor__step-header ${STEP_HEADER_CLASS_BY_STEP[currentStep]}`}
-        style={STEP_TONE_STYLE_BY_STEP[currentStep]}
+        className={`pacing-editor__step-header ${getStepHeaderClass(currentStep)}`}
+        style={getStepToneStyle(currentStep)}
       >
         <p className="pacing-editor__eyebrow">
           {tFormpack(getStepTranslationKey(currentStep))}
@@ -381,12 +402,12 @@ export default function PacingAmpelkartenEditor({
             type="button"
             className={[
               'pacing-editor__step',
-              STEP_BUTTON_CLASS_BY_STEP[step],
+              getStepButtonClass(step),
               isCurrent ? 'pacing-editor__step--current' : '',
             ]
               .filter(Boolean)
               .join(' ')}
-            style={STEP_TONE_STYLE_BY_STEP[step]}
+            style={getStepToneStyle(step)}
             aria-current={isCurrent ? 'step' : undefined}
             onClick={() => setCurrentStep(step)}
           >
