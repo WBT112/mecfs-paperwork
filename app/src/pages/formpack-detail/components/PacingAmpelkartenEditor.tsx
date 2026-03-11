@@ -42,12 +42,11 @@ const STEP_HEADER_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
   yellow: 'pacing-editor__step-header--yellow',
   red: 'pacing-editor__step-header--red',
 };
-const STEP_HEADER_CLASS_BY_STEP: Record<string, string> = {
+const STEP_HEADER_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
   variant: 'pacing-editor__step-header--variant',
   green: 'pacing-editor__step-header--green',
   yellow: 'pacing-editor__step-header--yellow',
   red: 'pacing-editor__step-header--red',
-  notes: 'pacing-editor__step-header--preview',
   preview: 'pacing-editor__step-header--preview',
 };
 const CARD_BADGE_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
@@ -55,12 +54,11 @@ const CARD_BADGE_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
   yellow: 'pacing-editor__card-badge--yellow',
   red: 'pacing-editor__card-badge--red',
 };
-const STEP_BUTTON_CLASS_BY_STEP: Record<string, string> = {
+const STEP_BUTTON_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
   variant: 'pacing-editor__step--variant',
   green: 'pacing-editor__step--green',
   yellow: 'pacing-editor__step--yellow',
   red: 'pacing-editor__step--red',
-  notes: 'pacing-editor__step--preview',
   preview: 'pacing-editor__step--preview',
 };
 
@@ -88,7 +86,7 @@ const buildToneStyle = (
     '--pacing-badge-dark-text': options.badgeDarkText,
   }) as CSSProperties;
 
-const STEP_TONE_STYLE_BY_STEP: Record<string, CSSProperties> = {
+const STEP_TONE_STYLE_BY_STEP: Record<PacingEditorStepId, CSSProperties> = {
   variant: buildToneStyle(
     'var(--pacing-variant)',
     'var(--pacing-variant-soft)',
@@ -122,13 +120,6 @@ const STEP_TONE_STYLE_BY_STEP: Record<string, CSSProperties> = {
     stepText: '#7f3131',
   }),
   preview: buildToneStyle(PACING_PREVIEW_ACCENT, PACING_PREVIEW_SOFT, {
-    badgeDarkBase: '#121722',
-    badgeText: PACING_PREVIEW_ACCENT,
-    badgeDarkText: '#eef4ff',
-    headerDarkBase: '#12101b',
-    stepText: '#4c4381',
-  }),
-  notes: buildToneStyle(PACING_PREVIEW_ACCENT, PACING_PREVIEW_SOFT, {
     badgeDarkBase: '#121722',
     badgeText: PACING_PREVIEW_ACCENT,
     badgeDarkText: '#eef4ff',

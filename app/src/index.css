@@ -1262,44 +1262,39 @@ body {
   justify-items: start;
   min-height: 64px;
   padding: 0.8rem 0.9rem;
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--pacing-step-accent) 24%,
-      var(--color-border-subtle)
-    );
+  border: 0;
   border-radius: 14px;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--pacing-step-soft) 88%, white),
     color-mix(in srgb, var(--pacing-step-soft) 48%, var(--color-surface))
   );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-step-accent) 10%, transparent);
   color: var(--pacing-step-text);
   text-align: left;
 }
 
 .pacing-editor__step:hover {
-  border-color: color-mix(
-    in srgb,
-    var(--pacing-step-accent) 38%,
-    var(--color-border)
-  );
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--pacing-step-soft) 96%, white),
     color-mix(in srgb, var(--pacing-step-soft) 65%, var(--color-surface))
   );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-step-accent) 18%, white),
+    0 8px 20px color-mix(in srgb, var(--pacing-step-accent) 10%, transparent);
 }
 
 .pacing-editor__step--current {
-  border-color: color-mix(in srgb, var(--pacing-step-accent) 52%, white);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--pacing-step-accent) 18%, white),
     color-mix(in srgb, var(--pacing-step-soft) 72%, white)
   );
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--pacing-step-accent) 24%, white);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-step-accent) 24%, white),
+    0 12px 24px color-mix(in srgb, var(--pacing-step-accent) 14%, transparent);
 }
 
 .pacing-editor__step-index {
@@ -1310,12 +1305,6 @@ body {
   height: 1.65rem;
   border-radius: 999px;
   background: var(--color-surface);
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--pacing-step-accent) 24%,
-      var(--color-border-subtle)
-    );
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--pacing-step-text);
@@ -1343,8 +1332,9 @@ body {
   gap: 0.4rem;
   padding: 1rem 1.1rem;
   border-radius: 18px;
-  border: 1px solid color-mix(in srgb, var(--pacing-header-accent) 30%, white);
   background: linear-gradient(180deg, var(--pacing-header-soft), white);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-header-accent) 12%, transparent);
   color: var(--pacing-header-text);
 }
 
@@ -1394,7 +1384,8 @@ body {
   gap: 0.25rem;
   padding: 0.9rem 1rem;
   border-radius: 16px;
-  border: 1px solid color-mix(in srgb, #b86a00 38%, white);
+  border: 0;
+  border-inline-start: 4px solid color-mix(in srgb, #b86a00 60%, white);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, #fff1cc 88%, white),
@@ -1414,7 +1405,7 @@ body {
 }
 
 :root[data-theme='dark'] .pacing-editor__page-warning {
-  border-color: color-mix(in srgb, #f0b24d 65%, var(--color-border));
+  border-inline-start-color: color-mix(in srgb, #f0b24d 72%, white);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, #d08a17 26%, #1a1510),
@@ -1424,55 +1415,44 @@ body {
 }
 
 :root[data-theme='dark'] .pacing-editor__step {
-  border-color: color-mix(
-    in srgb,
-    var(--pacing-step-accent) 36%,
-    var(--color-border)
-  );
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--pacing-step-accent) 20%, #131313),
     color-mix(in srgb, var(--pacing-step-soft) 8%, var(--color-surface))
   );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-step-accent) 16%, transparent);
   color: var(--color-text-strong);
 }
 
 :root[data-theme='dark'] .pacing-editor__step:hover {
-  border-color: color-mix(in srgb, var(--pacing-step-accent) 48%, white);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--pacing-step-accent) 27%, #151515),
     color-mix(in srgb, var(--pacing-step-soft) 14%, var(--color-surface))
   );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-step-accent) 26%, white),
+    0 10px 22px color-mix(in srgb, var(--pacing-step-accent) 12%, transparent);
 }
 
 :root[data-theme='dark'] .pacing-editor__step--current {
-  border-color: color-mix(in srgb, var(--pacing-step-accent) 60%, white);
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--pacing-step-accent) 34%, #151515),
     color-mix(in srgb, var(--pacing-step-soft) 18%, var(--color-surface))
   );
-  box-shadow: inset 0 0 0 1px
-    color-mix(in srgb, var(--pacing-step-accent) 46%, white);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-step-accent) 36%, white),
+    0 12px 24px color-mix(in srgb, var(--pacing-step-accent) 18%, transparent);
 }
 
 :root[data-theme='dark'] .pacing-editor__step-index {
-  border-color: color-mix(
-    in srgb,
-    var(--pacing-step-accent) 44%,
-    var(--color-border)
-  );
   background: color-mix(in srgb, var(--pacing-step-accent) 18%, #161616);
   color: var(--color-text-strong);
 }
 
 :root[data-theme='dark'] .pacing-editor__step-header {
-  border-color: color-mix(
-    in srgb,
-    var(--pacing-header-accent) 58%,
-    var(--color-border)
-  );
   background: linear-gradient(
     180deg,
     color-mix(
@@ -1482,6 +1462,8 @@ body {
     ),
     color-mix(in srgb, var(--pacing-header-accent) 16%, var(--color-surface))
   );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-header-accent) 20%, transparent);
 }
 
 :root[data-theme='dark'] .pacing-editor__step-header .pacing-editor__eyebrow,
@@ -1493,13 +1475,11 @@ body {
 }
 
 :root[data-theme='dark'] .pacing-editor__card-badge {
-  border: 1px solid transparent;
   background: color-mix(
     in srgb,
     var(--pacing-badge-accent) 34%,
     var(--pacing-badge-dark-base)
   );
-  border-color: color-mix(in srgb, var(--pacing-badge-accent) 54%, white);
   color: var(--pacing-badge-dark-text);
 }
 
@@ -1525,6 +1505,19 @@ body {
 .pacing-editor .formpack-form--pacing-ampelkarten .field-array {
   display: grid;
   gap: 0.5rem;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .formpack-array-item {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item__header:not(.formpack-array-item__header--actions-only) {
+  justify-content: flex-start;
 }
 
 .pacing-editor .formpack-form--pacing-ampelkarten .field-radio-group {
@@ -1561,6 +1554,33 @@ body {
 
 .pacing-editor__preview-panel h5 {
   margin: 0;
+}
+
+.pacing-editor .formpack-form__actions {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pacing-editor__preview-panel .formpack-document-preview {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.pacing-editor__preview-panel .formpack-document-preview__section {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+}
+
+.pacing-editor__preview-panel .formpack-document-preview__list li {
+  padding: 0.5rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .formpack-form__actions {
