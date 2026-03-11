@@ -12,6 +12,12 @@ This document explains the purpose of the HTTP security headers implemented in t
   - `img-src 'self' data:`: Allows images from the same origin and from `data:` URIs.
   - `font-src 'self'`: Allows fonts from the same origin.
   - `connect-src 'self' data:`: Restricts `fetch`, `XHR`, `WebSocket`, and `EventSource` connections to the same origin, while allowing trusted `data:` requests required by the PDF runtime (`@react-pdf/yoga` in some builds).
+- **Development caveat:** This CSP intentionally does **not** allow
+  `'unsafe-inline'` scripts. That is compatible with the built app, but it is
+  not fully compatible with the raw Vite HMR server because Vite injects inline
+  development bootstrap code. As a result, `npm run dev` is not the reliable
+  environment for manual PDF export verification; use `vite preview` or a
+  production-like deployment instead.
 
 ## X-Frame-Options
 

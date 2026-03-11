@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "introAccepted": {
+          "type": "boolean"
+        },
+        "variant": {
+          "type": "string",
+          "enum": ["adult", "child"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "sender": {
+      "type": "object",
+      "properties": {
+        "signature": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "adult": {
+      "$ref": "#/$defs/variantContent"
+    },
+    "child": {
+      "$ref": "#/$defs/variantContent"
+    },
+    "notes": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "items": {
+          "$ref": "#/$defs/textList"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "textList": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0
+    },
+    "cardBase": {
+      "type": "object",
+      "properties": {
+        "canDo": {
+          "$ref": "#/$defs/textList"
+        },
+        "needHelp": {
+          "$ref": "#/$defs/textList"
+        },
+        "visitRules": {
+          "$ref": "#/$defs/textList"
+        },
+        "stimuli": {
+          "$ref": "#/$defs/textList"
+        },
+        "hint": {
+          "type": "string"
+        },
+        "thanks": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "variantContent": {
+      "type": "object",
+      "properties": {
+        "cards": {
+          "type": "object",
+          "properties": {
+            "green": {
+              "$ref": "#/$defs/cardBase"
+            },
+            "yellow": {
+              "$ref": "#/$defs/cardBase"
+            },
+            "red": {
+              "$ref": "#/$defs/cardBase"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

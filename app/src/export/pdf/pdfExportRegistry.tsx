@@ -42,6 +42,21 @@ const buildOfflabelAntragConfig = async (): Promise<PdfExportConfig> => {
   };
 };
 
+const buildPacingAmpelkartenConfig = async (): Promise<PdfExportConfig> => {
+  const [
+    { buildPacingAmpelkartenPdfDocumentModel },
+    { default: PacingAmpelkartenPdfDocument },
+  ] = await Promise.all([
+    import('../../formpacks/pacing-ampelkarten/export/pdfDocumentModel'),
+    import('./templates/PacingAmpelkartenPdfDocument'),
+  ]);
+
+  return {
+    buildModel: buildPacingAmpelkartenPdfDocumentModel,
+    renderDocument: (model) => <PacingAmpelkartenPdfDocument model={model} />,
+  };
+};
+
 export const getPdfExportConfig = async (
   formpackId: string | null,
 ): Promise<PdfExportConfig | null> => {
@@ -50,6 +65,9 @@ export const getPdfExportConfig = async (
   }
   if (formpackId === 'offlabel-antrag') {
     return buildOfflabelAntragConfig();
+  }
+  if (formpackId === 'pacing-ampelkarten') {
+    return buildPacingAmpelkartenConfig();
   }
   return null;
 };

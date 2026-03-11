@@ -1,4 +1,7 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { clickActionButton } from './actions';
+import { getActiveRecordId } from './records';
+import { openCollapsibleSectionById } from './sections';
 
 const MANIFEST_ERROR_PATTERN = /unable to reach the formpack manifest/i;
 
@@ -47,4 +50,90 @@ export const openFormpackWithRetry = async (
     readyLocator,
     `Failed to load formpack "${formpackId}" after ${attempts} attempts.`,
   ).toBeVisible({ timeout: readyTimeoutMs });
+};
+
+export const acceptFormpackIntroGate = async (
+  page: Page,
+  options?: {
+    checkboxLabel?: string | RegExp;
+    continueButtonLabel?: string | RegExp;
+    timeoutMs?: number;
+    formSelector?: string;
+  },
+) => {
+  const timeoutMs = options?.timeoutMs ?? 20_000;
+  const formSelector = options?.formSelector ?? '.formpack-form';
+  const introGate = page.locator('.formpack-intro-gate');
+  const hasIntroGate = await introGate
+    .isVisible({ timeout: 1_000 })
+    .catch(() => false);
+
+  if (!hasIntroGate) {
+    await expect(page.locator(formSelector)).toBeVisible({
+      timeout: timeoutMs,
+    });
+    return;
+  }
+
+  const checkbox = page.getByLabel(
+    options?.checkboxLabel ?? /ich habe verstanden|i understand/i,
+  );
+  const continueButton = page.getByRole('button', {
+    name: options?.continueButtonLabel ?? /weiter|continue/i,
+  });
+
+  await checkbox.check();
+  await clickActionButton(continueButton, timeoutMs);
+  await expect(page.locator(formSelector)).toBeVisible({ timeout: timeoutMs });
+};
+
+export const ensureActiveRecord = async (
+  page: Page,
+  options?: {
+    formSelector?: string;
+    sectionId?: string;
+    formpackId?: string;
+    timeoutMs?: number;
+  },
+) => {
+  const timeoutMs = options?.timeoutMs ?? 20_000;
+  const formSelector = options?.formSelector ?? '.formpack-form';
+  const sectionId = options?.sectionId ?? 'formpack-records';
+  const form = page.locator(formSelector);
+  const hasActiveRecord = options?.formpackId
+    ? await getActiveRecordId(page, options.formpackId)
+    : null;
+
+  if (hasActiveRecord && (await form.isVisible().catch(() => false))) {
+    return;
+  }
+
+  await openCollapsibleSectionById(page, sectionId);
+
+  const newDraftButton = page.getByRole('button', {
+    name: /new\s*draft|neuer\s*entwurf/i,
+  });
+  if (
+    await newDraftButton
+      .first()
+      .isVisible()
+      .catch(() => false)
+  ) {
+    await clickActionButton(newDraftButton.first(), timeoutMs);
+  } else {
+    await clickActionButton(
+      page.locator('.formpack-records__actions .app__button').first(),
+      timeoutMs,
+    );
+  }
+
+  await expect(form).toBeVisible({ timeout: timeoutMs });
+
+  if (options?.formpackId) {
+    await expect
+      .poll(() => getActiveRecordId(page, options.formpackId), {
+        timeout: timeoutMs,
+      })
+      .not.toBeNull();
+  }
 };

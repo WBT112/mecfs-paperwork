@@ -17,6 +17,7 @@ import type { FormpackManifest } from '../../src/formpacks/types';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import type { RecordEntry, SnapshotEntry } from '../../src/storage/types';
 import type { OfflabelRenderedDocument } from '../../src/formpacks/offlabel-antrag/content/buildOfflabelDocuments';
+import pacingAmpelkartenUiSchema from '../../public/formpacks/pacing-ampelkarten/ui.schema.json';
 
 const testConstants = vi.hoisted(() => ({
   FORMPACK_ID: 'notfallpass',
@@ -140,7 +141,17 @@ const mutableRjsfFormDataState = vi.hoisted(() => ({
     field: 'value-0',
   } as Record<string, unknown>,
 }));
+const localeState = vi.hoisted(() => ({
+  locale: 'de' as 'de' | 'en',
+}));
 const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
+const PACING_AMPELKARTEN_FORMPACK_ID = 'pacing-ampelkarten';
+const PACING_INTRO_ACCEPTED_PATH = 'meta.introAccepted';
+const PACING_DE_GREEN_TEXT = 'Kurze Gespräche sind möglich';
+const PACING_DE_CHILD_GREEN_TEXT =
+  'Heute ist ein guter Tag für kurze Gespräche';
+const INTRO_ACCEPTED_JSON_FRAGMENT = '"introAccepted":true';
+const CHILD_VARIANT_JSON_FRAGMENT = '"variant":"child"';
 const OFFLABEL_OTHER_KEY = 'other';
 const OFFLABEL_CHANGE_TRIGGER_LABEL = 'trigger-offlabel-change';
 const LEGACY_INDICATION_KEY = 'legacy-indication';
@@ -160,6 +171,18 @@ const INTRO_GATE_CONFIG = {
   checkboxLabelKey: INTRO_CHECKBOX_KEY,
   startButtonLabelKey: INTRO_START_KEY,
   reopenButtonLabelKey: INTRO_REOPEN_KEY,
+};
+
+const parsePacingUiSchema = (
+  element: HTMLElement,
+): Partial<Record<'meta' | 'adult' | 'child', Record<string, unknown>>> => {
+  const uiSchemaText = element.textContent;
+  if (!uiSchemaText) {
+    throw new Error('Expected rendered UI schema JSON');
+  }
+  return JSON.parse(uiSchemaText) as Partial<
+    Record<'meta' | 'adult' | 'child', Record<string, unknown>>
+  >;
 };
 
 const offlabelPreviewState = vi.hoisted(() => ({
@@ -297,6 +320,10 @@ const PROFILE_SAVE_STORAGE_KEY = 'mecfs-paperwork.profile.saveEnabled';
 const PDF_EXPORT_CONTROLS_LABEL = 'pdf-export-controls';
 const PDF_SUCCESS_BUTTON_LABEL = 'pdf-success';
 const PDF_ERROR_BUTTON_LABEL = 'pdf-error';
+const MOCK_RJSF_FORM_TEST_ID = 'mock-rjsf-form';
+const DOCTOR_LETTER_FORMPACK_ID = 'doctor-letter';
+const DOCTOR_LETTER_ROUTE = `/formpacks/${DOCTOR_LETTER_FORMPACK_ID}`;
+const DOCTOR_LETTER_FORM_CLASS = 'formpack-form--doctor-letter';
 
 const mockFileText = (content: string) => {
   const descriptor = Object.getOwnPropertyDescriptor(File.prototype, 'text');
@@ -372,20 +399,33 @@ vi.mock('../../src/storage/formpackMeta', () => ({
 vi.mock('@rjsf/core', () => ({
   default: ({
     children,
+    className,
     formData,
+    templates,
+    uiSchema,
     onChange,
     onSubmit,
   }: {
     children?: React.ReactNode;
+    className?: string;
     formData?: Record<string, unknown>;
+    templates?: {
+      FieldTemplate?: unknown;
+    };
+    uiSchema?: Record<string, unknown>;
     onChange?: (event: { formData: Record<string, unknown> }) => void;
     onSubmit?: (
       event: { formData: Record<string, unknown> },
       submitEvent: { preventDefault: () => void },
     ) => void;
   }) => (
-    <div>
+    <div data-testid={MOCK_RJSF_FORM_TEST_ID} className={className}>
       <div data-testid="form-data">{JSON.stringify(formData)}</div>
+      <div data-testid="ui-schema">{JSON.stringify(uiSchema)}</div>
+      <div data-testid="has-field-template">
+        {String(Boolean(templates?.FieldTemplate))}
+      </div>
+      {children}
       <button
         type="button"
         onClick={() => onChange?.({ formData: { field: 'value' } })}
@@ -451,6 +491,82 @@ vi.mock('@rjsf/core', () => ({
       <button
         type="button"
         onClick={() =>
+          onChange?.({
+            formData: {
+              ...(formData ?? {}),
+              meta: {
+                ...((formData?.meta as Record<string, unknown> | undefined) ??
+                  {}),
+                variant: 'child',
+              },
+            },
+          })
+        }
+      >
+        trigger-pacing-child
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onChange?.({
+            formData: {
+              ...(formData ?? {}),
+              meta: {
+                ...((formData?.meta as Record<string, unknown> | undefined) ??
+                  {}),
+                variant: 'adult',
+              },
+            },
+          })
+        }
+      >
+        trigger-pacing-adult
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onChange?.({
+            formData: {
+              meta: {
+                ...((formData?.meta as Record<string, unknown> | undefined) ??
+                  {}),
+                variant: 'adult',
+              },
+              adult:
+                (formData?.adult as Record<string, unknown> | undefined) ?? {},
+              notes:
+                (formData?.notes as Record<string, unknown> | undefined) ?? {},
+              sender:
+                (formData?.sender as Record<string, unknown> | undefined) ?? {},
+            },
+          })
+        }
+      >
+        trigger-pacing-adult-visible-only
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onChange?.({
+            formData: {
+              meta: {
+                ...((formData?.meta as Record<string, unknown> | undefined) ??
+                  {}),
+                variant: 'child',
+              },
+              notes:
+                (formData?.notes as Record<string, unknown> | undefined) ?? {},
+              sender:
+                (formData?.sender as Record<string, unknown> | undefined) ?? {},
+            },
+          })
+        }
+      >
+        trigger-pacing-child-visible-only
+      </button>
+      <button
+        type="button"
+        onClick={() =>
           onSubmit?.(
             { formData: { submitted: true } },
             { preventDefault: () => undefined },
@@ -462,7 +578,6 @@ vi.mock('@rjsf/core', () => ({
       <input id="root_request_selectedIndicationKey" />
       <input id="root_request_otherDrugName" />
       <input id="root_request_indicationFullyMetOrDoctorConfirms_0" />
-      {children}
     </div>
   ),
 }));
@@ -473,7 +588,7 @@ vi.mock('../../src/i18n/formpack', () => ({
 
 vi.mock('../../src/i18n/useLocale', () => ({
   useLocale: () => ({
-    locale: 'de',
+    locale: localeState.locale,
     setLocale: storageState.setLocale,
   }),
 }));
@@ -648,7 +763,7 @@ const mockT = (key: string, options?: { ns?: string; message?: string }) => {
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: mockT,
-    i18n: { language: 'de' },
+    i18n: { language: localeState.locale },
   }),
   initReactI18next: {
     type: '3rdParty',
@@ -703,6 +818,7 @@ describe('FormpackDetailPage', () => {
     diagnosticsState.resetAllLocalData.mockResolvedValue(undefined);
     visibilityState.isDevUiEnabled = true;
     visibilityState.isFormpackVisibleOverride = null;
+    localeState.locale = 'de';
     mutableRjsfFormDataState.counter = 0;
     mutableRjsfFormDataState.data = {
       field: 'value-0',
@@ -946,6 +1062,55 @@ describe('FormpackDetailPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('applies a formpack-specific CSS class for non-letter formpacks', async () => {
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    const form = await screen.findByTestId(MOCK_RJSF_FORM_TEST_ID);
+
+    expect(form).toHaveClass('formpack-form', 'formpack-form--notfallpass');
+    expect(form).not.toHaveClass(DOCTOR_LETTER_FORM_CLASS);
+  });
+
+  it('passes the custom field template to RJSF even without info boxes', async () => {
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(await screen.findByTestId('has-field-template')).toHaveTextContent(
+      'true',
+    );
+  });
+
+  it('adds the doctor-letter form CSS class for letter layouts', async () => {
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: DOCTOR_LETTER_FORMPACK_ID,
+      exports: [],
+    } as FormpackManifest;
+
+    render(
+      <TestRouter initialEntries={[DOCTOR_LETTER_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    const form = await screen.findByTestId(MOCK_RJSF_FORM_TEST_ID);
+
+    expect(form).toHaveClass('formpack-form', DOCTOR_LETTER_FORM_CLASS);
+  });
+
   it('does not render PDF controls when pdf export is not declared', async () => {
     formpackState.manifest = {
       ...formpackState.manifest,
@@ -1137,6 +1302,30 @@ describe('FormpackDetailPage', () => {
         toolsScope.getByRole('button', { name: sectionLabels.snapshots }),
       ).toBeInTheDocument();
     }
+  });
+
+  it('renders dev metadata after the tools group', async () => {
+    visibilityState.isDevUiEnabled = true;
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    const toolsHeading = await screen.findByRole('heading', {
+      name: 'formpackToolsHeading',
+    });
+    const detailsHeading = await screen.findByRole('heading', {
+      name: 'formpackDetailsHeading',
+    });
+
+    expect(
+      toolsHeading.compareDocumentPosition(detailsHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('defaults to collapsed drafts, import, history, and preview', async () => {
@@ -1370,6 +1559,500 @@ describe('FormpackDetailPage', () => {
           screen.getByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
         ).toHaveFocus(),
       { timeout: 4_000 },
+    );
+  });
+
+  it('fills pacing presets in German when the intro gate is accepted', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      exports: ['pdf', 'json'],
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        PACING_DE_GREEN_TEXT,
+      ),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      '"variant":"adult"',
+    );
+  });
+
+  it('fills pacing presets in English when the intro gate is accepted', async () => {
+    localeState.locale = 'en';
+    const introRecord = {
+      ...record,
+      locale: 'en' as const,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      exports: ['pdf', 'json'],
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        'Short conversations are possible',
+      ),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
+    );
+  });
+
+  it('uses the stored pacing variant when presets are injected from record data', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {
+        meta: {
+          introAccepted: false,
+          variant: 'child',
+        },
+      },
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        'Heute ist ein guter Tag für kurze Gespräche',
+      ),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      CHILD_VARIANT_JSON_FRAGMENT,
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
+    );
+  });
+
+  it('starts pacing on the variant step and switches to the matching card step variant', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    const uiWidgetKey = 'ui:widget';
+    const initialUiSchema = parsePacingUiSchema(
+      screen.getByTestId('ui-schema'),
+    );
+    expect(initialUiSchema.meta?.[uiWidgetKey]).toBeUndefined();
+    expect(initialUiSchema.adult?.[uiWidgetKey]).toBe('hidden');
+    expect(initialUiSchema.child?.[uiWidgetKey]).toBe('hidden');
+    expect(
+      screen.queryByText(PDF_EXPORT_CONTROLS_LABEL),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'trigger-pacing-child' }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        CHILD_VARIANT_JSON_FRAGMENT,
+      ),
+    );
+    const switchedUiSchema = parsePacingUiSchema(
+      screen.getByTestId('ui-schema'),
+    );
+    expect(switchedUiSchema.adult?.[uiWidgetKey]).toBe('hidden');
+    expect(switchedUiSchema.child?.[uiWidgetKey]).toBeUndefined();
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.preview\.label/,
+      }),
+    );
+    expect(
+      screen.queryByTestId(MOCK_RJSF_FORM_TEST_ID),
+    ).not.toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'formpackDocumentPreviewHeading',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('keeps child presets available when adult-only changes omit the hidden section', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {},
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'trigger-pacing-adult-visible-only' }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'trigger-pacing-child-visible-only' }),
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('form-data')).toHaveTextContent(
+        CHILD_VARIANT_JSON_FRAGMENT,
+      ),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      PACING_DE_CHILD_GREEN_TEXT,
+    );
+  });
+
+  it('hides primitive pacing array item labels via ui schema options', async () => {
+    expect(
+      pacingAmpelkartenUiSchema.adult.cards.green.visitRules.items['ui:options']
+        .label,
+    ).toBe(false);
+    expect(
+      pacingAmpelkartenUiSchema.child.cards.green.canDo.items['ui:options']
+        .label,
+    ).toBe(false);
+    expect(
+      pacingAmpelkartenUiSchema.notes.items.items['ui:options'].label,
+    ).toBe(false);
+  });
+
+  it('preserves existing pacing data when the intro gate is accepted later', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: {
+        meta: {
+          introAccepted: false,
+          variant: 'child',
+        },
+        adult: {
+          cards: {
+            green: {
+              canDo: ['Existing adult content'],
+            },
+          },
+        },
+      },
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      'Existing adult content',
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      '"variant":"child"',
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
+    );
+    expect(screen.getByTestId('form-data')).not.toHaveTextContent(
+      PACING_DE_GREEN_TEXT,
+    );
+  });
+
+  it('routes draft deletion and snapshot actions through the detail-page callbacks', async () => {
+    const secondRecord = {
+      ...record,
+      id: 'record-2',
+      title: 'Second',
+      updatedAt: new Date().toISOString(),
+    };
+    const snapshot: SnapshotEntry = {
+      id: 'snapshot-1',
+      recordId: record.id,
+      label: 'Snapshot',
+      createdAt: new Date().toISOString(),
+      data: { field: 'snapshot' },
+    };
+    storageState.records = [record, secondRecord];
+    storageState.activeRecord = record;
+    storageState.snapshots = [snapshot];
+    storageState.deleteRecord.mockResolvedValue(true);
+    storageState.clearSnapshots.mockResolvedValue(1);
+    storageState.loadSnapshot.mockResolvedValue(snapshot);
+    storageState.updateActiveRecord.mockResolvedValue({
+      ...record,
+      data: snapshot.data,
+    });
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await openSection(sectionLabels.records);
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackRecordDelete' }),
+    );
+    await confirmDialog('formpackRecordDeleteConfirm', 'formpackRecordDelete');
+    await waitFor(() =>
+      expect(storageState.deleteRecord).toHaveBeenCalledWith(secondRecord.id),
+    );
+
+    await openSection(sectionLabels.snapshots);
+    await userEvent.click(await screen.findByText('formpackSnapshotRestore'));
+    await waitFor(() =>
+      expect(storageState.updateActiveRecord).toHaveBeenCalledWith(record.id, {
+        data: snapshot.data,
+      }),
+    );
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'formpackSnapshotsClearAll' }),
+    );
+    await confirmDialog(
+      'formpackSnapshotsClearAllConfirm',
+      'formpackSnapshotsClearAll',
+    );
+    await waitFor(() =>
+      expect(storageState.clearSnapshots).toHaveBeenCalledWith(),
+    );
+  });
+
+  it('falls back to current pacing data when stored record data is not a record', async () => {
+    const introRecord = {
+      ...record,
+      formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
+      data: [] as unknown as Record<string, unknown>,
+    };
+    storageState.records = [introRecord];
+    storageState.activeRecord = introRecord;
+    formpackState.manifest = {
+      ...formpackState.manifest,
+      id: PACING_AMPELKARTEN_FORMPACK_ID,
+      ui: {
+        introGate: {
+          ...INTRO_GATE_CONFIG,
+          acceptedFieldPath: PACING_INTRO_ACCEPTED_PATH,
+        },
+      },
+    };
+
+    render(
+      <TestRouter
+        initialEntries={[`/formpacks/${PACING_AMPELKARTEN_FORMPACK_ID}`]}
+      >
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    await userEvent.click(
+      await screen.findByRole('checkbox', { name: INTRO_CHECKBOX_KEY }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: INTRO_START_KEY }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      PACING_DE_GREEN_TEXT,
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      '"variant":"adult"',
+    );
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      INTRO_ACCEPTED_JSON_FRAGMENT,
     );
   });
 
@@ -2432,10 +3115,10 @@ describe('FormpackDetailPage', () => {
   });
 
   it('clears hidden doctor-letter decision fields on form change', async () => {
-    const doctorLetterRoute = '/formpacks/doctor-letter';
+    const doctorLetterRoute = DOCTOR_LETTER_ROUTE;
     formpackState.manifest = {
       ...formpackState.manifest,
-      id: 'doctor-letter',
+      id: DOCTOR_LETTER_FORMPACK_ID,
       titleKey: 'doctorLetterTitle',
       descriptionKey: 'doctorLetterDescription',
       exports: ['docx'],
@@ -2464,10 +3147,10 @@ describe('FormpackDetailPage', () => {
   });
 
   it('keeps doctor-letter decision data unchanged when no hidden fields need clearing', async () => {
-    const doctorLetterRoute = '/formpacks/doctor-letter';
+    const doctorLetterRoute = DOCTOR_LETTER_ROUTE;
     formpackState.manifest = {
       ...formpackState.manifest,
-      id: 'doctor-letter',
+      id: DOCTOR_LETTER_FORMPACK_ID,
       titleKey: 'doctorLetterTitle',
       descriptionKey: 'doctorLetterDescription',
       exports: ['docx'],

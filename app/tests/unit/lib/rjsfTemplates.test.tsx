@@ -67,6 +67,24 @@ const CopyButton = getComponent<IconButtonProps>(
 );
 const ARRAY_DESCRIPTION_TEST_ID = 'array-description';
 const UI_DESCRIPTION_TEXT = 'Ui description';
+const ARRAY_ITEM_SELECTOR = '.formpack-array-item';
+const COMPACT_ITEM_CLASS = 'formpack-array-item--compact';
+const ACTIONS_ONLY_HEADER_CLASS = 'formpack-array-item__header--actions-only';
+const ARRAY_ITEM_TITLE_SELECTOR = '.formpack-array-item__title';
+const ARRAY_ITEM_HEADER_SELECTOR = '.formpack-array-item__header';
+const createItemTranslator = (includeRemove = false) =>
+  vi.fn((key: string, options?: { item?: string; index?: number }) => {
+    if (key === 'common.item') {
+      return 'Item';
+    }
+    if (key === 'common.itemWithIndex') {
+      return `${options?.item ?? 'Item'} ${options?.index ?? 0}`;
+    }
+    if (includeRemove && key === 'common.remove') {
+      return 'Remove';
+    }
+    return key;
+  });
 
 const createTemplateButton = (
   label: string,
@@ -358,23 +376,11 @@ describe('rjsfTemplates', () => {
   });
 
   it('renders array item title using parent ui:title and disables remove button', () => {
-    const t = vi.fn(
-      (key: string, options?: { item?: string; index?: number }) => {
-        if (key === 'common.item') {
-          return 'Item';
-        }
-        if (key === 'common.itemWithIndex') {
-          return `${options?.item ?? 'Item'} ${options?.index ?? 0}`;
-        }
-        if (key === 'common.remove') {
-          return 'Remove';
-        }
-        return key;
-      },
-    );
+    const t = createItemTranslator(true);
     const registry = createRegistry({ formContext: { t } });
     const props = createArrayItemProps(registry, {
       index: 1,
+      schema: { type: 'object' },
       buttonsProps: createItemButtonsProps(registry, {
         hasRemove: true,
         readonly: true,
@@ -442,26 +448,118 @@ describe('rjsfTemplates', () => {
   });
 
   it('renders item title with default translation when no parent title exists', () => {
-    const t = vi.fn(
-      (key: string, options?: { item?: string; index?: number }) => {
-        if (key === 'common.item') {
-          return 'Item';
-        }
-        if (key === 'common.itemWithIndex') {
-          return `${options?.item ?? 'Item'} ${options?.index ?? 0}`;
-        }
-        return key;
-      },
-    );
+    const t = createItemTranslator();
     const registry = createRegistry({ formContext: { t } });
     const props = createArrayItemProps(registry, {
       index: 0,
+      schema: { type: 'object' },
       parentUiSchema: undefined,
     });
 
     render(<ArrayFieldItemTemplate {...props} />);
 
     expect(screen.getByText('Item 1', { selector: 'p' })).toBeInTheDocument();
+  });
+
+  it('hides primitive array item titles and renders compact item chrome', () => {
+    const t = vi.fn((key: string) => key);
+    const registry = createRegistry({ formContext: { t } });
+    const props = createArrayItemProps(registry, {
+      schema: { type: 'string' },
+      buttonsProps: createItemButtonsProps(registry, {
+        hasRemove: true,
+      }),
+    });
+
+    const { container } = render(<ArrayFieldItemTemplate {...props} />);
+
+    expect(container.querySelector(ARRAY_ITEM_SELECTOR)).toHaveClass(
+      COMPACT_ITEM_CLASS,
+    );
+    expect(
+      container.querySelector(ARRAY_ITEM_TITLE_SELECTOR),
+    ).not.toBeInTheDocument();
+    expect(container.querySelector(ARRAY_ITEM_HEADER_SELECTOR)).toHaveClass(
+      ACTIONS_ONLY_HEADER_CLASS,
+    );
+  });
+
+  it('keeps object-union array item titles when the schema can render objects', () => {
+    const t = createItemTranslator();
+    const registry = createRegistry({ formContext: { t } });
+    const props = createArrayItemProps(registry, {
+      schema: { type: ['object', 'null'] },
+      parentUiSchema: undefined,
+    });
+
+    const { container } = render(<ArrayFieldItemTemplate {...props} />);
+
+    expect(screen.getByText('Item 1', { selector: 'p' })).toBeInTheDocument();
+    expect(container.querySelector(ARRAY_ITEM_SELECTOR)).not.toHaveClass(
+      COMPACT_ITEM_CLASS,
+    );
+  });
+
+  it('treats array-union item schemas as non-primitive when the schema can render arrays', () => {
+    const t = createItemTranslator();
+    const registry = createRegistry({ formContext: { t } });
+    const props = createArrayItemProps(registry, {
+      schema: { type: ['array', 'null'] },
+      parentUiSchema: undefined,
+    });
+
+    const { container } = render(<ArrayFieldItemTemplate {...props} />);
+
+    expect(screen.getByText('Item 1', { selector: 'p' })).toBeInTheDocument();
+    expect(container.querySelector(ARRAY_ITEM_SELECTOR)).not.toHaveClass(
+      COMPACT_ITEM_CLASS,
+    );
+  });
+
+  it('hides object item titles when ui options request compact array items', () => {
+    const t = vi.fn((key: string) => key);
+    const registry = createRegistry({ formContext: { t } });
+    const props = createArrayItemProps(registry, {
+      schema: { type: 'object' },
+      parentUiSchema: {
+        'ui:options': {
+          hideItemTitles: true,
+          compactItems: true,
+        },
+      } as UiSchema,
+    });
+
+    const { container } = render(<ArrayFieldItemTemplate {...props} />);
+
+    expect(
+      container.querySelector(ARRAY_ITEM_TITLE_SELECTOR),
+    ).not.toBeInTheDocument();
+    expect(container.querySelector(ARRAY_ITEM_SELECTOR)).toHaveClass(
+      COMPACT_ITEM_CLASS,
+    );
+    expect(container.querySelector(ARRAY_ITEM_HEADER_SELECTOR)).toHaveClass(
+      ACTIONS_ONLY_HEADER_CLASS,
+    );
+  });
+
+  it('treats array-valued schemas as primitive array items for compact fallback rendering', () => {
+    const t = vi.fn((key: string) => key);
+    const registry = createRegistry({ formContext: { t } });
+    const props = createArrayItemProps(registry, {
+      schema: [] as unknown as RJSFSchema,
+      buttonsProps: createItemButtonsProps(registry, {
+        hasRemove: true,
+      }),
+    });
+
+    const { container } = render(<ArrayFieldItemTemplate {...props} />);
+
+    expect(container.querySelector(ARRAY_ITEM_SELECTOR)).toHaveClass(
+      COMPACT_ITEM_CLASS,
+    );
+    expect(
+      container.querySelector(ARRAY_ITEM_TITLE_SELECTOR),
+    ).not.toBeInTheDocument();
   });
 
   it('omits the remove button when it is not available', () => {

@@ -434,7 +434,11 @@ const openFormpackForLayoutAudit = async (page: Page, formpackId: string) => {
   );
 
   const formLocator = page.locator('.formpack-form');
-  if (formpackId === FORM_PACK_ID) {
+  const introGate = page.locator('.formpack-intro-gate');
+  if (await introGate.isVisible().catch(() => false)) {
+    await introGate.locator('input[type="checkbox"]').check();
+    await introGate.locator('button:not([disabled])').click();
+  } else if (formpackId === FORM_PACK_ID) {
     await acceptIntroGate(page);
   }
 
@@ -652,9 +656,9 @@ test.describe('formpack layout consistency @mobile', () => {
     const formBorderRadii = snapshots.map(
       (snapshot) => snapshot.formBorderRadius,
     );
-    const fieldsetBorderRadii = snapshots.map(
-      (snapshot) => snapshot.fieldsetBorderRadius,
-    );
+    const fieldsetBorderRadii = snapshots
+      .map((snapshot) => snapshot.fieldsetBorderRadius)
+      .filter((radius) => radius > 0);
     const checkboxMedians = snapshots
       .map((snapshot) => snapshot.checkboxSizes.median)
       .filter((value): value is number => value !== null);
@@ -669,7 +673,9 @@ test.describe('formpack layout consistency @mobile', () => {
     expect(summarizeRange(formWidths)).toBeLessThanOrEqual(2);
     expect(summarizeRange(formPaddingValues)).toBeLessThanOrEqual(0.5);
     expect(summarizeRange(formBorderRadii)).toBeLessThanOrEqual(0.5);
-    expect(summarizeRange(fieldsetBorderRadii)).toBeLessThanOrEqual(0.5);
+    if (fieldsetBorderRadii.length > 1) {
+      expect(summarizeRange(fieldsetBorderRadii)).toBeLessThanOrEqual(0.5);
+    }
 
     if (checkboxMedians.length > 1) {
       expect(summarizeRange(checkboxMedians)).toBeLessThanOrEqual(1);

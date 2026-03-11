@@ -1,6 +1,7 @@
 import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 import type { DocumentModel } from '../types';
 import { ensurePdfFontsRegistered, PDF_FONT_FAMILY_SANS } from '../fonts';
+import { toKeyedEntries } from '../keyedEntries';
 import { formatLocalizedDate } from '../../../lib/version';
 import type { OfflabelPdfTemplateData } from '../../../formpacks/offlabel-antrag/export/pdfDocumentModel';
 import type { OffLabelPostExportChecklist } from '../../../formpacks/offlabel-antrag/export/documentModel';
@@ -110,19 +111,6 @@ const normalizePdfLanguage = (locale: string): string =>
 
 const resolveOfflabelTitle = (locale: string): string =>
   locale.toLowerCase().startsWith('de') ? OFFLABEL_DE_TITLE : OFFLABEL_EN_TITLE;
-
-const toKeyedEntries = (items: string[], prefix: string) => {
-  const seenCounts = new Map<string, number>();
-
-  return items.map((item) => {
-    const count = (seenCounts.get(item) ?? 0) + 1;
-    seenCounts.set(item, count);
-    return {
-      key: `${prefix}:${item}:${count}`,
-      value: item,
-    };
-  });
-};
 
 const renderLineBlock = (lines: string[], keyPrefix: string) => {
   if (lines.length === 0) {

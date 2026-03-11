@@ -15,10 +15,16 @@ import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/previewValue';
 import { isRecord } from '../lib/utils';
 import { buildRandomDummyPatch, mergeDummyPatch } from '../lib/devDummyFill';
-import { createAsyncGuard, ignoreAsyncError } from '../lib/asyncGuard';
+import {
+  createAsyncGuard,
+  ignoreAsyncError,
+  runIfActive,
+} from '../lib/asyncGuard';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
+import { mergePacingFormData } from '../formpacks/pacing-ampelkarten/formData';
+import { buildPacingAmpelkartenPreset } from '../formpacks/pacing-ampelkarten/presets';
 import {
   FORMPACKS_UPDATED_EVENT,
   DOCTOR_LETTER_FORMPACK_ID,
@@ -53,6 +59,7 @@ import {
   FormpackExportActions,
   FormpackFormPanel,
   FormpackToolsSection,
+  PacingAmpelkartenEditor,
   QuotaBanner,
 } from './formpack-detail/components';
 import { doctorLetterHelpers } from './formpack-detail/helpers/doctorLetterHelpers';
@@ -88,8 +95,17 @@ const FORM_PRIMARY_FOCUS_SELECTOR =
 const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
 const FOCUS_RETRY_DELAY_MS = 50;
 const FOCUS_RETRY_ATTEMPTS = 30;
+const PACING_AMPELKARTEN_FORMPACK_ID = 'pacing-ampelkarten';
 
 const showDevMedicationOptions = isFormpackVisible({ visibility: 'dev' });
+
+const resolvePacingPresetVariant = (value: unknown): 'adult' | 'child' =>
+  value === 'child' ? 'child' : 'adult';
+
+const isPacingPresetContentEmpty = (value: FormDataState): boolean => {
+  const { meta: _meta, ...content } = value;
+  return !hasPreviewValue(content);
+};
 
 /**
  * Shows formpack metadata with translations loaded for the active locale.
@@ -123,6 +139,12 @@ export default function FormpackDetailPage() {
   const handleLoadedFormpackChange = useCallback(() => {
     setFormData({});
     setIsIntroModalOpen(false);
+  }, []);
+  const handleCloseIntroModal = useCallback(() => {
+    setIsIntroModalOpen(false);
+  }, []);
+  const handleOpenIntroModal = useCallback(() => {
+    setIsIntroModalOpen(true);
   }, []);
   const { errorMessage, isLoading, manifest, schema, uiSchema } =
     useFormpackLoader({
@@ -238,9 +260,7 @@ export default function FormpackDetailPage() {
 
     const refreshMeta = async () => {
       const next = await getFormpackMeta(currentFormpackId);
-      if (guard.isActive()) {
-        setFormpackMeta(next);
-      }
+      runIfActive(guard, () => setFormpackMeta(next));
     };
 
     const handleUpdated = (event: Event) => {
@@ -572,9 +592,12 @@ export default function FormpackDetailPage() {
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = useCallback(
     (event) => {
       const incomingData = event.formData as FormDataState;
-      let nextData: FormDataState = handleOfflabelFormChange({
-        ...incomingData,
-      });
+      let nextData: FormDataState =
+        formpackId === PACING_AMPELKARTEN_FORMPACK_ID
+          ? mergePacingFormData(formData, incomingData, locale)
+          : { ...incomingData };
+
+      nextData = handleOfflabelFormChange(nextData);
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
       if (
@@ -600,7 +623,7 @@ export default function FormpackDetailPage() {
 
       setFormData(nextData);
     },
-    [formpackId, handleOfflabelFormChange, setFormData],
+    [formData, formpackId, handleOfflabelFormChange, locale, setFormData],
   );
 
   // Resolve decision tree after formData changes (for doctor-letter only)
@@ -697,10 +720,37 @@ export default function FormpackDetailPage() {
 
   const handleAcceptIntroGate = useCallback(() => {
     setPendingIntroFocus(true);
-    setFormData((current) =>
-      setPathValueImmutable(current, introGateConfig!.acceptedFieldPath, true),
-    );
-  }, [introGateConfig]);
+    setFormData((current) => {
+      if (formpackId === PACING_AMPELKARTEN_FORMPACK_ID) {
+        const sourceData =
+          isPacingPresetContentEmpty(current) && isRecord(activeRecord?.data)
+            ? (activeRecord.data as FormDataState)
+            : current;
+        const variant = resolvePacingPresetVariant(
+          getPathValue(sourceData, 'meta.variant'),
+        );
+        const nextFormData: FormDataState = isPacingPresetContentEmpty(
+          sourceData,
+        )
+          ? (buildPacingAmpelkartenPreset(
+              locale === 'en' ? 'en' : 'de',
+              variant,
+            ) as unknown as FormDataState)
+          : sourceData;
+        return setPathValueImmutable(
+          nextFormData,
+          introGateConfig!.acceptedFieldPath,
+          true,
+        );
+      }
+
+      return setPathValueImmutable(
+        current,
+        introGateConfig!.acceptedFieldPath,
+        true,
+      );
+    });
+  }, [activeRecord, formpackId, introGateConfig, locale]);
 
   useEffect(() => {
     if (!pendingIntroFocus || isIntroGateVisible) {
@@ -751,16 +801,15 @@ export default function FormpackDetailPage() {
     pendingOfflabelFocusSelector,
   ]);
 
-  // Use custom field template for formpacks that provide InfoBoxes.
-  const templates = useMemo(() => {
-    if ((manifest?.ui?.infoBoxes?.length ?? 0) > 0) {
-      return {
-        ...formpackTemplates,
-        FieldTemplate: FormpackFieldTemplate,
-      };
-    }
-    return formpackTemplates;
-  }, [manifest?.ui?.infoBoxes]);
+  // Always use the custom field template so hidden conditional sections are
+  // removed from the DOM even for formpacks without InfoBoxes.
+  const templates = useMemo(
+    () => ({
+      ...formpackTemplates,
+      FieldTemplate: FormpackFieldTemplate,
+    }),
+    [],
+  );
   const previewUiSchema =
     conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
   const jsonPreview = useMemo(
@@ -953,6 +1002,14 @@ export default function FormpackDetailPage() {
 
   const currentQuotaStatus =
     storageHealth.status === 'ok' ? null : storageHealth.status;
+  const isPacingAmpelkarten = formpackId === PACING_AMPELKARTEN_FORMPACK_ID;
+  const formClassNames = ['formpack-form', `formpack-form--${manifest.id}`];
+
+  if (hasLetterLayout(formpackId)) {
+    formClassNames.push('formpack-form--doctor-letter');
+  }
+
+  const formClassName = formClassNames.join(' ');
 
   return (
     <section className="app__card">
@@ -992,85 +1049,105 @@ export default function FormpackDetailPage() {
         className="formpack-detail"
         onClickCapture={handleActionClickCapture}
       >
-        <div className="formpack-detail__assets">
-          <DevMetadataPanel
-            show={showDevSections}
-            manifest={manifest}
-            labels={{
-              detailsHeading: t('formpackDetailsHeading'),
-              idLabel: t('formpackId'),
-              versionLabel: t('formpackVersion'),
-              defaultLocaleLabel: t('formpackDefaultLocale'),
-              localesLabel: t('formpackLocales'),
-              exportsHeading: t('formpackExportsHeading'),
-              exportsLabel: t('formpackExports'),
-              docxHeading: t('formpackDocxHeading'),
-              docxTemplateA4: t('formpackDocxTemplateA4'),
-              docxTemplateWallet: t('formpackDocxTemplateWallet'),
-              docxTemplateWalletUnavailable: t(
-                'formpackDocxTemplateWalletUnavailable',
-              ),
-              docxMapping: t('formpackDocxMapping'),
-            }}
-          />
-        </div>
         <div className="formpack-detail__form">
           <FormContentSection title={t('formpackFormHeading')}>
-            <FormpackFormPanel
-              FormComponent={LazyForm}
-              actions={exportActions}
-              activeRecordExists={Boolean(activeRecord)}
-              closeLabel={t('common.close')}
-              emptyMessage={t('formpackFormNoActiveRecord')}
-              formClassName={
-                hasLetterLayout(formpackId)
-                  ? 'formpack-form formpack-form--doctor-letter'
-                  : 'formpack-form'
-              }
-              formContentRef={formContentRef}
-              formContext={formContext}
-              formData={formData}
-              formSchema={formSchema}
-              introGateEnabled={Boolean(introGateConfig?.enabled)}
-              introTexts={introTexts}
-              isIntroGateVisible={isIntroGateVisible}
-              isIntroModalOpen={isIntroModalOpen}
-              loadingLabel={t('formpackLoading')}
-              onApplyDummyData={handleApplyDummyData}
-              onApplyProfile={handleApplyProfile}
-              onCloseIntroModal={() => setIsIntroModalOpen(false)}
-              onConfirmIntroGate={handleAcceptIntroGate}
-              onFormChange={handleFormChange}
-              onFormSubmit={handleFormSubmit}
-              onOpenIntroModal={() => setIsIntroModalOpen(true)}
-              onProfileSaveToggle={handleProfileSaveToggle}
-              profileApplyDummyLabel={t('profileApplyDummyButton')}
-              profileApplyLabel={t('profileApplyButton')}
-              profileHasSavedData={profileHasSavedData}
-              profileSaveEnabled={profileSaveEnabled}
-              profileStatus={profileStatus}
-              profileStatusSuccessText={t('profileApplySuccess')}
-              profileToggleLabel={t('profileSaveCheckbox')}
-              showDevSections={showDevSections}
-              templates={templates}
-              uiSchema={conditionalUiSchema}
-              validator={validator}
-            />
+            {isPacingAmpelkarten ? (
+              <PacingAmpelkartenEditor
+                FormComponent={LazyForm}
+                activeRecordExists={Boolean(activeRecord)}
+                closeLabel={t('common.close')}
+                documentPreview={documentPreview}
+                emptyMessage={t('formpackFormNoActiveRecord')}
+                emptyPreviewLabel={t('formpackDocumentPreviewEmpty')}
+                exportActions={exportActions}
+                formClassName={formClassName}
+                formContentRef={formContentRef}
+                formContext={formContext}
+                formData={formData}
+                formSchema={formSchema}
+                hasDocumentContent={hasDocumentContent}
+                introGateEnabled={Boolean(introGateConfig?.enabled)}
+                introTexts={introTexts}
+                isIntroGateVisible={isIntroGateVisible}
+                isIntroModalOpen={isIntroModalOpen}
+                loadingLabel={t('formpackLoading')}
+                onApplyDummyData={handleApplyDummyData}
+                onApplyProfile={handleApplyProfile}
+                onCloseIntroModal={handleCloseIntroModal}
+                onConfirmIntroGate={handleAcceptIntroGate}
+                onFormChange={handleFormChange}
+                onFormSubmit={handleFormSubmit}
+                onOpenIntroModal={handleOpenIntroModal}
+                onProfileSaveToggle={handleProfileSaveToggle}
+                profileApplyDummyLabel={t('profileApplyDummyButton')}
+                profileApplyLabel={t('profileApplyButton')}
+                profileHasSavedData={profileHasSavedData}
+                profileSaveEnabled={profileSaveEnabled}
+                profileStatus={profileStatus}
+                profileStatusSuccessText={t('profileApplySuccess')}
+                profileToggleLabel={t('profileSaveCheckbox')}
+                showDevSections={showDevSections}
+                t={t}
+                tFormpack={tFormpack}
+                templates={templates}
+                uiSchema={conditionalUiSchema}
+                validator={validator}
+              />
+            ) : (
+              <FormpackFormPanel
+                FormComponent={LazyForm}
+                actions={exportActions}
+                activeRecordExists={Boolean(activeRecord)}
+                closeLabel={t('common.close')}
+                emptyMessage={t('formpackFormNoActiveRecord')}
+                formClassName={formClassName}
+                formContentRef={formContentRef}
+                formContext={formContext}
+                formData={formData}
+                formSchema={formSchema}
+                introGateEnabled={Boolean(introGateConfig?.enabled)}
+                introTexts={introTexts}
+                isIntroGateVisible={isIntroGateVisible}
+                isIntroModalOpen={isIntroModalOpen}
+                loadingLabel={t('formpackLoading')}
+                onApplyDummyData={handleApplyDummyData}
+                onApplyProfile={handleApplyProfile}
+                onCloseIntroModal={handleCloseIntroModal}
+                onConfirmIntroGate={handleAcceptIntroGate}
+                onFormChange={handleFormChange}
+                onFormSubmit={handleFormSubmit}
+                onOpenIntroModal={handleOpenIntroModal}
+                onProfileSaveToggle={handleProfileSaveToggle}
+                profileApplyDummyLabel={t('profileApplyDummyButton')}
+                profileApplyLabel={t('profileApplyButton')}
+                profileHasSavedData={profileHasSavedData}
+                profileSaveEnabled={profileSaveEnabled}
+                profileStatus={profileStatus}
+                profileStatusSuccessText={t('profileApplySuccess')}
+                profileToggleLabel={t('profileSaveCheckbox')}
+                showDevSections={showDevSections}
+                templates={templates}
+                uiSchema={conditionalUiSchema}
+                validator={validator}
+              />
+            )}
           </FormContentSection>
-          <DocumentPreviewPanel
-            title={t('formpackDocumentPreviewHeading')}
-            isIntroGateVisible={isIntroGateVisible}
-          >
-            <FormpackDocumentPreviewContent
-              documentPreview={documentPreview}
-              emptyLabel={t('formpackDocumentPreviewEmpty')}
-              formpackId={formpackId}
-              hasDocumentContent={hasDocumentContent}
-              offlabelPreviewDocuments={offlabelPreviewDocuments}
-              onSelectOfflabelPreview={setSelectedOfflabelPreviewId}
-              selectedOfflabelPreviewId={selectedOfflabelPreviewId}
-            />
-          </DocumentPreviewPanel>
+          {isPacingAmpelkarten ? null : (
+            <DocumentPreviewPanel
+              title={t('formpackDocumentPreviewHeading')}
+              isIntroGateVisible={isIntroGateVisible}
+            >
+              <FormpackDocumentPreviewContent
+                documentPreview={documentPreview}
+                emptyLabel={t('formpackDocumentPreviewEmpty')}
+                formpackId={formpackId}
+                hasDocumentContent={hasDocumentContent}
+                offlabelPreviewDocuments={offlabelPreviewDocuments}
+                onSelectOfflabelPreview={setSelectedOfflabelPreviewId}
+                selectedOfflabelPreviewId={selectedOfflabelPreviewId}
+              />
+            </DocumentPreviewPanel>
+          )}
           <FormpackToolsSection
             heading={t('formpackToolsHeading')}
             recordsPanelProps={{
@@ -1183,6 +1260,26 @@ export default function FormpackDetailPage() {
               <pre className="formpack-preview">{getJsonPreviewContent()}</pre>
             </div>
           )}
+          <DevMetadataPanel
+            show={showDevSections}
+            manifest={manifest}
+            labels={{
+              detailsHeading: t('formpackDetailsHeading'),
+              idLabel: t('formpackId'),
+              versionLabel: t('formpackVersion'),
+              defaultLocaleLabel: t('formpackDefaultLocale'),
+              localesLabel: t('formpackLocales'),
+              exportsHeading: t('formpackExportsHeading'),
+              exportsLabel: t('formpackExports'),
+              docxHeading: t('formpackDocxHeading'),
+              docxTemplateA4: t('formpackDocxTemplateA4'),
+              docxTemplateWallet: t('formpackDocxTemplateWallet'),
+              docxTemplateWalletUnavailable: t(
+                'formpackDocxTemplateWalletUnavailable',
+              ),
+              docxMapping: t('formpackDocxMapping'),
+            }}
+          />
         </div>
       </div>
       <p className="formpack-detail__version-meta" aria-live="polite">

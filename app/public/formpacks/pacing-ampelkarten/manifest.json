@@ -1,0 +1,36 @@
+{
+  "id": "pacing-ampelkarten",
+  "version": "0.1.0",
+  "defaultLocale": "de",
+  "locales": [
+    "de",
+    "en"
+  ],
+  "titleKey": "pacing-ampelkarten.title",
+  "descriptionKey": "pacing-ampelkarten.description",
+  "exports": [
+    "pdf",
+    "json"
+  ],
+  "visibility": "dev",
+  "meta": {
+    "category": "general",
+    "keywords": [
+      "pacing",
+      "ampelkarten",
+      "aushang",
+      "karte"
+    ]
+  },
+  "ui": {
+    "introGate": {
+      "enabled": true,
+      "acceptedFieldPath": "meta.introAccepted",
+      "titleKey": "pacing-ampelkarten.ui.intro.title",
+      "bodyKey": "pacing-ampelkarten.ui.intro.body",
+      "checkboxLabelKey": "pacing-ampelkarten.ui.intro.checkboxLabel",
+      "startButtonLabelKey": "pacing-ampelkarten.ui.intro.startButtonLabel",
+      "reopenButtonLabelKey": "pacing-ampelkarten.ui.intro.reopenButtonLabel"
+    }
+  }
+}

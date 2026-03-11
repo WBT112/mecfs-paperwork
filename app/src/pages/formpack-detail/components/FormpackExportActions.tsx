@@ -263,7 +263,9 @@ export default function FormpackExportActions({
   return (
     <>
       <div className="formpack-actions__group formpack-actions__group--export">
-        {renderDocxExportControls()}
+        {manifest.exports.includes('docx')
+          ? renderDocxExportControls()
+          : renderPdfExportControls()}
       </div>
       <div className="formpack-actions__group formpack-actions__group--secondary">
         {secondaryActions}
