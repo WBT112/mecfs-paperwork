@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import pacingUiSchema from '../../public/formpacks/pacing-ampelkarten/ui.schema.json';
 import {
   buildPacingEditorUiSchema,
-  type PacingEditorSecondarySectionState,
+  type PacingEditorCardColor,
 } from '../../src/formpacks/pacing-ampelkarten/editorUiSchema';
 import type { UiSchema } from '@rjsf/utils';
 
@@ -17,9 +17,8 @@ type UiFieldView = {
 
 type CardView = UiFieldView & {
   canDo?: UiFieldView;
-  visitRules?: UiFieldView;
-  stimuli?: UiFieldView;
-  thanks?: UiFieldView;
+  needHelp?: UiFieldView;
+  hint?: UiFieldView;
 };
 
 type VariantView = UiFieldView & {
@@ -37,7 +36,6 @@ type PacingEditorUiSchemaView = {
   };
   adult?: VariantView;
   child?: VariantView;
-  notes?: UiFieldView;
   sender?: UiFieldView;
 };
 
@@ -59,9 +57,6 @@ const baseFormData = {
       },
     },
   },
-  notes: {
-    title: 'Notes',
-  },
   sender: {
     signature: 'Signature',
   },
@@ -73,10 +68,16 @@ const hiddenWidget = 'hidden';
 const asPacingSchemaView = (value: UiSchema): PacingEditorUiSchemaView =>
   value as unknown as PacingEditorUiSchemaView;
 
+const getCardView = (
+  step: PacingEditorCardColor,
+  formData = baseFormData,
+): PacingEditorUiSchemaView =>
+  asPacingSchemaView(buildPacingEditorUiSchema(asUiSchema, formData, step));
+
 describe('buildPacingEditorUiSchema', () => {
   it('shows only the variant controls on the first step', () => {
     const view = asPacingSchemaView(
-      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'variant', {}),
+      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'variant'),
     );
 
     expect(view.meta?.['ui:widget']).toBeUndefined();
@@ -84,115 +85,51 @@ describe('buildPacingEditorUiSchema', () => {
     expect(view.meta?.introAccepted?.['ui:widget']).toBe(hiddenWidget);
     expect(view.adult?.['ui:widget']).toBe(hiddenWidget);
     expect(view.child?.['ui:widget']).toBe(hiddenWidget);
-    expect(view.notes?.['ui:widget']).toBe(hiddenWidget);
     expect(view.sender?.['ui:widget']).toBe(hiddenWidget);
   });
 
-  it('shows only the active card and collapses secondary fields by default', () => {
-    const view = asPacingSchemaView(
-      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'green', {}),
-    );
+  it('shows only the active card and hides the other cards', () => {
+    const view = getCardView('green');
 
     expect(view.meta?.['ui:widget']).toBe(hiddenWidget);
     expect(view.adult?.['ui:widget']).toBe(hiddenWidget);
     expect(view.child?.['ui:widget']).toBeUndefined();
     expect(view.child?.cards?.green?.['ui:widget']).toBeUndefined();
-    expect(view.child?.cards?.green?.canDo?.['ui:widget']).toBeUndefined();
-    expect(view.child?.cards?.green?.visitRules?.['ui:widget']).toBe(
-      hiddenWidget,
-    );
-    expect(view.child?.cards?.green?.stimuli?.['ui:widget']).toBe(hiddenWidget);
-    expect(view.child?.cards?.green?.thanks?.['ui:widget']).toBe(hiddenWidget);
     expect(view.child?.cards?.yellow?.['ui:widget']).toBe(hiddenWidget);
     expect(view.child?.cards?.red?.['ui:widget']).toBe(hiddenWidget);
+    expect(view.sender?.['ui:widget']).toBe(hiddenWidget);
   });
 
-  it('clears technical item titles for list inputs in the editor flow', () => {
-    const cardStep = asPacingSchemaView(
-      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'green', {}),
-    );
-    const yellowStep = asPacingSchemaView(
-      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'yellow', {}),
-    );
-    const redStep = asPacingSchemaView(
-      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'red', {}),
-    );
-    const notesStep = asPacingSchemaView(
-      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'notes', {}),
-    );
+  it('keeps list-item labels suppressed for every card step', () => {
+    for (const step of ['green', 'yellow', 'red'] as const) {
+      const view = getCardView(step);
+      const card = view.child?.cards?.[step];
 
-    expect(cardStep.child?.cards?.green?.canDo?.items?.['ui:title']).toBe('');
-    expect(
-      cardStep.child?.cards?.green?.canDo?.items?.['ui:options']?.label,
-    ).toBe(false);
-    expect(
-      yellowStep.child?.cards?.yellow?.canDo?.items?.['ui:options']?.label,
-    ).toBe(false);
-    expect(redStep.child?.cards?.red?.canDo?.items?.['ui:options']?.label).toBe(
-      false,
-    );
-    expect(notesStep.notes?.items?.items?.['ui:title']).toBe('');
-    expect(notesStep.notes?.items?.items?.['ui:options']?.label).toBe(false);
+      expect(card?.canDo?.items?.['ui:title']).toBe('');
+      expect(card?.canDo?.items?.['ui:options']?.label).toBe(false);
+      expect(card?.needHelp?.items?.['ui:title']).toBe('');
+      expect(card?.needHelp?.items?.['ui:options']?.label).toBe(false);
+    }
   });
 
-  it('reveals secondary card sections when expanded for the current color', () => {
-    const expanded: PacingEditorSecondarySectionState = { green: true };
-    const view = asPacingSchemaView(
-      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'green', expanded),
-    );
+  it('keeps only the simplified card fields visible on card steps', () => {
+    const view = getCardView('yellow');
+    const yellowCard = view.child?.cards?.yellow;
 
-    expect(view.child?.cards?.green?.visitRules?.['ui:widget']).toBeUndefined();
-    expect(view.child?.cards?.green?.stimuli?.['ui:widget']).toBeUndefined();
-    expect(view.child?.cards?.green?.thanks?.['ui:widget']).toBe('textarea');
-    expect(view.child?.cards?.green?.visitRules?.items?.['ui:title']).toBe('');
-    expect(view.child?.cards?.green?.stimuli?.items?.['ui:title']).toBe('');
+    expect(yellowCard?.canDo?.['ui:widget']).toBeUndefined();
+    expect(yellowCard?.needHelp?.['ui:widget']).toBeUndefined();
+    expect(yellowCard?.hint?.['ui:widget']).toBe('textarea');
+    expect((yellowCard as Record<string, unknown>).visitRules).toBeUndefined();
+    expect((yellowCard as Record<string, unknown>).stimuli).toBeUndefined();
+    expect((yellowCard as Record<string, unknown>).thanks).toBeUndefined();
   });
 
   it('defaults missing variants to the adult branch on card steps', () => {
-    const view = asPacingSchemaView(
-      buildPacingEditorUiSchema(asUiSchema, {}, 'yellow', {}),
-    );
+    const view = getCardView('yellow', {});
 
     expect(view.adult?.['ui:widget']).toBeUndefined();
     expect(view.child?.['ui:widget']).toBe(hiddenWidget);
     expect(view.adult?.cards?.yellow?.['ui:widget']).toBeUndefined();
-  });
-
-  it('shows notes and sender on the notes step', () => {
-    const view = asPacingSchemaView(
-      buildPacingEditorUiSchema(asUiSchema, baseFormData, 'notes', {}),
-    );
-
-    expect(view.notes?.['ui:widget']).toBeUndefined();
-    expect(view.sender?.['ui:widget']).toBeUndefined();
-    expect(view.meta?.['ui:widget']).toBe(hiddenWidget);
-    expect(view.adult?.['ui:widget']).toBe(hiddenWidget);
-    expect(view.child?.['ui:widget']).toBe(hiddenWidget);
-  });
-
-  it('removes stale hidden widgets when a step becomes visible again', () => {
-    const baseMeta = asUiSchema.meta as Record<string, unknown>;
-    const schemaWithHiddenVariant = {
-      ...asUiSchema,
-      meta: {
-        ...baseMeta,
-        variant: {
-          ...(baseMeta.variant as Record<string, unknown>),
-          'ui:widget': 'hidden',
-        },
-      },
-    } as UiSchema;
-
-    const view = asPacingSchemaView(
-      buildPacingEditorUiSchema(
-        schemaWithHiddenVariant,
-        baseFormData,
-        'variant',
-        {},
-      ),
-    );
-
-    expect(view.meta?.variant?.['ui:widget']).toBeUndefined();
   });
 
   it('returns the original schema unchanged on the preview step', () => {
@@ -200,13 +137,12 @@ describe('buildPacingEditorUiSchema', () => {
       asUiSchema,
       baseFormData,
       'preview',
-      {},
     );
 
     expect(result).toBe(asUiSchema);
   });
 
-  it('recreates hidden list item schema defaults when an array field has no item ui schema', () => {
+  it('recreates hidden list item defaults when an array field has no item ui schema', () => {
     const childSection = asUiSchema.child as Record<string, unknown>;
     const childCards = childSection.cards as Record<string, unknown>;
     const greenCard = childCards.green as Record<string, unknown>;
@@ -228,29 +164,59 @@ describe('buildPacingEditorUiSchema', () => {
     } as UiSchema;
 
     const view = asPacingSchemaView(
-      buildPacingEditorUiSchema(schemaWithoutItemUi, baseFormData, 'green', {}),
+      buildPacingEditorUiSchema(schemaWithoutItemUi, baseFormData, 'green'),
     );
 
     expect(view.child?.cards?.green?.canDo?.items?.['ui:title']).toBe('');
+    expect(view.child?.cards?.green?.canDo?.items?.['ui:options']?.label).toBe(
+      false,
+    );
   });
 
-  it('falls back to empty meta and notes sections when the ui schema shape is incomplete', () => {
+  it('falls back to an empty meta section when the ui schema shape is incomplete', () => {
     const incompleteSchema = {
       ...asUiSchema,
       meta: undefined,
-      notes: undefined,
     } as unknown as UiSchema;
 
     const variantView = asPacingSchemaView(
-      buildPacingEditorUiSchema(incompleteSchema, baseFormData, 'variant', {}),
-    );
-    const notesView = asPacingSchemaView(
-      buildPacingEditorUiSchema(incompleteSchema, baseFormData, 'notes', {}),
+      buildPacingEditorUiSchema(incompleteSchema, baseFormData, 'variant'),
     );
 
     expect(variantView.meta?.variant?.['ui:widget']).toBeUndefined();
     expect(variantView.meta?.introAccepted?.['ui:widget']).toBe(hiddenWidget);
-    expect(notesView.notes?.['ui:widget']).toBeUndefined();
-    expect(notesView.notes?.items?.items?.['ui:title']).toBe('');
+  });
+
+  it('unhides hidden active sections and tolerates malformed card field nodes', () => {
+    const childSection = asUiSchema.child as Record<string, unknown>;
+    const childCards = childSection.cards as Record<string, unknown>;
+    const greenCard = childCards.green as Record<string, unknown>;
+    const hiddenSchema = {
+      ...asUiSchema,
+      child: {
+        ...childSection,
+        'ui:widget': hiddenWidget,
+        cards: {
+          ...childCards,
+          'ui:widget': hiddenWidget,
+          green: {
+            ...greenCard,
+            'ui:widget': hiddenWidget,
+            canDo: null,
+          },
+        },
+      },
+    } as UiSchema;
+
+    const view = asPacingSchemaView(
+      buildPacingEditorUiSchema(hiddenSchema, baseFormData, 'green'),
+    );
+
+    expect(view.child?.['ui:widget']).toBeUndefined();
+    expect(view.child?.cards?.green?.['ui:widget']).toBeUndefined();
+    expect(view.child?.cards?.green?.canDo?.items?.['ui:title']).toBe('');
+    expect(view.child?.cards?.green?.canDo?.items?.['ui:options']?.label).toBe(
+      false,
+    );
   });
 });

@@ -33,7 +33,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     }
   });
 
-  it('builds German adult cards with resolved section labels and themed assets', () => {
+  it('builds three localized card sections with themed assets', () => {
     const formData = buildPacingAmpelkartenPreset(
       'de',
       'adult',
@@ -50,19 +50,19 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
 
     expect(model.title).toBe('Pacing-Ampelkarten');
     expect(model.meta?.createdAtIso).toBe(exportedAt.toISOString());
-    expect(model.sections).toHaveLength(4);
+    expect(model.sections).toHaveLength(3);
     expect(model.sections[0].heading).toBe('Grün - heute geht etwas');
-    expect(model.sections[3].heading).toBe('Notizen / individuelle Regeln');
+    expect(model.sections[2].heading).toBe('Rot - heute geht fast nichts');
     expect(templateData?.variant).toBe('adult');
     expect(templateData?.cards[0].animalLabel).toBe('Löwe');
     expect(templateData?.cards[0].imageSrc).toMatch(/^data:image\/png;base64,/);
     expect(templateData?.cards[0].sectionLabelColor).toBe('#245a35');
+    expect(templateData?.cards[0].sections).toHaveLength(2);
     expect(templateData?.cards[0].sections[0].label).toBe(
       'Was heute möglich ist',
     );
-    expect(templateData?.cards[0].sections[0].items[0]).toContain(
-      'Kurze Gespräche sind möglich',
-    );
+    expect(templateData?.signatureLabel).toBe('Unterschrift / Abschlusszeile');
+    expect(templateData?.cards[0]).not.toHaveProperty('hintLabel');
   });
 
   it('builds English child cards with localized titles and animal labels', () => {
@@ -70,7 +70,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       'en',
       'child',
     ) as unknown as Record<string, unknown>;
-    delete (formData.notes as { title?: unknown }).title;
 
     const model = buildPacingAmpelkartenPdfDocumentModel({
       formData,
@@ -88,7 +87,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(templateData?.cards[1].imageAlt).toBe(
       'Panda card with a careful yellow background',
     );
-    expect(templateData?.notes.title).toBe('Title for the notes block');
   });
 
   it('falls back safely for sparse adult data and omits empty blocks', () => {
@@ -102,25 +100,15 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
             green: {
               canDo: [`  ${KEPT_ITEM}  `, 42, ''],
               needHelp: 'invalid',
-              visitRules: [],
-              stimuli: [],
               hint: 17,
-              thanks: null,
             },
             yellow: {
               canDo: [],
               needHelp: [],
-              visitRules: [],
-              stimuli: [],
               hint: '',
-              thanks: '',
             },
             red: {},
           },
-        },
-        notes: {
-          title: '  Custom notes  ',
-          items: 'invalid',
         },
         sender: {
           signature: 7,
@@ -136,9 +124,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(templateData?.variant).toBe('adult');
     expect(templateData?.cards[0].sections[0].items).toEqual([KEPT_ITEM]);
     expect(templateData?.cards[0].hint).toBe('');
-    expect(templateData?.cards[0].thanks).toBe('');
-    expect(templateData?.notes.title).toBe('Custom notes');
-    expect(templateData?.notes.items).toEqual([]);
     expect(templateData?.signature).toBe('');
     expect(model.sections[0].blocks).toEqual([
       {
@@ -154,6 +139,11 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
         items: [KEPT_ITEM],
       },
     ]);
-    expect(model.sections[3].blocks).toEqual([]);
+    expect(model.sections[2].blocks).toEqual([
+      {
+        type: 'paragraph',
+        text: 'Sloth',
+      },
+    ]);
   });
 });

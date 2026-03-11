@@ -286,10 +286,7 @@ describe('formpacks/documentModel', () => {
           green: {
             canDo: ['Short chat'],
             needHelp: ['Shopping'],
-            visitRules: ['Please ask first'],
-            stimuli: ['Low noise'],
             hint: 'Pacing helps',
-            thanks: 'Thank you',
           },
         },
       },
@@ -298,16 +295,9 @@ describe('formpacks/documentModel', () => {
           green: {
             canDo: ['Play a small game'],
             needHelp: ['Please remind me to rest'],
-            visitRules: ['Only one friend'],
-            stimuli: ['Quiet voices'],
             hint: 'Good day',
-            thanks: 'Thanks',
           },
         },
-      },
-      notes: {
-        title: 'Notes',
-        items: ['No doorbell'],
       },
     });
 
@@ -320,13 +310,9 @@ describe('formpacks/documentModel', () => {
     });
     expect(result.adult?.cards.green.canDo).toEqual(['Short chat']);
     expect(result.child?.cards.green.canDo).toEqual(['Play a small game']);
-    expect(result.notes).toEqual({
-      title: 'Notes',
-      items: ['No doorbell'],
-    });
   });
 
-  it('defaults pacing-ampelkarten variant to adult and omits unsupported child-only fields', () => {
+  it('defaults pacing-ampelkarten variant to adult and projects the simplified card payload', () => {
     const result = buildDocumentModel('pacing-ampelkarten', 'en', {
       meta: {
         introAccepted: false,
@@ -337,16 +323,9 @@ describe('formpacks/documentModel', () => {
           green: {
             canDo: ['Slow walk', '', null],
             needHelp: ['Cooking'],
-            visitRules: ['Please text first'],
-            stimuli: ['Dim light'],
             hint: 'One step at a time',
-            thanks: 'Thanks for understanding',
           },
         },
-      },
-      notes: {
-        title: 'Important',
-        items: ['Keep visits short', '', null],
       },
     });
 
@@ -357,22 +336,12 @@ describe('formpacks/documentModel', () => {
     expect(result.adult?.cards.green).toEqual({
       canDo: ['Slow walk'],
       needHelp: ['Cooking'],
-      visitRules: ['Please text first'],
-      stimuli: ['Dim light'],
       hint: 'One step at a time',
-      thanks: 'Thanks for understanding',
     });
     expect(result.child?.cards.green).toEqual({
       canDo: [],
       needHelp: [],
-      visitRules: [],
-      stimuli: [],
       hint: null,
-      thanks: null,
-    });
-    expect(result.notes).toEqual({
-      title: 'Important',
-      items: ['Keep visits short'],
     });
   });
 });

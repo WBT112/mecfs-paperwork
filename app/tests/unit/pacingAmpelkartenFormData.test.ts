@@ -22,9 +22,6 @@ describe('mergePacingFormData', () => {
           },
         },
       },
-      notes: {
-        items: ['Current note'],
-      },
       sender: {
         signature: 'Current signature',
       },
@@ -41,9 +38,6 @@ describe('mergePacingFormData', () => {
           },
         },
       },
-      notes: {
-        items: ['Incoming note'],
-      },
       sender: {
         signature: 'Incoming signature',
       },
@@ -57,7 +51,6 @@ describe('mergePacingFormData', () => {
     });
     expect(result.adult).toEqual(incoming.adult);
     expect(result.child).toEqual(current.child);
-    expect(result.notes).toEqual(incoming.notes);
     expect(result.sender).toEqual(incoming.sender);
   });
 
@@ -89,9 +82,6 @@ describe('mergePacingFormData', () => {
     );
     expect(result.sender).toEqual({
       signature: 'Deine / Dein ...',
-    });
-    expect(result.notes).toMatchObject({
-      title: 'Notizen / individuelle Regeln',
     });
   });
 

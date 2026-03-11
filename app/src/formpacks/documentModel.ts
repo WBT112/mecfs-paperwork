@@ -31,10 +31,7 @@ type DiagnosisFlags = {
 type PacingCardProjection = {
   canDo: string[];
   needHelp: string[];
-  visitRules: string[];
-  stimuli: string[];
   hint: string | null;
-  thanks: string | null;
 };
 
 export type DocumentModel = {
@@ -121,10 +118,6 @@ export type DocumentModel = {
       yellow: PacingCardProjection;
       red: PacingCardProjection;
     };
-  };
-  notes?: {
-    title: string | null;
-    items: string[];
   };
   kk?: OffLabelLetterSection;
   arzt?: OffLabelLetterSection;
@@ -379,10 +372,7 @@ const projectPacingCard = (value: unknown): PacingCardProjection => {
   return {
     canDo: projectStringList(record?.canDo),
     needHelp: projectStringList(record?.needHelp),
-    visitRules: projectStringList(record?.visitRules),
-    stimuli: projectStringList(record?.stimuli),
     hint: getStringValue(record?.hint),
-    thanks: getStringValue(record?.thanks),
   };
 };
 
@@ -395,7 +385,6 @@ const buildPacingAmpelkartenModel = (
   const sender = getRecordValue(formData.sender);
   const adultCards = getRecordValue(getRecordValue(formData.adult)?.cards);
   const childCards = getRecordValue(getRecordValue(formData.child)?.cards);
-  const notes = getRecordValue(formData.notes);
 
   return {
     diagnosisParagraphs: [],
@@ -420,10 +409,6 @@ const buildPacingAmpelkartenModel = (
         yellow: projectPacingCard(childCards?.yellow),
         red: projectPacingCard(childCards?.red),
       },
-    },
-    notes: {
-      title: getStringValue(notes?.title),
-      items: projectStringList(notes?.items),
     },
   };
 };

@@ -1867,15 +1867,12 @@ describe('FormpackDetailPage', () => {
 
   it('hides primitive pacing array item labels via ui schema options', async () => {
     expect(
-      pacingAmpelkartenUiSchema.adult.cards.green.visitRules.items['ui:options']
+      pacingAmpelkartenUiSchema.adult.cards.green.canDo.items['ui:options']
         .label,
     ).toBe(false);
     expect(
       pacingAmpelkartenUiSchema.child.cards.green.canDo.items['ui:options']
         .label,
-    ).toBe(false);
-    expect(
-      pacingAmpelkartenUiSchema.notes.items.items['ui:options'].label,
     ).toBe(false);
   });
 
@@ -3868,6 +3865,7 @@ describe('FormpackDetailPage', () => {
   });
 
   it('dismisses the formpack update notice banner', async () => {
+    const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
     formpackMetaState.getFormpackMeta.mockResolvedValue({
       id: record.formpackId,
       versionOrHash: FORMPACK_META_VERSION,
@@ -3885,6 +3883,13 @@ describe('FormpackDetailPage', () => {
     );
 
     await screen.findByText('formpackFormHeading');
+    await waitFor(() =>
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        FORMPACKS_UPDATED_EVENT,
+        expect.any(Function),
+      ),
+    );
+    addEventListenerSpy.mockRestore();
 
     await act(async () => {
       window.dispatchEvent(

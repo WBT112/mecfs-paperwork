@@ -15,7 +15,7 @@ import {
 type PacingVariant = 'adult' | 'child';
 
 type PacingCardSection = {
-  id: 'canDo' | 'needHelp' | 'visitRules' | 'stimuli';
+  id: 'canDo' | 'needHelp';
   label: string;
   items: string[];
 };
@@ -31,16 +31,8 @@ type PacingPdfCard = {
   surfaceColor: string;
   titleColor: string;
   sectionLabelColor: string;
-  hintLabel: string;
   hint: string;
-  thanksLabel: string;
-  thanks: string;
   sections: PacingCardSection[];
-};
-
-type PacingPdfNotes = {
-  title: string;
-  items: string[];
 };
 
 /**
@@ -55,11 +47,9 @@ export type PacingAmpelkartenPdfTemplateData = {
   locale: SupportedLocale;
   createdAtIso: string;
   variant: PacingVariant;
-  cutLineLabel: string;
   signatureLabel: string;
   signature: string;
   cards: [PacingPdfCard, PacingPdfCard, PacingPdfCard];
-  notes: PacingPdfNotes;
 };
 
 /**
@@ -75,12 +65,7 @@ export type BuildPacingAmpelkartenPdfDocumentModelOptions = {
   exportedAt?: Date;
 };
 
-const CARD_SECTION_KEYS = [
-  'canDo',
-  'needHelp',
-  'visitRules',
-  'stimuli',
-] as const;
+const CARD_SECTION_KEYS = ['canDo', 'needHelp'] as const;
 
 const asTrimmedString = (value: unknown): string => {
   if (typeof value !== 'string') {
@@ -137,14 +122,7 @@ const buildCard = (
     surfaceColor: theme.surfaceColor,
     titleColor: theme.titleColor,
     sectionLabelColor: theme.sectionLabelColor,
-    hintLabel: t('pacing-ampelkarten.card.hint.label', {
-      defaultValue: 'pacing-ampelkarten.card.hint.label',
-    }),
     hint: asTrimmedString(getPathValue(formData, `${basePath}.hint`)),
-    thanksLabel: t('pacing-ampelkarten.card.thanks.label', {
-      defaultValue: 'pacing-ampelkarten.card.thanks.label',
-    }),
-    thanks: asTrimmedString(getPathValue(formData, `${basePath}.thanks`)),
     sections: CARD_SECTION_KEYS.map((sectionKey) => ({
       id: sectionKey,
       label: t(`pacing-ampelkarten.card.${sectionKey}.label`, {
@@ -174,28 +152,16 @@ export const buildPacingAmpelkartenPdfDocumentModel = ({
   const cards = PACING_CARD_COLORS.map((color) =>
     buildCard(formData, locale, variant, color),
   ) as [PacingPdfCard, PacingPdfCard, PacingPdfCard];
-  const notes: PacingPdfNotes = {
-    title:
-      asTrimmedString(getPathValue(formData, 'notes.title')) ||
-      t('pacing-ampelkarten.notes.title.label', {
-        defaultValue: 'pacing-ampelkarten.notes.title.label',
-      }),
-    items: asStringList(getPathValue(formData, 'notes.items')),
-  };
   const signature = asTrimmedString(getPathValue(formData, 'sender.signature'));
   const templateData: PacingAmpelkartenPdfTemplateData = {
     locale,
     createdAtIso: exportedAt.toISOString(),
     variant,
-    cutLineLabel: t('pacing-ampelkarten.export.cutLine', {
-      defaultValue: 'pacing-ampelkarten.export.cutLine',
-    }),
     signatureLabel: t('pacing-ampelkarten.sender.signature.label', {
       defaultValue: 'pacing-ampelkarten.sender.signature.label',
     }),
     signature,
     cards,
-    notes,
   };
 
   const sections: DocumentSection[] = cards.map((card) => ({
@@ -208,27 +174,9 @@ export const buildPacingAmpelkartenPdfDocumentModel = ({
         ? [
             {
               type: 'paragraph',
-              text: `${card.hintLabel}: ${card.hint}`,
+              text: card.hint,
             } satisfies DocumentBlock,
           ]
-        : []),
-      ...(card.thanks
-        ? [
-            {
-              type: 'paragraph',
-              text: `${card.thanksLabel}: ${card.thanks}`,
-            } satisfies DocumentBlock,
-          ]
-        : []),
-    ],
-  }));
-
-  sections.push({
-    id: 'notes',
-    heading: notes.title,
-    blocks: [
-      ...(notes.items.length
-        ? [{ type: 'bullets', items: notes.items } satisfies DocumentBlock]
         : []),
       ...(signature
         ? [
@@ -239,7 +187,7 @@ export const buildPacingAmpelkartenPdfDocumentModel = ({
           ]
         : []),
     ],
-  });
+  }));
 
   return {
     title: t('pacing-ampelkarten.title', {

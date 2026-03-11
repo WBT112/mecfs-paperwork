@@ -4,10 +4,7 @@ type PacingAmpelkartenVariant = 'adult' | 'child';
 interface BaseCardPreset {
   canDo: string[];
   needHelp: string[];
-  visitRules: string[];
-  stimuli: string[];
   hint: string;
-  thanks: string;
 }
 
 interface VariantCardsPreset<TCard extends BaseCardPreset> {
@@ -30,15 +27,9 @@ interface PacingAmpelkartenPreset {
   child: {
     cards: VariantCardsPreset<BaseCardPreset>;
   };
-  notes: {
-    title: string;
-    items: string[];
-  };
 }
 
-type LocalePresetContent = Omit<PacingAmpelkartenPreset, 'meta'>;
-
-const DE_PRESET: LocalePresetContent = {
+const DE_PRESET = {
   sender: {
     signature: 'Deine / Dein ...',
   },
@@ -54,17 +45,7 @@ const DE_PRESET: LocalePresetContent = {
         needHelp: [
           'Wenn möglich: eine Aufgabe abnehmen (z. B. Einkauf oder Telefonat).',
         ],
-        visitRules: [
-          'Kurzer Besuch ist möglich - bitte vorher kurz anfragen.',
-          'Maximal 1-2 Personen, ohne Programm.',
-        ],
-        stimuli: [
-          'Bitte leise sprechen, keine Musik/TV laut.',
-          'Bitte keine starken Düfte (Parfum/Deo).',
-          'Licht lieber weich/gedimmt.',
-        ],
         hint: 'Pausen gehören zu meinem Pacing - ich schütze damit meine Energie.',
-        thanks: 'Danke, dass du Rücksicht nimmst. 💙',
       },
       yellow: {
         canDo: [
@@ -76,17 +57,7 @@ const DE_PRESET: LocalePresetContent = {
           'Bitte übernimm heute Organisationskram (Telefonate/Termine/Rückfragen).',
           'Hilfe bei Haushalt/Kochen wäre toll.',
         ],
-        visitRules: [
-          'Besuch nur nach Absprache und kurz (15-30 Minuten).',
-          'Bitte nur eine Person gleichzeitig.',
-        ],
-        stimuli: [
-          'Bitte leise, keine Fragenketten.',
-          'Handy auf lautlos / Klingel vermeiden (wenn möglich).',
-          'Keine starken Gerüche, wenig Licht.',
-        ],
         hint: 'Weniger Kontakt heißt nicht weniger Wertschätzung. Ich brauche heute Ruhe, um keinen Crash auszulösen.',
-        thanks: 'Danke für Geduld und Verständnis. 💙',
       },
       red: {
         canDo: [
@@ -97,16 +68,7 @@ const DE_PRESET: LocalePresetContent = {
           'Essen/Trinken bereitstellen.',
           'Tür/Telefon abfangen, falls nötig.',
         ],
-        visitRules: [
-          'Bitte kein Besuch.',
-          'Nur bei echter Dringlichkeit - am besten per Nachricht.',
-        ],
-        stimuli: [
-          'So ruhig wie möglich: leise, wenig Licht, keine Gerüche.',
-          'Bitte nicht klingeln/klopfen (wenn vermeidbar).',
-        ],
         hint: 'Mein System ist heute im Alarmmodus. Ruhe hilft am meisten.',
-        thanks: 'Danke, dass du Ruhe möglich machst. 💙',
       },
     },
   },
@@ -121,16 +83,7 @@ const DE_PRESET: LocalePresetContent = {
         needHelp: [
           'Bitte hilf trotzdem beim Planen und erinnere mich an Pausen.',
         ],
-        visitRules: [
-          'Kurzer Besuch ist ok, wenn er vorher abgesprochen ist.',
-          'Bitte nur wenige Leute auf einmal und kein volles Programm.',
-        ],
-        stimuli: [
-          'Bitte leise sprechen und Musik oder TV nicht laut machen.',
-          'Licht lieber weich und keine starken Gerüche.',
-        ],
         hint: 'Heute ist ein guter Tag. Trotzdem helfen Pausen.',
-        thanks: 'Danke, dass du so rücksichtsvoll bist. 💙',
       },
       yellow: {
         canDo: [
@@ -141,16 +94,7 @@ const DE_PRESET: LocalePresetContent = {
           'Bitte übernimm heute Dinge, die anstrengend sind.',
           'Hilf mir dabei, dass alles ruhig und langsam bleibt.',
         ],
-        visitRules: [
-          'Besuch bitte nur kurz und nur nach Absprache.',
-          'Bitte nur eine Person gleichzeitig.',
-        ],
-        stimuli: [
-          'Bitte leise sprechen und nicht viele Fragen hintereinander stellen.',
-          'Wenig Licht, keine Klingel und keine starken Gerüche helfen mir.',
-        ],
         hint: 'Heute ist ein vorsichtiger Tag. Bitte langsam und leise.',
-        thanks: 'Danke für Geduld und Verständnis. 💙',
       },
       red: {
         canDo: [
@@ -161,29 +105,13 @@ const DE_PRESET: LocalePresetContent = {
           'Bitte bring mir etwas zu trinken oder zu essen.',
           'Bitte halte Tür oder Telefon für mich ab, wenn es geht.',
         ],
-        visitRules: [
-          'Bitte heute kein Besuch.',
-          'Nur bei echter Dringlichkeit und am besten erst per Nachricht.',
-        ],
-        stimuli: [
-          'Bitte alles so ruhig wie möglich halten: leise, wenig Licht, keine Gerüche.',
-          'Bitte nicht klingeln oder klopfen, wenn es vermeidbar ist.',
-        ],
         hint: 'Heute ist ein Ruhetag. Bitte nichts erwarten.',
-        thanks: 'Danke, dass du mir Ruhe schenkst. 💙',
       },
     },
   },
-  notes: {
-    title: 'Notizen / individuelle Regeln',
-    items: [
-      'Beispiel: Kurze Besuche nur nach Absprache.',
-      'Beispiel: Bitte keine spontanen Telefonate.',
-    ],
-  },
 };
 
-const EN_PRESET: LocalePresetContent = {
+const EN_PRESET = {
   sender: {
     signature: 'Love, ...',
   },
@@ -199,17 +127,7 @@ const EN_PRESET: LocalePresetContent = {
         needHelp: [
           'If possible, please take one task off my plate (for example shopping or a phone call).',
         ],
-        visitRules: [
-          'A short visit is possible - please check in first.',
-          'No more than 1-2 people at a time and no programme around it.',
-        ],
-        stimuli: [
-          'Please keep voices low and avoid loud music or TV.',
-          'Please avoid strong fragrances.',
-          'Soft or dimmed light is easier for me.',
-        ],
         hint: 'Rest breaks are part of my pacing and help me protect my energy.',
-        thanks: 'Thank you for being considerate. 💙',
       },
       yellow: {
         canDo: [
@@ -221,17 +139,7 @@ const EN_PRESET: LocalePresetContent = {
           'Please take over admin tasks today (calls, appointments, follow-up questions).',
           'Help with cooking or household tasks would really help.',
         ],
-        visitRules: [
-          'Visits only after checking in first and only for a short time (15-30 minutes).',
-          'Please keep it to one person at a time.',
-        ],
-        stimuli: [
-          'Please stay quiet and avoid asking many questions in a row.',
-          'Silent phones and as little doorbell noise as possible help.',
-          'Low light and no strong smells are best.',
-        ],
         hint: 'Less contact does not mean less appreciation. I need extra quiet today to avoid a crash.',
-        thanks: 'Thank you for your patience and understanding. 💙',
       },
       red: {
         canDo: [
@@ -242,16 +150,7 @@ const EN_PRESET: LocalePresetContent = {
           'Please make sure food and drinks are within reach.',
           'Please handle the door or phone if needed.',
         ],
-        visitRules: [
-          'Please no visitors today.',
-          'Only if it is truly urgent - ideally send a message first.',
-        ],
-        stimuli: [
-          'As calm as possible: low noise, low light, no fragrances.',
-          'Please avoid ringing or knocking if at all possible.',
-        ],
         hint: 'My system is on high alert today. Rest helps the most.',
-        thanks: 'Thank you for helping me keep things quiet. 💙',
       },
     },
   },
@@ -266,16 +165,7 @@ const EN_PRESET: LocalePresetContent = {
         needHelp: [
           'Please still help me pace and remind me to rest before I overdo it.',
         ],
-        visitRules: [
-          'A short visit is okay if we plan it first.',
-          'Please keep it to a few people and no busy schedule.',
-        ],
-        stimuli: [
-          'Please use quiet voices and keep music or TV low.',
-          'Soft light and no strong smells help me.',
-        ],
         hint: 'Today is a better day. I still need breaks.',
-        thanks: 'Thank you for being so kind and careful. 💙',
       },
       yellow: {
         canDo: [
@@ -286,16 +176,7 @@ const EN_PRESET: LocalePresetContent = {
           'Please take over the tiring things today.',
           'Please help keep everything calm and slow.',
         ],
-        visitRules: [
-          'Visits should be short and only after checking first.',
-          'Please only one person at a time.',
-        ],
-        stimuli: [
-          'Please speak softly and do not ask lots of questions one after another.',
-          'Low light, no ringing, and no strong smells help me.',
-        ],
         hint: 'Today is a careful day. Please go slowly and keep things quiet.',
-        thanks: 'Thank you for being patient with me. 💙',
       },
       red: {
         canDo: [
@@ -306,32 +187,16 @@ const EN_PRESET: LocalePresetContent = {
           'Please bring me drinks or food if I need them.',
           'Please answer the door or phone for me if possible.',
         ],
-        visitRules: [
-          'Please no visitors today.',
-          'Only contact me if it is really urgent, and message first if you can.',
-        ],
-        stimuli: [
-          'Please keep everything as calm as possible: quiet, low light, no smells.',
-          'Please do not ring or knock unless you really have to.',
-        ],
         hint: 'Today is a rest day. Please do not expect anything from me.',
-        thanks: 'Thank you for helping me rest. 💙',
       },
     },
   },
-  notes: {
-    title: 'Notes / personal rules',
-    items: [
-      'Example: Short visits only after checking first.',
-      'Example: Please no spontaneous phone calls.',
-    ],
-  },
 };
 
-const PRESETS_BY_LOCALE: Record<SupportedLocale, LocalePresetContent> = {
+const PRESETS_BY_LOCALE = {
   de: DE_PRESET,
   en: EN_PRESET,
-};
+} as const;
 
 /**
  * Builds the initial pacing-card form data for the requested locale and variant.
@@ -360,56 +225,40 @@ export const buildPacingAmpelkartenPreset = (
     adult: {
       cards: {
         green: {
-          ...preset.adult.cards.green,
           canDo: [...preset.adult.cards.green.canDo],
           needHelp: [...preset.adult.cards.green.needHelp],
-          visitRules: [...preset.adult.cards.green.visitRules],
-          stimuli: [...preset.adult.cards.green.stimuli],
+          hint: preset.adult.cards.green.hint,
         },
         yellow: {
-          ...preset.adult.cards.yellow,
           canDo: [...preset.adult.cards.yellow.canDo],
           needHelp: [...preset.adult.cards.yellow.needHelp],
-          visitRules: [...preset.adult.cards.yellow.visitRules],
-          stimuli: [...preset.adult.cards.yellow.stimuli],
+          hint: preset.adult.cards.yellow.hint,
         },
         red: {
-          ...preset.adult.cards.red,
           canDo: [...preset.adult.cards.red.canDo],
           needHelp: [...preset.adult.cards.red.needHelp],
-          visitRules: [...preset.adult.cards.red.visitRules],
-          stimuli: [...preset.adult.cards.red.stimuli],
+          hint: preset.adult.cards.red.hint,
         },
       },
     },
     child: {
       cards: {
         green: {
-          ...preset.child.cards.green,
           canDo: [...preset.child.cards.green.canDo],
           needHelp: [...preset.child.cards.green.needHelp],
-          visitRules: [...preset.child.cards.green.visitRules],
-          stimuli: [...preset.child.cards.green.stimuli],
+          hint: preset.child.cards.green.hint,
         },
         yellow: {
-          ...preset.child.cards.yellow,
           canDo: [...preset.child.cards.yellow.canDo],
           needHelp: [...preset.child.cards.yellow.needHelp],
-          visitRules: [...preset.child.cards.yellow.visitRules],
-          stimuli: [...preset.child.cards.yellow.stimuli],
+          hint: preset.child.cards.yellow.hint,
         },
         red: {
-          ...preset.child.cards.red,
           canDo: [...preset.child.cards.red.canDo],
           needHelp: [...preset.child.cards.red.needHelp],
-          visitRules: [...preset.child.cards.red.visitRules],
-          stimuli: [...preset.child.cards.red.stimuli],
+          hint: preset.child.cards.red.hint,
         },
       },
-    },
-    notes: {
-      title: preset.notes.title,
-      items: [...preset.notes.items],
     },
   };
 

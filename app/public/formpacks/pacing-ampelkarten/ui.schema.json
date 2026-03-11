@@ -1,9 +1,17 @@
 {
-  "ui:order": ["meta", "adult", "child", "notes", "sender"],
+  "ui:order": [
+    "meta",
+    "adult",
+    "child",
+    "sender"
+  ],
   "meta": {
     "ui:title": "pacing-ampelkarten.section.meta.title",
     "ui:description": "pacing-ampelkarten.section.meta.description",
-    "ui:order": ["variant", "introAccepted"],
+    "ui:order": [
+      "variant",
+      "introAccepted"
+    ],
     "variant": {
       "ui:title": "pacing-ampelkarten.meta.variant.label",
       "ui:help": "pacing-ampelkarten.meta.variant.help",
@@ -22,16 +30,17 @@
     "ui:description": "pacing-ampelkarten.section.adult.description",
     "cards": {
       "ui:title": "",
-      "ui:order": ["green", "yellow", "red"],
+      "ui:order": [
+        "green",
+        "yellow",
+        "red"
+      ],
       "green": {
         "ui:title": "pacing-ampelkarten.adult.cards.green.title",
         "ui:order": [
           "canDo",
           "needHelp",
-          "visitRules",
-          "stimuli",
-          "hint",
-          "thanks"
+          "hint"
         ],
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
@@ -61,48 +70,12 @@
             "removable": true
           }
         },
-        "visitRules": {
-          "ui:title": "pacing-ampelkarten.card.visitRules.label",
-          "ui:help": "pacing-ampelkarten.card.visitRules.help",
-          "items": {
-            "ui:options": {
-              "label": false
-            }
-          },
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
-        "stimuli": {
-          "ui:title": "pacing-ampelkarten.card.stimuli.label",
-          "ui:help": "pacing-ampelkarten.card.stimuli.help",
-          "items": {
-            "ui:options": {
-              "label": false
-            }
-          },
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
         "hint": {
           "ui:title": "pacing-ampelkarten.card.hint.label",
           "ui:help": "pacing-ampelkarten.card.hint.help",
           "ui:widget": "textarea",
           "ui:options": {
             "rows": 3
-          }
-        },
-        "thanks": {
-          "ui:title": "pacing-ampelkarten.card.thanks.label",
-          "ui:help": "pacing-ampelkarten.card.thanks.help",
-          "ui:widget": "textarea",
-          "ui:options": {
-            "rows": 2
           }
         }
       },
@@ -111,10 +84,7 @@
         "ui:order": [
           "canDo",
           "needHelp",
-          "visitRules",
-          "stimuli",
-          "hint",
-          "thanks"
+          "hint"
         ],
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
@@ -144,48 +114,12 @@
             "removable": true
           }
         },
-        "visitRules": {
-          "ui:title": "pacing-ampelkarten.card.visitRules.label",
-          "ui:help": "pacing-ampelkarten.card.visitRules.help",
-          "items": {
-            "ui:options": {
-              "label": false
-            }
-          },
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
-        "stimuli": {
-          "ui:title": "pacing-ampelkarten.card.stimuli.label",
-          "ui:help": "pacing-ampelkarten.card.stimuli.help",
-          "items": {
-            "ui:options": {
-              "label": false
-            }
-          },
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
         "hint": {
           "ui:title": "pacing-ampelkarten.card.hint.label",
           "ui:help": "pacing-ampelkarten.card.hint.help",
           "ui:widget": "textarea",
           "ui:options": {
             "rows": 3
-          }
-        },
-        "thanks": {
-          "ui:title": "pacing-ampelkarten.card.thanks.label",
-          "ui:help": "pacing-ampelkarten.card.thanks.help",
-          "ui:widget": "textarea",
-          "ui:options": {
-            "rows": 2
           }
         }
       },
@@ -194,10 +128,7 @@
         "ui:order": [
           "canDo",
           "needHelp",
-          "visitRules",
-          "stimuli",
-          "hint",
-          "thanks"
+          "hint"
         ],
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
@@ -227,48 +158,12 @@
             "removable": true
           }
         },
-        "visitRules": {
-          "ui:title": "pacing-ampelkarten.card.visitRules.label",
-          "ui:help": "pacing-ampelkarten.card.visitRules.help",
-          "items": {
-            "ui:options": {
-              "label": false
-            }
-          },
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
-        "stimuli": {
-          "ui:title": "pacing-ampelkarten.card.stimuli.label",
-          "ui:help": "pacing-ampelkarten.card.stimuli.help",
-          "items": {
-            "ui:options": {
-              "label": false
-            }
-          },
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
         "hint": {
           "ui:title": "pacing-ampelkarten.card.hint.label",
           "ui:help": "pacing-ampelkarten.card.hint.help",
           "ui:widget": "textarea",
           "ui:options": {
             "rows": 3
-          }
-        },
-        "thanks": {
-          "ui:title": "pacing-ampelkarten.card.thanks.label",
-          "ui:help": "pacing-ampelkarten.card.thanks.help",
-          "ui:widget": "textarea",
-          "ui:options": {
-            "rows": 2
           }
         }
       }
@@ -279,16 +174,17 @@
     "ui:description": "pacing-ampelkarten.section.child.description",
     "cards": {
       "ui:title": "",
-      "ui:order": ["green", "yellow", "red"],
+      "ui:order": [
+        "green",
+        "yellow",
+        "red"
+      ],
       "green": {
         "ui:title": "pacing-ampelkarten.child.cards.green.title",
         "ui:order": [
           "canDo",
           "needHelp",
-          "visitRules",
-          "stimuli",
-          "hint",
-          "thanks"
+          "hint"
         ],
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
@@ -318,48 +214,12 @@
             "removable": true
           }
         },
-        "visitRules": {
-          "ui:title": "pacing-ampelkarten.card.visitRules.label",
-          "ui:help": "pacing-ampelkarten.card.visitRules.help",
-          "items": {
-            "ui:options": {
-              "label": false
-            }
-          },
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
-        "stimuli": {
-          "ui:title": "pacing-ampelkarten.card.stimuli.label",
-          "ui:help": "pacing-ampelkarten.card.stimuli.help",
-          "items": {
-            "ui:options": {
-              "label": false
-            }
-          },
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
         "hint": {
           "ui:title": "pacing-ampelkarten.card.hint.label",
           "ui:help": "pacing-ampelkarten.card.hint.help",
           "ui:widget": "textarea",
           "ui:options": {
             "rows": 3
-          }
-        },
-        "thanks": {
-          "ui:title": "pacing-ampelkarten.card.thanks.label",
-          "ui:help": "pacing-ampelkarten.card.thanks.help",
-          "ui:widget": "textarea",
-          "ui:options": {
-            "rows": 2
           }
         }
       },
@@ -368,10 +228,7 @@
         "ui:order": [
           "canDo",
           "needHelp",
-          "visitRules",
-          "stimuli",
-          "hint",
-          "thanks"
+          "hint"
         ],
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
@@ -391,38 +248,12 @@
             "removable": true
           }
         },
-        "visitRules": {
-          "ui:title": "pacing-ampelkarten.card.visitRules.label",
-          "ui:help": "pacing-ampelkarten.card.visitRules.help",
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
-        "stimuli": {
-          "ui:title": "pacing-ampelkarten.card.stimuli.label",
-          "ui:help": "pacing-ampelkarten.card.stimuli.help",
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
         "hint": {
           "ui:title": "pacing-ampelkarten.card.hint.label",
           "ui:help": "pacing-ampelkarten.card.hint.help",
           "ui:widget": "textarea",
           "ui:options": {
             "rows": 3
-          }
-        },
-        "thanks": {
-          "ui:title": "pacing-ampelkarten.card.thanks.label",
-          "ui:help": "pacing-ampelkarten.card.thanks.help",
-          "ui:widget": "textarea",
-          "ui:options": {
-            "rows": 2
           }
         }
       },
@@ -431,10 +262,7 @@
         "ui:order": [
           "canDo",
           "needHelp",
-          "visitRules",
-          "stimuli",
-          "hint",
-          "thanks"
+          "hint"
         ],
         "canDo": {
           "ui:title": "pacing-ampelkarten.card.canDo.label",
@@ -454,24 +282,6 @@
             "removable": true
           }
         },
-        "visitRules": {
-          "ui:title": "pacing-ampelkarten.card.visitRules.label",
-          "ui:help": "pacing-ampelkarten.card.visitRules.help",
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
-        "stimuli": {
-          "ui:title": "pacing-ampelkarten.card.stimuli.label",
-          "ui:help": "pacing-ampelkarten.card.stimuli.help",
-          "ui:options": {
-            "addable": true,
-            "orderable": false,
-            "removable": true
-          }
-        },
         "hint": {
           "ui:title": "pacing-ampelkarten.card.hint.label",
           "ui:help": "pacing-ampelkarten.card.hint.help",
@@ -479,38 +289,7 @@
           "ui:options": {
             "rows": 3
           }
-        },
-        "thanks": {
-          "ui:title": "pacing-ampelkarten.card.thanks.label",
-          "ui:help": "pacing-ampelkarten.card.thanks.help",
-          "ui:widget": "textarea",
-          "ui:options": {
-            "rows": 2
-          }
         }
-      }
-    }
-  },
-  "notes": {
-    "ui:title": "pacing-ampelkarten.section.notes.title",
-    "ui:description": "pacing-ampelkarten.section.notes.description",
-    "ui:order": ["title", "items"],
-    "title": {
-      "ui:title": "pacing-ampelkarten.notes.title.label",
-      "ui:help": "pacing-ampelkarten.notes.title.help"
-    },
-    "items": {
-      "ui:title": "pacing-ampelkarten.notes.items.label",
-      "ui:help": "pacing-ampelkarten.notes.items.help",
-      "items": {
-        "ui:options": {
-          "label": false
-        }
-      },
-      "ui:options": {
-        "addable": true,
-        "orderable": false,
-        "removable": true
       }
     }
   },

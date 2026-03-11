@@ -33,7 +33,6 @@ describe('buildPacingAmpelkartenPreset', () => {
       });
       expect(preset.adult.cards.green.canDo.length).toBeGreaterThan(0);
       expect(preset.child.cards.red.canDo.length).toBeGreaterThan(0);
-      expect(preset.notes.items.length).toBe(2);
     },
   );
 
@@ -44,7 +43,6 @@ describe('buildPacingAmpelkartenPreset', () => {
     expect(preset.adult.cards.yellow.hint).toContain(
       'Weniger Kontakt heißt nicht weniger Wertschätzung.',
     );
-    expect(preset.notes.title).toBe('Notizen / individuelle Regeln');
   });
 
   it('uses natural English copy for the English preset', () => {
@@ -63,10 +61,8 @@ describe('buildPacingAmpelkartenPreset', () => {
     const first = buildPacingAmpelkartenPreset('de', 'adult');
     const second = buildPacingAmpelkartenPreset('de', 'adult');
 
-    first.notes.items.push('Additional note');
     first.child.cards.green.canDo[0] = 'Changed';
 
-    expect(second.notes.items).toHaveLength(2);
     expect(second.child.cards.green.canDo[0]).not.toBe('Changed');
   });
 });

@@ -18,17 +18,7 @@
         "needHelp": [
           "Wenn möglich: eine Aufgabe abnehmen (z. B. Einkauf oder Telefonat)."
         ],
-        "visitRules": [
-          "Kurzer Besuch ist möglich - bitte vorher kurz anfragen.",
-          "Maximal 1-2 Personen, ohne Programm."
-        ],
-        "stimuli": [
-          "Bitte leise sprechen, keine Musik/TV laut.",
-          "Bitte keine starken Düfte (Parfum/Deo).",
-          "Licht lieber weich/gedimmt."
-        ],
-        "hint": "Pausen gehören zu meinem Pacing - ich schütze damit meine Energie.",
-        "thanks": "Danke, dass du Rücksicht nimmst. 💙"
+        "hint": "Pausen gehören zu meinem Pacing - ich schütze damit meine Energie."
       },
       "yellow": {
         "canDo": [
@@ -40,17 +30,7 @@
           "Bitte übernimm heute Organisationskram (Telefonate/Termine/Rückfragen).",
           "Hilfe bei Haushalt/Kochen wäre toll."
         ],
-        "visitRules": [
-          "Besuch nur nach Absprache und kurz (15-30 Minuten).",
-          "Bitte nur eine Person gleichzeitig."
-        ],
-        "stimuli": [
-          "Bitte leise, keine Fragenketten.",
-          "Handy auf lautlos / Klingel vermeiden (wenn möglich).",
-          "Keine starken Gerüche, wenig Licht."
-        ],
-        "hint": "Weniger Kontakt heißt nicht weniger Wertschätzung. Ich brauche heute Ruhe, um keinen Crash auszulösen.",
-        "thanks": "Danke für Geduld und Verständnis. 💙"
+        "hint": "Weniger Kontakt heißt nicht weniger Wertschätzung. Ich brauche heute Ruhe, um keinen Crash auszulösen."
       },
       "red": {
         "canDo": [
@@ -61,16 +41,7 @@
           "Essen/Trinken bereitstellen.",
           "Tür/Telefon abfangen, falls nötig."
         ],
-        "visitRules": [
-          "Bitte kein Besuch.",
-          "Nur bei echter Dringlichkeit - am besten per Nachricht."
-        ],
-        "stimuli": [
-          "So ruhig wie möglich: leise, wenig Licht, keine Gerüche.",
-          "Bitte nicht klingeln/klopfen (wenn vermeidbar)."
-        ],
-        "hint": "Mein System ist heute im Alarmmodus. Ruhe hilft am meisten.",
-        "thanks": "Danke, dass du Ruhe möglich machst. 💙"
+        "hint": "Mein System ist heute im Alarmmodus. Ruhe hilft am meisten."
       }
     }
   },
@@ -85,16 +56,7 @@
         "needHelp": [
           "Bitte hilf trotzdem beim Planen und erinnere mich an Pausen."
         ],
-        "visitRules": [
-          "Kurzer Besuch ist ok, wenn er vorher abgesprochen ist.",
-          "Bitte nur wenige Leute auf einmal und kein volles Programm."
-        ],
-        "stimuli": [
-          "Bitte leise sprechen und Musik oder TV nicht laut machen.",
-          "Licht lieber weich und keine starken Gerüche."
-        ],
-        "hint": "Heute ist ein guter Tag. Trotzdem helfen Pausen.",
-        "thanks": "Danke, dass du so rücksichtsvoll bist. 💙"
+        "hint": "Heute ist ein guter Tag. Trotzdem helfen Pausen."
       },
       "yellow": {
         "canDo": [
@@ -105,16 +67,7 @@
           "Bitte übernimm heute Dinge, die anstrengend sind.",
           "Hilf mir dabei, dass alles ruhig und langsam bleibt."
         ],
-        "visitRules": [
-          "Besuch bitte nur kurz und nur nach Absprache.",
-          "Bitte nur eine Person gleichzeitig."
-        ],
-        "stimuli": [
-          "Bitte leise sprechen und nicht viele Fragen hintereinander stellen.",
-          "Wenig Licht, keine Klingel und keine starken Gerüche helfen mir."
-        ],
-        "hint": "Heute ist ein vorsichtiger Tag. Bitte langsam und leise.",
-        "thanks": "Danke für Geduld und Verständnis. 💙"
+        "hint": "Heute ist ein vorsichtiger Tag. Bitte langsam und leise."
       },
       "red": {
         "canDo": [
@@ -125,24 +78,8 @@
           "Bitte bring mir etwas zu trinken oder zu essen.",
           "Bitte halte Tür oder Telefon für mich ab, wenn es geht."
         ],
-        "visitRules": [
-          "Bitte heute kein Besuch.",
-          "Nur bei echter Dringlichkeit und am besten erst per Nachricht."
-        ],
-        "stimuli": [
-          "Bitte alles so ruhig wie möglich halten: leise, wenig Licht, keine Gerüche.",
-          "Bitte nicht klingeln oder klopfen, wenn es vermeidbar ist."
-        ],
-        "hint": "Heute ist ein Ruhetag. Bitte nichts erwarten.",
-        "thanks": "Danke, dass du mir Ruhe schenkst. 💙"
+        "hint": "Heute ist ein Ruhetag. Bitte nichts erwarten."
       }
     }
-  },
-  "notes": {
-    "title": "Notizen / individuelle Regeln",
-    "items": [
-      "Beispiel: Kurze Besuche nur nach Absprache.",
-      "Beispiel: Bitte keine spontanen Telefonate."
-    ]
   }
 }

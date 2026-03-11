@@ -10,7 +10,10 @@
         },
         "variant": {
           "type": "string",
-          "enum": ["adult", "child"]
+          "enum": [
+            "adult",
+            "child"
+          ]
         }
       },
       "additionalProperties": false
@@ -29,18 +32,6 @@
     },
     "child": {
       "$ref": "#/$defs/variantContent"
-    },
-    "notes": {
-      "type": "object",
-      "properties": {
-        "title": {
-          "type": "string"
-        },
-        "items": {
-          "$ref": "#/$defs/textList"
-        }
-      },
-      "additionalProperties": false
     }
   },
   "additionalProperties": false,
@@ -61,16 +52,7 @@
         "needHelp": {
           "$ref": "#/$defs/textList"
         },
-        "visitRules": {
-          "$ref": "#/$defs/textList"
-        },
-        "stimuli": {
-          "$ref": "#/$defs/textList"
-        },
         "hint": {
-          "type": "string"
-        },
-        "thanks": {
           "type": "string"
         }
       },

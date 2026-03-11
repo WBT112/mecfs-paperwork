@@ -101,7 +101,7 @@ it('adds dedicated dark-theme pacing editor overrides for readable colored heade
   expect(cssSource).toContain('--pacing-badge-dark-text: #eef4ff;');
 });
 
-it('defines dedicated pacing step tones for all six editor navigation buttons', () => {
+it('defines dedicated pacing step tones for the pacing editor navigation buttons', () => {
   const cssSource = readFileSync(cssPath, 'utf8');
 
   expect(cssSource).toContain('.pacing-editor__step {');

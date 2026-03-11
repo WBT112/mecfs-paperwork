@@ -30,9 +30,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 12,
   },
-  pageBody: {
-    flexGrow: 1,
-  },
   brand: {
     fontSize: 10.5,
     fontWeight: 700,
@@ -45,16 +42,8 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 2.2,
     borderRadius: 14,
-    height: '100%',
-    overflow: 'hidden',
-  },
-  halfPageSlot: {
     flexGrow: 1,
-    flexBasis: 0,
-  },
-  notesCard: {
-    backgroundColor: '#f4f7fb',
-    borderColor: '#8faecc',
+    overflow: 'hidden',
   },
   cardRail: {
     height: 10,
@@ -108,16 +97,10 @@ const styles = StyleSheet.create({
     fontSize: 9.5,
     color: '#334155',
   },
-  cutLine: {
-    marginVertical: 10,
-    textAlign: 'center',
-    color: '#456381',
+  signature: {
+    marginTop: 8,
     fontSize: 9.5,
-    fontWeight: 700,
-    letterSpacing: 0.6,
-  },
-  notesTitle: {
-    color: '#174A7E',
+    color: '#334155',
   },
 });
 
@@ -174,16 +157,7 @@ const renderCard = (card: PacingPdfCard) => (
         ) : null,
       )}
 
-      {card.hint ? (
-        <Text style={styles.helperText}>
-          {card.hintLabel}: {card.hint}
-        </Text>
-      ) : null}
-      {card.thanks ? (
-        <Text style={styles.helperText}>
-          {card.thanksLabel}: {card.thanks}
-        </Text>
-      ) : null}
+      {card.hint ? <Text style={styles.helperText}>{card.hint}</Text> : null}
     </View>
   </View>
 );
@@ -209,10 +183,7 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
         surfaceColor: '',
         titleColor: '',
         sectionLabelColor: '',
-        hintLabel: '',
         hint: '',
-        thanksLabel: '',
-        thanks: '',
         sections: [],
       },
       {
@@ -226,10 +197,7 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
         surfaceColor: '',
         titleColor: '',
         sectionLabelColor: '',
-        hintLabel: '',
         hint: '',
-        thanksLabel: '',
-        thanks: '',
         sections: [],
       },
       {
@@ -243,17 +211,12 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
         surfaceColor: '',
         titleColor: '',
         sectionLabelColor: '',
-        hintLabel: '',
         hint: '',
-        thanksLabel: '',
-        thanks: '',
         sections: [],
       },
     ] as PacingAmpelkartenPdfTemplateData['cards']);
-  const notes = templateData?.notes ?? { title: '', items: [] };
   const signatureLabel = templateData?.signatureLabel ?? '';
   const signature = templateData?.signature ?? '';
-  const cutLineLabel = templateData?.cutLineLabel ?? '✂';
 
   return (
     <Document
@@ -265,46 +228,24 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
       language={pdfLanguage}
       pageMode="useOutlines"
     >
-      <Page size="A4" style={styles.page} bookmark={cards[0].title || title}>
-        <View style={styles.pageHeader}>
-          <Text style={styles.brand}>{BRAND_LABEL}</Text>
-        </View>
-        <View style={styles.pageBody}>
-          <View style={styles.halfPageSlot}>{renderCard(cards[0])}</View>
-          <Text style={styles.cutLine}>{cutLineLabel}</Text>
-          <View style={styles.halfPageSlot}>{renderCard(cards[1])}</View>
-        </View>
-      </Page>
-
-      <Page
-        size="A4"
-        style={styles.page}
-        bookmark={cards[2].title || notes.title || title}
-      >
-        <View style={styles.pageHeader}>
-          <Text style={styles.brand}>{BRAND_LABEL}</Text>
-        </View>
-        <View style={styles.pageBody}>
-          <View style={styles.halfPageSlot}>{renderCard(cards[2])}</View>
-          <Text style={styles.cutLine}>{cutLineLabel}</Text>
-          <View style={styles.halfPageSlot}>
-            <View style={[styles.card, styles.notesCard]}>
-              <View style={[styles.cardRail, { backgroundColor: '#174A7E' }]} />
-              <View style={styles.cardInner}>
-                <Text style={[styles.cardTitle, styles.notesTitle]}>
-                  {notes.title}
-                </Text>
-                {renderBulletList(notes.items, 'notes')}
-                {signature ? (
-                  <Text style={styles.helperText}>
-                    {signatureLabel}: {signature}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
+      {cards.map((card) => (
+        <Page
+          key={card.color}
+          size="A4"
+          style={styles.page}
+          bookmark={card.title || title}
+        >
+          <View style={styles.pageHeader}>
+            <Text style={styles.brand}>{BRAND_LABEL}</Text>
           </View>
-        </View>
-      </Page>
+          {renderCard(card)}
+          {signature ? (
+            <Text style={styles.signature}>
+              {signatureLabel}: {signature}
+            </Text>
+          ) : null}
+        </Page>
+      ))}
     </Document>
   );
 };
