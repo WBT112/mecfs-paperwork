@@ -1207,6 +1207,22 @@ body {
   --pacing-variant-soft: #eef3ff;
   --pacing-preview: #5b4f99;
   --pacing-preview-soft: #f0edff;
+  --pacing-section-border: color-mix(in srgb, var(--color-border) 82%, white);
+  --pacing-section-bg-start: color-mix(
+    in srgb,
+    var(--color-surface) 92%,
+    white
+  );
+  --pacing-section-bg-end: color-mix(
+    in srgb,
+    var(--color-surface-subtle) 72%,
+    white
+  );
+  --pacing-item-divider: color-mix(
+    in srgb,
+    var(--color-border-subtle) 82%,
+    white
+  );
   display: grid;
   gap: 1rem;
 }
@@ -1489,6 +1505,29 @@ body {
   color: var(--pacing-badge-dark-text);
 }
 
+:root[data-theme='dark'] .pacing-editor {
+  --pacing-section-border: color-mix(
+    in srgb,
+    var(--color-border) 72%,
+    transparent
+  );
+  --pacing-section-bg-start: color-mix(
+    in srgb,
+    var(--color-surface) 92%,
+    #171717
+  );
+  --pacing-section-bg-end: color-mix(
+    in srgb,
+    var(--color-surface-subtle) 76%,
+    #161616
+  );
+  --pacing-item-divider: color-mix(
+    in srgb,
+    var(--color-border-subtle) 68%,
+    transparent
+  );
+}
+
 .pacing-editor .formpack-form--pacing-ampelkarten,
 .pacing-editor__form-step {
   display: grid;
@@ -1515,6 +1554,18 @@ body {
   display: none;
 }
 
+.pacing-editor .formpack-form--pacing-ampelkarten > fieldset > .field,
+.pacing-editor .formpack-form--pacing-ampelkarten > .field {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    var(--pacing-section-bg-start),
+    var(--pacing-section-bg-end)
+  );
+}
+
 .pacing-editor .formpack-form--pacing-ampelkarten .formpack-array {
   gap: 0.6rem;
   padding: 0;
@@ -1532,6 +1583,14 @@ body {
   padding: 0;
   background: transparent;
   gap: 0.4rem;
+}
+
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item
+  + .formpack-array-item {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--pacing-item-divider);
 }
 
 .pacing-editor
@@ -1569,6 +1628,35 @@ body {
 .pacing-editor .formpack-form--pacing-ampelkarten textarea,
 .pacing-editor .formpack-form--pacing-ampelkarten input[type='text'] {
   background: color-mix(in srgb, var(--color-surface-subtle) 65%, white);
+}
+
+:root[data-theme='dark']
+  .pacing-editor
+  .formpack-form--pacing-ampelkarten
+  > fieldset
+  > .field,
+:root[data-theme='dark']
+  .pacing-editor
+  .formpack-form--pacing-ampelkarten
+  > .field {
+  border-color: color-mix(in srgb, var(--color-border) 72%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 92%, #171717),
+    color-mix(in srgb, var(--color-surface-subtle) 76%, #161616)
+  );
+}
+
+:root[data-theme='dark']
+  .pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item
+  + .formpack-array-item {
+  border-top-color: color-mix(
+    in srgb,
+    var(--color-border-subtle) 68%,
+    transparent
+  );
 }
 
 .pacing-editor__actions {
