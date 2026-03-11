@@ -1012,7 +1012,14 @@ export default function FormpackDetailPage() {
   const formClassName = formClassNames.join(' ');
 
   return (
-    <section className="app__card">
+    <section
+      className={[
+        'app__card',
+        isPacingAmpelkarten ? 'app__card--pacing-ampelkarten' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <FormpackDetailHeader
         title={title}
         description={description}

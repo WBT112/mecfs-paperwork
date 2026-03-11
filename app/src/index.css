@@ -293,6 +293,14 @@ body {
   max-width: 960px;
 }
 
+.app__card--pacing-ampelkarten {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  max-width: 1040px;
+}
+
 .app__card h2 {
   margin-top: 0;
 }
@@ -1204,16 +1212,14 @@ body {
 }
 
 .pacing-editor__utility-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: 0.75rem;
-  align-items: center;
-  justify-content: space-between;
+  align-items: start;
 }
 
 .pacing-editor__utility {
   display: flex;
-  flex: 1 1 30rem;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
@@ -1483,28 +1489,41 @@ body {
   color: var(--pacing-badge-dark-text);
 }
 
-.pacing-editor .formpack-form--pacing-ampelkarten {
+.pacing-editor .formpack-form--pacing-ampelkarten,
+.pacing-editor__form-step {
   display: grid;
   gap: 0.9rem;
 }
 
-.pacing-editor .formpack-form--pacing-ampelkarten .form-group {
+.pacing-editor .formpack-form--pacing-ampelkarten .form-group,
+.pacing-editor .formpack-form--pacing-ampelkarten .field,
+.pacing-editor .formpack-form--pacing-ampelkarten .field-string,
+.pacing-editor .formpack-form--pacing-ampelkarten .field-array,
+.pacing-editor .formpack-form--pacing-ampelkarten .field-object {
   margin-bottom: 0;
 }
 
-.pacing-editor .formpack-form--pacing-ampelkarten > fieldset {
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset {
   padding: 0;
   margin: 0;
   border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .pacing-editor .formpack-form--pacing-ampelkarten > fieldset > legend {
   display: none;
 }
 
-.pacing-editor .formpack-form--pacing-ampelkarten .field-array {
-  display: grid;
-  gap: 0.5rem;
+.pacing-editor .formpack-form--pacing-ampelkarten .formpack-array {
+  gap: 0.6rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .formpack-array__items {
+  gap: 0.6rem;
 }
 
 .pacing-editor .formpack-form--pacing-ampelkarten .formpack-array-item {
@@ -1512,12 +1531,34 @@ body {
   border-radius: 0;
   padding: 0;
   background: transparent;
+  gap: 0.4rem;
 }
 
 .pacing-editor
   .formpack-form--pacing-ampelkarten
   .formpack-array-item__header:not(.formpack-array-item__header--actions-only) {
   justify-content: flex-start;
+}
+
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item__content
+  > fieldset,
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item__content
+  .field
+  > fieldset {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item__content
+  .control-label {
+  margin-bottom: 0.35rem;
 }
 
 .pacing-editor .formpack-form--pacing-ampelkarten .field-radio-group {
@@ -1741,6 +1782,7 @@ body {
   }
 
   .pacing-editor__utility-row {
+    grid-template-columns: 1fr;
     align-items: stretch;
   }
 

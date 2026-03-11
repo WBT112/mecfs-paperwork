@@ -19,7 +19,9 @@ const sourceExtensions = new Set([
 const runtimeGeneratedAllowlist = new Set([
   'btn',
   'field-array',
+  'field-object',
   'field-radio-group',
+  'field-string',
   'form-group',
   'formpack-detail__quota-banner--warning',
   'formpack-detail__quota-banner--error',

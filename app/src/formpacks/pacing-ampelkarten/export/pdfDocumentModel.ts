@@ -182,7 +182,7 @@ export const buildPacingAmpelkartenPdfDocumentModel = ({
         ? [
             {
               type: 'paragraph',
-              text: `${templateData.signatureLabel}: ${signature}`,
+              text: signature,
             } satisfies DocumentBlock,
           ]
         : []),

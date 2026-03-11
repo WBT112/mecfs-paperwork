@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
   card: {
     borderWidth: 2.2,
     borderRadius: 14,
-    flexGrow: 1,
+    width: '100%',
     overflow: 'hidden',
   },
   cardRail: {
@@ -119,6 +119,7 @@ const renderBulletList = (items: string[], prefix: string) =>
 const renderCard = (card: PacingPdfCard) => (
   <View
     key={card.color}
+    wrap={false}
     style={[
       styles.card,
       {
@@ -215,7 +216,6 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
         sections: [],
       },
     ] as PacingAmpelkartenPdfTemplateData['cards']);
-  const signatureLabel = templateData?.signatureLabel ?? '';
   const signature = templateData?.signature ?? '';
 
   return (
@@ -239,11 +239,7 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
             <Text style={styles.brand}>{BRAND_LABEL}</Text>
           </View>
           {renderCard(card)}
-          {signature ? (
-            <Text style={styles.signature}>
-              {signatureLabel}: {signature}
-            </Text>
-          ) : null}
+          {signature ? <Text style={styles.signature}>{signature}</Text> : null}
         </Page>
       ))}
     </Document>

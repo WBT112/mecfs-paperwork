@@ -10,6 +10,8 @@ import {
 
 const namespace = 'formpack:pacing-ampelkarten';
 const KEPT_ITEM = 'Keep one short item';
+const SIGNATURE_LABEL = 'Unterschrift / Abschlusszeile';
+const EXPORTED_AT_ISO = '2026-03-09T10:00:00.000Z';
 
 describe('buildPacingAmpelkartenPdfDocumentModel', () => {
   beforeAll(() => {
@@ -38,7 +40,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       'de',
       'adult',
     ) as unknown as Record<string, unknown>;
-    const exportedAt = new Date('2026-03-09T10:00:00.000Z');
+    const exportedAt = new Date(EXPORTED_AT_ISO);
     const model = buildPacingAmpelkartenPdfDocumentModel({
       formData,
       locale: 'de',
@@ -61,7 +63,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(templateData?.cards[0].sections[0].label).toBe(
       'Was heute möglich ist',
     );
-    expect(templateData?.signatureLabel).toBe('Unterschrift / Abschlusszeile');
+    expect(templateData?.signatureLabel).toBe(SIGNATURE_LABEL);
     expect(templateData?.cards[0]).not.toHaveProperty('hintLabel');
   });
 
@@ -74,7 +76,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     const model = buildPacingAmpelkartenPdfDocumentModel({
       formData,
       locale: 'en',
-      exportedAt: new Date('2026-03-09T10:00:00.000Z'),
+      exportedAt: new Date(EXPORTED_AT_ISO),
     });
     const templateData = model.meta?.templateData as
       | PacingAmpelkartenPdfTemplateData
@@ -87,6 +89,24 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(templateData?.cards[1].imageAlt).toBe(
       'Panda card with a careful yellow background',
     );
+  });
+
+  it('keeps the signature text without prefixing the localized label', () => {
+    const model = buildPacingAmpelkartenPdfDocumentModel({
+      formData: {
+        ...buildPacingAmpelkartenPreset('de', 'adult'),
+        sender: {
+          signature: 'Max Mustermann',
+        },
+      } as unknown as Record<string, unknown>,
+      locale: 'de',
+      exportedAt: new Date(EXPORTED_AT_ISO),
+    });
+
+    expect(model.sections[0].blocks.at(-1)).toEqual({
+      type: 'paragraph',
+      text: 'Max Mustermann',
+    });
   });
 
   it('falls back safely for sparse adult data and omits empty blocks', () => {

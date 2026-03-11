@@ -13,6 +13,7 @@ const namespace = 'formpack:pacing-ampelkarten';
 const EXPORTED_AT_ISO = '2026-03-09T10:00:00.000Z';
 const DEFAULT_TITLE = 'Pacing-Ampelkarten';
 const IMAGE_SRC = '/formpacks/pacing-ampelkarten/assets/card-green-sloth.png';
+const SIGNATURE_LABEL = 'Unterschrift / Abschlusszeile';
 
 type PageElement = ReactElement<{ bookmark?: string; children?: ReactNode }>;
 
@@ -35,9 +36,72 @@ type PacingTemplateCard = {
   }>;
 };
 
+const buildTemplateCards = (
+  overrides?: Partial<
+    Record<'green' | 'yellow' | 'red', Partial<PacingTemplateCard>>
+  >,
+): [PacingTemplateCard, PacingTemplateCard, PacingTemplateCard] => [
+  {
+    color: 'green',
+    title: 'Gruen',
+    animalLabel: 'Loewe',
+    imageAlt: 'Bild',
+    imageSrc: IMAGE_SRC,
+    accentColor: '#76b27f',
+    borderColor: '#76b27f',
+    surfaceColor: '#f1f8ef',
+    titleColor: '#183524',
+    sectionLabelColor: '#245a35',
+    hint: '',
+    sections: [],
+    ...overrides?.green,
+  },
+  {
+    color: 'yellow',
+    title: 'Gelb',
+    animalLabel: 'Panda',
+    imageAlt: 'Bild',
+    imageSrc: IMAGE_SRC,
+    accentColor: '#d1a238',
+    borderColor: '#d1a238',
+    surfaceColor: '#fff7e3',
+    titleColor: '#5a3e00',
+    sectionLabelColor: '#8f5f00',
+    hint: '',
+    sections: [],
+    ...overrides?.yellow,
+  },
+  {
+    color: 'red',
+    title: 'Rot',
+    animalLabel: 'Faultier',
+    imageAlt: 'Bild',
+    imageSrc: IMAGE_SRC,
+    accentColor: '#d47a59',
+    borderColor: '#d47a59',
+    surfaceColor: '#fff1ea',
+    titleColor: '#5d2618',
+    sectionLabelColor: '#943a23',
+    hint: '',
+    sections: [],
+    ...overrides?.red,
+  },
+];
+
 const getPages = (
   element: ReactElement<{ children?: ReactNode }>,
 ): PageElement[] => Children.toArray(element.props.children) as PageElement[];
+
+const getPageCard = (
+  page: PageElement,
+): ReactElement<{
+  wrap?: boolean;
+  style?: Array<Record<string, unknown>> | Record<string, unknown>;
+}> =>
+  Children.toArray(page.props.children)[1] as ReactElement<{
+    wrap?: boolean;
+    style?: Array<Record<string, unknown>> | Record<string, unknown>;
+  }>;
 
 const collectRenderedText = (node: ReactNode): string[] => {
   if (typeof node === 'string') {
@@ -115,6 +179,23 @@ describe('PacingAmpelkartenPdfDocument', () => {
     expect(pages[0].props.bookmark).toBe('Grün - heute geht etwas');
     expect(pages[1].props.bookmark).toBe('Gelb - bitte vorsichtig');
     expect(pages[2].props.bookmark).toBe('Rot - heute geht fast nichts');
+
+    const firstCard = getPageCard(pages[0]);
+    expect(firstCard.props.wrap).toBe(false);
+    expect(firstCard.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          width: '100%',
+        }),
+      ]),
+    );
+    expect(firstCard.props.style).toEqual(
+      expect.not.arrayContaining([
+        expect.objectContaining({
+          flexGrow: 1,
+        }),
+      ]),
+    );
   });
 
   it('keeps rendering with empty fallback data', () => {
@@ -229,52 +310,13 @@ describe('PacingAmpelkartenPdfDocument', () => {
           locale: 'de',
           createdAtIso: EXPORTED_AT_ISO,
           variant: 'adult',
-          signatureLabel: 'Unterschrift / Abschlusszeile',
+          signatureLabel: SIGNATURE_LABEL,
           signature: '',
-          cards: [
-            {
-              color: 'green',
-              title: 'Gruen',
-              animalLabel: 'Loewe',
-              imageAlt: 'Bild',
-              imageSrc: IMAGE_SRC,
-              accentColor: '#76b27f',
-              borderColor: '#76b27f',
-              surfaceColor: '#f1f8ef',
-              titleColor: '#183524',
-              sectionLabelColor: '#245a35',
+          cards: buildTemplateCards({
+            green: {
               hint: 'Bitte heute langsam.',
-              sections: [],
             },
-            {
-              color: 'yellow',
-              title: 'Gelb',
-              animalLabel: 'Panda',
-              imageAlt: 'Bild',
-              imageSrc: IMAGE_SRC,
-              accentColor: '#d1a238',
-              borderColor: '#d1a238',
-              surfaceColor: '#fff7e3',
-              titleColor: '#5a3e00',
-              sectionLabelColor: '#8f5f00',
-              hint: '',
-              sections: [],
-            },
-            {
-              color: 'red',
-              title: 'Rot',
-              animalLabel: 'Faultier',
-              imageAlt: 'Bild',
-              imageSrc: IMAGE_SRC,
-              accentColor: '#d47a59',
-              borderColor: '#d47a59',
-              surfaceColor: '#fff1ea',
-              titleColor: '#5d2618',
-              sectionLabelColor: '#943a23',
-              hint: '',
-              sections: [],
-            },
-          ] as [PacingTemplateCard, PacingTemplateCard, PacingTemplateCard],
+          }),
         },
       },
       sections: [],
@@ -287,6 +329,33 @@ describe('PacingAmpelkartenPdfDocument', () => {
 
     expect(text).toContain('Bitte heute langsam.');
     expect(text).not.toContain('Freundlicher Hinweis: Bitte heute langsam.');
+  });
+
+  it('renders signature text without prefixing the localized signature label', () => {
+    const model: DocumentModel = {
+      title: DEFAULT_TITLE,
+      meta: {
+        createdAtIso: EXPORTED_AT_ISO,
+        locale: 'de',
+        templateData: {
+          locale: 'de',
+          createdAtIso: EXPORTED_AT_ISO,
+          variant: 'adult',
+          signatureLabel: SIGNATURE_LABEL,
+          signature: 'Max Mustermann',
+          cards: buildTemplateCards(),
+        },
+      },
+      sections: [],
+    };
+
+    const element = PacingAmpelkartenPdfDocument({ model }) as ReactElement<{
+      children?: ReactElement[];
+    }>;
+    const text = collectRenderedText(getPages(element)[0]);
+
+    expect(text).toContain('Max Mustermann');
+    expect(text).not.toContain(`${SIGNATURE_LABEL}: Max Mustermann`);
   });
 
   it('defaults the PDF language to German when metadata is missing', () => {

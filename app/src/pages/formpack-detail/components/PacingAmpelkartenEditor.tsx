@@ -506,7 +506,7 @@ export default function PacingAmpelkartenEditor({
           {renderStepActions()}
         </div>
       ) : (
-        <div className={formClassName}>
+        <div className={`${formClassName} pacing-editor__form-step`}>
           <Suspense fallback={<p>{loadingLabel}</p>}>
             <FormComponent
               schema={formSchema}
