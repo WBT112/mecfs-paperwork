@@ -2,9 +2,10 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import PacingAmpelkartenEditor from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
+import PacingAmpelkartenEditor, {
+  type PacingAmpelkartenEditorProps,
+} from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
 import pacingUiSchema from '../../../public/formpacks/pacing-ampelkarten/ui.schema.json';
-import type { PacingAmpelkartenEditorProps } from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
 
 type CardFieldView = {
   'ui:widget'?: string;

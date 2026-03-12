@@ -62,11 +62,12 @@ vi.mock('../../../src/pages/formpack-detail/components/SnapshotsPanel', () => ({
 
 import FormpackDocumentPreviewContent from '../../../src/pages/formpack-detail/components/FormpackDocumentPreviewContent';
 import FormpackExportActions from '../../../src/pages/formpack-detail/components/FormpackExportActions';
-import FormpackFormPanel from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
+import FormpackFormPanel, {
+  type FormpackFormPanelProps,
+} from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
 import FormpackIntroUtilityRow from '../../../src/pages/formpack-detail/components/FormpackIntroUtilityRow';
 import FormpackToolsSection from '../../../src/pages/formpack-detail/components/FormpackToolsSection';
 import PacingAmpelkartenEditor from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
-import type { FormpackFormPanelProps } from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
 import type { FormpackManifest } from '../../../src/formpacks/types';
 import * as formpackDetailComponents from '../../../src/pages/formpack-detail/components';
 

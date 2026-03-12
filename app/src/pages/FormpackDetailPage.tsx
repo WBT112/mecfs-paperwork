@@ -5,6 +5,8 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentType,
+  type ReactNode,
   type RefObject,
 } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -80,7 +82,6 @@ import { useProfileSync } from './formpack-detail/hooks/useProfileSync';
 import { useRecordManager } from './formpack-detail/hooks/useRecordManager';
 import { useSnapshotManager } from './formpack-detail/hooks/useSnapshotManager';
 import { APP_UPDATE_AVAILABLE_EVENT } from '../pwa/register';
-import type { ComponentType, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
 
@@ -763,6 +764,7 @@ export default function FormpackDetailPage() {
           isPacingPresetContentEmpty(current) && isRecord(activeRecord?.data)
             ? (activeRecord.data as FormDataState)
             : current;
+        const presetLocale = locale === 'en' ? 'en' : 'de';
         const variant = resolvePacingPresetVariant(
           getPathValue(sourceData, 'meta.variant'),
         );
@@ -770,7 +772,7 @@ export default function FormpackDetailPage() {
           sourceData,
         )
           ? (buildPacingAmpelkartenPreset(
-              locale === 'en' ? 'en' : 'de',
+              presetLocale,
               variant,
             ) as unknown as FormDataState)
           : sourceData;

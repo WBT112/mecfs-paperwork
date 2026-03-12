@@ -1,16 +1,16 @@
 import { isSupportedLocale } from '../i18n/locale';
 import { isRecord } from '../lib/utils';
 import { FORMPACK_IDS } from './registry';
-import type {
-  FormpackDocxManifest,
-  FormpackExportType,
-  FormpackManifest,
-  FormpackManifestPayload,
-  FormpackMeta,
-  FormpackUiConfig,
-  FormpackVisibility,
+import {
+  isFormpackCategory,
+  type FormpackDocxManifest,
+  type FormpackExportType,
+  type FormpackManifest,
+  type FormpackManifestPayload,
+  type FormpackMeta,
+  type FormpackUiConfig,
+  type FormpackVisibility,
 } from './types';
-import { isFormpackCategory } from './types';
 
 export type FormpackLoaderErrorCode =
   | 'not_found'

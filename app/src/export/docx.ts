@@ -6,8 +6,10 @@
 import { createReport } from 'docx-templates/lib/browser.js';
 import i18n from '../i18n';
 import type { SupportedLocale } from '../i18n/locale';
-import { buildDocumentModel } from '../formpacks/documentModel';
-import type { DocumentModel } from '../formpacks/documentModel';
+import {
+  buildDocumentModel,
+  type DocumentModel,
+} from '../formpacks/documentModel';
 import {
   getDoctorLetterExportDefaults,
   hasDoctorLetterDecisionAnswers,

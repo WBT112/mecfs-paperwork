@@ -1,14 +1,17 @@
 import type { ReactNode } from 'react';
-import type {
-  ArrayFieldItemTemplateProps,
-  ArrayFieldTemplateProps,
-  DescriptionFieldProps,
-  FieldHelpProps,
-  IconButtonProps,
-  UiSchema,
+import {
+  buttonId,
+  getTemplate,
+  getUiOptions,
+  helpId,
+  type ArrayFieldItemTemplateProps,
+  type ArrayFieldTemplateProps,
+  type DescriptionFieldProps,
+  type FieldHelpProps,
+  type IconButtonProps,
+  type UiSchema,
 } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
-import { buttonId, getTemplate, getUiOptions, helpId } from '@rjsf/utils';
 import MarkdownRenderer from '../components/Markdown/MarkdownRenderer';
 
 export type FormpackFormContext = {

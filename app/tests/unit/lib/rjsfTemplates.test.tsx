@@ -1,20 +1,20 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import type {
-  ArrayFieldDescriptionProps,
-  ArrayFieldItemButtonsTemplateProps,
-  ArrayFieldItemTemplateProps,
-  ArrayFieldTemplateProps,
-  ArrayFieldTitleProps,
-  IconButtonProps,
-  PathSchema,
-  Registry,
-  RJSFSchema,
-  UiSchema,
-  ValidatorType,
+import {
+  buttonId,
+  type ArrayFieldDescriptionProps,
+  type ArrayFieldItemButtonsTemplateProps,
+  type ArrayFieldItemTemplateProps,
+  type ArrayFieldTemplateProps,
+  type ArrayFieldTitleProps,
+  type IconButtonProps,
+  type PathSchema,
+  type Registry,
+  type RJSFSchema,
+  type UiSchema,
+  type ValidatorType,
 } from '@rjsf/utils';
 import type { ComponentType } from 'react';
-import { buttonId } from '@rjsf/utils';
 import { formpackTemplates } from '../../../src/lib/rjsfTemplates';
 
 const getComponent = <TProps,>(
