@@ -37,15 +37,26 @@ type NotfallpassPdfPanelSection =
 
 type NotfallpassPdfPanel = {
   title: string;
+  subtitle?: string;
   sections: NotfallpassPdfPanelSection[];
+  isCover?: boolean;
+};
+
+type NotfallpassPdfPage = {
+  panels: [
+    NotfallpassPdfPanel,
+    NotfallpassPdfPanel,
+    NotfallpassPdfPanel,
+    NotfallpassPdfPanel,
+  ];
 };
 
 /**
  * Layout-oriented payload for the notfallpass PDF renderer.
  *
  * @remarks
- * RATIONALE: The PDF layout needs fully resolved labels and normalized fallback
- * text so the renderer stays deterministic and offline-safe.
+ * RATIONALE: DOCX and PDF must follow the same foldable panel order so both
+ * exports remain printable and operationally consistent.
  */
 export type NotfallpassPdfTemplateData = {
   createdAtIso: string;
@@ -68,12 +79,7 @@ export type NotfallpassPdfTemplateData = {
   allergies: string;
   doctorHeading: string;
   doctorRows: Array<[string, string]>;
-  panels: [
-    NotfallpassPdfPanel,
-    NotfallpassPdfPanel,
-    NotfallpassPdfPanel,
-    NotfallpassPdfPanel,
-  ];
+  pages: [NotfallpassPdfPage, NotfallpassPdfPage];
 };
 
 /**
@@ -155,6 +161,12 @@ const buildContactItem = (contact: NotfallpassPdfContact): string =>
     .filter((entry) => entry !== FALLBACK_VALUE)
     .join(' · ');
 
+const withFallbackParagraph = (value: string): string[] =>
+  value === FALLBACK_VALUE ? [FALLBACK_VALUE] : [value];
+
+const withFallbackBullets = (items: string[]): string[] =>
+  items.length > 0 ? items : [FALLBACK_VALUE];
+
 /**
  * Builds the PDF document model for the notfallpass formpack.
  *
@@ -173,6 +185,42 @@ export const buildNotfallpassPdfDocumentModel = ({
     formData,
   );
 
+  const personRows = asDisplayRows([
+    [
+      t('notfallpass.person.firstName.label', { defaultValue: 'Vorname' }),
+      documentModel.person.name,
+    ],
+    [
+      t('notfallpass.person.birthDate.label', {
+        defaultValue: 'Geburtsdatum',
+      }),
+      documentModel.person.birthDate,
+    ],
+  ]);
+  const contactItems = withFallbackBullets(
+    documentModel.contacts.map((contact) =>
+      buildContactItem({
+        name: asDisplayValue(buildContactLabel(contact)),
+        phone: asDisplayValue(contact.phone),
+        relation: asDisplayValue(contact.relation),
+      }),
+    ),
+  );
+  const medicationItems = withFallbackBullets(
+    documentModel.medications.map((medication) =>
+      buildMedicationItem({
+        name: asDisplayValue(medication.name),
+        dosage: asDisplayValue(medication.dosage),
+        schedule: asDisplayValue(medication.schedule),
+      }),
+    ),
+  );
+  const diagnosesSummary = joinDiagnosisSummary(formData, documentModel);
+  const treatmentNotes =
+    documentModel.diagnosisParagraphs.length > 0
+      ? documentModel.diagnosisParagraphs
+      : withFallbackParagraph(diagnosesSummary);
+
   const templateData: NotfallpassPdfTemplateData = {
     createdAtIso: exportedAt.toISOString(),
     locale,
@@ -181,23 +229,13 @@ export const buildNotfallpassPdfDocumentModel = ({
       defaultValue: 'Wichtige Gesundheitsinformationen für den Notfall.',
     }),
     foldHint: t('notfallpass.export.foldHint', {
-      defaultValue: 'A4 zweimal falten: erst horizontal, dann vertikal.',
+      defaultValue:
+        'Beidseitig drucken, an der kurzen Kante wenden und ziehharmonikaartig falten.',
     }),
     personHeading: t('notfallpass.section.person.title', {
       defaultValue: 'Person',
     }),
-    personRows: asDisplayRows([
-      [
-        t('notfallpass.person.firstName.label', { defaultValue: 'Vorname' }),
-        documentModel.person.name,
-      ],
-      [
-        t('notfallpass.person.birthDate.label', {
-          defaultValue: 'Geburtsdatum',
-        }),
-        documentModel.person.birthDate,
-      ],
-    ]),
+    personRows,
     contactsHeading: t('notfallpass.section.contacts.title', {
       defaultValue: 'Notfallkontakte',
     }),
@@ -209,11 +247,8 @@ export const buildNotfallpassPdfDocumentModel = ({
     diagnosesHeading: t('notfallpass.section.diagnoses.title', {
       defaultValue: 'Diagnosen',
     }),
-    diagnosesSummary: joinDiagnosisSummary(formData, documentModel),
-    diagnosisParagraphs:
-      documentModel.diagnosisParagraphs.length > 0
-        ? documentModel.diagnosisParagraphs
-        : [],
+    diagnosesSummary,
+    diagnosisParagraphs: documentModel.diagnosisParagraphs,
     symptomsHeading: t('notfallpass.section.symptoms.title', {
       defaultValue: 'Symptome',
     }),
@@ -245,135 +280,149 @@ export const buildNotfallpassPdfDocumentModel = ({
         documentModel.doctor.phone,
       ],
     ]),
-    panels: [
+    pages: [
       {
-        title: t('notfallpass.export.panel.identity.title', {
-          defaultValue: 'Person & Diagnose',
-        }),
-        sections: [
+        panels: [
           {
-            heading: t('notfallpass.section.person.title', {
-              defaultValue: 'Person',
+            title: t('notfallpass.export.panel.cover.title', {
+              defaultValue: 'Notfallpass',
             }),
-            type: 'rows',
-            rows: asDisplayRows([
-              [
-                t('notfallpass.person.firstName.label', {
-                  defaultValue: 'Vorname',
+            subtitle: t('notfallpass.description', {
+              defaultValue:
+                'Wichtige Gesundheitsinformationen für den Notfall.',
+            }),
+            isCover: true,
+            sections: [
+              {
+                heading: t('notfallpass.section.person.title', {
+                  defaultValue: 'Person',
                 }),
-                documentModel.person.name,
-              ],
-              [
-                t('notfallpass.person.birthDate.label', {
-                  defaultValue: 'Geburtsdatum',
-                }),
-                documentModel.person.birthDate,
-              ],
-            ]),
+                type: 'rows',
+                rows: personRows,
+              },
+            ],
           },
           {
-            heading: t('notfallpass.section.diagnoses.title', {
+            title: t('notfallpass.export.panel.diagnoses.title', {
               defaultValue: 'Diagnosen',
             }),
-            type: 'paragraphs',
-            paragraphs: [joinDiagnosisSummary(formData, documentModel)],
-          },
-        ],
-      },
-      {
-        title: t('notfallpass.export.panel.support.title', {
-          defaultValue: 'Kontakte & Praxis',
-        }),
-        sections: [
-          {
-            heading: t('notfallpass.section.contacts.title', {
-              defaultValue: 'Notfallkontakte',
-            }),
-            type: 'bullets',
-            items:
-              documentModel.contacts.length > 0
-                ? documentModel.contacts.map((contact) =>
-                    buildContactItem({
-                      name: asDisplayValue(buildContactLabel(contact)),
-                      phone: asDisplayValue(contact.phone),
-                      relation: asDisplayValue(contact.relation),
-                    }),
-                  )
-                : [FALLBACK_VALUE],
-          },
-          {
-            heading: t('notfallpass.section.doctor.title', {
-              defaultValue: 'Behandelnde Ärztin / Arzt',
-            }),
-            type: 'rows',
-            rows: asDisplayRows([
-              [
-                t('notfallpass.doctor.name.label', {
-                  defaultValue: 'Praxis / Ärztin / Arzt',
+            sections: [
+              {
+                heading: t('notfallpass.section.diagnoses.title', {
+                  defaultValue: 'Diagnosen',
                 }),
-                documentModel.doctor.name,
-              ],
-              [
-                t('notfallpass.doctor.phone.label', {
-                  defaultValue: 'Telefon',
-                }),
-                documentModel.doctor.phone,
-              ],
-            ]),
+                type: 'paragraphs',
+                paragraphs: withFallbackParagraph(diagnosesSummary),
+              },
+            ],
           },
-        ],
-      },
-      {
-        title: t('notfallpass.export.panel.alerts.title', {
-          defaultValue: 'Symptome & Allergien',
-        }),
-        sections: [
           {
-            heading: t('notfallpass.section.symptoms.title', {
+            title: t('notfallpass.export.panel.symptoms.title', {
               defaultValue: 'Symptome',
             }),
-            type: 'paragraphs',
-            paragraphs: [asDisplayValue(documentModel.symptoms)],
+            sections: [
+              {
+                heading: t('notfallpass.section.symptoms.title', {
+                  defaultValue: 'Symptome',
+                }),
+                type: 'paragraphs',
+                paragraphs: withFallbackParagraph(
+                  asDisplayValue(documentModel.symptoms),
+                ),
+              },
+            ],
           },
           {
-            heading: t('notfallpass.section.allergies.title', {
-              defaultValue: 'Allergien',
+            title: t('notfallpass.export.panel.medications.title', {
+              defaultValue: 'Medikamente',
             }),
-            type: 'paragraphs',
-            paragraphs: [asDisplayValue(documentModel.allergies)],
+            sections: [
+              {
+                heading: t('notfallpass.section.medications.title', {
+                  defaultValue: 'Medikamente',
+                }),
+                type: 'bullets',
+                items: medicationItems,
+              },
+            ],
           },
         ],
       },
       {
-        title: t('notfallpass.export.panel.medications.title', {
-          defaultValue: 'Medikamente & Hinweise',
-        }),
-        sections: [
+        panels: [
           {
-            heading: t('notfallpass.section.medications.title', {
-              defaultValue: 'Medikamente',
+            title: t('notfallpass.export.panel.contact.title', {
+              defaultValue: 'Notfallkontakt',
             }),
-            type: 'bullets',
-            items:
-              documentModel.medications.length > 0
-                ? documentModel.medications.map((medication) =>
-                    buildMedicationItem({
-                      name: asDisplayValue(medication.name),
-                      dosage: asDisplayValue(medication.dosage),
-                      schedule: asDisplayValue(medication.schedule),
-                    }),
-                  )
-                : [FALLBACK_VALUE],
+            sections: [
+              {
+                heading: t('notfallpass.section.contacts.title', {
+                  defaultValue: 'Notfallkontakte',
+                }),
+                type: 'bullets',
+                items: contactItems,
+              },
+            ],
           },
           {
-            heading: t('notfallpass.export.panel.medications.detailsHeading', {
+            title: t('notfallpass.export.panel.practice.title', {
+              defaultValue: 'Praxis',
+            }),
+            sections: [
+              {
+                heading: t('notfallpass.section.doctor.title', {
+                  defaultValue: 'Praxis',
+                }),
+                type: 'rows',
+                rows: asDisplayRows([
+                  [
+                    t('notfallpass.doctor.name.label', {
+                      defaultValue: 'Praxis / Ärztin / Arzt',
+                    }),
+                    documentModel.doctor.name,
+                  ],
+                  [
+                    t('notfallpass.doctor.phone.label', {
+                      defaultValue: 'Telefon',
+                    }),
+                    documentModel.doctor.phone,
+                  ],
+                ]),
+              },
+            ],
+          },
+          {
+            title: t('notfallpass.export.panel.allergies.title', {
+              defaultValue: 'Allergien',
+            }),
+            sections: [
+              {
+                heading: t('notfallpass.section.allergies.title', {
+                  defaultValue: 'Allergien',
+                }),
+                type: 'paragraphs',
+                paragraphs: withFallbackParagraph(
+                  asDisplayValue(documentModel.allergies),
+                ),
+              },
+            ],
+          },
+          {
+            title: t('notfallpass.export.panel.treatment.title', {
               defaultValue: 'Wichtige Hinweise',
             }),
-            type: 'paragraphs',
-            paragraphs:
-              documentModel.diagnosisParagraphs.length > 0
-                ? documentModel.diagnosisParagraphs
-                : [FALLBACK_VALUE],
+            sections: [
+              {
+                heading: t(
+                  'notfallpass.export.panel.treatment.detailsHeading',
+                  {
+                    defaultValue: 'Behandlungshinweise',
+                  },
+                ),
+                type: 'paragraphs',
+                paragraphs: treatmentNotes,
+              },
+            ],
           },
         ],
       },
@@ -383,75 +432,36 @@ export const buildNotfallpassPdfDocumentModel = ({
   return {
     title: templateData.title,
     meta: {
-      createdAtIso: exportedAt.toISOString(),
       locale,
+      createdAtIso: templateData.createdAtIso,
       templateData,
     },
     sections: [
       {
-        id: 'person',
         heading: templateData.personHeading,
         blocks: [{ type: 'kvTable', rows: templateData.personRows }],
       },
       {
-        id: 'contacts',
         heading: templateData.contactsHeading,
-        blocks: [
-          {
-            type: 'bullets',
-            items:
-              templateData.contacts.length > 0
-                ? templateData.contacts.map((contact) =>
-                    [contact.name, contact.phone]
-                      .filter((entry) => entry !== FALLBACK_VALUE)
-                      .join(' · '),
-                  )
-                : [FALLBACK_VALUE],
-          },
-        ],
+        blocks: [{ type: 'bullets', items: contactItems }],
       },
       {
-        id: 'diagnoses',
         heading: templateData.diagnosesHeading,
-        blocks: [
-          { type: 'paragraph', text: templateData.diagnosesSummary },
-          ...(templateData.diagnosisParagraphs.length > 0
-            ? [
-                {
-                  type: 'lineBreaks',
-                  lines: templateData.diagnosisParagraphs,
-                } as const,
-              ]
-            : []),
-        ],
+        blocks: [{ type: 'paragraph', text: templateData.diagnosesSummary }],
       },
       {
-        id: 'symptoms',
         heading: templateData.symptomsHeading,
         blocks: [{ type: 'paragraph', text: templateData.symptoms }],
       },
       {
-        id: 'medications',
         heading: templateData.medicationsHeading,
-        blocks: [
-          {
-            type: 'bullets',
-            items:
-              templateData.medications.length > 0
-                ? templateData.medications.map((medication) =>
-                    buildMedicationItem(medication),
-                  )
-                : [FALLBACK_VALUE],
-          },
-        ],
+        blocks: [{ type: 'bullets', items: medicationItems }],
       },
       {
-        id: 'allergies',
         heading: templateData.allergiesHeading,
         blocks: [{ type: 'paragraph', text: templateData.allergies }],
       },
       {
-        id: 'doctor',
         heading: templateData.doctorHeading,
         blocks: [{ type: 'kvTable', rows: templateData.doctorRows }],
       },

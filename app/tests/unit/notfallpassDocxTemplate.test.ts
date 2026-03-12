@@ -22,22 +22,23 @@ const loadNotfallpassTemplateXml = async (): Promise<string> => {
 };
 
 describe('notfallpass A4 DOCX template', () => {
-  it('uses a landscape 2x2 fold layout instead of the legacy linear document', async () => {
+  it('uses a two-page landscape fold layout with four panels per page', async () => {
     const xml = await loadNotfallpassTemplateXml();
 
-    expect(xml).toContain('<w:tbl>');
     expect(xml).toContain('w:orient="landscape"');
-    expect(xml.match(/<w:tr>/g) ?? []).toHaveLength(2);
-    expect(xml.match(/<w:tc>/g) ?? []).toHaveLength(4);
+    expect(xml.match(/<w:tbl>/g) ?? []).toHaveLength(2);
+    expect(xml.match(/<w:gridCol /g) ?? []).toHaveLength(8);
+    expect(xml.match(/<w:tc>/g) ?? []).toHaveLength(8);
+    expect(xml).toContain('<w:br w:type="page"/>');
   });
 
-  it('contains the four fold panels with the required placeholders and loops', async () => {
+  it('contains the panel titles and loops required for the foldable export', async () => {
     const xml = await loadNotfallpassTemplateXml();
 
-    expect(xml).toContain('{{t.notfallpass.export.foldHint}}');
-    expect(xml).toContain('{{t.notfallpass.export.panel.support.title}}');
-    expect(xml).toContain('{{t.notfallpass.export.panel.alerts.title}}');
-    expect(xml).toContain('{{t.notfallpass.export.panel.medications.title}}');
+    expect(xml).toContain('{{t.notfallpass.export.panel.cover.title}}');
+    expect(xml).toContain('{{t.notfallpass.export.panel.contact.title}}');
+    expect(xml).toContain('{{t.notfallpass.export.panel.practice.title}}');
+    expect(xml).toContain('{{t.notfallpass.export.panel.treatment.title}}');
     expect(xml).toContain('{{FOR c IN contacts}}');
     expect(xml).toContain('{{FOR m IN medications}}');
     expect(xml).toContain('{{FOR p IN diagnosisParagraphs}}');

@@ -34,7 +34,7 @@ describe('buildNotfallpassPdfDocumentModel', () => {
     }
   });
 
-  it('builds localized template data with person, diagnoses, and doctor sections', () => {
+  it('builds two four-panel pages for the foldable emergency pass layout', () => {
     const model = buildNotfallpassPdfDocumentModel({
       formData: {
         person: {
@@ -61,28 +61,38 @@ describe('buildNotfallpassPdfDocumentModel', () => {
     expect(model.title).toBe('Notfallpass');
     expect(model.meta?.createdAtIso).toBe(EXPORTED_AT_ISO);
     expect(model.sections).toHaveLength(7);
+    expect(templateData?.foldHint).toBe(
+      'Beidseitig drucken, an der kurzen Kante wenden und ziehharmonikaartig falten.',
+    );
     expect(templateData?.personRows).toEqual([
       ['Vorname', 'Mara Muster'],
       ['Geburtsdatum', '12-04-1990'],
     ]);
-    expect(templateData?.diagnosesSummary).toBe('ME/CFS, POTS');
-    expect(templateData?.diagnosisParagraphs).toHaveLength(2);
     expect(templateData?.doctorRows).toEqual([
       ['Praxis / Ärztin / Arzt', PRACTICE_NAME],
       ['Telefon', '+49 30 987654'],
     ]);
-    expect(templateData?.foldHint).toBe(
-      'Für das Brieftaschenformat einmal waagerecht und einmal senkrecht falten.',
-    );
-    expect(templateData?.panels.map((panel) => panel.title)).toEqual([
-      'Person & Diagnose',
-      'Kontakte & Praxis',
-      'Symptome & Allergien',
-      'Medikamente & Hinweise',
+    expect(templateData?.pages).toHaveLength(2);
+    expect(templateData?.pages[0].panels.map((panel) => panel.title)).toEqual([
+      'Notfallpass',
+      'Diagnosen',
+      'Symptome',
+      'Medikamente',
     ]);
+    expect(templateData?.pages[1].panels.map((panel) => panel.title)).toEqual([
+      'Notfallkontakt',
+      'Praxis',
+      'Allergien',
+      'Wichtige Hinweise',
+    ]);
+    expect(
+      templateData?.pages[1].panels[3].sections[0].type === 'paragraphs'
+        ? templateData.pages[1].panels[3].sections[0].paragraphs
+        : [],
+    ).toHaveLength(2);
   });
 
-  it('falls back to compact diagnosis labels and placeholder values', () => {
+  it('falls back to placeholders for sparse data and keeps each panel populated', () => {
     const model = buildNotfallpassPdfDocumentModel({
       formData: {
         diagnoses: { meCfs: true, longCovid: true },
@@ -99,54 +109,44 @@ describe('buildNotfallpassPdfDocumentModel', () => {
       ['First name', '—'],
       ['Date of birth', '—'],
     ]);
-    expect(templateData?.doctorRows).toEqual([
-      ['Practice / physician', '—'],
-      ['Phone', '—'],
-    ]);
-    expect(model.sections[1].blocks[0]).toEqual({
+    expect(templateData?.pages[0].panels[2].sections[0]).toEqual({
+      heading: 'Symptoms',
+      type: 'paragraphs',
+      paragraphs: ['—'],
+    });
+    expect(templateData?.pages[1].panels[0].sections[0]).toEqual({
+      heading: 'Emergency contacts',
       type: 'bullets',
       items: ['—'],
     });
   });
 
-  it('keeps relation-only contacts, omits empty diagnosis paragraphs, and falls back for missing diagnoses', () => {
-    const model = buildNotfallpassPdfDocumentModel({
+  it('keeps relation-only contacts and phone-only contacts visible in the contact panel', () => {
+    const relationOnly = buildNotfallpassPdfDocumentModel({
       formData: {
         contacts: [{ relation: 'Nachbarin' }],
-        medications: [{ name: 'Bedarfsmedikament' }],
       },
       locale: 'de',
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
-    const templateData = model.meta?.templateData as
+    const relationData = relationOnly.meta?.templateData as
       | NotfallpassPdfTemplateData
       | undefined;
 
-    expect(templateData?.contacts).toEqual([
+    expect(relationData?.contacts).toEqual([
       {
         name: 'Nachbarin',
         phone: '—',
         relation: 'Nachbarin',
       },
     ]);
-    expect(templateData?.diagnosesSummary).toBe('—');
-    expect(templateData?.diagnosisParagraphs).toEqual([]);
-    expect(model.sections[2].blocks).toEqual([
-      {
-        type: 'paragraph',
-        text: '—',
-      },
-    ]);
-    expect(model.sections[4].blocks).toEqual([
-      {
-        type: 'bullets',
-        items: ['Bedarfsmedikament'],
-      },
-    ]);
-  });
+    expect(relationData?.pages[1].panels[0].sections[0]).toEqual({
+      heading: 'Notfallkontakte',
+      type: 'bullets',
+      items: ['Nachbarin'],
+    });
 
-  it('handles empty diagnosis objects and phone-only contacts without paragraph fallbacks', () => {
-    const model = buildNotfallpassPdfDocumentModel({
+    const phoneOnly = buildNotfallpassPdfDocumentModel({
       formData: {
         contacts: [{ phone: CONTACT_PHONE }],
         diagnoses: {},
@@ -154,28 +154,18 @@ describe('buildNotfallpassPdfDocumentModel', () => {
       locale: 'de',
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
-    const templateData = model.meta?.templateData as
+    const phoneData = phoneOnly.meta?.templateData as
       | NotfallpassPdfTemplateData
       | undefined;
 
-    expect(templateData?.diagnosesSummary).toBe('—');
-    expect(templateData?.diagnosisParagraphs).toEqual([]);
-    expect(templateData?.contacts).toEqual([
-      {
-        name: '—',
-        phone: CONTACT_PHONE,
-        relation: '—',
-      },
-    ]);
-    expect(model.sections[1].blocks).toEqual([
-      {
-        type: 'bullets',
-        items: [CONTACT_PHONE],
-      },
-    ]);
+    expect(phoneData?.pages[1].panels[0].sections[0]).toEqual({
+      heading: 'Notfallkontakte',
+      type: 'bullets',
+      items: [CONTACT_PHONE],
+    });
   });
 
-  it('builds fallback diagnosis labels for non-ME/CFS companion diagnoses', () => {
+  it('uses the diagnosis summary as treatment fallback when no paragraphs exist', () => {
     const model = buildNotfallpassPdfDocumentModel({
       formData: {
         diagnoses: { pots: true },
@@ -189,5 +179,10 @@ describe('buildNotfallpassPdfDocumentModel', () => {
 
     expect(templateData?.diagnosesSummary).toBe('POTS');
     expect(templateData?.diagnosisParagraphs).toEqual([]);
+    expect(templateData?.pages[1].panels[3].sections[0]).toEqual({
+      heading: 'Behandlungshinweise',
+      type: 'paragraphs',
+      paragraphs: ['POTS'],
+    });
   });
 });

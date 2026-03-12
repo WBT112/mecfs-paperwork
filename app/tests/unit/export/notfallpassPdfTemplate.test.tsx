@@ -13,70 +13,16 @@ import { collectRenderedText } from './pdfRenderedText';
 
 const EXPORTED_AT_ISO = '2026-03-12T09:00:00.000Z';
 const PERSON_NAME = 'Mara Muster';
-const TEMPLATE_SUBTITLE = 'Kurzfassung';
 const DEFAULT_TITLE = 'Notfallpass';
+const DEFAULT_SUBTITLE = 'Wichtige Gesundheitsinformationen für den Notfall.';
 const FOLD_HINT =
-  'Für das Brieftaschenformat einmal waagerecht und einmal senkrecht falten.';
+  'Beidseitig drucken, an der kurzen Kante wenden und ziehharmonikaartig falten.';
 const namespace = 'formpack:notfallpass';
+const MEDICATION_BULLET = 'Elektrolytlösung · Täglich';
 const SYMPTOMS_TEXT = 'Starke Erschöpfung';
-const MEDICATION_NAME = 'Elektrolytlösung';
-const PERSON_PANEL_TITLE = 'Person & Diagnose';
-const SUPPORT_PANEL_TITLE = 'Kontakte & Praxis';
-const ALERTS_PANEL_TITLE = 'Symptome & Allergien';
-const MEDICATIONS_PANEL_TITLE = 'Medikamente & Hinweise';
-const PERSON_HEADING = 'Person';
-const CONTACTS_HEADING = 'Kontakte';
-const SYMPTOMS_HEADING = 'Symptome';
-const MEDICATIONS_HEADING = 'Medikamente';
-const DIAGNOSES_HEADING = 'Diagnosen';
-const MEDICATION_BULLET = `${MEDICATION_NAME} · Täglich`;
-
-const createMinimalPanels = (
-  contactItems: string[],
-  symptomParagraphs: string[],
-  medicationItems: string[],
-): NotfallpassPdfTemplateData['panels'] => [
-  {
-    title: PERSON_PANEL_TITLE,
-    sections: [
-      {
-        heading: PERSON_HEADING,
-        type: 'rows',
-        rows: [['Vorname', PERSON_NAME]],
-      },
-    ],
-  },
-  {
-    title: SUPPORT_PANEL_TITLE,
-    sections: [
-      {
-        heading: CONTACTS_HEADING,
-        type: 'bullets',
-        items: contactItems,
-      },
-    ],
-  },
-  {
-    title: ALERTS_PANEL_TITLE,
-    sections: [
-      {
-        heading: SYMPTOMS_HEADING,
-        type: 'paragraphs',
-        paragraphs: symptomParagraphs,
-      },
-    ],
-  },
-  {
-    title: MEDICATIONS_PANEL_TITLE,
-    sections: [
-      {
-        heading: MEDICATIONS_HEADING,
-        type: 'bullets',
-        items: medicationItems,
-      },
-    ],
-  },
-];
+const ALLERGIES_TEXT = 'Keine bekannt';
+const TREATMENT_TITLE = 'Wichtige Hinweise';
+const TREATMENT_TEXT = 'Reizarm behandeln.';
 
 const createTemplateData = (
   overrides: Partial<NotfallpassPdfTemplateData> = {},
@@ -84,66 +30,111 @@ const createTemplateData = (
   createdAtIso: EXPORTED_AT_ISO,
   locale: 'de',
   title: DEFAULT_TITLE,
-  subtitle: TEMPLATE_SUBTITLE,
+  subtitle: DEFAULT_SUBTITLE,
   foldHint: FOLD_HINT,
   personHeading: 'Person',
   personRows: [['Vorname', PERSON_NAME]],
-  contactsHeading: CONTACTS_HEADING,
-  contacts: [{ name: 'Alex', phone: '—', relation: 'Partner' }],
-  diagnosesHeading: DIAGNOSES_HEADING,
+  contactsHeading: 'Notfallkontakte',
+  contacts: [{ name: 'Alex', phone: '123', relation: 'Partner' }],
+  diagnosesHeading: 'Diagnosen',
   diagnosesSummary: 'ME/CFS',
-  diagnosisParagraphs: [],
-  symptomsHeading: SYMPTOMS_HEADING,
+  diagnosisParagraphs: [TREATMENT_TEXT],
+  symptomsHeading: 'Symptome',
   symptoms: SYMPTOMS_TEXT,
-  medicationsHeading: MEDICATIONS_HEADING,
-  medications: [{ name: MEDICATION_NAME, dosage: '—', schedule: 'Täglich' }],
+  medicationsHeading: 'Medikamente',
+  medications: [{ name: 'Elektrolytlösung', dosage: '—', schedule: 'Täglich' }],
   allergiesHeading: 'Allergien',
-  allergies: 'Keine bekannt',
+  allergies: ALLERGIES_TEXT,
   doctorHeading: 'Praxis',
   doctorRows: [['Telefon', '123']],
-  panels: [
+  pages: [
     {
-      title: PERSON_PANEL_TITLE,
-      sections: [
+      panels: [
         {
-          heading: PERSON_HEADING,
-          type: 'rows',
-          rows: [['Vorname', PERSON_NAME]],
+          title: 'Notfallpass',
+          subtitle: DEFAULT_SUBTITLE,
+          isCover: true,
+          sections: [
+            {
+              heading: 'Person',
+              type: 'rows',
+              rows: [['Vorname', PERSON_NAME]],
+            },
+          ],
         },
         {
-          heading: DIAGNOSES_HEADING,
-          type: 'paragraphs',
-          paragraphs: ['ME/CFS'],
+          title: 'Diagnosen',
+          sections: [
+            {
+              heading: 'Diagnosen',
+              type: 'paragraphs',
+              paragraphs: ['ME/CFS'],
+            },
+          ],
+        },
+        {
+          title: 'Symptome',
+          sections: [
+            {
+              heading: 'Symptome',
+              type: 'paragraphs',
+              paragraphs: [SYMPTOMS_TEXT],
+            },
+          ],
+        },
+        {
+          title: 'Medikamente',
+          sections: [
+            {
+              heading: 'Medikamente',
+              type: 'bullets',
+              items: [MEDICATION_BULLET],
+            },
+          ],
         },
       ],
     },
     {
-      title: SUPPORT_PANEL_TITLE,
-      sections: [
+      panels: [
         {
-          heading: CONTACTS_HEADING,
-          type: 'bullets',
-          items: ['Alex'],
+          title: 'Notfallkontakt',
+          sections: [
+            {
+              heading: 'Notfallkontakte',
+              type: 'bullets',
+              items: ['Alex · 123'],
+            },
+          ],
         },
-      ],
-    },
-    {
-      title: ALERTS_PANEL_TITLE,
-      sections: [
         {
-          heading: SYMPTOMS_HEADING,
-          type: 'paragraphs',
-          paragraphs: [SYMPTOMS_TEXT],
+          title: 'Praxis',
+          sections: [
+            {
+              heading: 'Praxis',
+              type: 'rows',
+              rows: [['Telefon', '123']],
+            },
+          ],
         },
-      ],
-    },
-    {
-      title: MEDICATIONS_PANEL_TITLE,
-      sections: [
         {
-          heading: MEDICATIONS_HEADING,
-          type: 'bullets',
-          items: [MEDICATION_BULLET],
+          title: 'Allergien',
+          sections: [
+            {
+              heading: 'Allergien',
+              type: 'paragraphs',
+              paragraphs: [ALLERGIES_TEXT],
+            },
+          ],
+        },
+        {
+          title: TREATMENT_TITLE,
+          sections: [
+            {
+              heading: 'Behandlungshinweise',
+              type: 'paragraphs',
+              paragraphs: [TREATMENT_TEXT],
+            },
+          ],
         },
       ],
     },
@@ -173,7 +164,7 @@ describe('NotfallpassPdfDocument', () => {
     }
   });
 
-  it('renders a single-page localized emergency pass in landscape fold layout', () => {
+  it('renders two landscape pages with four fold panels each', () => {
     const model = buildNotfallpassPdfDocumentModel({
       formData: {
         person: {
@@ -184,8 +175,8 @@ describe('NotfallpassPdfDocument', () => {
         contacts: [{ name: 'Alex', phone: '+49 30 1234', relation: 'Partner' }],
         diagnoses: { meCfs: true, formatted: 'ME/CFS' },
         symptoms: SYMPTOMS_TEXT,
-        medications: [{ name: MEDICATION_NAME, dosage: '500 ml' }],
-        allergies: 'Keine bekannt',
+        medications: [{ name: 'Elektrolytlösung', dosage: '500 ml' }],
+        allergies: ALLERGIES_TEXT,
         doctor: { name: 'Praxis Beispiel', phone: '+49 30 987654' },
       },
       locale: 'de',
@@ -198,25 +189,33 @@ describe('NotfallpassPdfDocument', () => {
       title?: string;
     }>;
     const pages = Children.toArray(element.props.children);
-    const firstPage = pages[0] as ReactNode;
 
     expect(element.props.language).toBe('de-DE');
     expect(element.props.title).toBe(DEFAULT_TITLE);
-    expect(pages).toHaveLength(1);
+    expect(pages).toHaveLength(2);
     expect(
-      (pages[0] as ReactElement<{ orientation?: string }>).props.orientation,
-    ).toBe('landscape');
-    expect(collectRenderedText(firstPage)).toEqual(
+      pages.map(
+        (page) =>
+          (page as ReactElement<{ orientation?: string }>).props.orientation,
+      ),
+    ).toEqual(['landscape', 'landscape']);
+    expect(collectRenderedText(pages[0] as ReactNode)).toEqual(
       expect.arrayContaining([
         DEFAULT_TITLE,
-        'Wichtige Gesundheitsinformationen für den Notfall.',
+        DEFAULT_SUBTITLE,
         FOLD_HINT,
         PERSON_NAME,
-        'ME/CFS',
-        'Praxis Beispiel',
-        SUPPORT_PANEL_TITLE,
-        ALERTS_PANEL_TITLE,
-        MEDICATIONS_PANEL_TITLE,
+        'Diagnosen',
+        'Symptome',
+        'Medikamente',
+      ]),
+    );
+    expect(collectRenderedText(pages[1] as ReactNode)).toEqual(
+      expect.arrayContaining([
+        'Notfallkontakt',
+        'Praxis',
+        'Allergien',
+        TREATMENT_TITLE,
       ]),
     );
   });
@@ -240,105 +239,60 @@ describe('NotfallpassPdfDocument', () => {
 
     expect(element.props.language).toBe('en-US');
     expect(pages).toHaveLength(1);
+    expect(collectRenderedText(pages[0] as ReactNode).join(' ')).toContain(
+      'Emergency pass',
+    );
   });
 
-  it('falls back to the default locale when document metadata is missing', () => {
-    const model: DocumentModel = {
-      title: DEFAULT_TITLE,
-      sections: [],
-    };
-
-    const element = NotfallpassPdfDocument({ model }) as ReactElement<{
-      children?: ReactElement[];
-      language?: string;
-    }>;
-
-    expect(element.props.language).toBe('de-DE');
-  });
-
-  it('uses template title fallback and suppresses placeholder separators', () => {
+  it('uses template data title when the document title is blank', () => {
     const model: DocumentModel = {
       title: '   ',
       meta: {
         createdAtIso: EXPORTED_AT_ISO,
         locale: 'de',
         templateData: createTemplateData({
-          title: 'Notfallpass aus Template',
-          panels: createMinimalPanels(
-            ['Alex'],
-            [SYMPTOMS_TEXT],
-            [MEDICATION_BULLET],
-          ),
+          title: 'Pass aus Template',
         }),
       },
       sections: [],
     };
 
     const element = NotfallpassPdfDocument({ model }) as ReactElement<{
-      children?: ReactElement[];
-      language?: string;
       title?: string;
+      language?: string;
+    }>;
+
+    expect(element.props.title).toBe('Pass aus Template');
+    expect(element.props.language).toBe('de-DE');
+  });
+
+  it('falls back to default locale and hardcoded title when metadata is absent', () => {
+    const model: DocumentModel = {
+      title: ' ',
+      sections: [],
+    };
+
+    const element = NotfallpassPdfDocument({ model }) as ReactElement<{
+      title?: string;
+      language?: string;
+      children?: ReactElement[];
     }>;
     const pages = Children.toArray(element.props.children);
-    const firstPage = pages[0] as ReactNode;
-    const text = collectRenderedText(firstPage);
 
-    expect(element.props.language).toBe('de-DE');
-    expect(element.props.title).toBe('Notfallpass aus Template');
-    expect(text).toContain('Alex');
-    expect(text).not.toContain('Alex · —');
-    expect(text).toContain('Elektrolytlösung · Täglich');
-    expect(text).not.toContain('Elektrolytlösung · — · Täglich');
-  });
-
-  it('falls back to the default title and empty-state bullets when template data is sparse', () => {
-    const model: DocumentModel = {
-      title: '   ',
-      meta: {
-        createdAtIso: EXPORTED_AT_ISO,
-        locale: 'de',
-        templateData: createTemplateData({
-          title: '',
-          contacts: [],
-          diagnosesSummary: '—',
-          symptoms: '—',
-          medications: [],
-          allergies: '—',
-          panels: createMinimalPanels(['—'], ['—'], ['—']),
-          doctorRows: [['Telefon', '—']],
-        }),
-      },
-      sections: [],
-    };
-
-    const element = NotfallpassPdfDocument({ model }) as ReactElement<{
-      children?: ReactElement[];
-      language?: string;
-      title?: string;
-    }>;
-    const firstPage = Children.toArray(element.props.children)[0] as ReactNode;
-    const text = collectRenderedText(firstPage);
-
-    expect(element.props.language).toBe('de-DE');
     expect(element.props.title).toBe(DEFAULT_TITLE);
-    expect(text).toEqual(expect.arrayContaining([TEMPLATE_SUBTITLE, '—']));
+    expect(element.props.language).toBe('de-DE');
+    expect(collectRenderedText(pages[0] as ReactNode).join(' ')).toContain(
+      DEFAULT_TITLE,
+    );
   });
 
-  it('renders placeholder-only contacts without crashing the fallback join path', () => {
+  it('renders every panel from template data in order', () => {
     const model: DocumentModel = {
       title: DEFAULT_TITLE,
       meta: {
         createdAtIso: EXPORTED_AT_ISO,
         locale: 'de',
-        templateData: createTemplateData({
-          contacts: [{ name: '—', phone: '—', relation: '—' }],
-          diagnosesSummary: '—',
-          symptoms: '—',
-          medications: [{ name: 'Rx', dosage: '—', schedule: '—' }],
-          allergies: '—',
-          panels: createMinimalPanels(['—'], ['—'], ['Rx']),
-          doctorRows: [['Telefon', '—']],
-        }),
+        templateData: createTemplateData(),
       },
       sections: [],
     };
@@ -346,7 +300,23 @@ describe('NotfallpassPdfDocument', () => {
     const element = NotfallpassPdfDocument({ model }) as ReactElement<{
       children?: ReactElement[];
     }>;
+    const pages = Children.toArray(element.props.children);
+    const rendered = pages.flatMap((page) =>
+      collectRenderedText(page as ReactNode),
+    );
 
-    expect(Children.toArray(element.props.children)).toHaveLength(1);
+    expect(rendered).toEqual(
+      expect.arrayContaining([
+        'Notfallpass',
+        'Diagnosen',
+        'Symptome',
+        'Medikamente',
+        'Notfallkontakt',
+        'Praxis',
+        'Allergien',
+        TREATMENT_TITLE,
+        MEDICATION_BULLET,
+      ]),
+    );
   });
 });

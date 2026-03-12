@@ -3,126 +3,102 @@ import { ensurePdfFontsRegistered, PDF_FONT_FAMILY_SANS } from '../fonts';
 import type { DocumentModel } from '../types';
 import type { NotfallpassPdfTemplateData } from '../../../formpacks/notfallpass/export/pdfDocumentModel';
 
+const PAGE_PADDING = 16;
+
 const styles = StyleSheet.create({
   page: {
-    backgroundColor: '#f7f4ee',
+    backgroundColor: '#f6f1e8',
     color: '#18212b',
     fontFamily: PDF_FONT_FAMILY_SANS,
-    fontSize: 9.4,
-    lineHeight: 1.28,
-    paddingTop: 18,
-    paddingBottom: 18,
-    paddingLeft: 18,
-    paddingRight: 18,
+    fontSize: 8.8,
+    lineHeight: 1.3,
+    paddingTop: PAGE_PADDING,
+    paddingBottom: PAGE_PADDING,
+    paddingLeft: PAGE_PADDING,
+    paddingRight: PAGE_PADDING,
     position: 'relative',
   },
-  foldGuideVertical: {
+  foldGuide: {
     position: 'absolute',
-    top: 18,
-    bottom: 18,
-    left: '50%',
+    top: PAGE_PADDING,
+    bottom: PAGE_PADDING,
     width: 1,
-    backgroundColor: '#c5cfdb',
+    backgroundColor: '#c9b99d',
   },
-  foldGuideHorizontal: {
-    position: 'absolute',
-    left: 18,
-    right: 18,
-    top: '50%',
-    height: 1,
-    backgroundColor: '#c5cfdb',
+  foldGuideFirst: {
+    left: '25%',
   },
-  foldGrid: {
-    borderWidth: 1,
-    borderColor: '#c5cfdb',
-    borderRadius: 16,
-    overflow: 'hidden',
-    flex: 1,
+  foldGuideSecond: {
+    left: '50%',
   },
-  gridRow: {
+  foldGuideThird: {
+    left: '75%',
+  },
+  panelRow: {
     flexDirection: 'row',
     flex: 1,
+    borderWidth: 1,
+    borderColor: '#c9b99d',
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#fffdf9',
   },
   panel: {
-    backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#d7dee8',
-    padding: 14,
     flex: 1,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingLeft: 10,
+    paddingRight: 10,
+    borderRightWidth: 1,
+    borderRightColor: '#d8ccba',
   },
-  panelTopLeft: {
-    borderTopWidth: 0,
-    borderLeftWidth: 0,
-    borderRightWidth: 0.5,
-    borderBottomWidth: 0.5,
-  },
-  panelTopRight: {
-    borderTopWidth: 0,
+  panelLast: {
     borderRightWidth: 0,
-    borderLeftWidth: 0.5,
-    borderBottomWidth: 0.5,
   },
-  panelBottomLeft: {
-    borderBottomWidth: 0,
-    borderLeftWidth: 0,
-    borderRightWidth: 0.5,
-    borderTopWidth: 0.5,
-  },
-  panelBottomRight: {
-    borderBottomWidth: 0,
-    borderRightWidth: 0,
-    borderLeftWidth: 0.5,
-    borderTopWidth: 0.5,
-  },
-  panelEyebrow: {
-    color: '#5d6b7d',
-    fontSize: 7.8,
-    letterSpacing: 0.9,
-    textTransform: 'uppercase',
-    marginBottom: 4,
+  coverPanel: {
+    backgroundColor: '#f2ede4',
   },
   panelTitle: {
-    fontSize: 12.8,
+    fontSize: 11,
     fontWeight: 700,
     color: '#163f69',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   panelSubtitle: {
     color: '#304255',
-    fontSize: 9.2,
+    fontSize: 8.4,
     marginBottom: 8,
   },
   foldHint: {
     color: '#5d6b7d',
-    fontSize: 7.8,
+    fontSize: 7.2,
     marginBottom: 10,
-  },
-  sectionHeading: {
-    fontSize: 8,
-    color: '#5d6b7d',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 4,
   },
   section: {
     marginBottom: 8,
+  },
+  sectionHeading: {
+    fontSize: 7.3,
+    color: '#5d6b7d',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 3,
   },
   row: {
     marginBottom: 4,
   },
   rowLabel: {
-    fontSize: 7.8,
+    fontSize: 7.1,
     color: '#5d6b7d',
     textTransform: 'uppercase',
-    letterSpacing: 0.45,
     marginBottom: 1,
   },
   rowValue: {
-    fontSize: 9.4,
+    fontSize: 8.8,
     color: '#18212b',
   },
   bulletItem: {
-    marginBottom: 2,
+    marginBottom: 3,
     paddingLeft: 8,
   },
   paragraph: {
@@ -130,7 +106,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     marginTop: 6,
-    fontSize: 8.5,
+    fontSize: 7.4,
     color: '#5d6b7d',
     textAlign: 'right',
   },
@@ -156,8 +132,8 @@ const renderBullets = (items: string[]) =>
     </Text>
   ));
 
-const renderPanelSections = (
-  sections: NotfallpassPdfTemplateData['panels'][number]['sections'],
+const renderSections = (
+  sections: NotfallpassPdfTemplateData['pages'][number]['panels'][number]['sections'],
 ) =>
   sections.map((section) => (
     <View key={section.heading} style={styles.section}>
@@ -177,6 +153,45 @@ const renderPanelSections = (
     </View>
   ));
 
+const renderPanel = (
+  panel: NotfallpassPdfTemplateData['pages'][number]['panels'][number],
+  foldHint: string,
+  index: number,
+) => (
+  <View
+    key={`${panel.title}:${index}`}
+    style={[
+      styles.panel,
+      ...(panel.isCover ? [styles.coverPanel] : []),
+      ...(index === 3 ? [styles.panelLast] : []),
+    ]}
+    wrap={false}
+  >
+    <Text style={styles.panelTitle}>{panel.title}</Text>
+    {panel.subtitle ? (
+      <Text style={styles.panelSubtitle}>{panel.subtitle}</Text>
+    ) : null}
+    {panel.isCover ? <Text style={styles.foldHint}>{foldHint}</Text> : null}
+    {renderSections(panel.sections)}
+  </View>
+);
+
+const renderFallbackPage = (title: string) => (
+  <Page size="A4" orientation="landscape" style={styles.page}>
+    <View style={[styles.foldGuide, styles.foldGuideFirst]} />
+    <View style={[styles.foldGuide, styles.foldGuideSecond]} />
+    <View style={[styles.foldGuide, styles.foldGuideThird]} />
+    <View style={styles.panelRow}>
+      <View style={[styles.panel, styles.coverPanel]}>
+        <Text style={styles.panelTitle}>{title}</Text>
+      </View>
+      <View style={styles.panel} />
+      <View style={styles.panel} />
+      <View style={[styles.panel, styles.panelLast]} />
+    </View>
+  </Page>
+);
+
 const NotfallpassPdfDocument = ({ model }: { model: DocumentModel }) => {
   const templateData = model.meta?.templateData as
     | NotfallpassPdfTemplateData
@@ -188,20 +203,7 @@ const NotfallpassPdfDocument = ({ model }: { model: DocumentModel }) => {
   if (!templateData) {
     return (
       <Document title={title} subject={title} language={pdfLanguage}>
-        <Page size="A4" orientation="landscape" style={styles.page}>
-          <View style={styles.foldGrid}>
-            <View style={styles.gridRow}>
-              <View style={[styles.panel, styles.panelTopLeft]}>
-                <Text style={styles.panelTitle}>{title}</Text>
-              </View>
-              <View style={[styles.panel, styles.panelTopRight]} />
-            </View>
-            <View style={styles.gridRow}>
-              <View style={[styles.panel, styles.panelBottomLeft]} />
-              <View style={[styles.panel, styles.panelBottomRight]} />
-            </View>
-          </View>
-        </Page>
+        {renderFallbackPage(title)}
       </Document>
     );
   }
@@ -215,47 +217,27 @@ const NotfallpassPdfDocument = ({ model }: { model: DocumentModel }) => {
       keywords="Notfallpass, emergency pass, ME/CFS"
       language={pdfLanguage}
     >
-      <Page size="A4" orientation="landscape" style={styles.page}>
-        <View style={styles.foldGuideVertical} />
-        <View style={styles.foldGuideHorizontal} />
-
-        <View style={styles.foldGrid}>
-          <View style={styles.gridRow}>
-            <View style={[styles.panel, styles.panelTopLeft]}>
-              <Text style={styles.panelEyebrow}>Notfallpass</Text>
-              <Text style={styles.panelTitle}>{templateData.title}</Text>
-              <Text style={styles.panelSubtitle}>{templateData.subtitle}</Text>
-              <Text style={styles.foldHint}>{templateData.foldHint}</Text>
-              {renderPanelSections(templateData.panels[0].sections)}
-            </View>
-
-            <View style={[styles.panel, styles.panelTopRight]}>
-              <Text style={styles.panelEyebrow}>
-                {templateData.panels[1].title}
-              </Text>
-              {renderPanelSections(templateData.panels[1].sections)}
-            </View>
+      {templateData.pages.map((page, pageIndex) => (
+        <Page
+          key={`notfallpass-page-${pageIndex + 1}`}
+          size="A4"
+          orientation="landscape"
+          style={styles.page}
+        >
+          <View style={[styles.foldGuide, styles.foldGuideFirst]} />
+          <View style={[styles.foldGuide, styles.foldGuideSecond]} />
+          <View style={[styles.foldGuide, styles.foldGuideThird]} />
+          <View style={styles.panelRow}>
+            {page.panels.map((panel, panelIndex) =>
+              renderPanel(panel, templateData.foldHint, panelIndex),
+            )}
           </View>
-
-          <View style={styles.gridRow}>
-            <View style={[styles.panel, styles.panelBottomLeft]}>
-              <Text style={styles.panelEyebrow}>
-                {templateData.panels[2].title}
-              </Text>
-              {renderPanelSections(templateData.panels[2].sections)}
-            </View>
-
-            <View style={[styles.panel, styles.panelBottomRight]}>
-              <Text style={styles.panelEyebrow}>
-                {templateData.panels[3].title}
-              </Text>
-              {renderPanelSections(templateData.panels[3].sections)}
-            </View>
-          </View>
-        </View>
-
-        <Text style={styles.footer}>{templateData.createdAtIso}</Text>
-      </Page>
+          <Text style={styles.footer}>
+            {templateData.createdAtIso} · {pageIndex + 1}/
+            {templateData.pages.length}
+          </Text>
+        </Page>
+      ))}
     </Document>
   );
 };
