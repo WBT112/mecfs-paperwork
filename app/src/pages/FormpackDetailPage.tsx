@@ -115,33 +115,31 @@ const isPacingPresetContentEmpty = (value: FormDataState): boolean => {
   return !hasPreviewValue(content);
 };
 
-const useDeferredFormFocus = ({
-  enabled,
-  fallbackSelector = FORM_FALLBACK_FOCUS_SELECTOR,
-  getRoot,
-  onResolved,
-  selector,
-}: {
-  enabled: boolean;
-  fallbackSelector?: string;
-  getRoot: RefObject<HTMLDivElement | null>;
-  onResolved: () => void;
-  selector: string | null;
-}) => {
+const useDeferredFormFocusStates = (
+  getRoot: RefObject<HTMLDivElement | null>,
+  states: readonly {
+    enabled: boolean;
+    onResolved: () => void;
+    selector: string | null;
+  }[],
+) => {
   useEffect(() => {
-    if (!enabled || !selector) {
+    const activeState = states.find(
+      (state) => state.enabled && typeof state.selector === 'string',
+    );
+    if (!activeState?.selector) {
       return;
     }
 
     return focusWithRetry({
       getRoot: () => getRoot.current,
-      selector,
-      fallbackSelector,
+      selector: activeState.selector,
+      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
       maxAttempts: FOCUS_RETRY_ATTEMPTS,
       retryDelayMs: FOCUS_RETRY_DELAY_MS,
-      onResolved,
+      onResolved: activeState.onResolved,
     });
-  }, [enabled, fallbackSelector, getRoot, onResolved, selector]);
+  }, [getRoot, states]);
 };
 
 /**
@@ -789,29 +787,37 @@ export default function FormpackDetailPage() {
     });
   }, [activeRecord, formpackId, introGateConfig, locale]);
 
-  useDeferredFormFocus({
-    enabled: pendingIntroFocus && !isIntroGateVisible,
-    getRoot: formContentRef,
-    onResolved: () => setPendingIntroFocus(false),
-    selector: FORM_PRIMARY_FOCUS_SELECTOR,
-  });
+  const deferredFocusStates = useMemo(
+    () => [
+      {
+        enabled: pendingIntroFocus && !isIntroGateVisible,
+        onResolved: () => setPendingIntroFocus(false),
+        selector: FORM_PRIMARY_FOCUS_SELECTOR,
+      },
+      {
+        enabled: pendingFormFocus && !isIntroGateVisible,
+        onResolved: () => setPendingFormFocus(false),
+        selector: FORM_PRIMARY_FOCUS_SELECTOR,
+      },
+      {
+        enabled:
+          pendingOfflabelFocusSelector !== null &&
+          pendingOfflabelFocusSelector !== '' &&
+          !isIntroGateVisible,
+        onResolved: clearPendingOfflabelFocusTarget,
+        selector: pendingOfflabelFocusSelector,
+      },
+    ],
+    [
+      clearPendingOfflabelFocusTarget,
+      isIntroGateVisible,
+      pendingFormFocus,
+      pendingIntroFocus,
+      pendingOfflabelFocusSelector,
+    ],
+  );
 
-  useDeferredFormFocus({
-    enabled: pendingFormFocus && !isIntroGateVisible,
-    getRoot: formContentRef,
-    onResolved: () => setPendingFormFocus(false),
-    selector: FORM_PRIMARY_FOCUS_SELECTOR,
-  });
-
-  useDeferredFormFocus({
-    enabled:
-      pendingOfflabelFocusSelector !== null &&
-      pendingOfflabelFocusSelector !== '' &&
-      !isIntroGateVisible,
-    getRoot: formContentRef,
-    onResolved: clearPendingOfflabelFocusTarget,
-    selector: pendingOfflabelFocusSelector,
-  });
+  useDeferredFormFocusStates(formContentRef, deferredFocusStates);
 
   // Always use the custom field template so hidden conditional sections are
   // removed from the DOM even for formpacks without InfoBoxes.
