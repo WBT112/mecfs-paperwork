@@ -752,6 +752,8 @@ export default function FormpackDetailPage() {
         : null,
     [introGateConfig, tFormpack],
   );
+  const formLoadingLabel = t('formpackLoading');
+  const formEmptyMessage = t('formpackFormNoActiveRecord');
 
   const handleAcceptIntroGate = useCallback(() => {
     setPendingIntroFocus(true);
@@ -1028,6 +1030,41 @@ export default function FormpackDetailPage() {
   }
 
   const formClassName = formClassNames.join(' ');
+  const commonFormPanelProps = {
+    FormComponent: LazyForm,
+    activeRecordExists: Boolean(activeRecord),
+    closeLabel: t('common.close'),
+    emptyMessage: formEmptyMessage,
+    formClassName,
+    formContentRef,
+    formContext,
+    formData,
+    formSchema,
+    introGateEnabled: Boolean(introGateConfig?.enabled),
+    introTexts,
+    isIntroGateVisible,
+    isIntroModalOpen,
+    loadingLabel: formLoadingLabel,
+    onApplyDummyData: handleApplyDummyData,
+    onApplyProfile: handleApplyProfile,
+    onCloseIntroModal: handleCloseIntroModal,
+    onConfirmIntroGate: handleAcceptIntroGate,
+    onFormChange: handleFormChange,
+    onFormSubmit: handleFormSubmit,
+    onOpenIntroModal: handleOpenIntroModal,
+    onProfileSaveToggle: handleProfileSaveToggle,
+    profileApplyDummyLabel: t('profileApplyDummyButton'),
+    profileApplyLabel: t('profileApplyButton'),
+    profileHasSavedData,
+    profileSaveEnabled,
+    profileStatus,
+    profileStatusSuccessText: t('profileApplySuccess'),
+    profileToggleLabel: t('profileSaveCheckbox'),
+    showDevSections,
+    templates,
+    uiSchema: conditionalUiSchema,
+    validator,
+  };
 
   return (
     <section
@@ -1078,82 +1115,18 @@ export default function FormpackDetailPage() {
           <FormContentSection title={t('formpackFormHeading')}>
             {isPacingAmpelkarten ? (
               <PacingAmpelkartenEditor
-                FormComponent={LazyForm}
-                activeRecordExists={Boolean(activeRecord)}
-                closeLabel={t('common.close')}
                 documentPreview={documentPreview}
-                emptyMessage={t('formpackFormNoActiveRecord')}
                 emptyPreviewLabel={t('formpackDocumentPreviewEmpty')}
                 exportActions={exportActions}
-                formClassName={formClassName}
-                formContentRef={formContentRef}
-                formContext={formContext}
-                formData={formData}
-                formSchema={formSchema}
                 hasDocumentContent={hasDocumentContent}
-                introGateEnabled={Boolean(introGateConfig?.enabled)}
-                introTexts={introTexts}
-                isIntroGateVisible={isIntroGateVisible}
-                isIntroModalOpen={isIntroModalOpen}
-                loadingLabel={t('formpackLoading')}
-                onApplyDummyData={handleApplyDummyData}
-                onApplyProfile={handleApplyProfile}
-                onCloseIntroModal={handleCloseIntroModal}
-                onConfirmIntroGate={handleAcceptIntroGate}
-                onFormChange={handleFormChange}
-                onFormSubmit={handleFormSubmit}
-                onOpenIntroModal={handleOpenIntroModal}
-                onProfileSaveToggle={handleProfileSaveToggle}
-                profileApplyDummyLabel={t('profileApplyDummyButton')}
-                profileApplyLabel={t('profileApplyButton')}
-                profileHasSavedData={profileHasSavedData}
-                profileSaveEnabled={profileSaveEnabled}
-                profileStatus={profileStatus}
-                profileStatusSuccessText={t('profileApplySuccess')}
-                profileToggleLabel={t('profileSaveCheckbox')}
-                showDevSections={showDevSections}
                 t={t}
                 tFormpack={tFormpack}
-                templates={templates}
-                uiSchema={conditionalUiSchema}
-                validator={validator}
+                {...commonFormPanelProps}
               />
             ) : (
               <FormpackFormPanel
-                FormComponent={LazyForm}
                 actions={exportActions}
-                activeRecordExists={Boolean(activeRecord)}
-                closeLabel={t('common.close')}
-                emptyMessage={t('formpackFormNoActiveRecord')}
-                formClassName={formClassName}
-                formContentRef={formContentRef}
-                formContext={formContext}
-                formData={formData}
-                formSchema={formSchema}
-                introGateEnabled={Boolean(introGateConfig?.enabled)}
-                introTexts={introTexts}
-                isIntroGateVisible={isIntroGateVisible}
-                isIntroModalOpen={isIntroModalOpen}
-                loadingLabel={t('formpackLoading')}
-                onApplyDummyData={handleApplyDummyData}
-                onApplyProfile={handleApplyProfile}
-                onCloseIntroModal={handleCloseIntroModal}
-                onConfirmIntroGate={handleAcceptIntroGate}
-                onFormChange={handleFormChange}
-                onFormSubmit={handleFormSubmit}
-                onOpenIntroModal={handleOpenIntroModal}
-                onProfileSaveToggle={handleProfileSaveToggle}
-                profileApplyDummyLabel={t('profileApplyDummyButton')}
-                profileApplyLabel={t('profileApplyButton')}
-                profileHasSavedData={profileHasSavedData}
-                profileSaveEnabled={profileSaveEnabled}
-                profileStatus={profileStatus}
-                profileStatusSuccessText={t('profileApplySuccess')}
-                profileToggleLabel={t('profileSaveCheckbox')}
-                showDevSections={showDevSections}
-                templates={templates}
-                uiSchema={conditionalUiSchema}
-                validator={validator}
+                {...commonFormPanelProps}
               />
             )}
           </FormContentSection>
