@@ -103,11 +103,9 @@ const refreshSingleFormpack = async (formpackId: string): Promise<boolean> => {
   ];
 
   if (manifest.docx) {
-    const walletTemplate = manifest.docx.templates.wallet;
     resourcePaths.push(
       buildDocxPath(formpackId, manifest.docx.mapping),
       buildDocxPath(formpackId, manifest.docx.templates.a4),
-      ...(walletTemplate ? [buildDocxPath(formpackId, walletTemplate)] : []),
     );
   }
 

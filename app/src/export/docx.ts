@@ -42,7 +42,7 @@ import {
 } from '../formpacks/formpackIds';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 
-export type DocxTemplateId = 'a4' | 'wallet';
+export type DocxTemplateId = 'a4';
 
 type DocxMappingField = {
   var: string;
@@ -82,22 +82,6 @@ type MapTemplateOptions = {
   locale?: SupportedLocale;
   schema?: RJSFSchema | null;
   uiSchema?: UiSchema | null;
-};
-
-/**
- * Product rule safety net:
- * - A4 is the standard template for all formpacks.
- * - Wallet templates are only supported for the notfallpass formpack.
- */
-const assertTemplateAllowed = (
-  formpackId: string,
-  templateId: DocxTemplateId,
-) => {
-  if (templateId === 'wallet' && formpackId !== NOTFALLPASS_FORMPACK_ID) {
-    throw new Error(
-      'Wallet DOCX export is only supported for the notfallpass formpack.',
-    );
-  }
 };
 
 const DOCX_MIME =
@@ -826,12 +810,10 @@ const loadDocxUiSchema = async (
  */
 export const mapDocumentDataToTemplate = async (
   formpackId: string,
-  templateId: DocxTemplateId,
+  _templateId: DocxTemplateId,
   documentData: DocumentModel,
   options: MapTemplateOptions = {},
 ): Promise<DocxTemplateContext> => {
-  assertTemplateAllowed(formpackId, templateId);
-
   const locale = options.locale ?? (i18n.language as SupportedLocale);
   const mappingPath = options.mappingPath ?? 'docx/mapping.json';
   const mapping = await loadDocxMapping(formpackId, mappingPath);
@@ -1138,14 +1120,7 @@ export const exportDocx = async ({
       );
     })();
 
-  const templatePath =
-    variant === 'wallet'
-      ? docxConfig.templates.wallet
-      : docxConfig.templates.a4;
-
-  if (!templatePath) {
-    throw new Error(`DOCX template for ${variant} is not available.`);
-  }
+  const templatePath = docxConfig.templates.a4;
 
   const record = await getRecord(recordId);
   if (!record) {
@@ -1204,10 +1179,6 @@ export const preloadDocxAssets = async (
     loadDocxMapping(formpackId, docx.mapping),
     loadDocxTemplate(formpackId, docx.templates.a4),
   ];
-
-  if (docx.templates.wallet) {
-    tasks.push(loadDocxTemplate(formpackId, docx.templates.wallet));
-  }
 
   await Promise.all(tasks);
 

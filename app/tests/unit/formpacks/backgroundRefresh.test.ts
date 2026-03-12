@@ -294,42 +294,6 @@ describe('formpacks/backgroundRefresh', () => {
     expect(clearFormpackCaches).not.toHaveBeenCalled();
   });
 
-  it('downloads wallet docx template resources when configured in manifest', async () => {
-    Object.defineProperty(navigator, 'onLine', {
-      configurable: true,
-      value: true,
-    });
-
-    const fetchMock = installFetchMock();
-    parseManifest.mockReturnValue({
-      ...parsedManifest,
-      docx: {
-        ...parsedManifest.docx,
-        templates: {
-          ...parsedManifest.docx.templates,
-          wallet: 'docx/wallet.docx',
-        },
-      },
-    });
-    getFormpackMeta.mockResolvedValue({
-      id: FORMPACK_ID,
-      versionOrHash: '1.0.0',
-      version: '1.0.0',
-      hash: 'old-hash',
-      updatedAt: UPDATED_AT,
-    });
-
-    const result = await runFormpackBackgroundRefresh();
-
-    expect(result.updatedIds).toEqual([FORMPACK_ID]);
-    const fetchedUrls = fetchMock.mock.calls.map(([input]) => String(input));
-    expect(
-      fetchedUrls.some((url) =>
-        url.endsWith(`/formpacks/${FORMPACK_ID}/docx/wallet.docx`),
-      ),
-    ).toBe(true);
-  });
-
   it('refreshes changed formpacks without docx resources when manifest has no docx section', async () => {
     Object.defineProperty(navigator, 'onLine', {
       configurable: true,

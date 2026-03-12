@@ -57,6 +57,21 @@ const buildPacingAmpelkartenConfig = async (): Promise<PdfExportConfig> => {
   };
 };
 
+const buildNotfallpassConfig = async (): Promise<PdfExportConfig> => {
+  const [
+    { buildNotfallpassPdfDocumentModel },
+    { default: NotfallpassPdfDocument },
+  ] = await Promise.all([
+    import('../../formpacks/notfallpass/export/pdfDocumentModel'),
+    import('./templates/NotfallpassPdfDocument'),
+  ]);
+
+  return {
+    buildModel: buildNotfallpassPdfDocumentModel,
+    renderDocument: (model) => <NotfallpassPdfDocument model={model} />,
+  };
+};
+
 export const getPdfExportConfig = async (
   formpackId: string | null,
 ): Promise<PdfExportConfig | null> => {
@@ -68,6 +83,9 @@ export const getPdfExportConfig = async (
   }
   if (formpackId === 'pacing-ampelkarten') {
     return buildPacingAmpelkartenConfig();
+  }
+  if (formpackId === 'notfallpass') {
+    return buildNotfallpassConfig();
   }
   return null;
 };

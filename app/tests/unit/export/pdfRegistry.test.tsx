@@ -100,4 +100,23 @@ describe('getPdfExportConfig', () => {
       locale: 'en',
     });
   }, 15_000);
+
+  it('returns a configured export for notfallpass', async () => {
+    await expectConfiguredExport('notfallpass', {
+      formData: {
+        person: {
+          firstName: 'Mara',
+          lastName: 'Muster',
+          birthDate: '1990-04-12',
+        },
+        contacts: [{ name: 'Alex', phone: '+49 30 1234', relation: 'Partner' }],
+        diagnoses: { meCfs: true, pots: true, formatted: 'ME/CFS, POTS' },
+        symptoms: 'Starke Erschöpfung',
+        medications: [{ name: 'Elektrolytlösung', dosage: '500 ml' }],
+        allergies: 'Keine bekannt',
+        doctor: { name: 'Praxis Beispiel', phone: '+49 30 987654' },
+      },
+      locale: 'de',
+    });
+  }, 15_000);
 });

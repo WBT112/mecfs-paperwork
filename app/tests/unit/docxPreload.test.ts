@@ -15,10 +15,7 @@ describe('preloadDocxAssets', () => {
 
   it('reuses cached assets when offline', async () => {
     const manifest: FormpackDocxManifest = {
-      templates: {
-        a4: 'templates/a4.docx',
-        wallet: 'templates/wallet.docx',
-      },
+      templates: { a4: 'templates/a4.docx' },
       mapping: 'docx/mapping.json',
     };
     const mapping = {
@@ -26,7 +23,6 @@ describe('preloadDocxAssets', () => {
       fields: [{ var: 'person.name', path: 'person.name' }],
     };
     const a4Buffer = new Uint8Array([1, 2, 3]).buffer;
-    const walletBuffer = new Uint8Array([4, 5, 6]).buffer;
 
     const fetchMock = vi.fn().mockImplementation((input: unknown) => {
       const url = String(input);
@@ -36,18 +32,12 @@ describe('preloadDocxAssets', () => {
       if (url.endsWith('/templates/a4.docx')) {
         return Promise.resolve({ ok: true, arrayBuffer: async () => a4Buffer });
       }
-      if (url.endsWith('/templates/wallet.docx')) {
-        return Promise.resolve({
-          ok: true,
-          arrayBuffer: async () => walletBuffer,
-        });
-      }
       return Promise.resolve({ ok: false, status: 404 });
     });
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     await preloadDocxAssets('testpack', manifest);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
 
     fetchMock.mockClear();
     fetchMock.mockImplementation(() => {

@@ -1,9 +1,4 @@
-import {
-  Children,
-  isValidElement,
-  type ReactElement,
-  type ReactNode,
-} from 'react';
+import { Children, type ReactElement, type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
 import i18n from '../../../src/i18n';
 import type { DocumentModel } from '../../../src/export/pdf/types';
@@ -12,6 +7,7 @@ import { buildPacingAmpelkartenPreset } from '../../../src/formpacks/pacing-ampe
 import { buildPacingAmpelkartenPdfDocumentModel } from '../../../src/formpacks/pacing-ampelkarten/export/pdfDocumentModel';
 import deTranslations from '../../../public/formpacks/pacing-ampelkarten/i18n/de.json';
 import enTranslations from '../../../public/formpacks/pacing-ampelkarten/i18n/en.json';
+import { collectRenderedText } from './pdfRenderedText';
 
 const namespace = 'formpack:pacing-ampelkarten';
 const EXPORTED_AT_ISO = '2026-03-09T10:00:00.000Z';
@@ -106,33 +102,6 @@ const getPageCard = (
     wrap?: boolean;
     style?: Array<Record<string, unknown>> | Record<string, unknown>;
   }>;
-
-const collectRenderedText = (node: ReactNode): string[] => {
-  if (typeof node === 'string') {
-    return [node];
-  }
-
-  if (
-    typeof node === 'number' ||
-    node === null ||
-    node === undefined ||
-    typeof node === 'boolean'
-  ) {
-    return [];
-  }
-
-  if (Array.isArray(node)) {
-    return node.flatMap((child) => collectRenderedText(child));
-  }
-
-  if (isValidElement(node)) {
-    return collectRenderedText(
-      (node as ReactElement<{ children?: ReactNode }>).props.children,
-    );
-  }
-
-  return [];
-};
 
 describe('PacingAmpelkartenPdfDocument', () => {
   if (!i18n.hasResourceBundle('de', namespace)) {

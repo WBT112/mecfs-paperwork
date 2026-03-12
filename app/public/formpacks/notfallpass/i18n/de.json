@@ -13,7 +13,7 @@
   "notfallpass.person.lastName.label": "Nachname",
   "notfallpass.person.lastName.help": "Nachname der betroffenen Person (optional).",
   "notfallpass.person.birthDate.label": "Geburtsdatum",
-  "notfallpass.person.birthDate.help": "Geburtsdatum im Format TT-MM-JJJJ.",
+  "notfallpass.person.birthDate.help": "Geburtsdatum auswählen oder im Format JJJJ-MM-TT eintragen.",
   "notfallpass.contacts.name.label": "Name",
   "notfallpass.contacts.name.help": "Name der Kontaktperson.",
   "notfallpass.contacts.phone.label": "Telefon",

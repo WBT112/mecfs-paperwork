@@ -7,7 +7,6 @@ const DOCX_MAPPING_PATH = 'docx/mapping.json';
 const LOCALE_EN = 'en';
 const TEMPLATE_A4_PATH = 'templates/a4.docx';
 const FORMPACKS_BASE = '/formpacks';
-const WALLET_TEMPLATE_PATH = 'templates/wallet.docx';
 const PERSON_NAME = 'Ada Example';
 const PERSON_NAME_PATH = 'person.name';
 const CONTACTS_NAME_PATH = 'contacts.0.name';
@@ -461,15 +460,6 @@ describe('docx export coverage', () => {
         locale: LOCALE_EN,
       }),
     ).rejects.toThrow('Invalid DOCX mapping path.');
-
-    await expect(
-      mapDocumentDataToTemplate('pack-c', 'wallet', documentData, {
-        mappingPath: DOCX_MAPPING_PATH,
-        locale: LOCALE_EN,
-      }),
-    ).rejects.toThrow(
-      'Wallet DOCX export is only supported for the notfallpass formpack.',
-    );
   });
 
   it('handles mapping fetch errors and JSON parse failures', async () => {
@@ -1093,16 +1083,6 @@ describe('docx export coverage', () => {
       },
     };
 
-    await expect(
-      exportDocx({
-        formpackId: 'pack-e',
-        recordId: RECORD_ID,
-        variant: 'wallet',
-        locale: LOCALE_EN,
-        manifest,
-      }),
-    ).rejects.toThrow('DOCX template for wallet is not available.');
-
     mocks.getRecordMock.mockResolvedValueOnce(null);
 
     await expect(
@@ -1158,7 +1138,7 @@ describe('docx export coverage', () => {
   it('falls back to default filename segments when sanitized parts are empty', () => {
     const filename = buildDocxExportFilename(
       '///',
-      '' as unknown as 'a4' | 'wallet',
+      '' as unknown as 'a4',
       new Date('2026-02-28T00:00:00.000Z'),
     );
 
@@ -2007,45 +1987,11 @@ describe('docx export coverage', () => {
         ok: true,
         arrayBuffer: async () => new Uint8Array([1]).buffer,
       },
-      [`${FORMPACKS_BASE}/pack-f/${WALLET_TEMPLATE_PATH}`]: {
-        ok: true,
-        arrayBuffer: async () => new Uint8Array([2]).buffer,
-      },
     });
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     await preloadDocxAssets('pack-f', {
-      templates: {
-        a4: TEMPLATE_A4_PATH,
-        wallet: WALLET_TEMPLATE_PATH,
-      },
-      mapping: DOCX_MAPPING_PATH,
-    });
-
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-  });
-
-  it('preloads only mapping and a4 template when no wallet template exists', async () => {
-    const mapping = {
-      version: 1,
-      fields: [{ var: PERSON_NAME_PATH, path: PERSON_NAME_PATH }],
-    };
-    const fetchMock = buildFetchMock({
-      [`${FORMPACKS_BASE}/pack-no-wallet/${DOCX_MAPPING_PATH}`]: {
-        ok: true,
-        json: async () => mapping,
-      },
-      [`${FORMPACKS_BASE}/pack-no-wallet/${TEMPLATE_A4_PATH}`]: {
-        ok: true,
-        arrayBuffer: async () => new Uint8Array([3]).buffer,
-      },
-    });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
-
-    await preloadDocxAssets('pack-no-wallet', {
-      templates: {
-        a4: TEMPLATE_A4_PATH,
-      },
+      templates: { a4: TEMPLATE_A4_PATH },
       mapping: DOCX_MAPPING_PATH,
     });
 

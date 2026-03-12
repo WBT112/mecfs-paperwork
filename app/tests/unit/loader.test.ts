@@ -17,7 +17,7 @@ describe('formpacks/loader parseManifest', () => {
       exports: ['docx'],
       visibility: 'public',
       docx: {
-        templates: { a4: 'a4.docx', wallet: 'wallet.docx' },
+        templates: { a4: 'a4.docx' },
         mapping: 'm.json',
       },
     };
@@ -102,26 +102,5 @@ describe('formpacks/loader parseManifest', () => {
 
     const manifest = parseManifest(payload, DOCTOR_LETTER_ID);
     expect(manifest.meta).toBeUndefined();
-  });
-
-  it('throws when wallet template is present for non-notfallpass', () => {
-    const payload: FormpackManifestPayload = {
-      id: DOCTOR_LETTER_ID,
-      version: '1',
-      titleKey: 't',
-      descriptionKey: 'd',
-      locales: ['de'],
-      defaultLocale: 'de',
-      exports: ['docx'],
-      visibility: 'public',
-      docx: {
-        templates: { a4: 'a4.docx', wallet: 'wallet.docx' },
-        mapping: 'm',
-      },
-    };
-
-    expect(() => parseManifest(payload, DOCTOR_LETTER_ID)).toThrow(
-      FormpackLoaderError,
-    );
   });
 });

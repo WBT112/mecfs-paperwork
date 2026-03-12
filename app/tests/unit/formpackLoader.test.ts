@@ -17,7 +17,6 @@ const NOTFALLPASS_ID = 'notfallpass';
 const OFFLABEL_ANTRAG_ID = 'offlabel-antrag';
 const PACING_AMPELKARTEN_ID = 'pacing-ampelkarten';
 const DOCX_A4_PATH = 'docx/a4.docx';
-const DOCX_WALLET_PATH = 'docx/wallet.docx';
 const DOCX_MAPPING_PATH = 'docx/mapping.json';
 const MANIFEST_PATH_DOCTOR = `/formpacks/${DOCTOR_LETTER_ID}/manifest.json`;
 const MANIFEST_PATH_NOTFALLPASS = `/formpacks/${NOTFALLPASS_ID}/manifest.json`;
@@ -182,32 +181,13 @@ describe('parseManifest', () => {
     ).toThrow(new FormpackLoaderError('invalid', DOCX_ASSETS_ERROR_MESSAGE));
   });
 
-  it('rejects wallet templates outside notfallpass', () => {
-    const payload = {
-      ...validPayload,
-      exports: ['docx'],
-      docx: {
-        templates: { a4: DOCX_A4_PATH, wallet: DOCX_WALLET_PATH },
-        mapping: DOCX_MAPPING_PATH,
-      },
-    };
-    expect(() =>
-      parseManifest(payload as FormpackManifestPayload, TEST_FORMPACK_ID),
-    ).toThrow(
-      new FormpackLoaderError(
-        'invalid',
-        'Wallet templates are only supported for the notfallpass formpack.',
-      ),
-    );
-  });
-
   it('accepts valid DOCX assets for notfallpass', () => {
     const payload = {
       ...validPayload,
       id: NOTFALLPASS_ID,
       exports: ['docx'],
       docx: {
-        templates: { a4: DOCX_A4_PATH, wallet: DOCX_WALLET_PATH },
+        templates: { a4: DOCX_A4_PATH },
         mapping: DOCX_MAPPING_PATH,
       },
     };
@@ -215,7 +195,7 @@ describe('parseManifest', () => {
       payload as FormpackManifestPayload,
       NOTFALLPASS_ID,
     );
-    expect(manifest.docx?.templates.wallet).toBe(DOCX_WALLET_PATH);
+    expect(manifest.docx?.templates.a4).toBe(DOCX_A4_PATH);
   });
 
   it('throws when DOCX templates are invalid or mapping is not a string', () => {
@@ -230,21 +210,6 @@ describe('parseManifest', () => {
     expect(() =>
       parseManifest(
         invalidTemplatesPayload as unknown as FormpackManifestPayload,
-        TEST_FORMPACK_ID,
-      ),
-    ).toThrow(new FormpackLoaderError('invalid', DOCX_ASSETS_ERROR_MESSAGE));
-
-    const invalidWalletTypePayload = {
-      ...validPayload,
-      exports: ['docx'],
-      docx: {
-        templates: { a4: DOCX_A4_PATH, wallet: 123 },
-        mapping: DOCX_MAPPING_PATH,
-      },
-    };
-    expect(() =>
-      parseManifest(
-        invalidWalletTypePayload as unknown as FormpackManifestPayload,
         TEST_FORMPACK_ID,
       ),
     ).toThrow(new FormpackLoaderError('invalid', DOCX_ASSETS_ERROR_MESSAGE));

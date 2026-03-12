@@ -1273,10 +1273,6 @@ export default function FormpackDetailPage() {
               exportsLabel: t('formpackExports'),
               docxHeading: t('formpackDocxHeading'),
               docxTemplateA4: t('formpackDocxTemplateA4'),
-              docxTemplateWallet: t('formpackDocxTemplateWallet'),
-              docxTemplateWalletUnavailable: t(
-                'formpackDocxTemplateWalletUnavailable',
-              ),
               docxMapping: t('formpackDocxMapping'),
             }}
           />

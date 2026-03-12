@@ -23,7 +23,6 @@ const testConstants = vi.hoisted(() => ({
   FORMPACK_ID: 'notfallpass',
   DOCX_MAPPING_PATH: 'mapping.json',
   TEMPLATE_A4: 'template-a4.docx',
-  TEMPLATE_WALLET: 'template-wallet.docx',
   IMPORT_FILE_NAME: 'import.json',
   IMPORT_FILE_CONTENT: '{"data":true}',
 }));
@@ -44,10 +43,7 @@ const formpackState = vi.hoisted(
       exports: ['docx'],
       visibility: 'public',
       docx: {
-        templates: {
-          a4: testConstants.TEMPLATE_A4,
-          wallet: testConstants.TEMPLATE_WALLET,
-        },
+        templates: { a4: testConstants.TEMPLATE_A4 },
         mapping: testConstants.DOCX_MAPPING_PATH,
       },
     } as FormpackManifest,
@@ -122,7 +118,6 @@ const {
   FORMPACK_ID,
   DOCX_MAPPING_PATH,
   TEMPLATE_A4,
-  TEMPLATE_WALLET,
   IMPORT_FILE_NAME,
   IMPORT_FILE_CONTENT,
 } = testConstants;
@@ -304,8 +299,6 @@ const mockMarkAsSaved = storageState.markAsSaved;
 const FORMPACK_ROUTE = `/formpacks/${FORMPACK_ID}`;
 const OFFLABEL_ROUTE = '/formpacks/offlabel-antrag';
 const DOCX_EXPORT_BUTTON_LABEL = 'formpackRecordExportDocx';
-const DOCX_TEMPLATE_A4_OPTION = 'formpackDocxTemplateA4Option';
-const DOCX_TEMPLATE_WALLET_OPTION = 'formpackDocxTemplateWalletOption';
 const IMPORT_ACTION_LABEL = 'formpackImportAction';
 const IMPORT_SUCCESS_LABEL = 'importSuccess';
 const STORAGE_UNAVAILABLE_LABEL = 'storageUnavailable';
@@ -833,10 +826,7 @@ describe('FormpackDetailPage', () => {
       exports: ['docx'],
       visibility: 'public',
       docx: {
-        templates: {
-          a4: TEMPLATE_A4,
-          wallet: TEMPLATE_WALLET,
-        },
+        templates: { a4: TEMPLATE_A4 },
         mapping: DOCX_MAPPING_PATH,
       },
     };
@@ -1001,7 +991,7 @@ describe('FormpackDetailPage', () => {
     await waitFor(() => expect(toggle).toHaveAttribute(ARIA_EXPANDED, 'false'));
   });
 
-  it('renders DOCX metadata and template options', async () => {
+  it('renders DOCX metadata without a template selector for A4-only exports', async () => {
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
@@ -1012,35 +1002,8 @@ describe('FormpackDetailPage', () => {
 
     expect(await screen.findByText(DOCX_MAPPING_PATH)).toBeInTheDocument();
     expect(
-      screen.getByRole('option', { name: DOCX_TEMPLATE_A4_OPTION }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('option', { name: DOCX_TEMPLATE_WALLET_OPTION }),
-    ).toBeInTheDocument();
-  });
-
-  it('shows a fallback label when the wallet template is unavailable', async () => {
-    formpackState.manifest = {
-      ...formpackState.manifest,
-      docx: {
-        templates: {
-          a4: TEMPLATE_A4,
-        },
-        mapping: DOCX_MAPPING_PATH,
-      },
-    };
-
-    render(
-      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
-        <Routes>
-          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
-        </Routes>
-      </TestRouter>,
-    );
-
-    expect(
-      await screen.findByText('formpackDocxTemplateWalletUnavailable'),
-    ).toBeInTheDocument();
+      screen.queryByLabelText('formpackDocxTemplateLabel'),
+    ).not.toBeInTheDocument();
   });
 
   it('renders PDF export controls when the formpack supports pdf export', async () => {

@@ -97,7 +97,6 @@ const INTRO_TEXTS = {
 
 const DOCX_MAPPING_PATH = '/mapping.json';
 const DOCX_A4_TEMPLATE_PATH = '/a4.docx';
-const DOCX_WALLET_TEMPLATE_PATH = '/wallet.docx';
 const DEFAULT_LOCALES = ['de', 'en'] as const;
 const PACING_FORMPACK_ID = 'pacing-ampelkarten';
 const FORMPACK_UTILITY_ROW_SELECTOR = '.formpack-utility-row';
@@ -478,10 +477,7 @@ describe('formpack detail subcomponents', () => {
     renderExportActions({
       docxError: 'docx-error',
       docxSuccess: 'docx-success',
-      docxTemplateOptions: [
-        { id: 'a4', label: 'A4' },
-        { id: 'wallet', label: 'Wallet' },
-      ],
+      docxTemplateOptions: [{ id: 'a4', label: 'A4' }],
       encryptJsonExport: true,
       formpackId: 'offlabel-antrag',
       jsonExportError: 'json-error',
@@ -573,40 +569,31 @@ describe('formpack detail subcomponents', () => {
     expect(document.querySelector('.formpack-actions__status')).toBeNull();
   });
 
-  it('updates template selection and encrypted json password fields', () => {
-    const setDocxTemplateId = vi.fn();
+  it('updates encrypted json password fields without rendering a template selector for A4-only DOCX', () => {
     const setEncryptJsonExport = vi.fn();
     const setJsonExportPassword = vi.fn();
     const setJsonExportPasswordConfirm = vi.fn();
 
     renderExportActions({
-      docxTemplateOptions: [
-        { id: 'a4', label: 'A4' },
-        { id: 'wallet', label: 'Wallet' },
-      ],
+      docxTemplateOptions: [{ id: 'a4', label: 'A4' }],
       encryptJsonExport: true,
       jsonExportPassword: 'old-secret',
       jsonExportPasswordConfirm: 'old-confirm',
       manifest: createManifest({
         exports: ['docx', 'json'],
         docx: {
-          templates: {
-            a4: DOCX_A4_TEMPLATE_PATH,
-            wallet: DOCX_WALLET_TEMPLATE_PATH,
-          },
+          templates: { a4: DOCX_A4_TEMPLATE_PATH },
           mapping: DOCX_MAPPING_PATH,
         },
       }),
-      setDocxTemplateId,
       setEncryptJsonExport,
       setJsonExportPassword,
       setJsonExportPasswordConfirm,
     });
 
-    fireEvent.change(screen.getByLabelText('formpackDocxTemplateLabel'), {
-      target: { value: 'wallet' },
-    });
-    expect(setDocxTemplateId).toHaveBeenCalledWith('wallet');
+    expect(
+      screen.queryByLabelText('formpackDocxTemplateLabel'),
+    ).not.toBeInTheDocument();
 
     fireEvent.click(
       screen.getByLabelText('formpackJsonExportEncryptionToggle'),
