@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import PacingAmpelkartenEditor, {
@@ -35,6 +35,8 @@ const MOCK_RJSF_FORM_TEST_ID = 'mock-rjsf-form';
 const PREVIEW_HEADING_KEY = 'formpackDocumentPreviewHeading';
 const PAGE_WARNING_TITLE_KEY = 'pacing-ampelkarten.editor.pageWarning.title';
 const PAGE_WARNING_BODY_KEY = 'pacing-ampelkarten.editor.pageWarning.body';
+const ADULT_GREEN_ITEM = 'Adult green';
+const CHILD_GREEN_ITEM = 'Child green';
 
 const DummyForm = ({
   children,
@@ -85,8 +87,8 @@ const createProps = (
   formContext: { t: ((key: string) => key) as never },
   formData: {
     meta: { variant: 'adult' },
-    adult: { cards: { green: { canDo: ['Adult green'] } } },
-    child: { cards: { green: { canDo: ['Child green'] } } },
+    adult: { cards: { green: { canDo: [ADULT_GREEN_ITEM] } } },
+    child: { cards: { green: { canDo: [CHILD_GREEN_ITEM] } } },
     sender: { signature: 'Family' },
   },
   formSchema: { type: 'object', properties: {} },
@@ -156,16 +158,15 @@ describe('PacingAmpelkartenEditor', () => {
   it('keeps preview hidden until the final step', async () => {
     render(<PacingAmpelkartenEditor {...createProps()} />);
 
-    expect(screen.getByTestId(MOCK_RJSF_FORM_TEST_ID)).toBeInTheDocument();
+    expect(
+      screen.getByRole('radio', {
+        name: /pacing-ampelkarten\.meta\.variant\.option\.adult/,
+      }),
+    ).toBeInTheDocument();
     expect(screen.queryByText('export-actions')).not.toBeInTheDocument();
     expect(
       screen.queryByText('formpackDocumentPreviewHeading'),
     ).not.toBeInTheDocument();
-
-    const initialSchema = parseRenderedUiSchema();
-    expect(initialSchema.meta?.['ui:widget']).toBeUndefined();
-    expect(initialSchema.adult?.['ui:widget']).toBe('hidden');
-    expect(initialSchema.child?.['ui:widget']).toBe('hidden');
 
     await userEvent.click(
       screen.getByRole('button', {
@@ -235,6 +236,115 @@ describe('PacingAmpelkartenEditor', () => {
     });
     expect(redStep).toHaveStyle({
       '--pacing-step-accent': 'var(--pacing-red)',
+    });
+  });
+
+  it('renders modern variant cards and marks the active selection', async () => {
+    const onFormChange = vi.fn();
+    render(
+      <PacingAmpelkartenEditor
+        {...createProps({
+          onFormChange,
+        })}
+      />,
+    );
+
+    const adultCard = screen.getByRole('radio', {
+      name: /pacing-ampelkarten\.meta\.variant\.option\.adult/,
+    });
+    const childCard = screen.getByRole('radio', {
+      name: /pacing-ampelkarten\.meta\.variant\.option\.child/,
+    });
+
+    expect(adultCard).toHaveAttribute('aria-checked', 'true');
+    expect(adultCard).toHaveClass('pacing-editor__variant-card--selected');
+    expect(
+      within(adultCard).getByText(
+        'pacing-ampelkarten.editor.variant.adult.badge',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      within(childCard).getByText(
+        'pacing-ampelkarten.editor.variant.child.badge',
+      ),
+    ).toBeInTheDocument();
+
+    await userEvent.click(childCard);
+
+    const lastCall = onFormChange.mock.calls.at(-1);
+    expect(lastCall).toBeDefined();
+    const changeArg = lastCall?.[0] as {
+      formData?: {
+        meta?: {
+          variant?: string;
+        };
+      };
+    };
+    expect(changeArg.formData?.meta?.variant).toBe('child');
+  });
+
+  it('renders the child variant as selected when the stored variant is child', async () => {
+    render(
+      <PacingAmpelkartenEditor
+        {...createProps({
+          formData: {
+            meta: { variant: 'child' },
+            adult: { cards: { green: { canDo: [ADULT_GREEN_ITEM] } } },
+            child: { cards: { green: { canDo: [CHILD_GREEN_ITEM] } } },
+          },
+        })}
+      />,
+    );
+
+    const childCard = screen.getByRole('radio', {
+      name: /pacing-ampelkarten\.meta\.variant\.option\.child/,
+    });
+
+    expect(childCard).toHaveAttribute('aria-checked', 'true');
+    expect(childCard).toHaveClass('pacing-editor__variant-card--selected');
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
+    );
+
+    expect(
+      screen.getByRole('heading', {
+        name: 'pacing-ampelkarten.child.cards.green.title',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('normalizes a missing meta object when selecting a variant card', async () => {
+    const onFormChange = vi.fn();
+    render(
+      <PacingAmpelkartenEditor
+        {...createProps({
+          formData: {
+            meta: 'invalid-meta',
+            adult: { cards: { green: { canDo: [ADULT_GREEN_ITEM] } } },
+            child: { cards: { green: { canDo: [CHILD_GREEN_ITEM] } } },
+          },
+          onFormChange,
+        })}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getByRole('radio', {
+        name: /pacing-ampelkarten\.meta\.variant\.option\.child/,
+      }),
+    );
+
+    const lastCall = onFormChange.mock.calls.at(-1);
+    expect(lastCall).toBeDefined();
+    expect(lastCall?.[0]).toMatchObject({
+      formData: {
+        meta: {
+          variant: 'child',
+        },
+      },
     });
   });
 
@@ -314,6 +424,11 @@ describe('PacingAmpelkartenEditor', () => {
     expect(
       screen.getByRole('heading', {
         name: 'pacing-ampelkarten.editor.variant.title',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('radio', {
+        name: /pacing-ampelkarten\.meta\.variant\.option\.adult/,
       }),
     ).toBeInTheDocument();
   });

@@ -114,6 +114,15 @@ it('defines dedicated pacing step tones for the pacing editor navigation buttons
   expect(cssSource).toContain('--pacing-step-text: #21457f;');
 });
 
+it('styles the pacing variant chooser as selectable cards instead of plain radios', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+
+  expect(cssSource).toContain('.pacing-editor__variant-grid {');
+  expect(cssSource).toContain('.pacing-editor__variant-card {');
+  expect(cssSource).toContain('.pacing-editor__variant-card--selected {');
+  expect(cssSource).toContain('.pacing-editor__variant-pill {');
+});
+
 it('keeps standalone pdf export buttons as wide as other primary action buttons', () => {
   const cssSource = readFileSync(cssPath, 'utf8');
 

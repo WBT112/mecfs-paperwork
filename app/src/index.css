@@ -1275,6 +1275,96 @@ body {
   gap: 0.5rem;
 }
 
+.pacing-editor__variant-stage {
+  display: grid;
+  gap: 1rem;
+}
+
+.pacing-editor__variant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.pacing-editor__variant-card {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  min-height: 188px;
+  padding: 1.15rem;
+  border: 0;
+  border-radius: 22px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgb(255 255 255 / 0.9),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pacing-variant-soft) 92%, white),
+      color-mix(in srgb, var(--color-surface) 88%, var(--pacing-variant-soft))
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 10%, transparent),
+    0 10px 30px rgb(31 64 122 / 0.08);
+  color: var(--color-text-strong);
+  text-align: left;
+}
+
+.pacing-editor__variant-card:hover {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 18%, white),
+    0 14px 32px rgb(31 64 122 / 0.12);
+  transform: translateY(-1px);
+}
+
+.pacing-editor__variant-card--selected {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgb(255 255 255 / 0.94),
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pacing-variant) 18%, white),
+      color-mix(in srgb, var(--pacing-variant-soft) 72%, white)
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 24%, white),
+    0 16px 34px rgb(31 64 122 / 0.16);
+}
+
+.pacing-editor__variant-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.72rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pacing-variant) 12%, white);
+  color: var(--pacing-variant);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pacing-editor__variant-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.pacing-editor__variant-body {
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.pacing-editor__variant-check {
+  margin-top: auto;
+  font-weight: 700;
+  color: var(--pacing-variant);
+}
+
 .pacing-editor__step {
   --pacing-step-accent: var(--pacing-variant);
   --pacing-step-soft: var(--pacing-variant-soft);
@@ -1445,6 +1535,53 @@ body {
   box-shadow: inset 0 0 0 1px
     color-mix(in srgb, var(--pacing-step-accent) 16%, transparent);
   color: var(--color-text-strong);
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-card {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgb(255 255 255 / 0.08),
+      transparent 35%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pacing-variant) 18%, #14171f),
+      color-mix(in srgb, var(--pacing-variant-soft) 10%, var(--color-surface))
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 16%, transparent),
+    0 14px 28px rgb(0 0 0 / 0.24);
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-card--selected {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgb(255 255 255 / 0.12),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pacing-variant) 34%, #14171f),
+      color-mix(in srgb, var(--pacing-variant-soft) 16%, var(--color-surface))
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 32%, white),
+    0 18px 34px rgb(0 0 0 / 0.34);
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-pill {
+  background: color-mix(in srgb, var(--pacing-variant) 30%, #14171f);
+  color: #e8efff;
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-body {
+  color: var(--color-text-subtle);
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-check {
+  color: #d8e5ff;
 }
 
 :root[data-theme='dark'] .pacing-editor__step:hover {
@@ -1854,6 +1991,10 @@ body {
 }
 
 @media (max-width: 900px) {
+  .pacing-editor__variant-grid {
+    grid-template-columns: 1fr;
+  }
+
   .pacing-editor__steps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }

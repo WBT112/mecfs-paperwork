@@ -1565,6 +1565,11 @@ describe('FormpackDetailPage', () => {
     await waitFor(() =>
       expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
     );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
+    );
     await waitFor(() =>
       expect(screen.getByTestId('form-data')).toHaveTextContent(
         PACING_DE_GREEN_TEXT,
@@ -1620,6 +1625,11 @@ describe('FormpackDetailPage', () => {
     await waitFor(() =>
       expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
     );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
+    );
     await waitFor(() =>
       expect(screen.getByTestId('form-data')).toHaveTextContent(
         'Short conversations are possible',
@@ -1674,6 +1684,16 @@ describe('FormpackDetailPage', () => {
     await waitFor(() =>
       expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
     );
+    expect(
+      screen.getByRole('radio', {
+        name: /pacing-ampelkarten\.meta\.variant\.option\.child/,
+      }),
+    ).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
+    );
     await waitFor(() =>
       expect(screen.getByTestId('form-data')).toHaveTextContent(
         'Heute ist ein guter Tag für kurze Gespräche',
@@ -1688,6 +1708,7 @@ describe('FormpackDetailPage', () => {
   });
 
   it('starts pacing on the variant step and switches to the matching card step variant', async () => {
+    const uiWidgetKey = 'ui:widget';
     const introRecord = {
       ...record,
       formpackId: PACING_AMPELKARTEN_FORMPACK_ID,
@@ -1726,19 +1747,19 @@ describe('FormpackDetailPage', () => {
     await waitFor(() =>
       expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
     );
-    const uiWidgetKey = 'ui:widget';
-    const initialUiSchema = parsePacingUiSchema(
-      screen.getByTestId('ui-schema'),
-    );
-    expect(initialUiSchema.meta?.[uiWidgetKey]).toBeUndefined();
-    expect(initialUiSchema.adult?.[uiWidgetKey]).toBe('hidden');
-    expect(initialUiSchema.child?.[uiWidgetKey]).toBe('hidden');
+    expect(
+      screen.getByRole('radio', {
+        name: /pacing-ampelkarten\.meta\.variant\.option\.adult/,
+      }),
+    ).toHaveAttribute('aria-checked', 'true');
     expect(
       screen.queryByText(PDF_EXPORT_CONTROLS_LABEL),
     ).not.toBeInTheDocument();
 
     await userEvent.click(
-      screen.getByRole('button', { name: 'trigger-pacing-child' }),
+      screen.getByRole('radio', {
+        name: /pacing-ampelkarten\.meta\.variant\.option\.child/,
+      }),
     );
     await userEvent.click(
       screen.getByRole('button', {
@@ -1809,6 +1830,11 @@ describe('FormpackDetailPage', () => {
 
     await waitFor(() =>
       expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
     );
 
     await userEvent.click(
@@ -1889,6 +1915,11 @@ describe('FormpackDetailPage', () => {
 
     await waitFor(() =>
       expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
     );
     expect(screen.getByTestId('form-data')).toHaveTextContent(
       'Existing adult content',
@@ -2004,6 +2035,11 @@ describe('FormpackDetailPage', () => {
 
     await waitFor(() =>
       expect(screen.queryByText(INTRO_START_KEY)).not.toBeInTheDocument(),
+    );
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: /pacing-ampelkarten\.editor\.steps\.green\.label/,
+      }),
     );
     expect(screen.getByTestId('form-data')).toHaveTextContent(
       PACING_DE_GREEN_TEXT,

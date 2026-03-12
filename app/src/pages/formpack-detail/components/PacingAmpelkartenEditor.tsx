@@ -12,6 +12,7 @@ import {
 import FormpackIntroModal from '../../../components/FormpackIntroModal';
 import { formpackWidgets } from '../../../lib/rjsfWidgetRegistry';
 import { getPathValue } from '../../../lib/pathAccess';
+import { isRecord } from '../../../lib/utils';
 import FormpackDocumentPreviewContent from './FormpackDocumentPreviewContent';
 import FormpackIntroGatePanel from './FormpackIntroGatePanel';
 import FormpackIntroUtilityRow from './FormpackIntroUtilityRow';
@@ -139,6 +140,9 @@ const getStepToneStyle = (step: PacingEditorStepId): CSSProperties =>
 
 const resolveVariant = (value: unknown): PacingVariant =>
   value === 'child' ? 'child' : 'adult';
+
+const normalizeMeta = (value: unknown): Record<string, unknown> =>
+  isRecord(value) ? { ...value } : {};
 
 const resolveCardStep = (
   step: PacingEditorStepId,
@@ -321,6 +325,19 @@ export default function PacingAmpelkartenEditor({
           getPathValue(formData, `${variant}.cards.${currentCardStep}`),
         );
 
+  const handleVariantSelect = (nextVariant: PacingVariant) => {
+    const nextData: FormDataState = {
+      ...formData,
+      meta: {
+        ...normalizeMeta(formData.meta),
+        variant: nextVariant,
+      },
+    };
+    onFormChange({
+      formData: nextData,
+    } as Parameters<NonNullable<RjsfFormProps['onChange']>>[0]);
+  };
+
   const renderStepHeader = () => {
     if (currentStep === 'preview') {
       return (
@@ -441,6 +458,52 @@ export default function PacingAmpelkartenEditor({
     </div>
   );
 
+  const renderVariantChooser = () => (
+    <section className="pacing-editor__variant-stage">
+      <div
+        className="pacing-editor__variant-grid"
+        role="radiogroup"
+        aria-label={tFormpack('pacing-ampelkarten.meta.variant.label')}
+      >
+        {(['adult', 'child'] as const).map((option) => {
+          const isSelected = option === variant;
+          return (
+            <button
+              key={option}
+              type="button"
+              role="radio"
+              aria-checked={isSelected}
+              className={[
+                'pacing-editor__variant-card',
+                isSelected ? 'pacing-editor__variant-card--selected' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => handleVariantSelect(option)}
+            >
+              <span className="pacing-editor__variant-pill">
+                {tFormpack(`pacing-ampelkarten.editor.variant.${option}.badge`)}
+              </span>
+              <span className="pacing-editor__variant-title">
+                {tFormpack(`pacing-ampelkarten.meta.variant.option.${option}`)}
+              </span>
+              <span className="pacing-editor__variant-body">
+                {tFormpack(
+                  `pacing-ampelkarten.editor.variant.${option}.summary`,
+                )}
+              </span>
+              <span className="pacing-editor__variant-check">
+                {isSelected
+                  ? tFormpack('pacing-ampelkarten.editor.variant.selected')
+                  : tFormpack('pacing-ampelkarten.editor.variant.select')}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+
   if (!activeRecordExists) {
     return <p className="formpack-records__empty">{emptyMessage}</p>;
   }
@@ -466,6 +529,62 @@ export default function PacingAmpelkartenEditor({
     );
   }
 
+  let stepContent: ReactNode;
+
+  if (currentStep === 'preview') {
+    stepContent = (
+      <div className={`${formClassName} pacing-editor__preview-step`}>
+        <div className="pacing-editor__export-panel">{exportActions}</div>
+        <div className="pacing-editor__preview-panel">
+          <h5>{t('formpackDocumentPreviewHeading')}</h5>
+          <div id="formpack-document-preview-content">
+            <FormpackDocumentPreviewContent
+              documentPreview={documentPreview}
+              emptyLabel={emptyPreviewLabel}
+              formpackId="pacing-ampelkarten"
+              hasDocumentContent={hasDocumentContent}
+              offlabelPreviewDocuments={[]}
+              onSelectOfflabelPreview={ignoreOfflabelPreviewSelection}
+              selectedOfflabelPreviewId="part1"
+            />
+          </div>
+        </div>
+        {renderStepActions()}
+      </div>
+    );
+  } else if (currentStep === 'variant') {
+    stepContent = (
+      <div className={`${formClassName} pacing-editor__form-step`}>
+        {renderVariantChooser()}
+        {renderStepActions()}
+      </div>
+    );
+  } else {
+    stepContent = (
+      <div className={`${formClassName} pacing-editor__form-step`}>
+        <Suspense fallback={<p>{loadingLabel}</p>}>
+          <FormComponent
+            schema={formSchema}
+            uiSchema={filteredUiSchema as UiSchema}
+            templates={templates}
+            widgets={formpackWidgets}
+            validator={validator}
+            formData={formData}
+            omitExtraData
+            liveOmit
+            onChange={onFormChange}
+            onSubmit={onFormSubmit}
+            formContext={formContext}
+            noHtml5Validate
+            showErrorList={false}
+          >
+            {renderStepActions()}
+          </FormComponent>
+        </Suspense>
+      </div>
+    );
+  }
+
   return (
     <div ref={formContentRef} className="pacing-editor">
       <FormpackIntroUtilityRow
@@ -485,49 +604,7 @@ export default function PacingAmpelkartenEditor({
           </p>
         </output>
       ) : null}
-
-      {currentStep === 'preview' ? (
-        <div className={`${formClassName} pacing-editor__preview-step`}>
-          <div className="pacing-editor__export-panel">{exportActions}</div>
-          <div className="pacing-editor__preview-panel">
-            <h5>{t('formpackDocumentPreviewHeading')}</h5>
-            <div id="formpack-document-preview-content">
-              <FormpackDocumentPreviewContent
-                documentPreview={documentPreview}
-                emptyLabel={emptyPreviewLabel}
-                formpackId="pacing-ampelkarten"
-                hasDocumentContent={hasDocumentContent}
-                offlabelPreviewDocuments={[]}
-                onSelectOfflabelPreview={ignoreOfflabelPreviewSelection}
-                selectedOfflabelPreviewId="part1"
-              />
-            </div>
-          </div>
-          {renderStepActions()}
-        </div>
-      ) : (
-        <div className={`${formClassName} pacing-editor__form-step`}>
-          <Suspense fallback={<p>{loadingLabel}</p>}>
-            <FormComponent
-              schema={formSchema}
-              uiSchema={filteredUiSchema as UiSchema}
-              templates={templates}
-              widgets={formpackWidgets}
-              validator={validator}
-              formData={formData}
-              omitExtraData
-              liveOmit
-              onChange={onFormChange}
-              onSubmit={onFormSubmit}
-              formContext={formContext}
-              noHtml5Validate
-              showErrorList={false}
-            >
-              {renderStepActions()}
-            </FormComponent>
-          </Suspense>
-        </div>
-      )}
+      {stepContent}
       {introGateEnabled && introTexts && (
         <FormpackIntroModal
           isOpen={isIntroModalOpen}
