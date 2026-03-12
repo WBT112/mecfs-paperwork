@@ -8,77 +8,131 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7f4ee',
     color: '#18212b',
     fontFamily: PDF_FONT_FAMILY_SANS,
-    fontSize: 10,
-    lineHeight: 1.35,
-    paddingTop: 24,
-    paddingBottom: 24,
-    paddingLeft: 24,
-    paddingRight: 24,
+    fontSize: 9.4,
+    lineHeight: 1.28,
+    paddingTop: 18,
+    paddingBottom: 18,
+    paddingLeft: 18,
+    paddingRight: 18,
+    position: 'relative',
   },
-  hero: {
-    backgroundColor: '#163f69',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 14,
+  foldGuideVertical: {
+    position: 'absolute',
+    top: 18,
+    bottom: 18,
+    left: '50%',
+    width: 1,
+    backgroundColor: '#c5cfdb',
   },
-  title: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 700,
-    marginBottom: 4,
+  foldGuideHorizontal: {
+    position: 'absolute',
+    left: 18,
+    right: 18,
+    top: '50%',
+    height: 1,
+    backgroundColor: '#c5cfdb',
   },
-  subtitle: {
-    color: '#dbe7f6',
-    fontSize: 10.5,
+  foldGrid: {
+    borderWidth: 1,
+    borderColor: '#c5cfdb',
+    borderRadius: 16,
+    overflow: 'hidden',
+    flex: 1,
   },
-  grid: {
+  gridRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
+    flex: 1,
   },
   panel: {
-    width: '48.5%',
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#d7dee8',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
+    padding: 14,
+    flex: 1,
   },
-  panelWide: {
-    width: '100%',
+  panelTopLeft: {
+    borderTopWidth: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0.5,
+    borderBottomWidth: 0.5,
   },
-  panelHeading: {
-    fontSize: 11,
+  panelTopRight: {
+    borderTopWidth: 0,
+    borderRightWidth: 0,
+    borderLeftWidth: 0.5,
+    borderBottomWidth: 0.5,
+  },
+  panelBottomLeft: {
+    borderBottomWidth: 0,
+    borderLeftWidth: 0,
+    borderRightWidth: 0.5,
+    borderTopWidth: 0.5,
+  },
+  panelBottomRight: {
+    borderBottomWidth: 0,
+    borderRightWidth: 0,
+    borderLeftWidth: 0.5,
+    borderTopWidth: 0.5,
+  },
+  panelEyebrow: {
+    color: '#5d6b7d',
+    fontSize: 7.8,
+    letterSpacing: 0.9,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  panelTitle: {
+    fontSize: 12.8,
     fontWeight: 700,
     color: '#163f69',
+    marginBottom: 4,
+  },
+  panelSubtitle: {
+    color: '#304255',
+    fontSize: 9.2,
+    marginBottom: 8,
+  },
+  foldHint: {
+    color: '#5d6b7d',
+    fontSize: 7.8,
+    marginBottom: 10,
+  },
+  sectionHeading: {
+    fontSize: 8,
+    color: '#5d6b7d',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 4,
+  },
+  section: {
     marginBottom: 8,
   },
   row: {
-    marginBottom: 5,
+    marginBottom: 4,
   },
   rowLabel: {
-    fontSize: 8.5,
+    fontSize: 7.8,
     color: '#5d6b7d',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.45,
     marginBottom: 1,
   },
   rowValue: {
-    fontSize: 10.5,
+    fontSize: 9.4,
     color: '#18212b',
   },
   bulletItem: {
-    marginBottom: 3,
+    marginBottom: 2,
     paddingLeft: 8,
   },
   paragraph: {
     marginBottom: 4,
   },
   footer: {
-    marginTop: 8,
+    marginTop: 6,
     fontSize: 8.5,
     color: '#5d6b7d',
+    textAlign: 'right',
   },
 });
 
@@ -102,6 +156,27 @@ const renderBullets = (items: string[]) =>
     </Text>
   ));
 
+const renderPanelSections = (
+  sections: NotfallpassPdfTemplateData['panels'][number]['sections'],
+) =>
+  sections.map((section) => (
+    <View key={section.heading} style={styles.section}>
+      <Text style={styles.sectionHeading}>{section.heading}</Text>
+      {section.type === 'rows' ? renderRows(section.rows) : null}
+      {section.type === 'bullets' ? renderBullets(section.items) : null}
+      {section.type === 'paragraphs'
+        ? section.paragraphs.map((paragraph) => (
+            <Text
+              key={`${section.heading}:${paragraph}`}
+              style={styles.paragraph}
+            >
+              {paragraph}
+            </Text>
+          ))
+        : null}
+    </View>
+  ));
+
 const NotfallpassPdfDocument = ({ model }: { model: DocumentModel }) => {
   const templateData = model.meta?.templateData as
     | NotfallpassPdfTemplateData
@@ -113,33 +188,23 @@ const NotfallpassPdfDocument = ({ model }: { model: DocumentModel }) => {
   if (!templateData) {
     return (
       <Document title={title} subject={title} language={pdfLanguage}>
-        <Page size="A4" style={styles.page}>
-          <View style={styles.hero}>
-            <Text style={styles.title}>{title}</Text>
+        <Page size="A4" orientation="landscape" style={styles.page}>
+          <View style={styles.foldGrid}>
+            <View style={styles.gridRow}>
+              <View style={[styles.panel, styles.panelTopLeft]}>
+                <Text style={styles.panelTitle}>{title}</Text>
+              </View>
+              <View style={[styles.panel, styles.panelTopRight]} />
+            </View>
+            <View style={styles.gridRow}>
+              <View style={[styles.panel, styles.panelBottomLeft]} />
+              <View style={[styles.panel, styles.panelBottomRight]} />
+            </View>
           </View>
         </Page>
       </Document>
     );
   }
-
-  const medicationItems =
-    templateData.medications.length > 0
-      ? templateData.medications.map((medication) =>
-          [medication.name, medication.dosage, medication.schedule]
-            .filter((entry, index) => !(index > 0 && entry === '—'))
-            .join(' · '),
-        )
-      : ['—'];
-
-  const contactItems =
-    templateData.contacts.length > 0
-      ? templateData.contacts.map(
-          (contact) =>
-            [contact.name, contact.phone]
-              .filter((entry) => entry !== '—')
-              .join(' · ') || '—',
-        )
-      : ['—'];
 
   return (
     <Document
@@ -150,67 +215,42 @@ const NotfallpassPdfDocument = ({ model }: { model: DocumentModel }) => {
       keywords="Notfallpass, emergency pass, ME/CFS"
       language={pdfLanguage}
     >
-      <Page size="A4" style={styles.page}>
-        <View style={styles.hero}>
-          <Text style={styles.title}>{templateData.title}</Text>
-          <Text style={styles.subtitle}>{templateData.subtitle}</Text>
-        </View>
+      <Page size="A4" orientation="landscape" style={styles.page}>
+        <View style={styles.foldGuideVertical} />
+        <View style={styles.foldGuideHorizontal} />
 
-        <View style={styles.grid}>
-          <View style={styles.panel}>
-            <Text style={styles.panelHeading}>
-              {templateData.personHeading}
-            </Text>
-            {renderRows(templateData.personRows)}
-          </View>
+        <View style={styles.foldGrid}>
+          <View style={styles.gridRow}>
+            <View style={[styles.panel, styles.panelTopLeft]}>
+              <Text style={styles.panelEyebrow}>Notfallpass</Text>
+              <Text style={styles.panelTitle}>{templateData.title}</Text>
+              <Text style={styles.panelSubtitle}>{templateData.subtitle}</Text>
+              <Text style={styles.foldHint}>{templateData.foldHint}</Text>
+              {renderPanelSections(templateData.panels[0].sections)}
+            </View>
 
-          <View style={styles.panel}>
-            <Text style={styles.panelHeading}>
-              {templateData.doctorHeading}
-            </Text>
-            {renderRows(templateData.doctorRows)}
-          </View>
-
-          <View style={styles.panel}>
-            <Text style={styles.panelHeading}>
-              {templateData.contactsHeading}
-            </Text>
-            {renderBullets(contactItems)}
-          </View>
-
-          <View style={styles.panel}>
-            <Text style={styles.panelHeading}>
-              {templateData.medicationsHeading}
-            </Text>
-            {renderBullets(medicationItems)}
-          </View>
-
-          <View style={[styles.panel, styles.panelWide]}>
-            <Text style={styles.panelHeading}>
-              {templateData.diagnosesHeading}
-            </Text>
-            <Text style={styles.paragraph}>
-              {templateData.diagnosesSummary}
-            </Text>
-            {templateData.diagnosisParagraphs.map((paragraph) => (
-              <Text key={paragraph} style={styles.paragraph}>
-                {paragraph}
+            <View style={[styles.panel, styles.panelTopRight]}>
+              <Text style={styles.panelEyebrow}>
+                {templateData.panels[1].title}
               </Text>
-            ))}
+              {renderPanelSections(templateData.panels[1].sections)}
+            </View>
           </View>
 
-          <View style={[styles.panel, styles.panelWide]}>
-            <Text style={styles.panelHeading}>
-              {templateData.symptomsHeading}
-            </Text>
-            <Text style={styles.paragraph}>{templateData.symptoms}</Text>
-          </View>
+          <View style={styles.gridRow}>
+            <View style={[styles.panel, styles.panelBottomLeft]}>
+              <Text style={styles.panelEyebrow}>
+                {templateData.panels[2].title}
+              </Text>
+              {renderPanelSections(templateData.panels[2].sections)}
+            </View>
 
-          <View style={[styles.panel, styles.panelWide]}>
-            <Text style={styles.panelHeading}>
-              {templateData.allergiesHeading}
-            </Text>
-            <Text style={styles.paragraph}>{templateData.allergies}</Text>
+            <View style={[styles.panel, styles.panelBottomRight]}>
+              <Text style={styles.panelEyebrow}>
+                {templateData.panels[3].title}
+              </Text>
+              {renderPanelSections(templateData.panels[3].sections)}
+            </View>
           </View>
         </View>
 

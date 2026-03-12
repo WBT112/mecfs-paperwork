@@ -71,6 +71,15 @@ describe('buildNotfallpassPdfDocumentModel', () => {
       ['Praxis / Ärztin / Arzt', PRACTICE_NAME],
       ['Telefon', '+49 30 987654'],
     ]);
+    expect(templateData?.foldHint).toBe(
+      'Für das Brieftaschenformat einmal waagerecht und einmal senkrecht falten.',
+    );
+    expect(templateData?.panels.map((panel) => panel.title)).toEqual([
+      'Person & Diagnose',
+      'Kontakte & Praxis',
+      'Symptome & Allergien',
+      'Medikamente & Hinweise',
+    ]);
   });
 
   it('falls back to compact diagnosis labels and placeholder values', () => {
