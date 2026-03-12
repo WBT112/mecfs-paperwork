@@ -11,7 +11,7 @@ export const expectLocaleLabel = async (
   page: Page,
   locale: SupportedTestLocale,
 ) => {
-  await expect(page.locator('label[for="locale-select"]')).toHaveText(
+  await expect(page.locator('.app__locale-switch')).toContainText(
     localeLabelMap[locale],
   );
 };
@@ -20,5 +20,6 @@ export const switchLocale = async (page: Page, locale: SupportedTestLocale) => {
   const localeSelect = page.locator('#locale-select');
   await expect(localeSelect).toBeVisible();
   await localeSelect.selectOption(locale);
+  await expect(localeSelect).toHaveValue(locale);
   await expectLocaleLabel(page, locale);
 };
