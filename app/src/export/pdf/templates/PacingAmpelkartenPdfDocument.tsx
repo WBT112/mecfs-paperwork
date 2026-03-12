@@ -12,8 +12,14 @@ import type { DocumentModel } from '../types';
 import type { PacingAmpelkartenPdfTemplateData } from '../../../formpacks/pacing-ampelkarten/export/pdfDocumentModel';
 
 type PacingPdfCard = PacingAmpelkartenPdfTemplateData['cards'][number];
+type PacingPdfCardColor = PacingPdfCard['color'];
 
 const BRAND_LABEL = 'MEcfs-paperwork';
+const FALLBACK_CARD_COLORS: readonly PacingPdfCardColor[] = [
+  'green',
+  'yellow',
+  'red',
+] as const;
 
 const styles = StyleSheet.create({
   page: {
@@ -163,6 +169,21 @@ const renderCard = (card: PacingPdfCard) => (
   </View>
 );
 
+const createEmptyCard = (color: PacingPdfCardColor): PacingPdfCard => ({
+  color,
+  title: '',
+  animalLabel: '',
+  imageAlt: '',
+  imageSrc: '',
+  accentColor: '',
+  borderColor: '',
+  surfaceColor: '',
+  titleColor: '',
+  sectionLabelColor: '',
+  hint: '',
+  sections: [],
+});
+
 const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
   const locale = model.meta?.locale ?? 'de';
   const pdfLanguage = normalizePdfLanguage(locale);
@@ -172,50 +193,9 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
   const title = model.title?.trim() || 'Pacing-Ampelkarten';
   const cards =
     templateData?.cards ??
-    ([
-      {
-        color: 'green',
-        title: '',
-        animalLabel: '',
-        imageAlt: '',
-        imageSrc: '',
-        accentColor: '',
-        borderColor: '',
-        surfaceColor: '',
-        titleColor: '',
-        sectionLabelColor: '',
-        hint: '',
-        sections: [],
-      },
-      {
-        color: 'yellow',
-        title: '',
-        animalLabel: '',
-        imageAlt: '',
-        imageSrc: '',
-        accentColor: '',
-        borderColor: '',
-        surfaceColor: '',
-        titleColor: '',
-        sectionLabelColor: '',
-        hint: '',
-        sections: [],
-      },
-      {
-        color: 'red',
-        title: '',
-        animalLabel: '',
-        imageAlt: '',
-        imageSrc: '',
-        accentColor: '',
-        borderColor: '',
-        surfaceColor: '',
-        titleColor: '',
-        sectionLabelColor: '',
-        hint: '',
-        sections: [],
-      },
-    ] as PacingAmpelkartenPdfTemplateData['cards']);
+    (FALLBACK_CARD_COLORS.map((color) =>
+      createEmptyCard(color),
+    ) as PacingAmpelkartenPdfTemplateData['cards']);
   const signature = templateData?.signature ?? '';
 
   return (

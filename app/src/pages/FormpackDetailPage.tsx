@@ -1,4 +1,12 @@
-import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Ajv2020 from 'ajv/dist/2020';
@@ -105,6 +113,35 @@ const resolvePacingPresetVariant = (value: unknown): 'adult' | 'child' =>
 const isPacingPresetContentEmpty = (value: FormDataState): boolean => {
   const { meta: _meta, ...content } = value;
   return !hasPreviewValue(content);
+};
+
+const useDeferredFormFocus = ({
+  enabled,
+  fallbackSelector = FORM_FALLBACK_FOCUS_SELECTOR,
+  getRoot,
+  onResolved,
+  selector,
+}: {
+  enabled: boolean;
+  fallbackSelector?: string;
+  getRoot: RefObject<HTMLDivElement | null>;
+  onResolved: () => void;
+  selector: string | null;
+}) => {
+  useEffect(() => {
+    if (!enabled || !selector) {
+      return;
+    }
+
+    return focusWithRetry({
+      getRoot: () => getRoot.current,
+      selector,
+      fallbackSelector,
+      maxAttempts: FOCUS_RETRY_ATTEMPTS,
+      retryDelayMs: FOCUS_RETRY_DELAY_MS,
+      onResolved,
+    });
+  }, [enabled, fallbackSelector, getRoot, onResolved, selector]);
 };
 
 /**
@@ -752,54 +789,29 @@ export default function FormpackDetailPage() {
     });
   }, [activeRecord, formpackId, introGateConfig, locale]);
 
-  useEffect(() => {
-    if (!pendingIntroFocus || isIntroGateVisible) {
-      return;
-    }
+  useDeferredFormFocus({
+    enabled: pendingIntroFocus && !isIntroGateVisible,
+    getRoot: formContentRef,
+    onResolved: () => setPendingIntroFocus(false),
+    selector: FORM_PRIMARY_FOCUS_SELECTOR,
+  });
 
-    return focusWithRetry({
-      getRoot: () => formContentRef.current,
-      selector: FORM_PRIMARY_FOCUS_SELECTOR,
-      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
-      maxAttempts: FOCUS_RETRY_ATTEMPTS,
-      retryDelayMs: FOCUS_RETRY_DELAY_MS,
-      onResolved: () => setPendingIntroFocus(false),
-    });
-  }, [isIntroGateVisible, pendingIntroFocus]);
+  useDeferredFormFocus({
+    enabled: pendingFormFocus && !isIntroGateVisible,
+    getRoot: formContentRef,
+    onResolved: () => setPendingFormFocus(false),
+    selector: FORM_PRIMARY_FOCUS_SELECTOR,
+  });
 
-  useEffect(() => {
-    if (!pendingFormFocus || isIntroGateVisible) {
-      return;
-    }
-
-    return focusWithRetry({
-      getRoot: () => formContentRef.current,
-      selector: FORM_PRIMARY_FOCUS_SELECTOR,
-      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
-      maxAttempts: FOCUS_RETRY_ATTEMPTS,
-      retryDelayMs: FOCUS_RETRY_DELAY_MS,
-      onResolved: () => setPendingFormFocus(false),
-    });
-  }, [isIntroGateVisible, pendingFormFocus]);
-
-  useEffect(() => {
-    if (!pendingOfflabelFocusSelector || isIntroGateVisible) {
-      return;
-    }
-
-    return focusWithRetry({
-      getRoot: () => formContentRef.current,
-      selector: pendingOfflabelFocusSelector,
-      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
-      maxAttempts: FOCUS_RETRY_ATTEMPTS,
-      retryDelayMs: FOCUS_RETRY_DELAY_MS,
-      onResolved: clearPendingOfflabelFocusTarget,
-    });
-  }, [
-    clearPendingOfflabelFocusTarget,
-    isIntroGateVisible,
-    pendingOfflabelFocusSelector,
-  ]);
+  useDeferredFormFocus({
+    enabled:
+      pendingOfflabelFocusSelector !== null &&
+      pendingOfflabelFocusSelector !== '' &&
+      !isIntroGateVisible,
+    getRoot: formContentRef,
+    onResolved: clearPendingOfflabelFocusTarget,
+    selector: pendingOfflabelFocusSelector,
+  });
 
   // Always use the custom field template so hidden conditional sections are
   // removed from the DOM even for formpacks without InfoBoxes.

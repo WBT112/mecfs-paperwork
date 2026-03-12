@@ -198,6 +198,20 @@ const PRESETS_BY_LOCALE = {
   en: EN_PRESET,
 } as const;
 
+const cloneCardPreset = (card: BaseCardPreset): BaseCardPreset => ({
+  canDo: [...card.canDo],
+  needHelp: [...card.needHelp],
+  hint: card.hint,
+});
+
+const cloneVariantCardsPreset = (
+  cards: VariantCardsPreset<BaseCardPreset>,
+): VariantCardsPreset<BaseCardPreset> => ({
+  green: cloneCardPreset(cards.green),
+  yellow: cloneCardPreset(cards.yellow),
+  red: cloneCardPreset(cards.red),
+});
+
 /**
  * Builds the initial pacing-card form data for the requested locale and variant.
  *
@@ -223,42 +237,10 @@ export const buildPacingAmpelkartenPreset = (
       signature: preset.sender.signature,
     },
     adult: {
-      cards: {
-        green: {
-          canDo: [...preset.adult.cards.green.canDo],
-          needHelp: [...preset.adult.cards.green.needHelp],
-          hint: preset.adult.cards.green.hint,
-        },
-        yellow: {
-          canDo: [...preset.adult.cards.yellow.canDo],
-          needHelp: [...preset.adult.cards.yellow.needHelp],
-          hint: preset.adult.cards.yellow.hint,
-        },
-        red: {
-          canDo: [...preset.adult.cards.red.canDo],
-          needHelp: [...preset.adult.cards.red.needHelp],
-          hint: preset.adult.cards.red.hint,
-        },
-      },
+      cards: cloneVariantCardsPreset(preset.adult.cards),
     },
     child: {
-      cards: {
-        green: {
-          canDo: [...preset.child.cards.green.canDo],
-          needHelp: [...preset.child.cards.green.needHelp],
-          hint: preset.child.cards.green.hint,
-        },
-        yellow: {
-          canDo: [...preset.child.cards.yellow.canDo],
-          needHelp: [...preset.child.cards.yellow.needHelp],
-          hint: preset.child.cards.yellow.hint,
-        },
-        red: {
-          canDo: [...preset.child.cards.red.canDo],
-          needHelp: [...preset.child.cards.red.needHelp],
-          hint: preset.child.cards.red.hint,
-        },
-      },
+      cards: cloneVariantCardsPreset(preset.child.cards),
     },
   };
 
