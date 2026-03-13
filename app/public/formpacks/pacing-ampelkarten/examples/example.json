@@ -3,9 +3,6 @@
     "introAccepted": true,
     "variant": "adult"
   },
-  "sender": {
-    "signature": "Liebe Grüße"
-  },
   "adult": {
     "cards": {
       "green": {
@@ -34,12 +31,12 @@
       },
       "red": {
         "canDo": [
-          "Ich brauche Ruhe. Sprechen ist heute schwer.",
-          "Wenn möglich: nur kurze Nachrichten. Keine Anrufe."
+          "Ich brauche Ruhe. Sprechen ist heute schwer."
         ],
         "needHelp": [
-          "Essen/Trinken bereitstellen.",
-          "Tür/Telefon abfangen, falls nötig."
+          "Bitte stelle Essen und Trinken bereit.",
+          "Bitte übernimm Telefon, Klingel oder kurze Rückfragen.",
+          "Bitte halte den Tag für mich möglichst reizarm und ruhig."
         ],
         "hint": "Mein System ist heute im Alarmmodus. Ruhe hilft am meisten."
       }
@@ -71,12 +68,12 @@
       },
       "red": {
         "canDo": [
-          "Heute brauche ich ganz viel Ruhe.",
-          "Wenn überhaupt, dann nur ganz kurze Nachrichten statt Anrufen."
+          "Heute brauche ich ganz viel Ruhe."
         ],
         "needHelp": [
           "Bitte bring mir etwas zu trinken oder zu essen.",
-          "Bitte halte Tür oder Telefon für mich ab, wenn es geht."
+          "Bitte halte Tür oder Telefon für mich ab, wenn es geht.",
+          "Bitte hilf mit, dass alles leise und langsam bleibt."
         ],
         "hint": "Heute ist ein Ruhetag. Bitte nichts erwarten."
       }

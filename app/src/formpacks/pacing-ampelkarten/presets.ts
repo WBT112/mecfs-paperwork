@@ -18,9 +18,6 @@ interface PacingAmpelkartenPreset {
     introAccepted: boolean;
     variant: PacingAmpelkartenVariant;
   };
-  sender: {
-    signature: string;
-  };
   adult: {
     cards: VariantCardsPreset<BaseCardPreset>;
   };
@@ -50,17 +47,14 @@ const createVariantCardsPreset = (
 });
 
 const createLocalePreset = (
-  signature: string,
   adultCards: VariantCardsPreset<BaseCardPreset>,
   childCards: VariantCardsPreset<BaseCardPreset>,
 ) => ({
-  sender: { signature },
   adult: { cards: adultCards },
   child: { cards: childCards },
 });
 
 const DE_PRESET = createLocalePreset(
-  'Liebe Grüße',
   createVariantCardsPreset(
     createCardPreset(
       [
@@ -85,11 +79,12 @@ const DE_PRESET = createLocalePreset(
       'Weniger Kontakt heißt nicht weniger Wertschätzung. Ich brauche heute Ruhe, um keinen Crash auszulösen.',
     ),
     createCardPreset(
+      ['Ich brauche Ruhe. Sprechen ist heute schwer.'],
       [
-        'Ich brauche Ruhe. Sprechen ist heute schwer.',
-        'Wenn möglich: nur kurze Nachrichten. Keine Anrufe.',
+        'Bitte stelle Essen und Trinken bereit.',
+        'Bitte übernimm Telefon, Klingel oder kurze Rückfragen.',
+        'Bitte halte den Tag für mich möglichst reizarm und ruhig.',
       ],
-      ['Essen/Trinken bereitstellen.', 'Tür/Telefon abfangen, falls nötig.'],
       'Mein System ist heute im Alarmmodus. Ruhe hilft am meisten.',
     ),
   ),
@@ -115,13 +110,11 @@ const DE_PRESET = createLocalePreset(
       'Heute ist ein vorsichtiger Tag. Bitte langsam und leise.',
     ),
     createCardPreset(
-      [
-        'Heute brauche ich ganz viel Ruhe.',
-        'Wenn überhaupt, dann nur ganz kurze Nachrichten statt Anrufen.',
-      ],
+      ['Heute brauche ich ganz viel Ruhe.'],
       [
         'Bitte bring mir etwas zu trinken oder zu essen.',
         'Bitte halte Tür oder Telefon für mich ab, wenn es geht.',
+        'Bitte hilf mit, dass alles leise und langsam bleibt.',
       ],
       'Heute ist ein Ruhetag. Bitte nichts erwarten.',
     ),
@@ -129,7 +122,6 @@ const DE_PRESET = createLocalePreset(
 );
 
 const EN_PRESET = createLocalePreset(
-  'Best wishes',
   createVariantCardsPreset(
     createCardPreset(
       [
@@ -156,13 +148,11 @@ const EN_PRESET = createLocalePreset(
       'Less contact does not mean less appreciation. I need extra quiet today to avoid a crash.',
     ),
     createCardPreset(
-      [
-        'I need rest. Talking is very hard today.',
-        'If possible, please use short messages only. No calls.',
-      ],
+      ['I need rest. Talking is very hard today.'],
       [
         'Please make sure food and drinks are within reach.',
-        'Please handle the door or phone if needed.',
+        'Please handle the door, phone, or quick questions for me.',
+        'Please help keep everything as calm and low-stimulation as possible.',
       ],
       'My system is on high alert today. Rest helps the most.',
     ),
@@ -189,13 +179,11 @@ const EN_PRESET = createLocalePreset(
       'Today is a careful day. Please go slowly and keep things quiet.',
     ),
     createCardPreset(
-      [
-        'Today I need a lot of rest.',
-        'If needed, please only send very short messages instead of calling.',
-      ],
+      ['Today I need a lot of rest.'],
       [
         'Please bring me drinks or food if I need them.',
         'Please answer the door or phone for me if possible.',
+        'Please help keep everything quiet and very low-key.',
       ],
       'Today is a rest day. Please do not expect anything from me.',
     ),
@@ -241,9 +229,6 @@ export const buildPacingAmpelkartenPreset = (
     meta: {
       introAccepted: false,
       variant,
-    },
-    sender: {
-      signature: preset.sender.signature,
     },
     adult: {
       cards: cloneVariantCardsPreset(preset.adult.cards),

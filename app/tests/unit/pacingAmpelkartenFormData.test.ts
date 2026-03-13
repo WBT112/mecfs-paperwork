@@ -22,9 +22,6 @@ describe('mergePacingFormData', () => {
           },
         },
       },
-      sender: {
-        signature: 'Current signature',
-      },
     };
 
     const incoming = {
@@ -38,9 +35,6 @@ describe('mergePacingFormData', () => {
           },
         },
       },
-      sender: {
-        signature: 'Incoming signature',
-      },
     };
 
     const result = mergePacingFormData(current, incoming, 'de');
@@ -51,7 +45,6 @@ describe('mergePacingFormData', () => {
     });
     expect(result.adult).toEqual(incoming.adult);
     expect(result.child).toEqual(current.child);
-    expect(result.sender).toEqual(incoming.sender);
   });
 
   it('hydrates missing sections from German defaults when neither state contains them', () => {
@@ -80,9 +73,6 @@ describe('mergePacingFormData', () => {
     ).toContain(
       'Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.',
     );
-    expect(result.sender).toEqual({
-      signature: 'Liebe Grüße',
-    });
   });
 
   it('hydrates missing sections from English defaults for adult mode', () => {
@@ -108,9 +98,6 @@ describe('mergePacingFormData', () => {
       (result.adult as { cards: { green: { canDo: string[] } } }).cards.green
         .canDo,
     ).toContain('Short conversations are possible (around 10-20 minutes).');
-    expect(result.sender).toEqual({
-      signature: 'Best wishes',
-    });
   });
 
   it('defaults to adult presets when the incoming variant is missing', () => {

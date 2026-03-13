@@ -278,9 +278,6 @@ describe('formpacks/documentModel', () => {
         introAccepted: true,
         variant: 'child',
       },
-      sender: {
-        signature: 'Love, Alex',
-      },
       adult: {
         cards: {
           green: {
@@ -304,9 +301,6 @@ describe('formpacks/documentModel', () => {
     expect(result.meta).toEqual({
       introAccepted: true,
       variant: 'child',
-    });
-    expect(result.sender).toEqual({
-      signature: 'Love, Alex',
     });
     expect(result.adult?.cards.green.canDo).toEqual(['Short chat']);
     expect(result.child?.cards.green.canDo).toEqual(['Play a small game']);

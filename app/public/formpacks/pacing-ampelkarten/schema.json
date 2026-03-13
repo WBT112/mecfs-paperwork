@@ -18,15 +18,6 @@
       },
       "additionalProperties": false
     },
-    "sender": {
-      "type": "object",
-      "properties": {
-        "signature": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false
-    },
     "adult": {
       "$ref": "#/$defs/variantContent"
     },

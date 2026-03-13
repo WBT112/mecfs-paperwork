@@ -102,9 +102,6 @@ export type DocumentModel = {
     introAccepted?: boolean;
     variant?: 'adult' | 'child';
   };
-  sender?: {
-    signature: string | null;
-  };
   adult?: {
     cards: {
       green: PacingCardProjection;
@@ -382,7 +379,6 @@ const buildPacingAmpelkartenModel = (
   baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
 ): DocumentModel => {
   const meta = getRecordValue(formData.meta);
-  const sender = getRecordValue(formData.sender);
   const adultCards = getRecordValue(getRecordValue(formData.adult)?.cards);
   const childCards = getRecordValue(getRecordValue(formData.child)?.cards);
 
@@ -392,9 +388,6 @@ const buildPacingAmpelkartenModel = (
     meta: {
       introAccepted: meta?.introAccepted === true,
       variant: meta?.variant === 'child' ? 'child' : 'adult',
-    },
-    sender: {
-      signature: getStringValue(sender?.signature),
     },
     adult: {
       cards: {

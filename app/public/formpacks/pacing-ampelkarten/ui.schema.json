@@ -2,8 +2,7 @@
   "ui:order": [
     "meta",
     "adult",
-    "child",
-    "sender"
+    "child"
   ],
   "meta": {
     "ui:title": "pacing-ampelkarten.section.meta.title",
@@ -290,17 +289,6 @@
             "rows": 3
           }
         }
-      }
-    }
-  },
-  "sender": {
-    "ui:title": "pacing-ampelkarten.section.sender.title",
-    "signature": {
-      "ui:title": "pacing-ampelkarten.sender.signature.label",
-      "ui:help": "pacing-ampelkarten.sender.signature.help",
-      "ui:widget": "textarea",
-      "ui:options": {
-        "rows": 2
       }
     }
   }

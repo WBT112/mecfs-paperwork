@@ -10,8 +10,6 @@ import {
 
 const namespace = 'formpack:pacing-ampelkarten';
 const KEPT_ITEM = 'Keep one short item';
-const SIGNATURE_LABEL = 'Unterschrift / Abschlusszeile';
-const REASSURANCE = 'Weniger Kontakt ist nichts Persönliches.';
 const EXPORTED_AT_ISO = '2026-03-09T10:00:00.000Z';
 
 describe('buildPacingAmpelkartenPdfDocumentModel', () => {
@@ -64,8 +62,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(templateData?.cards[0].sections[0].label).toBe(
       'Was heute möglich ist',
     );
-    expect(templateData?.signatureLabel).toBe(SIGNATURE_LABEL);
-    expect(templateData?.reassurance).toBe(REASSURANCE);
     expect(templateData?.cards[0]).not.toHaveProperty('hintLabel');
   });
 
@@ -93,23 +89,21 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     );
   });
 
-  it('keeps the signature text without prefixing the localized label', () => {
+  it('omits any closing line content from the exported sections', () => {
     const model = buildPacingAmpelkartenPdfDocumentModel({
-      formData: {
-        ...buildPacingAmpelkartenPreset('de', 'adult'),
-        sender: {
-          signature: 'Liebe Grüße',
-        },
-      } as unknown as Record<string, unknown>,
+      formData: buildPacingAmpelkartenPreset(
+        'de',
+        'adult',
+      ) as unknown as Record<string, unknown>,
       locale: 'de',
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
 
-    expect(model.sections[0].blocks.at(-2)).toEqual({
+    expect(model.sections[0].blocks).not.toContainEqual({
       type: 'paragraph',
-      text: REASSURANCE,
+      text: 'Weniger Kontakt ist nichts Persönliches.',
     });
-    expect(model.sections[0].blocks.at(-1)).toEqual({
+    expect(model.sections[0].blocks).not.toContainEqual({
       type: 'paragraph',
       text: 'Liebe Grüße',
     });
@@ -136,9 +130,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
             red: {},
           },
         },
-        sender: {
-          signature: 7,
-        },
       } as unknown as Record<string, unknown>,
       locale: 'en',
       exportedAt: new Date('2026-03-09T11:00:00.000Z'),
@@ -150,7 +141,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(templateData?.variant).toBe('adult');
     expect(templateData?.cards[0].sections[0].items).toEqual([KEPT_ITEM]);
     expect(templateData?.cards[0].hint).toBe('');
-    expect(templateData?.signature).toBe('');
     expect(model.sections[0].heading).toBe('Today is a good day');
     expect(model.sections[0].blocks).toEqual([
       {

@@ -17,7 +17,7 @@ const mergePacingTopLevelSection = (
   current: FormDataState,
   incoming: FormDataState,
   fallback: FormDataState,
-  key: 'sender' | 'adult' | 'child',
+  key: 'adult' | 'child',
 ): unknown => {
   if (hasOwnKey(incoming, key)) {
     return incoming[key];
@@ -64,7 +64,6 @@ export const mergePacingFormData = (
       ...(isRecord(incoming.meta) ? incoming.meta : {}),
       variant,
     },
-    sender: mergePacingTopLevelSection(current, incoming, fallback, 'sender'),
     adult: mergePacingTopLevelSection(current, incoming, fallback, 'adult'),
     child: mergePacingTopLevelSection(current, incoming, fallback, 'child'),
   };
