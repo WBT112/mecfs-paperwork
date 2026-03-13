@@ -271,4 +271,71 @@ describe('formpacks/documentModel', () => {
     expect(result.exportBundle?.part2.attachments).toEqual([]);
     expect(result.exportBundle?.part2.attachmentsHeading).toBe('');
   });
+
+  it('builds pacing-ampelkarten model with export-ready adult and child cards', () => {
+    const result = buildDocumentModel('pacing-ampelkarten', 'en', {
+      meta: {
+        introAccepted: true,
+        variant: 'child',
+      },
+      adult: {
+        cards: {
+          green: {
+            canDo: ['Short chat'],
+            needHelp: ['Shopping'],
+            hint: 'Pacing helps',
+          },
+        },
+      },
+      child: {
+        cards: {
+          green: {
+            canDo: ['Play a small game'],
+            needHelp: ['Please remind me to rest'],
+            hint: 'Good day',
+          },
+        },
+      },
+    });
+
+    expect(result.meta).toEqual({
+      introAccepted: true,
+      variant: 'child',
+    });
+    expect(result.adult?.cards.green.canDo).toEqual(['Short chat']);
+    expect(result.child?.cards.green.canDo).toEqual(['Play a small game']);
+  });
+
+  it('defaults pacing-ampelkarten variant to adult and projects the simplified card payload', () => {
+    const result = buildDocumentModel('pacing-ampelkarten', 'en', {
+      meta: {
+        introAccepted: false,
+        variant: 'unexpected',
+      },
+      adult: {
+        cards: {
+          green: {
+            canDo: ['Slow walk', '', null],
+            needHelp: ['Cooking'],
+            hint: 'One step at a time',
+          },
+        },
+      },
+    });
+
+    expect(result.meta).toEqual({
+      introAccepted: false,
+      variant: 'adult',
+    });
+    expect(result.adult?.cards.green).toEqual({
+      canDo: ['Slow walk'],
+      needHelp: ['Cooking'],
+      hint: 'One step at a time',
+    });
+    expect(result.child?.cards.green).toEqual({
+      canDo: [],
+      needHelp: [],
+      hint: null,
+    });
+  });
 });

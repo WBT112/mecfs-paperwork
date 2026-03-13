@@ -10,8 +10,6 @@ type DevMetadataLabels = {
   exportsLabel: string;
   docxHeading: string;
   docxTemplateA4: string;
-  docxTemplateWallet: string;
-  docxTemplateWalletUnavailable: string;
   docxMapping: string;
 };
 
@@ -71,14 +69,6 @@ export default function DevMetadataPanel({
             <div>
               <dt>{labels.docxTemplateA4}</dt>
               <dd>{manifest.docx.templates.a4}</dd>
-            </div>
-            <div>
-              <dt>{labels.docxTemplateWallet}</dt>
-              <dd>
-                {manifest.docx.templates.wallet
-                  ? manifest.docx.templates.wallet
-                  : labels.docxTemplateWalletUnavailable}
-              </dd>
             </div>
             <div>
               <dt>{labels.docxMapping}</dt>

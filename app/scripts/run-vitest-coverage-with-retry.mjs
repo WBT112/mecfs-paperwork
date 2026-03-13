@@ -9,13 +9,19 @@ const C_RESET = '\x1b[0m';
 const C_YELLOW = '\x1b[33m';
 
 const isChangedMode = process.argv.includes('--changed');
+const coverageThresholdMode =
+  process.env.COVERAGE_GLOBAL_THRESHOLD_MODE?.trim().toLowerCase() ?? 'hard';
+const allowSoftGlobalThreshold = coverageThresholdMode === 'soft';
+const extraVitestArgs = process.argv
+  .slice(2)
+  .filter((arg) => arg !== '--changed');
 
 const vitestArgs = [
   '--run',
   '--coverage',
-  ...(isChangedMode
-    ? ['--coverage.reporter=json-summary', '--coverage.reporter=text-summary']
-    : []),
+  '--coverage.reporter=json-summary',
+  ...(isChangedMode ? ['--coverage.reporter=text-summary'] : []),
+  ...extraVitestArgs,
 ];
 
 const runCommand = (command, args) =>
@@ -60,11 +66,12 @@ const main = async () => {
       break;
     }
 
-    if (
-      !shouldRetry(lastResult.code, lastResult.output) ||
-      attempt === MAX_ATTEMPTS
-    ) {
+    if (!shouldRetry(lastResult.code, lastResult.output)) {
       process.exit(lastResult.code);
+    }
+
+    if (attempt === MAX_ATTEMPTS) {
+      break;
     }
 
     console.warn(
@@ -72,12 +79,30 @@ const main = async () => {
     );
   }
 
-  if (lastResult.code !== 0) {
+  const isGlobalThresholdFailure = RETRYABLE_THRESHOLD_FAILURE.test(
+    lastResult.output,
+  );
+
+  if (
+    lastResult.code !== 0 &&
+    (!isGlobalThresholdFailure || !allowSoftGlobalThreshold)
+  ) {
     process.exit(lastResult.code);
   }
 
   if (!isChangedMode) {
+    if (lastResult.code !== 0 && isGlobalThresholdFailure) {
+      console.warn(
+        `${C_YELLOW}Continuing after repeated global V8 coverage-threshold failure because COVERAGE_GLOBAL_THRESHOLD_MODE=soft and the underlying coverage artifacts were still produced.${C_RESET}`,
+      );
+    }
     return;
+  }
+
+  if (lastResult.code !== 0 && isGlobalThresholdFailure) {
+    console.warn(
+      `${C_YELLOW}Continuing after repeated global V8 coverage-threshold failure because COVERAGE_GLOBAL_THRESHOLD_MODE=soft and --changed mode enforces 100% on each changed file separately.${C_RESET}`,
+    );
   }
 
   const changedCoverageResult = await runCommand('node', [

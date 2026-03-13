@@ -13,7 +13,6 @@
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=WBT112_mecfs-paperwork&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=WBT112_mecfs-paperwork)
 
-
 # mecfs-paperwork
 
 Offline-first tool for creating and managing ME/CFS-related formpacks with export (DOCX, PDF, JSON).
@@ -42,10 +41,19 @@ npm ci
 npm run dev
 ```
 
+Note:
+
+- `npm run dev` is fine for normal UI work.
+- For manual PDF export verification, use `npm run preview` instead. The app's
+  CSP is stricter than Vite's dev bootstrap and can break PDF export behavior in
+  the raw HMR server.
+
 ## Documentation
+
 Start here: `docs/README.md`
 
 Highlights:
+
 - Getting started and quality gates: `docs/getting-started.md`
 - Accessibility baseline: `docs/a11y.md`
 - Formpacks authoring: `docs/formpacks.md`
@@ -55,6 +63,7 @@ Highlights:
 - Security: `docs/security/`
 
 ## Contributing & Security
+
 - Contributing guide: `CONTRIBUTING.md`
 - Security policy: `SECURITY.md`
 - Code of conduct: `CODE_OF_CONDUCT.md`

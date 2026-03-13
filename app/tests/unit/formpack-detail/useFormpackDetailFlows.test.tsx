@@ -122,10 +122,7 @@ const NOTFALLPASS_MANIFEST: FormpackManifest = {
   ...MANIFEST,
   id: 'notfallpass',
   docx: {
-    templates: {
-      a4: '/templates/a4.docx',
-      wallet: '/templates/wallet.docx',
-    },
+    templates: { a4: '/templates/a4.docx' },
     mapping: '/templates/mapping.json',
   },
 };
@@ -842,10 +839,7 @@ describe('formpack detail flow hooks', () => {
 
     rerender({ manifest: NOTFALLPASS_MANIFEST });
     await waitFor(() => {
-      expect(result.current.docxTemplateOptions).toHaveLength(2);
-    });
-    act(() => {
-      result.current.setDocxTemplateId('wallet');
+      expect(result.current.docxTemplateOptions).toHaveLength(1);
     });
     rerender({ manifest: OFFLABEL_MANIFEST });
     await waitFor(() => {

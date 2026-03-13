@@ -19,7 +19,6 @@ const REQUIRED_MANIFEST_FIELDS = [
   'titleKey',
   'descriptionKey',
   'exports',
-  'docx',
 ];
 const manifestAjv = new Ajv2020({ allErrors: true, strict: false });
 addFormats(manifestAjv);
@@ -34,7 +33,6 @@ const MANIFEST_SCHEMA = {
     'titleKey',
     'descriptionKey',
     'exports',
-    'docx',
   ],
   properties: {
     id: { type: 'string', minLength: 1 },

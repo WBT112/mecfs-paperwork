@@ -45,7 +45,7 @@ describe.skipIf(!hasBuild)('bundle size budgets', () => {
     expect(total).toBeLessThanOrEqual(JS_TOTAL_BUDGET);
   });
 
-  it('total CSS stays under 40 kB', () => {
+  it('total CSS stays under the configured budget', () => {
     const total = cssAssets.reduce((sum, a) => sum + a.size, 0);
     expect(total).toBeLessThanOrEqual(CSS_TOTAL_BUDGET);
   });

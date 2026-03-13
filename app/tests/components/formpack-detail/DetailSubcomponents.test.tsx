@@ -62,9 +62,14 @@ vi.mock('../../../src/pages/formpack-detail/components/SnapshotsPanel', () => ({
 
 import FormpackDocumentPreviewContent from '../../../src/pages/formpack-detail/components/FormpackDocumentPreviewContent';
 import FormpackExportActions from '../../../src/pages/formpack-detail/components/FormpackExportActions';
-import FormpackFormPanel from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
+import FormpackFormPanel, {
+  type FormpackFormPanelProps,
+} from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
+import FormpackIntroUtilityRow from '../../../src/pages/formpack-detail/components/FormpackIntroUtilityRow';
 import FormpackToolsSection from '../../../src/pages/formpack-detail/components/FormpackToolsSection';
-import type { FormpackFormPanelProps } from '../../../src/pages/formpack-detail/components/FormpackFormPanel';
+import PacingAmpelkartenEditor from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
+import type { DocxTemplateId } from '../../../src/export/docxLazy';
+import type { FormpackManifest } from '../../../src/formpacks/types';
 import * as formpackDetailComponents from '../../../src/pages/formpack-detail/components';
 
 const DummyForm = ({
@@ -90,6 +95,12 @@ const INTRO_TEXTS = {
   startButtonLabel: 'Start',
   reopenButtonLabel: 'Reopen',
 } as const;
+
+const DOCX_MAPPING_PATH = '/mapping.json';
+const DOCX_A4_TEMPLATE_PATH = '/a4.docx';
+const DEFAULT_LOCALES = ['de', 'en'] as const;
+const PACING_FORMPACK_ID = 'pacing-ampelkarten';
+const FORMPACK_UTILITY_ROW_SELECTOR = '.formpack-utility-row';
 
 const TOOL_SECTION_PROPS = {
   heading: 'Tools',
@@ -138,6 +149,17 @@ const TOOL_SECTION_PROPS = {
   } as never,
 } as const;
 
+const formPanelActionProps = {
+  onApplyDummyData: vi.fn(),
+  onApplyProfile: vi.fn(),
+  onCloseIntroModal: vi.fn(),
+  onConfirmIntroGate: vi.fn(),
+  onFormChange: vi.fn(),
+  onFormSubmit: vi.fn(),
+  onOpenIntroModal: vi.fn(),
+  onProfileSaveToggle: vi.fn(),
+};
+
 const createFormPanelProps = (
   overrides: Partial<FormpackFormPanelProps> = {},
 ): FormpackFormPanelProps => ({
@@ -156,14 +178,6 @@ const createFormPanelProps = (
   isIntroGateVisible: false,
   isIntroModalOpen: false,
   loadingLabel: 'Loading',
-  onApplyDummyData: vi.fn(),
-  onApplyProfile: vi.fn(),
-  onCloseIntroModal: vi.fn(),
-  onConfirmIntroGate: vi.fn(),
-  onFormChange: vi.fn(),
-  onFormSubmit: vi.fn(),
-  onOpenIntroModal: vi.fn(),
-  onProfileSaveToggle: vi.fn(),
   profileApplyDummyLabel: 'Dummy',
   profileApplyLabel: 'Apply',
   profileHasSavedData: false,
@@ -175,8 +189,67 @@ const createFormPanelProps = (
   templates: {},
   uiSchema: {},
   validator: {} as never,
+  ...formPanelActionProps,
   ...overrides,
 });
+
+type ExportActionOverrides = Partial<
+  React.ComponentProps<typeof FormpackExportActions>
+>;
+
+const createManifest = (
+  overrides: Partial<FormpackManifest> = {},
+): FormpackManifest => ({
+  id: 'doctor-letter',
+  version: '1.0.0',
+  titleKey: 'title',
+  descriptionKey: 'description',
+  defaultLocale: 'de',
+  locales: [...DEFAULT_LOCALES],
+  exports: ['docx'],
+  visibility: 'public',
+  docx: {
+    templates: { a4: DOCX_A4_TEMPLATE_PATH },
+    mapping: DOCX_MAPPING_PATH,
+  },
+  ...overrides,
+});
+
+const createExportActionProps = (
+  overrides: ExportActionOverrides = {},
+): React.ComponentProps<typeof FormpackExportActions> => ({
+  PdfExportControlsComponent: DummyPdfControls as never,
+  docxError: null,
+  docxSuccess: null,
+  docxTemplateId: 'a4',
+  docxTemplateOptions: [{ id: 'a4', label: 'A4' }],
+  encryptJsonExport: false,
+  formData: {},
+  formpackId: 'doctor-letter',
+  handleExportDocx: vi.fn(),
+  handleExportJson: vi.fn(),
+  handlePdfExportError: vi.fn(),
+  handlePdfExportSuccess: vi.fn(),
+  isDocxExporting: false,
+  jsonExportError: null,
+  jsonExportPassword: '',
+  jsonExportPasswordConfirm: '',
+  manifest: createManifest(),
+  offlabelOutputLocale: 'de',
+  pdfError: null,
+  pdfSuccess: null,
+  secondaryActions: null,
+  setDocxTemplateId: vi.fn(),
+  setEncryptJsonExport: vi.fn(),
+  setJsonExportPassword: vi.fn(),
+  setJsonExportPasswordConfirm: vi.fn(),
+  storageBlocked: false,
+  t: (key) => key,
+  ...overrides,
+});
+
+const renderExportActions = (overrides: ExportActionOverrides = {}) =>
+  render(<FormpackExportActions {...createExportActionProps(overrides)} />);
 
 describe('formpack detail subcomponents', () => {
   it('re-exports the page-local component entrypoints through the barrel', () => {
@@ -201,6 +274,9 @@ describe('formpack detail subcomponents', () => {
     );
     expect(formpackDetailComponents.FormpackToolsSection).toBe(
       FormpackToolsSection,
+    );
+    expect(formpackDetailComponents.PacingAmpelkartenEditor).toBe(
+      PacingAmpelkartenEditor,
     );
   });
 
@@ -306,54 +382,116 @@ describe('formpack detail subcomponents', () => {
     expect(screen.getByText('Snapshots')).toBeInTheDocument();
   });
 
-  it('renders export controls and status messages', () => {
+  it('wraps intro and profile actions in a shared utility row for stable layout', () => {
     render(
-      <FormpackExportActions
-        PdfExportControlsComponent={DummyPdfControls as never}
-        docxError="docx-error"
-        docxSuccess="docx-success"
-        docxTemplateId="a4"
-        docxTemplateOptions={[
-          { id: 'a4', label: 'A4' },
-          { id: 'wallet', label: 'Wallet' },
-        ]}
-        encryptJsonExport
-        formData={{}}
-        formpackId="offlabel-antrag"
-        handleExportDocx={vi.fn()}
-        handleExportJson={vi.fn()}
-        handlePdfExportError={vi.fn()}
-        handlePdfExportSuccess={vi.fn()}
-        isDocxExporting={false}
-        jsonExportError="json-error"
-        jsonExportPassword="secret"
-        jsonExportPasswordConfirm="secret"
-        manifest={{
-          id: 'offlabel-antrag',
-          version: '1.0.0',
-          titleKey: 'title',
-          descriptionKey: 'description',
-          defaultLocale: 'de',
-          locales: ['de', 'en'],
-          exports: ['docx', 'json', 'pdf'],
-          visibility: 'public',
-          docx: {
-            templates: { a4: '/a4.docx' },
-            mapping: '/mapping.json',
-          },
-        }}
-        offlabelOutputLocale="de"
-        pdfError="pdf-error"
-        pdfSuccess="pdf-success"
-        secondaryActions={<button type="button">Reset</button>}
-        setDocxTemplateId={vi.fn()}
-        setEncryptJsonExport={vi.fn()}
-        setJsonExportPassword={vi.fn()}
-        setJsonExportPasswordConfirm={vi.fn()}
-        storageBlocked={false}
-        t={(key) => key}
+      <FormpackFormPanel
+        {...createFormPanelProps({
+          introGateEnabled: true,
+          introTexts: INTRO_TEXTS,
+          profileHasSavedData: true,
+          showDevSections: true,
+        })}
       />,
     );
+
+    const reopenButton = screen.getByRole('button', { name: 'Reopen' });
+    const utilityRow = reopenButton.closest(FORMPACK_UTILITY_ROW_SELECTOR);
+
+    expect(utilityRow).not.toBeNull();
+    expect(utilityRow).toContainElement(
+      screen.getByRole('checkbox', { name: 'Save' }),
+    );
+    expect(utilityRow).toContainElement(
+      screen.getByRole('button', { name: 'Apply' }),
+    );
+    expect(utilityRow).toContainElement(
+      screen.getByRole('button', { name: 'Dummy' }),
+    );
+  });
+
+  it('renders intro and profile controls without layout wrappers when none are provided', () => {
+    render(
+      <FormpackIntroUtilityRow
+        introGateEnabled
+        introReopenLabel="Reopen"
+        onApplyDummyData={vi.fn()}
+        onApplyProfile={vi.fn()}
+        onOpenIntroModal={vi.fn()}
+        onProfileSaveToggle={vi.fn()}
+        profileApplyDummyLabel="Dummy"
+        profileApplyLabel="Apply"
+        profileClassName="profile-quickfill"
+        profileHasSavedData={false}
+        profileSaveEnabled={false}
+        profileStatus="profile-error"
+        profileStatusSuccessText="profileApplySuccess"
+        profileToggleLabel="Save"
+        showDevSections={false}
+      />,
+    );
+
+    expect(document.querySelector(FORMPACK_UTILITY_ROW_SELECTOR)).toBeNull();
+    expect(document.querySelector('.formpack-intro__reopen')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Reopen' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    expect(
+      screen.queryByRole('button', { name: 'Dummy' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('profile-error')).toBeInTheDocument();
+  });
+
+  it('can render only profile actions inside a provided wrapper when intro controls are absent', () => {
+    render(
+      <FormpackIntroUtilityRow
+        containerClassName="formpack-utility-row"
+        introGateEnabled={false}
+        onApplyDummyData={vi.fn()}
+        onApplyProfile={vi.fn()}
+        onOpenIntroModal={vi.fn()}
+        onProfileSaveToggle={vi.fn()}
+        profileApplyDummyLabel="Dummy"
+        profileApplyLabel="Apply"
+        profileClassName="profile-quickfill"
+        profileHasSavedData
+        profileSaveEnabled
+        profileStatus="profileApplySuccess"
+        profileStatusSuccessText="profileApplySuccess"
+        profileToggleLabel="Save"
+        showDevSections
+      />,
+    );
+
+    const utilityRow = document.querySelector(FORMPACK_UTILITY_ROW_SELECTOR);
+    expect(utilityRow).not.toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Reopen' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Dummy' })).toBeInTheDocument();
+    expect(screen.getByText('profileApplySuccess')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
+  });
+
+  it('renders export controls and status messages', () => {
+    renderExportActions({
+      docxError: 'docx-error',
+      docxSuccess: 'docx-success',
+      docxTemplateOptions: [{ id: 'a4', label: 'A4' }],
+      encryptJsonExport: true,
+      formpackId: 'offlabel-antrag',
+      jsonExportError: 'json-error',
+      jsonExportPassword: 'secret',
+      jsonExportPasswordConfirm: 'secret',
+      manifest: createManifest({
+        id: 'offlabel-antrag',
+        exports: ['docx', 'json', 'pdf'],
+      }),
+      pdfError: 'pdf-error',
+      pdfSuccess: 'pdf-success',
+      secondaryActions: <button type="button">Reset</button>,
+    });
 
     expect(
       screen.getByRole('button', { name: 'formpackRecordExportDocx' }),
@@ -370,5 +508,155 @@ describe('formpack detail subcomponents', () => {
     expect(screen.getByText('json-error')).toBeInTheDocument();
     expect(screen.getByText('pdf-error')).toBeInTheDocument();
     expect(screen.getByText('pdf-success')).toBeInTheDocument();
+  });
+
+  it('renders standalone PDF controls when a formpack has no DOCX export', () => {
+    renderExportActions({
+      docxTemplateOptions: [],
+      formpackId: PACING_FORMPACK_ID,
+      manifest: createManifest({
+        id: PACING_FORMPACK_ID,
+        exports: ['json', 'pdf'],
+        docx: undefined,
+      }),
+    });
+
+    expect(
+      screen.queryByRole('button', { name: 'formpackRecordExportDocx' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'formpackRecordExportPdf' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'formpackRecordExportJson' }),
+    ).toBeInTheDocument();
+  });
+
+  it('hides the primary export row when docx is declared without usable templates', () => {
+    renderExportActions({
+      docxTemplateOptions: [],
+      manifest: createManifest({ exports: ['docx'] }),
+    });
+
+    expect(
+      screen.queryByRole('button', { name: 'formpackRecordExportDocx' }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('.formpack-pdf-export')).toBeNull();
+    expect(
+      document.querySelector('.formpack-actions__group--export'),
+    ).toBeEmptyDOMElement();
+  });
+
+  it('renders DOCX-only controls without PDF wrapper when pdf export is absent', () => {
+    renderExportActions({
+      isDocxExporting: true,
+      manifest: createManifest({ exports: ['docx'] }),
+    });
+
+    const docxButton = screen.getByRole('button', {
+      name: 'formpackDocxExportInProgress',
+    });
+    expect(docxButton).toBeDisabled();
+    expect(
+      document.querySelector('.formpack-docx-export--single-template'),
+    ).not.toBeNull();
+    expect(
+      document.querySelector('.formpack-docx-export__buttons--single-action'),
+    ).not.toBeNull();
+    expect(document.querySelector('.formpack-pdf-export')).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'formpackRecordExportJson' }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('.formpack-actions__status')).toBeNull();
+  });
+
+  it('updates encrypted json password fields without rendering a template selector for A4-only DOCX', () => {
+    const setEncryptJsonExport = vi.fn();
+    const setJsonExportPassword = vi.fn();
+    const setJsonExportPasswordConfirm = vi.fn();
+
+    renderExportActions({
+      docxTemplateOptions: [{ id: 'a4', label: 'A4' }],
+      encryptJsonExport: true,
+      jsonExportPassword: 'old-secret',
+      jsonExportPasswordConfirm: 'old-confirm',
+      manifest: createManifest({
+        exports: ['docx', 'json'],
+        docx: {
+          templates: { a4: DOCX_A4_TEMPLATE_PATH },
+          mapping: DOCX_MAPPING_PATH,
+        },
+      }),
+      setEncryptJsonExport,
+      setJsonExportPassword,
+      setJsonExportPasswordConfirm,
+    });
+
+    expect(
+      screen.queryByLabelText('formpackDocxTemplateLabel'),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByLabelText('formpackJsonExportEncryptionToggle'),
+    );
+    expect(setEncryptJsonExport).toHaveBeenCalledWith(false);
+
+    fireEvent.change(screen.getByLabelText('formpackJsonExportPasswordLabel'), {
+      target: { value: 'new-secret' },
+    });
+    expect(setJsonExportPassword).toHaveBeenCalledWith('new-secret');
+
+    fireEvent.change(
+      screen.getByLabelText('formpackJsonExportPasswordConfirmLabel'),
+      {
+        target: { value: 'new-confirm' },
+      },
+    );
+    expect(setJsonExportPasswordConfirm).toHaveBeenCalledWith('new-confirm');
+  });
+
+  it('renders a DOCX template selector when multiple templates are available and updates the selected template', () => {
+    const setDocxTemplateId = vi.fn();
+    const alternateTemplateId = 'a4-alt' as unknown as DocxTemplateId;
+
+    renderExportActions({
+      docxTemplateId: 'a4',
+      docxTemplateOptions: [
+        { id: 'a4', label: 'A4' },
+        { id: alternateTemplateId, label: 'A4 (alt)' },
+      ],
+      manifest: createManifest({ exports: ['docx', 'pdf'] }),
+      setDocxTemplateId,
+    });
+
+    const selector = screen.getByLabelText('formpackDocxTemplateLabel');
+    expect(selector).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'A4' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: 'A4 (alt)' }),
+    ).toBeInTheDocument();
+
+    fireEvent.change(selector, { target: { value: alternateTemplateId } });
+    expect(setDocxTemplateId).toHaveBeenCalledWith(alternateTemplateId);
+  });
+
+  it('omits secondary export actions and status area when json export and messages are absent', () => {
+    renderExportActions({
+      docxTemplateOptions: [],
+      formpackId: PACING_FORMPACK_ID,
+      manifest: createManifest({
+        id: PACING_FORMPACK_ID,
+        exports: ['pdf'],
+        docx: undefined,
+      }),
+    });
+
+    expect(
+      screen.getByRole('button', { name: 'formpackRecordExportPdf' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'formpackRecordExportJson' }),
+    ).not.toBeInTheDocument();
+    expect(document.querySelector('.formpack-actions__status')).toBeNull();
   });
 });

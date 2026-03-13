@@ -21,7 +21,6 @@ export const isFormpackVisibility = (
 export interface FormpackDocxManifest {
   templates: {
     a4: string;
-    wallet?: string;
   };
   mapping: string;
 }

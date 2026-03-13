@@ -293,6 +293,14 @@ body {
   max-width: 960px;
 }
 
+.app__card--pacing-ampelkarten {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  max-width: 1040px;
+}
+
 .app__card h2 {
   margin-top: 0;
 }
@@ -675,7 +683,6 @@ body {
   gap: 2rem;
 }
 
-.formpack-detail__assets,
 .formpack-detail__form {
   display: grid;
   gap: 1.5rem;
@@ -1152,6 +1159,17 @@ body {
   font-size: 0.95rem;
 }
 
+.formpack-array-item--compact {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.formpack-array-item__header--actions-only {
+  justify-content: flex-end;
+}
+
 .formpack-array-item__content > fieldset {
   margin: 0;
   padding: 0;
@@ -1176,6 +1194,753 @@ body {
   color: var(--color-text-muted);
   font-size: 0.9rem;
   line-height: 1.4;
+}
+
+.pacing-editor {
+  --pacing-green: #2f7c4f;
+  --pacing-green-soft: #eef7f0;
+  --pacing-yellow: #8f6b00;
+  --pacing-yellow-soft: #fff7dd;
+  --pacing-red: #9a3d3d;
+  --pacing-red-soft: #fff0ef;
+  --pacing-variant: #2f5ca8;
+  --pacing-variant-soft: #eef3ff;
+  --pacing-preview: #5b4f99;
+  --pacing-preview-soft: #f0edff;
+  --pacing-section-border: color-mix(in srgb, var(--color-border) 82%, white);
+  --pacing-section-bg-start: color-mix(
+    in srgb,
+    var(--color-surface) 92%,
+    white
+  );
+  --pacing-section-bg-end: color-mix(
+    in srgb,
+    var(--color-surface-subtle) 72%,
+    white
+  );
+  --pacing-item-divider: color-mix(
+    in srgb,
+    var(--color-border-subtle) 82%,
+    white
+  );
+  display: grid;
+  gap: 1rem;
+}
+
+.pacing-editor__utility-row {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 95%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 72%, white)
+  );
+  box-shadow: 0 10px 24px rgb(15 23 42 / 0.04);
+}
+
+.pacing-editor__utility {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.pacing-editor__utility .app__button {
+  min-height: 40px;
+}
+
+.pacing-editor__utility-row > .app__button {
+  min-height: 40px;
+}
+
+.pacing-editor__utility__save {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.pacing-editor__utility__success {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.pacing-editor__utility__error {
+  font-size: 0.85rem;
+  color: var(--color-danger);
+}
+
+.pacing-editor__steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 95%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 70%, white)
+  );
+  box-shadow: 0 10px 24px rgb(15 23 42 / 0.04);
+}
+
+.pacing-editor__variant-stage {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 96%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 74%, white)
+  );
+}
+
+.pacing-editor__variant-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.pacing-editor__variant-card {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  min-height: 188px;
+  padding: 1.15rem;
+  border: 0;
+  border-radius: 22px;
+  background:
+    radial-gradient(
+      circle at top right,
+      rgb(255 255 255 / 0.9),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pacing-variant-soft) 92%, white),
+      color-mix(in srgb, var(--color-surface) 88%, var(--pacing-variant-soft))
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 10%, transparent),
+    0 10px 30px rgb(31 64 122 / 0.08);
+  color: var(--color-text-strong);
+  text-align: left;
+}
+
+.pacing-editor__variant-card:hover {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 18%, white),
+    0 14px 32px rgb(31 64 122 / 0.12);
+  transform: translateY(-1px);
+}
+
+.pacing-editor__variant-card--selected {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgb(255 255 255 / 0.94),
+      transparent 40%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pacing-variant) 18%, white),
+      color-mix(in srgb, var(--pacing-variant-soft) 72%, white)
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 24%, white),
+    0 16px 34px rgb(31 64 122 / 0.16);
+}
+
+.pacing-editor__variant-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.72rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pacing-variant) 12%, white);
+  color: var(--pacing-variant);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pacing-editor__variant-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.pacing-editor__variant-body {
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.pacing-editor__variant-check {
+  margin-top: auto;
+  font-weight: 700;
+  color: var(--pacing-variant);
+}
+
+.pacing-editor__step {
+  --pacing-step-accent: var(--pacing-variant);
+  --pacing-step-soft: var(--pacing-variant-soft);
+  --pacing-step-text: #21457f;
+  display: grid;
+  gap: 0.25rem;
+  justify-items: start;
+  min-height: 64px;
+  padding: 0.8rem 0.9rem;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-soft) 88%, white),
+    color-mix(in srgb, var(--pacing-step-soft) 48%, var(--color-surface))
+  );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-step-accent) 10%, transparent);
+  color: var(--pacing-step-text);
+  text-align: left;
+}
+
+.pacing-editor__step:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-soft) 96%, white),
+    color-mix(in srgb, var(--pacing-step-soft) 65%, var(--color-surface))
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-step-accent) 18%, white),
+    0 8px 20px color-mix(in srgb, var(--pacing-step-accent) 10%, transparent);
+}
+
+.pacing-editor__step--current {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-accent) 18%, white),
+    color-mix(in srgb, var(--pacing-step-soft) 72%, white)
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-step-accent) 24%, white),
+    0 12px 24px color-mix(in srgb, var(--pacing-step-accent) 14%, transparent);
+}
+
+.pacing-editor__step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--pacing-step-text);
+}
+
+.pacing-editor__step--current .pacing-editor__step-index {
+  border-color: transparent;
+  background: var(--pacing-step-accent);
+  color: #fff;
+}
+
+.pacing-editor__step-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.pacing-editor__step-header {
+  --pacing-header-accent: var(--pacing-variant);
+  --pacing-header-soft: var(--pacing-variant-soft);
+  --pacing-header-dark-base: #0d111b;
+  --pacing-header-text: var(--color-text-strong);
+  --pacing-header-dark-text: var(--color-text-strong);
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem 1.1rem;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--pacing-header-soft), white);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-header-accent) 12%, transparent);
+  color: var(--pacing-header-text);
+}
+
+.pacing-editor__step-header h4 {
+  margin: 0;
+}
+
+.pacing-editor__eyebrow {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.pacing-editor__description {
+  margin: 0;
+  max-width: 65ch;
+  color: var(--color-text-muted);
+}
+
+.pacing-editor__card-title {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  margin: 0;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pacing-header-accent) 16%, white);
+  color: var(--pacing-header-accent);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-header-accent) 16%, transparent);
+}
+
+.pacing-editor__page-warning {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem 1rem;
+  border-radius: 16px;
+  border: 0;
+  border-inline-start: 4px solid color-mix(in srgb, #b86a00 60%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff1cc 88%, white),
+    color-mix(in srgb, #fff7df 60%, var(--color-surface))
+  );
+  color: #6c4300;
+}
+
+.pacing-editor__page-warning-title,
+.pacing-editor__page-warning-body {
+  margin: 0;
+}
+
+.pacing-editor__page-warning-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+:root[data-theme='dark'] .pacing-editor__page-warning {
+  border-inline-start-color: color-mix(in srgb, #f0b24d 72%, white);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, #d08a17 26%, #1a1510),
+    color-mix(in srgb, #d08a17 12%, var(--color-surface))
+  );
+  color: #ffe7ba;
+}
+
+:root[data-theme='dark'] .pacing-editor__step {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-accent) 20%, #131313),
+    color-mix(in srgb, var(--pacing-step-soft) 8%, var(--color-surface))
+  );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-step-accent) 16%, transparent);
+  color: var(--color-text-strong);
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-card {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgb(255 255 255 / 0.08),
+      transparent 35%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pacing-variant) 18%, #14171f),
+      color-mix(in srgb, var(--pacing-variant-soft) 10%, var(--color-surface))
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 16%, transparent),
+    0 14px 28px rgb(0 0 0 / 0.24);
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-card--selected {
+  background:
+    radial-gradient(
+      circle at top right,
+      rgb(255 255 255 / 0.12),
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pacing-variant) 34%, #14171f),
+      color-mix(in srgb, var(--pacing-variant-soft) 16%, var(--color-surface))
+    );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-variant) 32%, white),
+    0 18px 34px rgb(0 0 0 / 0.34);
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-pill {
+  background: color-mix(in srgb, var(--pacing-variant) 30%, #14171f);
+  color: #e8efff;
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-body {
+  color: var(--color-text-subtle);
+}
+
+:root[data-theme='dark'] .pacing-editor__variant-check {
+  color: #d8e5ff;
+}
+
+:root[data-theme='dark'] .pacing-editor__step:hover {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-accent) 27%, #151515),
+    color-mix(in srgb, var(--pacing-step-soft) 14%, var(--color-surface))
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-step-accent) 26%, white),
+    0 10px 22px color-mix(in srgb, var(--pacing-step-accent) 12%, transparent);
+}
+
+:root[data-theme='dark'] .pacing-editor__step--current {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pacing-step-accent) 34%, #151515),
+    color-mix(in srgb, var(--pacing-step-soft) 18%, var(--color-surface))
+  );
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--pacing-step-accent) 36%, white),
+    0 12px 24px color-mix(in srgb, var(--pacing-step-accent) 18%, transparent);
+}
+
+:root[data-theme='dark'] .pacing-editor__step-index {
+  background: color-mix(in srgb, var(--pacing-step-accent) 18%, #161616);
+  color: var(--color-text-strong);
+}
+
+:root[data-theme='dark'] .pacing-editor__step-header {
+  background: linear-gradient(
+    180deg,
+    color-mix(
+      in srgb,
+      var(--pacing-header-accent) 38%,
+      var(--pacing-header-dark-base)
+    ),
+    color-mix(in srgb, var(--pacing-header-accent) 16%, var(--color-surface))
+  );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-header-accent) 20%, transparent);
+}
+
+:root[data-theme='dark'] .pacing-editor__step-header .pacing-editor__eyebrow,
+:root[data-theme='dark']
+  .pacing-editor__step-header
+  .pacing-editor__description,
+:root[data-theme='dark'] .pacing-editor__step-header h4 {
+  color: var(--pacing-header-dark-text);
+}
+
+:root[data-theme='dark'] .pacing-editor__card-title {
+  background: color-mix(
+    in srgb,
+    var(--pacing-header-accent) 34%,
+    var(--pacing-header-dark-base)
+  );
+  color: var(--pacing-header-dark-text);
+}
+
+:root[data-theme='dark'] .pacing-editor {
+  --pacing-section-border: color-mix(
+    in srgb,
+    var(--color-border) 72%,
+    transparent
+  );
+  --pacing-section-bg-start: color-mix(
+    in srgb,
+    var(--color-surface) 92%,
+    #171717
+  );
+  --pacing-section-bg-end: color-mix(
+    in srgb,
+    var(--color-surface-subtle) 76%,
+    #161616
+  );
+  --pacing-item-divider: color-mix(
+    in srgb,
+    var(--color-border-subtle) 68%,
+    transparent
+  );
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten,
+.pacing-editor__form-step {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.pacing-editor__form-step {
+  padding: 1rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 20px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 97%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 78%, white)
+  );
+  box-shadow:
+    0 16px 34px rgb(15 23 42 / 0.05),
+    inset 0 1px 0 rgb(255 255 255 / 0.6);
+}
+
+.pacing-editor__preview-step {
+  padding: 1rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 96%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 74%, white)
+  );
+  box-shadow: 0 14px 30px rgb(15 23 42 / 0.04);
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .form-group,
+.pacing-editor .formpack-form--pacing-ampelkarten .field,
+.pacing-editor .formpack-form--pacing-ampelkarten .field-string,
+.pacing-editor .formpack-form--pacing-ampelkarten .field-array,
+.pacing-editor .formpack-form--pacing-ampelkarten .field-object {
+  margin-bottom: 0;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten > fieldset > legend {
+  display: none;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten > fieldset > .field,
+.pacing-editor .formpack-form--pacing-ampelkarten > .field {
+  padding: 1rem 1.1rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--pacing-section-border) 86%, white);
+  border-radius: 18px;
+  background: linear-gradient(
+    180deg,
+    var(--pacing-section-bg-start),
+    var(--pacing-section-bg-end)
+  );
+  box-shadow:
+    0 8px 20px rgb(15 23 42 / 0.03),
+    inset 0 1px 0 rgb(255 255 255 / 0.45);
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .formpack-array {
+  gap: 0.6rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--pacing-item-divider) 88%, white);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 98%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 68%, white)
+  );
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .formpack-array__items {
+  gap: 0.6rem;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .formpack-array-item {
+  border: 1px solid color-mix(in srgb, var(--pacing-item-divider) 92%, white);
+  border-radius: 14px;
+  padding: 0.7rem 0.8rem 0.8rem;
+  background: color-mix(in srgb, var(--color-surface) 94%, white);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3);
+  gap: 0.4rem;
+}
+
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item
+  + .formpack-array-item {
+  margin-top: 0.15rem;
+}
+
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item__header:not(.formpack-array-item__header--actions-only) {
+  justify-content: flex-start;
+}
+
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item__content
+  > fieldset,
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item__content
+  .field
+  > fieldset {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item__content
+  .control-label {
+  margin-bottom: 0.35rem;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten .field-radio-group {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.pacing-editor .formpack-form--pacing-ampelkarten textarea,
+.pacing-editor .formpack-form--pacing-ampelkarten input[type='text'] {
+  background: color-mix(in srgb, var(--color-surface-subtle) 65%, white);
+}
+
+:root[data-theme='dark']
+  .pacing-editor
+  .formpack-form--pacing-ampelkarten
+  > fieldset
+  > .field,
+:root[data-theme='dark']
+  .pacing-editor
+  .formpack-form--pacing-ampelkarten
+  > .field {
+  border-color: color-mix(in srgb, var(--color-border) 72%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 92%, #171717),
+    color-mix(in srgb, var(--color-surface-subtle) 76%, #161616)
+  );
+  box-shadow:
+    0 12px 28px rgb(0 0 0 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.03);
+}
+
+:root[data-theme='dark']
+  .pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array {
+  border-color: color-mix(in srgb, var(--color-border-subtle) 72%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 94%, #121212),
+    color-mix(in srgb, var(--color-surface-subtle) 82%, #151515)
+  );
+}
+
+:root[data-theme='dark']
+  .pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item {
+  border-color: color-mix(in srgb, var(--color-border-subtle) 68%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 90%, #161616),
+    color-mix(in srgb, var(--color-surface-subtle) 78%, #141414)
+  );
+  box-shadow:
+    0 10px 20px rgb(0 0 0 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.02);
+}
+
+.pacing-editor__actions {
+  margin-top: 0.25rem;
+}
+
+.pacing-editor__step-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.pacing-editor__preview-step {
+  display: grid;
+  gap: 1rem;
+}
+
+.pacing-editor__export-panel,
+.pacing-editor__preview-panel {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 95%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 72%, white)
+  );
+}
+
+.pacing-editor__preview-panel h5 {
+  margin: 0;
+}
+
+.pacing-editor .formpack-form__actions {
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--pacing-item-divider);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pacing-editor__preview-panel .formpack-document-preview {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.pacing-editor__preview-panel .formpack-document-preview__section {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--pacing-item-divider);
+}
+
+.pacing-editor__preview-panel .formpack-document-preview__list li {
+  padding: 0.5rem 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+:root[data-theme='dark'] .pacing-editor__utility-row,
+:root[data-theme='dark'] .pacing-editor__steps,
+:root[data-theme='dark'] .pacing-editor__variant-stage,
+:root[data-theme='dark'] .pacing-editor__form-step,
+:root[data-theme='dark'] .pacing-editor__preview-step,
+:root[data-theme='dark'] .pacing-editor__export-panel,
+:root[data-theme='dark'] .pacing-editor__preview-panel {
+  border-color: color-mix(in srgb, var(--color-border) 72%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 92%, #171717),
+    color-mix(in srgb, var(--color-surface-subtle) 76%, #161616)
+  );
+  box-shadow: 0 14px 30px rgb(0 0 0 / 0.16);
 }
 
 .formpack-form__actions {
@@ -1266,6 +2031,24 @@ body {
   margin-bottom: 1rem;
 }
 
+.formpack-utility-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.formpack-utility-row .formpack-intro__reopen {
+  margin: 0;
+  flex: 0 0 auto;
+}
+
+.formpack-utility-row .profile-quickfill {
+  flex: 1 1 34rem;
+  margin-bottom: 0;
+}
+
 .profile-quickfill {
   display: flex;
   flex-wrap: wrap;
@@ -1276,6 +2059,10 @@ body {
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
   background: var(--color-surface);
+}
+
+.profile-quickfill .app__button {
+  min-height: 40px;
 }
 
 .profile-quickfill__save {
@@ -1295,6 +2082,53 @@ body {
 .profile-quickfill__error {
   font-size: 0.85rem;
   color: var(--color-danger);
+}
+
+@media (max-width: 900px) {
+  .pacing-editor__variant-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pacing-editor__steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .formpack-utility-row {
+    align-items: stretch;
+  }
+
+  .formpack-utility-row .formpack-intro__reopen,
+  .formpack-utility-row .profile-quickfill {
+    flex: 1 1 100%;
+  }
+
+  .pacing-editor__utility-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .pacing-editor__utility {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pacing-editor__steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pacing-editor__step-buttons {
+    justify-content: stretch;
+  }
+
+  .pacing-editor__step-buttons .app__button {
+    flex: 1 1 0;
+  }
+
+  .profile-quickfill {
+    align-items: stretch;
+  }
 }
 
 .formpack-intro-gate {
@@ -1511,7 +2345,7 @@ body {
 
 /* Polished export action bar: make buttons fill their grid cells consistently. */
 .formpack-docx-export__buttons .app__button,
-.formpack-docx-export__buttons .formpack-pdf-export .app__button,
+.formpack-pdf-export .app__button,
 .formpack-actions__group--secondary .app__button {
   width: 100%;
 }

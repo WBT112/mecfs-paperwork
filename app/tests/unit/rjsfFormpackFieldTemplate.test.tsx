@@ -99,6 +99,19 @@ describe('FormpackFieldTemplate', () => {
     expect(container.querySelector('label')).not.toBeInTheDocument();
   });
 
+  it('does not render label when ui options disable labels', () => {
+    const props = createMockProps({
+      uiSchema: {
+        'ui:options': {
+          label: false,
+        },
+      },
+    });
+
+    const { container } = render(<FormpackFieldTemplate {...props} />);
+    expect(container.querySelector('label')).not.toBeInTheDocument();
+  });
+
   it('uses default translator and hides label for array container schema types', () => {
     const props = createMockProps({
       label: 'Container Label',

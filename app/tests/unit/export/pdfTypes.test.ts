@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { DocumentModel } from '../../../src/export/pdf/types';
 import {
   DOCUMENT_BLOCK_TYPES,
   isDocumentBlock,
   isDocumentBlockType,
   isDocumentModel,
   isDocumentSection,
+  type DocumentModel,
 } from '../../../src/export/pdf/types';
 
 const validModel: DocumentModel = {

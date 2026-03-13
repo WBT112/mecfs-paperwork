@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import type { SupportedLocale } from '../../i18n/locale';
-import type { PdfExportPayload } from './PdfExportButton';
-import PdfExportButton from './PdfExportButton';
+import PdfExportButton, { type PdfExportPayload } from './PdfExportButton';
 import { buildPdfExportFilename } from './download';
 
 export type PdfExportControlsProps = {

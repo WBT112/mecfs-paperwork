@@ -13,6 +13,10 @@ test('collapsible sections default and toggle offline', async ({
   context,
 }) => {
   await deleteDatabase(page, DB_NAME);
+  const toolsHeading = page.getByRole('heading', {
+    name: /tools|werkzeuge/i,
+  });
+  const recordsToggle = page.locator('#formpack-records-toggle');
 
   for (let attempt = 1; attempt <= 5; attempt += 1) {
     await page.goto(`/formpacks/${FORM_PACK_ID}`);
@@ -20,13 +24,14 @@ test('collapsible sections default and toggle offline', async ({
     const manifestLoadError = page.getByText(
       /unable to reach the formpack manifest/i,
     );
-
-    const recordsToggle = page.locator('#formpack-records-toggle');
-    const recordsVisible = await recordsToggle
+    const toolsVisible = await toolsHeading
       .isVisible({ timeout: 15_000 })
       .catch(() => false);
-    if (recordsVisible) {
-      break;
+    if (toolsVisible) {
+      const recordsVisible = await recordsToggle.isVisible().catch(() => false);
+      if (recordsVisible) {
+        break;
+      }
     }
 
     if (await manifestLoadError.isVisible().catch(() => false)) {
@@ -35,8 +40,14 @@ test('collapsible sections default and toggle offline', async ({
         continue;
       }
     }
+
+    if (attempt < 5) {
+      await page.waitForTimeout(250 * attempt);
+      continue;
+    }
   }
 
+  await expect(toolsHeading).toBeVisible();
   await expect(page.locator('#formpack-records-toggle')).toBeVisible();
 
   const draftsToggle = getCollapsibleSectionToggleById(
@@ -52,9 +63,6 @@ test('collapsible sections default and toggle offline', async ({
     page,
     'formpack-document-preview',
   );
-  const toolsHeading = page.getByRole('heading', {
-    name: /tools|werkzeuge/i,
-  });
 
   await expect(draftsToggle).toHaveAttribute('aria-expanded', 'false');
   await expect(importToggle).toHaveAttribute('aria-expanded', 'false');

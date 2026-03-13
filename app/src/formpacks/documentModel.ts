@@ -7,6 +7,7 @@ import {
   DOCTOR_LETTER_FORMPACK_ID,
   NOTFALLPASS_FORMPACK_ID,
   OFFLABEL_ANTRAG_FORMPACK_ID,
+  PACING_AMPELKARTEN_FORMPACK_ID,
 } from './formpackIds';
 import {
   formatBirthDate,
@@ -25,6 +26,12 @@ type DiagnosisFlags = {
   meCfs?: boolean;
   pots?: boolean;
   longCovid?: boolean;
+};
+
+type PacingCardProjection = {
+  canDo: string[];
+  needHelp: string[];
+  hint: string | null;
 };
 
 export type DocumentModel = {
@@ -90,6 +97,24 @@ export type DocumentModel = {
   attachmentsFreeText?: string | null;
   attachments?: {
     items: string[];
+  };
+  meta?: {
+    introAccepted?: boolean;
+    variant?: 'adult' | 'child';
+  };
+  adult?: {
+    cards: {
+      green: PacingCardProjection;
+      yellow: PacingCardProjection;
+      red: PacingCardProjection;
+    };
+  };
+  child?: {
+    cards: {
+      green: PacingCardProjection;
+      yellow: PacingCardProjection;
+      red: PacingCardProjection;
+    };
   };
   kk?: OffLabelLetterSection;
   arzt?: OffLabelLetterSection;
@@ -333,6 +358,54 @@ const buildOfflabelAntragModel = (
   };
 };
 
+const projectStringList = (value: unknown): string[] =>
+  getArrayValue(value)
+    .map((entry) => getStringValue(entry))
+    .filter((entry): entry is string => Boolean(entry));
+
+const projectPacingCard = (value: unknown): PacingCardProjection => {
+  const record = getRecordValue(value);
+
+  return {
+    canDo: projectStringList(record?.canDo),
+    needHelp: projectStringList(record?.needHelp),
+    hint: getStringValue(record?.hint),
+  };
+};
+
+const buildPacingAmpelkartenModel = (
+  formData: Record<string, unknown>,
+  _locale: SupportedLocale,
+  baseModel: Omit<DocumentModel, 'diagnosisParagraphs'>,
+): DocumentModel => {
+  const meta = getRecordValue(formData.meta);
+  const adultCards = getRecordValue(getRecordValue(formData.adult)?.cards);
+  const childCards = getRecordValue(getRecordValue(formData.child)?.cards);
+
+  return {
+    diagnosisParagraphs: [],
+    ...baseModel,
+    meta: {
+      introAccepted: meta?.introAccepted === true,
+      variant: meta?.variant === 'child' ? 'child' : 'adult',
+    },
+    adult: {
+      cards: {
+        green: projectPacingCard(adultCards?.green),
+        yellow: projectPacingCard(adultCards?.yellow),
+        red: projectPacingCard(adultCards?.red),
+      },
+    },
+    child: {
+      cards: {
+        green: projectPacingCard(childCards?.green),
+        yellow: projectPacingCard(childCards?.yellow),
+        red: projectPacingCard(childCards?.red),
+      },
+    },
+  };
+};
+
 const withEmptyDiagnosis = (
   model: Omit<DocumentModel, 'diagnosisParagraphs'>,
 ): DocumentModel => ({ diagnosisParagraphs: [], ...model });
@@ -347,6 +420,7 @@ const FORMPACK_MODEL_BUILDERS: Partial<Record<string, ModelBuilder>> = {
   [DOCTOR_LETTER_FORMPACK_ID]: buildDoctorLetterModel,
   [NOTFALLPASS_FORMPACK_ID]: buildNotfallpassModel,
   [OFFLABEL_ANTRAG_FORMPACK_ID]: buildOfflabelAntragModel,
+  [PACING_AMPELKARTEN_FORMPACK_ID]: buildPacingAmpelkartenModel,
 };
 
 /**

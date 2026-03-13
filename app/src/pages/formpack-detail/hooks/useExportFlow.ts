@@ -26,11 +26,7 @@ import {
   USER_TIMING_NAMES,
   startUserTiming,
 } from '../../../lib/performance/userTiming';
-import {
-  NOTFALLPASS_FORMPACK_ID,
-  type FormpackId,
-  type FormpackManifest,
-} from '../../../formpacks';
+import { type FormpackId, type FormpackManifest } from '../../../formpacks';
 import { formpackAssetHelpers } from '../helpers/formpackAssetHelpers';
 import type { RecordEntry, SnapshotEntry } from '../../../storage';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
@@ -139,33 +135,10 @@ export const useExportFlow = ({
       return [];
     }
 
-    const options: Array<{ id: DocxTemplateId; label: string }> = [
+    return [
       { id: 'a4', label: t('formpackDocxTemplateA4Option') },
-    ];
-
-    if (
-      manifest.id === NOTFALLPASS_FORMPACK_ID &&
-      manifest.docx.templates.wallet
-    ) {
-      options.push({
-        id: 'wallet',
-        label: t('formpackDocxTemplateWalletOption'),
-      });
-    }
-
-    return options;
+    ] satisfies Array<{ id: DocxTemplateId; label: string }>;
   }, [manifest, t]);
-
-  useEffect(() => {
-    if (!docxTemplateOptions.length) {
-      setDocxTemplateId('a4');
-      return;
-    }
-
-    if (!docxTemplateOptions.some((option) => option.id === docxTemplateId)) {
-      setDocxTemplateId(docxTemplateOptions[0].id);
-    }
-  }, [docxTemplateId, docxTemplateOptions]);
 
   const handleExportJson = useCallback(async () => {
     if (!manifest || !activeRecord) {

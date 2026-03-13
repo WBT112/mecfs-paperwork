@@ -275,7 +275,14 @@ test.describe('offline-first extensions', () => {
     await openDraftsSection(page);
     await context.setOffline(true);
     await switchLocale(page, 'en');
-    await switchLocale(page, 'de');
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          window.localStorage.getItem('mecfs-paperwork.locale'),
+        ),
+      )
+      .toBe('en');
     await context.setOffline(false);
   });
 });

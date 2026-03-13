@@ -18,7 +18,6 @@ const MANIFEST_JSON = 'manifest.json';
 const SCHEMA_JSON = 'schema.json';
 const UI_SCHEMA_JSON = 'ui.schema.json';
 const EXAMPLE_JSON = path.join('examples', 'example.json');
-const WALLET_DOCX = 'docx/wallet.docx';
 
 async function writeStandardFiles(
   base: string,
@@ -365,7 +364,7 @@ describe('validate-formpacks: extra branches', () => {
       descriptionKey: PACK_DESC,
       exports: ['docx', 'json'],
       docx: {
-        templates: { a4: DOCX_A4, wallet: WALLET_DOCX },
+        templates: { a4: DOCX_A4 },
         mapping: DOCX_MAPPING,
       },
     };
@@ -392,7 +391,6 @@ describe('validate-formpacks: extra branches', () => {
       JSON.stringify({ fields: [] }),
     );
     await fs.writeFile(path.join(base, DOCX_A4), Buffer.from('ok'));
-    await fs.writeFile(path.join(base, WALLET_DOCX), Buffer.from('ok'));
 
     const oldArgv2 = process.argv;
     const oldExit2 = process.exitCode;

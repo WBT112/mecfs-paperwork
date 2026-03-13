@@ -1,9 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import JSZip from 'jszip';
 import { deleteDatabase } from './helpers';
 import { clickActionButton } from './helpers/actions';
+import {
+  extractDocxDocumentXml,
+  extractDocxParagraphTexts,
+  extractDocxTextFromXml,
+} from './helpers/docx';
 import { openFormpackWithRetry } from './helpers/formpack';
 import { splitParagraphs } from '../src/lib/text/paragraphs';
 import {
@@ -320,45 +324,6 @@ const exportDocxAndExpectSuccess = async (
   await expect(errorMessage).toHaveCount(0);
   return download;
 };
-
-const extractDocxDocumentXml = async (docxPath: string) => {
-  const buffer = await readFile(docxPath);
-  const zip = await JSZip.loadAsync(buffer);
-  const documentXml = await zip.file('word/document.xml')?.async('string');
-  if (!documentXml) {
-    throw new Error('DOCX document.xml was not found in the export.');
-  }
-
-  return documentXml;
-};
-
-const extractDocxTextFromXml = (documentXml: string) => {
-  const textRuns = Array.from(
-    documentXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g),
-  ).map((match) => match[1]);
-
-  return textRuns
-    .join('')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, '&');
-};
-
-const extractDocxParagraphTexts = (documentXml: string): string[] =>
-  Array.from(documentXml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/g))
-    .map((paragraphMatch) => paragraphMatch[0])
-    .map((paragraphXml) =>
-      Array.from(paragraphXml.matchAll(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g))
-        .map((textMatch) => textMatch[1])
-        .join('')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&apos;/g, "'")
-        .replace(/&amp;/g, '&'),
-    );
 
 const stripAngleBracketSections = (value: string) => {
   let result = '';

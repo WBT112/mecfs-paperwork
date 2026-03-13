@@ -64,11 +64,18 @@ const canResolveRef = (ref) => {
 const resolveBaseRef = () => {
   const envRef = process.env.COVERAGE_BASE_REF?.trim();
   const githubBaseRef = process.env.GITHUB_BASE_REF?.trim();
+  const githubEventBefore = process.env.GITHUB_EVENT_BEFORE?.trim();
+
+  const validGithubEventBefore =
+    githubEventBefore && !/^0+$/u.test(githubEventBefore)
+      ? githubEventBefore
+      : null;
 
   const candidates = [
     envRef,
     githubBaseRef ? `origin/${githubBaseRef}` : null,
     githubBaseRef,
+    validGithubEventBefore,
     'HEAD~1',
   ].filter((value) => typeof value === 'string' && value.length > 0);
 
