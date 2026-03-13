@@ -70,6 +70,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6
@@ -84,6 +85,8 @@ jobs:
 
       - name: Unit tests with coverage
         working-directory: app
+        env:
+          COVERAGE_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: npm run test:coverage:changed
 
       - name: Upload coverage report
