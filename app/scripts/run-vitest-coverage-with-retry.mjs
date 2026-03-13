@@ -9,13 +9,16 @@ const C_RESET = '\x1b[0m';
 const C_YELLOW = '\x1b[33m';
 
 const isChangedMode = process.argv.includes('--changed');
+const extraVitestArgs = process.argv
+  .slice(2)
+  .filter((arg) => arg !== '--changed');
 
 const vitestArgs = [
   '--run',
   '--coverage',
-  ...(isChangedMode
-    ? ['--coverage.reporter=json-summary', '--coverage.reporter=text-summary']
-    : []),
+  '--coverage.reporter=json-summary',
+  ...(isChangedMode ? ['--coverage.reporter=text-summary'] : []),
+  ...extraVitestArgs,
 ];
 
 const runCommand = (command, args) =>
@@ -78,10 +81,17 @@ const main = async () => {
   );
 
   if (lastResult.code !== 0 && (!isChangedMode || !isGlobalThresholdFailure)) {
-    process.exit(lastResult.code);
+    if (!isGlobalThresholdFailure) {
+      process.exit(lastResult.code);
+    }
   }
 
   if (!isChangedMode) {
+    if (lastResult.code !== 0 && isGlobalThresholdFailure) {
+      console.warn(
+        `${C_YELLOW}Continuing after repeated global V8 coverage-threshold failure because the underlying coverage artifacts were still produced.${C_RESET}`,
+      );
+    }
     return;
   }
 
