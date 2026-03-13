@@ -89,7 +89,7 @@ const isCardStep = (step: PacingEditorStepId): step is PacingEditorCardColor =>
 
 const buildVariantStepUiSchema = (uiSchema: UiSchema): UiSchema => ({
   ...uiSchema,
-  'ui:order': ['meta', 'adult', 'child', 'sender'],
+  'ui:order': ['meta', 'adult', 'child'],
   meta: {
     ...showNode(uiSchema.meta),
     'ui:title': '',
@@ -103,7 +103,6 @@ const buildVariantStepUiSchema = (uiSchema: UiSchema): UiSchema => ({
   },
   adult: hideNode(uiSchema.adult),
   child: hideNode(uiSchema.child),
-  sender: hideNode(uiSchema.sender),
 });
 
 const buildCardStepUiSchema = (
@@ -140,10 +139,9 @@ const buildCardVariantUiSchema = (
 
   return {
     ...uiSchema,
-    'ui:order': ['meta', 'adult', 'child', 'sender'],
+    'ui:order': ['meta', 'adult', 'child'],
     meta: hideNode(uiSchema.meta),
     [inactiveVariant]: hideNode(uiSchema[inactiveVariant]),
-    sender: hideNode(uiSchema.sender),
     [variant]: {
       ...activeSection,
       'ui:title': '',
@@ -176,7 +174,6 @@ export const buildPacingEditorUiSchema = (
   uiSchema: UiSchema,
   formData: Record<string, unknown>,
   step: PacingEditorStepId,
-  _unusedTranslator?: unknown,
 ): UiSchema => {
   if (step === 'variant') {
     return buildVariantStepUiSchema(uiSchema);

@@ -36,7 +36,6 @@ type PacingEditorUiSchemaView = {
   };
   adult?: VariantView;
   child?: VariantView;
-  sender?: UiFieldView;
 };
 
 const baseFormData = {
@@ -56,9 +55,6 @@ const baseFormData = {
         canDo: ['Child'],
       },
     },
-  },
-  sender: {
-    signature: 'Signature',
   },
 } as Record<string, unknown>;
 
@@ -85,7 +81,6 @@ describe('buildPacingEditorUiSchema', () => {
     expect(view.meta?.introAccepted?.['ui:widget']).toBe(hiddenWidget);
     expect(view.adult?.['ui:widget']).toBe(hiddenWidget);
     expect(view.child?.['ui:widget']).toBe(hiddenWidget);
-    expect(view.sender?.['ui:widget']).toBe(hiddenWidget);
   });
 
   it('shows only the active card and hides the other cards', () => {
@@ -97,7 +92,6 @@ describe('buildPacingEditorUiSchema', () => {
     expect(view.child?.cards?.green?.['ui:widget']).toBeUndefined();
     expect(view.child?.cards?.yellow?.['ui:widget']).toBe(hiddenWidget);
     expect(view.child?.cards?.red?.['ui:widget']).toBe(hiddenWidget);
-    expect(view.sender?.['ui:widget']).toBe(hiddenWidget);
   });
 
   it('keeps list-item labels suppressed for every card step', () => {

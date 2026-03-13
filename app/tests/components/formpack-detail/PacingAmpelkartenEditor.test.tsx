@@ -89,7 +89,6 @@ const createProps = (
     meta: { variant: 'adult' },
     adult: { cards: { green: { canDo: [ADULT_GREEN_ITEM] } } },
     child: { cards: { green: { canDo: [CHILD_GREEN_ITEM] } } },
-    sender: { signature: 'Family' },
   },
   formSchema: { type: 'object', properties: {} },
   hasDocumentContent: true,

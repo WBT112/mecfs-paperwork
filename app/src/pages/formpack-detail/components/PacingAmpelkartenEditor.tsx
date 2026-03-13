@@ -294,13 +294,8 @@ export default function PacingAmpelkartenEditor({
       return null;
     }
 
-    return buildPacingEditorUiSchema(
-      uiSchema,
-      formData,
-      currentStep,
-      tFormpack,
-    );
-  }, [currentStep, formData, tFormpack, uiSchema]);
+    return buildPacingEditorUiSchema(uiSchema, formData, currentStep);
+  }, [currentStep, formData, uiSchema]);
 
   const currentCardTitle =
     currentCardStep === null

@@ -11,7 +11,6 @@
   "pacing-ampelkarten.section.adult.description": "These three cards are written for adults with ME/CFS. Edit every text freely or leave individual lists empty.",
   "pacing-ampelkarten.section.child.title": "Child cards",
   "pacing-ampelkarten.section.child.description": "These cards use simpler wording and address relatives or carers directly.",
-  "pacing-ampelkarten.section.sender.title": "Signature / closing line",
   "pacing-ampelkarten.editor.navigation.label": "Editing steps",
   "pacing-ampelkarten.editor.navigation.previous": "Back",
   "pacing-ampelkarten.editor.navigation.next": "Continue",
@@ -53,9 +52,6 @@
   "pacing-ampelkarten.card.needHelp.help": "What kind of support is especially helpful today.",
   "pacing-ampelkarten.card.hint.label": "Friendly note",
   "pacing-ampelkarten.card.hint.help": "A short guiding sentence for the card.",
-  "pacing-ampelkarten.sender.signature.label": "Signature / closing line",
-  "pacing-ampelkarten.sender.signature.help": "For example: Best wishes",
-  "pacing-ampelkarten.sender.reassurance": "Less contact is not personal.",
   "pacing-ampelkarten.card.animal.green": "Lion",
   "pacing-ampelkarten.card.animal.yellow": "Panda",
   "pacing-ampelkarten.card.animal.red": "Sloth",
@@ -64,7 +60,7 @@
   "pacing-ampelkarten.card.imageAlt.red": "Sloth card with a quiet red background",
   "pacing-ampelkarten.ui.intro.title": "How to use these cards",
   "pacing-ampelkarten.ui.intro.body": "## What this formpack creates\nThis template creates **three pacing signal cards** for green, yellow, and red days. In the export, **each card gets its own A4 page**.\n\n## Edit and print\n- You can edit every text.\n- You can also leave fields empty and write on the print-out later.\n- If something changes, simply print the cards again.\n\n## Adult or child mode?\n- **For adults**: more direct, factual wording.\n- **Child mode**: friendlier wording, meant for children roughly aged 8 to 14 and the people around them.\n\n## Print layout\n- Exported as **A4** with **one card per page**.\n- This keeps every card readable even when you enter longer texts.\n\n## Tip\nIf you laminate the cards, you can update individual points later with a wipe-clean pen.",
-  "pacing-ampelkarten.ui.intro.checkboxLabel": "I understand how to edit, print, and cut the cards.",
+  "pacing-ampelkarten.ui.intro.checkboxLabel": "I understand how to edit and print the cards.",
   "pacing-ampelkarten.ui.intro.startButtonLabel": "Continue",
   "pacing-ampelkarten.ui.intro.reopenButtonLabel": "Show guidance"
 }

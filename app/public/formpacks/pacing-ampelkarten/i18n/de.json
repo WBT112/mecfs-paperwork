@@ -11,7 +11,6 @@
   "pacing-ampelkarten.section.adult.description": "Diese drei Karten sind für erwachsene Betroffene gedacht. Bearbeite alle Texte frei oder lass einzelne Listen leer.",
   "pacing-ampelkarten.section.child.title": "Kinder-Karten",
   "pacing-ampelkarten.section.child.description": "Diese Karten sind einfacher formuliert und an Angehörige gerichtet.",
-  "pacing-ampelkarten.section.sender.title": "Absender / Abschluss",
   "pacing-ampelkarten.editor.navigation.label": "Bearbeitungsschritte",
   "pacing-ampelkarten.editor.navigation.previous": "Zurück",
   "pacing-ampelkarten.editor.navigation.next": "Weiter",
@@ -53,9 +52,6 @@
   "pacing-ampelkarten.card.needHelp.help": "Welche Unterstützung heute besonders hilft.",
   "pacing-ampelkarten.card.hint.label": "Freundlicher Hinweis",
   "pacing-ampelkarten.card.hint.help": "Ein kurzer Leitsatz für die Karte.",
-  "pacing-ampelkarten.sender.signature.label": "Unterschrift / Abschlusszeile",
-  "pacing-ampelkarten.sender.signature.help": "Zum Beispiel: Liebe Grüße",
-  "pacing-ampelkarten.sender.reassurance": "Weniger Kontakt ist nichts Persönliches.",
   "pacing-ampelkarten.card.animal.green": "Löwe",
   "pacing-ampelkarten.card.animal.yellow": "Panda",
   "pacing-ampelkarten.card.animal.red": "Faultier",
@@ -64,7 +60,7 @@
   "pacing-ampelkarten.card.imageAlt.red": "Faultier-Karte mit rotem Ruhehintergrund",
   "pacing-ampelkarten.ui.intro.title": "Hinweise zur Nutzung",
   "pacing-ampelkarten.ui.intro.body": "## So nutzt du die Ampelkarten\nDiese Vorlage erstellt **drei Pacing-Ampelkarten** für Grün, Gelb und Rot. Jede Karte erhält im Export **eine eigene A4-Seite**.\n\n## Bearbeiten und Drucken\n- Du kannst alle Texte frei anpassen.\n- Du kannst Felder auch leer lassen und die Ausdrucke später per Hand ergänzen.\n- Wenn sich etwas ändert, drucke die Karten einfach neu.\n\n## Erwachsenen- oder Kindermodus?\n- **Für Erwachsene**: direkter, sachlicher Ton.\n- **Kindermodus**: freundlichere Sprache, gedacht für Kinder zwischen etwa 8 und 14 Jahren und deren Bezugspersonen.\n\n## Drucklayout\n- Export als **A4** mit **einer Karte pro Seite**.\n- Dadurch bleibt jede Karte lesbar, auch wenn du längere Texte einträgst.\n\n## Tipp\nWenn du die Karten laminierst, kannst du einzelne Punkte später auch mit abwischbarem Stift anpassen.",
-  "pacing-ampelkarten.ui.intro.checkboxLabel": "Ich habe verstanden, wie die Karten bearbeitet, gedruckt und ausgeschnitten werden.",
+  "pacing-ampelkarten.ui.intro.checkboxLabel": "Ich habe verstanden, wie die Karten bearbeitet und gedruckt werden.",
   "pacing-ampelkarten.ui.intro.startButtonLabel": "Weiter",
   "pacing-ampelkarten.ui.intro.reopenButtonLabel": "Hinweise anzeigen"
 }
