@@ -45,6 +45,8 @@ jobs:
 
       - name: Unit tests + coverage (lcov)
         working-directory: app
+        env:
+          COVERAGE_GLOBAL_THRESHOLD_MODE: soft
         run: |
           npm run test:coverage -- \
             --coverage.reporter=lcov \

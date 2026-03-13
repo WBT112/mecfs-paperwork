@@ -404,6 +404,9 @@ type FormpackLayoutSnapshot = {
 const summarizeRange = (values: number[]) =>
   values.length > 1 ? Math.max(...values) - Math.min(...values) : 0;
 
+const usesCustomMobileEditorChrome = (formpackId: string): boolean =>
+  formpackId === 'pacing-ampelkarten';
+
 const listFormpackIdsFromOverview = async (page: Page) => {
   await page.goto('/formpacks');
   const idsHandle = await page.waitForFunction(() => {
@@ -650,13 +653,16 @@ test.describe('formpack layout consistency @mobile', () => {
 
     const detailWidths = snapshots.map((snapshot) => snapshot.detailWidth);
     const formWidths = snapshots.map((snapshot) => snapshot.formWidth);
-    const formPaddingValues = snapshots.map(
+    const standardChromeSnapshots = snapshots.filter(
+      (snapshot) => !usesCustomMobileEditorChrome(snapshot.formpackId),
+    );
+    const formPaddingValues = standardChromeSnapshots.map(
       (snapshot) => snapshot.formPaddingX,
     );
-    const formBorderRadii = snapshots.map(
+    const formBorderRadii = standardChromeSnapshots.map(
       (snapshot) => snapshot.formBorderRadius,
     );
-    const fieldsetBorderRadii = snapshots
+    const fieldsetBorderRadii = standardChromeSnapshots
       .map((snapshot) => snapshot.fieldsetBorderRadius)
       .filter((radius) => radius > 0);
     const checkboxMedians = snapshots

@@ -1689,11 +1689,17 @@ body {
 }
 
 .pacing-editor__form-step {
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+  padding: 1rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 20px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 97%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 78%, white)
+  );
+  box-shadow:
+    0 16px 34px rgb(15 23 42 / 0.05),
+    inset 0 1px 0 rgb(255 255 255 / 0.6);
 }
 
 .pacing-editor__preview-step {
@@ -1730,21 +1736,29 @@ body {
 
 .pacing-editor .formpack-form--pacing-ampelkarten > fieldset > .field,
 .pacing-editor .formpack-form--pacing-ampelkarten > .field {
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--pacing-section-border);
-  border-radius: 16px;
+  padding: 1rem 1.1rem 1.1rem;
+  border: 1px solid color-mix(in srgb, var(--pacing-section-border) 86%, white);
+  border-radius: 18px;
   background: linear-gradient(
     180deg,
     var(--pacing-section-bg-start),
     var(--pacing-section-bg-end)
   );
+  box-shadow:
+    0 8px 20px rgb(15 23 42 / 0.03),
+    inset 0 1px 0 rgb(255 255 255 / 0.45);
 }
 
 .pacing-editor .formpack-form--pacing-ampelkarten .formpack-array {
   gap: 0.6rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid color-mix(in srgb, var(--pacing-item-divider) 88%, white);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 98%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 68%, white)
+  );
 }
 
 .pacing-editor .formpack-form--pacing-ampelkarten .formpack-array__items {
@@ -1752,10 +1766,11 @@ body {
 }
 
 .pacing-editor .formpack-form--pacing-ampelkarten .formpack-array-item {
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--pacing-item-divider) 92%, white);
+  border-radius: 14px;
+  padding: 0.7rem 0.8rem 0.8rem;
+  background: color-mix(in srgb, var(--color-surface) 94%, white);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.3);
   gap: 0.4rem;
 }
 
@@ -1763,8 +1778,7 @@ body {
   .formpack-form--pacing-ampelkarten
   .formpack-array-item
   + .formpack-array-item {
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--pacing-item-divider);
+  margin-top: 0.15rem;
 }
 
 .pacing-editor
@@ -1819,18 +1833,36 @@ body {
     color-mix(in srgb, var(--color-surface) 92%, #171717),
     color-mix(in srgb, var(--color-surface-subtle) 76%, #161616)
   );
+  box-shadow:
+    0 12px 28px rgb(0 0 0 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.03);
 }
 
 :root[data-theme='dark']
   .pacing-editor
   .formpack-form--pacing-ampelkarten
-  .formpack-array-item
-  + .formpack-array-item {
-  border-top-color: color-mix(
-    in srgb,
-    var(--color-border-subtle) 68%,
-    transparent
+  .formpack-array {
+  border-color: color-mix(in srgb, var(--color-border-subtle) 72%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 94%, #121212),
+    color-mix(in srgb, var(--color-surface-subtle) 82%, #151515)
   );
+}
+
+:root[data-theme='dark']
+  .pacing-editor
+  .formpack-form--pacing-ampelkarten
+  .formpack-array-item {
+  border-color: color-mix(in srgb, var(--color-border-subtle) 68%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 90%, #161616),
+    color-mix(in srgb, var(--color-surface-subtle) 78%, #141414)
+  );
+  box-shadow:
+    0 10px 20px rgb(0 0 0 / 0.18),
+    inset 0 1px 0 rgb(255 255 255 / 0.02);
 }
 
 .pacing-editor__actions {
@@ -1898,6 +1930,7 @@ body {
 :root[data-theme='dark'] .pacing-editor__utility-row,
 :root[data-theme='dark'] .pacing-editor__steps,
 :root[data-theme='dark'] .pacing-editor__variant-stage,
+:root[data-theme='dark'] .pacing-editor__form-step,
 :root[data-theme='dark'] .pacing-editor__preview-step,
 :root[data-theme='dark'] .pacing-editor__export-panel,
 :root[data-theme='dark'] .pacing-editor__preview-panel {

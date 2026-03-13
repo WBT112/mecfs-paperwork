@@ -68,6 +68,7 @@ import FormpackFormPanel, {
 import FormpackIntroUtilityRow from '../../../src/pages/formpack-detail/components/FormpackIntroUtilityRow';
 import FormpackToolsSection from '../../../src/pages/formpack-detail/components/FormpackToolsSection';
 import PacingAmpelkartenEditor from '../../../src/pages/formpack-detail/components/PacingAmpelkartenEditor';
+import type { DocxTemplateId } from '../../../src/export/docxLazy';
 import type { FormpackManifest } from '../../../src/formpacks/types';
 import * as formpackDetailComponents from '../../../src/pages/formpack-detail/components';
 
@@ -612,6 +613,31 @@ describe('formpack detail subcomponents', () => {
       },
     );
     expect(setJsonExportPasswordConfirm).toHaveBeenCalledWith('new-confirm');
+  });
+
+  it('renders a DOCX template selector when multiple templates are available and updates the selected template', () => {
+    const setDocxTemplateId = vi.fn();
+    const alternateTemplateId = 'a4-alt' as unknown as DocxTemplateId;
+
+    renderExportActions({
+      docxTemplateId: 'a4',
+      docxTemplateOptions: [
+        { id: 'a4', label: 'A4' },
+        { id: alternateTemplateId, label: 'A4 (alt)' },
+      ],
+      manifest: createManifest({ exports: ['docx', 'pdf'] }),
+      setDocxTemplateId,
+    });
+
+    const selector = screen.getByLabelText('formpackDocxTemplateLabel');
+    expect(selector).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'A4' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: 'A4 (alt)' }),
+    ).toBeInTheDocument();
+
+    fireEvent.change(selector, { target: { value: alternateTemplateId } });
+    expect(setDocxTemplateId).toHaveBeenCalledWith(alternateTemplateId);
   });
 
   it('omits secondary export actions and status area when json export and messages are absent', () => {

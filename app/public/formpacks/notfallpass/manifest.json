@@ -6,7 +6,7 @@
   "titleKey": "notfallpass.title",
   "descriptionKey": "notfallpass.description",
   "exports": ["docx", "pdf", "json"],
-  "visibility": "public",
+  "visibility": "dev",
   "meta": {
     "category": "general",
     "keywords": ["notfall", "pass", "notfallpass", "daten"]

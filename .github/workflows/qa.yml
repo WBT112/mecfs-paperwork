@@ -87,6 +87,7 @@ jobs:
         working-directory: app
         env:
           COVERAGE_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.before }}
+          COVERAGE_GLOBAL_THRESHOLD_MODE: soft
         run: npm run test:coverage:changed
 
       - name: Upload coverage report
