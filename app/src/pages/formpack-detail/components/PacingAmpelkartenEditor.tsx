@@ -50,11 +50,6 @@ const STEP_HEADER_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
   red: 'pacing-editor__step-header--red',
   preview: 'pacing-editor__step-header--preview',
 };
-const CARD_BADGE_CLASS_BY_COLOR: Record<PacingEditorCardColor, string> = {
-  green: 'pacing-editor__card-badge--green',
-  yellow: 'pacing-editor__card-badge--yellow',
-  red: 'pacing-editor__card-badge--red',
-};
 const STEP_BUTTON_CLASS_BY_STEP: Record<PacingEditorStepId, string> = {
   variant: 'pacing-editor__step--variant',
   green: 'pacing-editor__step--green',
@@ -314,10 +309,6 @@ export default function PacingAmpelkartenEditor({
           `pacing-ampelkarten.${variant}.cards.${currentCardStep}.title`,
         );
 
-  const currentAnimalLabel =
-    currentCardStep === null
-      ? null
-      : tFormpack(`pacing-ampelkarten.card.animal.${currentCardStep}`);
   const currentCardOverflowAssessment =
     currentCardStep === null
       ? null
@@ -356,7 +347,7 @@ export default function PacingAmpelkartenEditor({
       );
     }
 
-    if (currentCardStep !== null && currentCardTitle && currentAnimalLabel) {
+    if (currentCardStep !== null && currentCardTitle) {
       return (
         <div
           className={`pacing-editor__step-header ${STEP_HEADER_CLASS_BY_COLOR[currentCardStep]}`}
@@ -365,15 +356,7 @@ export default function PacingAmpelkartenEditor({
           <p className="pacing-editor__eyebrow">
             {tFormpack(getStepTranslationKey(currentStep))}
           </p>
-          <div className="pacing-editor__card-heading">
-            <span
-              className={`pacing-editor__card-badge ${CARD_BADGE_CLASS_BY_COLOR[currentCardStep]}`}
-              style={getStepToneStyle(currentCardStep)}
-            >
-              {currentAnimalLabel}
-            </span>
-            <h4>{currentCardTitle}</h4>
-          </div>
+          <h4 className="pacing-editor__card-title">{currentCardTitle}</h4>
           <p className="pacing-editor__description">
             {tFormpack(getCardSummaryKey(currentCardStep))}
           </p>

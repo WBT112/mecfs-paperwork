@@ -39,7 +39,7 @@ describe('buildPacingAmpelkartenPreset', () => {
   it('uses German pacing language for the German preset', () => {
     const preset = buildPacingAmpelkartenPreset('de', 'adult');
 
-    expect(preset.sender.signature).toBe('Deine / Dein ...');
+    expect(preset.sender.signature).toBe('Liebe Grüße');
     expect(preset.adult.cards.yellow.hint).toContain(
       'Weniger Kontakt heißt nicht weniger Wertschätzung.',
     );
@@ -48,7 +48,7 @@ describe('buildPacingAmpelkartenPreset', () => {
   it('uses natural English copy for the English preset', () => {
     const preset = buildPacingAmpelkartenPreset('en', 'child');
 
-    expect(preset.sender.signature).toBe('Love, ...');
+    expect(preset.sender.signature).toBe('Best wishes');
     expect(preset.adult.cards.yellow.hint).toContain(
       'Less contact does not mean less appreciation.',
     );

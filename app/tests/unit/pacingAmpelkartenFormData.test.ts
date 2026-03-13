@@ -81,7 +81,7 @@ describe('mergePacingFormData', () => {
       'Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.',
     );
     expect(result.sender).toEqual({
-      signature: 'Deine / Dein ...',
+      signature: 'Liebe Grüße',
     });
   });
 
@@ -109,7 +109,7 @@ describe('mergePacingFormData', () => {
         .canDo,
     ).toContain('Short conversations are possible (around 10-20 minutes).');
     expect(result.sender).toEqual({
-      signature: 'Love, ...',
+      signature: 'Best wishes',
     });
   });
 

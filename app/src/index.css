@@ -1232,6 +1232,15 @@ body {
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 0.75rem;
   align-items: start;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 95%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 72%, white)
+  );
+  box-shadow: 0 10px 24px rgb(15 23 42 / 0.04);
 }
 
 .pacing-editor__utility {
@@ -1273,11 +1282,28 @@ body {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.5rem;
+  padding: 0.65rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 95%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 70%, white)
+  );
+  box-shadow: 0 10px 24px rgb(15 23 42 / 0.04);
 }
 
 .pacing-editor__variant-stage {
   display: grid;
   gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 96%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 74%, white)
+  );
 }
 
 .pacing-editor__variant-grid {
@@ -1469,26 +1495,17 @@ body {
   color: var(--color-text-muted);
 }
 
-.pacing-editor__card-heading {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.pacing-editor__card-badge {
-  --pacing-badge-accent: var(--pacing-variant);
-  --pacing-badge-dark-base: #121722;
-  --pacing-badge-text: var(--pacing-variant);
-  --pacing-badge-dark-text: #eef4ff;
+.pacing-editor__card-title {
   display: inline-flex;
   align-items: center;
-  padding: 0.3rem 0.7rem;
+  justify-self: start;
+  margin: 0;
+  padding: 0.45rem 0.85rem;
   border-radius: 999px;
-  font-size: 0.85rem;
-  font-weight: 700;
-  background: color-mix(in srgb, var(--pacing-badge-accent) 14%, white);
-  color: var(--pacing-badge-text);
+  background: color-mix(in srgb, var(--pacing-header-accent) 16%, white);
+  color: var(--pacing-header-accent);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--pacing-header-accent) 16%, transparent);
 }
 
 .pacing-editor__page-warning {
@@ -1633,13 +1650,13 @@ body {
   color: var(--pacing-header-dark-text);
 }
 
-:root[data-theme='dark'] .pacing-editor__card-badge {
+:root[data-theme='dark'] .pacing-editor__card-title {
   background: color-mix(
     in srgb,
-    var(--pacing-badge-accent) 34%,
-    var(--pacing-badge-dark-base)
+    var(--pacing-header-accent) 34%,
+    var(--pacing-header-dark-base)
   );
-  color: var(--pacing-badge-dark-text);
+  color: var(--pacing-header-dark-text);
 }
 
 :root[data-theme='dark'] .pacing-editor {
@@ -1669,6 +1686,26 @@ body {
 .pacing-editor__form-step {
   display: grid;
   gap: 0.9rem;
+}
+
+.pacing-editor__form-step {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.pacing-editor__preview-step {
+  padding: 1rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 96%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 74%, white)
+  );
+  box-shadow: 0 14px 30px rgb(15 23 42 / 0.04);
 }
 
 .pacing-editor .formpack-form--pacing-ampelkarten .form-group,
@@ -1816,6 +1853,14 @@ body {
 .pacing-editor__preview-panel {
   display: grid;
   gap: 0.75rem;
+  padding: 1rem 1.05rem;
+  border: 1px solid var(--pacing-section-border);
+  border-radius: 16px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 95%, white),
+    color-mix(in srgb, var(--color-surface-subtle) 72%, white)
+  );
 }
 
 .pacing-editor__preview-panel h5 {
@@ -1823,8 +1868,8 @@ body {
 }
 
 .pacing-editor .formpack-form__actions {
-  padding: 0;
-  border: 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--pacing-item-divider);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
@@ -1840,6 +1885,7 @@ body {
 .pacing-editor__preview-panel .formpack-document-preview__section {
   margin-bottom: 1rem;
   padding-bottom: 1rem;
+  border-bottom: 1px solid var(--pacing-item-divider);
 }
 
 .pacing-editor__preview-panel .formpack-document-preview__list li {
@@ -1847,6 +1893,21 @@ body {
   border: 0;
   border-radius: 0;
   background: transparent;
+}
+
+:root[data-theme='dark'] .pacing-editor__utility-row,
+:root[data-theme='dark'] .pacing-editor__steps,
+:root[data-theme='dark'] .pacing-editor__variant-stage,
+:root[data-theme='dark'] .pacing-editor__preview-step,
+:root[data-theme='dark'] .pacing-editor__export-panel,
+:root[data-theme='dark'] .pacing-editor__preview-panel {
+  border-color: color-mix(in srgb, var(--color-border) 72%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--color-surface) 92%, #171717),
+    color-mix(in srgb, var(--color-surface-subtle) 76%, #161616)
+  );
+  box-shadow: 0 14px 30px rgb(0 0 0 / 0.16);
 }
 
 .formpack-form__actions {

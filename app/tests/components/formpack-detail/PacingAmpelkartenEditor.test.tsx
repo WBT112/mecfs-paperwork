@@ -314,6 +314,9 @@ describe('PacingAmpelkartenEditor', () => {
         name: 'pacing-ampelkarten.child.cards.green.title',
       }),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText('pacing-ampelkarten.card.animal.green'),
+    ).not.toBeInTheDocument();
   });
 
   it('normalizes a missing meta object when selecting a variant card', async () => {

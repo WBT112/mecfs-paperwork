@@ -47,6 +47,7 @@ export type PacingAmpelkartenPdfTemplateData = {
   locale: SupportedLocale;
   createdAtIso: string;
   variant: PacingVariant;
+  reassurance: string;
   signatureLabel: string;
   signature: string;
   cards: [PacingPdfCard, PacingPdfCard, PacingPdfCard];
@@ -107,7 +108,7 @@ const buildCard = (
   const t = i18n.getFixedT(locale, 'formpack:pacing-ampelkarten');
   const basePath = `${variant}.cards.${color}`;
   const theme = getPacingCardTheme(color);
-  const titleKey = `pacing-ampelkarten.${variant}.cards.${color}.title`;
+  const titleKey = `pacing-ampelkarten.pdf.cards.${color}.title`;
 
   return {
     color,
@@ -157,6 +158,9 @@ export const buildPacingAmpelkartenPdfDocumentModel = ({
     locale,
     createdAtIso: exportedAt.toISOString(),
     variant,
+    reassurance: t('pacing-ampelkarten.sender.reassurance', {
+      defaultValue: 'pacing-ampelkarten.sender.reassurance',
+    }),
     signatureLabel: t('pacing-ampelkarten.sender.signature.label', {
       defaultValue: 'pacing-ampelkarten.sender.signature.label',
     }),
@@ -180,6 +184,10 @@ export const buildPacingAmpelkartenPdfDocumentModel = ({
         : []),
       ...(signature
         ? [
+            {
+              type: 'paragraph',
+              text: templateData.reassurance,
+            } satisfies DocumentBlock,
             {
               type: 'paragraph',
               text: signature,

@@ -5,10 +5,10 @@ import { PNG } from 'pngjs';
 
 const width = 1200;
 const height = 360;
-const outputDir = path.resolve(
-  process.cwd(),
-  'public/formpacks/pacing-ampelkarten/assets',
-);
+const outputDirs = [
+  path.resolve(process.cwd(), 'public/formpacks/pacing-ampelkarten/assets'),
+  path.resolve(process.cwd(), 'src/formpacks/pacing-ampelkarten/export/assets'),
+];
 
 const parseHex = (hex) => {
   const normalized = hex.replace('#', '');
@@ -104,6 +104,27 @@ const drawThickLine = (png, x1, y1, x2, y2, thickness, color) => {
   }
 };
 
+const drawSmile = (
+  png,
+  cx,
+  cy,
+  radius,
+  startAngle,
+  endAngle,
+  thickness,
+  color,
+) => {
+  for (let angle = startAngle; angle <= endAngle; angle += Math.PI / 180) {
+    const x = cx + Math.cos(angle) * radius;
+    const y = cy + Math.sin(angle) * radius;
+    fillCircle(png, x, y, thickness / 2, color);
+  }
+};
+
+const addBlush = (png, cx, cy, color) => {
+  fillEllipse(png, cx, cy, 18, 10, { ...color, a: 110 });
+};
+
 const createCanvas = (startHex, endHex) => {
   const png = new PNG({ width, height });
   const start = parseHex(startHex);
@@ -118,123 +139,140 @@ const createCanvas = (startHex, endHex) => {
 };
 
 const addSharedBackdrop = (png, palette) => {
-  fillRect(png, 0, 0, width, 24, { ...palette.deep, a: 255 });
-  fillEllipse(png, 220, 300, 380, 110, { ...palette.soft, a: 120 });
-  fillEllipse(png, 980, 52, 190, 98, { ...palette.light, a: 110 });
-  fillCircle(png, 170, 92, 26, { ...palette.spark, a: 160 });
-  fillCircle(png, 270, 62, 18, { ...palette.spark, a: 96 });
-  fillCircle(png, 332, 126, 14, { ...palette.spark, a: 176 });
+  fillRect(png, 0, 0, width, 26, { ...palette.deep, a: 255 });
+  fillEllipse(png, 170, 84, 110, 44, { ...palette.spark, a: 150 });
+  fillEllipse(png, 270, 62, 90, 34, { ...palette.spark, a: 120 });
+  fillEllipse(png, 390, 98, 120, 48, { ...palette.spark, a: 140 });
+  fillEllipse(png, 240, 300, 360, 94, { ...palette.soft, a: 145 });
+  fillEllipse(png, 944, 46, 210, 86, { ...palette.light, a: 120 });
+  fillCircle(png, 948, 100, 18, { ...palette.spark, a: 150 });
+  fillCircle(png, 998, 74, 12, { ...palette.spark, a: 130 });
+  fillCircle(png, 1042, 112, 10, { ...palette.spark, a: 165 });
 };
 
 const drawSloth = (png) => {
-  const branch = parseHex('#5B3A26');
-  const leaf = parseHex('#2E6F4E');
-  const body = parseHex('#E9D8C0');
-  const fur = parseHex('#7A5A3B');
-  const mask = parseHex('#4B3426');
+  const branch = parseHex('#7A583C');
+  const leaf = parseHex('#5B9B6D');
+  const body = parseHex('#EEDFCC');
+  const fur = parseHex('#8D6A49');
+  const mask = parseHex('#5D4430');
   const nose = parseHex('#2D2019');
-  const claw = parseHex('#6A4B34');
+  const claw = parseHex('#7A6043');
+  const blush = parseHex('#F3BEAF');
 
-  drawThickLine(png, 736, 78, 1132, 102, 16, branch);
-  drawThickLine(png, 915, 102, 868, 150, 9, branch);
-  drawThickLine(png, 1014, 106, 1046, 154, 9, branch);
-  fillEllipse(png, 798, 78, 22, 10, leaf);
-  fillEllipse(png, 850, 86, 18, 12, leaf);
-  fillEllipse(png, 1098, 100, 20, 11, leaf);
+  drawThickLine(png, 736, 74, 1134, 98, 18, branch);
+  drawThickLine(png, 918, 98, 872, 148, 10, branch);
+  drawThickLine(png, 1012, 102, 1050, 148, 10, branch);
+  fillEllipse(png, 804, 74, 24, 12, leaf);
+  fillEllipse(png, 854, 84, 22, 13, leaf);
+  fillEllipse(png, 1096, 97, 22, 12, leaf);
 
-  fillEllipse(png, 958, 182, 98, 78, fur);
-  fillEllipse(png, 956, 176, 62, 58, body);
-  fillEllipse(png, 928, 162, 26, 34, body);
-  fillEllipse(png, 984, 162, 26, 34, body);
-  fillEllipse(png, 934, 162, 18, 22, mask);
-  fillEllipse(png, 979, 162, 18, 22, mask);
-  fillCircle(png, 934, 162, 6, { ...parseHex('#FFFFFF'), a: 255 });
-  fillCircle(png, 979, 162, 6, { ...parseHex('#FFFFFF'), a: 255 });
-  fillCircle(png, 934, 162, 2.5, nose);
-  fillCircle(png, 979, 162, 2.5, nose);
-  fillEllipse(png, 956, 190, 13, 10, nose);
-  drawThickLine(png, 940, 200, 972, 200, 3, nose);
+  fillEllipse(png, 960, 188, 104, 84, fur);
+  fillEllipse(png, 960, 184, 68, 64, body);
+  fillCircle(png, 928, 160, 28, body);
+  fillCircle(png, 992, 160, 28, body);
+  fillEllipse(png, 936, 166, 22, 26, mask);
+  fillEllipse(png, 984, 166, 22, 26, mask);
+  fillCircle(png, 936, 166, 7, { ...parseHex('#FFFFFF'), a: 255 });
+  fillCircle(png, 984, 166, 7, { ...parseHex('#FFFFFF'), a: 255 });
+  fillCircle(png, 936, 166, 2.5, nose);
+  fillCircle(png, 984, 166, 2.5, nose);
+  addBlush(png, 922, 188, blush);
+  addBlush(png, 998, 188, blush);
+  fillEllipse(png, 960, 194, 14, 10, nose);
+  drawSmile(png, 960, 197, 16, 0.2, 2.94, 3, nose);
 
-  drawThickLine(png, 918, 208, 894, 248, 10, claw);
-  drawThickLine(png, 994, 208, 1018, 248, 10, claw);
-  drawThickLine(png, 930, 236, 910, 290, 11, claw);
-  drawThickLine(png, 980, 236, 1000, 292, 11, claw);
+  drawThickLine(png, 920, 214, 892, 254, 12, claw);
+  drawThickLine(png, 1000, 214, 1028, 254, 12, claw);
+  drawThickLine(png, 936, 238, 918, 292, 12, claw);
+  drawThickLine(png, 984, 238, 1002, 292, 12, claw);
 };
 
 const drawPanda = (png) => {
-  const bamboo = parseHex('#5D8B3A');
-  const bambooLight = parseHex('#7DA64E');
+  const bamboo = parseHex('#6D9B4A');
+  const bambooLight = parseHex('#8EBE62');
   const fur = parseHex('#23242A');
-  const cream = parseHex('#F4F0E8');
+  const cream = parseHex('#F8F4ED');
   const deep = parseHex('#14151A');
+  const blush = parseHex('#F2C2BA');
 
-  for (const x of [760, 810, 1090]) {
+  for (const x of [742, 798, 1088]) {
     fillRect(png, x, 38, 22, 240, bamboo);
     fillRect(png, x, 96, 22, 6, bambooLight);
     fillRect(png, x, 162, 22, 6, bambooLight);
     fillRect(png, x, 224, 22, 6, bambooLight);
   }
 
-  fillEllipse(png, 955, 196, 108, 104, cream);
-  fillCircle(png, 886, 112, 40, fur);
-  fillCircle(png, 1028, 112, 40, fur);
-  fillEllipse(png, 910, 165, 34, 44, fur);
-  fillEllipse(png, 1008, 165, 34, 44, fur);
-  fillEllipse(png, 956, 214, 56, 68, fur);
-  fillEllipse(png, 904, 248, 36, 54, fur);
-  fillEllipse(png, 1007, 248, 36, 54, fur);
-  fillEllipse(png, 956, 120, 62, 54, cream);
-  fillEllipse(png, 956, 146, 22, 18, fur);
-  fillCircle(png, 927, 152, 6, { ...parseHex('#FFFFFF'), a: 255 });
-  fillCircle(png, 985, 152, 6, { ...parseHex('#FFFFFF'), a: 255 });
-  fillCircle(png, 927, 152, 2.5, deep);
-  fillCircle(png, 985, 152, 2.5, deep);
-  drawThickLine(png, 742, 212, 824, 248, 10, fur);
-  fillEllipse(png, 742, 212, 36, 14, bambooLight);
+  fillEllipse(png, 956, 206, 110, 108, cream);
+  fillCircle(png, 892, 116, 36, fur);
+  fillCircle(png, 1020, 116, 36, fur);
+  fillEllipse(png, 916, 170, 34, 42, fur);
+  fillEllipse(png, 996, 170, 34, 42, fur);
+  fillEllipse(png, 956, 228, 60, 72, fur);
+  fillEllipse(png, 906, 258, 36, 52, fur);
+  fillEllipse(png, 1006, 258, 36, 52, fur);
+  fillEllipse(png, 956, 128, 66, 56, cream);
+  fillEllipse(png, 956, 150, 24, 18, fur);
+  fillCircle(png, 928, 156, 6, { ...parseHex('#FFFFFF'), a: 255 });
+  fillCircle(png, 984, 156, 6, { ...parseHex('#FFFFFF'), a: 255 });
+  fillCircle(png, 928, 156, 2.5, deep);
+  fillCircle(png, 984, 156, 2.5, deep);
+  addBlush(png, 910, 186, blush);
+  addBlush(png, 1002, 186, blush);
+  drawSmile(png, 956, 184, 17, 0.3, 2.84, 3, deep);
+  drawThickLine(png, 724, 220, 822, 250, 10, fur);
+  fillEllipse(png, 724, 218, 38, 14, bambooLight);
 };
 
 const drawLion = (png) => {
-  const mane = parseHex('#8B3F26');
-  const maneLight = parseHex('#B95D3B');
-  const body = parseHex('#E9B06D');
-  const face = parseHex('#F6DFC3');
-  const deep = parseHex('#4B2A1F');
+  const mane = parseHex('#B5613E');
+  const maneLight = parseHex('#D88455');
+  const body = parseHex('#F1C17C');
+  const face = parseHex('#FAE5CB');
+  const deep = parseHex('#5A3425');
+  const blush = parseHex('#F5B8A2');
 
-  fillCircle(png, 968, 168, 112, mane);
-  fillCircle(png, 968, 168, 86, maneLight);
-  fillCircle(png, 968, 168, 60, face);
-  fillCircle(png, 912, 118, 18, body);
-  fillCircle(png, 1024, 118, 18, body);
-  fillEllipse(png, 944, 168, 10, 14, deep);
-  fillEllipse(png, 992, 168, 10, 14, deep);
-  fillCircle(png, 944, 164, 3, { ...parseHex('#FFFFFF'), a: 255 });
-  fillCircle(png, 992, 164, 3, { ...parseHex('#FFFFFF'), a: 255 });
-  fillEllipse(png, 968, 192, 24, 18, face);
-  fillEllipse(png, 952, 190, 10, 8, deep);
-  fillEllipse(png, 984, 190, 10, 8, deep);
-  fillEllipse(png, 968, 184, 12, 8, deep);
-  drawThickLine(png, 948, 205, 988, 205, 3, deep);
-  drawThickLine(png, 915, 198, 944, 194, 2, deep);
-  drawThickLine(png, 915, 210, 944, 210, 2, deep);
-  drawThickLine(png, 915, 222, 944, 226, 2, deep);
-  drawThickLine(png, 992, 194, 1021, 198, 2, deep);
-  drawThickLine(png, 992, 210, 1021, 210, 2, deep);
-  drawThickLine(png, 992, 226, 1021, 222, 2, deep);
+  fillCircle(png, 968, 164, 108, mane);
+  fillCircle(png, 968, 164, 82, maneLight);
+  fillCircle(png, 968, 164, 62, face);
+  fillCircle(png, 914, 114, 18, body);
+  fillCircle(png, 1022, 114, 18, body);
+  fillEllipse(png, 944, 164, 10, 13, deep);
+  fillEllipse(png, 992, 164, 10, 13, deep);
+  fillCircle(png, 944, 160, 3, { ...parseHex('#FFFFFF'), a: 255 });
+  fillCircle(png, 992, 160, 3, { ...parseHex('#FFFFFF'), a: 255 });
+  addBlush(png, 924, 186, blush);
+  addBlush(png, 1012, 186, blush);
+  fillEllipse(png, 968, 188, 24, 18, face);
+  fillEllipse(png, 952, 186, 10, 8, deep);
+  fillEllipse(png, 984, 186, 10, 8, deep);
+  fillEllipse(png, 968, 180, 12, 8, deep);
+  drawSmile(png, 968, 192, 18, 0.25, 2.9, 3, deep);
+  drawThickLine(png, 916, 196, 942, 192, 2, deep);
+  drawThickLine(png, 916, 208, 942, 208, 2, deep);
+  drawThickLine(png, 916, 220, 942, 224, 2, deep);
+  drawThickLine(png, 994, 192, 1020, 196, 2, deep);
+  drawThickLine(png, 994, 208, 1020, 208, 2, deep);
+  drawThickLine(png, 994, 224, 1020, 220, 2, deep);
 
-  fillRoundedRect(png, 888, 236, 166, 74, 36, body);
-  fillEllipse(png, 890, 298, 28, 18, body);
-  fillEllipse(png, 1056, 298, 28, 18, body);
-  drawThickLine(png, 924, 244, 902, 300, 12, maneLight);
-  drawThickLine(png, 1008, 244, 1035, 298, 12, maneLight);
-  drawThickLine(png, 1032, 244, 1089, 300, 14, maneLight);
+  fillRoundedRect(png, 888, 238, 166, 74, 36, body);
+  fillEllipse(png, 890, 300, 28, 18, body);
+  fillEllipse(png, 1056, 300, 28, 18, body);
+  drawThickLine(png, 924, 246, 902, 302, 12, maneLight);
+  drawThickLine(png, 1008, 246, 1036, 300, 12, maneLight);
+  drawThickLine(png, 1032, 246, 1092, 302, 14, maneLight);
+  fillCircle(png, 1102, 302, 12, maneLight);
 };
 
 const writeAsset = (name, startHex, endHex, palette, renderer) => {
   const png = createCanvas(startHex, endHex);
   addSharedBackdrop(png, palette);
   renderer(png);
-  mkdirSync(outputDir, { recursive: true });
-  writeFileSync(path.join(outputDir, name), PNG.sync.write(png));
+  const buffer = PNG.sync.write(png);
+  for (const outputDir of outputDirs) {
+    mkdirSync(outputDir, { recursive: true });
+    writeFileSync(path.join(outputDir, name), buffer);
+  }
 };
 
 writeAsset(
@@ -276,4 +314,4 @@ writeAsset(
   drawLion,
 );
 
-console.log('Generated pacing card assets in', outputDir);
+console.log('Generated pacing card assets in', outputDirs.join(', '));

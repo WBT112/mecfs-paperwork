@@ -60,7 +60,7 @@ const createLocalePreset = (
 });
 
 const DE_PRESET = createLocalePreset(
-  'Deine / Dein ...',
+  'Liebe Grüße',
   createVariantCardsPreset(
     createCardPreset(
       [
@@ -129,7 +129,7 @@ const DE_PRESET = createLocalePreset(
 );
 
 const EN_PRESET = createLocalePreset(
-  'Love, ...',
+  'Best wishes',
   createVariantCardsPreset(
     createCardPreset(
       [

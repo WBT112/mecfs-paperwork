@@ -61,10 +61,10 @@ const acceptIntroAndOpenForm = async (page: Page) => {
 };
 
 const getAdultVariantRadio = (page: Page) =>
-  page.getByLabel(ADULT_VARIANT_LABEL);
+  page.getByRole('radio', { name: ADULT_VARIANT_LABEL });
 
 const getChildVariantRadio = (page: Page) =>
-  page.getByLabel(CHILD_VARIANT_LABEL);
+  page.getByRole('radio', { name: CHILD_VARIANT_LABEL });
 
 const continueToNextStep = async (page: Page) => {
   await clickActionButton(

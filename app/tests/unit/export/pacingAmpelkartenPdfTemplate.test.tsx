@@ -14,6 +14,8 @@ const EXPORTED_AT_ISO = '2026-03-09T10:00:00.000Z';
 const DEFAULT_TITLE = 'Pacing-Ampelkarten';
 const IMAGE_SRC = '/formpacks/pacing-ampelkarten/assets/card-green-sloth.png';
 const SIGNATURE_LABEL = 'Unterschrift / Abschlusszeile';
+const REASSURANCE = 'Weniger Kontakt ist nichts Persönliches.';
+const SIGNATURE_TEXT = 'Liebe Grüße';
 
 type PageElement = ReactElement<{ bookmark?: string; children?: ReactNode }>;
 
@@ -149,9 +151,9 @@ describe('PacingAmpelkartenPdfDocument', () => {
     expect(collectRenderedText(pages[0])).not.toContain(DEFAULT_TITLE);
     expect(collectRenderedText(pages[1])).not.toContain(DEFAULT_TITLE);
     expect(collectRenderedText(pages[2])).not.toContain(DEFAULT_TITLE);
-    expect(pages[0].props.bookmark).toBe('Grün - heute geht etwas');
-    expect(pages[1].props.bookmark).toBe('Gelb - bitte vorsichtig');
-    expect(pages[2].props.bookmark).toBe('Rot - heute geht fast nichts');
+    expect(pages[0].props.bookmark).toBe('Heute ist ein guter Tag');
+    expect(pages[1].props.bookmark).toBe('Heute ist ein vorsichtiger Tag');
+    expect(pages[2].props.bookmark).toBe('Heute ist ein schwerer Tag');
 
     const firstCard = getPageCard(pages[0]);
     expect(firstCard.props.wrap).toBe(false);
@@ -194,6 +196,34 @@ describe('PacingAmpelkartenPdfDocument', () => {
     expect(pages).toHaveLength(3);
   });
 
+  it('renders the signature inside the card instead of below it', () => {
+    const model = buildPacingAmpelkartenPdfDocumentModel({
+      formData: {
+        ...buildPacingAmpelkartenPreset('de', 'adult'),
+        sender: { signature: SIGNATURE_TEXT },
+      } as unknown as Record<string, unknown>,
+      locale: 'de',
+      exportedAt: new Date(EXPORTED_AT_ISO),
+    });
+
+    const element = PacingAmpelkartenPdfDocument({
+      model,
+    }) as ReactElement<{
+      children?: ReactElement[];
+    }>;
+    const pages = getPages(element);
+    const firstPageChildren = Children.toArray(pages[0].props.children);
+
+    expect(firstPageChildren).toHaveLength(2);
+    const firstPageText = collectRenderedText(pages[0]);
+
+    expect(firstPageText).toContain(REASSURANCE);
+    expect(firstPageText).toContain(SIGNATURE_TEXT);
+    expect(firstPageText.indexOf(REASSURANCE)).toBeLessThan(
+      firstPageText.indexOf(SIGNATURE_TEXT),
+    );
+  });
+
   it('uses title fallbacks for empty template content', () => {
     const model: DocumentModel = {
       title: '   ',
@@ -204,6 +234,7 @@ describe('PacingAmpelkartenPdfDocument', () => {
           locale: 'en',
           createdAtIso: EXPORTED_AT_ISO,
           variant: 'child',
+          reassurance: 'Less contact is not personal.',
           signatureLabel: 'Signed by',
           signature: '',
           cards: [

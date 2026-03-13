@@ -97,10 +97,12 @@ it('adds dedicated dark-theme pacing editor overrides for readable colored heade
     '--pacing-header-soft: var(--pacing-variant-soft);',
   );
   expect(cssSource).toContain(
-    ":root[data-theme='dark'] .pacing-editor__card-badge {",
+    ":root[data-theme='dark'] .pacing-editor__card-title {",
   );
-  expect(cssSource).toContain('--pacing-badge-accent: var(--pacing-variant);');
-  expect(cssSource).toContain('--pacing-badge-dark-text: #eef4ff;');
+  expect(cssSource).toContain('.pacing-editor__card-title {');
+  expect(cssSource).toContain(
+    'background: color-mix(in srgb, var(--pacing-header-accent) 16%, white);',
+  );
 });
 
 it('defines dedicated pacing step tones for the pacing editor navigation buttons', () => {

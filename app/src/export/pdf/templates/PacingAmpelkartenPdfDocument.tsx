@@ -122,7 +122,11 @@ const renderBulletList = (items: string[], prefix: string) =>
     </Text>
   ));
 
-const renderCard = (card: PacingPdfCard) => (
+const renderCard = (
+  card: PacingPdfCard,
+  reassurance: string,
+  signature: string,
+) => (
   <View
     key={card.color}
     wrap={false}
@@ -165,6 +169,10 @@ const renderCard = (card: PacingPdfCard) => (
       )}
 
       {card.hint ? <Text style={styles.helperText}>{card.hint}</Text> : null}
+      {signature && reassurance ? (
+        <Text style={styles.helperText}>{reassurance}</Text>
+      ) : null}
+      {signature ? <Text style={styles.signature}>{signature}</Text> : null}
     </View>
   </View>
 );
@@ -196,6 +204,7 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
     (FALLBACK_CARD_COLORS.map((color) =>
       createEmptyCard(color),
     ) as PacingAmpelkartenPdfTemplateData['cards']);
+  const reassurance = templateData?.reassurance ?? '';
   const signature = templateData?.signature ?? '';
 
   return (
@@ -218,8 +227,7 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
           <View style={styles.pageHeader}>
             <Text style={styles.brand}>{BRAND_LABEL}</Text>
           </View>
-          {renderCard(card)}
-          {signature ? <Text style={styles.signature}>{signature}</Text> : null}
+          {renderCard(card, reassurance, signature)}
         </Page>
       ))}
     </Document>

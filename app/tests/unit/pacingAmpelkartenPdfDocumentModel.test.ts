@@ -11,6 +11,7 @@ import {
 const namespace = 'formpack:pacing-ampelkarten';
 const KEPT_ITEM = 'Keep one short item';
 const SIGNATURE_LABEL = 'Unterschrift / Abschlusszeile';
+const REASSURANCE = 'Weniger Kontakt ist nichts Persönliches.';
 const EXPORTED_AT_ISO = '2026-03-09T10:00:00.000Z';
 
 describe('buildPacingAmpelkartenPdfDocumentModel', () => {
@@ -53,8 +54,8 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(model.title).toBe('Pacing-Ampelkarten');
     expect(model.meta?.createdAtIso).toBe(exportedAt.toISOString());
     expect(model.sections).toHaveLength(3);
-    expect(model.sections[0].heading).toBe('Grün - heute geht etwas');
-    expect(model.sections[2].heading).toBe('Rot - heute geht fast nichts');
+    expect(model.sections[0].heading).toBe('Heute ist ein guter Tag');
+    expect(model.sections[2].heading).toBe('Heute ist ein schwerer Tag');
     expect(templateData?.variant).toBe('adult');
     expect(templateData?.cards[0].animalLabel).toBe('Löwe');
     expect(templateData?.cards[0].imageSrc).toMatch(/^data:image\/png;base64,/);
@@ -64,6 +65,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       'Was heute möglich ist',
     );
     expect(templateData?.signatureLabel).toBe(SIGNATURE_LABEL);
+    expect(templateData?.reassurance).toBe(REASSURANCE);
     expect(templateData?.cards[0]).not.toHaveProperty('hintLabel');
   });
 
@@ -83,7 +85,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       | undefined;
 
     expect(templateData?.variant).toBe('child');
-    expect(templateData?.cards[0].title).toContain('good day');
+    expect(templateData?.cards[0].title).toBe('Today is a good day');
     expect(templateData?.cards[0].animalLabel).toBe('Lion');
     expect(templateData?.cards[2].animalLabel).toBe('Sloth');
     expect(templateData?.cards[1].imageAlt).toBe(
@@ -96,16 +98,20 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       formData: {
         ...buildPacingAmpelkartenPreset('de', 'adult'),
         sender: {
-          signature: 'Max Mustermann',
+          signature: 'Liebe Grüße',
         },
       } as unknown as Record<string, unknown>,
       locale: 'de',
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
 
+    expect(model.sections[0].blocks.at(-2)).toEqual({
+      type: 'paragraph',
+      text: REASSURANCE,
+    });
     expect(model.sections[0].blocks.at(-1)).toEqual({
       type: 'paragraph',
-      text: 'Max Mustermann',
+      text: 'Liebe Grüße',
     });
   });
 
@@ -145,6 +151,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(templateData?.cards[0].sections[0].items).toEqual([KEPT_ITEM]);
     expect(templateData?.cards[0].hint).toBe('');
     expect(templateData?.signature).toBe('');
+    expect(model.sections[0].heading).toBe('Today is a good day');
     expect(model.sections[0].blocks).toEqual([
       {
         type: 'paragraph',
@@ -159,6 +166,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
         items: [KEPT_ITEM],
       },
     ]);
+    expect(model.sections[2].heading).toBe('Today is a difficult day');
     expect(model.sections[2].blocks).toEqual([
       {
         type: 'paragraph',
