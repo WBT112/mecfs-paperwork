@@ -19,6 +19,14 @@ const configuredWorkers = parsePositiveInt(
   process.env.PW_WORKERS ?? process.env.PLAYWRIGHT_WORKERS,
 );
 const resolvedWorkers = configuredWorkers ?? (isCI ? 2 : defaultLocalWorkers);
+const resolvedPort =
+  parsePositiveInt(
+    process.env.PW_BASE_PORT ??
+      process.env.PLAYWRIGHT_PORT ??
+      process.env.E2E_PORT,
+  ) ?? 5173;
+const resolvedHost = process.env.PLAYWRIGHT_HOST ?? '127.0.0.1';
+const resolvedBaseUrl = `http://${resolvedHost}:${resolvedPort}`;
 // NOTE: WebKit on Windows can inherit a broken system proxy (WPAD), so we
 // force an explicit proxy config with localhost bypass to keep local E2E stable.
 const localProxyBypass = '127.0.0.1,localhost,::1';
@@ -43,15 +51,15 @@ export default defineConfig({
   ],
 
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: resolvedBaseUrl,
     trace: 'on-first-retry',
     // Reduce per-test I/O overhead while still collecting screenshots for failures.
     screenshot: { mode: 'only-on-failure', fullPage: true },
   },
 
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 5173 --strictPort',
-    url: 'http://127.0.0.1:5173',
+    command: `npm run dev -- --host ${resolvedHost} --port ${resolvedPort} --strictPort`,
+    url: resolvedBaseUrl,
     // SW tests require a fresh server process so VITE_ENABLE_DEV_SW is applied.
     reuseExistingServer: !isCI && !requiresDevServiceWorker,
     timeout: 120_000,

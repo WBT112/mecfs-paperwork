@@ -19,8 +19,6 @@ const FORM_PACK_ID = 'pacing-ampelkarten';
 const DB_NAME = 'mecfs-paperwork';
 const POLL_TIMEOUT = 20_000;
 const PACING_EDITOR_SELECTOR = '.pacing-editor';
-const INTRO_CHECKBOX_LABEL =
-  /Ich habe verstanden, wie die Karten bearbeitet, gedruckt und ausgeschnitten werden|I understand how to edit, print, and cut the cards/i;
 const CHILD_CAN_DO_VALUE =
   'Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.';
 const CUSTOM_CHILD_HINT = 'Heute helfen nur ruhige Vorlese-Minuten.';
@@ -48,7 +46,6 @@ const openPacingAmpelkarten = async (page: Page) => {
 
 const acceptIntroAndOpenForm = async (page: Page) => {
   await acceptFormpackIntroGate(page, {
-    checkboxLabel: INTRO_CHECKBOX_LABEL,
     continueButtonLabel: /weiter|continue/i,
     formSelector: PACING_EDITOR_SELECTOR,
     timeoutMs: POLL_TIMEOUT,
