@@ -23,7 +23,6 @@ type PacingCardSection = {
 type PacingPdfCard = {
   color: PacingCardColor;
   title: string;
-  animalLabel: string;
   imageAlt: string;
   imageSrc: string;
   accentColor: string;
@@ -110,9 +109,6 @@ const buildCard = (
   return {
     color,
     title: t(titleKey, { defaultValue: titleKey }),
-    animalLabel: t(theme.animalLabelKey, {
-      defaultValue: theme.animalLabelKey,
-    }),
     imageAlt: t(theme.imageAltKey, { defaultValue: theme.imageAltKey }),
     imageSrc: theme.imageSrc,
     accentColor: theme.accentColor,
@@ -161,7 +157,6 @@ export const buildPacingAmpelkartenPdfDocumentModel = ({
     id: card.color,
     heading: card.title,
     blocks: [
-      { type: 'paragraph', text: card.animalLabel },
       ...buildSectionBlocks(card),
       ...(card.hint
         ? [

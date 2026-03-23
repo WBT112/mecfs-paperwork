@@ -15,7 +15,6 @@ describe('pacing card theme helpers', () => {
 
     expect(greenTheme).toMatchObject({
       color: 'green',
-      animalLabelKey: 'pacing-ampelkarten.card.animal.green',
       imageAltKey: 'pacing-ampelkarten.card.imageAlt.green',
     });
     expect(greenTheme.imageSrc).toMatch(/^data:image\/png;base64,/);
@@ -55,11 +54,11 @@ describe('pacing card theme helpers', () => {
     expect(getPacingCardTheme('green').imageSrc).not.toBe(
       getPacingCardTheme('red').imageSrc,
     );
-    expect(getPacingCardTheme('green').animalLabelKey).toBe(
-      'pacing-ampelkarten.card.animal.green',
+    expect(getPacingCardTheme('green').imageAltKey).toBe(
+      'pacing-ampelkarten.card.imageAlt.green',
     );
-    expect(getPacingCardTheme('red').animalLabelKey).toBe(
-      'pacing-ampelkarten.card.animal.red',
+    expect(getPacingCardTheme('red').imageAltKey).toBe(
+      'pacing-ampelkarten.card.imageAlt.red',
     );
   });
 });

@@ -14,7 +14,6 @@ export type PacingCardTheme = {
   titleColor: string;
   sectionLabelColor: string;
   imageSrc: string;
-  animalLabelKey: string;
   imageAltKey: string;
 };
 
@@ -27,7 +26,6 @@ const THEMES: Record<PacingCardColor, PacingCardTheme> = {
     titleColor: '#183524',
     sectionLabelColor: '#245a35',
     imageSrc: redLionImage,
-    animalLabelKey: 'pacing-ampelkarten.card.animal.green',
     imageAltKey: 'pacing-ampelkarten.card.imageAlt.green',
   },
   yellow: {
@@ -38,7 +36,6 @@ const THEMES: Record<PacingCardColor, PacingCardTheme> = {
     titleColor: '#5a3e00',
     sectionLabelColor: '#8f5f00',
     imageSrc: yellowPandaImage,
-    animalLabelKey: 'pacing-ampelkarten.card.animal.yellow',
     imageAltKey: 'pacing-ampelkarten.card.imageAlt.yellow',
   },
   red: {
@@ -49,7 +46,6 @@ const THEMES: Record<PacingCardColor, PacingCardTheme> = {
     titleColor: '#5d2618',
     sectionLabelColor: '#943a23',
     imageSrc: greenSlothImage,
-    animalLabelKey: 'pacing-ampelkarten.card.animal.red',
     imageAltKey: 'pacing-ampelkarten.card.imageAlt.red',
   },
 };

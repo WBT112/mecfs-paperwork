@@ -55,7 +55,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(model.sections[0].heading).toBe('Heute ist ein guter Tag');
     expect(model.sections[2].heading).toBe('Heute ist ein schwerer Tag');
     expect(templateData?.variant).toBe('adult');
-    expect(templateData?.cards[0].animalLabel).toBe('Löwe');
     expect(templateData?.cards[0].imageSrc).toMatch(/^data:image\/png;base64,/);
     expect(templateData?.cards[0].sectionLabelColor).toBe('#245a35');
     expect(templateData?.cards[0].sections).toHaveLength(2);
@@ -82,8 +81,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
 
     expect(templateData?.variant).toBe('child');
     expect(templateData?.cards[0].title).toBe('Today is a good day');
-    expect(templateData?.cards[0].animalLabel).toBe('Lion');
-    expect(templateData?.cards[2].animalLabel).toBe('Sloth');
     expect(templateData?.cards[1].imageAlt).toBe(
       'Panda card with a careful yellow background',
     );
@@ -145,10 +142,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
     expect(model.sections[0].blocks).toEqual([
       {
         type: 'paragraph',
-        text: 'Lion',
-      },
-      {
-        type: 'paragraph',
         text: 'What is possible today',
       },
       {
@@ -157,11 +150,6 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       },
     ]);
     expect(model.sections[2].heading).toBe('Today is a difficult day');
-    expect(model.sections[2].blocks).toEqual([
-      {
-        type: 'paragraph',
-        text: 'Sloth',
-      },
-    ]);
+    expect(model.sections[2].blocks).toEqual([]);
   });
 });

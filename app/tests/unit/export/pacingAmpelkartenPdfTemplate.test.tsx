@@ -19,7 +19,6 @@ type PageElement = ReactElement<{ bookmark?: string; children?: ReactNode }>;
 type PacingTemplateCard = {
   color: 'green' | 'yellow' | 'red';
   title: string;
-  animalLabel: string;
   imageAlt: string;
   imageSrc: string;
   accentColor: string;
@@ -43,7 +42,6 @@ const buildTemplateCards = (
   {
     color: 'green',
     title: 'Gruen',
-    animalLabel: 'Loewe',
     imageAlt: 'Bild',
     imageSrc: IMAGE_SRC,
     accentColor: '#76b27f',
@@ -58,7 +56,6 @@ const buildTemplateCards = (
   {
     color: 'yellow',
     title: 'Gelb',
-    animalLabel: 'Panda',
     imageAlt: 'Bild',
     imageSrc: IMAGE_SRC,
     accentColor: '#d1a238',
@@ -73,7 +70,6 @@ const buildTemplateCards = (
   {
     color: 'red',
     title: 'Rot',
-    animalLabel: 'Faultier',
     imageAlt: 'Bild',
     imageSrc: IMAGE_SRC,
     accentColor: '#d47a59',
@@ -234,7 +230,6 @@ describe('PacingAmpelkartenPdfDocument', () => {
             {
               color: 'green',
               title: '',
-              animalLabel: 'Lion',
               imageAlt: 'Lion card',
               imageSrc: IMAGE_SRC,
               accentColor: '#2b6a3e',
@@ -251,7 +246,6 @@ describe('PacingAmpelkartenPdfDocument', () => {
             {
               color: 'yellow',
               title: '',
-              animalLabel: 'Panda',
               imageAlt: 'Panda card',
               imageSrc: IMAGE_SRC,
               accentColor: '#9b6a00',
@@ -265,7 +259,6 @@ describe('PacingAmpelkartenPdfDocument', () => {
             {
               color: 'red',
               title: '',
-              animalLabel: 'Sloth',
               imageAlt: 'Sloth card',
               imageSrc: IMAGE_SRC,
               accentColor: '#a5472a',

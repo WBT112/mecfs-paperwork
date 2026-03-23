@@ -66,16 +66,15 @@ const styles = StyleSheet.create({
     fontWeight: 700,
     marginBottom: 6,
   },
-  animalLabel: {
+  cardTitleBadge: {
     fontSize: 8.5,
     marginBottom: 8,
-    textTransform: 'uppercase',
-    letterSpacing: 1.1,
     alignSelf: 'flex-start',
     color: '#ffffff',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
+    fontWeight: 700,
   },
   backgroundImage: {
     width: '100%',
@@ -132,13 +131,10 @@ const renderCard = (card: PacingPdfCard) => (
     <View style={[styles.cardRail, { backgroundColor: card.accentColor }]} />
     <View style={styles.cardInner}>
       <View style={styles.cardHeader}>
-        <Text style={[styles.cardTitle, { color: card.titleColor }]}>
-          {card.title}
-        </Text>
         <Text
-          style={[styles.animalLabel, { backgroundColor: card.accentColor }]}
+          style={[styles.cardTitleBadge, { backgroundColor: card.accentColor }]}
         >
-          {card.animalLabel}
+          {card.title}
         </Text>
         <Image src={card.imageSrc} style={styles.backgroundImage} />
       </View>
@@ -167,7 +163,6 @@ const renderCard = (card: PacingPdfCard) => (
 const createEmptyCard = (color: PacingPdfCardColor): PacingPdfCard => ({
   color,
   title: '',
-  animalLabel: '',
   imageAlt: '',
   imageSrc: '',
   accentColor: '',
