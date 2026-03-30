@@ -111,6 +111,7 @@ const createConfig = (mode: string): AppConfig => ({
       createPwaConfig({
         isDev: mode === 'development',
         enableDevSw: process.env.VITE_ENABLE_DEV_SW === 'true',
+        selfDestroying: process.env.VITE_PWA_SELF_DESTROYING === 'true',
       }),
     ),
   ],

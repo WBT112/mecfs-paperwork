@@ -694,6 +694,19 @@ export default function FormpackDetailPage() {
         : null,
     [introGateConfig, tFormpack],
   );
+  const formClassName = useMemo(() => {
+    const classNames = ['formpack-form'];
+
+    if (hasLetterLayout(formpackId)) {
+      classNames.push('formpack-form--doctor-letter');
+    }
+
+    if (formpackId === 'offlabel-antrag') {
+      classNames.push('formpack-form--offlabel');
+    }
+
+    return classNames.join(' ');
+  }, [formpackId]);
 
   const handleAcceptIntroGate = useCallback(() => {
     setPendingIntroFocus(true);
@@ -1022,11 +1035,7 @@ export default function FormpackDetailPage() {
               activeRecordExists={Boolean(activeRecord)}
               closeLabel={t('common.close')}
               emptyMessage={t('formpackFormNoActiveRecord')}
-              formClassName={
-                hasLetterLayout(formpackId)
-                  ? 'formpack-form formpack-form--doctor-letter'
-                  : 'formpack-form'
-              }
+              formClassName={formClassName}
               formContentRef={formContentRef}
               formContext={formContext}
               formData={formData}
