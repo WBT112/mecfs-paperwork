@@ -295,7 +295,7 @@
       "boardTitle": "Karte",
       "boardHint": "Tippe passende Felder an. Das Freifeld in der Mitte bleibt aktiv.",
       "boardLabel": "ME-Bingo-Karte",
-      "freeFieldLabel": "Freifeld",
+      "freeFieldLabel": "ME/CFS ? Noch nie gehört",
       "freeFieldBadge": "FREI",
       "cellAriaLabel": "{{label}}. Reihe {{row}}, Spalte {{column}}. {{state}}.",
       "cellState": {

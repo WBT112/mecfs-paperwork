@@ -104,7 +104,7 @@ describe('MeBingoPage states', () => {
     expect(screen.queryByText(/Play time/i)).not.toBeInTheDocument();
     expect(
       screen.getByRole('button', {
-        name: /Free field\. Row 1, column 1\. Free field, already marked\./i,
+        name: /ME\/CFS\? Never heard of it\. Row 1, column 1\. Free field, already marked\./i,
       }),
     ).toBeDisabled();
     expect(

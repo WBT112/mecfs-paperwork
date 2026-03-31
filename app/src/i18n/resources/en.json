@@ -295,7 +295,7 @@
       "boardTitle": "Board",
       "boardHint": "Tap matching tiles. The free center tile always stays active.",
       "boardLabel": "ME Bingo board",
-      "freeFieldLabel": "Free field",
+      "freeFieldLabel": "ME/CFS? Never heard of it",
       "freeFieldBadge": "FREE",
       "cellAriaLabel": "{{label}}. Row {{row}}, column {{column}}. {{state}}.",
       "cellState": {
