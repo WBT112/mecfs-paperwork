@@ -33,6 +33,12 @@ export default memo(function Footer() {
           >
             {t('footerHelp')}
           </Link>
+          <Link
+            className="app__footer-link app__footer-link--center-right"
+            to="/games"
+          >
+            {t('footerGames')}
+          </Link>
           {sponsorUrl ? (
             <a
               className="app__footer-link app__footer-link--center-right"

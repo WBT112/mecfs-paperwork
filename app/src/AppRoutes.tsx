@@ -4,6 +4,11 @@ import { useTranslation } from 'react-i18next';
 
 const FormpackDetailPage = lazy(() => import('./pages/FormpackDetailPage'));
 const FormpackListPage = lazy(() => import('./pages/FormpackListPage'));
+const GamesHubPage = lazy(() => import('./features/games/pages/GamesHubPage'));
+const MeBingoPage = lazy(() => import('./features/games/pages/MeBingoPage'));
+const SpoonManagerPage = lazy(
+  () => import('./features/games/pages/SpoonManagerPage'),
+);
 const HelpPage = lazy(() => import('./pages/HelpPage'));
 const ImprintPage = lazy(() => import('./pages/ImprintPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
@@ -39,6 +44,9 @@ export default function AppRoutes() {
         <Route path="/" element={<Navigate to="/formpacks" replace />} />
         <Route path="/formpacks" element={<FormpackListPage />} />
         <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        <Route path="/games" element={<GamesHubPage />} />
+        <Route path="/games/me-bingo" element={<MeBingoPage />} />
+        <Route path="/games/spoon-manager" element={<SpoonManagerPage />} />
         <Route path="/imprint" element={<ImprintPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/help" element={<HelpPage />} />
