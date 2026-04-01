@@ -132,3 +132,24 @@ it('keeps standalone pdf export buttons as wide as other primary action buttons'
     /\.formpack-pdf-export \.app__button,\s*\.formpack-actions__group--secondary \.app__button \{\s*width:\s*100%;/m,
   );
 });
+
+it('does not define duplicate pacing editor selectors in index.css', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+  const pacingSelectors = [
+    '.pacing-editor__preview-step',
+    '.pacing-editor__form-step',
+    '.pacing-editor__steps',
+    '.pacing-editor__utility-row',
+  ];
+
+  for (const selector of pacingSelectors) {
+    const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const matches = cssSource.match(
+      new RegExp(`^${escapedSelector}\\s*\\{`, 'gm'),
+    );
+    expect(
+      matches?.length ?? 0,
+      `${selector} should be declared only once`,
+    ).toBeLessThanOrEqual(1);
+  }
+});

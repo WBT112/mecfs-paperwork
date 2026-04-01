@@ -13,6 +13,8 @@ interface VariantCardsPreset<TCard extends BaseCardPreset> {
   red: TCard;
 }
 
+type CardColor = keyof VariantCardsPreset<BaseCardPreset>;
+
 interface PacingAmpelkartenPreset {
   meta: {
     introAccepted: boolean;
@@ -25,6 +27,18 @@ interface PacingAmpelkartenPreset {
     cards: VariantCardsPreset<BaseCardPreset>;
   };
 }
+
+type CardPresetSource = readonly [
+  canDo: readonly string[],
+  needHelp: readonly string[],
+  hint: string,
+];
+
+type VariantCardsPresetSource = Record<CardColor, CardPresetSource>;
+type LocalePresetSource = Record<
+  PacingAmpelkartenVariant,
+  VariantCardsPresetSource
+>;
 
 const createCardPreset = (
   canDo: string[],
@@ -54,9 +68,33 @@ const createLocalePreset = (
   child: { cards: childCards },
 });
 
-const DE_PRESET = createLocalePreset(
+const createCardPresetFromSource = ([
+  canDo,
+  needHelp,
+  hint,
+]: CardPresetSource): BaseCardPreset =>
+  createCardPreset([...canDo], [...needHelp], hint);
+
+const createVariantCardsPresetFromSource = (
+  source: VariantCardsPresetSource,
+): VariantCardsPreset<BaseCardPreset> =>
   createVariantCardsPreset(
-    createCardPreset(
+    createCardPresetFromSource(source.green),
+    createCardPresetFromSource(source.yellow),
+    createCardPresetFromSource(source.red),
+  );
+
+const createLocalePresetFromSource = (
+  source: LocalePresetSource,
+): Omit<PacingAmpelkartenPreset, 'meta'> =>
+  createLocalePreset(
+    createVariantCardsPresetFromSource(source.adult),
+    createVariantCardsPresetFromSource(source.child),
+  );
+
+const DE_PRESET_SOURCE = {
+  adult: {
+    green: [
       [
         'Kurze Gespräche sind möglich (ca. 10-20 Minuten).',
         'Kleine Aufgaben gehen (z. B. kurz Küche aufräumen).',
@@ -65,8 +103,8 @@ const DE_PRESET = createLocalePreset(
       ],
       ['Wenn möglich: eine Aufgabe abnehmen (z. B. Einkauf oder Telefonat).'],
       'Pausen gehören zu meinem Pacing - ich schütze damit meine Energie.',
-    ),
-    createCardPreset(
+    ],
+    yellow: [
       [
         'Nur kurze Gespräche (max. 5-10 Minuten).',
         'Lieber schriftlich als telefonisch.',
@@ -77,8 +115,8 @@ const DE_PRESET = createLocalePreset(
         'Hilfe bei Haushalt/Kochen wäre toll.',
       ],
       'Weniger Kontakt heißt nicht weniger Wertschätzung. Ich brauche heute Ruhe, um keinen Crash auszulösen.',
-    ),
-    createCardPreset(
+    ],
+    red: [
       ['Ich brauche Ruhe. Sprechen ist heute schwer.'],
       [
         'Bitte stelle Essen und Trinken bereit.',
@@ -86,10 +124,10 @@ const DE_PRESET = createLocalePreset(
         'Bitte halte den Tag für mich möglichst reizarm und ruhig.',
       ],
       'Mein System ist heute im Alarmmodus. Ruhe hilft am meisten.',
-    ),
-  ),
-  createVariantCardsPreset(
-    createCardPreset(
+    ],
+  },
+  child: {
+    green: [
       [
         'Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.',
         'Kurze Nachrichten lesen oder beantworten geht oft gut.',
@@ -97,8 +135,8 @@ const DE_PRESET = createLocalePreset(
       ],
       ['Bitte hilf trotzdem beim Planen und erinnere mich an Pausen.'],
       'Heute ist ein guter Tag. Trotzdem helfen Pausen.',
-    ),
-    createCardPreset(
+    ],
+    yellow: [
       [
         'Heute gehen nur kurze Gespräche oder Nachrichten.',
         'Ich brauche viele Pausen und möchte mich zwischendurch hinlegen.',
@@ -108,8 +146,8 @@ const DE_PRESET = createLocalePreset(
         'Hilf mir dabei, dass alles ruhig und langsam bleibt.',
       ],
       'Heute ist ein vorsichtiger Tag. Bitte langsam und leise.',
-    ),
-    createCardPreset(
+    ],
+    red: [
       ['Heute brauche ich ganz viel Ruhe.'],
       [
         'Bitte bring mir etwas zu trinken oder zu essen.',
@@ -117,13 +155,13 @@ const DE_PRESET = createLocalePreset(
         'Bitte hilf mit, dass alles leise und langsam bleibt.',
       ],
       'Heute ist ein Ruhetag. Bitte nichts erwarten.',
-    ),
-  ),
-);
+    ],
+  },
+} as const satisfies LocalePresetSource;
 
-const EN_PRESET = createLocalePreset(
-  createVariantCardsPreset(
-    createCardPreset(
+const EN_PRESET_SOURCE = {
+  adult: {
+    green: [
       [
         'Short conversations are possible (around 10-20 minutes).',
         'Small tasks are manageable (for example tidying up the kitchen a little).',
@@ -134,8 +172,8 @@ const EN_PRESET = createLocalePreset(
         'If possible, please take one task off my plate (for example shopping or a phone call).',
       ],
       'Rest breaks are part of my pacing and help me protect my energy.',
-    ),
-    createCardPreset(
+    ],
+    yellow: [
       [
         'Only short conversations are possible today (around 5-10 minutes).',
         'Written messages are better than phone calls.',
@@ -146,8 +184,8 @@ const EN_PRESET = createLocalePreset(
         'Help with cooking or household tasks would really help.',
       ],
       'Less contact does not mean less appreciation. I need extra quiet today to avoid a crash.',
-    ),
-    createCardPreset(
+    ],
+    red: [
       ['I need rest. Talking is very hard today.'],
       [
         'Please make sure food and drinks are within reach.',
@@ -155,10 +193,10 @@ const EN_PRESET = createLocalePreset(
         'Please help keep everything as calm and low-stimulation as possible.',
       ],
       'My system is on high alert today. Rest helps the most.',
-    ),
-  ),
-  createVariantCardsPreset(
-    createCardPreset(
+    ],
+  },
+  child: {
+    green: [
       [
         'Today is a better day for a short chat or one small activity together.',
         'Short messages are usually okay.',
@@ -166,8 +204,8 @@ const EN_PRESET = createLocalePreset(
       ],
       ['Please still help me pace and remind me to rest before I overdo it.'],
       'Today is a better day. I still need breaks.',
-    ),
-    createCardPreset(
+    ],
+    yellow: [
       [
         'Today I can only manage short chats or messages.',
         'I need lots of breaks and time to lie down quietly.',
@@ -177,8 +215,8 @@ const EN_PRESET = createLocalePreset(
         'Please help keep everything calm and slow.',
       ],
       'Today is a careful day. Please go slowly and keep things quiet.',
-    ),
-    createCardPreset(
+    ],
+    red: [
       ['Today I need a lot of rest.'],
       [
         'Please bring me drinks or food if I need them.',
@@ -186,9 +224,12 @@ const EN_PRESET = createLocalePreset(
         'Please help keep everything quiet and very low-key.',
       ],
       'Today is a rest day. Please do not expect anything from me.',
-    ),
-  ),
-);
+    ],
+  },
+} as const satisfies LocalePresetSource;
+
+const DE_PRESET = createLocalePresetFromSource(DE_PRESET_SOURCE);
+const EN_PRESET = createLocalePresetFromSource(EN_PRESET_SOURCE);
 
 const PRESETS_BY_LOCALE = {
   de: DE_PRESET,

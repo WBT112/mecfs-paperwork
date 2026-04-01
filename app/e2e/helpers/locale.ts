@@ -20,6 +20,7 @@ export const switchLocale = async (page: Page, locale: SupportedTestLocale) => {
   const localeSelect = page.locator('#locale-select');
   await expect(localeSelect).toBeVisible();
   await localeSelect.selectOption(locale);
-  await expect(localeSelect).toHaveValue(locale);
+  await expect(page.locator('#locale-select')).toHaveValue(locale);
+  await expect(page.locator('html')).toHaveAttribute('lang', locale);
   await expectLocaleLabel(page, locale);
 };

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from '../helpers';
-import { openFormpackWithRetry } from '../helpers/formpack';
+import { ensureActiveRecord, openFormpackWithRetry } from '../helpers/formpack';
 import { switchLocale } from '../helpers/locale';
 import { openCollapsibleSectionById } from '../helpers/sections';
 
@@ -443,6 +443,13 @@ const openFormpackForLayoutAudit = async (page: Page, formpackId: string) => {
     await introGate.locator('button:not([disabled])').click();
   } else if (formpackId === FORM_PACK_ID) {
     await acceptIntroGate(page);
+  }
+
+  if (!(await formLocator.isVisible().catch(() => false))) {
+    await ensureActiveRecord(page, {
+      formpackId,
+      formSelector: '.formpack-form',
+    });
   }
 
   await expect(formLocator).toBeVisible({ timeout: 20_000 });

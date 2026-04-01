@@ -9,29 +9,55 @@ test('me bingo keeps board, progress, and stats stacked on mobile @mobile', asyn
 
   const layout = page.locator('.games-bingo__layout');
   const boardPanel = page.locator('.games-bingo__board-panel');
+  const boardScroll = page.locator('.games-bingo__board-scroll');
+  const firstBoardItem = page.locator('.games-bingo__board-item').first();
+  const firstCellText = page.locator('.games-bingo__cell-text').first();
   const progressPanel = page.locator('.games-bingo__panel--progress');
   const statsPanel = page.locator('.games-bingo__panel--stats');
   const sidebar = page.locator('.games-bingo__sidebar');
 
   await expect(layout).toBeVisible();
   await expect(boardPanel).toBeVisible();
+  await expect(boardScroll).toBeVisible();
   await expect(progressPanel).toBeVisible();
   await expect(statsPanel).toBeVisible();
 
-  const [layoutDisplay, boardBox, sidebarBox, progressBox, statsBox] =
-    await Promise.all([
-      layout.evaluate((element) => getComputedStyle(element).display),
-      boardPanel.boundingBox(),
-      sidebar.boundingBox(),
-      progressPanel.boundingBox(),
-      statsPanel.boundingBox(),
-    ]);
+  const [
+    layoutDisplay,
+    boardBox,
+    sidebarBox,
+    progressBox,
+    statsBox,
+    firstBoardItemBox,
+    firstCellFontSize,
+    boardScrollMetrics,
+  ] = await Promise.all([
+    layout.evaluate((element) => getComputedStyle(element).display),
+    boardPanel.boundingBox(),
+    sidebar.boundingBox(),
+    progressPanel.boundingBox(),
+    statsPanel.boundingBox(),
+    firstBoardItem.boundingBox(),
+    firstCellText.evaluate((element) =>
+      Number.parseFloat(getComputedStyle(element).fontSize),
+    ),
+    boardScroll.evaluate((element) => ({
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    })),
+  ]);
 
   expect(layoutDisplay).toBe('flex');
   expect(boardBox).not.toBeNull();
   expect(sidebarBox).not.toBeNull();
   expect(progressBox).not.toBeNull();
   expect(statsBox).not.toBeNull();
+  expect(firstBoardItemBox).not.toBeNull();
+  expect(firstCellFontSize).toBeGreaterThanOrEqual(14);
+  expect(firstBoardItemBox!.width).toBeGreaterThanOrEqual(88);
+  expect(boardScrollMetrics.scrollWidth).toBeGreaterThan(
+    boardScrollMetrics.clientWidth,
+  );
 
   expect(sidebarBox!.y).toBeGreaterThanOrEqual(
     boardBox!.y + boardBox!.height - 1,
