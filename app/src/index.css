@@ -514,20 +514,18 @@ body {
   }
 
   .games-bingo__board {
-    gap: 0.6rem;
-    min-width: 34rem;
-    width: max-content;
+    gap: 0.35rem;
+    min-width: 0;
+    width: 100%;
   }
 
   .games-bingo__board-scroll {
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    padding-bottom: 0.1rem;
-    -webkit-overflow-scrolling: touch;
+    overflow-x: visible;
   }
 
   .games-bingo__board-item {
-    width: 6.4rem;
+    width: auto;
+    aspect-ratio: auto;
   }
 
   .games-bingo__result-card {
@@ -543,13 +541,14 @@ body {
   }
 
   .games-bingo__cell-button {
-    padding: 0.75rem;
+    min-height: 6.9rem;
+    padding: 0.55rem 0.42rem;
   }
 
   .games-bingo__cell-text {
-    font-size: 0.95rem;
+    font-size: 0.75rem;
     line-height: 1.4;
-    -webkit-line-clamp: 5;
+    -webkit-line-clamp: 6;
   }
 }
 
@@ -620,13 +619,14 @@ body {
   }
 
   .games-bingo__board {
-    gap: 0.5rem;
-    min-width: 30rem;
-    width: max-content;
+    gap: 0.25rem;
+    min-width: 0;
+    width: 100%;
   }
 
   .games-bingo__board-item {
-    width: 5.6rem;
+    width: auto;
+    aspect-ratio: auto;
   }
 
   .games-bingo__result-card {
@@ -642,18 +642,19 @@ body {
   }
 
   .games-bingo__cell-button {
-    padding: 0.65rem;
-    border-radius: 14px;
+    min-height: 6.1rem;
+    padding: 0.45rem 0.32rem;
+    border-radius: 12px;
   }
 
   .games-bingo__cell-text {
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     line-height: 1.4;
-    -webkit-line-clamp: 5;
+    -webkit-line-clamp: 6;
   }
 
   .games-bingo__cell-marker {
-    font-size: 0.76rem;
+    font-size: 0.64rem;
   }
 }
 
@@ -1126,6 +1127,8 @@ body {
   font-size: 0.92rem;
   line-height: 1.35;
   overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
 }

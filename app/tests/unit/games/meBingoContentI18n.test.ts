@@ -33,4 +33,18 @@ describe('meBingo content i18n parity', () => {
       'wellness-advice': 25,
     });
   });
+
+  it('keeps prompt labels short enough for small mobile bingo cells', () => {
+    const promptPool = getMeBingoPromptPool();
+
+    const longestGermanLabel = Math.max(
+      ...promptPool.map((prompt) => prompt.labels.de.length),
+    );
+    const longestEnglishLabel = Math.max(
+      ...promptPool.map((prompt) => prompt.labels.en.length),
+    );
+
+    expect(longestGermanLabel).toBeLessThanOrEqual(32);
+    expect(longestEnglishLabel).toBeLessThanOrEqual(31);
+  });
 });

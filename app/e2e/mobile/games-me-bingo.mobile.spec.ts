@@ -53,11 +53,12 @@ test('me bingo keeps board, progress, and stats stacked on mobile @mobile', asyn
   expect(progressBox).not.toBeNull();
   expect(statsBox).not.toBeNull();
   expect(firstBoardItemBox).not.toBeNull();
-  expect(firstCellFontSize).toBeGreaterThanOrEqual(14);
-  expect(firstBoardItemBox!.width).toBeGreaterThanOrEqual(88);
-  expect(boardScrollMetrics.scrollWidth).toBeGreaterThan(
-    boardScrollMetrics.clientWidth,
+  expect(firstCellFontSize).toBeGreaterThanOrEqual(11);
+  expect(firstBoardItemBox!.width).toBeGreaterThanOrEqual(52);
+  expect(boardScrollMetrics.scrollWidth).toBeLessThanOrEqual(
+    boardScrollMetrics.clientWidth + 1,
   );
+  expect(boardBox!.width).toBeLessThanOrEqual(390);
 
   expect(sidebarBox!.y).toBeGreaterThanOrEqual(
     boardBox!.y + boardBox!.height - 1,
