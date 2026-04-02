@@ -16,6 +16,7 @@ import { hasPreviewValue } from '../lib/previewValue';
 import { isRecord } from '../lib/utils';
 import { buildRandomDummyPatch, mergeDummyPatch } from '../lib/devDummyFill';
 import { createAsyncGuard, ignoreAsyncError } from '../lib/asyncGuard';
+import { resetAppShell } from '../lib/diagnostics/resetAppShell';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
@@ -116,6 +117,7 @@ export default function FormpackDetailPage() {
     useState(false);
   const [showAppUpdateNotice, setShowAppUpdateNotice] = useState(false);
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
+  const [isResettingAppShell, setIsResettingAppShell] = useState(false);
   const [pendingIntroFocus, setPendingIntroFocus] = useState(false);
   const [pendingFormFocus, setPendingFormFocus] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -897,6 +899,17 @@ export default function FormpackDetailPage() {
     () => hasPreviewValue(formData),
     [formData],
   );
+  const isRecoverableFormpackLoadError =
+    errorMessage === t('formpackLoadError') ||
+    errorMessage === t('formpackSchemaUnavailable') ||
+    errorMessage === t('formpackUiSchemaUnavailable');
+  const handleRetryFormpackLoad = useCallback(() => {
+    setAssetRefreshVersion((currentVersion) => currentVersion + 1);
+  }, []);
+  const handleResetAppShell = useCallback(() => {
+    setIsResettingAppShell(true);
+    resetAppShell().catch(ignoreAsyncError);
+  }, []);
 
   if (isLoading) {
     return (
@@ -912,6 +925,30 @@ export default function FormpackDetailPage() {
       <section className="app__card">
         <h2>{t('formpackDetailTitle')}</h2>
         <p className="app__error">{errorMessage}</p>
+        {isRecoverableFormpackLoadError ? (
+          <>
+            <p>{t('formpackLoadRecoveryHint')}</p>
+            <div className="formpack-form__actions">
+              <button
+                type="button"
+                className="app__button"
+                onClick={handleRetryFormpackLoad}
+              >
+                {t('formpackRetryLoad')}
+              </button>
+              <button
+                type="button"
+                className="app__button"
+                onClick={handleResetAppShell}
+                disabled={isResettingAppShell}
+              >
+                {isResettingAppShell
+                  ? t('formpackResetAppShellInProgress')
+                  : t('formpackResetAppShell')}
+              </button>
+            </div>
+          </>
+        ) : null}
         <Link className="app__link" to="/formpacks">
           {t('formpackBackToList')}
         </Link>

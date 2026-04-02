@@ -42,6 +42,7 @@ describe('parseManifest', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    vi.useRealTimers();
     clearFormpackCaches();
   });
 
@@ -465,6 +466,27 @@ describe('formpack loader fetches', () => {
     });
   });
 
+  it('retries transient manifest network failures before surfacing an error', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => manifestFor(DOCTOR_LETTER_ID),
+      });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const manifestPromise = loadFormpackManifest(DOCTOR_LETTER_ID);
+    await vi.runAllTimersAsync();
+
+    await expect(manifestPromise).resolves.toMatchObject({
+      id: DOCTOR_LETTER_ID,
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('handles missing and invalid manifest responses', async () => {
     const fetchMock = buildFetchMock({
       [MANIFEST_PATH_DOCTOR]: {
@@ -563,8 +585,13 @@ describe('formpack loader fetches', () => {
       },
     });
     vi.stubGlobal('fetch', offlineFetch as unknown as typeof fetch);
+    vi.useFakeTimers();
 
-    await expect(loadFormpackSchema(DOCTOR_LETTER_ID)).rejects.toMatchObject({
+    const schemaPromise = loadFormpackSchema(DOCTOR_LETTER_ID);
+    schemaPromise.catch(() => undefined);
+    await vi.runAllTimersAsync();
+
+    await expect(schemaPromise).rejects.toMatchObject({
       code: 'schema_unavailable',
     });
   });
