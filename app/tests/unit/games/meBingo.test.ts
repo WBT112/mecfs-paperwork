@@ -107,9 +107,7 @@ describe('meBingo logic', () => {
         },
         () => 0,
       ),
-    ).toThrowError(
-      /At least 5 unique ME Bingo prompts are required per category/u,
-    );
+    ).toThrow(/At least 5 unique ME Bingo prompts are required per category/u);
   });
 
   it('toggles regular cells and leaves the free field untouched', () => {
