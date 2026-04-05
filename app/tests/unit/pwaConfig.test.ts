@@ -179,6 +179,7 @@ describe('createPwaConfig', () => {
   it('uses active service worker update behavior', () => {
     const config = createPwaConfig();
     expect(config.registerType).toBe('autoUpdate');
+    expect(config.selfDestroying).toBe(false);
 
     const workbox = config.workbox;
     expect(workbox).toBeDefined();
@@ -187,6 +188,13 @@ describe('createPwaConfig', () => {
     }
     expect(workbox.skipWaiting).toBe(true);
     expect(workbox.clientsClaim).toBe(true);
+  });
+
+  it('supports a temporary self-destroying worker rollout for legacy clients', () => {
+    const config = createPwaConfig({ selfDestroying: true });
+
+    expect(config.selfDestroying).toBe(true);
+    expect(config.registerType).toBe('autoUpdate');
   });
 
   it('matches script, style, and worker requests for static cache', () => {

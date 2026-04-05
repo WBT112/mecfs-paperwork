@@ -44,6 +44,7 @@ const buildSchemaPath = (formpackId: string) =>
 const buildUiSchemaPath = (formpackId: string) =>
   `/formpacks/${formpackId}/ui.schema.json`;
 const FORMPACK_ID_SET = new Set<string>(FORMPACK_IDS);
+const FETCH_RETRY_DELAYS_MS = [150, 400] as const;
 
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string');
@@ -75,6 +76,34 @@ const assertManifestRequiredFields = (
       'The formpack manifest id does not match the requested pack.',
     );
   }
+};
+
+const delay = async (milliseconds: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+
+const fetchWithRetry = async (
+  path: string,
+  init?: RequestInit,
+): Promise<Response> => {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= FETCH_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await fetch(path, init);
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === FETCH_RETRY_DELAYS_MS.length) {
+        break;
+      }
+
+      await delay(FETCH_RETRY_DELAYS_MS[attempt]);
+    }
+  }
+
+  throw lastError;
 };
 
 const getValidatedLocales = (
@@ -298,7 +327,7 @@ export const loadFormpackManifest = async (
   let response: Response;
 
   try {
-    response = await fetch(buildManifestPath(formpackId), {
+    response = await fetchWithRetry(buildManifestPath(formpackId), {
       headers: { Accept: 'application/json' },
     });
   } catch {
@@ -355,7 +384,9 @@ const loadFormpackJsonResource = async (
   let response: Response;
 
   try {
-    response = await fetch(path, { headers: { Accept: 'application/json' } });
+    response = await fetchWithRetry(path, {
+      headers: { Accept: 'application/json' },
+    });
   } catch {
     throw new FormpackLoaderError(
       unavailableCode,

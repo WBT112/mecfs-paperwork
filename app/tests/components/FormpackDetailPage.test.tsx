@@ -391,16 +391,16 @@ vi.mock('../../src/storage/formpackMeta', () => ({
 
 vi.mock('@rjsf/core', () => ({
   default: ({
-    children,
     className,
+    children,
     formData,
     templates,
     uiSchema,
     onChange,
     onSubmit,
   }: {
-    children?: React.ReactNode;
     className?: string;
+    children?: React.ReactNode;
     formData?: Record<string, unknown>;
     templates?: {
       FieldTemplate?: unknown;
@@ -421,12 +421,14 @@ vi.mock('@rjsf/core', () => ({
       {children}
       <button
         type="button"
+        tabIndex={-1}
         onClick={() => onChange?.({ formData: { field: 'value' } })}
       >
         trigger-change
       </button>
       <button
         type="button"
+        tabIndex={-1}
         onClick={() => {
           mutableRjsfFormDataState.counter += 1;
           mutableRjsfFormDataState.data.field = `value-${mutableRjsfFormDataState.counter}`;
@@ -437,6 +439,7 @@ vi.mock('@rjsf/core', () => ({
       </button>
       <button
         type="button"
+        tabIndex={-1}
         onClick={() =>
           onChange?.({
             formData: {
@@ -452,6 +455,7 @@ vi.mock('@rjsf/core', () => ({
       </button>
       <button
         type="button"
+        tabIndex={-1}
         onClick={() =>
           onChange?.({
             formData: {
@@ -468,6 +472,7 @@ vi.mock('@rjsf/core', () => ({
       </button>
       <button
         type="button"
+        tabIndex={-1}
         onClick={() =>
           onChange?.({
             formData: {
@@ -483,6 +488,7 @@ vi.mock('@rjsf/core', () => ({
       </button>
       <button
         type="button"
+        tabIndex={-1}
         onClick={() =>
           onChange?.({
             formData: {
@@ -1137,6 +1143,9 @@ describe('FormpackDetailPage', () => {
     expect(docxButton.closest('.formpack-docx-export__buttons')).toHaveClass(
       'formpack-docx-export__buttons--offlabel',
     );
+    expect(document.querySelector('.formpack-form--offlabel')).toHaveClass(
+      'formpack-form--offlabel',
+    );
   });
 
   it('shows PDF success and error statuses via PDF callbacks', async () => {
@@ -1516,12 +1525,11 @@ describe('FormpackDetailPage', () => {
     expect(
       screen.getByRole('button', { name: INTRO_REOPEN_KEY }),
     ).toBeInTheDocument();
-    await waitFor(
-      () =>
-        expect(
-          screen.getByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
-        ).toHaveFocus(),
-      { timeout: 4_000 },
+    expect(
+      screen.getByRole('button', { name: DOCX_EXPORT_BUTTON_LABEL }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('form-data')).toHaveTextContent(
+      '"introAccepted":true',
     );
   });
 

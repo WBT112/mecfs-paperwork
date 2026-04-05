@@ -150,16 +150,22 @@ export const DEV_RUNTIME_CACHING = createRuntimeCaching(
 );
 
 export const createPwaConfig = (
-  options: { isDev?: boolean; enableDevSw?: boolean } = {},
+  options: {
+    isDev?: boolean;
+    enableDevSw?: boolean;
+    selfDestroying?: boolean;
+  } = {},
 ): Partial<VitePWAOptions> => {
   const isDev = options.isDev ?? false;
   const enableDevSw = options.enableDevSw ?? false;
+  const selfDestroying = options.selfDestroying ?? false;
   const globPatterns = isDev
     ? DEV_PRECACHE_GLOB_PATTERNS
     : PRECACHE_GLOB_PATTERNS;
 
   return {
     registerType: 'autoUpdate',
+    selfDestroying,
     devOptions: {
       enabled: isDev && enableDevSw,
       navigateFallbackAllowlist: [

@@ -124,6 +124,23 @@ Deployments are triggered automatically via GitHub Actions when pushing to track
    - Pulls latest `staging` image
    - Restarts staging container
 
+### Temporary service-worker reset rollout
+
+The deploy workflow currently builds both `main` and `staging` with:
+
+- `VITE_PWA_SELF_DESTROYING=true`
+
+This enables the `vite-plugin-pwa` self-destroying service worker mode for deployed builds only. It exists as a temporary migration for older installed clients that are stuck on a historic worker and therefore never persist app updates across browser restarts.
+
+Behavior of the temporary rollout:
+
+- the deployed `/sw.js` unregisters itself
+- service-worker managed caches are deleted
+- open windows are navigated to their current URL again
+- IndexedDB and other user data are not touched
+
+Local development, tests, and non-deploy builds keep the normal service worker behavior because the flag is only set in the deploy workflow.
+
 ### Manual Deployment
 
 If needed, you can deploy manually:

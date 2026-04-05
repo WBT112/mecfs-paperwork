@@ -16,6 +16,7 @@ import {
   FormpackLoaderError,
   loadFormpackManifest,
 } from '../../src/formpacks/loader';
+import { resetAppShell } from '../../src/lib/diagnostics/resetAppShell';
 import type { FormpackManifest } from '../../src/formpacks/types';
 import type { RJSFSchema, UiSchema } from '@rjsf/utils';
 import type { RecordEntry, SnapshotEntry } from '../../src/storage/types';
@@ -32,6 +33,7 @@ const testConstants = vi.hoisted(() => ({
 
 const DOCX_JSON_EXPORTS = ['docx', 'json'] as const;
 const APP_ID = 'mecfs-paperwork';
+const LOAD_FAILED_ERROR = 'Load failed';
 
 const formpackState = vi.hoisted(
   (): {
@@ -341,6 +343,10 @@ vi.mock('../../src/storage/importRecord', () => ({
 vi.mock('../../src/storage/formpackMeta', () => ({
   getFormpackMeta: formpackMetaState.getFormpackMeta,
   upsertFormpackMeta: formpackMetaState.upsertFormpackMeta,
+}));
+
+vi.mock('../../src/lib/diagnostics/resetAppShell', () => ({
+  resetAppShell: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@rjsf/core', () => ({
@@ -2414,7 +2420,7 @@ describe('FormpackDetailPage', () => {
 
   it('renders generic error content when formpack loading fails', async () => {
     vi.mocked(loadFormpackManifest).mockRejectedValueOnce(
-      new Error('Load failed'),
+      new Error(LOAD_FAILED_ERROR),
     );
 
     render(
@@ -2427,6 +2433,46 @@ describe('FormpackDetailPage', () => {
 
     expect(await screen.findByText('formpackLoadError')).toBeInTheDocument();
     expect(screen.getByText('formpackBackToList')).toBeInTheDocument();
+  });
+
+  it('offers retry recovery for transient formpack load failures', async () => {
+    vi.mocked(loadFormpackManifest)
+      .mockRejectedValueOnce(new Error(LOAD_FAILED_ERROR))
+      .mockResolvedValueOnce(formpackState.manifest);
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    expect(await screen.findByText('formpackLoadError')).toBeInTheDocument();
+    expect(screen.getByText('formpackLoadRecoveryHint')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('formpackRetryLoad'));
+
+    await screen.findByText('formpackFormHeading');
+    expect(loadFormpackManifest).toHaveBeenCalledTimes(2);
+  });
+
+  it('offers app-shell reset recovery for transient formpack load failures', async () => {
+    vi.mocked(loadFormpackManifest).mockRejectedValueOnce(
+      new Error(LOAD_FAILED_ERROR),
+    );
+
+    render(
+      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
+        <Routes>
+          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
+        </Routes>
+      </TestRouter>,
+    );
+
+    fireEvent.click(await screen.findByText('formpackResetAppShell'));
+
+    expect(resetAppShell).toHaveBeenCalledOnce();
   });
 
   it('maps known loader errors to translated formpack messages', async () => {

@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentProps,
   type ComponentType,
   type ReactNode,
   type RefObject,
@@ -30,6 +31,7 @@ import {
   ignoreAsyncError,
   runIfActive,
 } from '../lib/asyncGuard';
+import { resetAppShell } from '../lib/diagnostics/resetAppShell';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
@@ -143,6 +145,101 @@ const useDeferredFormFocusStates = (
   }, [getRoot, states]);
 };
 
+const renderLoadingState = (title: string, loadingLabel: string) => (
+  <section className="app__card">
+    <h2>{title}</h2>
+    <p>{loadingLabel}</p>
+  </section>
+);
+
+const renderErrorState = ({
+  backToListLabel,
+  errorMessage,
+  isRecoverable,
+  isResettingAppShell,
+  onResetAppShell,
+  onRetry,
+  recoveryHint,
+  resetLabel,
+  resetPendingLabel,
+  retryLabel,
+  title,
+}: {
+  backToListLabel: string;
+  errorMessage: string | null;
+  isRecoverable: boolean;
+  isResettingAppShell: boolean;
+  onResetAppShell: () => void;
+  onRetry: () => void;
+  recoveryHint: string;
+  resetLabel: string;
+  resetPendingLabel: string;
+  retryLabel: string;
+  title: string;
+}) => (
+  <section className="app__card">
+    <h2>{title}</h2>
+    <p className="app__error">{errorMessage}</p>
+    {isRecoverable ? (
+      <>
+        <p>{recoveryHint}</p>
+        <div className="formpack-form__actions">
+          <button type="button" className="app__button" onClick={onRetry}>
+            {retryLabel}
+          </button>
+          <button
+            type="button"
+            className="app__button"
+            onClick={onResetAppShell}
+            disabled={isResettingAppShell}
+          >
+            {isResettingAppShell ? resetPendingLabel : resetLabel}
+          </button>
+        </div>
+      </>
+    ) : null}
+    <Link className="app__link" to="/formpacks">
+      {backToListLabel}
+    </Link>
+  </section>
+);
+
+const renderFormContent = ({
+  commonFormPanelProps,
+  documentPreview,
+  emptyPreviewLabel,
+  exportActions,
+  hasDocumentContent,
+  isPacingAmpelkarten,
+  t,
+  tFormpack,
+}: {
+  commonFormPanelProps: Omit<
+    ComponentProps<typeof FormpackFormPanel>,
+    'actions'
+  >;
+  documentPreview: ReactNode;
+  emptyPreviewLabel: string;
+  exportActions: ReactNode;
+  hasDocumentContent: boolean;
+  isPacingAmpelkarten: boolean;
+  t: (key: string) => string;
+  tFormpack: (key: string) => string;
+}) =>
+  isPacingAmpelkarten ? (
+    <PacingAmpelkartenEditor
+      documentPreview={documentPreview}
+      emptyPreviewLabel={emptyPreviewLabel}
+      exportActions={exportActions}
+      hasDocumentContent={hasDocumentContent}
+      t={t}
+      tFormpack={tFormpack}
+      {...commonFormPanelProps}
+    />
+  ) : (
+    <FormpackFormPanel {...commonFormPanelProps} actions={exportActions} />
+  );
+
 /**
  * Shows formpack metadata with translations loaded for the active locale.
  */
@@ -168,6 +265,7 @@ export default function FormpackDetailPage() {
     useState(false);
   const [showAppUpdateNotice, setShowAppUpdateNotice] = useState(false);
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false);
+  const [isResettingAppShell, setIsResettingAppShell] = useState(false);
   const [pendingIntroFocus, setPendingIntroFocus] = useState(false);
   const [pendingFormFocus, setPendingFormFocus] = useState(false);
   const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -955,26 +1053,36 @@ export default function FormpackDetailPage() {
     () => hasPreviewValue(formData),
     [formData],
   );
+  const isRecoverableFormpackLoadError =
+    errorMessage === t('formpackLoadError') ||
+    errorMessage === t('formpackSchemaUnavailable') ||
+    errorMessage === t('formpackUiSchemaUnavailable');
+  const handleRetryFormpackLoad = useCallback(() => {
+    setAssetRefreshVersion((currentVersion) => currentVersion + 1);
+  }, []);
+  const handleResetAppShell = useCallback(() => {
+    setIsResettingAppShell(true);
+    resetAppShell().catch(ignoreAsyncError);
+  }, []);
 
   if (isLoading) {
-    return (
-      <section className="app__card">
-        <h2>{t('formpackDetailTitle')}</h2>
-        <p>{t('formpackLoading')}</p>
-      </section>
-    );
+    return renderLoadingState(t('formpackDetailTitle'), t('formpackLoading'));
   }
 
   if (errorMessage || !manifest) {
-    return (
-      <section className="app__card">
-        <h2>{t('formpackDetailTitle')}</h2>
-        <p className="app__error">{errorMessage}</p>
-        <Link className="app__link" to="/formpacks">
-          {t('formpackBackToList')}
-        </Link>
-      </section>
-    );
+    return renderErrorState({
+      backToListLabel: t('formpackBackToList'),
+      errorMessage,
+      isRecoverable: isRecoverableFormpackLoadError,
+      isResettingAppShell,
+      onResetAppShell: handleResetAppShell,
+      onRetry: handleRetryFormpackLoad,
+      recoveryHint: t('formpackLoadRecoveryHint'),
+      resetLabel: t('formpackResetAppShell'),
+      resetPendingLabel: t('formpackResetAppShellInProgress'),
+      retryLabel: t('formpackRetryLoad'),
+      title: t('formpackDetailTitle'),
+    });
   }
 
   // RATIONALE: Hide dev-only UI in production to reduce exposed metadata and UI surface.
@@ -1026,6 +1134,10 @@ export default function FormpackDetailPage() {
     storageHealth.status === 'ok' ? null : storageHealth.status;
   const isPacingAmpelkarten = formpackId === PACING_AMPELKARTEN_FORMPACK_ID;
   const formClassNames = ['formpack-form', `formpack-form--${manifest.id}`];
+  if (formpackId === 'offlabel-antrag') {
+    // NOTE: Keep the alias while offlabel-specific layout selectors still use it.
+    formClassNames.push('formpack-form--offlabel');
+  }
 
   if (hasLetterLayout(formpackId)) {
     formClassNames.push('formpack-form--doctor-letter');
@@ -1115,22 +1227,16 @@ export default function FormpackDetailPage() {
       >
         <div className="formpack-detail__form">
           <FormContentSection title={t('formpackFormHeading')}>
-            {isPacingAmpelkarten ? (
-              <PacingAmpelkartenEditor
-                documentPreview={documentPreview}
-                emptyPreviewLabel={t('formpackDocumentPreviewEmpty')}
-                exportActions={exportActions}
-                hasDocumentContent={hasDocumentContent}
-                t={t}
-                tFormpack={tFormpack}
-                {...commonFormPanelProps}
-              />
-            ) : (
-              <FormpackFormPanel
-                actions={exportActions}
-                {...commonFormPanelProps}
-              />
-            )}
+            {renderFormContent({
+              commonFormPanelProps,
+              documentPreview,
+              emptyPreviewLabel: t('formpackDocumentPreviewEmpty'),
+              exportActions,
+              hasDocumentContent,
+              isPacingAmpelkarten,
+              t,
+              tFormpack,
+            })}
           </FormContentSection>
           {isPacingAmpelkarten ? null : (
             <DocumentPreviewPanel

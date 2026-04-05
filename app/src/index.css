@@ -1832,6 +1832,10 @@ body {
   border: 0;
 }
 
+.formpack-form--offlabel fieldset#root > * + * {
+  margin-top: 1.75rem;
+}
+
 .formpack-form--doctor-letter fieldset#root > legend {
   display: none;
 }
