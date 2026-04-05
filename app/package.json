@@ -114,12 +114,13 @@
   },
   "overrides": {
     "@isaacs/brace-expansion": "^5.0.1",
-    "minimatch@3": {
-      "brace-expansion": "^2.0.3"
-    },
-    "minimatch@5": {
-      "brace-expansion": "^2.0.3"
-    },
+    "brace-expansion@<1.1.13": "^2.0.3",
+    "brace-expansion@>=4.0.0 <5.0.5": "^5.0.5",
+    "lodash": ">=4.18.1",
+    "lodash-es": ">=4.18.1",
+    "minimatch@<3.1.4": "^3.1.5",
+    "minimatch@>=5.0.0 <5.1.8": "^5.1.9",
+    "minimatch@>=10.0.0 <10.2.3": "^10.2.5",
     "serialize-javascript": ">=7.0.3",
     "smol-toml": "^1.6.1",
     "source-map": "npm:source-map-js@^1.2.1",
