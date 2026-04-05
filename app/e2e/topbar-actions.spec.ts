@@ -20,5 +20,5 @@ test('topbar feedback and share actions are available and share a link-only URL'
 
   const shareUrlInput = page.getByLabel(/share url|teilen-link/i);
   await expect(shareUrlInput).toBeVisible();
-  await expect(shareUrlInput).toHaveValue('http://127.0.0.1:5173/formpacks');
+  await expect(shareUrlInput).toHaveValue(page.url());
 });

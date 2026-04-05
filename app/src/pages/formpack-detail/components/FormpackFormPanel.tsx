@@ -5,10 +5,11 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import FormpackIntroGate from '../../../components/FormpackIntroGate';
 import FormpackIntroModal from '../../../components/FormpackIntroModal';
 import { formpackWidgets } from '../../../lib/rjsfWidgetRegistry';
 import type { FormpackFormContext } from '../../../lib/rjsfTemplates';
+import FormpackIntroGatePanel from './FormpackIntroGatePanel';
+import FormpackIntroUtilityRow from './FormpackIntroUtilityRow';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
 
@@ -115,6 +116,34 @@ export default function FormpackFormPanel({
   uiSchema,
   validator,
 }: Readonly<FormpackFormPanelProps>) {
+  const introGatePanelProps = introTexts
+    ? {
+        title: introTexts.title,
+        body: introTexts.body,
+        checkboxLabel: introTexts.checkboxLabel,
+        startButtonLabel: introTexts.startButtonLabel,
+        onConfirm: onConfirmIntroGate,
+        formContentRef,
+      }
+    : null;
+
+  const introUtilityProps = {
+    introGateEnabled,
+    introReopenLabel: introTexts?.reopenButtonLabel,
+    onApplyDummyData,
+    onApplyProfile,
+    onOpenIntroModal,
+    onProfileSaveToggle,
+    profileApplyDummyLabel,
+    profileApplyLabel,
+    profileHasSavedData,
+    profileSaveEnabled,
+    profileStatus,
+    profileStatusSuccessText,
+    profileToggleLabel,
+    showDevSections,
+  };
+
   if (!activeRecordExists) {
     return <p className="formpack-records__empty">{emptyMessage}</p>;
   }
@@ -123,72 +152,18 @@ export default function FormpackFormPanel({
     return noSchemaMessage;
   }
 
-  if (isIntroGateVisible && introTexts) {
-    return (
-      <div ref={formContentRef}>
-        <FormpackIntroGate
-          title={introTexts.title}
-          body={introTexts.body}
-          checkboxLabel={introTexts.checkboxLabel}
-          startButtonLabel={introTexts.startButtonLabel}
-          onConfirm={onConfirmIntroGate}
-        />
-      </div>
-    );
+  if (isIntroGateVisible && introGatePanelProps) {
+    return <FormpackIntroGatePanel {...introGatePanelProps} />;
   }
 
   return (
     <div ref={formContentRef}>
-      {introGateEnabled && introTexts && (
-        <div className="formpack-intro__reopen">
-          <button
-            type="button"
-            className="app__button"
-            onClick={onOpenIntroModal}
-          >
-            {introTexts.reopenButtonLabel}
-          </button>
-        </div>
-      )}
-      <div className="profile-quickfill">
-        <label className="profile-quickfill__save">
-          <input
-            type="checkbox"
-            checked={profileSaveEnabled}
-            onChange={onProfileSaveToggle}
-          />
-          {profileToggleLabel}
-        </label>
-        <button
-          type="button"
-          className="app__button"
-          disabled={!profileHasSavedData}
-          onClick={onApplyProfile}
-        >
-          {profileApplyLabel}
-        </button>
-        {showDevSections && (
-          <button
-            type="button"
-            className="app__button"
-            onClick={onApplyDummyData}
-          >
-            {profileApplyDummyLabel}
-          </button>
-        )}
-        {profileStatus && (
-          <span
-            className={
-              profileStatus === profileStatusSuccessText
-                ? 'profile-quickfill__success'
-                : 'profile-quickfill__error'
-            }
-            aria-live="polite"
-          >
-            {profileStatus}
-          </span>
-        )}
-      </div>
+      <FormpackIntroUtilityRow
+        containerClassName="formpack-utility-row"
+        profileClassName="profile-quickfill"
+        introButtonWrapperClassName="formpack-intro__reopen"
+        {...introUtilityProps}
+      />
       <Suspense fallback={<p>{loadingLabel}</p>}>
         <FormComponent
           className={formClassName}

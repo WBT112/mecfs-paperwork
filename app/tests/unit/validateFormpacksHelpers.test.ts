@@ -142,6 +142,25 @@ describe('validate-formpacks helpers', () => {
     expect(errors2.size).toBeGreaterThan(0);
   });
 
+  it('validateManifest accepts pdf-only manifests without docx config', () => {
+    const errors: Map<
+      string,
+      Array<{ contextPath: string; error: Error }>
+    > = new Map();
+    const valid = {
+      id: 'test',
+      version: '1.0',
+      defaultLocale: 'de',
+      locales: ['de', 'en'],
+      titleKey: 'p.title',
+      descriptionKey: 'p.desc',
+      exports: ['json', 'pdf'],
+    };
+
+    expect(validateManifest(valid, 'test', '/fake', errors)).toBe(true);
+    expect(errors.size).toBe(0);
+  });
+
   it('parseArgs extracts --id flag', () => {
     expect(parseArgs(['--id', 'zzz']).id).toBe('zzz');
     expect(parseArgs([]).id).toBe(null);

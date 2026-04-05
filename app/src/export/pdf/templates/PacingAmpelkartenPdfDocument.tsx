@@ -1,0 +1,216 @@
+import {
+  Document,
+  Image,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+} from '@react-pdf/renderer';
+import { ensurePdfFontsRegistered, PDF_FONT_FAMILY_SANS } from '../fonts';
+import { toKeyedEntries } from '../keyedEntries';
+import type { DocumentModel } from '../types';
+import type { PacingAmpelkartenPdfTemplateData } from '../../../formpacks/pacing-ampelkarten/export/pdfDocumentModel';
+
+type PacingPdfCard = PacingAmpelkartenPdfTemplateData['cards'][number];
+type PacingPdfCardColor = PacingPdfCard['color'];
+
+const BRAND_LABEL = 'MEcfs-paperwork';
+const FALLBACK_CARD_COLORS: readonly PacingPdfCardColor[] = [
+  'green',
+  'yellow',
+  'red',
+] as const;
+
+const styles = StyleSheet.create({
+  page: {
+    backgroundColor: '#f4efe8',
+    paddingTop: 24,
+    paddingBottom: 24,
+    paddingLeft: 26,
+    paddingRight: 26,
+    fontFamily: PDF_FONT_FAMILY_SANS,
+    fontSize: 10.5,
+    lineHeight: 1.35,
+  },
+  pageHeader: {
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  brand: {
+    fontSize: 10.5,
+    fontWeight: 700,
+    color: '#ffffff',
+    backgroundColor: '#163f69',
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+  card: {
+    borderWidth: 2.2,
+    borderRadius: 14,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  cardRail: {
+    height: 10,
+    width: '100%',
+  },
+  cardInner: {
+    padding: 14,
+  },
+  cardHeader: {
+    marginBottom: 10,
+  },
+  cardTitle: {
+    fontSize: 15.5,
+    fontWeight: 700,
+    marginBottom: 6,
+  },
+  cardTitleBadge: {
+    fontSize: 8.5,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+    color: '#ffffff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    fontWeight: 700,
+  },
+  backgroundImage: {
+    width: '100%',
+    height: 96,
+    objectFit: 'cover',
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  section: {
+    marginBottom: 10,
+    borderLeftWidth: 2,
+    paddingLeft: 8,
+  },
+  sectionLabel: {
+    fontSize: 10.5,
+    fontWeight: 700,
+    marginBottom: 3,
+  },
+  bulletItem: {
+    marginBottom: 2,
+    paddingLeft: 8,
+  },
+  helperText: {
+    marginTop: 8,
+    fontSize: 9.5,
+    color: '#334155',
+  },
+});
+
+ensurePdfFontsRegistered();
+
+const normalizePdfLanguage = (locale: string): string =>
+  locale.toLowerCase().startsWith('de') ? 'de-DE' : 'en-US';
+
+const renderBulletList = (items: string[], prefix: string) =>
+  toKeyedEntries(items, prefix).map((entry) => (
+    <Text key={entry.key} style={styles.bulletItem}>
+      • {entry.value}
+    </Text>
+  ));
+
+const renderCard = (card: PacingPdfCard) => (
+  <View
+    key={card.color}
+    wrap={false}
+    style={[
+      styles.card,
+      {
+        borderColor: card.borderColor,
+        backgroundColor: card.surfaceColor,
+      },
+    ]}
+  >
+    <View style={[styles.cardRail, { backgroundColor: card.accentColor }]} />
+    <View style={styles.cardInner}>
+      <View style={styles.cardHeader}>
+        <Text
+          style={[styles.cardTitleBadge, { backgroundColor: card.accentColor }]}
+        >
+          {card.title}
+        </Text>
+        <Image src={card.imageSrc} style={styles.backgroundImage} />
+      </View>
+
+      {card.sections.map((section) =>
+        section.items.length > 0 ? (
+          <View
+            key={`${card.color}:${section.id}`}
+            style={[styles.section, { borderLeftColor: card.accentColor }]}
+          >
+            <Text
+              style={[styles.sectionLabel, { color: card.sectionLabelColor }]}
+            >
+              {section.label}
+            </Text>
+            {renderBulletList(section.items, `${card.color}:${section.id}`)}
+          </View>
+        ) : null,
+      )}
+
+      {card.hint ? <Text style={styles.helperText}>{card.hint}</Text> : null}
+    </View>
+  </View>
+);
+
+const createEmptyCard = (color: PacingPdfCardColor): PacingPdfCard => ({
+  color,
+  title: '',
+  imageAlt: '',
+  imageSrc: '',
+  accentColor: '',
+  borderColor: '',
+  surfaceColor: '',
+  titleColor: '',
+  sectionLabelColor: '',
+  hint: '',
+  sections: [],
+});
+
+const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
+  const locale = model.meta?.locale ?? 'de';
+  const pdfLanguage = normalizePdfLanguage(locale);
+  const templateData = model.meta?.templateData as
+    | PacingAmpelkartenPdfTemplateData
+    | undefined;
+  const title = model.title?.trim() || 'Pacing-Ampelkarten';
+  const cards =
+    templateData?.cards ??
+    (FALLBACK_CARD_COLORS.map((color) =>
+      createEmptyCard(color),
+    ) as PacingAmpelkartenPdfTemplateData['cards']);
+  return (
+    <Document
+      title={title}
+      subject={title}
+      creator="mecfs-paperwork"
+      producer="@react-pdf/renderer"
+      keywords="ME/CFS, Pacing, Signal cards, PDF"
+      language={pdfLanguage}
+      pageMode="useOutlines"
+    >
+      {cards.map((card) => (
+        <Page
+          key={card.color}
+          size="A4"
+          style={styles.page}
+          bookmark={card.title || title}
+        >
+          <View style={styles.pageHeader}>
+            <Text style={styles.brand}>{BRAND_LABEL}</Text>
+          </View>
+          {renderCard(card)}
+        </Page>
+      ))}
+    </Document>
+  );
+};
+
+export default PacingAmpelkartenPdfDocument;

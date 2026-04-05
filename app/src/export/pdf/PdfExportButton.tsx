@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import type { ComponentType, ReactElement } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactElement,
+} from 'react';
 import type { DocumentProps } from '@react-pdf/renderer';
 import {
   USER_TIMING_NAMES,

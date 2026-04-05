@@ -175,6 +175,9 @@ export const extractProfileData = (
     case 'notfallpass': {
       return extractNotfallpass(formData);
     }
+    case 'pacing-ampelkarten': {
+      return {};
+    }
   }
 };
 
@@ -270,6 +273,9 @@ export const applyProfileData = (
         fillEmpty(result, 'doctor', 'name', profile.doctor.name);
         fillEmpty(result, 'doctor', 'phone', profile.doctor.phone);
       }
+      break;
+    }
+    case 'pacing-ampelkarten': {
       break;
     }
   }

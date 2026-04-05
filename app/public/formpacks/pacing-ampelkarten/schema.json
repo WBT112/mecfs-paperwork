@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "meta": {
+      "type": "object",
+      "properties": {
+        "introAccepted": {
+          "type": "boolean"
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "adult",
+            "child"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "adult": {
+      "$ref": "#/$defs/variantContent"
+    },
+    "child": {
+      "$ref": "#/$defs/variantContent"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "textList": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0
+    },
+    "cardBase": {
+      "type": "object",
+      "properties": {
+        "canDo": {
+          "$ref": "#/$defs/textList"
+        },
+        "needHelp": {
+          "$ref": "#/$defs/textList"
+        },
+        "hint": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "variantContent": {
+      "type": "object",
+      "properties": {
+        "cards": {
+          "type": "object",
+          "properties": {
+            "green": {
+              "$ref": "#/$defs/cardBase"
+            },
+            "yellow": {
+              "$ref": "#/$defs/cardBase"
+            },
+            "red": {
+              "$ref": "#/$defs/cardBase"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

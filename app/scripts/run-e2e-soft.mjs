@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import net from 'node:net';
 import process from 'node:process';
 import console from 'node:console';
 import { checkNodeVersion } from './check-node-version.mjs';
@@ -16,6 +17,8 @@ const ALLOWED_PROJECTS = new Set([
 ]);
 
 const ALLOWED_PROFILES = new Set(['fast', 'cross', 'all']);
+const DEFAULT_E2E_PORT = 5173;
+const MAX_PORT_ATTEMPTS = 25;
 
 function getRunner() {
   const ua = process.env.npm_config_user_agent || '';
@@ -50,6 +53,42 @@ function resolveProfile() {
   }
 
   return resolved;
+}
+
+function isPortFree(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+
+    server.once('error', () => resolve(false));
+    server.once('listening', () => {
+      server.close(() => resolve(true));
+    });
+
+    server.listen(port, '127.0.0.1');
+  });
+}
+
+async function resolvePort() {
+  const fromEnv = process.env.PW_BASE_PORT ?? process.env.PLAYWRIGHT_PORT;
+  if (fromEnv) {
+    return fromEnv;
+  }
+
+  for (
+    let port = DEFAULT_E2E_PORT;
+    port < DEFAULT_E2E_PORT + MAX_PORT_ATTEMPTS;
+    port += 1
+  ) {
+    if (await isPortFree(port)) {
+      return String(port);
+    }
+  }
+
+  throw new Error(
+    `Unable to find a free E2E port in range ${DEFAULT_E2E_PORT}-${
+      DEFAULT_E2E_PORT + MAX_PORT_ATTEMPTS - 1
+    }`,
+  );
 }
 
 function runPlaywright({
@@ -160,6 +199,7 @@ async function runAllProfile() {
 
 async function main() {
   process.env.VITE_ENABLE_DEV_SW = 'true';
+  process.env.PLAYWRIGHT_PORT = await resolvePort();
 
   const profile = resolveProfile();
   let exitCode = 0;

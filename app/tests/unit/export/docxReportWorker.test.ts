@@ -18,7 +18,9 @@ type WorkerRequest = {
   locale: string;
 };
 
-const buildRequest = (): WorkerRequest => ({
+const buildRequest = (
+  overrides: Partial<WorkerRequest> = {},
+): WorkerRequest => ({
   id: 1,
   template: new Uint8Array([1, 2, 3]),
   data: { name: 'Sample' },
@@ -28,6 +30,7 @@ const buildRequest = (): WorkerRequest => ({
   failFast: true,
   tContext: { hello: 'Hallo' },
   locale: 'de',
+  ...overrides,
 });
 
 const flushPromises = async () => {

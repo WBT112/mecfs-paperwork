@@ -142,7 +142,7 @@ export default [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
+      'no-duplicate-imports': ['error', { allowSeparateTypeImports: false }],
 
       ...reactHooks.configs.recommended.rules,
 

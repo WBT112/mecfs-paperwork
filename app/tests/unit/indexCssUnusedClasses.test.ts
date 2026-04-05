@@ -18,10 +18,19 @@ const sourceExtensions = new Set([
 ]);
 const runtimeGeneratedAllowlist = new Set([
   'btn',
+  'field-array',
+  'field-object',
   'field-radio-group',
+  'field-string',
   'form-group',
   'formpack-detail__quota-banner--warning',
   'formpack-detail__quota-banner--error',
+  'formpack-form--pacing-ampelkarten',
+  'pacing-editor__utility__error',
+  'pacing-editor__utility__save',
+  'pacing-editor__utility__success',
+  'profile-quickfill__error',
+  'profile-quickfill__save',
 ]);
 
 const collectFiles = (directory: string): string[] => {
@@ -75,4 +84,72 @@ it('styles help page storage status "ok" in the same success color as "available
   expect(cssSource).toMatch(
     /\.help-page__storage-details dd\[data-status='available'\],\s*\.help-page__storage-details dd\[data-status='ok'\]\s*\{\s*color:\s*var\(--color-success\);/m,
   );
+});
+
+it('adds dedicated dark-theme pacing editor overrides for readable colored headers', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+
+  expect(cssSource).toContain(
+    ":root[data-theme='dark'] .pacing-editor__step-header {",
+  );
+  expect(cssSource).toContain('--pacing-header-accent: var(--pacing-variant);');
+  expect(cssSource).toContain(
+    '--pacing-header-soft: var(--pacing-variant-soft);',
+  );
+  expect(cssSource).toContain(
+    ":root[data-theme='dark'] .pacing-editor__card-title {",
+  );
+  expect(cssSource).toContain('.pacing-editor__card-title {');
+  expect(cssSource).toContain(
+    'background: color-mix(in srgb, var(--pacing-header-accent) 16%, white);',
+  );
+});
+
+it('defines dedicated pacing step tones for the pacing editor navigation buttons', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+
+  expect(cssSource).toContain('.pacing-editor__step {');
+  expect(cssSource).toContain('--pacing-step-accent: var(--pacing-variant);');
+  expect(cssSource).toContain(
+    '--pacing-step-soft: var(--pacing-variant-soft);',
+  );
+  expect(cssSource).toContain('--pacing-step-text: #21457f;');
+});
+
+it('styles the pacing variant chooser as selectable cards instead of plain radios', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+
+  expect(cssSource).toContain('.pacing-editor__variant-grid {');
+  expect(cssSource).toContain('.pacing-editor__variant-card {');
+  expect(cssSource).toContain('.pacing-editor__variant-card--selected {');
+  expect(cssSource).toContain('.pacing-editor__variant-pill {');
+});
+
+it('keeps standalone pdf export buttons as wide as other primary action buttons', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+
+  expect(cssSource).toMatch(
+    /\.formpack-pdf-export \.app__button,\s*\.formpack-actions__group--secondary \.app__button \{\s*width:\s*100%;/m,
+  );
+});
+
+it('does not define duplicate pacing editor selectors in index.css', () => {
+  const cssSource = readFileSync(cssPath, 'utf8');
+  const pacingSelectors = [
+    '.pacing-editor__preview-step',
+    '.pacing-editor__form-step',
+    '.pacing-editor__steps',
+    '.pacing-editor__utility-row',
+  ];
+
+  for (const selector of pacingSelectors) {
+    const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const matches = cssSource.match(
+      new RegExp(`^${escapedSelector}\\s*\\{`, 'gm'),
+    );
+    expect(
+      matches?.length ?? 0,
+      `${selector} should be declared only once`,
+    ).toBeLessThanOrEqual(1);
+  }
 });

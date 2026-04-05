@@ -1,5 +1,4 @@
-import type { ComponentPropsWithoutRef } from 'react';
-import { memo } from 'react';
+import { memo, type ComponentPropsWithoutRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { isExternalHref, isSafeHref } from './markdownLinks';
 

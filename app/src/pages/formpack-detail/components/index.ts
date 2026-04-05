@@ -7,6 +7,7 @@ export { default as FormpackExportActions } from './FormpackExportActions';
 export { default as FormpackFormPanel } from './FormpackFormPanel';
 export { default as FormpackToolsSection } from './FormpackToolsSection';
 export { default as ImportPanel } from './ImportPanel';
+export { default as PacingAmpelkartenEditor } from './PacingAmpelkartenEditor';
 export { default as QuotaBanner } from './QuotaBanner';
 export { default as RecordsPanel } from './RecordsPanel';
 export { default as SnapshotsPanel } from './SnapshotsPanel';

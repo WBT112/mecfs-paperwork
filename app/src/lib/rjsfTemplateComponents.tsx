@@ -1,14 +1,17 @@
 import type { ReactNode } from 'react';
-import type {
-  ArrayFieldItemTemplateProps,
-  ArrayFieldTemplateProps,
-  DescriptionFieldProps,
-  FieldHelpProps,
-  IconButtonProps,
-  UiSchema,
+import {
+  buttonId,
+  getTemplate,
+  getUiOptions,
+  helpId,
+  type ArrayFieldItemTemplateProps,
+  type ArrayFieldTemplateProps,
+  type DescriptionFieldProps,
+  type FieldHelpProps,
+  type IconButtonProps,
+  type UiSchema,
 } from '@rjsf/utils';
 import type { TFunction } from 'i18next';
-import { buttonId, getTemplate, getUiOptions, helpId } from '@rjsf/utils';
 import MarkdownRenderer from '../components/Markdown/MarkdownRenderer';
 
 export type FormpackFormContext = {
@@ -156,16 +159,46 @@ const getArrayItemTitle = (
   return t('common.itemWithIndex', { item: itemLabel, index: index + 1 });
 };
 
+const isPrimitiveArrayItemSchema = (schema: unknown): boolean => {
+  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
+    return true;
+  }
+
+  const type = (schema as { type?: unknown }).type;
+  if (Array.isArray(type)) {
+    return !type.some((entry) => entry === 'object' || entry === 'array');
+  }
+
+  return type !== 'object' && type !== 'array';
+};
+
 export const ArrayFieldItemTemplate = (props: ArrayFieldItemTemplateProps) => {
-  const { children, buttonsProps, index, parentUiSchema, registry } = props;
+  const { children, buttonsProps, index, parentUiSchema, registry, schema } =
+    props;
   const { ButtonTemplates } = registry.templates;
   const t = getTranslator(registry.formContext);
-  const itemTitle = getArrayItemTitle(parentUiSchema, index, t);
+  const uiOptions = getUiOptions(parentUiSchema);
+  const hideItemTitle =
+    uiOptions.hideItemTitles === true || isPrimitiveArrayItemSchema(schema);
+  const compactItemChrome =
+    uiOptions.compactItems === true || isPrimitiveArrayItemSchema(schema);
+  const itemTitle = hideItemTitle
+    ? null
+    : getArrayItemTitle(parentUiSchema, index, t);
+  const itemClassName = compactItemChrome
+    ? 'formpack-array-item formpack-array-item--compact'
+    : 'formpack-array-item';
+  const headerClassName =
+    !itemTitle && buttonsProps.hasRemove
+      ? 'formpack-array-item__header formpack-array-item__header--actions-only'
+      : 'formpack-array-item__header';
 
   return (
-    <div className="formpack-array-item">
-      <div className="formpack-array-item__header">
-        <p className="formpack-array-item__title">{itemTitle}</p>
+    <div className={itemClassName}>
+      <div className={headerClassName}>
+        {itemTitle ? (
+          <p className="formpack-array-item__title">{itemTitle}</p>
+        ) : null}
         {buttonsProps.hasRemove && (
           <ButtonTemplates.RemoveButton
             className="formpack-array-item__remove"

@@ -5,6 +5,7 @@ export const FORMPACK_IDS = [
   'doctor-letter',
   'notfallpass',
   'offlabel-antrag',
+  'pacing-ampelkarten',
 ] as const;
 
 export type FormpackId = (typeof FORMPACK_IDS)[number];

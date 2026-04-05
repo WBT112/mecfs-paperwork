@@ -6,6 +6,32 @@ PDF exports are generated client-side in the browser using `@react-pdf/renderer`
 
 PDF generation runs only after an explicit user click.
 
+## Local development caveat
+
+Manual PDF verification should be done with `npm run preview`, not with the raw
+Vite HMR server from `npm run dev`.
+
+Why:
+
+- The app ships with a strict CSP in `app/index.html`.
+- That CSP allows `'unsafe-eval'` for `docx-templates`, but it does **not**
+  allow `'unsafe-inline'`.
+- Vite's development server injects inline dev/HMR bootstrap code that is
+  blocked by this CSP.
+- In the current setup this can leave the app broadly usable while PDF export
+  fails in the browser with the generic `PDF export failed` path.
+
+Observed local behavior on `2026-03-10`:
+
+- `npm run dev`: reproduced a browser-visible PDF export failure for
+  `pacing-ampelkarten`.
+- `vite preview` / production-like serving: export path works.
+
+Implication:
+
+- Use `npm run dev` for normal UI work.
+- Use `npm run preview` or Playwright for final PDF verification.
+
 ## Current scope
 
 - Supported formpacks: `doctor-letter`, `offlabel-antrag`

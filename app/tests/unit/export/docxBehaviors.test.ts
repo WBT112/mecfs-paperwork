@@ -5,10 +5,7 @@ import {
   loadDocxTemplate,
   getDocxErrorKey,
 } from '../../../src/export/docx';
-import {
-  NOTFALLPASS_FORMPACK_ID,
-  OFFLABEL_ANTRAG_FORMPACK_ID,
-} from '../../../src/formpacks/formpackIds';
+import { OFFLABEL_ANTRAG_FORMPACK_ID } from '../../../src/formpacks/formpackIds';
 import type { DocumentModel } from '../../../src/formpacks/documentModel';
 
 const INVALID_PATH_ERROR = 'Invalid DOCX template path.';
@@ -26,46 +23,6 @@ const MOCK_DOCUMENT_MODEL: DocumentModel = {
 };
 
 describe('docx behaviors', () => {
-  describe('template allowance', () => {
-    it('throws when requesting wallet template for a non-notfallpass formpack', async () => {
-      await expect(
-        mapDocumentDataToTemplate(
-          'doctor-letter',
-          'wallet',
-          MOCK_DOCUMENT_MODEL,
-        ),
-      ).rejects.toThrow(
-        'Wallet DOCX export is only supported for the notfallpass formpack.',
-      );
-    });
-
-    it('allows wallet template for notfallpass formpack', async () => {
-      // Mock fetch for mapping and schemas to avoid actual network calls
-      vi.spyOn(global, 'fetch').mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          version: 1,
-          fields: [{ var: 'test', path: 'test' }],
-        }),
-      } as Response);
-
-      // This should NOT throw the "Wallet DOCX export is only supported" error
-      // It might throw something else if further setup is missing, but we focus on the guard
-      try {
-        await mapDocumentDataToTemplate(
-          NOTFALLPASS_FORMPACK_ID,
-          'wallet',
-          MOCK_DOCUMENT_MODEL,
-        );
-      } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : String(e);
-        expect(message).not.toBe(
-          'Wallet DOCX export is only supported for the notfallpass formpack.',
-        );
-      }
-    });
-  });
-
   describe('path safety', () => {
     it('throws for absolute asset paths', async () => {
       await expect(

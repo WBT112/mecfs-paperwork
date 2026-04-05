@@ -8,6 +8,7 @@ import { execSync } from 'node:child_process';
 import { createPwaConfig } from './src/lib/pwaConfig';
 
 const require = createRequire(import.meta.url);
+const bufferPath = require.resolve('buffer/');
 const utilPath = require.resolve('util/util.js');
 
 const createFormpackSpaFallbackPlugin = (): Plugin => ({
@@ -122,14 +123,16 @@ const createConfig = (mode: string): AppConfig => ({
     // aliases map the Node.js module names to their browser equivalents.
     // Removing them will break the document export functionality.
     alias: [
+      { find: /^buffer$/, replacement: bufferPath },
       { find: /^events$/, replacement: require.resolve('events') },
+      { find: /^node:buffer$/, replacement: bufferPath },
       { find: /^stream$/, replacement: require.resolve('stream-browserify') },
       { find: /^util$/, replacement: utilPath },
       { find: /^node:util$/, replacement: utilPath },
     ],
   },
   optimizeDeps: {
-    include: ['events', 'stream-browserify', 'util'],
+    include: ['buffer', 'events', 'stream-browserify', 'util'],
     exclude: [
       '@react-pdf/renderer',
       '@react-pdf/layout',
@@ -144,11 +147,18 @@ const createConfig = (mode: string): AppConfig => ({
       'yoga-layout-wasm',
     ],
     esbuildOptions: {
-      // Prevent Vite from externalizing util during pre-bundling (docx-templates).
+      // Prevent Vite from externalizing Node built-ins during pre-bundling
+      // (docx-templates and its readable-stream dependency chain).
       plugins: [
         {
-          name: 'alias-node-util',
+          name: 'alias-node-builtins',
           setup(build) {
+            build.onResolve({ filter: /^buffer$/ }, () => ({
+              path: bufferPath,
+            }));
+            build.onResolve({ filter: /^node:buffer$/ }, () => ({
+              path: bufferPath,
+            }));
             build.onResolve({ filter: /^util$/ }, () => ({ path: utilPath }));
             build.onResolve({ filter: /^node:util$/ }, () => ({
               path: utilPath,

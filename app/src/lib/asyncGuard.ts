@@ -22,6 +22,24 @@ export interface AsyncGuard {
 }
 
 /**
+ * Runs a callback only while the associated guard is still active.
+ *
+ * @param guard - Guard returned by {@link createAsyncGuard}.
+ * @param action - Callback that may update state when the guard is still active.
+ * @returns The callback result while active, otherwise `undefined`.
+ */
+export const runIfActive = <T>(
+  guard: AsyncGuard,
+  action: () => T,
+): T | undefined => {
+  if (!guard.isActive()) {
+    return undefined;
+  }
+
+  return action();
+};
+
+/**
  * Creates a mutable guard for async work that must stop updating state after
  * the owning effect unmounts.
  *

@@ -12,6 +12,7 @@ const translations: Record<string, string> = {
   footerImprint: 'Imprint',
   footerPrivacy: 'Privacy Policy',
   footerHelp: 'Help',
+  footerGames: 'Games',
   footerGithub: 'GitHub',
   footerSponsor: 'Sponsor',
   footerVersionLabel: 'v{{version}} • {{date}}',
@@ -67,6 +68,10 @@ describe('Footer', () => {
     expect(screen.getByRole('link', { name: 'Help' })).toHaveAttribute(
       'href',
       '/help',
+    );
+    expect(screen.getByRole('link', { name: 'Games' })).toHaveAttribute(
+      'href',
+      '/games',
     );
 
     const sponsorLink = screen.getByRole('link', { name: 'Sponsor' });

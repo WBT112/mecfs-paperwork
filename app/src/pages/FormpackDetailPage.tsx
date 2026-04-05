@@ -1,4 +1,15 @@
-import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentProps,
+  type ComponentType,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Ajv2020 from 'ajv/dist/2020';
@@ -15,11 +26,17 @@ import { resolveDisplayValue } from '../lib/displayValueResolver';
 import { hasPreviewValue } from '../lib/previewValue';
 import { isRecord } from '../lib/utils';
 import { buildRandomDummyPatch, mergeDummyPatch } from '../lib/devDummyFill';
-import { createAsyncGuard, ignoreAsyncError } from '../lib/asyncGuard';
+import {
+  createAsyncGuard,
+  ignoreAsyncError,
+  runIfActive,
+} from '../lib/asyncGuard';
 import { resetAppShell } from '../lib/diagnostics/resetAppShell';
 import { focusWithRetry } from '../lib/focusWithRetry';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { getPathValue, setPathValueImmutable } from '../lib/pathAccess';
+import { mergePacingFormData } from '../formpacks/pacing-ampelkarten/formData';
+import { buildPacingAmpelkartenPreset } from '../formpacks/pacing-ampelkarten/presets';
 import {
   FORMPACKS_UPDATED_EVENT,
   DOCTOR_LETTER_FORMPACK_ID,
@@ -54,6 +71,7 @@ import {
   FormpackExportActions,
   FormpackFormPanel,
   FormpackToolsSection,
+  PacingAmpelkartenEditor,
   QuotaBanner,
 } from './formpack-detail/components';
 import { doctorLetterHelpers } from './formpack-detail/helpers/doctorLetterHelpers';
@@ -66,7 +84,6 @@ import { useProfileSync } from './formpack-detail/hooks/useProfileSync';
 import { useRecordManager } from './formpack-detail/hooks/useRecordManager';
 import { useSnapshotManager } from './formpack-detail/hooks/useSnapshotManager';
 import { APP_UPDATE_AVAILABLE_EVENT } from '../pwa/register';
-import type { ComponentType, ReactNode } from 'react';
 import type { FormProps } from '@rjsf/core';
 import type { RJSFSchema, UiSchema, ValidatorType } from '@rjsf/utils';
 
@@ -89,8 +106,139 @@ const FORM_PRIMARY_FOCUS_SELECTOR =
 const FORM_FALLBACK_FOCUS_SELECTOR = '.formpack-form__actions .app__button';
 const FOCUS_RETRY_DELAY_MS = 50;
 const FOCUS_RETRY_ATTEMPTS = 30;
+const PACING_AMPELKARTEN_FORMPACK_ID = 'pacing-ampelkarten';
 
 const showDevMedicationOptions = isFormpackVisible({ visibility: 'dev' });
+
+const resolvePacingPresetVariant = (value: unknown): 'adult' | 'child' =>
+  value === 'child' ? 'child' : 'adult';
+
+const isPacingPresetContentEmpty = (value: FormDataState): boolean => {
+  const { meta: _meta, ...content } = value;
+  return !hasPreviewValue(content);
+};
+
+const useDeferredFormFocusStates = (
+  getRoot: RefObject<HTMLDivElement | null>,
+  states: readonly {
+    enabled: boolean;
+    onResolved: () => void;
+    selector: string | null;
+  }[],
+) => {
+  useEffect(() => {
+    const activeState = states.find(
+      (state) => state.enabled && typeof state.selector === 'string',
+    );
+    if (!activeState?.selector) {
+      return;
+    }
+
+    return focusWithRetry({
+      getRoot: () => getRoot.current,
+      selector: activeState.selector,
+      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
+      maxAttempts: FOCUS_RETRY_ATTEMPTS,
+      retryDelayMs: FOCUS_RETRY_DELAY_MS,
+      onResolved: activeState.onResolved,
+    });
+  }, [getRoot, states]);
+};
+
+const renderLoadingState = (title: string, loadingLabel: string) => (
+  <section className="app__card">
+    <h2>{title}</h2>
+    <p>{loadingLabel}</p>
+  </section>
+);
+
+const renderErrorState = ({
+  backToListLabel,
+  errorMessage,
+  isRecoverable,
+  isResettingAppShell,
+  onResetAppShell,
+  onRetry,
+  recoveryHint,
+  resetLabel,
+  resetPendingLabel,
+  retryLabel,
+  title,
+}: {
+  backToListLabel: string;
+  errorMessage: string | null;
+  isRecoverable: boolean;
+  isResettingAppShell: boolean;
+  onResetAppShell: () => void;
+  onRetry: () => void;
+  recoveryHint: string;
+  resetLabel: string;
+  resetPendingLabel: string;
+  retryLabel: string;
+  title: string;
+}) => (
+  <section className="app__card">
+    <h2>{title}</h2>
+    <p className="app__error">{errorMessage}</p>
+    {isRecoverable ? (
+      <>
+        <p>{recoveryHint}</p>
+        <div className="formpack-form__actions">
+          <button type="button" className="app__button" onClick={onRetry}>
+            {retryLabel}
+          </button>
+          <button
+            type="button"
+            className="app__button"
+            onClick={onResetAppShell}
+            disabled={isResettingAppShell}
+          >
+            {isResettingAppShell ? resetPendingLabel : resetLabel}
+          </button>
+        </div>
+      </>
+    ) : null}
+    <Link className="app__link" to="/formpacks">
+      {backToListLabel}
+    </Link>
+  </section>
+);
+
+const renderFormContent = ({
+  commonFormPanelProps,
+  documentPreview,
+  emptyPreviewLabel,
+  exportActions,
+  hasDocumentContent,
+  isPacingAmpelkarten,
+  t,
+  tFormpack,
+}: {
+  commonFormPanelProps: Omit<
+    ComponentProps<typeof FormpackFormPanel>,
+    'actions'
+  >;
+  documentPreview: ReactNode;
+  emptyPreviewLabel: string;
+  exportActions: ReactNode;
+  hasDocumentContent: boolean;
+  isPacingAmpelkarten: boolean;
+  t: (key: string) => string;
+  tFormpack: (key: string) => string;
+}) =>
+  isPacingAmpelkarten ? (
+    <PacingAmpelkartenEditor
+      documentPreview={documentPreview}
+      emptyPreviewLabel={emptyPreviewLabel}
+      exportActions={exportActions}
+      hasDocumentContent={hasDocumentContent}
+      t={t}
+      tFormpack={tFormpack}
+      {...commonFormPanelProps}
+    />
+  ) : (
+    <FormpackFormPanel {...commonFormPanelProps} actions={exportActions} />
+  );
 
 /**
  * Shows formpack metadata with translations loaded for the active locale.
@@ -125,6 +273,12 @@ export default function FormpackDetailPage() {
   const handleLoadedFormpackChange = useCallback(() => {
     setFormData({});
     setIsIntroModalOpen(false);
+  }, []);
+  const handleCloseIntroModal = useCallback(() => {
+    setIsIntroModalOpen(false);
+  }, []);
+  const handleOpenIntroModal = useCallback(() => {
+    setIsIntroModalOpen(true);
   }, []);
   const { errorMessage, isLoading, manifest, schema, uiSchema } =
     useFormpackLoader({
@@ -240,9 +394,7 @@ export default function FormpackDetailPage() {
 
     const refreshMeta = async () => {
       const next = await getFormpackMeta(currentFormpackId);
-      if (guard.isActive()) {
-        setFormpackMeta(next);
-      }
+      runIfActive(guard, () => setFormpackMeta(next));
     };
 
     const handleUpdated = (event: Event) => {
@@ -574,9 +726,12 @@ export default function FormpackDetailPage() {
   const handleFormChange: NonNullable<RjsfFormProps['onChange']> = useCallback(
     (event) => {
       const incomingData = event.formData as FormDataState;
-      let nextData: FormDataState = handleOfflabelFormChange({
-        ...incomingData,
-      });
+      let nextData: FormDataState =
+        formpackId === PACING_AMPELKARTEN_FORMPACK_ID
+          ? mergePacingFormData(formData, incomingData, locale)
+          : { ...incomingData };
+
+      nextData = handleOfflabelFormChange(nextData);
 
       // For doctor-letter formpack, clear hidden fields to prevent stale values
       if (
@@ -602,7 +757,7 @@ export default function FormpackDetailPage() {
 
       setFormData(nextData);
     },
-    [formpackId, handleOfflabelFormChange, setFormData],
+    [formData, formpackId, handleOfflabelFormChange, locale, setFormData],
   );
 
   // Resolve decision tree after formData changes (for doctor-letter only)
@@ -696,86 +851,85 @@ export default function FormpackDetailPage() {
         : null,
     [introGateConfig, tFormpack],
   );
-  const formClassName = useMemo(() => {
-    const classNames = ['formpack-form'];
-
-    if (hasLetterLayout(formpackId)) {
-      classNames.push('formpack-form--doctor-letter');
-    }
-
-    if (formpackId === 'offlabel-antrag') {
-      classNames.push('formpack-form--offlabel');
-    }
-
-    return classNames.join(' ');
-  }, [formpackId]);
+  const formLoadingLabel = t('formpackLoading');
+  const formEmptyMessage = t('formpackFormNoActiveRecord');
 
   const handleAcceptIntroGate = useCallback(() => {
     setPendingIntroFocus(true);
-    setFormData((current) =>
-      setPathValueImmutable(current, introGateConfig!.acceptedFieldPath, true),
-    );
-  }, [introGateConfig]);
+    setFormData((current) => {
+      if (formpackId === PACING_AMPELKARTEN_FORMPACK_ID) {
+        const sourceData =
+          isPacingPresetContentEmpty(current) && isRecord(activeRecord?.data)
+            ? (activeRecord.data as FormDataState)
+            : current;
+        const presetLocale = locale === 'en' ? 'en' : 'de';
+        const variant = resolvePacingPresetVariant(
+          getPathValue(sourceData, 'meta.variant'),
+        );
+        const nextFormData: FormDataState = isPacingPresetContentEmpty(
+          sourceData,
+        )
+          ? (buildPacingAmpelkartenPreset(
+              presetLocale,
+              variant,
+            ) as unknown as FormDataState)
+          : sourceData;
+        return setPathValueImmutable(
+          nextFormData,
+          introGateConfig!.acceptedFieldPath,
+          true,
+        );
+      }
 
-  useEffect(() => {
-    if (!pendingIntroFocus || isIntroGateVisible) {
-      return;
-    }
-
-    return focusWithRetry({
-      getRoot: () => formContentRef.current,
-      selector: FORM_PRIMARY_FOCUS_SELECTOR,
-      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
-      maxAttempts: FOCUS_RETRY_ATTEMPTS,
-      retryDelayMs: FOCUS_RETRY_DELAY_MS,
-      onResolved: () => setPendingIntroFocus(false),
+      return setPathValueImmutable(
+        current,
+        introGateConfig!.acceptedFieldPath,
+        true,
+      );
     });
-  }, [isIntroGateVisible, pendingIntroFocus]);
+  }, [activeRecord, formpackId, introGateConfig, locale]);
 
-  useEffect(() => {
-    if (!pendingFormFocus || isIntroGateVisible) {
-      return;
-    }
+  const deferredFocusStates = useMemo(
+    () => [
+      {
+        enabled: pendingIntroFocus && !isIntroGateVisible,
+        onResolved: () => setPendingIntroFocus(false),
+        selector: FORM_PRIMARY_FOCUS_SELECTOR,
+      },
+      {
+        enabled: pendingFormFocus && !isIntroGateVisible,
+        onResolved: () => setPendingFormFocus(false),
+        selector: FORM_PRIMARY_FOCUS_SELECTOR,
+      },
+      {
+        enabled:
+          pendingOfflabelFocusSelector !== null &&
+          pendingOfflabelFocusSelector !== '' &&
+          !isIntroGateVisible,
+        onResolved: clearPendingOfflabelFocusTarget,
+        selector: pendingOfflabelFocusSelector,
+      },
+    ],
+    [
+      clearPendingOfflabelFocusTarget,
+      isIntroGateVisible,
+      pendingFormFocus,
+      pendingIntroFocus,
+      pendingOfflabelFocusSelector,
+    ],
+  );
 
-    return focusWithRetry({
-      getRoot: () => formContentRef.current,
-      selector: FORM_PRIMARY_FOCUS_SELECTOR,
-      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
-      maxAttempts: FOCUS_RETRY_ATTEMPTS,
-      retryDelayMs: FOCUS_RETRY_DELAY_MS,
-      onResolved: () => setPendingFormFocus(false),
-    });
-  }, [isIntroGateVisible, pendingFormFocus]);
+  useDeferredFormFocusStates(formContentRef, deferredFocusStates);
 
-  useEffect(() => {
-    if (!pendingOfflabelFocusSelector || isIntroGateVisible) {
-      return;
-    }
-
-    return focusWithRetry({
-      getRoot: () => formContentRef.current,
-      selector: pendingOfflabelFocusSelector,
-      fallbackSelector: FORM_FALLBACK_FOCUS_SELECTOR,
-      maxAttempts: FOCUS_RETRY_ATTEMPTS,
-      retryDelayMs: FOCUS_RETRY_DELAY_MS,
-      onResolved: clearPendingOfflabelFocusTarget,
-    });
-  }, [
-    clearPendingOfflabelFocusTarget,
-    isIntroGateVisible,
-    pendingOfflabelFocusSelector,
-  ]);
-
-  // Use custom field template for formpacks that provide InfoBoxes.
-  const templates = useMemo(() => {
-    if ((manifest?.ui?.infoBoxes?.length ?? 0) > 0) {
-      return {
-        ...formpackTemplates,
-        FieldTemplate: FormpackFieldTemplate,
-      };
-    }
-    return formpackTemplates;
-  }, [manifest?.ui?.infoBoxes]);
+  // Always use the custom field template so hidden conditional sections are
+  // removed from the DOM even for formpacks without InfoBoxes.
+  const templates = useMemo(
+    () => ({
+      ...formpackTemplates,
+      FieldTemplate: FormpackFieldTemplate,
+    }),
+    [],
+  );
   const previewUiSchema =
     conditionalUiSchema ?? normalizedUiSchema ?? translatedUiSchema;
   const jsonPreview = useMemo(
@@ -912,48 +1066,23 @@ export default function FormpackDetailPage() {
   }, []);
 
   if (isLoading) {
-    return (
-      <section className="app__card">
-        <h2>{t('formpackDetailTitle')}</h2>
-        <p>{t('formpackLoading')}</p>
-      </section>
-    );
+    return renderLoadingState(t('formpackDetailTitle'), t('formpackLoading'));
   }
 
   if (errorMessage || !manifest) {
-    return (
-      <section className="app__card">
-        <h2>{t('formpackDetailTitle')}</h2>
-        <p className="app__error">{errorMessage}</p>
-        {isRecoverableFormpackLoadError ? (
-          <>
-            <p>{t('formpackLoadRecoveryHint')}</p>
-            <div className="formpack-form__actions">
-              <button
-                type="button"
-                className="app__button"
-                onClick={handleRetryFormpackLoad}
-              >
-                {t('formpackRetryLoad')}
-              </button>
-              <button
-                type="button"
-                className="app__button"
-                onClick={handleResetAppShell}
-                disabled={isResettingAppShell}
-              >
-                {isResettingAppShell
-                  ? t('formpackResetAppShellInProgress')
-                  : t('formpackResetAppShell')}
-              </button>
-            </div>
-          </>
-        ) : null}
-        <Link className="app__link" to="/formpacks">
-          {t('formpackBackToList')}
-        </Link>
-      </section>
-    );
+    return renderErrorState({
+      backToListLabel: t('formpackBackToList'),
+      errorMessage,
+      isRecoverable: isRecoverableFormpackLoadError,
+      isResettingAppShell,
+      onResetAppShell: handleResetAppShell,
+      onRetry: handleRetryFormpackLoad,
+      recoveryHint: t('formpackLoadRecoveryHint'),
+      resetLabel: t('formpackResetAppShell'),
+      resetPendingLabel: t('formpackResetAppShellInProgress'),
+      retryLabel: t('formpackRetryLoad'),
+      title: t('formpackDetailTitle'),
+    });
   }
 
   // RATIONALE: Hide dev-only UI in production to reduce exposed metadata and UI surface.
@@ -1003,9 +1132,63 @@ export default function FormpackDetailPage() {
 
   const currentQuotaStatus =
     storageHealth.status === 'ok' ? null : storageHealth.status;
+  const isPacingAmpelkarten = formpackId === PACING_AMPELKARTEN_FORMPACK_ID;
+  const formClassNames = ['formpack-form', `formpack-form--${manifest.id}`];
+  if (formpackId === 'offlabel-antrag') {
+    // NOTE: Keep the alias while offlabel-specific layout selectors still use it.
+    formClassNames.push('formpack-form--offlabel');
+  }
+
+  if (hasLetterLayout(formpackId)) {
+    formClassNames.push('formpack-form--doctor-letter');
+  }
+
+  const formClassName = formClassNames.join(' ');
+  const commonFormPanelProps = {
+    FormComponent: LazyForm,
+    activeRecordExists: Boolean(activeRecord),
+    closeLabel: t('common.close'),
+    emptyMessage: formEmptyMessage,
+    formClassName,
+    formContentRef,
+    formContext,
+    formData,
+    formSchema,
+    introGateEnabled: Boolean(introGateConfig?.enabled),
+    introTexts,
+    isIntroGateVisible,
+    isIntroModalOpen,
+    loadingLabel: formLoadingLabel,
+    onApplyDummyData: handleApplyDummyData,
+    onApplyProfile: handleApplyProfile,
+    onCloseIntroModal: handleCloseIntroModal,
+    onConfirmIntroGate: handleAcceptIntroGate,
+    onFormChange: handleFormChange,
+    onFormSubmit: handleFormSubmit,
+    onOpenIntroModal: handleOpenIntroModal,
+    onProfileSaveToggle: handleProfileSaveToggle,
+    profileApplyDummyLabel: t('profileApplyDummyButton'),
+    profileApplyLabel: t('profileApplyButton'),
+    profileHasSavedData,
+    profileSaveEnabled,
+    profileStatus,
+    profileStatusSuccessText: t('profileApplySuccess'),
+    profileToggleLabel: t('profileSaveCheckbox'),
+    showDevSections,
+    templates,
+    uiSchema: conditionalUiSchema,
+    validator,
+  };
 
   return (
-    <section className="app__card">
+    <section
+      className={[
+        'app__card',
+        isPacingAmpelkarten ? 'app__card--pacing-ampelkarten' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
       <FormpackDetailHeader
         title={title}
         description={description}
@@ -1042,81 +1225,35 @@ export default function FormpackDetailPage() {
         className="formpack-detail"
         onClickCapture={handleActionClickCapture}
       >
-        <div className="formpack-detail__assets">
-          <DevMetadataPanel
-            show={showDevSections}
-            manifest={manifest}
-            labels={{
-              detailsHeading: t('formpackDetailsHeading'),
-              idLabel: t('formpackId'),
-              versionLabel: t('formpackVersion'),
-              defaultLocaleLabel: t('formpackDefaultLocale'),
-              localesLabel: t('formpackLocales'),
-              exportsHeading: t('formpackExportsHeading'),
-              exportsLabel: t('formpackExports'),
-              docxHeading: t('formpackDocxHeading'),
-              docxTemplateA4: t('formpackDocxTemplateA4'),
-              docxTemplateWallet: t('formpackDocxTemplateWallet'),
-              docxTemplateWalletUnavailable: t(
-                'formpackDocxTemplateWalletUnavailable',
-              ),
-              docxMapping: t('formpackDocxMapping'),
-            }}
-          />
-        </div>
         <div className="formpack-detail__form">
           <FormContentSection title={t('formpackFormHeading')}>
-            <FormpackFormPanel
-              FormComponent={LazyForm}
-              actions={exportActions}
-              activeRecordExists={Boolean(activeRecord)}
-              closeLabel={t('common.close')}
-              emptyMessage={t('formpackFormNoActiveRecord')}
-              formClassName={formClassName}
-              formContentRef={formContentRef}
-              formContext={formContext}
-              formData={formData}
-              formSchema={formSchema}
-              introGateEnabled={Boolean(introGateConfig?.enabled)}
-              introTexts={introTexts}
-              isIntroGateVisible={isIntroGateVisible}
-              isIntroModalOpen={isIntroModalOpen}
-              loadingLabel={t('formpackLoading')}
-              onApplyDummyData={handleApplyDummyData}
-              onApplyProfile={handleApplyProfile}
-              onCloseIntroModal={() => setIsIntroModalOpen(false)}
-              onConfirmIntroGate={handleAcceptIntroGate}
-              onFormChange={handleFormChange}
-              onFormSubmit={handleFormSubmit}
-              onOpenIntroModal={() => setIsIntroModalOpen(true)}
-              onProfileSaveToggle={handleProfileSaveToggle}
-              profileApplyDummyLabel={t('profileApplyDummyButton')}
-              profileApplyLabel={t('profileApplyButton')}
-              profileHasSavedData={profileHasSavedData}
-              profileSaveEnabled={profileSaveEnabled}
-              profileStatus={profileStatus}
-              profileStatusSuccessText={t('profileApplySuccess')}
-              profileToggleLabel={t('profileSaveCheckbox')}
-              showDevSections={showDevSections}
-              templates={templates}
-              uiSchema={conditionalUiSchema}
-              validator={validator}
-            />
+            {renderFormContent({
+              commonFormPanelProps,
+              documentPreview,
+              emptyPreviewLabel: t('formpackDocumentPreviewEmpty'),
+              exportActions,
+              hasDocumentContent,
+              isPacingAmpelkarten,
+              t,
+              tFormpack,
+            })}
           </FormContentSection>
-          <DocumentPreviewPanel
-            title={t('formpackDocumentPreviewHeading')}
-            isIntroGateVisible={isIntroGateVisible}
-          >
-            <FormpackDocumentPreviewContent
-              documentPreview={documentPreview}
-              emptyLabel={t('formpackDocumentPreviewEmpty')}
-              formpackId={formpackId}
-              hasDocumentContent={hasDocumentContent}
-              offlabelPreviewDocuments={offlabelPreviewDocuments}
-              onSelectOfflabelPreview={setSelectedOfflabelPreviewId}
-              selectedOfflabelPreviewId={selectedOfflabelPreviewId}
-            />
-          </DocumentPreviewPanel>
+          {isPacingAmpelkarten ? null : (
+            <DocumentPreviewPanel
+              title={t('formpackDocumentPreviewHeading')}
+              isIntroGateVisible={isIntroGateVisible}
+            >
+              <FormpackDocumentPreviewContent
+                documentPreview={documentPreview}
+                emptyLabel={t('formpackDocumentPreviewEmpty')}
+                formpackId={formpackId}
+                hasDocumentContent={hasDocumentContent}
+                offlabelPreviewDocuments={offlabelPreviewDocuments}
+                onSelectOfflabelPreview={setSelectedOfflabelPreviewId}
+                selectedOfflabelPreviewId={selectedOfflabelPreviewId}
+              />
+            </DocumentPreviewPanel>
+          )}
           <FormpackToolsSection
             heading={t('formpackToolsHeading')}
             recordsPanelProps={{
@@ -1229,6 +1366,22 @@ export default function FormpackDetailPage() {
               <pre className="formpack-preview">{getJsonPreviewContent()}</pre>
             </div>
           )}
+          <DevMetadataPanel
+            show={showDevSections}
+            manifest={manifest}
+            labels={{
+              detailsHeading: t('formpackDetailsHeading'),
+              idLabel: t('formpackId'),
+              versionLabel: t('formpackVersion'),
+              defaultLocaleLabel: t('formpackDefaultLocale'),
+              localesLabel: t('formpackLocales'),
+              exportsHeading: t('formpackExportsHeading'),
+              exportsLabel: t('formpackExports'),
+              docxHeading: t('formpackDocxHeading'),
+              docxTemplateA4: t('formpackDocxTemplateA4'),
+              docxMapping: t('formpackDocxMapping'),
+            }}
+          />
         </div>
       </div>
       <p className="formpack-detail__version-meta" aria-live="polite">

@@ -30,6 +30,10 @@ vi.mock('../../src/pages/PrivacyPage', () => ({
   default: () => <div>Privacy</div>,
 }));
 
+vi.mock('../../src/features/games/pages/SpoonManagerPage', () => ({
+  default: () => <div>Spoon Manager</div>,
+}));
+
 const renderAppRoutes = async (entry: string) => {
   const { default: AppRoutes } = await import('../../src/AppRoutes');
   render(
@@ -85,6 +89,11 @@ describe('AppRoutes', () => {
   it('renders the help route when lazy loaded', async () => {
     await renderAppRoutes(HELP_ROUTE);
     expect(await screen.findByText(HELP_TEXT)).toBeInTheDocument();
+  });
+
+  it('renders the spoon manager route when lazy loaded', async () => {
+    await renderAppRoutes('/games/spoon-manager');
+    expect(await screen.findByText('Spoon Manager')).toBeInTheDocument();
   });
 
   it('resets window scroll to top when navigating to another route without hash', async () => {

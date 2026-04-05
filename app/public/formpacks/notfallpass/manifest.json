@@ -1,11 +1,11 @@
 {
   "id": "notfallpass",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "defaultLocale": "de",
   "locales": ["de", "en"],
   "titleKey": "notfallpass.title",
   "descriptionKey": "notfallpass.description",
-  "exports": ["docx", "json"],
+  "exports": ["docx", "pdf", "json"],
   "visibility": "dev",
   "meta": {
     "category": "general",

@@ -42,6 +42,7 @@
   "footerImprint": "Imprint",
   "footerPrivacy": "Privacy Policy",
   "footerHelp": "Help",
+  "footerGames": "Games",
   "footerGithub": "GitHub",
   "footerSponsor": "Sponsor",
   "footerVersionLabel": "Version: {{version}} • {{date}}",
@@ -90,12 +91,9 @@
   "formpackExports": "Formats",
   "formpackDocxHeading": "DOCX assets",
   "formpackDocxTemplateA4": "A4 template",
-  "formpackDocxTemplateWallet": "Wallet template",
-  "formpackDocxTemplateWalletUnavailable": "Not available",
   "formpackDocxMapping": "DOCX mapping",
   "formpackDocxTemplateLabel": "Word file (.docx)",
   "formpackDocxTemplateA4Option": "A4 (default)",
-  "formpackDocxTemplateWalletOption": "Wallet card",
   "formpackRecordExportDocx": "Export document",
   "formpackDocxExportInProgress": "Exporting document...",
   "formpackDocxExportSuccess": "Document exported.",
@@ -261,5 +259,434 @@
   "common.item": "Item",
   "common.itemWithIndex": "{{item}} {{index}}",
   "common.addItemWithTitle": "Add {{item}}",
-  "confirmationDialogTitle": "Confirmation required"
+  "confirmationDialogTitle": "Confirmation required",
+  "games": {
+    "hubTitle": "Games",
+    "hubDescription": "Small low-stimulation mini-games about daily life, pacing, and familiar moments. Everything runs locally in your browser.",
+    "hubIntro": "ME Bingo and Spoon Manager are playable now. More quiet mini-games can slot into the same structure later.",
+    "backToHub": "Back to the Games hub",
+    "status": {
+      "available": "Playable",
+      "comingSoon": "Coming soon"
+    },
+    "cta": {
+      "playNow": "Play now",
+      "comingSoon": "Later"
+    },
+    "catalog": {
+      "meBingo": {
+        "title": "ME Bingo",
+        "description": "A calm 5x5 bingo board with all-too-familiar phrases, situations, and pacing moments."
+      },
+      "spoonManager": {
+        "title": "Spoon Manager",
+        "description": "A calm strategy mini-game about energy budgeting, small trade-offs, and careful pacing."
+      },
+      "pemRunner": {
+        "title": "PEM Runner",
+        "description": "A later mini-game about timing, limits, and the cost of doing too much at once."
+      }
+    },
+    "meBingo": {
+      "pageTitle": "ME Bingo",
+      "pageDescription": "A compact bingo card full of familiar phrases, situations, and everyday classics.",
+      "introTitle": "A short round without time pressure",
+      "introBody": "Draw a card, mark the hits, and see how quickly one line comes together.",
+      "instructions": "5x5 board, free center tile, no timer, no noise, fully offline.",
+      "startAction": "Start game",
+      "newCardAction": "New card",
+      "resetAction": "Reset card",
+      "boardTitle": "Board",
+      "boardHint": "Tap matching tiles. The free center tile always stays active.",
+      "boardLabel": "ME Bingo board",
+      "freeFieldLabel": "ME/CFS? Never heard of it",
+      "freeFieldBadge": "FREE",
+      "cellAriaLabel": "{{label}}. Row {{row}}, column {{column}}. {{state}}.",
+      "cellState": {
+        "free": "Free field, already marked",
+        "marked": "Marked",
+        "unmarked": "Not marked"
+      },
+      "progress": {
+        "title": "Progress",
+        "marked": "Marked",
+        "lines": "Bingo lines",
+        "status": "Status"
+      },
+      "status": {
+        "idle": "Ready for a new round",
+        "playing": "No bingo yet",
+        "bingo": "Bingo complete",
+        "full-card": "Full card complete"
+      },
+      "liveRegion": {
+        "bingo": "Bingo detected. You can keep playing or draw a new card.",
+        "full-card": "Full card detected. The result view was updated."
+      },
+      "banner": {
+        "bingoTitle": "ME Bingo complete",
+        "bingoBody": "The card stays open if you want to keep going for a full card.",
+        "fullCardTitle": "Full card of classics",
+        "fullCardBody": "There is barely room for any more painfully familiar hits."
+      },
+      "result": {
+        "kicker": "Screenshot friendly",
+        "labelBingo": "ME Bingo complete",
+        "labelFullCard": "Full card complete",
+        "summaryBingoOne": "Especially accurate today.",
+        "summaryBingoMany": "A lot of classics in a single round.",
+        "summaryFullCard": "The whole board was uncomfortably complete.",
+        "marked": "{{count}} of {{total}} tiles marked",
+        "lines": "{{count}} bingo lines found",
+        "duration": "Play time {{duration}}",
+        "shareHint": "If you want to share it, a screenshot of this result card is enough."
+      },
+      "stats": {
+        "title": "Local stats",
+        "playedRounds": "Rounds played",
+        "bingos": "Bingos",
+        "fullCards": "Full cards",
+        "bestLines": "Best line count",
+        "lastStatus": "Last status"
+      }
+    },
+    "spoonManager": {
+      "pageTitle": "Spoon Manager",
+      "pageDescription": "A calm strategy mini-game about energy budgeting, everyday trade-offs, and the value of careful pacing.",
+      "dayKicker": "Today",
+      "currentPhaseKicker": "Current phase",
+      "currentTurnPrompt": "Which option makes the most sense for this turn today?",
+      "phases": {
+        "morning": "Morning",
+        "midday": "Midday",
+        "evening": "Evening"
+      },
+      "status": {
+        "playing": "In progress",
+        "stable": "Stably done",
+        "narrow": "Just made it",
+        "crash": "Crash"
+      },
+      "intro": {
+        "title": "One day, six decisions",
+        "body": "You begin with a limited number of spoons and try to get through morning, midday, and evening as steadily as possible.",
+        "help": "No timer, no pressure, four options per turn. At least one of them always protects your room to breathe.",
+        "startAction": "Start day",
+        "fallback": "Today, every small choice matters."
+      },
+      "statusPanel": {
+        "spoons": "Spoons",
+        "phase": "Phase",
+        "turnInPhase": "Turn",
+        "dayProgress": "Day"
+      },
+      "feedback": {
+        "title": "Feedback",
+        "eventKicker": "Between phases",
+        "eventTitle": "Phase event",
+        "continueAction": "Continue"
+      },
+      "legend": {
+        "title": "Guide",
+        "protective": "Protective: creates room, reduces sensory load, or postpones something.",
+        "demanding": "Demanding: costs noticeable energy or still lands later.",
+        "delayed": "Later -1: this effect shows up in the next phase."
+      },
+      "actionMeta": {
+        "delta": "Now {{delta}}",
+        "protective": "protective",
+        "demanding": "demanding",
+        "moderate": "moderate",
+        "nextPhaseDelta": "later {{delta}}"
+      },
+      "actions": {
+        "title": "Options",
+        "restart": "Restart",
+        "duschen": {
+          "title": "Take a shower",
+          "feedback": "Showering takes noticeable energy today."
+        },
+        "nur_waschen_umziehen": {
+          "title": "Wash up and get dressed",
+          "feedback": "That was more manageable than the full version."
+        },
+        "fruehstueck_machen": {
+          "title": "Make breakfast",
+          "feedback": "Eating helps, but making it costs energy too."
+        },
+        "etwas_kleines_essen": {
+          "title": "Eat something small",
+          "feedback": "Small fuel, small price."
+        },
+        "nachrichten_checken": {
+          "title": "Check messages",
+          "feedback": "Even small inputs use up some energy."
+        },
+        "kurz_whatsapp_antworten": {
+          "title": "Reply on WhatsApp quickly",
+          "feedback": "Brief was good, but it still was not free."
+        },
+        "anrufen_absagen": {
+          "title": "Call and cancel",
+          "feedback": "Cancelling saves more today than it costs."
+        },
+        "20_min_ruhen": {
+          "title": "Rest for 20 minutes",
+          "feedback": "The pause gives the morning a little more room."
+        },
+        "im_dunkeln_liegen": {
+          "title": "Lie in the dark",
+          "feedback": "Less input gives some space back."
+        },
+        "hilfe_annehmen_fruestueck": {
+          "title": "Accept help with breakfast",
+          "feedback": "You accepted help. Good call."
+        },
+        "arzttermin_vorbereiten": {
+          "title": "Prepare the doctor appointment",
+          "feedback": "Organizing takes noticeable effort today."
+        },
+        "medikamente_und_wasser": {
+          "title": "Medication and water",
+          "feedback": "Small basics, no waste."
+        },
+        "kleiner_einkauf": {
+          "title": "Do a small grocery run",
+          "feedback": "Even small is not really small today."
+        },
+        "essen_bestellen": {
+          "title": "Order food",
+          "feedback": "Not cooking saves more than it costs."
+        },
+        "kochen_einfach": {
+          "title": "Cook something simple",
+          "feedback": "Manageable, but still noticeable."
+        },
+        "reste_essen": {
+          "title": "Eat leftovers",
+          "feedback": "A clear energy-saving choice."
+        },
+        "kurzes_telefonat": {
+          "title": "Have a short phone call",
+          "feedback": "Even short conversations can be expensive."
+        },
+        "mail_beantworten": {
+          "title": "Answer an email",
+          "feedback": "One small item off the list."
+        },
+        "termin_organisieren": {
+          "title": "Organize an appointment",
+          "feedback": "Structure costs concentration."
+        },
+        "reizpause": {
+          "title": "Take a sensory break",
+          "feedback": "That noticeably took the pressure down."
+        },
+        "hinlegen_ohne_handy": {
+          "title": "Lie down without your phone",
+          "feedback": "Resting without side quests helps."
+        },
+        "bitte_um_hilfe": {
+          "title": "Ask for help",
+          "feedback": "Help saves real spoons today."
+        },
+        "paket_herunterholen": {
+          "title": "Go pick up the package",
+          "feedback": "Done quickly, but still a cost."
+        },
+        "arzttermin_wahrnehmen_light": {
+          "title": "Attend a short doctor appointment",
+          "feedback": "The appointment is done, but your system has not finished with it."
+        },
+        "besuch_kurz_empfangen": {
+          "title": "Have a brief visitor over",
+          "feedback": "Short sounded manageable, but it still was not light."
+        },
+        "kueche_noch_machen": {
+          "title": "Still do the kitchen",
+          "feedback": "Closing the loop costs more than expected today."
+        },
+        "waesche_noch_starten": {
+          "title": "Start one load of laundry",
+          "feedback": "Small, but not free."
+        },
+        "alles_liegen_lassen": {
+          "title": "Leave it for today",
+          "feedback": "Something is allowed to stay undone today."
+        },
+        "frueh_hinlegen": {
+          "title": "Go lie down early",
+          "feedback": "That gives the day a softer exit."
+        },
+        "licht_reduzieren_ruhen": {
+          "title": "Dim the lights and rest",
+          "feedback": "Less sensory input was exactly right now."
+        },
+        "noch_mails_checken": {
+          "title": "Check emails one more time",
+          "feedback": "Your brain keeps working, even if the day is almost over."
+        },
+        "kurz_aufraeumen": {
+          "title": "Tidy up briefly",
+          "feedback": "Small, but still something."
+        },
+        "essen_einfach_holen": {
+          "title": "Keep dinner simple",
+          "feedback": "Practical beats perfect."
+        },
+        "abendroutine_kurz": {
+          "title": "Short evening routine",
+          "feedback": "The smaller version saves energy."
+        },
+        "abendroutine_lang": {
+          "title": "Long evening routine",
+          "feedback": "Even in the evening, effort still adds up."
+        },
+        "sofort_absagen_fuer_morgen": {
+          "title": "Cancel tomorrow now",
+          "feedback": "Cancelling early can save a lot later."
+        }
+      },
+      "events": {
+        "paketbote": "The package delivery rings exactly when things had just gone quiet.",
+        "wetterkippt": "The weather turns. Unfortunately you feel it right away.",
+        "hilfe_verfuegbar": "Someone can actually take something off your plate today.",
+        "essen_ist_schon_da": "One less problem: food is already sorted.",
+        "ungeplanter_anruf": "Unexpected communication costs more than expected right now.",
+        "termin_entfaellt": "An appointment gets cancelled. That creates some room.",
+        "kopfschmerz_zieht_auf": "A headache starts creeping in.",
+        "etwas_dauert_laenger": "One small step takes longer than hoped.",
+        "kurze_ruhemoeglichkeit": "A real rest window unexpectedly opens up.",
+        "nachricht_muss_nicht_sofort_beantwortet_werden": "Not everything is urgent today. That helps mentally.",
+        "reize_haengen_nach": "The day is already lingering in your system.",
+        "hilfe_fuer_haushalt": "Someone takes a small household task off your hands.",
+        "arznei_abholen_muss_warten": "You can push one thing to tomorrow.",
+        "licht_und_geraeusch_werden_zu_viel": "Light and noise get more expensive toward evening.",
+        "abend_ist_ruhiger_als_gedacht": "The evening turns out calmer than expected.",
+        "spontane_nachfrage_von_aussen": "One more small outside request comes in.",
+        "etwas_ist_schon_erledigt": "Something gets handled on its own.",
+        "appetit_ist_niedrig": "Even sorting out food feels bigger than it should today.",
+        "ruhe_greift": "The pause helps more than you expected.",
+        "abendliches_umplanen": "With a bit of replanning, the evening stays manageable."
+      },
+      "system": {
+        "phaseOverload": "That was a bit too much in one phase.",
+        "pendingPhaseDeltaNegative": "An earlier effort is still catching up with you.",
+        "pendingPhaseDeltaPositive": "An earlier relief is still helping a bit.",
+        "noPacingBeforeEvening": "Without a pause, the room to maneuver shrinks.",
+        "socialChain": "Too many outward-facing tasks still cost one more bit of energy by the end."
+      },
+      "startFlavors": {
+        "lowReserve": "The day starts with very little reserve.",
+        "slowStart": "You notice early on: today needs a slower start.",
+        "sleepDidNotRestore": "Sleep did not restore much.",
+        "slightlySteadier": "Today starts a little steadier.",
+        "cautiousBeginning": "The day begins cautiously.",
+        "dayForWeighing": "Today is a day for weighing trade-offs.",
+        "notAnEasyDay": "This is not one of the easier days.",
+        "littleBuffer": "You have a little buffer, but not much.",
+        "everyChoiceCounts": "Every decision counts today.",
+        "fragileEnergy": "The energy is there, but it is fragile.",
+        "morningAlreadyHeavy": "The morning is already demanding.",
+        "notEverythingAtOnce": "Better not do everything at once today.",
+        "tightBudget": "It feels like a tight budget.",
+        "surprisinglyCalm": "The day starts surprisingly calm.",
+        "smartPacingCouldHelp": "Smart pacing could save a lot today.",
+        "middlingDay": "A middling day with some uncertainty.",
+        "notEmptyButFarFromFit": "You are not empty, but very far from well.",
+        "tacticsOverTempo": "Today calls for tactics more than tempo.",
+        "okayButNotRobust": "The start is okay, but not robust.",
+        "smallThingsTurnBig": "One of those days when small things can turn big."
+      },
+      "phaseFlavors": {
+        "morning": {
+          "justGotUp": "You just got up.",
+          "alreadyTooLoud": "The morning is already louder than needed.",
+          "energyOnlyPartlyThere": "The day is here. The energy only partly is.",
+          "manyOpenThings": "A lot is still open.",
+          "earlyDecisionsMatter": "Today it gets clear early how tight this will be.",
+          "smallThingsRelevant": "Even small things already feel relevant.",
+          "needsClearChoice": "The morning needs a clear choice.",
+          "easyToOverdo": "You could overdo it easily today.",
+          "bestToStartCarefully": "Starting carefully would be wise.",
+          "prioritiesImmediately": "The morning asks for priorities right away."
+        },
+        "midday": {
+          "morningWasNotFree": "The morning was not free.",
+          "showsWhatIsLeft": "Now you see what is still left.",
+          "dayOftenTipsNow": "This is often where the day starts to tip.",
+          "alreadyInvested": "You have already spent something.",
+          "someRoomStill": "There is still some room, but not much.",
+          "feelItLater": "You will feel whatever comes next later.",
+          "reserveNotFresh": "The reserve no longer feels fresh.",
+          "smallChoicesDouble": "At midday, small choices often count double.",
+          "smartNotBig": "This calls for smart, not big, choices.",
+          "restOfDayDependsHere": "The rest of the day hangs on this stretch."
+        },
+        "evening": {
+          "smallDecisionsNow": "The evening now hangs on small decisions.",
+          "littleBufferLeft": "There is not much buffer left.",
+          "stabilityOverProductivity": "This is about stability more than productivity now.",
+          "onlyIfTrulyNeeded": "If something still has to happen today, it should truly matter.",
+          "almostDoneNotYet": "The day is almost done, but not over yet.",
+          "eveningAffectsTomorrow": "The evening often decides something about tomorrow too.",
+          "everySkippedExtraLoop": "Every extra loop you avoid is worth it now.",
+          "roomGotTighter": "The room to maneuver has narrowed.",
+          "reliefOverAmbition": "Relief matters more than ambition here.",
+          "unspectacularIsFine": "The final phase is allowed to stay uneventful."
+        }
+      },
+      "results": {
+        "flavors": {
+          "stable": {
+            "lessWasMore": "Well chosen. Today, less really was more.",
+            "surprisinglyStable": "You made it through the day surprisingly steadily.",
+            "goodDivisionGoodDay": "Good pacing, good day.",
+            "keptReserves": "You managed to keep some reserve.",
+            "notSpectacularButRight": "Not spectacular, but exactly right.",
+            "pacingMadeDifference": "Pacing made the difference today.",
+            "dayStayedWithinBounds": "The day stayed within bounds.",
+            "solidDay": "Solidly managed."
+          },
+          "narrow": {
+            "tightButOkay": "That was tight, but still okay.",
+            "notMuchMore": "It would not have taken much more.",
+            "tightPacingCounts": "Tight pacing still counts as pacing.",
+            "lineWasClose": "The line was close today.",
+            "justWithinBounds": "Just still within bounds.",
+            "cautionWasNotOverdoingIt": "Today, caution was not overdoing it.",
+            "doneWithoutBuffer": "The day is done, but without a buffer.",
+            "gotThroughBarely": "You still got through it, just barely."
+          },
+          "crash": {
+            "oneSpoonTooMany": "That was probably one spoon too many.",
+            "dayTippedOver": "The day tipped over.",
+            "smallThingsAddedUp": "Too many small things added up.",
+            "reserveWentFaster": "The reserve went faster than expected today.",
+            "betweenNeededAndTooMuch": "Somewhere between necessary and too much, it tipped.",
+            "lessRoomThanHoped": "There was less room than you hoped.",
+            "lessWouldHaveProtected": "Today, less probably would have protected more.",
+            "sumNotSingleThing": "It was not one thing. It was the sum."
+          }
+        }
+      },
+      "result": {
+        "remainingSpoons": "Remaining spoons",
+        "protectiveChoices": "Protective choices",
+        "demandingChoices": "Demanding choices",
+        "restartAction": "One more day",
+        "backAction": "Back to Games"
+      },
+      "stats": {
+        "title": "Local stats",
+        "totalRuns": "Days played",
+        "stableRuns": "Stably done",
+        "narrowRuns": "Just made it",
+        "crashRuns": "Crashes",
+        "bestRemainingSpoons": "Best remaining spoons",
+        "lastStatus": "Last status",
+        "none": "Nothing yet"
+      }
+    }
+  }
 }

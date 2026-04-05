@@ -12,6 +12,7 @@ type AnyRecord = Record<string, unknown>;
 const DOCTOR_LETTER = 'doctor-letter' as const;
 const NOTFALLPASS = 'notfallpass' as const;
 const OFFLABEL = 'offlabel-antrag' as const;
+const PACING_AMPELKARTEN = 'pacing-ampelkarten' as const;
 
 const PATIENT_NAME = 'Max Mustermann';
 const DOCTOR_NAME = 'Dr. Müller';
@@ -312,6 +313,21 @@ describe('applyProfileData', () => {
     expect((result.patient as AnyRecord).lastName).toBe('Schmidt');
   });
 
+  it('leaves pacing ampelkarten unchanged when applying a profile', () => {
+    const formData = {
+      meta: { variant: 'adult' },
+      sender: { signature: 'Keep me' },
+    };
+
+    const result = applyProfileData(PACING_AMPELKARTEN, formData, {
+      patient: { firstName: 'Max' },
+      doctor: { name: DOCTOR_NAME },
+    });
+
+    expect(result).toEqual(formData);
+    expect(result).not.toBe(formData);
+  });
+
   it('splits fullName into firstName/lastName for notfallpass', () => {
     const formData = { person: {} };
     const profile = {
@@ -460,6 +476,15 @@ describe('extractProfileData edge cases', () => {
 
     expect(result.patient).toEqual({ firstName: 'Max' });
     expect(result.doctor).toEqual({ phone: '030-12345' });
+  });
+
+  it('returns no profile payload for pacing ampelkarten', () => {
+    const result = extractProfileData(PACING_AMPELKARTEN, {
+      sender: { signature: 'Test' },
+      adult: { cards: { green: { canDo: ['Existing'] } } },
+    });
+
+    expect(result).toEqual({});
   });
 });
 

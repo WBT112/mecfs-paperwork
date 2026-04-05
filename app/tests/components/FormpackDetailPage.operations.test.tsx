@@ -27,7 +27,6 @@ const testConstants = vi.hoisted(() => ({
   FORMPACK_ID: 'notfallpass',
   DOCX_MAPPING_PATH: 'mapping.json',
   TEMPLATE_A4: 'template-a4.docx',
-  TEMPLATE_WALLET: 'template-wallet.docx',
   IMPORT_FILE_NAME: 'import.json',
   IMPORT_FILE_CONTENT: '{"data":true}',
 }));
@@ -52,10 +51,7 @@ const formpackState = vi.hoisted(
       exports: ['docx'],
       visibility: 'public',
       docx: {
-        templates: {
-          a4: testConstants.TEMPLATE_A4,
-          wallet: testConstants.TEMPLATE_WALLET,
-        },
+        templates: { a4: testConstants.TEMPLATE_A4 },
         mapping: testConstants.DOCX_MAPPING_PATH,
       },
     } as FormpackManifest,
@@ -130,7 +126,6 @@ const {
   FORMPACK_ID,
   DOCX_MAPPING_PATH,
   TEMPLATE_A4,
-  TEMPLATE_WALLET,
   IMPORT_FILE_NAME,
   IMPORT_FILE_CONTENT,
 } = testConstants;
@@ -604,7 +599,6 @@ describe('FormpackDetailPage', () => {
       docx: {
         templates: {
           a4: TEMPLATE_A4,
-          wallet: TEMPLATE_WALLET,
         },
         mapping: DOCX_MAPPING_PATH,
       },
@@ -2029,7 +2023,7 @@ describe('FormpackDetailPage', () => {
     expect(storageState.createRecord).not.toHaveBeenCalled();
   });
 
-  it('updates DOCX template selection when changed', async () => {
+  it('does not render a DOCX template selector for A4-only exports', async () => {
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
         <Routes>
@@ -2038,25 +2032,9 @@ describe('FormpackDetailPage', () => {
       </TestRouter>,
     );
 
-    const select = await screen.findByLabelText('formpackDocxTemplateLabel');
-    await userEvent.selectOptions(select, 'wallet');
-
-    expect(select).toHaveValue('wallet');
-  });
-
-  it('resets invalid DOCX template values back to the first available option', async () => {
-    render(
-      <TestRouter initialEntries={[FORMPACK_ROUTE]}>
-        <Routes>
-          <Route path="/formpacks/:id" element={<FormpackDetailPage />} />
-        </Routes>
-      </TestRouter>,
-    );
-
-    const select = await screen.findByLabelText('formpackDocxTemplateLabel');
-    fireEvent.change(select, { target: { value: 'invalid-template' } });
-
-    await waitFor(() => expect(select).toHaveValue('a4'));
+    expect(
+      screen.queryByLabelText('formpackDocxTemplateLabel'),
+    ).not.toBeInTheDocument();
   });
 
   it('hides the DOCX template selector when only one template is available', async () => {

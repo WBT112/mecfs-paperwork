@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import i18n from './index';
-import type { SupportedLocale } from './locale';
 import {
   defaultLocale,
   isSupportedLocale,
   setStoredLocale,
   supportedLocales,
+  type SupportedLocale,
 } from './locale';
 
 const normalizeLocale = (value: string): SupportedLocale => {

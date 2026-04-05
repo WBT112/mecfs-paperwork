@@ -17,17 +17,17 @@
     "longCovid": false,
     "formatted": "ME/CFS, POTS"
   },
-  "symptoms": "Severe fatigue, dizziness, light sensitivity",
+  "symptoms": "Starke Erschöpfung, Schwindel und Lichtempfindlichkeit.",
   "medications": [
     {
-      "name": "Electrolyte solution",
+      "name": "Elektrolytlösung",
       "dosage": "500 ml",
-      "schedule": "Daily"
+      "schedule": "Täglich"
     }
   ],
-  "allergies": "No known drug allergies",
+  "allergies": "Keine bekannten Medikamentenallergien",
   "doctor": {
-    "name": "Dr. Example",
+    "name": "Praxis Beispiel",
     "phone": "+49 30 987654"
   }
 }

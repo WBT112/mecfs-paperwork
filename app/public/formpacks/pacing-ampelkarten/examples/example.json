@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "introAccepted": true,
+    "variant": "adult"
+  },
+  "adult": {
+    "cards": {
+      "green": {
+        "canDo": [
+          "Kurze Gespräche sind möglich (ca. 10-20 Minuten).",
+          "Kleine Aufgaben gehen (z. B. kurz Küche aufräumen).",
+          "Kurze Nachrichten beantworten ist ok.",
+          "Kurz an die frische Luft (5-10 Minuten), wenn es ruhig ist."
+        ],
+        "needHelp": [
+          "Wenn möglich: eine Aufgabe abnehmen (z. B. Einkauf oder Telefonat)."
+        ],
+        "hint": "Pausen gehören zu meinem Pacing - ich schütze damit meine Energie."
+      },
+      "yellow": {
+        "canDo": [
+          "Nur kurze Gespräche (max. 5-10 Minuten).",
+          "Lieber schriftlich als telefonisch.",
+          "Viele Pausen und Rückzug."
+        ],
+        "needHelp": [
+          "Bitte übernimm heute Organisationskram (Telefonate/Termine/Rückfragen).",
+          "Hilfe bei Haushalt/Kochen wäre toll."
+        ],
+        "hint": "Weniger Kontakt heißt nicht weniger Wertschätzung. Ich brauche heute Ruhe, um keinen Crash auszulösen."
+      },
+      "red": {
+        "canDo": [
+          "Ich brauche Ruhe. Sprechen ist heute schwer."
+        ],
+        "needHelp": [
+          "Bitte stelle Essen und Trinken bereit.",
+          "Bitte übernimm Telefon, Klingel oder kurze Rückfragen.",
+          "Bitte halte den Tag für mich möglichst reizarm und ruhig."
+        ],
+        "hint": "Mein System ist heute im Alarmmodus. Ruhe hilft am meisten."
+      }
+    }
+  },
+  "child": {
+    "cards": {
+      "green": {
+        "canDo": [
+          "Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.",
+          "Kurze Nachrichten lesen oder beantworten geht oft gut.",
+          "Ein kurzer ruhiger Moment draußen kann möglich sein."
+        ],
+        "needHelp": [
+          "Bitte hilf trotzdem beim Planen und erinnere mich an Pausen."
+        ],
+        "hint": "Heute ist ein guter Tag. Trotzdem helfen Pausen."
+      },
+      "yellow": {
+        "canDo": [
+          "Heute gehen nur kurze Gespräche oder Nachrichten.",
+          "Ich brauche viele Pausen und möchte mich zwischendurch hinlegen."
+        ],
+        "needHelp": [
+          "Bitte übernimm heute Dinge, die anstrengend sind.",
+          "Hilf mir dabei, dass alles ruhig und langsam bleibt."
+        ],
+        "hint": "Heute ist ein vorsichtiger Tag. Bitte langsam und leise."
+      },
+      "red": {
+        "canDo": [
+          "Heute brauche ich ganz viel Ruhe."
+        ],
+        "needHelp": [
+          "Bitte bring mir etwas zu trinken oder zu essen.",
+          "Bitte halte Tür oder Telefon für mich ab, wenn es geht.",
+          "Bitte hilf mit, dass alles leise und langsam bleibt."
+        ],
+        "hint": "Heute ist ein Ruhetag. Bitte nichts erwarten."
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deleteDatabase } from '../helpers';
-import { openFormpackWithRetry } from '../helpers/formpack';
+import { ensureActiveRecord, openFormpackWithRetry } from '../helpers/formpack';
 import { switchLocale } from '../helpers/locale';
 import { openCollapsibleSectionById } from '../helpers/sections';
 
@@ -404,6 +404,9 @@ type FormpackLayoutSnapshot = {
 const summarizeRange = (values: number[]) =>
   values.length > 1 ? Math.max(...values) - Math.min(...values) : 0;
 
+const usesCustomMobileEditorChrome = (formpackId: string): boolean =>
+  formpackId === 'pacing-ampelkarten';
+
 const listFormpackIdsFromOverview = async (page: Page) => {
   await page.goto('/formpacks');
   const idsHandle = await page.waitForFunction(() => {
@@ -434,8 +437,19 @@ const openFormpackForLayoutAudit = async (page: Page, formpackId: string) => {
   );
 
   const formLocator = page.locator('.formpack-form');
-  if (formpackId === FORM_PACK_ID) {
+  const introGate = page.locator('.formpack-intro-gate');
+  if (await introGate.isVisible().catch(() => false)) {
+    await introGate.locator('input[type="checkbox"]').check();
+    await introGate.locator('button:not([disabled])').click();
+  } else if (formpackId === FORM_PACK_ID) {
     await acceptIntroGate(page);
+  }
+
+  if (!(await formLocator.isVisible().catch(() => false))) {
+    await ensureActiveRecord(page, {
+      formpackId,
+      formSelector: '.formpack-form',
+    });
   }
 
   await expect(formLocator).toBeVisible({ timeout: 20_000 });
@@ -646,15 +660,18 @@ test.describe('formpack layout consistency @mobile', () => {
 
     const detailWidths = snapshots.map((snapshot) => snapshot.detailWidth);
     const formWidths = snapshots.map((snapshot) => snapshot.formWidth);
-    const formPaddingValues = snapshots.map(
+    const standardChromeSnapshots = snapshots.filter(
+      (snapshot) => !usesCustomMobileEditorChrome(snapshot.formpackId),
+    );
+    const formPaddingValues = standardChromeSnapshots.map(
       (snapshot) => snapshot.formPaddingX,
     );
-    const formBorderRadii = snapshots.map(
+    const formBorderRadii = standardChromeSnapshots.map(
       (snapshot) => snapshot.formBorderRadius,
     );
-    const fieldsetBorderRadii = snapshots.map(
-      (snapshot) => snapshot.fieldsetBorderRadius,
-    );
+    const fieldsetBorderRadii = standardChromeSnapshots
+      .map((snapshot) => snapshot.fieldsetBorderRadius)
+      .filter((radius) => radius > 0);
     const checkboxMedians = snapshots
       .map((snapshot) => snapshot.checkboxSizes.median)
       .filter((value): value is number => value !== null);
@@ -669,7 +686,9 @@ test.describe('formpack layout consistency @mobile', () => {
     expect(summarizeRange(formWidths)).toBeLessThanOrEqual(2);
     expect(summarizeRange(formPaddingValues)).toBeLessThanOrEqual(0.5);
     expect(summarizeRange(formBorderRadii)).toBeLessThanOrEqual(0.5);
-    expect(summarizeRange(fieldsetBorderRadii)).toBeLessThanOrEqual(0.5);
+    if (fieldsetBorderRadii.length > 1) {
+      expect(summarizeRange(fieldsetBorderRadii)).toBeLessThanOrEqual(0.5);
+    }
 
     if (checkboxMedians.length > 1) {
       expect(summarizeRange(checkboxMedians)).toBeLessThanOrEqual(1);

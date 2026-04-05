@@ -1,0 +1,295 @@
+{
+  "ui:order": [
+    "meta",
+    "adult",
+    "child"
+  ],
+  "meta": {
+    "ui:title": "pacing-ampelkarten.section.meta.title",
+    "ui:description": "pacing-ampelkarten.section.meta.description",
+    "ui:order": [
+      "variant",
+      "introAccepted"
+    ],
+    "variant": {
+      "ui:title": "pacing-ampelkarten.meta.variant.label",
+      "ui:help": "pacing-ampelkarten.meta.variant.help",
+      "ui:widget": "radio",
+      "ui:enumNames": [
+        "pacing-ampelkarten.meta.variant.option.adult",
+        "pacing-ampelkarten.meta.variant.option.child"
+      ]
+    },
+    "introAccepted": {
+      "ui:widget": "hidden"
+    }
+  },
+  "adult": {
+    "ui:title": "pacing-ampelkarten.section.adult.title",
+    "ui:description": "pacing-ampelkarten.section.adult.description",
+    "cards": {
+      "ui:title": "",
+      "ui:order": [
+        "green",
+        "yellow",
+        "red"
+      ],
+      "green": {
+        "ui:title": "pacing-ampelkarten.adult.cards.green.title",
+        "ui:order": [
+          "canDo",
+          "needHelp",
+          "hint"
+        ],
+        "canDo": {
+          "ui:title": "pacing-ampelkarten.card.canDo.label",
+          "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "needHelp": {
+          "ui:title": "pacing-ampelkarten.card.needHelp.label",
+          "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "hint": {
+          "ui:title": "pacing-ampelkarten.card.hint.label",
+          "ui:help": "pacing-ampelkarten.card.hint.help",
+          "ui:widget": "textarea",
+          "ui:options": {
+            "rows": 3
+          }
+        }
+      },
+      "yellow": {
+        "ui:title": "pacing-ampelkarten.adult.cards.yellow.title",
+        "ui:order": [
+          "canDo",
+          "needHelp",
+          "hint"
+        ],
+        "canDo": {
+          "ui:title": "pacing-ampelkarten.card.canDo.label",
+          "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "needHelp": {
+          "ui:title": "pacing-ampelkarten.card.needHelp.label",
+          "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "hint": {
+          "ui:title": "pacing-ampelkarten.card.hint.label",
+          "ui:help": "pacing-ampelkarten.card.hint.help",
+          "ui:widget": "textarea",
+          "ui:options": {
+            "rows": 3
+          }
+        }
+      },
+      "red": {
+        "ui:title": "pacing-ampelkarten.adult.cards.red.title",
+        "ui:order": [
+          "canDo",
+          "needHelp",
+          "hint"
+        ],
+        "canDo": {
+          "ui:title": "pacing-ampelkarten.card.canDo.label",
+          "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "needHelp": {
+          "ui:title": "pacing-ampelkarten.card.needHelp.label",
+          "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "hint": {
+          "ui:title": "pacing-ampelkarten.card.hint.label",
+          "ui:help": "pacing-ampelkarten.card.hint.help",
+          "ui:widget": "textarea",
+          "ui:options": {
+            "rows": 3
+          }
+        }
+      }
+    }
+  },
+  "child": {
+    "ui:title": "pacing-ampelkarten.section.child.title",
+    "ui:description": "pacing-ampelkarten.section.child.description",
+    "cards": {
+      "ui:title": "",
+      "ui:order": [
+        "green",
+        "yellow",
+        "red"
+      ],
+      "green": {
+        "ui:title": "pacing-ampelkarten.child.cards.green.title",
+        "ui:order": [
+          "canDo",
+          "needHelp",
+          "hint"
+        ],
+        "canDo": {
+          "ui:title": "pacing-ampelkarten.card.canDo.label",
+          "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "needHelp": {
+          "ui:title": "pacing-ampelkarten.card.needHelp.label",
+          "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "items": {
+            "ui:options": {
+              "label": false
+            }
+          },
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "hint": {
+          "ui:title": "pacing-ampelkarten.card.hint.label",
+          "ui:help": "pacing-ampelkarten.card.hint.help",
+          "ui:widget": "textarea",
+          "ui:options": {
+            "rows": 3
+          }
+        }
+      },
+      "yellow": {
+        "ui:title": "pacing-ampelkarten.child.cards.yellow.title",
+        "ui:order": [
+          "canDo",
+          "needHelp",
+          "hint"
+        ],
+        "canDo": {
+          "ui:title": "pacing-ampelkarten.card.canDo.label",
+          "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "needHelp": {
+          "ui:title": "pacing-ampelkarten.card.needHelp.label",
+          "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "hint": {
+          "ui:title": "pacing-ampelkarten.card.hint.label",
+          "ui:help": "pacing-ampelkarten.card.hint.help",
+          "ui:widget": "textarea",
+          "ui:options": {
+            "rows": 3
+          }
+        }
+      },
+      "red": {
+        "ui:title": "pacing-ampelkarten.child.cards.red.title",
+        "ui:order": [
+          "canDo",
+          "needHelp",
+          "hint"
+        ],
+        "canDo": {
+          "ui:title": "pacing-ampelkarten.card.canDo.label",
+          "ui:help": "pacing-ampelkarten.card.canDo.help",
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "needHelp": {
+          "ui:title": "pacing-ampelkarten.card.needHelp.label",
+          "ui:help": "pacing-ampelkarten.card.needHelp.help",
+          "ui:options": {
+            "addable": true,
+            "orderable": false,
+            "removable": true
+          }
+        },
+        "hint": {
+          "ui:title": "pacing-ampelkarten.card.hint.label",
+          "ui:help": "pacing-ampelkarten.card.hint.help",
+          "ui:widget": "textarea",
+          "ui:options": {
+            "rows": 3
+          }
+        }
+      }
+    }
+  }
+}
