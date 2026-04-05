@@ -265,6 +265,8 @@ test.describe('offline-first extensions', () => {
       window.localStorage.clear();
       window.sessionStorage.clear();
     });
+    await page.reload();
+    await page.waitForLoadState('networkidle');
     await expect(page.locator('#locale-select')).toBeVisible();
     await context.setOffline(true);
     await switchLocale(page, 'en');

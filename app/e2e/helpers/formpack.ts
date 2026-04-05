@@ -64,11 +64,32 @@ export const acceptFormpackIntroGate = async (
   const timeoutMs = options?.timeoutMs ?? 20_000;
   const formSelector = options?.formSelector ?? '.formpack-form';
   const introGate = page.locator('.formpack-intro-gate');
-  const hasIntroGate = await introGate
-    .isVisible({ timeout: 1_000 })
-    .catch(() => false);
+  const readiness = await expect
+    .poll(
+      async () => {
+        const hasIntroGate = await introGate.isVisible().catch(() => false);
+        if (hasIntroGate) {
+          return 'intro';
+        }
 
-  if (!hasIntroGate) {
+        const hasForm = await page
+          .locator(formSelector)
+          .isVisible()
+          .catch(() => false);
+        return hasForm ? 'form' : 'pending';
+      },
+      {
+        timeout: timeoutMs,
+        message: `Timed out waiting for intro gate or form "${formSelector}" to become visible.`,
+      },
+    )
+    .not.toBe('pending')
+    .then(async () => {
+      const hasIntroGate = await introGate.isVisible().catch(() => false);
+      return hasIntroGate ? 'intro' : 'form';
+    });
+
+  if (readiness === 'form') {
     await expect(page.locator(formSelector)).toBeVisible({
       timeout: timeoutMs,
     });
