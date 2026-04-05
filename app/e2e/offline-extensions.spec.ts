@@ -265,14 +265,7 @@ test.describe('offline-first extensions', () => {
       window.localStorage.clear();
       window.sessionStorage.clear();
     });
-    await deleteDatabase(page, DB.dbName);
-
-    await openFormpackWithRetry(
-      page,
-      FORM_PACK_ID,
-      page.locator('#formpack-records-toggle'),
-    );
-    await openDraftsSection(page);
+    await expect(page.locator('#locale-select')).toBeVisible();
     await context.setOffline(true);
     await switchLocale(page, 'en');
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
