@@ -92,7 +92,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "eslint-plugin-sonarjs": "^3.0.7",
+    "eslint-plugin-sonarjs": "^4.0.2",
     "eslint-plugin-tsdoc": "^0.5.2",
     "eslint-plugin-unicorn": "^62.0.0",
     "globals": "^17.4.0",
@@ -114,8 +114,16 @@
   },
   "overrides": {
     "@isaacs/brace-expansion": "^5.0.1",
+    "minimatch@3": {
+      "brace-expansion": "^2.0.3"
+    },
+    "minimatch@5": {
+      "brace-expansion": "^2.0.3"
+    },
     "serialize-javascript": ">=7.0.3",
+    "smol-toml": "^1.6.1",
     "source-map": "npm:source-map-js@^1.2.1",
-    "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.5.5"
+    "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.5.5",
+    "yaml": "^2.8.3"
   }
 }
