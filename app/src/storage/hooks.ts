@@ -355,10 +355,10 @@ export const useAutosaveRecord = (
   const lastSavedRef = useRef<string | null>(null);
   const lastRecordIdRef = useRef<string | null>(null);
   const latestRecordIdRef = useRef<string | null>(recordId);
-  const latestFormDataRef = useRef<Record<string, unknown>>(formData);
-  const latestLocaleRef = useRef<SupportedLocale>(locale);
-  const onSavedRef = useRef<typeof onSaved>(onSaved);
-  const onErrorRef = useRef<typeof onError>(onError);
+  const latestFormDataRef = useRef(formData);
+  const latestLocaleRef = useRef(locale);
+  const onSavedRef = useRef(onSaved);
+  const onErrorRef = useRef(onError);
 
   useEffect(() => {
     latestRecordIdRef.current = recordId;
