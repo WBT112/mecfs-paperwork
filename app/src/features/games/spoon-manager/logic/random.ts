@@ -1,3 +1,5 @@
+let timestampFallbackCounter = 0;
+
 /**
  * Creates a deterministic pseudo-random number generator from a seed string.
  *
@@ -29,14 +31,33 @@ export const createSeededRandom = (seed: string): (() => number) => {
 /**
  * Creates a shareable day seed when the URL does not provide one.
  *
+ * @remarks
+ * SECURITY: This seed only scopes local game variation and shareable URLs. It
+ * must not be used for authentication, secrets, or encryption. We prefer Web
+ * Crypto and fall back to a monotonic timestamp-based identifier when crypto is
+ * unavailable, which keeps the seed generator free of weak PRNG APIs.
+ *
  * @returns A locally generated non-sensitive seed string.
  */
 export const createRandomSeed = (): string => {
-  if (typeof globalThis.crypto.randomUUID === 'function') {
-    return globalThis.crypto.randomUUID();
+  const crypto = globalThis.crypto as Crypto | undefined;
+
+  if (typeof crypto?.randomUUID === 'function') {
+    return crypto.randomUUID();
   }
 
-  return `seed-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  if (typeof crypto?.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join(
+      '',
+    );
+  }
+
+  const timestamp = Date.now().toString(36);
+  const counter = (timestampFallbackCounter++ % 1_679_616).toString(36);
+
+  return `seed-${timestamp}-${counter.padStart(4, '0')}`;
 };
 
 /**
