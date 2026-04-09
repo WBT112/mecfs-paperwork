@@ -439,10 +439,9 @@ describe('Spoon Manager logic', () => {
     );
   });
 
-  it('creates random seeds with and without randomUUID support', () => {
+  it('creates random seeds with randomUUID, getRandomValues, and timestamp fallbacks', () => {
     const originalCrypto = globalThis.crypto;
     const originalDateNow = Date.now;
-    const originalMathRandom = Math.random;
 
     Object.defineProperty(globalThis, 'crypto', {
       configurable: true,
@@ -455,19 +454,29 @@ describe('Spoon Manager logic', () => {
 
     Object.defineProperty(globalThis, 'crypto', {
       configurable: true,
-      value: {},
+      value: {
+        getRandomValues: (bytes: Uint8Array) => {
+          bytes.set([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+          return bytes;
+        },
+      },
+    });
+    expect(createRandomSeed()).toBe('0102030405060708090a0b0c0d0e0f10');
+
+    Object.defineProperty(globalThis, 'crypto', {
+      configurable: true,
+      value: undefined,
     });
     Date.now = () => 1234;
-    Math.random = () => 0.123456789;
 
-    expect(createRandomSeed()).toBe('seed-1234-4fzzzxjy');
+    expect(createRandomSeed()).toBe('seed-ya-0000');
+    expect(createRandomSeed()).toBe('seed-ya-0001');
 
     Object.defineProperty(globalThis, 'crypto', {
       configurable: true,
       value: originalCrypto,
     });
     Date.now = originalDateNow;
-    Math.random = originalMathRandom;
   });
 
   it('trims blank seeds, supports positive pending deltas, and ignores repeated advances after results', () => {
