@@ -101,7 +101,7 @@ jobs:
 
       - name: Upload Trivy SARIF (image)
         if: always() && steps.check-secrets.outputs.available == 'true' && github.actor != 'dependabot[bot]' && hashFiles('trivy-image.sarif') != ''
-        uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v4.31.10
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         with:
           sarif_file: trivy-image.sarif
 
@@ -143,6 +143,6 @@ jobs:
 
       - name: Upload Trivy SARIF (fs)
         if: always() && github.actor != 'dependabot[bot]' && hashFiles('trivy-fs.sarif') != ''
-        uses: github/codeql-action/upload-sarif@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v4.31.10
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4.35.1
         with:
           sarif_file: trivy-fs.sarif
