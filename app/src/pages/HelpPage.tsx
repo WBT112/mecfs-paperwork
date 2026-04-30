@@ -120,7 +120,7 @@ export default function HelpPage() {
   } = useStorageHealth();
 
   const [resetting, setResetting] = useState(false);
-  const [swInfo, setSwInfo] = useState<ServiceWorkerInfo>(defaultSwInfo);
+  const [swInfo, setSwInfo] = useState(defaultSwInfo);
 
   useEffect(() => {
     let cancelled = false;
