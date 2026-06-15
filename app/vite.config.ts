@@ -9,6 +9,7 @@ import { createPwaConfig } from './src/lib/pwaConfig';
 
 const require = createRequire(import.meta.url);
 const bufferPath = require.resolve('buffer/');
+const processShimPath = require.resolve('./vite.process-shim.js');
 const utilPath = require.resolve('util/util.js');
 
 const createFormpackSpaFallbackPlugin = (): Plugin => ({
@@ -146,26 +147,22 @@ const createConfig = (mode: string): AppConfig => ({
       'yoga-layout',
       'yoga-layout-wasm',
     ],
-    esbuildOptions: {
+    rolldownOptions: {
       // Prevent Vite from externalizing Node built-ins during pre-bundling
       // (docx-templates and its readable-stream dependency chain).
-      plugins: [
-        {
-          name: 'alias-node-builtins',
-          setup(build) {
-            build.onResolve({ filter: /^buffer$/ }, () => ({
-              path: bufferPath,
-            }));
-            build.onResolve({ filter: /^node:buffer$/ }, () => ({
-              path: bufferPath,
-            }));
-            build.onResolve({ filter: /^util$/ }, () => ({ path: utilPath }));
-            build.onResolve({ filter: /^node:util$/ }, () => ({
-              path: utilPath,
-            }));
-          },
+      resolve: {
+        alias: {
+          buffer: bufferPath,
+          'node:buffer': bufferPath,
+          util: utilPath,
+          'node:util': utilPath,
         },
-      ],
+      },
+      transform: {
+        inject: {
+          process: [processShimPath, 'process'],
+        },
+      },
     },
   },
   server: {
