@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { RJSFSchema, WidgetProps } from '@rjsf/utils';
+import type { WidgetProps } from '@rjsf/utils';
 import { describe, expect, it, vi } from 'vitest';
 import {
   AutoGrowTextareaWidget,
@@ -15,7 +15,7 @@ const buildTextareaProps = (
 ): WidgetProps => ({
   id: 'resolvedCaseText',
   name: 'resolvedCaseText',
-  schema: { type: 'string' } as RJSFSchema,
+  schema: { type: 'string' },
   options: { rows: 6 },
   value: 'Hello',
   required: false,
@@ -35,7 +35,7 @@ const buildSelectProps = (
 ): WidgetProps => ({
   id: 'testSelect',
   name: 'testSelect',
-  schema: { type: 'string' } as RJSFSchema,
+  schema: { type: 'string' },
   options: {
     enumOptions: [
       { value: 'a', label: 'Option A' },
@@ -62,7 +62,7 @@ const buildAttachmentsAssistantProps = (
 ): WidgetProps => ({
   id: 'attachmentsFreeText',
   name: 'attachmentsFreeText',
-  schema: { type: 'string' } as RJSFSchema,
+  schema: { type: 'string' },
   options: { rows: 6 },
   value: '',
   required: false,
@@ -243,7 +243,7 @@ describe('AccessibleSelectWidget', () => {
     render(
       <AccessibleSelectWidget
         {...buildSelectProps({
-          schema: { type: 'string', default: 'a' } as RJSFSchema,
+          schema: { type: 'string', default: 'a' },
         })}
       />,
     );

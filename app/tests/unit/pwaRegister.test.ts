@@ -122,26 +122,25 @@ describe('registerServiceWorker', () => {
     });
 
     let scheduledCallback: (() => void) | undefined;
-    vi.spyOn(globalThis, 'setInterval').mockImplementation(((
-      callback: TimerHandler,
-    ) => {
-      if (isVoidCallback(callback)) {
-        scheduledCallback = () => {
-          callback();
-        };
-      }
-      return 1 as unknown as ReturnType<typeof globalThis.setInterval>;
-    }) as unknown as typeof globalThis.setInterval);
+    vi.spyOn(globalThis, 'setInterval').mockImplementation(
+      (callback: TimerHandler) => {
+        if (isVoidCallback(callback)) {
+          scheduledCallback = () => {
+            callback();
+          };
+        }
+        return 1 as unknown as ReturnType<typeof globalThis.setInterval>;
+      },
+    );
 
     let visibilityHandler: EventListener | undefined;
-    vi.spyOn(globalThis, 'addEventListener').mockImplementation(((
-      type: string,
-      listener: EventListenerOrEventListenerObject,
-    ) => {
-      if (type === 'visibilitychange' && typeof listener === 'function') {
-        visibilityHandler = listener;
-      }
-    }) as unknown as typeof globalThis.addEventListener);
+    vi.spyOn(globalThis, 'addEventListener').mockImplementation(
+      (type: string, listener: EventListenerOrEventListenerObject) => {
+        if (type === 'visibilitychange' && typeof listener === 'function') {
+          visibilityHandler = listener;
+        }
+      },
+    );
 
     const module = await import('../../src/pwa/register');
     module.registerServiceWorker({ DEV: false });
@@ -192,10 +191,7 @@ describe('registerServiceWorker', () => {
       },
     });
     vi.spyOn(globalThis, 'setInterval').mockImplementation(
-      (() =>
-        1 as unknown as ReturnType<
-          typeof globalThis.setInterval
-        >) as unknown as typeof globalThis.setInterval,
+      () => 1 as unknown as ReturnType<typeof globalThis.setInterval>,
     );
 
     const module = await import('../../src/pwa/register');
@@ -216,16 +212,16 @@ describe('registerServiceWorker', () => {
     });
 
     let scheduledCallback: (() => void) | undefined;
-    vi.spyOn(globalThis, 'setInterval').mockImplementation(((
-      callback: TimerHandler,
-    ) => {
-      if (isVoidCallback(callback)) {
-        scheduledCallback = () => {
-          callback();
-        };
-      }
-      return 1 as unknown as ReturnType<typeof globalThis.setInterval>;
-    }) as unknown as typeof globalThis.setInterval);
+    vi.spyOn(globalThis, 'setInterval').mockImplementation(
+      (callback: TimerHandler) => {
+        if (isVoidCallback(callback)) {
+          scheduledCallback = () => {
+            callback();
+          };
+        }
+        return 1 as unknown as ReturnType<typeof globalThis.setInterval>;
+      },
+    );
 
     const module = await import('../../src/pwa/register');
     module.registerServiceWorker({ DEV: false });
@@ -265,7 +261,7 @@ describe('registerServiceWorker', () => {
         },
       },
     );
-    vi.stubGlobal('navigator', navigatorProxy as unknown as Navigator);
+    vi.stubGlobal('navigator', navigatorProxy);
 
     let scheduledCallback: (() => void) | undefined;
     vi.spyOn(globalThis, 'setInterval').mockImplementation(

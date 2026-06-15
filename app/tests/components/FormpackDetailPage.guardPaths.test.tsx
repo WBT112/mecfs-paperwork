@@ -32,11 +32,11 @@ const formpackState = vi.hoisted(
         },
         mapping: 'mapping.json',
       },
-    } as FormpackManifest,
+    },
     schema: {
       type: 'object',
       properties: {},
-    } as RJSFSchema,
+    },
     uiSchema: {} as UiSchema,
   }),
 );

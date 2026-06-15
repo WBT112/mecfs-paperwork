@@ -46,11 +46,11 @@ const formpackState = vi.hoisted(
         templates: { a4: testConstants.TEMPLATE_A4 },
         mapping: testConstants.DOCX_MAPPING_PATH,
       },
-    } as FormpackManifest,
+    },
     schema: {
       type: 'object',
       properties: {},
-    } as RJSFSchema,
+    },
     uiSchema: {} as UiSchema,
   }),
 );
@@ -91,7 +91,7 @@ const storageState = vi.hoisted(
     return {
       record,
       records: [record],
-      activeRecord: record as typeof record | null,
+      activeRecord: record,
       isRecordsLoading: false,
       hasLoaded: true,
       recordsError: null as string | null,
@@ -134,10 +134,10 @@ const mutableRjsfFormDataState = vi.hoisted(() => ({
   counter: 0,
   data: {
     field: 'value-0',
-  } as Record<string, unknown>,
+  },
 }));
 const localeState = vi.hoisted(() => ({
-  locale: 'de' as 'de' | 'en',
+  locale: 'de',
 }));
 const OFFLABEL_FORMPACK_ID = 'offlabel-antrag';
 const PACING_AMPELKARTEN_FORMPACK_ID = 'pacing-ampelkarten';
@@ -232,7 +232,7 @@ const autosaveState = vi.hoisted(() => ({
 const diagnosticsState = vi.hoisted(() => ({
   health: {
     status: 'ok',
-  } as { status: 'ok' | 'warning' | 'error' },
+  },
   resetAllLocalData: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -494,8 +494,7 @@ vi.mock('@rjsf/core', () => ({
             formData: {
               ...(formData ?? {}),
               meta: {
-                ...((formData?.meta as Record<string, unknown> | undefined) ??
-                  {}),
+                ...(formData?.meta ?? {}),
                 variant: 'child',
               },
             },
@@ -511,8 +510,7 @@ vi.mock('@rjsf/core', () => ({
             formData: {
               ...(formData ?? {}),
               meta: {
-                ...((formData?.meta as Record<string, unknown> | undefined) ??
-                  {}),
+                ...(formData?.meta ?? {}),
                 variant: 'adult',
               },
             },
@@ -527,16 +525,12 @@ vi.mock('@rjsf/core', () => ({
           onChange?.({
             formData: {
               meta: {
-                ...((formData?.meta as Record<string, unknown> | undefined) ??
-                  {}),
+                ...(formData?.meta ?? {}),
                 variant: 'adult',
               },
-              adult:
-                (formData?.adult as Record<string, unknown> | undefined) ?? {},
-              notes:
-                (formData?.notes as Record<string, unknown> | undefined) ?? {},
-              sender:
-                (formData?.sender as Record<string, unknown> | undefined) ?? {},
+              adult: formData?.adult ?? {},
+              notes: formData?.notes ?? {},
+              sender: formData?.sender ?? {},
             },
           })
         }
@@ -549,14 +543,11 @@ vi.mock('@rjsf/core', () => ({
           onChange?.({
             formData: {
               meta: {
-                ...((formData?.meta as Record<string, unknown> | undefined) ??
-                  {}),
+                ...(formData?.meta ?? {}),
                 variant: 'child',
               },
-              notes:
-                (formData?.notes as Record<string, unknown> | undefined) ?? {},
-              sender:
-                (formData?.sender as Record<string, unknown> | undefined) ?? {},
+              notes: formData?.notes ?? {},
+              sender: formData?.sender ?? {},
             },
           })
         }
@@ -1065,7 +1056,7 @@ describe('FormpackDetailPage', () => {
       ...formpackState.manifest,
       id: DOCTOR_LETTER_FORMPACK_ID,
       exports: [],
-    } as FormpackManifest;
+    };
 
     render(
       <TestRouter initialEntries={[DOCTOR_LETTER_ROUTE]}>
@@ -2154,7 +2145,7 @@ describe('FormpackDetailPage', () => {
       properties: {
         field: { type: 'string' },
       },
-    } as RJSFSchema;
+    };
 
     render(
       <TestRouter initialEntries={[FORMPACK_ROUTE]}>
@@ -2224,7 +2215,7 @@ describe('FormpackDetailPage', () => {
       properties: {
         field: { type: 'string' },
       },
-    } as RJSFSchema;
+    };
     formpackState.uiSchema = {
       field: {
         'ui:title': 'notfallpass.section.person.title',
@@ -2765,7 +2756,7 @@ describe('FormpackDetailPage', () => {
     formpackState.manifest = {
       ...formpackState.manifest,
       titleKey: '',
-    } as FormpackManifest;
+    };
 
     const payload = {
       version: 1,
@@ -3126,7 +3117,7 @@ describe('FormpackDetailPage', () => {
       titleKey: 'doctorLetterTitle',
       descriptionKey: 'doctorLetterDescription',
       exports: ['docx'],
-    } as FormpackManifest;
+    };
 
     render(
       <TestRouter initialEntries={[doctorLetterRoute]}>
@@ -3158,7 +3149,7 @@ describe('FormpackDetailPage', () => {
       titleKey: 'doctorLetterTitle',
       descriptionKey: 'doctorLetterDescription',
       exports: ['docx'],
-    } as FormpackManifest;
+    };
 
     render(
       <TestRouter initialEntries={[doctorLetterRoute]}>
@@ -3207,7 +3198,7 @@ describe('FormpackDetailPage', () => {
       titleKey: 'offlabelTitle',
       descriptionKey: 'offlabelDescription',
       exports: ['docx'],
-    } as FormpackManifest;
+    };
     formpackState.schema = {
       type: 'object',
       properties: {
@@ -3222,7 +3213,7 @@ describe('FormpackDetailPage', () => {
           },
         },
       },
-    } as RJSFSchema;
+    };
     formpackState.uiSchema = {
       request: {
         drug: {},
@@ -3277,7 +3268,7 @@ describe('FormpackDetailPage', () => {
       titleKey: 'offlabelTitle',
       descriptionKey: 'offlabelDescription',
       exports: ['docx'],
-    } as FormpackManifest;
+    };
     formpackState.schema = {
       type: 'object',
       properties: {
@@ -3293,7 +3284,7 @@ describe('FormpackDetailPage', () => {
           },
         },
       },
-    } as RJSFSchema;
+    };
     formpackState.uiSchema = {
       request: {
         drug: {},
@@ -3335,7 +3326,7 @@ describe('FormpackDetailPage', () => {
       titleKey: 'offlabelTitle',
       descriptionKey: 'offlabelDescription',
       exports: ['docx'],
-    } as FormpackManifest;
+    };
     formpackState.schema = {
       type: 'object',
       properties: {
@@ -3350,7 +3341,7 @@ describe('FormpackDetailPage', () => {
           },
         },
       },
-    } as RJSFSchema;
+    };
     formpackState.uiSchema = {
       request: {
         drug: {},
@@ -3392,7 +3383,7 @@ describe('FormpackDetailPage', () => {
       titleKey: 'offlabelTitle',
       descriptionKey: 'offlabelDescription',
       exports: ['docx'],
-    } as FormpackManifest;
+    };
     formpackState.schema = {
       type: 'object',
       properties: {
@@ -3407,7 +3398,7 @@ describe('FormpackDetailPage', () => {
           },
         },
       },
-    } as RJSFSchema;
+    };
     formpackState.uiSchema = {
       request: {
         drug: {},

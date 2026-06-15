@@ -193,7 +193,7 @@ describe('useFormpackLoader', () => {
       | undefined;
     mocked.loadFormpackAssets.mockReturnValue(
       new Promise((resolve) => {
-        resolveLoad = resolve as typeof resolveLoad;
+        resolveLoad = resolve;
       }),
     );
 

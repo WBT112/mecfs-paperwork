@@ -96,14 +96,8 @@ describe('docxLazy', () => {
     });
     const cancelIdleCallback = vi.fn();
 
-    vi.stubGlobal(
-      'requestIdleCallback',
-      requestIdleCallback as unknown as (...args: unknown[]) => number,
-    );
-    vi.stubGlobal(
-      'cancelIdleCallback',
-      cancelIdleCallback as unknown as (...args: unknown[]) => void,
-    );
+    vi.stubGlobal('requestIdleCallback', requestIdleCallback);
+    vi.stubGlobal('cancelIdleCallback', cancelIdleCallback as unknown);
 
     const cancel = scheduleDocxPreload(preloadTask);
 
@@ -128,10 +122,7 @@ describe('docxLazy', () => {
       return 13;
     });
 
-    vi.stubGlobal(
-      'requestIdleCallback',
-      requestIdleCallback as unknown as (...args: unknown[]) => number,
-    );
+    vi.stubGlobal('requestIdleCallback', requestIdleCallback);
 
     const cancel = scheduleDocxPreload(preloadTask);
     cancel();

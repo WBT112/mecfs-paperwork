@@ -136,7 +136,7 @@ describe('storage at-rest encryption', () => {
 
   it('allows setting a secure storage key cookie on https locations', async () => {
     const originalLocation = globalThis.location;
-    vi.stubGlobal('location', { protocol: 'https:' } as Location);
+    vi.stubGlobal('location', { protocol: 'https:' });
 
     try {
       const encrypted = await encryptStorageData({ secure: true });

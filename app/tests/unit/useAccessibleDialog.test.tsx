@@ -304,9 +304,7 @@ describe('useAccessibleDialog', () => {
 
   it('uses first element when Array.at fallback is unavailable', async () => {
     const onClose = vi.fn();
-    const atSpy = vi
-      .spyOn(Array.prototype, 'at')
-      .mockReturnValue(undefined as never);
+    const atSpy = vi.spyOn(Array.prototype, 'at').mockReturnValue(undefined);
 
     try {
       const { getByTestId } = render(

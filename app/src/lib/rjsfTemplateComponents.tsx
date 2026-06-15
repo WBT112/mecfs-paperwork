@@ -25,7 +25,7 @@ const isFormpackFormContext = (
     typeof context === 'object' &&
     context !== null &&
     't' in context &&
-    typeof (context as { t: unknown }).t === 'function'
+    typeof context.t === 'function'
   );
 };
 

@@ -182,7 +182,7 @@ describe('HelpPage', () => {
   });
 
   it('does nothing when clipboard API is not available', async () => {
-    vi.stubGlobal('navigator', {} as Navigator);
+    vi.stubGlobal('navigator', {});
 
     render(<HelpPage />);
     await screen.findByTestId(TID_SW_STATUS_SUPPORTED);
@@ -328,7 +328,7 @@ describe('HelpPage', () => {
 
   describe('service worker status display', () => {
     it('shows not supported when service worker API is unavailable', async () => {
-      vi.stubGlobal('navigator', {} as Navigator);
+      vi.stubGlobal('navigator', {});
 
       render(<HelpPage />);
 
@@ -487,7 +487,7 @@ describe('HelpPage', () => {
           },
         },
       );
-      vi.stubGlobal('navigator', throwingNavigator as Navigator);
+      vi.stubGlobal('navigator', throwingNavigator);
 
       render(<HelpPage />);
 

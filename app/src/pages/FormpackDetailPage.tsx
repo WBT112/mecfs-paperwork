@@ -413,17 +413,11 @@ export default function FormpackDetailPage() {
       setAssetRefreshVersion((value) => value + 1);
     };
 
-    globalThis.addEventListener(
-      FORMPACKS_UPDATED_EVENT,
-      handleUpdated as EventListener,
-    );
+    globalThis.addEventListener(FORMPACKS_UPDATED_EVENT, handleUpdated);
 
     return () => {
       guard.deactivate();
-      globalThis.removeEventListener(
-        FORMPACKS_UPDATED_EVENT,
-        handleUpdated as EventListener,
-      );
+      globalThis.removeEventListener(FORMPACKS_UPDATED_EVENT, handleUpdated);
     };
   }, [manifest?.id]);
 

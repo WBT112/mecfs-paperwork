@@ -118,12 +118,7 @@ describe('parseManifest', () => {
     );
 
     const unsupportedDefault = { ...validPayload, defaultLocale: 'fr' };
-    expect(() =>
-      parseManifest(
-        unsupportedDefault as FormpackManifestPayload,
-        TEST_FORMPACK_ID,
-      ),
-    ).toThrow(
+    expect(() => parseManifest(unsupportedDefault, TEST_FORMPACK_ID)).toThrow(
       new FormpackLoaderError(
         'unsupported',
         'The formpack manifest declares an unsupported default locale.',
@@ -192,10 +187,7 @@ describe('parseManifest', () => {
         mapping: DOCX_MAPPING_PATH,
       },
     };
-    const manifest = parseManifest(
-      payload as FormpackManifestPayload,
-      NOTFALLPASS_ID,
-    );
+    const manifest = parseManifest(payload, NOTFALLPASS_ID);
     expect(manifest.docx?.templates.a4).toBe(DOCX_A4_PATH);
   });
 
@@ -241,10 +233,7 @@ describe('parseManifest', () => {
       },
     };
 
-    const manifest = parseManifest(
-      payload as FormpackManifestPayload,
-      TEST_FORMPACK_ID,
-    );
+    const manifest = parseManifest(payload, TEST_FORMPACK_ID);
 
     expect(manifest.docx).toEqual({
       templates: { a4: DOCX_A4_PATH },
@@ -260,7 +249,7 @@ describe('parseManifest', () => {
           category: 'general',
           keywords: ['foo', 'bar'],
         },
-      } as FormpackManifestPayload,
+      },
       TEST_FORMPACK_ID,
     );
     expect(withBoth.meta).toEqual({
@@ -275,7 +264,7 @@ describe('parseManifest', () => {
           category: 'doctor',
           keywords: 123,
         },
-      } as unknown as FormpackManifestPayload,
+      },
       TEST_FORMPACK_ID,
     );
     expect(withCategoryOnly.meta).toEqual({ category: 'doctor' });
@@ -287,7 +276,7 @@ describe('parseManifest', () => {
           category: 'invalid-category',
           keywords: ['only-keywords'],
         },
-      } as unknown as FormpackManifestPayload,
+      },
       TEST_FORMPACK_ID,
     );
     expect(withKeywordsOnly.meta).toEqual({ keywords: ['only-keywords'] });
@@ -299,7 +288,7 @@ describe('parseManifest', () => {
           category: 'invalid-category',
           keywords: 123,
         },
-      } as unknown as FormpackManifestPayload,
+      },
       TEST_FORMPACK_ID,
     );
     expect(withInvalidMeta.meta).toBeUndefined();
@@ -314,10 +303,7 @@ describe('parseManifest', () => {
       },
     };
 
-    const manifest = parseManifest(
-      payload as FormpackManifestPayload,
-      TEST_FORMPACK_ID,
-    );
+    const manifest = parseManifest(payload, TEST_FORMPACK_ID);
 
     expect(manifest.ui).toEqual({
       showValidityBanner: true,
@@ -371,7 +357,7 @@ describe('formpack loader fetches', () => {
         json: async () => manifestFor(DOCTOR_LETTER_ID),
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const manifest = await loadFormpackManifest(DOCTOR_LETTER_ID);
     expect(manifest.id).toBe(DOCTOR_LETTER_ID);
@@ -379,7 +365,7 @@ describe('formpack loader fetches', () => {
 
   it('rejects unknown formpack ids before fetching resources', async () => {
     const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     await expect(
       loadFormpackManifest(UNKNOWN_FORMPACK_ID),
@@ -410,7 +396,7 @@ describe('formpack loader fetches', () => {
         json: async () => manifestFor(DOCTOR_LETTER_ID),
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const first = await loadFormpackManifest(DOCTOR_LETTER_ID);
     const second = await loadFormpackManifest(DOCTOR_LETTER_ID);
@@ -425,7 +411,7 @@ describe('formpack loader fetches', () => {
         error: new Error('offline'),
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     await expect(loadFormpackManifest(DOCTOR_LETTER_ID)).rejects.toMatchObject({
       code: 'network',
@@ -443,7 +429,7 @@ describe('formpack loader fetches', () => {
         status: 200,
         json: async () => manifestFor(DOCTOR_LETTER_ID),
       });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const manifestPromise = loadFormpackManifest(DOCTOR_LETTER_ID);
     await vi.runAllTimersAsync();
@@ -461,7 +447,7 @@ describe('formpack loader fetches', () => {
         status: 404,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     await expect(loadFormpackManifest(DOCTOR_LETTER_ID)).rejects.toMatchObject({
       code: 'not_found',
@@ -475,7 +461,7 @@ describe('formpack loader fetches', () => {
         },
       },
     });
-    vi.stubGlobal('fetch', invalidJsonFetch as unknown as typeof fetch);
+    vi.stubGlobal('fetch', invalidJsonFetch as unknown);
 
     await expect(loadFormpackManifest(DOCTOR_LETTER_ID)).rejects.toMatchObject({
       code: 'invalid',
@@ -490,7 +476,7 @@ describe('formpack loader fetches', () => {
         status: 500,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     await expect(loadFormpackManifest(DOCTOR_LETTER_ID)).rejects.toMatchObject({
       code: 'network',
@@ -509,7 +495,7 @@ describe('formpack loader fetches', () => {
         status: 404,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     await expect(loadFormpackSchema(DOCTOR_LETTER_ID)).resolves.toEqual({
       type: 'object',
@@ -528,7 +514,7 @@ describe('formpack loader fetches', () => {
         },
       },
     });
-    vi.stubGlobal('fetch', invalidJsonFetch as unknown as typeof fetch);
+    vi.stubGlobal('fetch', invalidJsonFetch as unknown);
 
     await expect(loadFormpackSchema(DOCTOR_LETTER_ID)).rejects.toMatchObject({
       code: 'schema_invalid',
@@ -540,7 +526,7 @@ describe('formpack loader fetches', () => {
         json: async () => 'not-an-object',
       },
     });
-    vi.stubGlobal('fetch', invalidShapeFetch as unknown as typeof fetch);
+    vi.stubGlobal('fetch', invalidShapeFetch as unknown);
 
     await expect(loadFormpackSchema(DOCTOR_LETTER_ID)).rejects.toMatchObject({
       code: 'schema_invalid',
@@ -551,7 +537,7 @@ describe('formpack loader fetches', () => {
         error: new Error('offline'),
       },
     });
-    vi.stubGlobal('fetch', offlineFetch as unknown as typeof fetch);
+    vi.stubGlobal('fetch', offlineFetch as unknown);
     vi.useFakeTimers();
 
     const schemaPromise = loadFormpackSchema(DOCTOR_LETTER_ID);
@@ -570,7 +556,7 @@ describe('formpack loader fetches', () => {
         status: 500,
       },
     });
-    vi.stubGlobal('fetch', nonOkFetch as unknown as typeof fetch);
+    vi.stubGlobal('fetch', nonOkFetch as unknown);
 
     await expect(loadFormpackSchema(DOCTOR_LETTER_ID)).rejects.toMatchObject({
       code: 'schema_unavailable',
@@ -584,7 +570,7 @@ describe('formpack loader fetches', () => {
         json: async () => ({ type: 'object', title: 'Schema' }),
       },
     });
-    vi.stubGlobal('fetch', cachedSchemaFetch as unknown as typeof fetch);
+    vi.stubGlobal('fetch', cachedSchemaFetch as unknown);
 
     const first = await loadFormpackSchema(DOCTOR_LETTER_ID);
     const second = await loadFormpackSchema(DOCTOR_LETTER_ID);
@@ -615,7 +601,7 @@ describe('formpack loader fetches', () => {
         }),
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const manifests = await listFormpacks();
     expect(manifests.map((manifest) => manifest.id)).toEqual([

@@ -71,7 +71,9 @@ const PdfExportDownloadHandler = ({
     error,
   });
 
-  providerStateRef.current = { blob, url, loading, error };
+  useEffect(() => {
+    providerStateRef.current = { blob, url, loading, error };
+  }, [blob, error, loading, url]);
 
   useEffect(() => {
     completedRef.current = false;

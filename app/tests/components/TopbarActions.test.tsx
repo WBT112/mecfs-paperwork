@@ -162,7 +162,7 @@ describe('TopbarActions', () => {
   it('shows manual copy fallback when clipboard API is unavailable', async () => {
     vi.stubGlobal('navigator', {
       share: undefined,
-    } as unknown as Navigator);
+    });
 
     renderActions(TEST_FORMPACK_PATH);
     fireEvent.click(screen.getByRole('button', { name: SHARE_LINK_LABEL }));

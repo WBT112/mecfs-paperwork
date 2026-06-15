@@ -450,10 +450,7 @@ describe('extractProfileData edge cases', () => {
       patient: { firstName: 123, lastName: true, city: 'Berlin' },
     };
 
-    const result = extractProfileData(
-      DOCTOR_LETTER,
-      formData as unknown as Record<string, unknown>,
-    );
+    const result = extractProfileData(DOCTOR_LETTER, formData);
 
     expect(result.patient).toEqual({ city: 'Berlin' });
   });
