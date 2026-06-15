@@ -34,7 +34,7 @@ describe('preloadDocxAssets', () => {
       }
       return Promise.resolve({ ok: false, status: 404 });
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     await preloadDocxAssets('testpack', manifest);
     expect(fetchMock).toHaveBeenCalledTimes(2);

@@ -66,7 +66,7 @@ const createLegacyMediaQueryList = (matches: boolean): MockMediaQueryList => {
       currentMatches = nextMatches;
       onchange?.({ matches: nextMatches } as MediaQueryListEvent);
     },
-  } as MockMediaQueryList;
+  };
 };
 
 const ThemeHarness = () => {

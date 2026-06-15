@@ -390,7 +390,7 @@ const appendOfflabelLiabilityFallbackToPart2 = (
 
   const clonedDocumentData = cloneTemplateValue(documentData) as DocumentModel;
   setPathValueMutableSafe(
-    clonedDocumentData as unknown as Record<string, unknown>,
+    clonedDocumentData,
     'arzt.paragraphs',
     mergedPart2Paragraphs,
   );
@@ -685,7 +685,7 @@ const getArrayItemSchema = (
   schemaNode: RJSFSchema | undefined,
 ): RJSFSchema | undefined => {
   const items = getFirstItem(schemaNode?.items) as unknown;
-  return isRecord(items) ? (items as RJSFSchema) : undefined;
+  return isRecord(items) ? items : undefined;
 };
 
 const getArrayItemUiSchema = (

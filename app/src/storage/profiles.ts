@@ -20,7 +20,7 @@ export const getProfile = async (id: string): Promise<ProfileEntry | null> => {
 
   return {
     ...persisted,
-    data: data as ProfileData,
+    data: data,
   };
 };
 
@@ -62,7 +62,7 @@ export const upsertProfile = async (
   let existingData: ProfileData = {};
   if (existing) {
     const decoded = await decodeStoredData(existing.data);
-    existingData = decoded.data as ProfileData;
+    existingData = decoded.data;
   }
 
   const merged = mergeProfileData(existingData, partial);
@@ -90,8 +90,8 @@ const mergeProfileData = (
   const result: ProfileData = { ...existing };
 
   for (const key of ['patient', 'doctor', 'insurer'] as const) {
-    const existingCategory = existing[key] as StringRecord | undefined;
-    const partialCategory = partial[key] as StringRecord | undefined;
+    const existingCategory = existing[key];
+    const partialCategory = partial[key];
 
     if (!partialCategory) {
       continue;
@@ -104,7 +104,7 @@ const mergeProfileData = (
       }
     }
 
-    result[key] = merged as ProfileData[typeof key];
+    result[key] = merged;
   }
 
   return result;

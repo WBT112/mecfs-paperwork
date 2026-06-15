@@ -134,7 +134,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => buffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const first = await loadDocxTemplate('pack-a', TEMPLATE_A4_PATH);
     const second = await loadDocxTemplate('pack-a', TEMPLATE_A4_PATH);
@@ -164,7 +164,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const schema: RJSFSchema = {
       type: 'object',
@@ -240,7 +240,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -286,7 +286,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -334,7 +334,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -384,7 +384,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -421,7 +421,7 @@ describe('docx export coverage', () => {
         json: async () => ({ fields: [] }),
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -468,7 +468,7 @@ describe('docx export coverage', () => {
         ok: false,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -496,7 +496,7 @@ describe('docx export coverage', () => {
         },
       },
     });
-    vi.stubGlobal('fetch', parseErrorFetch as unknown as typeof fetch);
+    vi.stubGlobal('fetch', parseErrorFetch as unknown);
 
     await expect(
       mapDocumentDataToTemplate('pack-h', 'a4', documentData, {
@@ -515,7 +515,7 @@ describe('docx export coverage', () => {
         },
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -563,7 +563,7 @@ describe('docx export coverage', () => {
           json: async () => payload,
         },
       });
-      vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+      vi.stubGlobal('fetch', fetchMock as unknown);
 
       await expect(
         mapDocumentDataToTemplate(`pack-m-${index}`, 'a4', documentData, {
@@ -584,7 +584,7 @@ describe('docx export coverage', () => {
         }),
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -619,7 +619,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const schema: RJSFSchema = {
       type: 'object',
@@ -683,7 +683,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const schema: RJSFSchema = {
       type: 'object',
@@ -754,7 +754,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -791,7 +791,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData: DocumentModel = {
       diagnosisParagraphs: [],
@@ -841,7 +841,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const schema: RJSFSchema = {
       type: 'object',
@@ -896,7 +896,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const schema: RJSFSchema = {
       type: 'object',
@@ -970,7 +970,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData = {
       diagnosisParagraphs: [],
@@ -1012,7 +1012,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const manifest: FormpackManifest = {
       id: 'pack-d',
@@ -1156,7 +1156,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     mocks.loadFormpackSchemaMock.mockResolvedValueOnce(undefined);
     mocks.loadFormpackUiSchemaMock.mockResolvedValueOnce(undefined);
@@ -1216,7 +1216,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const withMissingLiability = {
       arzt: {
@@ -1269,7 +1269,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData = {
       arzt: {
@@ -1307,7 +1307,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData = {
       arzt: {
@@ -1345,7 +1345,7 @@ describe('docx export coverage', () => {
         json: async () => mapping,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const documentData = {
       arzt: {
@@ -1388,7 +1388,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const workerListeners = new Map<string, (event: MessageEvent) => void>();
     class MockWorker {
@@ -1456,7 +1456,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const workerListeners = new Map<string, (event: MessageEvent) => void>();
     const workerConstructed = vi.fn();
@@ -1477,7 +1477,7 @@ describe('docx export coverage', () => {
       }
     }
 
-    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+    vi.stubGlobal('Worker', MockWorker);
 
     const manifest: FormpackManifest = {
       id: PACK_WORKER_SUCCESS_ID,
@@ -1539,7 +1539,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const workerListeners = new Map<string, (event: MessageEvent) => void>();
     class MockWorker {
@@ -1552,7 +1552,7 @@ describe('docx export coverage', () => {
       }
     }
 
-    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+    vi.stubGlobal('Worker', MockWorker);
 
     const manifest: FormpackManifest = {
       id: 'pack-worker-error',
@@ -1603,7 +1603,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const workerListeners = new Map<string, (event: MessageEvent) => void>();
     class MockWorker {
@@ -1618,7 +1618,7 @@ describe('docx export coverage', () => {
       }
     }
 
-    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+    vi.stubGlobal('Worker', MockWorker);
 
     const manifest: FormpackManifest = {
       id: 'pack-worker-message-error',
@@ -1669,7 +1669,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     class MockWorker {
       addEventListener() {
@@ -1681,7 +1681,7 @@ describe('docx export coverage', () => {
       }
     }
 
-    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+    vi.stubGlobal('Worker', MockWorker);
 
     const manifest: FormpackManifest = {
       id: 'pack-worker-throw',
@@ -1732,7 +1732,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     class MockWorker {
       addEventListener() {
@@ -1744,7 +1744,7 @@ describe('docx export coverage', () => {
       }
     }
 
-    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+    vi.stubGlobal('Worker', MockWorker);
 
     const manifest: FormpackManifest = {
       id: 'pack-worker-throw-string',
@@ -1795,7 +1795,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     class MockWorker {
       addEventListener() {
@@ -1807,7 +1807,7 @@ describe('docx export coverage', () => {
       }
     }
 
-    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+    vi.stubGlobal('Worker', MockWorker);
 
     const manifest: FormpackManifest = {
       id: 'pack-nonrecord-t',
@@ -1858,7 +1858,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const workerListeners = new Map<string, (event: MessageEvent) => void>();
     class MockWorker {
@@ -1873,7 +1873,7 @@ describe('docx export coverage', () => {
       }
     }
 
-    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+    vi.stubGlobal('Worker', MockWorker);
 
     const manifest: FormpackManifest = {
       id: 'pack-worker-messageerror',
@@ -1924,7 +1924,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => templateBuffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     const workerListeners = new Map<string, (event: MessageEvent) => void>();
     class MockWorker {
@@ -1942,7 +1942,7 @@ describe('docx export coverage', () => {
       }
     }
 
-    vi.stubGlobal('Worker', MockWorker as unknown as typeof Worker);
+    vi.stubGlobal('Worker', MockWorker);
 
     const manifest: FormpackManifest = {
       id: 'pack-worker-unknown-id',
@@ -1988,7 +1988,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => new Uint8Array([1]).buffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     await preloadDocxAssets('pack-f', {
       templates: { a4: TEMPLATE_A4_PATH },
@@ -2013,7 +2013,7 @@ describe('docx export coverage', () => {
         arrayBuffer: async () => new Uint8Array([7]).buffer,
       },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     await preloadDocxAssets('pack-preload-repeat', {
       templates: {
@@ -2035,7 +2035,7 @@ describe('docx export coverage', () => {
     const fetchMock = buildFetchMock({
       [`${FORMPACKS_BASE}/pack-j/${TEMPLATE_A4_PATH}`]: { ok: false },
     });
-    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    vi.stubGlobal('fetch', fetchMock as unknown);
 
     await expect(loadDocxTemplate('pack-j', TEMPLATE_A4_PATH)).rejects.toThrow(
       'Unable to load DOCX template',

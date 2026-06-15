@@ -34,13 +34,7 @@ const EXAMPLE_CONTACT = '+49 123';
 describe('mapDocumentDataToTemplate', () => {
   beforeAll(() => {
     if (!i18n.hasResourceBundle('en', namespace)) {
-      i18n.addResourceBundle(
-        'en',
-        namespace,
-        enTranslations as Record<string, string>,
-        true,
-        true,
-      );
+      i18n.addResourceBundle('en', namespace, enTranslations, true, true);
     }
   });
 

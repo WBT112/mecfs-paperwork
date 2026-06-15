@@ -263,9 +263,9 @@ const hasReadonlySchema = (schema: RJSFSchema): boolean =>
 const resolveArrayItemSchema = (schema: RJSFSchema): RJSFSchema | null => {
   if (Array.isArray(schema.items)) {
     const first = schema.items[0];
-    return isRecord(first) ? (first as RJSFSchema) : null;
+    return isRecord(first) ? first : null;
   }
-  return isRecord(schema.items) ? (schema.items as RJSFSchema) : null;
+  return isRecord(schema.items) ? schema.items : null;
 };
 
 const resolveArrayItemUiSchema = (uiSchema: unknown): unknown => {
@@ -383,7 +383,7 @@ const buildObjectValue = (
     const childUiSchema = isRecord(uiSchema) ? uiSchema[key] : undefined;
     const childPath = [...path, key];
     const childValue = buildValue(
-      childSchemaNode as RJSFSchema,
+      childSchemaNode,
       childUiSchema,
       options,
       childPath,

@@ -28,7 +28,7 @@ describe('buildRandomDummyPatch', () => {
           properties: {
             [fieldName]: fieldSchema,
           },
-        } as RJSFSchema,
+        },
         {} as UiSchema,
         { rng: () => rngValue },
       );
@@ -421,7 +421,7 @@ describe('buildRandomDummyPatch', () => {
         properties: {
           contactEmail: { type: 'string', format: 'email' },
         },
-      } as RJSFSchema,
+      },
       {} as UiSchema,
       { rng: () => 0.4 },
     );
@@ -465,7 +465,7 @@ describe('buildRandomDummyPatch', () => {
           nestedObject: { type: 'object' },
           unknownType: { type: ['null'] },
         },
-      } as RJSFSchema,
+      },
       {} as UiSchema,
       { rng: () => 0.25 },
     );

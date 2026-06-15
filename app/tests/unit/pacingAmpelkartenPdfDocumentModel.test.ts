@@ -15,22 +15,10 @@ const EXPORTED_AT_ISO = '2026-03-09T10:00:00.000Z';
 describe('buildPacingAmpelkartenPdfDocumentModel', () => {
   beforeAll(() => {
     if (!i18n.hasResourceBundle('de', namespace)) {
-      i18n.addResourceBundle(
-        'de',
-        namespace,
-        deTranslations as Record<string, string>,
-        true,
-        true,
-      );
+      i18n.addResourceBundle('de', namespace, deTranslations, true, true);
     }
     if (!i18n.hasResourceBundle('en', namespace)) {
-      i18n.addResourceBundle(
-        'en',
-        namespace,
-        enTranslations as Record<string, string>,
-        true,
-        true,
-      );
+      i18n.addResourceBundle('en', namespace, enTranslations, true, true);
     }
   });
 
@@ -127,7 +115,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
             red: {},
           },
         },
-      } as unknown as Record<string, unknown>,
+      },
       locale: 'en',
       exportedAt: new Date('2026-03-09T11:00:00.000Z'),
     });

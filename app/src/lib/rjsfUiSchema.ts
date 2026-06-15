@@ -72,7 +72,7 @@ export const applyArrayUiSchemaDefaults = (
     }
 
     const nextItems = applyArrayItemDefaults(
-      schema.items as RJSFSchema | boolean,
+      schema.items,
       (nextSchema.items as UiSchema | undefined) ?? undefined,
     );
 

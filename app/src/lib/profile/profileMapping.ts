@@ -141,16 +141,8 @@ export const extractProfileData = (
   switch (formpackId) {
     case 'doctor-letter': {
       return {
-        patient: extractCategory(
-          formData,
-          'patient',
-          PATIENT_FIELDS_BASIC,
-        ) as ProfileData['patient'],
-        doctor: extractCategory(
-          formData,
-          'doctor',
-          DOCTOR_FIELDS_FULL,
-        ) as ProfileData['doctor'],
+        patient: extractCategory(formData, 'patient', PATIENT_FIELDS_BASIC),
+        doctor: extractCategory(formData, 'doctor', DOCTOR_FIELDS_FULL),
       };
     }
     case 'offlabel-antrag': {
@@ -159,17 +151,9 @@ export const extractProfileData = (
           formData,
           'patient',
           PATIENT_FIELDS_WITH_ADDRESS,
-        ) as ProfileData['patient'],
-        doctor: extractCategory(
-          formData,
-          'doctor',
-          DOCTOR_FIELDS_FULL,
-        ) as ProfileData['doctor'],
-        insurer: extractCategory(
-          formData,
-          'insurer',
-          INSURER_FIELDS,
-        ) as ProfileData['insurer'],
+        ),
+        doctor: extractCategory(formData, 'doctor', DOCTOR_FIELDS_FULL),
+        insurer: extractCategory(formData, 'insurer', INSURER_FIELDS),
       };
     }
     case 'notfallpass': {

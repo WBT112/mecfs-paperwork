@@ -54,11 +54,11 @@ const formpackState = vi.hoisted(
         templates: { a4: testConstants.TEMPLATE_A4 },
         mapping: testConstants.DOCX_MAPPING_PATH,
       },
-    } as FormpackManifest,
+    },
     schema: {
       type: 'object',
       properties: {},
-    } as RJSFSchema,
+    },
     uiSchema: {} as UiSchema,
   }),
 );
@@ -99,7 +99,7 @@ const storageState = vi.hoisted(
     return {
       record,
       records: [record],
-      activeRecord: record as typeof record | null,
+      activeRecord: record,
       isRecordsLoading: false,
       hasLoaded: true,
       recordsError: null as string | null,
@@ -139,7 +139,7 @@ const visibilityState = vi.hoisted(() => ({
 }));
 
 const localeState = vi.hoisted(() => ({
-  locale: 'de' as 'de' | 'en',
+  locale: 'de',
 }));
 
 const offlabelPreviewState = vi.hoisted(() => ({
@@ -187,8 +187,8 @@ const translationState = vi.hoisted(() => ({
   appCommonClose: null as string | null,
 }));
 
-const rjsfRenderState = vi.hoisted(() => ({
-  lastTemplates: null as unknown,
+const rjsfRenderState = vi.hoisted((): { lastTemplates: unknown } => ({
+  lastTemplates: null,
 }));
 
 const ARIA_EXPANDED = 'aria-expanded';
@@ -710,7 +710,7 @@ describe('FormpackDetailPage', () => {
       properties: {
         visibleText: { type: 'string' },
       },
-    } as RJSFSchema;
+    };
     formpackState.uiSchema = {};
     const patchSpy = vi
       .spyOn(devDummyFill, 'buildRandomDummyPatch')
@@ -1842,7 +1842,7 @@ describe('FormpackDetailPage', () => {
     formpackState.manifest = {
       ...formpackState.manifest,
       titleKey: '',
-    } as FormpackManifest;
+    };
     storageState.createRecord.mockResolvedValue(record);
 
     render(
@@ -1932,7 +1932,7 @@ describe('FormpackDetailPage', () => {
     formpackState.manifest = {
       ...formpackState.manifest,
       titleKey: '',
-    } as FormpackManifest;
+    };
     storageState.activeRecord = null;
     storageState.createRecord.mockResolvedValue(createdRecord);
 

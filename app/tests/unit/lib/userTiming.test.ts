@@ -44,7 +44,7 @@ describe('startUserTiming', () => {
       mark,
       measure: vi.fn(),
       clearMarks: vi.fn(),
-    } as Performance);
+    });
 
     const timing = startUserTiming(USER_TIMING_NAMES.exportPdfTotal);
 

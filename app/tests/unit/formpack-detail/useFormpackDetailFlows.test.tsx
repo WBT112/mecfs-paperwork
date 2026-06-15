@@ -367,6 +367,9 @@ describe('formpack detail flow hooks', () => {
       .mockResolvedValueOnce({ ...RECORD, data: { overwrite: 2 } })
       .mockRejectedValueOnce(new Error('storage failed'));
 
+    const initialProps: { activeRecord: RecordEntry | null } = {
+      activeRecord: RECORD,
+    };
     const { result, rerender } = renderHook(
       ({ activeRecord }: { activeRecord: RecordEntry | null }) =>
         useImportFlow({
@@ -386,7 +389,7 @@ describe('formpack detail flow hooks', () => {
           title: '',
         }),
       {
-        initialProps: { activeRecord: RECORD as RecordEntry | null },
+        initialProps,
       },
     );
 
@@ -635,6 +638,9 @@ describe('formpack detail flow hooks', () => {
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(false);
 
+    const initialProps: { activeRecord: RecordEntry | null } = {
+      activeRecord: RECORD,
+    };
     const { result, rerender } = renderHook(
       ({ activeRecord }: { activeRecord: RecordEntry | null }) =>
         useSnapshotManager({
@@ -656,7 +662,7 @@ describe('formpack detail flow hooks', () => {
           updateActiveRecord,
         }),
       {
-        initialProps: { activeRecord: RECORD as RecordEntry | null },
+        initialProps,
       },
     );
 

@@ -16,7 +16,7 @@ describe('getStorageEncryptionCookieDiagnostics', () => {
 
   it('reports missing key-cookie when cookie string is empty', () => {
     const originalDocument = globalThis.document;
-    vi.stubGlobal('document', { cookie: '' } as Document);
+    vi.stubGlobal('document', { cookie: '' });
 
     try {
       const diagnostics = getStorageEncryptionCookieDiagnostics();
@@ -37,7 +37,7 @@ describe('getStorageEncryptionCookieDiagnostics', () => {
 
   it('reports missing key-cookie when only unrelated cookie entries exist', () => {
     const originalDocument = globalThis.document;
-    vi.stubGlobal('document', { cookie: 'other-cookie=value' } as Document);
+    vi.stubGlobal('document', { cookie: 'other-cookie=value' });
 
     try {
       const diagnostics = getStorageEncryptionCookieDiagnostics();
@@ -49,7 +49,7 @@ describe('getStorageEncryptionCookieDiagnostics', () => {
 
   it('reports https context when protocol is https', () => {
     const originalLocation = globalThis.location;
-    vi.stubGlobal('location', { protocol: 'https:' } as Location);
+    vi.stubGlobal('location', { protocol: 'https:' });
 
     try {
       const diagnostics = getStorageEncryptionCookieDiagnostics();
@@ -61,7 +61,7 @@ describe('getStorageEncryptionCookieDiagnostics', () => {
 
   it('reports non-https context when protocol is not https', () => {
     const originalLocation = globalThis.location;
-    vi.stubGlobal('location', { protocol: 'http:' } as Location);
+    vi.stubGlobal('location', { protocol: 'http:' });
 
     try {
       const diagnostics = getStorageEncryptionCookieDiagnostics();
