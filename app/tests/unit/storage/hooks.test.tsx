@@ -427,6 +427,7 @@ describe('storage hooks', () => {
       getLatest()?.applyRecordUpdate(recordToDelete);
       getLatest()?.setActiveRecord(recordActive);
     });
+    const recordsBeforeDelete = getLatest()?.records;
 
     let result: boolean | undefined;
     await act(async () => {
@@ -434,7 +435,7 @@ describe('storage hooks', () => {
     });
 
     expect(result).toBe(false);
-    expect(getLatest()?.records).toEqual([recordActive, recordToDelete]);
+    expect(getLatest()?.records).toBe(recordsBeforeDelete);
   });
 
   it('keeps a concurrently switched active record during refresh', async () => {
