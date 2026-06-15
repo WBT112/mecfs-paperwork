@@ -85,6 +85,8 @@
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.54.0",
+    "@emnapi/core": "1.11.1",
+    "@emnapi/runtime": "1.11.1",
       "@vitejs/plugin-react": "^6.0.2",
       "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^9.39.3",
@@ -113,6 +115,9 @@
     "vitest": "^4.0.16"
   },
   "overrides": {
+    "@emnapi/core": "1.11.1",
+    "@emnapi/runtime": "1.11.1",
+    "@emnapi/wasi-threads": "1.2.2",
     "@isaacs/brace-expansion": "^5.0.1",
     "brace-expansion@<1.1.13": "^2.0.3",
     "brace-expansion@>=4.0.0 <5.0.5": "^5.0.5",
