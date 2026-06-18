@@ -129,14 +129,26 @@ const AGOMELATIN_BFARM_TITLE_DE =
   'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Agomelatin zur Behandlung der Fatigue bei postinfektiöser myalgischer Enzephalomyelitis/Chronischem Fatigue-Syndrom (ME/CFS) und bei Long/Post-COVID (Stand 02.12.2025).';
 const AGOMELATIN_BFARM_TITLE_EN =
   'Assessment by the Long COVID Off-Label-Use Expert Group under Section 35c para. 1 SGB V on the use of agomelatine for the treatment of fatigue in post-infectious myalgic encephalomyelitis/chronic fatigue syndrome (ME/CFS) and in long/post-COVID (status 2025-12-02).';
+const AGOMELATIN_GBA_ANLAGE_VI_STATUS_DE =
+  'G-BA-Beschluss zur Aufnahme von Agomelatin in Anlage VI der Arzneimittel-Richtlinie; im Bundesanzeiger veröffentlicht und seit 11.06.2026 in Kraft.';
+const AGOMELATIN_GBA_ANLAGE_VI_STATUS_EN =
+  'G-BA resolution to include agomelatine in Annex VI of the German Medicines Directive; published in the Federal Gazette and in force since 2026-06-11.';
 const IVABRADINE_BFARM_TITLE_DE =
   'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Ivabradin bei Patientinnen und Patienten mit COVID-19-assoziiertem Posturalem orthostatischem Tachykardiesyndrom (PoTS), die eine Therapie mit Betablockern nicht tolerieren oder für diese nicht geeignet sind (Stand 15.10.2025).';
 const IVABRADINE_BFARM_TITLE_EN =
   'Assessment by the Long COVID Off-Label-Use Expert Group under Section 35c para. 1 SGB V on the use of ivabradine in patients with COVID-19-associated postural orthostatic tachycardia syndrome (PoTS) who do not tolerate beta-blocker therapy or are not suitable for it (status 2025-10-15).';
+const IVABRADINE_GBA_ANLAGE_VI_STATUS_DE =
+  'G-BA-Beschluss zur Aufnahme von Ivabradin in Anlage VI der Arzneimittel-Richtlinie; im Bundesanzeiger veröffentlicht und seit 11.06.2026 in Kraft.';
+const IVABRADINE_GBA_ANLAGE_VI_STATUS_EN =
+  'G-BA resolution to include ivabradine in Annex VI of the German Medicines Directive; published in the Federal Gazette and in force since 2026-06-11.';
 const VORTIOXETINE_BFARM_TITLE_DE =
   'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Vortioxetin bei kognitiven Beeinträchtigungen und/oder depressiven Symptomen im Rahmen von Long/Post-COVID (Stand 15.10.2025).';
 const VORTIOXETINE_BFARM_TITLE_EN =
   'Assessment by the Long COVID Off-Label-Use Expert Group under Section 35c para. 1 SGB V on the use of vortioxetine for cognitive impairment and/or depressive symptoms in long/post-COVID (status 2025-10-15).';
+const VORTIOXETINE_GBA_ANLAGE_VI_STATUS_DE =
+  'G-BA-Beschluss zur Aufnahme von Vortioxetin in Anlage VI der Arzneimittel-Richtlinie; im Bundesanzeiger veröffentlicht und seit 11.06.2026 in Kraft.';
+const VORTIOXETINE_GBA_ANLAGE_VI_STATUS_EN =
+  'G-BA resolution to include vortioxetine in Annex VI of the German Medicines Directive; published in the Federal Gazette and in force since 2026-06-11.';
 
 const createIndication = (
   key: string,
@@ -241,8 +253,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.agomelatine',
     expertSourceDate: '02.12.2025',
     expertSourceTextOverride: {
-      de: AGOMELATIN_BFARM_TITLE_DE,
-      en: AGOMELATIN_BFARM_TITLE_EN,
+      de: `${AGOMELATIN_BFARM_TITLE_DE} ${AGOMELATIN_GBA_ANLAGE_VI_STATUS_DE}`,
+      en: `${AGOMELATIN_BFARM_TITLE_EN} ${AGOMELATIN_GBA_ANLAGE_VI_STATUS_EN}`,
     },
     indications: [
       createTupleIndication(
@@ -302,8 +314,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.ivabradine',
     expertSourceDate: '15.10.2025',
     expertSourceTextOverride: {
-      de: IVABRADINE_BFARM_TITLE_DE,
-      en: IVABRADINE_BFARM_TITLE_EN,
+      de: `${IVABRADINE_BFARM_TITLE_DE} ${IVABRADINE_GBA_ANLAGE_VI_STATUS_DE}`,
+      en: `${IVABRADINE_BFARM_TITLE_EN} ${IVABRADINE_GBA_ANLAGE_VI_STATUS_EN}`,
     },
     indications: [
       createTupleIndication(
@@ -346,8 +358,8 @@ const MEDICATION_INPUTS: readonly StandardMedicationInput[] = [
     infoBoxI18nKey: 'offlabel-antrag.ui.infobox.drug.vortioxetine',
     expertSourceDate: '15.10.2025',
     expertSourceTextOverride: {
-      de: VORTIOXETINE_BFARM_TITLE_DE,
-      en: VORTIOXETINE_BFARM_TITLE_EN,
+      de: `${VORTIOXETINE_BFARM_TITLE_DE} ${VORTIOXETINE_GBA_ANLAGE_VI_STATUS_DE}`,
+      en: `${VORTIOXETINE_BFARM_TITLE_EN} ${VORTIOXETINE_GBA_ANLAGE_VI_STATUS_EN}`,
     },
     indications: [
       createTupleIndication(

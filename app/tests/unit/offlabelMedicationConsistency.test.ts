@@ -39,6 +39,17 @@ describe('offlabel medication source consistency', () => {
       'Bewertung der Expertengruppe Long COVID Off-Label-Use nach § 35 c Abs. 1 SGB V zur Anwendung von Vortioxetin',
     );
 
+    for (const source of [
+      agomelatinSource,
+      ivabradineSource,
+      vortioxetineSource,
+    ]) {
+      expect(source).toContain('G-BA-Beschluss zur Aufnahme');
+      expect(source).toContain(
+        'im Bundesanzeiger veröffentlicht und seit 11.06.2026 in Kraft',
+      );
+    }
+
     expect(agomelatinSource).not.toContain(
       'Bewertung Agomelatin – Expertengruppe Long COVID Off-Label-Use beim BfArM',
     );
