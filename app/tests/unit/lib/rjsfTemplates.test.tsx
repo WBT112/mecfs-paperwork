@@ -8,7 +8,6 @@ import {
   type ArrayFieldTemplateProps,
   type ArrayFieldTitleProps,
   type IconButtonProps,
-  type PathSchema,
   type Registry,
   type RJSFSchema,
   type UiSchema,
@@ -127,9 +126,7 @@ const mockValidator: ValidatorType = {
 type SchemaValue = RJSFSchema;
 
 const toSchemaValue = (value: unknown): SchemaValue =>
-  value && typeof value === 'object'
-    ? (value as RJSFSchema)
-    : ({} as RJSFSchema);
+  value && typeof value === 'object' ? value : {};
 
 const mockSchemaUtils: Registry['schemaUtils'] = {
   getRootSchema: () => ({}),
@@ -149,7 +146,7 @@ const mockSchemaUtils: Registry['schemaUtils'] = {
   retrieveSchema: (schema) => toSchemaValue(schema),
   sanitizeDataForNewSchema: (_newSchema, _oldSchema, data) =>
     toSchemaValue(data),
-  toPathSchema: () => ({}) as PathSchema,
+  toPathSchema: () => ({ $name: '' }),
 };
 
 const createRegistry = ({

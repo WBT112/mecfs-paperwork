@@ -17,7 +17,7 @@ export const useStorageHealth = (): {
   loading: boolean;
   refresh: () => void;
 } => {
-  const [health, setHealth] = useState<StorageHealthInfo>(INITIAL_STATE);
+  const [health, setHealth] = useState(INITIAL_STATE);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 

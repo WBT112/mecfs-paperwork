@@ -106,7 +106,7 @@ export const getPathValue = (source: unknown, path: string): unknown => {
     return undefined;
   }
 
-  return segments.reduce<unknown>((current, segment) => {
+  return segments.reduce((current: unknown, segment) => {
     if (Array.isArray(current)) {
       if (!isArraySegment(segment)) {
         return undefined;

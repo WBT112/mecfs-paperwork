@@ -11,16 +11,6 @@ import {
   summarizeAudit,
 } from '../../../tools/npm-health.mjs';
 
-type WarningType = 'deprecated' | 'peer' | 'engine' | 'other';
-type WarningEntry = {
-  type: WarningType;
-  message: string;
-};
-type WarningsReport = {
-  total: number;
-  byType: Record<WarningType, number>;
-  warnings: WarningEntry[];
-};
 type AuditSummary = {
   counts: Record<'low' | 'moderate' | 'high' | 'critical', number>;
   packages: Array<{
@@ -30,56 +20,15 @@ type AuditSummary = {
     fixAvailable: boolean;
   }>;
 };
-type BuildWarningsMarkdownInput = {
-  report: WarningsReport;
-  missingLog: boolean;
-  limit: number;
-};
-type BuildAuditMarkdownInput = {
-  summary: AuditSummary;
-  missingAudit: boolean;
-  limit: number;
-};
-type PolicyResult = {
-  warningsOverBudget: boolean;
-  highFindings: boolean;
-  shouldFail: boolean;
-};
-type BuildHealthSummaryInput = {
-  warningsMarkdown: string;
-  auditMarkdown: string;
-  policy: PolicyResult;
-  warningsBudget: number;
-  failOnHigh: boolean;
-};
 
-const classifyWarningLineTyped = classifyWarningLine as unknown as (
-  line: string,
-) => WarningType;
-const parseInstallLogTyped = parseInstallLog as unknown as (
-  content: string,
-) => WarningEntry[];
-const buildWarningsReportTyped = buildWarningsReport as unknown as (
-  warnings: WarningEntry[],
-) => WarningsReport;
-const buildWarningsMarkdownTyped = buildWarningsMarkdown as unknown as (
-  input: BuildWarningsMarkdownInput,
-) => string;
-const summarizeAuditTyped = summarizeAudit as unknown as (
-  audit: unknown,
-) => AuditSummary;
-const buildAuditMarkdownTyped = buildAuditMarkdown as unknown as (
-  input: BuildAuditMarkdownInput,
-) => string;
-const evaluatePoliciesTyped = evaluatePolicies as unknown as (input: {
-  warningsReport: WarningsReport;
-  auditSummary: AuditSummary;
-  warningsBudget: number;
-  failOnHigh: boolean;
-}) => PolicyResult;
-const buildHealthSummaryTyped = buildHealthSummary as unknown as (
-  input: BuildHealthSummaryInput,
-) => string;
+const classifyWarningLineTyped = classifyWarningLine;
+const parseInstallLogTyped = parseInstallLog;
+const buildWarningsReportTyped = buildWarningsReport;
+const buildWarningsMarkdownTyped = buildWarningsMarkdown;
+const summarizeAuditTyped = summarizeAudit;
+const buildAuditMarkdownTyped = buildAuditMarkdown;
+const evaluatePoliciesTyped = evaluatePolicies;
+const buildHealthSummaryTyped = buildHealthSummary;
 
 describe('npm health helpers', () => {
   const WARN_DEPRECATED = 'npm WARN deprecated foo';

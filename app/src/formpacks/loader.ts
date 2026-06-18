@@ -8,7 +8,6 @@ import {
   type FormpackManifest,
   type FormpackManifestPayload,
   type FormpackMeta,
-  type FormpackUiConfig,
   type FormpackVisibility,
 } from './types';
 
@@ -287,9 +286,7 @@ export const parseManifest = (
     exports,
     visibility,
     docx,
-    ui: isRecord(payload.ui)
-      ? (payload.ui as unknown as FormpackUiConfig)
-      : undefined,
+    ui: isRecord(payload.ui) ? payload.ui : undefined,
     meta,
   };
 };

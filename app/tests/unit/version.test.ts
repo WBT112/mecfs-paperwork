@@ -5,8 +5,8 @@ const INVALID_DATE = 'not-a-date';
 
 const importVersionModule = async (appVersion: unknown, buildDate: unknown) => {
   vi.resetModules();
-  vi.stubGlobal('__APP_VERSION__', appVersion as string);
-  vi.stubGlobal('__BUILD_DATE__', buildDate as string);
+  vi.stubGlobal('__APP_VERSION__', appVersion);
+  vi.stubGlobal('__BUILD_DATE__', buildDate);
   return import('../../src/lib/version');
 };
 

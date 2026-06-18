@@ -6,10 +6,7 @@ const BUNDLE_FILENAME = 'mecfs-support-bundle.json';
 
 const redactDiagnosticsBundle = (
   bundle: DiagnosticsBundle,
-): DiagnosticsBundle =>
-  redactObject(
-    bundle as unknown as Record<string, unknown>,
-  ) as DiagnosticsBundle;
+): DiagnosticsBundle => redactObject(bundle) as DiagnosticsBundle;
 
 export const generateDiagnosticsBundle = async (): Promise<DiagnosticsBundle> =>
   redactDiagnosticsBundle(await collectDiagnosticsBundle());

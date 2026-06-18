@@ -145,22 +145,10 @@ const createTemplateData = (
 describe('NotfallpassPdfDocument', () => {
   beforeAll(() => {
     if (!i18n.hasResourceBundle('de', namespace)) {
-      i18n.addResourceBundle(
-        'de',
-        namespace,
-        deTranslations as Record<string, string>,
-        true,
-        true,
-      );
+      i18n.addResourceBundle('de', namespace, deTranslations, true, true);
     }
     if (!i18n.hasResourceBundle('en', namespace)) {
-      i18n.addResourceBundle(
-        'en',
-        namespace,
-        enTranslations as Record<string, string>,
-        true,
-        true,
-      );
+      i18n.addResourceBundle('en', namespace, enTranslations, true, true);
     }
   });
 

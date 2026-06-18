@@ -84,7 +84,7 @@ const loadFormpackAssets = async (
 
   return {
     manifest,
-    schema: schemaData as RJSFSchema,
+    schema: schemaData,
     uiSchema: uiSchemaData as UiSchema,
     errorMessage: null,
   };

@@ -192,12 +192,12 @@ describe('formpack detail helpers', () => {
 
     mocked.normalizeDecisionAnswers.mockReturnValue({});
     mocked.resolveDecisionTree.mockReturnValue({ caseId: 1 });
-    expect(detail.shouldHideCase0Result({} as never)).toBe(false);
+    expect(detail.shouldHideCase0Result({})).toBe(false);
     mocked.resolveDecisionTree.mockReturnValue({ caseId: 0 });
     mocked.isCompletedCase0Path.mockReturnValue(true);
-    expect(detail.shouldHideCase0Result({} as never)).toBe(false);
+    expect(detail.shouldHideCase0Result({})).toBe(false);
     mocked.isCompletedCase0Path.mockReturnValue(false);
-    expect(detail.shouldHideCase0Result({} as never)).toBe(true);
+    expect(detail.shouldHideCase0Result({})).toBe(true);
 
     const existingDecisionUi = {
       q2: {},
@@ -401,7 +401,7 @@ describe('formpack detail helpers', () => {
 
     expect(
       detail.buildOfflabelFormSchema(
-        { type: 'object' } as RJSFSchema,
+        { type: 'object' },
         { request: {} },
         false,
       ),
@@ -450,17 +450,17 @@ describe('formpack detail helpers', () => {
 
     const structuredCloneSpy = vi
       .spyOn(globalThis, 'structuredClone')
-      .mockReturnValueOnce({} as RJSFSchema)
+      .mockReturnValueOnce({})
       .mockReturnValueOnce({
         type: 'object',
         properties: {},
-      } as RJSFSchema)
+      })
       .mockReturnValueOnce({
         type: 'object',
         properties: {
           request: { type: 'object', properties: {} },
         },
-      } as RJSFSchema);
+      });
     try {
       expect(
         detail.buildOfflabelFormSchema(
@@ -491,7 +491,7 @@ describe('formpack detail helpers', () => {
   it('orders keys, labels, and paths for preview rendering', () => {
     expect(
       detail.getOrderedKeys(
-        { type: 'object', properties: { b: {}, a: {} } } as RJSFSchema,
+        { type: 'object', properties: { b: {}, a: {} } },
         { 'ui:order': ['a', '*'] } as UiSchema,
         { c: 1 },
       ),
@@ -499,9 +499,7 @@ describe('formpack detail helpers', () => {
     expect(
       detail.getUiSchemaNode({ foo: { 'ui:title': 'Foo' } }, 'foo'),
     ).toEqual({ 'ui:title': 'Foo' });
-    expect(
-      detail.getItemSchema({ items: [{ type: 'string' }] } as RJSFSchema),
-    ).toBeDefined();
+    expect(detail.getItemSchema({ items: [{ type: 'string' }] })).toBeDefined();
     expect(
       detail.getItemUiSchema({
         items: [{ 'ui:title': 'x' }],
@@ -512,25 +510,21 @@ describe('formpack detail helpers', () => {
     expect(detail.normalizeParagraphs(null)).toEqual([]);
     expect(detail.getLabel('fallback', undefined, undefined)).toBe('fallback');
     expect(
-      detail.getLabel(
-        'fallback',
-        { title: 'Schema title' } as RJSFSchema,
-        undefined,
-      ),
+      detail.getLabel('fallback', { title: 'Schema title' }, undefined),
     ).toBe('Schema title');
   });
 
   it('covers offlabel schema and ordering fallback branches', () => {
     expect(
       detail.getOrderedKeys(
-        { type: 'object', properties: { a: {}, b: {} } } as RJSFSchema,
+        { type: 'object', properties: { a: {}, b: {} } },
         { 'ui:order': ['missing', 'b'] } as UiSchema,
         {},
       ),
     ).toEqual(['missing', 'b', 'a']);
     expect(
       detail.getOrderedKeys(
-        { type: 'object', properties: { a: {}, b: {} } } as RJSFSchema,
+        { type: 'object', properties: { a: {}, b: {} } },
         { 'ui:order': ['missing', '*'] } as UiSchema,
         {},
       ),
@@ -747,7 +741,7 @@ describe('formpack detail helpers', () => {
     const nestedObjectPreview = detail.buildPreviewEntry({
       entry: { nested: 'value' },
       key: 'entry',
-      childSchema: { type: 'object' } as RJSFSchema,
+      childSchema: { type: 'object' },
       childUi: {} as UiSchema,
       childLabel: 'Entry',
       resolveValue: (value) => String(value),
@@ -765,7 +759,7 @@ describe('formpack detail helpers', () => {
       detail.buildPreviewEntry({
         entry: [],
         key: 'empty-array',
-        childSchema: { type: 'array' } as RJSFSchema,
+        childSchema: { type: 'array' },
         childUi: {} as UiSchema,
         childLabel: 'Empty array',
         resolveValue: (value) => String(value),
@@ -778,7 +772,7 @@ describe('formpack detail helpers', () => {
       detail.buildPreviewEntry({
         entry: {},
         key: 'empty-object',
-        childSchema: { type: 'object', properties: {} } as RJSFSchema,
+        childSchema: { type: 'object', properties: {} },
         childUi: {} as UiSchema,
         childLabel: 'Empty object',
         resolveValue: (value) => String(value),
@@ -795,7 +789,7 @@ describe('formpack detail helpers', () => {
     const nestedArrayPreview = detail.buildPreviewEntry({
       entry: ['nested'],
       key: 'array',
-      childSchema: { type: 'array', items: { type: 'string' } } as RJSFSchema,
+      childSchema: { type: 'array', items: { type: 'string' } },
       childUi: {} as UiSchema,
       childLabel: 'Array',
       resolveValue: (value) => String(value),
@@ -832,7 +826,7 @@ describe('formpack detail helpers', () => {
                 },
               },
             },
-          } as RJSFSchema,
+          },
           {
             nested: {
               value: { 'ui:title': 'Value' },

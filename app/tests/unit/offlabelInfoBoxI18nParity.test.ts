@@ -12,8 +12,8 @@ const getInfoBoxKeys = (bundle: Record<string, string>) =>
 
 describe('offlabel info box i18n parity', () => {
   it('keeps DE/EN info box key sets aligned', () => {
-    const deKeys = getInfoBoxKeys(deJson as Record<string, string>);
-    const enKeys = getInfoBoxKeys(enJson as Record<string, string>);
+    const deKeys = getInfoBoxKeys(deJson);
+    const enKeys = getInfoBoxKeys(enJson);
 
     expect(deKeys.length).toBeGreaterThan(0);
     expect(deKeys).toEqual(enKeys);

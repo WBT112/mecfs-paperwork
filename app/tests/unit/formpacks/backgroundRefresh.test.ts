@@ -100,7 +100,7 @@ const installFetchMock = (options?: {
     });
   });
 
-  vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+  vi.stubGlobal('fetch', fetchMock as unknown);
   return fetchMock;
 };
 
@@ -403,8 +403,8 @@ describe('formpacks/backgroundRefresh', () => {
     });
 
     const fetchMock = installFetchMock();
-    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
-    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('requestIdleCallback', undefined);
+    vi.stubGlobal('cancelIdleCallback', undefined);
 
     const stop = startFormpackBackgroundRefresh({ intervalMs: 10 });
     stop();
@@ -424,8 +424,8 @@ describe('formpacks/backgroundRefresh', () => {
     });
 
     const fetchMock = installFetchMock();
-    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
-    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('requestIdleCallback', undefined);
+    vi.stubGlobal('cancelIdleCallback', undefined);
 
     const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout');
     const setIntervalSpy = vi.spyOn(globalThis, 'setInterval');
@@ -529,8 +529,8 @@ describe('formpacks/backgroundRefresh', () => {
       updatedAt: UPDATED_AT,
     });
 
-    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
-    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('requestIdleCallback', undefined);
+    vi.stubGlobal('cancelIdleCallback', undefined);
 
     const onUpdated = vi.fn();
     const stop = startFormpackBackgroundRefresh({
@@ -567,8 +567,8 @@ describe('formpacks/backgroundRefresh', () => {
       updatedAt: UPDATED_AT,
     });
 
-    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
-    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('requestIdleCallback', undefined);
+    vi.stubGlobal('cancelIdleCallback', undefined);
 
     const stop = startFormpackBackgroundRefresh({ intervalMs: 10 });
 
@@ -665,8 +665,8 @@ describe('formpacks/backgroundRefresh', () => {
       updatedAt: UPDATED_AT,
     });
 
-    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
-    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('requestIdleCallback', undefined);
+    vi.stubGlobal('cancelIdleCallback', undefined);
 
     const eventListener = vi.fn();
     globalThis.addEventListener(
@@ -825,8 +825,8 @@ describe('formpacks/backgroundRefresh', () => {
       throw 'plain-failure';
     });
 
-    vi.stubGlobal('requestIdleCallback', undefined as unknown as never);
-    vi.stubGlobal('cancelIdleCallback', undefined as unknown as never);
+    vi.stubGlobal('requestIdleCallback', undefined);
+    vi.stubGlobal('cancelIdleCallback', undefined);
     const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => undefined);

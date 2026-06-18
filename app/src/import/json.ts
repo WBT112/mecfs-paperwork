@@ -212,24 +212,15 @@ const makeLenientSchema = (schema: RJSFSchema, depth = 0): RJSFSchema => {
       makeLenientSubschema(entry as OptionalRjsfSchema, depth),
     ) as unknown as RJSFSchema['items'];
   } else {
-    lenient.items = makeLenientSubschema(
-      lenient.items as OptionalRjsfSchema,
-      depth,
-    ) as RJSFSchema['items'];
+    lenient.items = makeLenientSubschema(lenient.items, depth);
   }
 
   lenient.additionalProperties = makeLenientSubschema(
-    lenient.additionalProperties as OptionalRjsfSchema,
+    lenient.additionalProperties,
     depth,
-  ) as RJSFSchema['additionalProperties'];
-  lenient.not = makeLenientSubschema(
-    lenient.not as OptionalRjsfSchema,
-    depth,
-  ) as RJSFSchema['not'];
-  lenient.if = makeLenientSubschema(
-    lenient.if as OptionalRjsfSchema,
-    depth,
-  ) as RJSFSchema['if'];
+  );
+  lenient.not = makeLenientSubschema(lenient.not, depth);
+  lenient.if = makeLenientSubschema(lenient.if, depth);
   const lenientRecord = lenient as Record<string, unknown>;
   const thenSubschema = makeLenientSubschema(
     lenientRecord['then'] as OptionalRjsfSchema,
@@ -241,10 +232,7 @@ const makeLenientSchema = (schema: RJSFSchema, depth = 0): RJSFSchema => {
     // JSON Schema uses "then" as a keyword; Reflect.set avoids unicorn/no-thenable.
     Reflect.set(lenientRecord, 'then', thenSubschema as unknown);
   }
-  lenient.else = makeLenientSubschema(
-    lenient.else as OptionalRjsfSchema,
-    depth,
-  ) as RJSFSchema['else'];
+  lenient.else = makeLenientSubschema(lenient.else, depth);
   lenient.allOf = makeLenientSubschemaArray(lenient.allOf, depth) as
     | RJSFSchema['allOf']
     | undefined;
@@ -333,9 +321,9 @@ const getFirstItemSchema = (
   schema: RJSFSchema,
 ): OptionalRjsfSchema | undefined => {
   if (Array.isArray(schema.items)) {
-    return schema.items[0] as OptionalRjsfSchema;
+    return schema.items[0];
   }
-  return schema.items as OptionalRjsfSchema;
+  return schema.items;
 };
 
 // Remove unknown fields when schema disallows additional properties.

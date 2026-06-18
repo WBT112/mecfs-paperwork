@@ -116,7 +116,7 @@ export const applyOfflabelVisibility = (
 
   const ensureFieldUiOptionsNode = (fieldUiNode: UiNode): UiNode => {
     const currentOptions = fieldUiNode['ui:options'];
-    return isRecord(currentOptions) ? (currentOptions as UiNode) : {};
+    return isRecord(currentOptions) ? currentOptions : {};
   };
 
   const applyFieldVisibility = (

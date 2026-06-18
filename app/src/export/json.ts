@@ -119,10 +119,7 @@ const normalizeSchemaObject = (schema: RJSFSchema, value: unknown): unknown => {
     if (!Object.hasOwn(updated, key)) {
       continue;
     }
-    updated[key] = normalizeSchemaDates(
-      propertySchema as RJSFSchema | boolean,
-      updated[key],
-    );
+    updated[key] = normalizeSchemaDates(propertySchema, updated[key]);
   }
   return updated;
 };
@@ -133,8 +130,7 @@ const normalizeSchemaAllOf = (schema: RJSFSchema, value: unknown): unknown => {
   }
 
   return schema.allOf.reduce(
-    (current, entry) =>
-      normalizeSchemaDates(entry as RJSFSchema | boolean, current),
+    (current, entry) => normalizeSchemaDates(entry, current),
     value,
   );
 };
