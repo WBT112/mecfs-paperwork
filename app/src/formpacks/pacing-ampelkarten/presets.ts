@@ -13,8 +13,6 @@ interface VariantCardsPreset<TCard extends BaseCardPreset> {
   red: TCard;
 }
 
-type CardColor = keyof VariantCardsPreset<BaseCardPreset>;
-
 interface PacingAmpelkartenPreset {
   meta: {
     introAccepted: boolean;
@@ -34,7 +32,11 @@ type CardPresetSource = readonly [
   hint: string,
 ];
 
-type VariantCardsPresetSource = Record<CardColor, CardPresetSource>;
+type VariantCardsPresetSource = readonly [
+  green: CardPresetSource,
+  yellow: CardPresetSource,
+  red: CardPresetSource,
+];
 type LocalePresetSource = Record<
   PacingAmpelkartenVariant,
   VariantCardsPresetSource
@@ -79,9 +81,9 @@ const createVariantCardsPresetFromSource = (
   source: VariantCardsPresetSource,
 ): VariantCardsPreset<BaseCardPreset> =>
   createVariantCardsPreset(
-    createCardPresetFromSource(source.green),
-    createCardPresetFromSource(source.yellow),
-    createCardPresetFromSource(source.red),
+    createCardPresetFromSource(source[0]),
+    createCardPresetFromSource(source[1]),
+    createCardPresetFromSource(source[2]),
   );
 
 const createLocalePresetFromSource = (
@@ -93,8 +95,8 @@ const createLocalePresetFromSource = (
   );
 
 const DE_PRESET_SOURCE = {
-  adult: {
-    green: [
+  adult: [
+    [
       [
         'Kurze Gespräche sind möglich (ca. 10-20 Minuten).',
         'Kleine Aufgaben gehen (z. B. kurz Küche aufräumen).',
@@ -104,7 +106,7 @@ const DE_PRESET_SOURCE = {
       ['Wenn möglich: eine Aufgabe abnehmen (z. B. Einkauf oder Telefonat).'],
       'Pausen gehören zu meinem Pacing - ich schütze damit meine Energie.',
     ],
-    yellow: [
+    [
       [
         'Nur kurze Gespräche (max. 5-10 Minuten).',
         'Lieber schriftlich als telefonisch.',
@@ -116,7 +118,7 @@ const DE_PRESET_SOURCE = {
       ],
       'Weniger Kontakt heißt nicht weniger Wertschätzung. Ich brauche heute Ruhe, um keinen Crash auszulösen.',
     ],
-    red: [
+    [
       ['Ich brauche Ruhe. Sprechen ist heute schwer.'],
       [
         'Bitte stelle Essen und Trinken bereit.',
@@ -125,9 +127,9 @@ const DE_PRESET_SOURCE = {
       ],
       'Mein System ist heute im Alarmmodus. Ruhe hilft am meisten.',
     ],
-  },
-  child: {
-    green: [
+  ],
+  child: [
+    [
       [
         'Heute ist ein guter Tag für kurze Gespräche oder eine kleine Sache zusammen.',
         'Kurze Nachrichten lesen oder beantworten geht oft gut.',
@@ -136,7 +138,7 @@ const DE_PRESET_SOURCE = {
       ['Bitte hilf trotzdem beim Planen und erinnere mich an Pausen.'],
       'Heute ist ein guter Tag. Trotzdem helfen Pausen.',
     ],
-    yellow: [
+    [
       [
         'Heute gehen nur kurze Gespräche oder Nachrichten.',
         'Ich brauche viele Pausen und möchte mich zwischendurch hinlegen.',
@@ -147,7 +149,7 @@ const DE_PRESET_SOURCE = {
       ],
       'Heute ist ein vorsichtiger Tag. Bitte langsam und leise.',
     ],
-    red: [
+    [
       ['Heute brauche ich ganz viel Ruhe.'],
       [
         'Bitte bring mir etwas zu trinken oder zu essen.',
@@ -156,12 +158,12 @@ const DE_PRESET_SOURCE = {
       ],
       'Heute ist ein Ruhetag. Bitte nichts erwarten.',
     ],
-  },
+  ],
 } as const satisfies LocalePresetSource;
 
 const EN_PRESET_SOURCE = {
-  adult: {
-    green: [
+  adult: [
+    [
       [
         'Short conversations are possible (around 10-20 minutes).',
         'Small tasks are manageable (for example tidying up the kitchen a little).',
@@ -173,7 +175,7 @@ const EN_PRESET_SOURCE = {
       ],
       'Rest breaks are part of my pacing and help me protect my energy.',
     ],
-    yellow: [
+    [
       [
         'Only short conversations are possible today (around 5-10 minutes).',
         'Written messages are better than phone calls.',
@@ -185,7 +187,7 @@ const EN_PRESET_SOURCE = {
       ],
       'Less contact does not mean less appreciation. I need extra quiet today to avoid a crash.',
     ],
-    red: [
+    [
       ['I need rest. Talking is very hard today.'],
       [
         'Please make sure food and drinks are within reach.',
@@ -194,9 +196,9 @@ const EN_PRESET_SOURCE = {
       ],
       'My system is on high alert today. Rest helps the most.',
     ],
-  },
-  child: {
-    green: [
+  ],
+  child: [
+    [
       [
         'Today is a better day for a short chat or one small activity together.',
         'Short messages are usually okay.',
@@ -205,7 +207,7 @@ const EN_PRESET_SOURCE = {
       ['Please still help me pace and remind me to rest before I overdo it.'],
       'Today is a better day. I still need breaks.',
     ],
-    yellow: [
+    [
       [
         'Today I can only manage short chats or messages.',
         'I need lots of breaks and time to lie down quietly.',
@@ -216,7 +218,7 @@ const EN_PRESET_SOURCE = {
       ],
       'Today is a careful day. Please go slowly and keep things quiet.',
     ],
-    red: [
+    [
       ['Today I need a lot of rest.'],
       [
         'Please bring me drinks or food if I need them.',
@@ -225,7 +227,7 @@ const EN_PRESET_SOURCE = {
       ],
       'Today is a rest day. Please do not expect anything from me.',
     ],
-  },
+  ],
 } as const satisfies LocalePresetSource;
 
 const DE_PRESET = createLocalePresetFromSource(DE_PRESET_SOURCE);
