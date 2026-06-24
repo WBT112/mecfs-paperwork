@@ -110,9 +110,11 @@ describe('buildI18nContext', () => {
 
     it('does not fail if the target is not an object (TS types should prevent this)', () => {
       const target = 'not-an-object';
-      // @ts-expect-error - Testing invalid input
-      setNested(target, 'a.b.c', 'value');
-      expect(target).toBe('not-an-object');
+
+      expect(() => {
+        // @ts-expect-error - Testing invalid input
+        setNested(target, 'a.b.c', 'value');
+      }).not.toThrow();
     });
   });
 

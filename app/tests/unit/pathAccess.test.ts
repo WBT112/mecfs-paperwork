@@ -133,10 +133,10 @@ describe('pathAccess', () => {
     it('ignores writes when target is not a record at runtime', () => {
       const target = 1;
 
-      // @ts-expect-error - runtime hardening for invalid caller input
-      setPathValueMutableSafe(target, 'a.b', 'ignored');
-
-      expect(target).toBe(1);
+      expect(() => {
+        // @ts-expect-error - runtime hardening for invalid caller input
+        setPathValueMutableSafe(target, 'a.b', 'ignored');
+      }).not.toThrow();
     });
   });
 });

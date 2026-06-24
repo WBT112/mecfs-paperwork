@@ -95,14 +95,14 @@ function ActiveSpoonGame({
   onChooseAction,
   onRestart,
   t,
-}: {
+}: Readonly<{
   game: NonNullable<ReturnType<typeof useSpoonManagerGame>['game']>;
   stats: SpoonGameStats;
   onAdvance: () => void;
   onChooseAction: (actionId: string) => void;
   onRestart: () => void;
   t: (key: string, options?: Record<string, unknown>) => string;
-}) {
+}>) {
   const startFlavor =
     getSpoonManagerStartFlavorById(game.startFlavorId)?.textKey ??
     FALLBACK_INTRO_KEY;
@@ -296,10 +296,10 @@ function ActiveSpoonGame({
 function StatsPanel({
   stats,
   t,
-}: {
+}: Readonly<{
   stats: SpoonGameStats;
   t: (key: string, options?: Record<string, unknown>) => string;
-}) {
+}>) {
   return (
     <section className="games-spoon__panel games-spoon__panel--stats">
       <h3>{t('games.spoonManager.stats.title')}</h3>

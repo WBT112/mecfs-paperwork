@@ -93,7 +93,7 @@ function ActiveGameSection({
   onResetGame,
   onToggleCell,
   t,
-}: {
+}: Readonly<{
   game: NonNullable<ReturnType<typeof useMeBingoGame>['game']>;
   locale: ReturnType<typeof useLocale>['locale'];
   stats: ReturnType<typeof useMeBingoGame>['stats'];
@@ -101,7 +101,7 @@ function ActiveGameSection({
   onResetGame: () => void;
   onToggleCell: (cellId: string) => void;
   t: (key: string, options?: Record<string, unknown>) => string;
-}) {
+}>) {
   const isCompleted = game.status === 'bingo' || game.status === 'full-card';
   const resultLabelKey =
     game.status === 'full-card'
@@ -270,7 +270,7 @@ function StatsPanel({
   stats,
   statusLabel,
   t,
-}: {
+}: Readonly<{
   className?: string;
   title: string;
   stats: {
@@ -281,7 +281,7 @@ function StatsPanel({
   };
   statusLabel: string;
   t: (key: string, options?: Record<string, unknown>) => string;
-}) {
+}>) {
   return (
     <section className={`games-bingo__panel ${className ?? ''}`.trim()}>
       <h3>{title}</h3>

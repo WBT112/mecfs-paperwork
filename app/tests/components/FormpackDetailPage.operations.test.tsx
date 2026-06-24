@@ -2360,7 +2360,7 @@ describe('FormpackDetailPage', () => {
     await screen.findByText('formpackFormHeading');
     view.unmount();
 
-    expect(true).toBe(true);
+    expect(view.container).toBeEmptyDOMElement();
   });
 
   it('requires password before importing encrypted JSON files', async () => {
