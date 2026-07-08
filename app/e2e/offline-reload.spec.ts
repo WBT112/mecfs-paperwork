@@ -71,11 +71,6 @@ test('offline reload keeps core navigation and docx export working', async ({
     browserName === 'webkit',
     'WebKit offline reload intermittently throws engine-internal navigation errors.',
   );
-  await page.goto('/');
-  await page.evaluate(() => {
-    window.localStorage.clear();
-    window.sessionStorage.clear();
-  });
   await deleteDatabase(page, DB_NAME);
 
   await page.goto('/formpacks');
@@ -102,6 +97,17 @@ test('offline reload keeps core navigation and docx export working', async ({
       allowSingleReload: false,
     }),
   ).toBe(true);
+
+  await openFormpackWithRetry(
+    page,
+    FORM_PACK_ID,
+    page.locator('#formpack-records-toggle'),
+  );
+  await waitForDocxExportReady(page);
+  await page.goto('/formpacks');
+  await expect(
+    page.getByRole('heading', { name: /forms|formulare|hilfsangebote/i }),
+  ).toBeVisible({ timeout: POLL_TIMEOUT });
 
   await context.setOffline(true);
   await page.reload().catch(async () => {
