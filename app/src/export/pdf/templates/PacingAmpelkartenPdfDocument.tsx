@@ -178,8 +178,7 @@ const PacingAmpelkartenPdfDocument = ({ model }: { model: DocumentModel }) => {
   const locale = model.meta?.locale ?? 'de';
   const pdfLanguage = normalizePdfLanguage(locale);
   const templateData = model.meta?.templateData as
-    | PacingAmpelkartenPdfTemplateData
-    | undefined;
+    PacingAmpelkartenPdfTemplateData | undefined;
   const title = model.title?.trim() || 'Pacing-Ampelkarten';
   const cards =
     templateData?.cards ??

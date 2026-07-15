@@ -194,8 +194,7 @@ const renderFallbackPage = (title: string) => (
 
 const NotfallpassPdfDocument = ({ model }: { model: DocumentModel }) => {
   const templateData = model.meta?.templateData as
-    | NotfallpassPdfTemplateData
-    | undefined;
+    NotfallpassPdfTemplateData | undefined;
   const locale = model.meta?.locale ?? 'de';
   const pdfLanguage = normalizePdfLanguage(locale);
   const title = model.title?.trim() || templateData?.title || 'Notfallpass';

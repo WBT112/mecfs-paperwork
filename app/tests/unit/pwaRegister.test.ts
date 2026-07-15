@@ -10,9 +10,8 @@ const isVoidCallback = (value: TimerHandler): value is () => void =>
   typeof value === 'function';
 
 const registerSW = vi.hoisted(() =>
-  vi.fn(
-    (_options?: RegisterSwOptions): UpdateSwHandler =>
-      vi.fn(async () => undefined),
+  vi.fn((_options?: RegisterSwOptions): UpdateSwHandler =>
+    vi.fn(async () => undefined),
   ),
 );
 
