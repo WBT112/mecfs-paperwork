@@ -106,11 +106,11 @@
     "knip": "^5.88.1",
     "lint-staged": "^16.4.0",
     "png-to-ico": "^2.1.8",
-    "prettier": "^3.8.4",
+    "prettier": "^3.9.4",
     "purgecss": "^8.0.0",
     "tsx": "^4.22.4",
     "typescript": "5.9.3",
-      "vite": "^8.1.0",
+      "vite": "^8.1.2",
     "vite-plugin-pwa": "^1.3.0",
     "vitest": "^4.0.16"
   },

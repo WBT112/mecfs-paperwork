@@ -29,8 +29,7 @@ export const importRecordWithSnapshots = async (
   const now = new Date().toISOString();
   let record: RecordEntry;
   let encryptedRecordData:
-    | Awaited<ReturnType<typeof encryptStorageData>>
-    | undefined;
+    Awaited<ReturnType<typeof encryptStorageData>> | undefined;
 
   if (options.mode === 'overwrite') {
     if (!options.recordId) {

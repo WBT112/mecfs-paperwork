@@ -34,8 +34,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       exportedAt,
     });
     const templateData = model.meta?.templateData as
-      | PacingAmpelkartenPdfTemplateData
-      | undefined;
+      PacingAmpelkartenPdfTemplateData | undefined;
 
     expect(model.title).toBe('Pacing-Ampelkarten');
     expect(model.meta?.createdAtIso).toBe(exportedAt.toISOString());
@@ -64,8 +63,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
     const templateData = model.meta?.templateData as
-      | PacingAmpelkartenPdfTemplateData
-      | undefined;
+      PacingAmpelkartenPdfTemplateData | undefined;
 
     expect(templateData?.variant).toBe('child');
     expect(templateData?.cards[0].title).toBe('Today is a good day');
@@ -120,8 +118,7 @@ describe('buildPacingAmpelkartenPdfDocumentModel', () => {
       exportedAt: new Date('2026-03-09T11:00:00.000Z'),
     });
     const templateData = model.meta?.templateData as
-      | PacingAmpelkartenPdfTemplateData
-      | undefined;
+      PacingAmpelkartenPdfTemplateData | undefined;
 
     expect(templateData?.variant).toBe('adult');
     expect(templateData?.cards[0].sections[0].items).toEqual([KEPT_ITEM]);

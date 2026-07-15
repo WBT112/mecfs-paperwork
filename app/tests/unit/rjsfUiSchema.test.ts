@@ -28,8 +28,7 @@ describe('applyArrayUiSchemaDefaults', () => {
     };
     const result = applyArrayUiSchemaDefaults(schema, {});
     const options = result[UI_OPTIONS_KEY] as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     expect(options?.orderable).toBe(false);
   });
 
@@ -41,8 +40,7 @@ describe('applyArrayUiSchemaDefaults', () => {
     const uiSchema: UiSchema = { [UI_OPTIONS_KEY]: { orderable: true } };
     const result = applyArrayUiSchemaDefaults(schema, uiSchema);
     const options = result[UI_OPTIONS_KEY] as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     expect(options?.orderable).toBe(true);
   });
 
@@ -54,8 +52,7 @@ describe('applyArrayUiSchemaDefaults', () => {
     const result = applyArrayUiSchemaDefaults(schema, {});
     const items = result.items as UiSchema | undefined;
     const options = items?.[UI_OPTIONS_KEY] as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     expect(options?.label).toBe(false);
   });
 
@@ -68,8 +65,7 @@ describe('applyArrayUiSchemaDefaults', () => {
     const result = applyArrayUiSchemaDefaults(schema, uiSchema);
     const items = result.items as UiSchema | undefined;
     const options = items?.[UI_OPTIONS_KEY] as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     expect(options?.label).toBe(true);
   });
 
@@ -83,8 +79,7 @@ describe('applyArrayUiSchemaDefaults', () => {
     const schema: RJSFSchema = { type: 'array', items: true };
     const result = applyArrayUiSchemaDefaults(schema, {});
     const options = result[UI_OPTIONS_KEY] as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     expect(options?.orderable).toBe(false);
     expect(result.items).toBeUndefined();
   });
@@ -102,8 +97,7 @@ describe('applyArrayUiSchemaDefaults', () => {
     const result = applyArrayUiSchemaDefaults(schema, {});
     const nested = result.nested as UiSchema | undefined;
     const options = nested?.[UI_OPTIONS_KEY] as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
     expect(options?.orderable).toBe(false);
   });
 });

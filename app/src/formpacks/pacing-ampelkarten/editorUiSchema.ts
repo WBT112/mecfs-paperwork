@@ -8,11 +8,7 @@ type PacingVariant = 'adult' | 'child';
  * Ordered step identifiers for the pacing editor flow.
  */
 export type PacingEditorStepId =
-  | 'variant'
-  | 'green'
-  | 'yellow'
-  | 'red'
-  | 'preview';
+  'variant' | 'green' | 'yellow' | 'red' | 'preview';
 
 export const PACING_EDITOR_STEP_IDS: readonly PacingEditorStepId[] = [
   'variant',

@@ -46,9 +46,7 @@ const deriveAesGcmKey = async (
 };
 
 export type JsonEncryptionErrorCode =
-  | 'crypto_unsupported'
-  | 'invalid_envelope'
-  | 'decrypt_failed';
+  'crypto_unsupported' | 'invalid_envelope' | 'decrypt_failed';
 
 /**
  * Error type for JSON export encryption/decryption operations.

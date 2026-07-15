@@ -489,8 +489,7 @@ const OfflabelAntragPdfDocument = ({ model }: { model: DocumentModel }) => {
   const locale = model.meta?.locale ?? 'de';
   const pdfLanguage = normalizePdfLanguage(locale);
   const templateData = model.meta?.templateData as
-    | OfflabelPdfTemplateData
-    | undefined;
+    OfflabelPdfTemplateData | undefined;
   const title = model.title?.trim() || resolveOfflabelTitle(locale);
 
   const part1 = templateData?.exportBundle.part1 ?? {

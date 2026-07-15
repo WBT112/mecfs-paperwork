@@ -209,8 +209,7 @@ const getLabel = (
 };
 
 type PreviewEntry =
-  | { type: 'row'; node: ReactNode }
-  | { type: 'nested'; node: ReactNode };
+  { type: 'row'; node: ReactNode } | { type: 'nested'; node: ReactNode };
 
 type PreviewEntryOptions = {
   entry: unknown;

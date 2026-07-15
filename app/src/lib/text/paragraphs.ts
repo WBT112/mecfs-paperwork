@@ -11,8 +11,7 @@ export const PARAGRAPH_MARKER = '[[P]]';
 export const LINE_BREAK_MARKER = '[[BR]]';
 
 export type ParagraphBlock =
-  | { type: 'paragraph'; text: string }
-  | { type: 'lineBreaks'; lines: string[] };
+  { type: 'paragraph'; text: string } | { type: 'lineBreaks'; lines: string[] };
 
 export const normalizeParagraphText = (
   raw: string,
