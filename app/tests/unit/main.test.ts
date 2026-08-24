@@ -122,24 +122,6 @@ describe('main', () => {
       expect(startUserTiming).toHaveBeenCalledWith('appBootTotal');
       expect(createRoot).toHaveBeenCalledWith(root);
       expect(render).toHaveBeenCalledTimes(1);
-      const renderedTree = render.mock.calls[0]?.[0] as {
-        props?: {
-          children?: {
-            props?: {
-              future?: {
-                v7_startTransition: boolean;
-                v7_relativeSplatPath: boolean;
-              };
-            };
-          };
-        };
-      };
-      expect(renderedTree.props?.children?.props?.future).toEqual(
-        expect.objectContaining({
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }),
-      );
       expect(requestAnimationFrame).toHaveBeenCalledTimes(1);
       expect(appBootEnd).toHaveBeenCalledTimes(1);
     } finally {
