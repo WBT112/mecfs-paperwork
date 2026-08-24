@@ -42,9 +42,7 @@ const appBootTiming = startUserTiming(USER_TIMING_NAMES.appBootTotal);
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <BrowserRouter
-      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-    >
+    <BrowserRouter>
       <App />
     </BrowserRouter>
   </React.StrictMode>,
