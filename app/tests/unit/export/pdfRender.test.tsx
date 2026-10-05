@@ -5,6 +5,19 @@ import DoctorLetterPdfDocument from '../../../src/export/pdf/templates/DoctorLet
 import type { DocumentModel } from '../../../src/export/pdf/types';
 import { renderPdfToLatin1Text } from './pdfTestUtils';
 
+const { onePixelPngSource } = vi.hoisted(() => {
+  const encodedPng =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P8/5+hHgAHggJ/lqG02QAAAABJRU5ErkJggg==';
+  const binaryPng = atob(encodedPng);
+
+  return {
+    onePixelPngSource: {
+      data: Uint8Array.from(binaryPng, (character) => character.charCodeAt(0)),
+      format: 'png' as const,
+    },
+  };
+});
+
 vi.mock('../../../src/export/pdf/fonts', () => ({
   ensurePdfFontsRegistered: vi.fn(),
   PDF_FONT_FAMILY_SANS: 'Helvetica',
@@ -14,15 +27,13 @@ vi.mock('../../../src/export/pdf/fonts', () => ({
 vi.mock(
   '../../../src/assets/formpacks/doctor-letter/annex-1-icd10-schema.jpg',
   () => ({
-    default:
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P8/5+hHgAHggJ/lqG02QAAAABJRU5ErkJggg==',
+    default: onePixelPngSource,
   }),
 );
 vi.mock(
   '../../../src/assets/formpacks/doctor-letter/annex-2-practiceguide-excerpt.png',
   () => ({
-    default:
-      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2P8/5+hHgAHggJ/lqG02QAAAABJRU5ErkJggg==',
+    default: onePixelPngSource,
   }),
 );
 

@@ -102,7 +102,7 @@
     "jpeg-js": "^0.4.4",
     "jscpd": "^4.2.5",
     "jsdom": "^27.4.0",
-    "jszip": "^3.10.2",
+    "jszip": "3.10.1",
     "knip": "^5.88.1",
     "lint-staged": "^16.4.0",
     "png-to-ico": "^2.1.8",
@@ -133,7 +133,7 @@
     "nanoid": "^3.3.18",
     "serialize-javascript": ">=7.0.3",
     "smol-toml": "^1.6.1",
-    "source-map": "npm:source-map-js@^1.2.1",
+    "source-map": "npm:source-map-js@1.2.2",
     "sourcemap-codec": "npm:@jridgewell/sourcemap-codec@^1.5.5",
     "ws": "^8.21.0",
     "yaml": "^2.8.3"
