@@ -18,9 +18,7 @@ import { formpackTemplates } from '../../../src/lib/rjsfTemplates';
 
 const getComponent = <TProps,>(
   component:
-    | ComponentType<TProps>
-    | { [key: string]: ComponentType<any> }
-    | undefined,
+    ComponentType<TProps> | { [key: string]: ComponentType<any> } | undefined,
   name: string,
 ): ComponentType<TProps> => {
   if (typeof component === 'function') {

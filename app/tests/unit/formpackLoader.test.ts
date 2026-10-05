@@ -63,8 +63,7 @@ describe('parseManifest', () => {
 
   it('throws when required fields are missing', () => {
     const payload = { ...validPayload, titleKey: undefined } as unknown as
-      | FormpackManifestPayload
-      | undefined;
+      FormpackManifestPayload | undefined;
     expect(() =>
       parseManifest(payload as FormpackManifestPayload, TEST_FORMPACK_ID),
     ).toThrow(

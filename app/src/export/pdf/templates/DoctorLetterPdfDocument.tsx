@@ -331,8 +331,7 @@ const buildSalutation = (
 
 const DoctorLetterPdfDocument = ({ model }: { model: DocumentModel }) => {
   const templateData = model.meta?.templateData as
-    | DoctorLetterTemplateData
-    | undefined;
+    DoctorLetterTemplateData | undefined;
 
   const locale = model.meta?.locale ?? 'de-DE';
   const pdfLanguage = normalizePdfLanguage(locale);

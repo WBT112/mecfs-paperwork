@@ -43,8 +43,7 @@ describe('buildNotfallpassPdfDocumentModel', () => {
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
     const templateData = model.meta?.templateData as
-      | NotfallpassPdfTemplateData
-      | undefined;
+      NotfallpassPdfTemplateData | undefined;
 
     expect(model.title).toBe('Notfallpass');
     expect(model.meta?.createdAtIso).toBe(EXPORTED_AT_ISO);
@@ -89,8 +88,7 @@ describe('buildNotfallpassPdfDocumentModel', () => {
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
     const templateData = model.meta?.templateData as
-      | NotfallpassPdfTemplateData
-      | undefined;
+      NotfallpassPdfTemplateData | undefined;
 
     expect(templateData?.diagnosesSummary).toBe('ME/CFS, Long Covid');
     expect(templateData?.personRows).toEqual([
@@ -118,8 +116,7 @@ describe('buildNotfallpassPdfDocumentModel', () => {
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
     const relationData = relationOnly.meta?.templateData as
-      | NotfallpassPdfTemplateData
-      | undefined;
+      NotfallpassPdfTemplateData | undefined;
 
     expect(relationData?.contacts).toEqual([
       {
@@ -143,8 +140,7 @@ describe('buildNotfallpassPdfDocumentModel', () => {
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
     const phoneData = phoneOnly.meta?.templateData as
-      | NotfallpassPdfTemplateData
-      | undefined;
+      NotfallpassPdfTemplateData | undefined;
 
     expect(phoneData?.pages[1].panels[0].sections[0]).toEqual({
       heading: 'Notfallkontakte',
@@ -162,8 +158,7 @@ describe('buildNotfallpassPdfDocumentModel', () => {
       exportedAt: new Date(EXPORTED_AT_ISO),
     });
     const templateData = model.meta?.templateData as
-      | NotfallpassPdfTemplateData
-      | undefined;
+      NotfallpassPdfTemplateData | undefined;
 
     expect(templateData?.diagnosesSummary).toBe('POTS');
     expect(templateData?.diagnosisParagraphs).toEqual([]);

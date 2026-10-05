@@ -40,9 +40,7 @@ const FORMPACK_ERROR_KEYS: Partial<
 const JSON_ENCRYPTION_KIND = 'mecfs-paperwork-json-encrypted';
 
 type JsonEncryptionRuntimeErrorCode =
-  | 'crypto_unsupported'
-  | 'invalid_envelope'
-  | 'decrypt_failed';
+  'crypto_unsupported' | 'invalid_envelope' | 'decrypt_failed';
 
 const isJsonEncryptionRuntimeError = (
   error: unknown,

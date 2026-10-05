@@ -96,9 +96,7 @@ const getOrCreateStorageKey = (): Uint8Array => {
 };
 
 export type StorageLockedErrorCode =
-  | 'missing_key'
-  | 'decrypt_failed'
-  | 'invalid_payload';
+  'missing_key' | 'decrypt_failed' | 'invalid_payload';
 
 /**
  * Indicates that encrypted local storage data cannot be unlocked.

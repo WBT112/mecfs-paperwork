@@ -234,14 +234,11 @@ const makeLenientSchema = (schema: RJSFSchema, depth = 0): RJSFSchema => {
   }
   lenient.else = makeLenientSubschema(lenient.else, depth);
   lenient.allOf = makeLenientSubschemaArray(lenient.allOf, depth) as
-    | RJSFSchema['allOf']
-    | undefined;
+    RJSFSchema['allOf'] | undefined;
   lenient.anyOf = makeLenientSubschemaArray(lenient.anyOf, depth) as
-    | RJSFSchema['anyOf']
-    | undefined;
+    RJSFSchema['anyOf'] | undefined;
   lenient.oneOf = makeLenientSubschemaArray(lenient.oneOf, depth) as
-    | RJSFSchema['oneOf']
-    | undefined;
+    RJSFSchema['oneOf'] | undefined;
   if (lenient.$defs && typeof lenient.$defs === 'object') {
     const defs = { ...lenient.$defs } as Record<string, unknown>;
     for (const key of Object.keys(defs)) {
@@ -461,8 +458,7 @@ const applySchemaDefaults = (
 };
 
 type ValidationOutcome<T> =
-  | { ok: true; value: T }
-  | { ok: false; error: ImportErrorCode };
+  { ok: true; value: T } | { ok: false; error: ImportErrorCode };
 
 const getInvalidResult = (code: ImportErrorCode): ImportValidationResult => ({
   payload: null,

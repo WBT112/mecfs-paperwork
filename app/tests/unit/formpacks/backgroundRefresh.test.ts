@@ -434,11 +434,9 @@ describe('formpacks/backgroundRefresh', () => {
     const stop = startFormpackBackgroundRefresh({ intervalMs: 10 });
 
     const timeoutCallback = setTimeoutSpy.mock.calls.at(-1)?.[0] as
-      | (() => void)
-      | undefined;
+      (() => void) | undefined;
     const intervalCallback = setIntervalSpy.mock.calls.at(-1)?.[0] as
-      | (() => void)
-      | undefined;
+      (() => void) | undefined;
     const onlineListener = addEventListenerSpy.mock.calls.find(
       ([type]) => type === 'online',
     )?.[1] as EventListener | undefined;

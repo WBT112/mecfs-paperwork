@@ -676,8 +676,7 @@ describe('FormpackDetailPage', () => {
 
       await waitFor(() => expect(storageState.markAsSaved).toHaveBeenCalled());
       const firstPayload = storageState.markAsSaved.mock.calls.at(-1)?.[0] as
-        | Record<string, unknown>
-        | undefined;
+        Record<string, unknown> | undefined;
       expect(firstPayload).toBeDefined();
       expect(firstPayload?.visibleChoice).toBe('yes');
       expect(firstPayload?.hiddenText).toBeUndefined();
@@ -692,8 +691,7 @@ describe('FormpackDetailPage', () => {
         expect(storageState.markAsSaved.mock.calls.length).toBeGreaterThan(1),
       );
       const secondPayload = storageState.markAsSaved.mock.calls.at(-1)?.[0] as
-        | Record<string, unknown>
-        | undefined;
+        Record<string, unknown> | undefined;
       expect(secondPayload).toBeDefined();
       expect(secondPayload?.visibleChoice).toBe('');
       expect(Array.isArray(secondPayload?.tags)).toBe(true);

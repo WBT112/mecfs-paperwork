@@ -19,8 +19,7 @@ type WorkerRequest = {
 };
 
 type WorkerResponse =
-  | { id: number; result: Uint8Array }
-  | { id: number; error: string };
+  { id: number; result: Uint8Array } | { id: number; error: string };
 
 const formatDate = (locale: string) => (value: string | null | undefined) => {
   if (!value) return '';

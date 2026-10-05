@@ -773,9 +773,7 @@ const loadDocxSchema = async (
   }
   try {
     const schema = (await loadFormpackSchema(formpackId)) as
-      | RJSFSchema
-      | null
-      | undefined;
+      RJSFSchema | null | undefined;
     const normalized = schema ?? null;
     docxSchemaCache.set(formpackId, normalized);
     return normalized;
@@ -793,9 +791,7 @@ const loadDocxUiSchema = async (
   }
   try {
     const uiSchema = (await loadFormpackUiSchema(formpackId)) as
-      | UiSchema
-      | null
-      | undefined;
+      UiSchema | null | undefined;
     const normalized = uiSchema ?? null;
     docxUiSchemaCache.set(formpackId, normalized);
     return normalized;
@@ -985,8 +981,7 @@ let docxWorker: Worker | null = null;
 let workerRequestId = 0;
 let workerFailed = false;
 type DocxWorkerResponse =
-  | { id: number; result: Uint8Array }
-  | { id: number; error: string };
+  { id: number; result: Uint8Array } | { id: number; error: string };
 type PendingWorkerRequest = {
   resolve: (result: Uint8Array) => void;
   reject: (error: Error) => void;
