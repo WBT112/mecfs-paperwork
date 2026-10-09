@@ -913,18 +913,6 @@ body {
   gap: 1.25rem;
 }
 
-.representative-letter__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.representative-letter__header h2 {
-  margin-bottom: 0.35rem;
-}
-
 .representative-letter__eyebrow {
   margin: 0 0 0.35rem;
   color: var(--color-text-subtle);
@@ -952,12 +940,6 @@ body {
 .representative-letter__panel {
   display: grid;
   gap: 1rem;
-}
-
-.representative-letter__panel h3,
-.representative-letter__panel ol,
-.representative-letter__panel p {
-  margin-top: 0;
 }
 
 .representative-letter__background {

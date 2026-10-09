@@ -62,7 +62,7 @@ export default function RepresentativeLetterPage() {
       className="app__card representative-letter"
       data-tool-id={REPRESENTATIVE_LETTER_TOOL_ID}
     >
-      <div className="representative-letter__header">
+      <div className="app__card-header">
         <div>
           <p className="representative-letter__eyebrow">
             {t('representativeLetter.toolLabel')}
