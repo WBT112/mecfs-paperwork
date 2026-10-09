@@ -71,6 +71,28 @@ export default function FormpackListPage() {
           <p className="app__subtitle">{t('formpackListDescription')}</p>
         </div>
       </div>
+      <div>
+        <h3 className="formpack-list__category-heading">
+          {t('representativeLetter.entryCategory')}
+        </h3>
+        <div className="formpack-list">
+          <Link
+            className="formpack-card"
+            to="/tools/representative-letter"
+            aria-label={t('representativeLetter.entryAriaLabel')}
+          >
+            <div>
+              <h3>{t('representativeLetter.title')}</h3>
+              <p className="formpack-card__description">
+                {t('representativeLetter.entryDescription')}
+              </p>
+            </div>
+            <div className="formpack-card__link">
+              {t('representativeLetter.open')}
+            </div>
+          </Link>
+        </div>
+      </div>
       {resumeFormpack && (
         <p>
           <Link

@@ -12,6 +12,10 @@ const SpoonManagerPage = lazy(
 const HelpPage = lazy(() => import('./pages/HelpPage'));
 const ImprintPage = lazy(() => import('./pages/ImprintPage'));
 const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const RepresentativeLetterPage = lazy(
+  () =>
+    import('./features/representative-letter/pages/RepresentativeLetterPage'),
+);
 
 const RouteFallback = () => {
   const { t } = useTranslation();
@@ -50,6 +54,10 @@ export default function AppRoutes() {
         <Route path="/imprint" element={<ImprintPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/help" element={<HelpPage />} />
+        <Route
+          path="/tools/representative-letter"
+          element={<RepresentativeLetterPage />}
+        />
       </Routes>
     </Suspense>
   );
