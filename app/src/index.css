@@ -908,6 +908,107 @@ body {
   color: var(--color-text-subtle);
 }
 
+.representative-letter {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.representative-letter__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.representative-letter__header h2 {
+  margin-bottom: 0.35rem;
+}
+
+.representative-letter__eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--color-text-subtle);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.representative-letter__view-switch,
+.representative-letter__length-switch,
+.representative-letter__actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.representative-letter__view-switch .app__button[aria-pressed='true'],
+.representative-letter__length-switch .app__button[aria-pressed='true'] {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-strong);
+}
+
+.representative-letter__panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.representative-letter__panel h3,
+.representative-letter__panel ol,
+.representative-letter__panel p {
+  margin-top: 0;
+}
+
+.representative-letter__background {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  padding: 0.5rem;
+}
+
+.representative-letter__background p {
+  margin: 0;
+  padding: 0 0.75rem 0.5rem;
+  color: var(--color-text-secondary);
+}
+
+.representative-letter__notice {
+  border-left: 4px solid var(--color-border-accent);
+  background: var(--color-surface-muted);
+  padding: 0.75rem 1rem;
+}
+
+.representative-letter__outputs {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.representative-letter__outputs label {
+  margin-top: 0.5rem;
+  font-weight: 700;
+  color: var(--color-text-strong);
+}
+
+.representative-letter__outputs input,
+.representative-letter__outputs textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.representative-letter__outputs input:focus-visible,
+.representative-letter__outputs textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .games-bingo {
   display: grid;
   gap: 1.25rem;

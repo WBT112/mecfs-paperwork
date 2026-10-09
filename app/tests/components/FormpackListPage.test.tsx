@@ -105,6 +105,12 @@ describe('FormpackListPage', () => {
     expect(screen.getByText(TITLE_INSURER)).toBeInTheDocument();
     expect(screen.getByText(TITLE_DOCTOR)).toBeInTheDocument();
     expect(screen.getByText(TITLE_PLAIN)).toBeInTheDocument();
+    expect(screen.getByText('representativeLetter.title')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'representativeLetter.entryAriaLabel',
+      }),
+    ).toHaveAttribute('href', '/tools/representative-letter');
     expect(screen.getByRole('status')).toHaveTextContent(
       'formpackSearchResultsStatus 3',
     );

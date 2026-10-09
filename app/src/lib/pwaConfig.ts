@@ -171,6 +171,7 @@ export const createPwaConfig = (
       navigateFallbackAllowlist: [
         /^\/$/,
         /^\/formpacks(\/.*)?$/,
+        /^\/tools\/representative-letter$/,
         /^\/help$/,
         /^\/imprint$/,
         /^\/privacy$/,

@@ -54,6 +54,7 @@ describe('createPwaConfig', () => {
     expect(config.devOptions?.navigateFallbackAllowlist).toEqual([
       /^\/$/,
       /^\/formpacks(\/.*)?$/,
+      /^\/tools\/representative-letter$/,
       /^\/help$/,
       /^\/imprint$/,
       /^\/privacy$/,
