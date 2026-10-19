@@ -1,5 +1,3 @@
-import representativeData from './representatives.json';
-
 const EMPTY_TEXT = '';
 
 /** How a representative entered the current Bundestag. */
@@ -62,10 +60,6 @@ export type RepresentativeCatalog = {
   sources: RepresentativeCatalogSource[];
   representatives: RepresentativeCatalogEntry[];
 };
-
-/** Versioned, bundled recipient catalog assembled from documented sources. */
-export const representativeCatalog =
-  representativeData as RepresentativeCatalog;
 
 /**
  * Versioned, bundled text catalogs populated with approved copy in the content

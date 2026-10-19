@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { representativeCatalog } from '../../src/features/representative-letter/data/catalogs';
+import { representativeCatalog } from '../../src/features/representative-letter/data/representativeCatalog';
 
 describe('representative catalog', () => {
   it('contains one uniquely identified entry per active mandate', () => {

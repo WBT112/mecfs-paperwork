@@ -954,12 +954,6 @@ body {
   color: var(--color-text-secondary);
 }
 
-.representative-letter__notice {
-  border-left: 4px solid var(--color-border-accent);
-  background: var(--color-surface-muted);
-  padding: 0.75rem 1rem;
-}
-
 .representative-letter__outputs {
   display: grid;
   gap: 0.5rem;
