@@ -35,6 +35,13 @@ test('opens directly and retains only tab-local representative-letter state', as
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
     'sanae.abdi@bundestag.de',
   );
+  const mailtoLink = page.getByRole('link', {
+    name: /Im E-Mail-Programm öffnen|Open in email application/i,
+  });
+  await expect(mailtoLink).toHaveAttribute(
+    'href',
+    /^mailto:sanae\.abdi@bundestag\.de\?subject=.*&body=/,
+  );
 
   await page.getByRole('button', { name: /Langform|long version/i }).click();
   await page.reload();

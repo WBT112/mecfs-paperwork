@@ -22,6 +22,7 @@ import {
   writeRepresentativeLetterState,
 } from '../sessionState';
 import { filterRepresentatives } from '../representativeSearch';
+import { createMailtoLink, type MailtoLink } from '../mailto';
 
 const RESULT_LIMIT = 50;
 const STACKED_PANEL_STYLE: CSSProperties = {
@@ -30,6 +31,10 @@ const STACKED_PANEL_STYLE: CSSProperties = {
   border: '1px solid var(--color-border-subtle)',
   borderRadius: '10px',
   padding: '1rem',
+};
+const MAILTO_PANEL_STYLE: CSSProperties = {
+  ...STACKED_PANEL_STYLE,
+  justifyItems: 'start',
 };
 const CONTROL_GRID_STYLE: CSSProperties = {
   display: 'grid',
@@ -337,6 +342,53 @@ const SelectedRecipient = ({
   );
 };
 
+type MailtoActionProps = {
+  mailtoLink: MailtoLink | null;
+};
+
+const MailtoAction = ({ mailtoLink }: MailtoActionProps) => {
+  const { t } = useTranslation();
+  const descriptionId = 'representative-letter-mailto-description';
+
+  return (
+    <section
+      className="representative-letter__mailto"
+      aria-labelledby="representative-letter-mailto-title"
+      style={MAILTO_PANEL_STYLE}
+    >
+      <h3 id="representative-letter-mailto-title">
+        {t('representativeLetter.mailtoTitle')}
+      </h3>
+      {mailtoLink ? (
+        <a
+          className="app__button"
+          href={mailtoLink.href}
+          aria-describedby={descriptionId}
+        >
+          {t('representativeLetter.openMailClient')}
+        </a>
+      ) : (
+        <button
+          type="button"
+          className="app__button"
+          aria-describedby={descriptionId}
+          disabled
+        >
+          {t('representativeLetter.openMailClient')}
+        </button>
+      )}
+      <p id={descriptionId}>
+        {mailtoLink
+          ? t('representativeLetter.mailtoDescription')
+          : t('representativeLetter.mailtoUnavailable')}
+      </p>
+      {mailtoLink && !mailtoLink.bodyIncluded ? (
+        <output>{t('representativeLetter.mailtoBodyTooLong')}</output>
+      ) : null}
+    </section>
+  );
+};
+
 /**
  * Renders the standalone, offline representative-letter workflow.
  *
@@ -389,6 +441,12 @@ export default function RepresentativeLetterPage() {
   const selectedRepresentative = representatives.find(
     ({ id }) => id === state.recipientId,
   );
+  const mailtoLink = createMailtoLink({
+    recipient: selectedRepresentative?.email ?? null,
+    recipientStatus: selectedRepresentative?.emailStatus ?? 'missing',
+    subject: textCatalog.subject,
+    body: mailBody,
+  });
 
   return (
     <section
@@ -542,6 +600,8 @@ export default function RepresentativeLetterPage() {
               placeholder={t('representativeLetter.bodyPlaceholder')}
             />
           </div>
+
+          <MailtoAction mailtoLink={mailtoLink} />
         </div>
       )}
 
