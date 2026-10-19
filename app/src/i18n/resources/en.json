@@ -312,6 +312,11 @@
     "subjectPlaceholder": "No subject available yet",
     "bodyLabel": "Mail body",
     "bodyPlaceholder": "No mail body available yet",
+    "mailtoTitle": "Continue in your email application",
+    "openMailClient": "Open in email application",
+    "mailtoDescription": "Opens your locally configured email application with the details shown above. Paperwork does not send anything automatically.",
+    "mailtoUnavailable": "Choose a recipient with a verified public email address. Otherwise, use the copy/paste fields and the official contact option.",
+    "mailtoBodyTooLong": "The subject or mail body is too long for a reliable email link. The email application will open with only the details that can be passed safely; copy the complete content from the fields above.",
     "reset": "Reset"
   },
   "games": {

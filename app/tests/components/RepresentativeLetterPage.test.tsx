@@ -15,6 +15,7 @@ const LONG_BODY_BUTTON = 'representativeLetter.longBody';
 const RECIPIENT_LABEL = 'representativeLetter.recipientLabel';
 const SEARCH_LABEL = 'representativeLetter.searchLabel';
 const SELECT_RECIPIENT_BUTTON = 'representativeLetter.selectRecipientNamed';
+const OPEN_MAIL_CLIENT = 'representativeLetter.openMailClient';
 const VERIFIED_RECIPIENT = representativeCatalog.representatives.find(
   ({ email }) => email !== null,
 );
@@ -26,6 +27,40 @@ const RECIPIENT_WITHOUT_CONSTITUENCY =
     ({ constituency }) => constituency === null,
   );
 
+const { SUBJECT, SHORT_BODY, LONG_BODY, localeState } = vi.hoisted(() => ({
+  SUBJECT: 'Synthetic subject: ä & test',
+  SHORT_BODY: 'Synthetic short body\nSecond line',
+  LONG_BODY: 'x'.repeat(2_000),
+  localeState: { current: 'de' },
+}));
+
+vi.mock(
+  '../../src/features/representative-letter/data/catalogs',
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<
+        typeof import('../../src/features/representative-letter/data/catalogs')
+      >();
+    return {
+      ...actual,
+      representativeLetterTextCatalogs: {
+        de: {
+          version: 'test',
+          subject: SUBJECT,
+          shortBody: SHORT_BODY,
+          longBody: LONG_BODY,
+        },
+        en: {
+          version: 'test',
+          subject: 'Synthetic English subject',
+          shortBody: 'Synthetic English body',
+          longBody: LONG_BODY,
+        },
+      },
+    };
+  },
+);
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
@@ -33,7 +68,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('../../src/i18n/useLocale', () => ({
-  useLocale: () => ({ locale: 'de' }),
+  useLocale: () => ({ locale: localeState.current }),
 }));
 
 const renderPage = () =>
@@ -51,6 +86,7 @@ const renderPage = () =>
 
 describe('RepresentativeLetterPage', () => {
   beforeEach(() => {
+    localeState.current = 'de';
     window.sessionStorage.clear();
     vi.stubGlobal(
       'fetch',
@@ -107,6 +143,11 @@ describe('RepresentativeLetterPage', () => {
     expect(
       screen.queryByRole('button', { name: /download|export/i }),
     ).toBeNull();
+    expect(
+      screen.getByRole('button', {
+        name: OPEN_MAIL_CLIENT,
+      }),
+    ).toBeDisabled();
   });
 
   it('searches locally and retains an explicitly selected verified recipient', async () => {
@@ -135,6 +176,14 @@ describe('RepresentativeLetterPage', () => {
     ).toHaveAttribute('href', VERIFIED_RECIPIENT!.officialProfileUrl);
     expect(readRepresentativeLetterState().recipientId).toBe(
       VERIFIED_RECIPIENT!.id,
+    );
+    expect(
+      screen.getByRole('link', {
+        name: OPEN_MAIL_CLIENT,
+      }),
+    ).toHaveAttribute(
+      'href',
+      `mailto:${VERIFIED_RECIPIENT!.email}?subject=Synthetic%20subject%3A%20%C3%A4%20%26%20test&body=Synthetic%20short%20body%0D%0ASecond%20line`,
     );
 
     await user.clear(search);
@@ -170,6 +219,11 @@ describe('RepresentativeLetterPage', () => {
         name: 'representativeLetter.officialContact',
       }),
     ).toHaveAttribute('href', MISSING_RECIPIENT!.officialContactUrl);
+    expect(
+      screen.getByRole('button', {
+        name: OPEN_MAIL_CLIENT,
+      }),
+    ).toBeDisabled();
   });
 
   it('filters by federal state, limits broad results, and supports entries without a constituency', async () => {
@@ -254,6 +308,58 @@ describe('RepresentativeLetterPage', () => {
 
     expect(screen.getByText('representativeLetter.processTitle')).toBeVisible();
     expect(readRepresentativeLetterState().bodyLength).toBe('short');
+  });
+
+  it('keeps an oversized long body available while omitting it from mailto', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: START_BUTTON }));
+    await user.type(
+      await screen.findByLabelText(SEARCH_LABEL),
+      VERIFIED_RECIPIENT!.fullName,
+    );
+    await user.click(
+      screen.getByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
+    );
+    await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
+
+    expect(screen.getByLabelText('representativeLetter.bodyLabel')).toHaveValue(
+      LONG_BODY,
+    );
+    expect(
+      screen.getByRole('link', {
+        name: OPEN_MAIL_CLIENT,
+      }),
+    ).toHaveAttribute(
+      'href',
+      `mailto:${VERIFIED_RECIPIENT!.email}?subject=Synthetic%20subject%3A%20%C3%A4%20%26%20test`,
+    );
+    expect(
+      screen.getByText('representativeLetter.mailtoBodyTooLong'),
+    ).toHaveProperty('tagName', 'OUTPUT');
+  });
+
+  it('uses the currently visible English subject and body in mailto', async () => {
+    localeState.current = 'en';
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: START_BUTTON }));
+    await user.type(
+      await screen.findByLabelText(SEARCH_LABEL),
+      VERIFIED_RECIPIENT!.fullName,
+    );
+    await user.click(
+      screen.getByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
+    );
+
+    expect(
+      screen.getByRole('link', {
+        name: OPEN_MAIL_CLIENT,
+      }),
+    ).toHaveAttribute(
+      'href',
+      `mailto:${VERIFIED_RECIPIENT!.email}?subject=Synthetic%20English%20subject&body=Synthetic%20English%20body`,
+    );
   });
 
   it('resets only the tool state and leaves unrelated session data intact', async () => {
