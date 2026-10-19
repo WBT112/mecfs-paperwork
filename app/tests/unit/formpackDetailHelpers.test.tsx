@@ -180,6 +180,7 @@ describe('formpack detail helpers', () => {
       q6: false,
       q7: true,
       q8: false,
+      otherCauseCode: false,
       resolvedCaseText: true,
     };
     detail.applyFieldVisibility(decisionUi, visibility);
