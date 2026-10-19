@@ -33,12 +33,14 @@ const searchableRepresentativeText = (
  * @param representatives - Static catalog entries to search.
  * @param query - User-entered name, constituency name, or constituency number.
  * @param stateCode - Optional federal-state code to require.
+ * @param constituencyNumber - Optional explicitly selected constituency.
  * @returns Entries matching the state and every normalized search token.
  */
 export const filterRepresentatives = (
   representatives: readonly RepresentativeCatalogEntry[],
   query: string,
   stateCode: string,
+  constituencyNumber?: number | null,
 ): RepresentativeCatalogEntry[] => {
   const searchTokens = normalizeSearchValue(query)
     .split(/\s+/u)
@@ -46,6 +48,12 @@ export const filterRepresentatives = (
 
   return representatives.filter((representative) => {
     if (stateCode && representative.stateCode !== stateCode) {
+      return false;
+    }
+    if (
+      constituencyNumber &&
+      representative.constituency?.number !== constituencyNumber
+    ) {
       return false;
     }
     if (searchTokens.length === 0) {

@@ -7,6 +7,7 @@ export const PRECACHE_GLOB_PATTERNS = [
   'apple-touch-icon.png',
   'assets/*.{js,css,woff2}',
   'assets/representatives-*.json',
+  'assets/constituency-locations-*.json',
   'assets/annex-*.{jpg,jpeg,png}',
   'assets/Liberation*.ttf',
 ];

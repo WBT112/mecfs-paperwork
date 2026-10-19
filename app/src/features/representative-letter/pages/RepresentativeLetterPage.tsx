@@ -8,8 +8,10 @@ import {
   type RepresentativeCatalog,
   type RepresentativeCatalogEntry,
 } from '../data/catalogs';
+import type { ConstituencyLocationCatalog } from '../data/constituencyLocationCatalogs';
 import { getRepresentativeLetterContent } from '../data/letterContent';
 import { generateRepresentativeLetter } from '../generator';
+import { loadConstituencyLocationCatalog } from '../data/loadConstituencyLocationCatalog';
 import { loadRepresentativeCatalog } from '../data/loadRepresentativeCatalog';
 import {
   REPRESENTATIVE_LETTER_TOOL_ID,
@@ -24,6 +26,11 @@ import {
   writeRepresentativeLetterState,
 } from '../sessionState';
 import { filterRepresentatives } from '../representativeSearch';
+import {
+  searchConstituencyLocations,
+  type ConstituencyLocationMatch,
+  type ConstituencyLocationSearchStatus,
+} from '../constituencyLocationSearch';
 import { createMailtoLink, type MailtoLink } from '../mailto';
 
 const RESULT_LIMIT = 50;
@@ -177,21 +184,150 @@ const SearchResults = ({
 
 type RecipientPickerProps = {
   representatives: readonly RepresentativeCatalogEntry[];
+  locationCatalog: ConstituencyLocationCatalog;
   query: string;
+  locationQuery: string;
   stateCode: string;
+  selectedConstituencyNumber: number | null;
   recipientId: string | null;
   onQueryChange: (value: string) => void;
+  onLocationQueryChange: (value: string) => void;
   onStateChange: (value: string) => void;
+  onSelectConstituency: (constituencyNumber: number) => void;
   onSelect: (recipientId: string) => void;
+};
+
+const locationStatusKey = (
+  status: ConstituencyLocationSearchStatus,
+): string => {
+  const keys: Record<ConstituencyLocationSearchStatus, string> = {
+    idle: 'representativeLetter.locationSearchPrompt',
+    'incomplete-postcode': 'representativeLetter.locationIncompletePostcode',
+    'invalid-postcode': 'representativeLetter.locationInvalidPostcode',
+    'incomplete-place': 'representativeLetter.locationIncompletePlace',
+    'not-found': 'representativeLetter.locationNotFound',
+    matches: 'representativeLetter.locationChooseConstituency',
+  };
+  return keys[status];
+};
+
+type LocationResultProps = {
+  match: ConstituencyLocationMatch;
+  isSelected: boolean;
+  onSelect: (constituencyNumber: number) => void;
+};
+
+const LocationResult = ({
+  match,
+  isSelected,
+  onSelect,
+}: LocationResultProps) => {
+  const { t } = useTranslation();
+  const visibleLocations = match.locations.slice(0, 3);
+  const locationSummary = visibleLocations
+    .map(({ municipality }) => municipality)
+    .join(' · ');
+  const postalCodeSummary = [
+    ...new Set(match.locations.flatMap(({ postalCodes }) => postalCodes)),
+  ]
+    .slice(0, 4)
+    .join(', ');
+
+  return (
+    <li style={RESULT_STYLE}>
+      <div style={RESULT_DETAILS_STYLE}>
+        <strong>
+          {t('representativeLetter.constituencyResult', {
+            number: match.constituencyNumber,
+            name: match.constituencyName,
+          })}
+        </strong>
+        <span>{match.state}</span>
+        <span>{locationSummary}</span>
+        <span>
+          {t('representativeLetter.postcodeSummary', {
+            postalCodes: postalCodeSummary,
+          })}
+        </span>
+      </div>
+      <button
+        type="button"
+        className="app__button"
+        aria-pressed={isSelected}
+        aria-label={t('representativeLetter.selectConstituencyNamed', {
+          number: match.constituencyNumber,
+          name: match.constituencyName,
+        })}
+        onClick={() => onSelect(match.constituencyNumber)}
+      >
+        {isSelected
+          ? t('representativeLetter.constituencySelected')
+          : t('representativeLetter.selectConstituency')}
+      </button>
+    </li>
+  );
+};
+
+type LocationSearchResultsProps = {
+  status: ConstituencyLocationSearchStatus;
+  matches: ConstituencyLocationMatch[];
+  selectedConstituencyNumber: number | null;
+  onSelect: (constituencyNumber: number) => void;
+};
+
+const LocationSearchResults = ({
+  status,
+  matches,
+  selectedConstituencyNumber,
+  onSelect,
+}: LocationSearchResultsProps) => {
+  const { t } = useTranslation();
+  if (status === 'idle') {
+    return null;
+  }
+  if (status !== 'matches') {
+    return <output>{t(locationStatusKey(status))}</output>;
+  }
+
+  return (
+    <div className="representative-letter__location-results">
+      <output>
+        {t(
+          matches.length > 1
+            ? 'representativeLetter.locationAmbiguous'
+            : 'representativeLetter.locationChooseConstituency',
+          { count: matches.length },
+        )}
+      </output>
+      <ul className="representative-letter__results" style={RESULTS_STYLE}>
+        {matches.slice(0, RESULT_LIMIT).map((match) => (
+          <LocationResult
+            key={match.constituencyNumber}
+            match={match}
+            isSelected={match.constituencyNumber === selectedConstituencyNumber}
+            onSelect={onSelect}
+          />
+        ))}
+      </ul>
+      {matches.length > RESULT_LIMIT ? (
+        <p>{t('representativeLetter.refineLocationSearch')}</p>
+      ) : null}
+    </div>
+  );
 };
 
 const RecipientPicker = ({
   representatives,
+  locationCatalog,
   query,
+  locationQuery,
   stateCode,
+  selectedConstituencyNumber,
   recipientId,
   onQueryChange,
+  onLocationQueryChange,
   onStateChange,
+  onSelectConstituency,
   onSelect,
 }: RecipientPickerProps) => {
   const { t } = useTranslation();
@@ -203,9 +339,22 @@ const RecipientPicker = ({
       ]),
     ).entries(),
   ].toSorted(([, left], [, right]) => left.localeCompare(right, 'de'));
-  const active = query.trim() !== '' || stateCode !== '';
+  const locationSearch = searchConstituencyLocations(
+    locationCatalog,
+    locationQuery,
+    stateCode,
+  );
+  const locationActive = locationQuery.trim() !== '';
+  const active = locationActive
+    ? selectedConstituencyNumber !== null
+    : query.trim() !== '' || stateCode !== '';
   const matches = active
-    ? filterRepresentatives(representatives, query, stateCode)
+    ? filterRepresentatives(
+        representatives,
+        query,
+        stateCode,
+        locationActive ? selectedConstituencyNumber : null,
+      )
     : [];
 
   return (
@@ -235,6 +384,21 @@ const RecipientPicker = ({
             style={CONTROL_STYLE}
           />
         </label>
+        <label
+          htmlFor="representative-letter-location-search"
+          style={FIELD_STYLE}
+        >
+          {t('representativeLetter.locationSearchLabel')}
+          <input
+            id="representative-letter-location-search"
+            type="search"
+            inputMode="search"
+            value={locationQuery}
+            onChange={(event) => onLocationQueryChange(event.target.value)}
+            placeholder={t('representativeLetter.locationSearchPlaceholder')}
+            style={CONTROL_STYLE}
+          />
+        </label>
         <label htmlFor="representative-letter-state-filter" style={FIELD_STYLE}>
           {t('representativeLetter.stateFilterLabel')}
           <select
@@ -253,6 +417,15 @@ const RecipientPicker = ({
         </label>
       </div>
       <p className="representative-letter__search-hint">
+        {t('representativeLetter.locationPrivacyHint')}
+      </p>
+      <LocationSearchResults
+        status={locationSearch.status}
+        matches={locationSearch.matches}
+        selectedConstituencyNumber={selectedConstituencyNumber}
+        onSelect={onSelectConstituency}
+      />
+      <p className="representative-letter__search-hint">
         {t('representativeLetter.constituencyHint')}{' '}
         <a
           className="app__link"
@@ -263,31 +436,42 @@ const RecipientPicker = ({
           {t('representativeLetter.constituencyLookup')}
         </a>
       </p>
-      <SearchResults
-        active={active}
-        matches={matches}
-        recipientId={recipientId}
-        onSelect={onSelect}
-      />
+      {!locationActive || selectedConstituencyNumber !== null ? (
+        <SearchResults
+          active={active}
+          matches={matches}
+          recipientId={recipientId}
+          onSelect={onSelect}
+        />
+      ) : null}
     </section>
   );
 };
 
-const useRepresentativeCatalog = (): {
+const useRepresentativeCatalogs = (): {
   catalog: RepresentativeCatalog | null;
+  locationCatalog: ConstituencyLocationCatalog | null;
   failed: boolean;
 } => {
   const [catalog, setCatalog] = useState<RepresentativeCatalog | null>(null);
+  const [locationCatalog, setLocationCatalog] =
+    useState<ConstituencyLocationCatalog | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    loadRepresentativeCatalog().then(
-      (loadedCatalog) => setCatalog(loadedCatalog),
+    Promise.all([
+      loadRepresentativeCatalog(),
+      loadConstituencyLocationCatalog(),
+    ]).then(
+      ([loadedCatalog, loadedLocationCatalog]) => {
+        setCatalog(loadedCatalog);
+        setLocationCatalog(loadedLocationCatalog);
+      },
       () => setFailed(true),
     );
   }, []);
 
-  return { catalog, failed };
+  return { catalog, locationCatalog, failed };
 };
 
 const SelectedRecipient = ({
@@ -403,8 +587,16 @@ export default function RepresentativeLetterPage() {
     readRepresentativeLetterState(),
   );
   const [searchQuery, setSearchQuery] = useState('');
+  const [locationQuery, setLocationQuery] = useState('');
   const [stateFilter, setStateFilter] = useState('');
-  const { catalog, failed: catalogFailed } = useRepresentativeCatalog();
+  const [selectedConstituencyNumber, setSelectedConstituencyNumber] = useState<
+    number | null
+  >(null);
+  const {
+    catalog,
+    locationCatalog,
+    failed: catalogFailed,
+  } = useRepresentativeCatalogs();
   const skipNextWrite = useRef(false);
 
   useEffect(() => {
@@ -437,7 +629,30 @@ export default function RepresentativeLetterPage() {
     clearRepresentativeLetterState();
     setState(createDefaultRepresentativeLetterState());
     setSearchQuery('');
+    setLocationQuery('');
     setStateFilter('');
+    setSelectedConstituencyNumber(null);
+  };
+
+  const updateRepresentativeQuery = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim()) {
+      setLocationQuery('');
+      setSelectedConstituencyNumber(null);
+    }
+  };
+
+  const updateLocationQuery = (value: string) => {
+    setLocationQuery(value);
+    setSelectedConstituencyNumber(null);
+    if (value.trim()) {
+      setSearchQuery('');
+    }
+  };
+
+  const updateStateFilter = (value: string) => {
+    setStateFilter(value);
+    setSelectedConstituencyNumber(null);
   };
 
   const contentCatalog = getRepresentativeLetterContent(locale);
@@ -532,14 +747,19 @@ export default function RepresentativeLetterPage() {
         </div>
       ) : (
         <div className="representative-letter__panel">
-          {catalog ? (
+          {catalog && locationCatalog ? (
             <RecipientPicker
               representatives={representatives}
+              locationCatalog={locationCatalog}
               query={searchQuery}
+              locationQuery={locationQuery}
               stateCode={stateFilter}
+              selectedConstituencyNumber={selectedConstituencyNumber}
               recipientId={state.recipientId}
-              onQueryChange={setSearchQuery}
-              onStateChange={setStateFilter}
+              onQueryChange={updateRepresentativeQuery}
+              onLocationQueryChange={updateLocationQuery}
+              onStateChange={updateStateFilter}
+              onSelectConstituency={setSelectedConstituencyNumber}
               onSelect={selectRecipient}
             />
           ) : (

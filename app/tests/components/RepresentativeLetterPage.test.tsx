@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { representativeLetterContent } from '../../src/features/representative-letter/data/letterContent';
+import { constituencyLocationCatalog } from '../../src/features/representative-letter/data/constituencyLocationCatalog';
 import { representativeCatalog } from '../../src/features/representative-letter/data/representativeCatalog';
 import RepresentativeLetterPage from '../../src/features/representative-letter/pages/RepresentativeLetterPage';
 import { createDefaultRepresentativeLetterState } from '../../src/features/representative-letter/model';
@@ -17,6 +18,9 @@ const LONG_BODY_BUTTON = 'representativeLetter.longBody';
 const RECIPIENT_LABEL = 'representativeLetter.recipientLabel';
 const BODY_LABEL = 'representativeLetter.bodyLabel';
 const SEARCH_LABEL = 'representativeLetter.searchLabel';
+const LOCATION_SEARCH_LABEL = 'representativeLetter.locationSearchLabel';
+const SELECT_CONSTITUENCY_BUTTON =
+  'representativeLetter.selectConstituencyNamed';
 const SELECT_RECIPIENT_BUTTON = 'representativeLetter.selectRecipientNamed';
 const OPEN_MAIL_CLIENT = 'representativeLetter.openMailClient';
 const INCLUDE_PERSONAL = 'representativeLetter.includePersonalInShortBody';
@@ -65,13 +69,14 @@ describe('RepresentativeLetterPage', () => {
     window.sessionStorage.clear();
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () =>
-        Promise.resolve(
-          new Response(JSON.stringify(representativeCatalog), {
-            headers: { 'content-type': 'application/json' },
-          }),
-        ),
-      ),
+      vi.fn(async (input: RequestInfo | URL) => {
+        const payload = String(input).includes('constituency-locations')
+          ? constituencyLocationCatalog
+          : representativeCatalog;
+        return new Response(JSON.stringify(payload), {
+          headers: { 'content-type': 'application/json' },
+        });
+      }),
     );
   });
 
@@ -227,6 +232,93 @@ describe('RepresentativeLetterPage', () => {
     expect(
       screen.getAllByText(RECIPIENT_WITHOUT_CONSTITUENCY!.fullName),
     ).toHaveLength(2);
+  });
+
+  it('requires an explicit constituency choice for ambiguous postcodes', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: START_BUTTON }));
+
+    const locationSearch = await screen.findByLabelText(LOCATION_SEARCH_LABEL);
+    await user.type(locationSearch, '97896');
+    expect(
+      screen.getByText('representativeLetter.locationAmbiguous'),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
+    ).toBeNull();
+    expect(
+      screen.getAllByRole('button', {
+        name: SELECT_CONSTITUENCY_BUTTON,
+      }),
+    ).toHaveLength(2);
+
+    await user.selectOptions(
+      screen.getByLabelText('representativeLetter.stateFilterLabel'),
+      'BY',
+    );
+    expect(
+      screen.getAllByRole('button', {
+        name: SELECT_CONSTITUENCY_BUTTON,
+      }),
+    ).toHaveLength(1);
+    await user.click(
+      screen.getByRole('button', {
+        name: SELECT_CONSTITUENCY_BUTTON,
+      }),
+    );
+    expect(
+      screen.getAllByRole('button', { name: SELECT_RECIPIENT_BUTTON }).length,
+    ).toBeGreaterThan(0);
+
+    await user.clear(locationSearch);
+    await user.type(locationSearch, '1234');
+    expect(
+      screen.getByText('representativeLetter.locationIncompletePostcode'),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
+    ).toBeNull();
+  });
+
+  it('shows local place-search validation and keeps queries ephemeral', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: START_BUTTON }));
+
+    const locationSearch = await screen.findByLabelText(LOCATION_SEARCH_LABEL);
+    await user.type(locationSearch, 'ab');
+    expect(
+      screen.getByText('representativeLetter.locationIncompletePlace'),
+    ).toBeVisible();
+    await user.clear(locationSearch);
+    await user.type(locationSearch, '12a45');
+    expect(
+      screen.getByText('representativeLetter.locationInvalidPostcode'),
+    ).toBeVisible();
+    await user.clear(locationSearch);
+    await user.type(locationSearch, 'Ort der nicht existiert');
+    expect(
+      screen.getByText('representativeLetter.locationNotFound'),
+    ).toBeVisible();
+    await user.clear(locationSearch);
+    await user.type(locationSearch, 'Bad');
+    expect(
+      screen.getByText('representativeLetter.refineLocationSearch'),
+    ).toBeVisible();
+
+    expect(window.location.search).toBe('');
+    expect(
+      window.sessionStorage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY),
+    ).not.toContain('Ort der nicht existiert');
+    expect(
+      screen.getByRole('link', {
+        name: 'representativeLetter.constituencyLookup',
+      }),
+    ).toHaveAttribute(
+      'href',
+      'https://www.bundestag.de/abgeordnete/wahlkreise/',
+    );
   });
 
   it('shows loading and failure states for the bundled catalog asset', async () => {
