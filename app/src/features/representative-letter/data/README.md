@@ -47,3 +47,21 @@ email, before committing it. The updater is not part of installation, tests,
 builds, or application runtime. Validation is part of the normal repository
 quality gate, but it reads only the checked-in snapshot and performs no
 network request.
+
+## Letter content
+
+`letter-content.de.json` preserves the German source text supplied in issue
+#553. The maintainer approved this exact text for technical integration on
+2026-10-19. The catalog deliberately retains bracketed alternatives in the
+source material so the generator can resolve them without changing the
+archived wording.
+
+No English letter translation is approved yet. Both interface locales resolve
+to the complete German catalog and the UI must disclose that language instead
+of silently mixing translated and untranslated paragraphs. A later English
+catalog requires separate editorial approval and the same structural checks.
+
+Run `npm run representative-content:validate` after every content change. The
+validator enforces the catalog version, approval metadata, the complete set of
+20 source blocks, unique selection keys, required template sections, and both
+long-form source links. It performs no network requests.
