@@ -24,11 +24,26 @@ test('opens directly and retains only tab-local representative-letter state', as
   await expect(page.locator('#representative-letter-body')).toBeVisible();
   await expect(page.locator('a[download], button[download]')).toHaveCount(0);
 
+  await page
+    .getByLabel(/Name oder Wahlkreis|Name or constituency/i)
+    .fill('Sanae Abdi');
+  await page
+    .getByRole('button', {
+      name: /Sanae Abdi als Empfänger auswählen|Select Sanae Abdi as recipient/i,
+    })
+    .click();
+  await expect(page.locator('#representative-letter-recipient')).toHaveValue(
+    'sanae.abdi@bundestag.de',
+  );
+
   await page.getByRole('button', { name: /Langform|long version/i }).click();
   await page.reload();
   await expect(
     page.getByRole('button', { name: /Langform|long version/i }),
   ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#representative-letter-recipient')).toHaveValue(
+    'sanae.abdi@bundestag.de',
+  );
 
   await page.goto('/formpacks');
   await page.goBack();
