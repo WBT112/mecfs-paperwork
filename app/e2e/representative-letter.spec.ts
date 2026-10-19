@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const TOOL_PATH = '/tools/representative-letter';
-const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v1';
+const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v2';
 
 test('opens directly and retains only tab-local representative-letter state', async ({
   context,
@@ -35,12 +35,48 @@ test('opens directly and retains only tab-local representative-letter state', as
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
     'sanae.abdi@bundestag.de',
   );
+  await page.getByLabel(/ME-Schweregrad|ME severity/i).selectOption('moderate');
+  await page
+    .getByLabel(/Variante zum Schweregrad|Severity variant/i)
+    .selectOption('2');
+  await page
+    .getByLabel(
+      /Pflegegrad oder Antragsstatus|Care grade or application status/i,
+    )
+    .selectOption('pending');
+  await page.getByLabel(/persönliche Absätze|personal paragraphs/i).check();
+  await expect(page.locator('#representative-letter-body')).toHaveValue(
+    /Mein Alltag ist eine ständige Abwägung/u,
+  );
+  await expect(page.locator('#representative-letter-body')).toHaveValue(
+    /Mein Antrag auf einen Pflegegrad läuft/u,
+  );
+  await expect(page.locator('#representative-letter-body')).toHaveValue(
+    /Guten Tag Sanae Abdi,/u,
+  );
+  await expect(page.locator('#representative-letter-body')).not.toHaveValue(
+    /\[/u,
+  );
   const mailtoLink = page.getByRole('link', {
     name: /Im E-Mail-Programm öffnen|Open in email application/i,
   });
   await expect(mailtoLink).toHaveAttribute(
     'href',
-    /^mailto:sanae\.abdi@bundestag\.de\?subject=.*&body=/,
+    /^mailto:sanae\.abdi@bundestag\.de\?subject=/,
+  );
+
+  const search = page.getByLabel(/Name oder Wahlkreis|Name or constituency/i);
+  await search.fill('Aaron Valent');
+  await page
+    .getByRole('button', {
+      name: /Aaron Valent als Empfänger auswählen|Select Aaron Valent as recipient/i,
+    })
+    .click();
+  await expect(page.locator('#representative-letter-body')).toHaveValue(
+    /Guten Tag Aaron Valent,/u,
+  );
+  await expect(page.locator('#representative-letter-body')).not.toHaveValue(
+    /Guten Tag Sanae Abdi,/u,
   );
 
   await page.getByRole('button', { name: /Langform|long version/i }).click();
@@ -49,8 +85,19 @@ test('opens directly and retains only tab-local representative-letter state', as
     page.getByRole('button', { name: /Langform|long version/i }),
   ).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
-    'sanae.abdi@bundestag.de',
+    'aaron.valent@bundestag.de',
   );
+  await expect(page.getByLabel(/ME-Schweregrad|ME severity/i)).toHaveValue(
+    'moderate',
+  );
+  await expect(
+    page.getByLabel(
+      /Pflegegrad oder Antragsstatus|Care grade or application status/i,
+    ),
+  ).toHaveValue('pending');
+  await expect(
+    page.getByLabel(/persönliche Absätze|personal paragraphs/i),
+  ).toBeChecked();
 
   await page.goto('/formpacks');
   await page.goBack();

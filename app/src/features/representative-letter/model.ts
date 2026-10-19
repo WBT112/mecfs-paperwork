@@ -2,7 +2,7 @@
 export const REPRESENTATIVE_LETTER_TOOL_ID = 'representative-letter';
 
 /** Current schema version for the tab-local representative-letter state. */
-export const REPRESENTATIVE_LETTER_STATE_VERSION = 1 as const;
+export const REPRESENTATIVE_LETTER_STATE_VERSION = 2 as const;
 
 /** Views available inside the representative-letter tool. */
 export type RepresentativeLetterView = 'information' | 'letter';
@@ -26,6 +26,9 @@ export type RepresentativeLetterState = {
   careStatusId: string | null;
   careStatusVariantId: string;
   includePersonalDetailsInShortBody: boolean;
+  includeConstituencyStatement: boolean;
+  customExperience: string;
+  customRequest: string;
   bodyLength: RepresentativeLetterBodyLength;
 };
 
@@ -40,9 +43,12 @@ export const createDefaultRepresentativeLetterState =
     view: 'information',
     recipientId: null,
     severityId: null,
-    severityVariantId: 'standard',
+    severityVariantId: '1',
     careStatusId: null,
-    careStatusVariantId: 'standard',
+    careStatusVariantId: '1',
     includePersonalDetailsInShortBody: false,
+    includeConstituencyStatement: false,
+    customExperience: '',
+    customRequest: '',
     bodyLength: 'short',
   });

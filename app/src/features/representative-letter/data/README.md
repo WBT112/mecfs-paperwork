@@ -65,3 +65,25 @@ Run `npm run representative-content:validate` after every content change. The
 validator enforces the catalog version, approval metadata, the complete set of
 20 source blocks, unique selection keys, required template sections, and both
 long-form source links. It performs no network requests.
+
+### Generator behavior
+
+The generator reads only the bundled catalog and tab-local selections. It is
+deterministic and does not call an API, infer a severity or care grade, or read
+profile data. Short output excludes all selected and custom personal
+paragraphs until the user enables the short-form opt-in. Long output includes
+selected personal paragraphs and the two cataloged source links.
+
+The archived `sourceText` remains unchanged. Before display, the generator
+resolves the bracketed drafting alternatives conservatively so no open
+placeholder reaches the mail text:
+
+- personal relationship alternatives become the neutral term “Pflegeperson”;
+- the unknown number of care years is omitted;
+- the mild-severity work/day-to-day alternative is omitted with its clause;
+- the care-grade-1 household-help/appointment-companion sentence is omitted;
+- the single “nicht selbstständig essen” option is retained without brackets.
+
+These transformations introduce no new personal circumstances. Changing them
+or adding an English letter catalog requires explicit editorial approval and a
+new content version.

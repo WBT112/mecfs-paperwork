@@ -29,20 +29,26 @@ const createPopulatedState = (): RepresentativeLetterState => ({
   careStatusId: 'care-status-example',
   careStatusVariantId: 'alternative',
   includePersonalDetailsInShortBody: true,
+  includeConstituencyStatement: true,
+  customExperience: 'Synthetic experience',
+  customRequest: 'Synthetic request',
   bodyLength: 'long',
 });
 
 describe('representative-letter session state', () => {
   it('creates a privacy-preserving default state', () => {
     expect(createDefaultRepresentativeLetterState()).toEqual({
-      version: 1,
+      version: 2,
       view: 'information',
       recipientId: null,
       severityId: null,
-      severityVariantId: 'standard',
+      severityVariantId: '1',
       careStatusId: null,
-      careStatusVariantId: 'standard',
+      careStatusVariantId: '1',
       includePersonalDetailsInShortBody: false,
+      includeConstituencyStatement: false,
+      customExperience: '',
+      customRequest: '',
       bodyLength: 'short',
     });
   });
@@ -90,7 +96,7 @@ describe('representative-letter session state', () => {
   it.each([
     ['null root', null],
     ['primitive root', 'invalid'],
-    ['version', { ...createPopulatedState(), version: 2 }],
+    ['version', { ...createPopulatedState(), version: 1 }],
     ['view', { ...createPopulatedState(), view: 'invalid' }],
     ['recipient', { ...createPopulatedState(), recipientId: 2 }],
     ['empty recipient', { ...createPopulatedState(), recipientId: ' ' }],
@@ -116,6 +122,12 @@ describe('representative-letter session state', () => {
       'personal-details flag',
       { ...createPopulatedState(), includePersonalDetailsInShortBody: 'yes' },
     ],
+    [
+      'constituency flag',
+      { ...createPopulatedState(), includeConstituencyStatement: 'yes' },
+    ],
+    ['custom experience', { ...createPopulatedState(), customExperience: 1 }],
+    ['custom request', { ...createPopulatedState(), customRequest: null }],
     ['body length', { ...createPopulatedState(), bodyLength: 'medium' }],
   ])('rejects an invalid %s value', (_label, value) => {
     const storage = createMemoryStorage();
@@ -141,11 +153,14 @@ describe('representative-letter session state', () => {
   it('clears only its own key', () => {
     const storage = createMemoryStorage();
     const unrelatedKey = 'unrelated';
+    const legacyKey = 'mecfs-paperwork.representative-letter.state.v1';
     storage.setItem(unrelatedKey, 'keep');
+    storage.setItem(legacyKey, 'obsolete');
     writeRepresentativeLetterState(createPopulatedState(), storage);
 
     expect(clearRepresentativeLetterState(storage)).toBe(true);
     expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBeNull();
+    expect(storage.getItem(legacyKey)).toBeNull();
     expect(storage.getItem(unrelatedKey)).toBe('keep');
   });
 
