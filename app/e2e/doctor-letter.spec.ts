@@ -560,9 +560,20 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
     '#root_decision_q5',
     /Other cause|OtherCause/i,
   );
-  await waitForResolvedText(
-    page,
-    translations.formpack['doctor-letter.case.10.paragraph'],
+  const otherCauseCode = 'E89.9 (Synthetic example)';
+  const otherCauseCodeInput = page.locator('#root_decision_otherCauseCode');
+  await expect(otherCauseCodeInput).toBeVisible();
+  await otherCauseCodeInput.fill(otherCauseCode);
+  await expect
+    .poll(
+      async () => page.locator('#root_decision_resolvedCaseText').inputValue(),
+      { timeout: POLL_TIMEOUT },
+    )
+    .toContain(otherCauseCode);
+  expect(
+    await page.locator('#root_decision_resolvedCaseText').inputValue(),
+  ).not.toContain(
+    '[insert the appropriate code for the specific non-infectious cause here]',
   );
 
   const recordId = assertPresent(
@@ -581,6 +592,12 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
     recordId,
     (record) => getDecisionField(record, 'q5'),
     'Other cause',
+  );
+  await waitForRecordField(
+    page,
+    recordId,
+    (record) => getDecisionField(record, 'otherCauseCode'),
+    otherCauseCode,
   );
 
   const downloadPromise = page.waitForEvent('download');
@@ -606,4 +623,5 @@ test('doctor-letter clears hidden fields when branch changes and JSON export sta
   expect(payload.record?.locale).toBe('en');
   expect(payload.data?.decision).not.toHaveProperty('q4');
   expect(payload.data?.decision?.q5).toBe('Other cause');
+  expect(payload.data?.decision?.otherCauseCode).toBe(otherCauseCode);
 });
