@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import CollapsibleSection from '../../../components/CollapsibleSection';
 import { useLocale } from '../../../i18n/useLocale';
+import LetterOptions from '../components/LetterOptions';
 import {
-  representativeLetterTextCatalogs,
   type RepresentativeCatalog,
   type RepresentativeCatalogEntry,
 } from '../data/catalogs';
+import { getRepresentativeLetterContent } from '../data/letterContent';
+import { generateRepresentativeLetter } from '../generator';
 import { loadRepresentativeCatalog } from '../data/loadRepresentativeCatalog';
 import {
   REPRESENTATIVE_LETTER_TOOL_ID,
@@ -426,6 +428,10 @@ export default function RepresentativeLetterPage() {
     setState((current) => ({ ...current, recipientId }));
   };
 
+  const updateOptions = (patch: Partial<RepresentativeLetterState>) => {
+    setState((current) => ({ ...current, ...patch }));
+  };
+
   const reset = () => {
     skipNextWrite.current = true;
     clearRepresentativeLetterState();
@@ -434,18 +440,29 @@ export default function RepresentativeLetterPage() {
     setStateFilter('');
   };
 
-  const textCatalog = representativeLetterTextCatalogs[locale];
-  const mailBody =
-    state.bodyLength === 'short' ? textCatalog.shortBody : textCatalog.longBody;
+  const contentCatalog = getRepresentativeLetterContent(locale);
   const representatives = catalog?.representatives ?? [];
   const selectedRepresentative = representatives.find(
     ({ id }) => id === state.recipientId,
   );
+  const generatedLetter = generateRepresentativeLetter({
+    catalog: contentCatalog,
+    bodyLength: state.bodyLength,
+    recipientName: selectedRepresentative?.fullName ?? null,
+    severityId: state.severityId,
+    severityVariantId: state.severityVariantId,
+    careStatusId: state.careStatusId,
+    careStatusVariantId: state.careStatusVariantId,
+    includePersonalDetailsInShortBody: state.includePersonalDetailsInShortBody,
+    includeConstituencyStatement: state.includeConstituencyStatement,
+    customExperience: state.customExperience,
+    customRequest: state.customRequest,
+  });
   const mailtoLink = createMailtoLink({
     recipient: selectedRepresentative?.email ?? null,
     recipientStatus: selectedRepresentative?.emailStatus ?? 'missing',
-    subject: textCatalog.subject,
-    body: mailBody,
+    subject: generatedLetter.subject,
+    body: generatedLetter.body,
   });
 
   return (
@@ -539,6 +556,12 @@ export default function RepresentativeLetterPage() {
             <SelectedRecipient representative={selectedRepresentative} />
           ) : null}
 
+          <LetterOptions
+            catalog={contentCatalog}
+            state={state}
+            onChange={updateOptions}
+          />
+
           <div
             className="representative-letter__length-switch"
             role="group"
@@ -585,7 +608,7 @@ export default function RepresentativeLetterPage() {
               id="representative-letter-subject"
               type="text"
               readOnly
-              value={textCatalog.subject}
+              value={generatedLetter.subject}
               placeholder={t('representativeLetter.subjectPlaceholder')}
             />
 
@@ -596,7 +619,7 @@ export default function RepresentativeLetterPage() {
               id="representative-letter-body"
               rows={12}
               readOnly
-              value={mailBody}
+              value={generatedLetter.body}
               placeholder={t('representativeLetter.bodyPlaceholder')}
             />
           </div>

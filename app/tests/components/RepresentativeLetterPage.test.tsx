@@ -2,8 +2,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { representativeLetterContent } from '../../src/features/representative-letter/data/letterContent';
 import { representativeCatalog } from '../../src/features/representative-letter/data/representativeCatalog';
 import RepresentativeLetterPage from '../../src/features/representative-letter/pages/RepresentativeLetterPage';
+import { createDefaultRepresentativeLetterState } from '../../src/features/representative-letter/model';
 import {
   REPRESENTATIVE_LETTER_SESSION_KEY,
   readRepresentativeLetterState,
@@ -13,9 +15,12 @@ import { TestRouter } from '../setup/testRouter';
 const START_BUTTON = 'representativeLetter.start';
 const LONG_BODY_BUTTON = 'representativeLetter.longBody';
 const RECIPIENT_LABEL = 'representativeLetter.recipientLabel';
+const BODY_LABEL = 'representativeLetter.bodyLabel';
 const SEARCH_LABEL = 'representativeLetter.searchLabel';
 const SELECT_RECIPIENT_BUTTON = 'representativeLetter.selectRecipientNamed';
 const OPEN_MAIL_CLIENT = 'representativeLetter.openMailClient';
+const INCLUDE_PERSONAL = 'representativeLetter.includePersonalInShortBody';
+const CUSTOM_EXPERIENCE = 'Synthetische eigene Erfahrung.';
 const VERIFIED_RECIPIENT = representativeCatalog.representatives.find(
   ({ email }) => email !== null,
 );
@@ -27,39 +32,9 @@ const RECIPIENT_WITHOUT_CONSTITUENCY =
     ({ constituency }) => constituency === null,
   );
 
-const { SUBJECT, SHORT_BODY, LONG_BODY, localeState } = vi.hoisted(() => ({
-  SUBJECT: 'Synthetic subject: ä & test',
-  SHORT_BODY: 'Synthetic short body\nSecond line',
-  LONG_BODY: 'x'.repeat(2_000),
+const { localeState } = vi.hoisted(() => ({
   localeState: { current: 'de' },
 }));
-
-vi.mock(
-  '../../src/features/representative-letter/data/catalogs',
-  async (importOriginal) => {
-    const actual =
-      await importOriginal<
-        typeof import('../../src/features/representative-letter/data/catalogs')
-      >();
-    return {
-      ...actual,
-      representativeLetterTextCatalogs: {
-        de: {
-          version: 'test',
-          subject: SUBJECT,
-          shortBody: SHORT_BODY,
-          longBody: LONG_BODY,
-        },
-        en: {
-          version: 'test',
-          subject: 'Synthetic English subject',
-          shortBody: 'Synthetic English body',
-          longBody: LONG_BODY,
-        },
-      },
-    };
-  },
-);
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -131,7 +106,7 @@ describe('RepresentativeLetterPage', () => {
 
     const recipient = screen.getByLabelText(RECIPIENT_LABEL);
     const subject = screen.getByLabelText('representativeLetter.subjectLabel');
-    const body = screen.getByLabelText('representativeLetter.bodyLabel');
+    const body = screen.getByLabelText(BODY_LABEL);
     expect(recipient).toHaveAttribute('readonly');
     expect(subject).toHaveAttribute('readonly');
     expect(body).toHaveAttribute('readonly');
@@ -183,7 +158,9 @@ describe('RepresentativeLetterPage', () => {
       }),
     ).toHaveAttribute(
       'href',
-      `mailto:${VERIFIED_RECIPIENT!.email}?subject=Synthetic%20subject%3A%20%C3%A4%20%26%20test&body=Synthetic%20short%20body%0D%0ASecond%20line`,
+      expect.stringContaining(
+        `mailto:${VERIFIED_RECIPIENT!.email}?subject=${encodeURIComponent(representativeLetterContent.subject)}`,
+      ),
     );
 
     await user.clear(search);
@@ -310,6 +287,97 @@ describe('RepresentativeLetterPage', () => {
     expect(readRepresentativeLetterState().bodyLength).toBe('short');
   });
 
+  it('selects independent personal variants and includes them only after short-form opt-in', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: START_BUTTON }));
+
+    const body = screen.getByLabelText(BODY_LABEL);
+    await user.selectOptions(
+      screen.getByLabelText('representativeLetter.severityLabel'),
+      'mild',
+    );
+    await user.selectOptions(
+      screen.getByLabelText('representativeLetter.severityVariantLabel'),
+      '2',
+    );
+    await user.selectOptions(
+      screen.getByLabelText('representativeLetter.careStatusLabel'),
+      'level-2',
+    );
+    await user.selectOptions(
+      screen.getByLabelText('representativeLetter.careVariantLabel'),
+      '2',
+    );
+
+    expect((body as HTMLTextAreaElement).value).not.toContain(
+      'Von außen sieht man mir die Erkrankung kaum an.',
+    );
+    await user.click(screen.getByText('representativeLetter.customizeTitle'));
+    await user.type(
+      screen.getByLabelText('representativeLetter.customExperienceLabel'),
+      CUSTOM_EXPERIENCE,
+    );
+    await user.type(
+      screen.getByLabelText('representativeLetter.customRequestLabel'),
+      'Synthetische eigene Bitte.',
+    );
+    await user.click(
+      screen.getByLabelText('representativeLetter.constituencyConfirmation'),
+    );
+    await user.click(screen.getByLabelText(INCLUDE_PERSONAL));
+
+    const includedBody = (body as HTMLTextAreaElement).value;
+    expect(includedBody).toContain(
+      'Von außen sieht man mir die Erkrankung kaum an.',
+    );
+    expect(includedBody).toContain('Ich habe Pflegegrad 2.');
+    expect(includedBody).toContain(CUSTOM_EXPERIENCE);
+    expect(includedBody).toContain('Synthetische eigene Bitte.');
+    expect(includedBody).toContain('Ich lebe in Ihrem Wahlkreis.');
+
+    await user.click(screen.getByLabelText(INCLUDE_PERSONAL));
+    expect((body as HTMLTextAreaElement).value).not.toContain(
+      CUSTOM_EXPERIENCE,
+    );
+    await user.selectOptions(
+      screen.getByLabelText('representativeLetter.severityLabel'),
+      '',
+    );
+    await user.selectOptions(
+      screen.getByLabelText('representativeLetter.careStatusLabel'),
+      '',
+    );
+    await user.click(
+      screen.getByLabelText('representativeLetter.constituencyConfirmation'),
+    );
+    expect(readRepresentativeLetterState()).toMatchObject({
+      severityId: null,
+      careStatusId: null,
+      includeConstituencyStatement: false,
+    });
+  });
+
+  it('safely omits a stale variant that is not in the approved catalog', async () => {
+    window.sessionStorage.setItem(
+      REPRESENTATIVE_LETTER_SESSION_KEY,
+      JSON.stringify({
+        ...createDefaultRepresentativeLetterState(),
+        view: 'letter',
+        severityId: 'mild',
+        severityVariantId: 'unknown',
+      }),
+    );
+    renderPage();
+
+    expect(
+      screen.queryByLabelText('representativeLetter.severityVariantLabel'),
+    ).toBeNull();
+    expect(
+      screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value,
+    ).not.toContain('Ich bin leicht an ME erkrankt.');
+  });
+
   it('keeps an oversized long body available while omitting it from mailto', async () => {
     const user = userEvent.setup();
     renderPage();
@@ -323,23 +391,23 @@ describe('RepresentativeLetterPage', () => {
     );
     await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
 
-    expect(screen.getByLabelText('representativeLetter.bodyLabel')).toHaveValue(
-      LONG_BODY,
-    );
+    expect(
+      screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value,
+    ).toContain('Weiterführende Quellen:');
     expect(
       screen.getByRole('link', {
         name: OPEN_MAIL_CLIENT,
       }),
     ).toHaveAttribute(
       'href',
-      `mailto:${VERIFIED_RECIPIENT!.email}?subject=Synthetic%20subject%3A%20%C3%A4%20%26%20test`,
+      `mailto:${VERIFIED_RECIPIENT!.email}?subject=${encodeURIComponent(representativeLetterContent.subject)}`,
     );
     expect(
       screen.getByText('representativeLetter.mailtoBodyTooLong'),
     ).toHaveProperty('tagName', 'OUTPUT');
   });
 
-  it('uses the currently visible English subject and body in mailto', async () => {
+  it('discloses and consistently uses the approved German content in the English interface', async () => {
     localeState.current = 'en';
     const user = userEvent.setup();
     renderPage();
@@ -353,13 +421,11 @@ describe('RepresentativeLetterPage', () => {
     );
 
     expect(
-      screen.getByRole('link', {
-        name: OPEN_MAIL_CLIENT,
-      }),
-    ).toHaveAttribute(
-      'href',
-      `mailto:${VERIFIED_RECIPIENT!.email}?subject=Synthetic%20English%20subject&body=Synthetic%20English%20body`,
-    );
+      screen.getByLabelText('representativeLetter.subjectLabel'),
+    ).toHaveValue(representativeLetterContent.subject);
+    expect(
+      screen.getByText('representativeLetter.contentLanguageNotice'),
+    ).toBeVisible();
   });
 
   it('resets only the tool state and leaves unrelated session data intact', async () => {

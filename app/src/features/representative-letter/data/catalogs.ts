@@ -1,5 +1,3 @@
-const EMPTY_TEXT = '';
-
 /** How a representative entered the current Bundestag. */
 export type RepresentativeMandateType = 'direct' | 'state-list' | 'successor';
 
@@ -60,22 +58,3 @@ export type RepresentativeCatalog = {
   sources: RepresentativeCatalogSource[];
   representatives: RepresentativeCatalogEntry[];
 };
-
-/**
- * Versioned, bundled text catalogs populated with approved copy in the content
- * issue. Empty values deliberately avoid introducing unreviewed advocacy text.
- */
-export const representativeLetterTextCatalogs = {
-  de: {
-    version: '1.0.0',
-    subject: EMPTY_TEXT,
-    shortBody: EMPTY_TEXT,
-    longBody: EMPTY_TEXT,
-  },
-  en: {
-    version: '1.0.0',
-    subject: EMPTY_TEXT,
-    shortBody: EMPTY_TEXT,
-    longBody: EMPTY_TEXT,
-  },
-} as const;

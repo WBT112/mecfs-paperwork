@@ -6,6 +6,8 @@ import {
 
 /** Storage key reserved for the representative-letter workflow. */
 export const REPRESENTATIVE_LETTER_SESSION_KEY =
+  'mecfs-paperwork.representative-letter.state.v2';
+const LEGACY_REPRESENTATIVE_LETTER_SESSION_KEY =
   'mecfs-paperwork.representative-letter.state.v1';
 
 /** Minimal storage contract used by the tab-local state helpers. */
@@ -51,6 +53,15 @@ const parseState = (value: unknown): RepresentativeLetterState | null => {
   if (typeof value.includePersonalDetailsInShortBody !== 'boolean') {
     return null;
   }
+  if (typeof value.includeConstituencyStatement !== 'boolean') {
+    return null;
+  }
+  if (
+    typeof value.customExperience !== 'string' ||
+    typeof value.customRequest !== 'string'
+  ) {
+    return null;
+  }
   if (value.bodyLength !== 'short' && value.bodyLength !== 'long') {
     return null;
   }
@@ -64,6 +75,9 @@ const parseState = (value: unknown): RepresentativeLetterState | null => {
     careStatusId: value.careStatusId,
     careStatusVariantId: value.careStatusVariantId,
     includePersonalDetailsInShortBody: value.includePersonalDetailsInShortBody,
+    includeConstituencyStatement: value.includeConstituencyStatement,
+    customExperience: value.customExperience,
+    customRequest: value.customRequest,
     bodyLength: value.bodyLength,
   };
 };
@@ -122,6 +136,7 @@ export const clearRepresentativeLetterState = (
 ): boolean => {
   try {
     storage.removeItem(REPRESENTATIVE_LETTER_SESSION_KEY);
+    storage.removeItem(LEGACY_REPRESENTATIVE_LETTER_SESSION_KEY);
     return true;
   } catch {
     return false;
