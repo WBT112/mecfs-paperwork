@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import CollapsibleSection from '../../../components/CollapsibleSection';
 import { useLocale } from '../../../i18n/useLocale';
-import LetterOptions from '../components/LetterOptions';
 import {
   type RepresentativeCatalog,
   type RepresentativeCatalogEntry,
@@ -90,6 +89,9 @@ const LINKS_STYLE: CSSProperties = {
   display: 'flex',
   gap: '1rem',
   flexWrap: 'wrap',
+};
+const SUBTLE_TEXT_STYLE: CSSProperties = {
+  color: 'var(--color-text-secondary)',
 };
 const constituencyLabel = (
   representative: RepresentativeCatalogEntry,
@@ -586,6 +588,7 @@ export default function RepresentativeLetterPage() {
   const [state, setState] = useState<RepresentativeLetterState>(() =>
     readRepresentativeLetterState(),
   );
+  const [view, setView] = useState<RepresentativeLetterView>('letter');
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [stateFilter, setStateFilter] = useState('');
@@ -608,10 +611,6 @@ export default function RepresentativeLetterPage() {
     writeRepresentativeLetterState(state);
   }, [state]);
 
-  const setView = (view: RepresentativeLetterView) => {
-    setState((current) => ({ ...current, view }));
-  };
-
   const setBodyLength = (bodyLength: RepresentativeLetterBodyLength) => {
     setState((current) => ({ ...current, bodyLength }));
   };
@@ -620,14 +619,11 @@ export default function RepresentativeLetterPage() {
     setState((current) => ({ ...current, recipientId }));
   };
 
-  const updateOptions = (patch: Partial<RepresentativeLetterState>) => {
-    setState((current) => ({ ...current, ...patch }));
-  };
-
   const reset = () => {
     skipNextWrite.current = true;
     clearRepresentativeLetterState();
     setState(createDefaultRepresentativeLetterState());
+    setView('letter');
     setSearchQuery('');
     setLocationQuery('');
     setStateFilter('');
@@ -664,14 +660,6 @@ export default function RepresentativeLetterPage() {
     catalog: contentCatalog,
     bodyLength: state.bodyLength,
     recipientName: selectedRepresentative?.fullName ?? null,
-    severityId: state.severityId,
-    severityVariantId: state.severityVariantId,
-    careStatusId: state.careStatusId,
-    careStatusVariantId: state.careStatusVariantId,
-    includePersonalDetailsInShortBody: state.includePersonalDetailsInShortBody,
-    includeConstituencyStatement: state.includeConstituencyStatement,
-    customExperience: state.customExperience,
-    customRequest: state.customRequest,
   });
   const mailtoLink = createMailtoLink({
     recipient: selectedRepresentative?.email ?? null,
@@ -707,7 +695,7 @@ export default function RepresentativeLetterPage() {
         <button
           type="button"
           className="app__button"
-          aria-pressed={state.view === 'information'}
+          aria-pressed={view === 'information'}
           onClick={() => setView('information')}
         >
           {t('representativeLetter.informationTab')}
@@ -715,19 +703,18 @@ export default function RepresentativeLetterPage() {
         <button
           type="button"
           className="app__button"
-          aria-pressed={state.view === 'letter'}
+          aria-pressed={view === 'letter'}
           onClick={() => setView('letter')}
         >
           {t('representativeLetter.letterTab')}
         </button>
       </nav>
 
-      {state.view === 'information' ? (
+      {view === 'information' ? (
         <div className="representative-letter__panel">
           <h3>{t('representativeLetter.processTitle')}</h3>
           <ol>
             <li>{t('representativeLetter.processRecipient')}</li>
-            <li>{t('representativeLetter.processOptions')}</li>
             <li>{t('representativeLetter.processCopy')}</li>
           </ol>
           <CollapsibleSection
@@ -776,12 +763,6 @@ export default function RepresentativeLetterPage() {
             <SelectedRecipient representative={selectedRepresentative} />
           ) : null}
 
-          <LetterOptions
-            catalog={contentCatalog}
-            state={state}
-            onChange={updateOptions}
-          />
-
           <div
             className="representative-letter__length-switch"
             role="group"
@@ -804,6 +785,13 @@ export default function RepresentativeLetterPage() {
               {t('representativeLetter.longBody')}
             </button>
           </div>
+
+          <p
+            className="representative-letter__language-note"
+            style={SUBTLE_TEXT_STYLE}
+          >
+            {t('representativeLetter.contentLanguageNotice')}
+          </p>
 
           <div className="representative-letter__outputs">
             <label htmlFor="representative-letter-recipient">

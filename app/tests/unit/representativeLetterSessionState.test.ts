@@ -11,6 +11,9 @@ import {
   type RepresentativeLetterSessionStorage,
 } from '../../src/features/representative-letter/sessionState';
 
+const LEGACY_V2_KEY = 'mecfs-paperwork.representative-letter.state.v2';
+const LEGACY_V1_KEY = 'mecfs-paperwork.representative-letter.state.v1';
+
 const createMemoryStorage = (): RepresentativeLetterSessionStorage => {
   const values = new Map<string, string>();
   return {
@@ -21,34 +24,16 @@ const createMemoryStorage = (): RepresentativeLetterSessionStorage => {
 };
 
 const createPopulatedState = (): RepresentativeLetterState => ({
-  ...createDefaultRepresentativeLetterState(),
-  view: 'letter',
+  version: 3,
   recipientId: 'representative-example',
-  severityId: 'severity-example',
-  severityVariantId: 'alternative',
-  careStatusId: 'care-status-example',
-  careStatusVariantId: 'alternative',
-  includePersonalDetailsInShortBody: true,
-  includeConstituencyStatement: true,
-  customExperience: 'Synthetic experience',
-  customRequest: 'Synthetic request',
   bodyLength: 'long',
 });
 
 describe('representative-letter session state', () => {
-  it('creates a privacy-preserving default state', () => {
+  it('creates a minimal privacy-preserving default state', () => {
     expect(createDefaultRepresentativeLetterState()).toEqual({
-      version: 2,
-      view: 'information',
+      version: 3,
       recipientId: null,
-      severityId: null,
-      severityVariantId: '1',
-      careStatusId: null,
-      careStatusVariantId: '1',
-      includePersonalDetailsInShortBody: false,
-      includeConstituencyStatement: false,
-      customExperience: '',
-      customRequest: '',
       bodyLength: 'short',
     });
   });
@@ -96,38 +81,9 @@ describe('representative-letter session state', () => {
   it.each([
     ['null root', null],
     ['primitive root', 'invalid'],
-    ['version', { ...createPopulatedState(), version: 1 }],
-    ['view', { ...createPopulatedState(), view: 'invalid' }],
+    ['version', { ...createPopulatedState(), version: 2 }],
     ['recipient', { ...createPopulatedState(), recipientId: 2 }],
     ['empty recipient', { ...createPopulatedState(), recipientId: ' ' }],
-    ['severity', { ...createPopulatedState(), severityId: false }],
-    [
-      'empty severity variant',
-      { ...createPopulatedState(), severityVariantId: '' },
-    ],
-    [
-      'severity variant type',
-      { ...createPopulatedState(), severityVariantId: 1 },
-    ],
-    ['care status', { ...createPopulatedState(), careStatusId: [] }],
-    [
-      'empty care variant',
-      { ...createPopulatedState(), careStatusVariantId: ' ' },
-    ],
-    [
-      'care variant type',
-      { ...createPopulatedState(), careStatusVariantId: null },
-    ],
-    [
-      'personal-details flag',
-      { ...createPopulatedState(), includePersonalDetailsInShortBody: 'yes' },
-    ],
-    [
-      'constituency flag',
-      { ...createPopulatedState(), includeConstituencyStatement: 'yes' },
-    ],
-    ['custom experience', { ...createPopulatedState(), customExperience: 1 }],
-    ['custom request', { ...createPopulatedState(), customRequest: null }],
     ['body length', { ...createPopulatedState(), bodyLength: 'medium' }],
   ])('rejects an invalid %s value', (_label, value) => {
     const storage = createMemoryStorage();
@@ -138,29 +94,67 @@ describe('representative-letter session state', () => {
     );
   });
 
-  it('accepts both views, lengths, and null optional selections', () => {
+  it('accepts the short length and a null recipient', () => {
     const storage = createMemoryStorage();
-    const state: RepresentativeLetterState = {
-      ...createDefaultRepresentativeLetterState(),
-      view: 'information',
-      bodyLength: 'short',
-    };
+    const state = createDefaultRepresentativeLetterState();
     storage.setItem(REPRESENTATIVE_LETTER_SESSION_KEY, JSON.stringify(state));
 
     expect(readRepresentativeLetterState(storage)).toEqual(state);
   });
 
-  it('clears only its own key', () => {
+  it('migrates only recipient and length from the health-related v2 state', () => {
+    const storage = createMemoryStorage();
+    storage.setItem(
+      LEGACY_V2_KEY,
+      JSON.stringify({
+        version: 2,
+        view: 'information',
+        recipientId: 'representative-example',
+        severityId: 'severe',
+        careStatusId: 'level-4',
+        customExperience: 'Synthetic health detail',
+        bodyLength: 'long',
+      }),
+    );
+    storage.setItem(LEGACY_V1_KEY, 'obsolete');
+
+    expect(readRepresentativeLetterState(storage)).toEqual(
+      createPopulatedState(),
+    );
+    expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
+    expect(storage.getItem(LEGACY_V1_KEY)).toBeNull();
+    expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBe(
+      JSON.stringify(createPopulatedState()),
+    );
+  });
+
+  it.each([
+    ['non-object', 'legacy'],
+    ['wrong version', { version: 1, recipientId: null, bodyLength: 'short' }],
+    ['invalid recipient', { version: 2, recipientId: [], bodyLength: 'short' }],
+    ['invalid length', { version: 2, recipientId: null, bodyLength: 'medium' }],
+  ])('discards an invalid legacy %s state', (_label, value) => {
+    const storage = createMemoryStorage();
+    storage.setItem(LEGACY_V2_KEY, JSON.stringify(value));
+
+    expect(readRepresentativeLetterState(storage)).toEqual(
+      createDefaultRepresentativeLetterState(),
+    );
+    expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
+  });
+
+  it('clears current and legacy keys while retaining unrelated data', () => {
     const storage = createMemoryStorage();
     const unrelatedKey = 'unrelated';
-    const legacyKey = 'mecfs-paperwork.representative-letter.state.v1';
     storage.setItem(unrelatedKey, 'keep');
-    storage.setItem(legacyKey, 'obsolete');
+    storage.setItem(LEGACY_V2_KEY, 'obsolete');
+    storage.setItem(LEGACY_V1_KEY, 'obsolete');
     writeRepresentativeLetterState(createPopulatedState(), storage);
 
     expect(clearRepresentativeLetterState(storage)).toBe(true);
     expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBeNull();
-    expect(storage.getItem(legacyKey)).toBeNull();
+    expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
+    expect(storage.getItem(LEGACY_V1_KEY)).toBeNull();
     expect(storage.getItem(unrelatedKey)).toBe('keep');
   });
 

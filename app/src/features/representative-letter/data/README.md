@@ -116,22 +116,14 @@ long-form source links. It performs no network requests.
 
 ### Generator behavior
 
-The generator reads only the bundled catalog and tab-local selections. It is
-deterministic and does not call an API, infer a severity or care grade, or read
-profile data. Short output excludes all selected and custom personal
-paragraphs until the user enables the short-form opt-in. Long output includes
-selected personal paragraphs and the two cataloged source links.
+The generator reads only the bundled subject, template, and source references.
+It is deterministic and does not call an API, read profile data, or accept any
+severity, care-grade, or custom health input. The short output is a complete
+letter immediately; the long output additionally includes the two cataloged
+source links and the template disclosure.
 
-The archived `sourceText` remains unchanged. Before display, the generator
-resolves the bracketed drafting alternatives conservatively so no open
-placeholder reaches the mail text:
-
-- personal relationship alternatives become the neutral term “Pflegeperson”;
-- the unknown number of care years is omitted;
-- the mild-severity work/day-to-day alternative is omitted with its clause;
-- the care-grade-1 household-help/appointment-companion sentence is omitted;
-- the single “nicht selbstständig essen” option is retained without brackets.
-
-These transformations introduce no new personal circumstances. Changing them
-or adding an English letter catalog requires explicit editorial approval and a
-new content version.
+The 20 personal `sourceText` blocks remain unchanged in the catalog as an
+editorially approved archive. They are not displayed, selected, transformed,
+or included in generated letters. Changing the archived content or adding an
+English letter catalog requires explicit editorial approval and a new content
+version.
