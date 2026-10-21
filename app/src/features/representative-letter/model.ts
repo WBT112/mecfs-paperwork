@@ -2,7 +2,7 @@
 export const REPRESENTATIVE_LETTER_TOOL_ID = 'representative-letter';
 
 /** Current schema version for the tab-local representative-letter state. */
-export const REPRESENTATIVE_LETTER_STATE_VERSION = 2 as const;
+export const REPRESENTATIVE_LETTER_STATE_VERSION = 3 as const;
 
 /** Views available inside the representative-letter tool. */
 export type RepresentativeLetterView = 'information' | 'letter';
@@ -11,24 +11,15 @@ export type RepresentativeLetterView = 'information' | 'letter';
 export type RepresentativeLetterBodyLength = 'short' | 'long';
 
 /**
- * Tab-local selections used to assemble the representative letter.
+ * Tab-local preferences used to assemble the representative letter.
  *
  * @remarks The state intentionally contains no identifying patient data and is
- * stored only in sessionStorage. Catalog identifiers are resolved from bundled
- * assets so no health-related selection is placed in a URL or network request.
+ * stored only in sessionStorage. The deliberately small state avoids retaining
+ * health-related details that are not needed to create the letter.
  */
 export type RepresentativeLetterState = {
   version: typeof REPRESENTATIVE_LETTER_STATE_VERSION;
-  view: RepresentativeLetterView;
   recipientId: string | null;
-  severityId: string | null;
-  severityVariantId: string;
-  careStatusId: string | null;
-  careStatusVariantId: string;
-  includePersonalDetailsInShortBody: boolean;
-  includeConstituencyStatement: boolean;
-  customExperience: string;
-  customRequest: string;
   bodyLength: RepresentativeLetterBodyLength;
 };
 
@@ -40,15 +31,6 @@ export type RepresentativeLetterState = {
 export const createDefaultRepresentativeLetterState =
   (): RepresentativeLetterState => ({
     version: REPRESENTATIVE_LETTER_STATE_VERSION,
-    view: 'information',
     recipientId: null,
-    severityId: null,
-    severityVariantId: '1',
-    careStatusId: null,
-    careStatusVariantId: '1',
-    includePersonalDetailsInShortBody: false,
-    includeConstituencyStatement: false,
-    customExperience: '',
-    customRequest: '',
     bodyLength: 'short',
   });

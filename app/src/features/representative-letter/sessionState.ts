@@ -6,8 +6,10 @@ import {
 
 /** Storage key reserved for the representative-letter workflow. */
 export const REPRESENTATIVE_LETTER_SESSION_KEY =
+  'mecfs-paperwork.representative-letter.state.v3';
+const LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY =
   'mecfs-paperwork.representative-letter.state.v2';
-const LEGACY_REPRESENTATIVE_LETTER_SESSION_KEY =
+const LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY =
   'mecfs-paperwork.representative-letter.state.v1';
 
 /** Minimal storage contract used by the tab-local state helpers. */
@@ -32,34 +34,7 @@ const parseState = (value: unknown): RepresentativeLetterState | null => {
   if (value.version !== REPRESENTATIVE_LETTER_STATE_VERSION) {
     return null;
   }
-  if (value.view !== 'information' && value.view !== 'letter') {
-    return null;
-  }
   if (!isOptionalId(value.recipientId)) {
-    return null;
-  }
-  if (!isOptionalId(value.severityId)) {
-    return null;
-  }
-  if (!isNonEmptyString(value.severityVariantId)) {
-    return null;
-  }
-  if (!isOptionalId(value.careStatusId)) {
-    return null;
-  }
-  if (!isNonEmptyString(value.careStatusVariantId)) {
-    return null;
-  }
-  if (typeof value.includePersonalDetailsInShortBody !== 'boolean') {
-    return null;
-  }
-  if (typeof value.includeConstituencyStatement !== 'boolean') {
-    return null;
-  }
-  if (
-    typeof value.customExperience !== 'string' ||
-    typeof value.customRequest !== 'string'
-  ) {
     return null;
   }
   if (value.bodyLength !== 'short' && value.bodyLength !== 'long') {
@@ -68,16 +43,27 @@ const parseState = (value: unknown): RepresentativeLetterState | null => {
 
   return {
     version: REPRESENTATIVE_LETTER_STATE_VERSION,
-    view: value.view,
     recipientId: value.recipientId,
-    severityId: value.severityId,
-    severityVariantId: value.severityVariantId,
-    careStatusId: value.careStatusId,
-    careStatusVariantId: value.careStatusVariantId,
-    includePersonalDetailsInShortBody: value.includePersonalDetailsInShortBody,
-    includeConstituencyStatement: value.includeConstituencyStatement,
-    customExperience: value.customExperience,
-    customRequest: value.customRequest,
+    bodyLength: value.bodyLength,
+  };
+};
+
+const parseLegacyV2State = (
+  value: unknown,
+): RepresentativeLetterState | null => {
+  if (!isRecord(value) || value.version !== 2) {
+    return null;
+  }
+  if (!isOptionalId(value.recipientId)) {
+    return null;
+  }
+  if (value.bodyLength !== 'short' && value.bodyLength !== 'long') {
+    return null;
+  }
+
+  return {
+    version: REPRESENTATIVE_LETTER_STATE_VERSION,
+    recipientId: value.recipientId,
     bodyLength: value.bodyLength,
   };
 };
@@ -93,14 +79,33 @@ export const readRepresentativeLetterState = (
 ): RepresentativeLetterState => {
   try {
     const serialized = storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY);
-    if (!serialized) {
+    if (serialized) {
+      return (
+        parseState(JSON.parse(serialized) as unknown) ??
+        createDefaultRepresentativeLetterState()
+      );
+    }
+
+    const legacySerialized = storage.getItem(
+      LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY,
+    );
+    storage.removeItem(LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY);
+    storage.removeItem(LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY);
+    if (!legacySerialized) {
       return createDefaultRepresentativeLetterState();
     }
 
-    return (
-      parseState(JSON.parse(serialized) as unknown) ??
-      createDefaultRepresentativeLetterState()
+    const migrated = parseLegacyV2State(
+      JSON.parse(legacySerialized) as unknown,
     );
+    if (!migrated) {
+      return createDefaultRepresentativeLetterState();
+    }
+    storage.setItem(
+      REPRESENTATIVE_LETTER_SESSION_KEY,
+      JSON.stringify(migrated),
+    );
+    return migrated;
   } catch {
     return createDefaultRepresentativeLetterState();
   }
@@ -136,7 +141,8 @@ export const clearRepresentativeLetterState = (
 ): boolean => {
   try {
     storage.removeItem(REPRESENTATIVE_LETTER_SESSION_KEY);
-    storage.removeItem(LEGACY_REPRESENTATIVE_LETTER_SESSION_KEY);
+    storage.removeItem(LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY);
+    storage.removeItem(LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY);
     return true;
   } catch {
     return false;

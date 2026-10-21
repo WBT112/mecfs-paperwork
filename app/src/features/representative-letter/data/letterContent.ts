@@ -3,10 +3,10 @@ import rawGermanLetterContent from './letter-content.de.json';
 /** Supported source-language identifiers for approved letter content. */
 export type RepresentativeLetterContentLanguage = 'de';
 
-/** Categories of optional personal source blocks. */
+/** Categories of archived personal source blocks. */
 export type RepresentativeLetterBlockCategory = 'severity' | 'care';
 
-/** One approved optional source block and its stable selection identifiers. */
+/** One archived source block and its stable catalog identifiers. */
 export type RepresentativeLetterContentBlock = {
   id: string;
   category: RepresentativeLetterBlockCategory;
@@ -47,7 +47,12 @@ export type RepresentativeLetterContentCatalog = {
   personalBlocks: RepresentativeLetterContentBlock[];
 };
 
-/** Approved German source catalog bundled with the offline application. */
+/**
+ * Approved German source catalog bundled with the offline application.
+ *
+ * @remarks Personal blocks remain archived verbatim for provenance but are not
+ * used by the current minimal-click letter workflow.
+ */
 export const representativeLetterContent =
   rawGermanLetterContent as RepresentativeLetterContentCatalog;
 

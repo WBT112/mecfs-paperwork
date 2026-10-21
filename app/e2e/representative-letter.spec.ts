@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const TOOL_PATH = '/tools/representative-letter';
-const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v2';
+const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v3';
 
 test('opens directly and retains only tab-local representative-letter state', async ({
   context,
@@ -15,10 +15,6 @@ test('opens directly and retains only tab-local representative-letter state', as
     .click();
   await expect(page).toHaveURL(new RegExp(`${TOOL_PATH}$`));
 
-  await page
-    .getByRole('button', { name: /Brief vorbereiten|prepare letter/i })
-    .last()
-    .click();
   await expect(page.locator('#representative-letter-recipient')).toBeVisible();
   await expect(page.locator('#representative-letter-subject')).toBeVisible();
   await expect(page.locator('#representative-letter-body')).toBeVisible();
@@ -35,27 +31,17 @@ test('opens directly and retains only tab-local representative-letter state', as
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
     'sanae.abdi@bundestag.de',
   );
-  await page.getByLabel(/ME-Schweregrad|ME severity/i).selectOption('moderate');
-  await page
-    .getByLabel(/Variante zum Schweregrad|Severity variant/i)
-    .selectOption('2');
-  await page
-    .getByLabel(
-      /Pflegegrad oder Antragsstatus|Care grade or application status/i,
-    )
-    .selectOption('pending');
-  await page.getByLabel(/persönliche Absätze|personal paragraphs/i).check();
-  await expect(page.locator('#representative-letter-body')).toHaveValue(
-    /Mein Alltag ist eine ständige Abwägung/u,
-  );
-  await expect(page.locator('#representative-letter-body')).toHaveValue(
-    /Mein Antrag auf einen Pflegegrad läuft/u,
-  );
   await expect(page.locator('#representative-letter-body')).toHaveValue(
     /Guten Tag Sanae Abdi,/u,
   );
+  await expect(page.getByLabel(/ME-Schweregrad|ME severity/i)).toHaveCount(0);
+  await expect(
+    page.getByLabel(
+      /Pflegegrad oder Antragsstatus|Care grade or application status/i,
+    ),
+  ).toHaveCount(0);
   await expect(page.locator('#representative-letter-body')).not.toHaveValue(
-    /\[/u,
+    /Mein Alltag ist eine ständige Abwägung|Mein Antrag auf einen Pflegegrad läuft/u,
   );
   const mailtoLink = page.getByRole('link', {
     name: /Im E-Mail-Programm öffnen|Open in email application/i,
@@ -94,18 +80,6 @@ test('opens directly and retains only tab-local representative-letter state', as
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
     'aaron.valent@bundestag.de',
   );
-  await expect(page.getByLabel(/ME-Schweregrad|ME severity/i)).toHaveValue(
-    'moderate',
-  );
-  await expect(
-    page.getByLabel(
-      /Pflegegrad oder Antragsstatus|Care grade or application status/i,
-    ),
-  ).toHaveValue('pending');
-  await expect(
-    page.getByLabel(/persönliche Absätze|personal paragraphs/i),
-  ).toBeChecked();
-
   await page.goto('/formpacks');
   await page.goBack();
   await expect(
@@ -116,7 +90,7 @@ test('opens directly and retains only tab-local representative-letter state', as
   await secondTab.goto(TOOL_PATH);
   await expect(
     secondTab.getByRole('button', {
-      name: /^(Informationen|Information)$/i,
+      name: /Brief vorbereiten|prepare letter/i,
     }),
   ).toHaveAttribute('aria-pressed', 'true');
   await secondTab.close();
@@ -124,7 +98,7 @@ test('opens directly and retains only tab-local representative-letter state', as
   await page.evaluate(() => sessionStorage.setItem('unrelated', 'keep'));
   await page.getByRole('button', { name: /Zurücksetzen|reset/i }).click();
   await expect(
-    page.getByRole('button', { name: /^(Informationen|Information)$/i }),
+    page.getByRole('button', { name: /Brief vorbereiten|prepare letter/i }),
   ).toHaveAttribute('aria-pressed', 'true');
   await expect
     .poll(() =>
@@ -151,15 +125,6 @@ test('finds an ambiguous postcode and its representatives fully offline', async 
   });
 
   await page.goto(TOOL_PATH);
-  await expect(
-    page
-      .getByRole('button', { name: /Brief vorbereiten|prepare letter/i })
-      .last(),
-  ).toBeVisible();
-  await page
-    .getByRole('button', { name: /Brief vorbereiten|prepare letter/i })
-    .last()
-    .click();
   await expect(
     page.getByLabel(/Ort oder Postleitzahl|Place or postcode/i),
   ).toBeVisible();

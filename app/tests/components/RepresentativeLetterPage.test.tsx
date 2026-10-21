@@ -14,7 +14,6 @@ import {
 } from '../../src/features/representative-letter/sessionState';
 import { TestRouter } from '../setup/testRouter';
 
-const START_BUTTON = 'representativeLetter.start';
 const LONG_BODY_BUTTON = 'representativeLetter.longBody';
 const RECIPIENT_LABEL = 'representativeLetter.recipientLabel';
 const BODY_LABEL = 'representativeLetter.bodyLabel';
@@ -24,8 +23,10 @@ const SELECT_CONSTITUENCY_BUTTON =
   'representativeLetter.selectConstituencyNamed';
 const SELECT_RECIPIENT_BUTTON = 'representativeLetter.selectRecipientNamed';
 const OPEN_MAIL_CLIENT = 'representativeLetter.openMailClient';
-const INCLUDE_PERSONAL = 'representativeLetter.includePersonalInShortBody';
-const CUSTOM_EXPERIENCE = 'Synthetische eigene Erfahrung.';
+const LETTER_TAB = 'representativeLetter.letterTab';
+const INFORMATION_TAB = 'representativeLetter.informationTab';
+const PRESSED_ATTRIBUTE = 'aria-pressed';
+const ORIGINAL_SIGN_OFF = representativeLetterContent.template.signOff;
 const VERIFIED_RECIPIENT = representativeCatalog.representatives.find(
   ({ email }) => email !== null,
 );
@@ -82,16 +83,30 @@ describe('RepresentativeLetterPage', () => {
   });
 
   afterEach(() => {
+    representativeLetterContent.template.signOff = ORIGINAL_SIGN_OFF;
     vi.unstubAllGlobals();
   });
 
-  it('shows the information view and optional background', async () => {
+  it('starts with the complete letter and keeps information optional', async () => {
     const user = userEvent.setup();
     renderPage();
 
     expect(
       screen.getByRole('heading', { name: 'representativeLetter.title' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: LETTER_TAB })).toHaveAttribute(
+      PRESSED_ATTRIBUTE,
+      'true',
+    );
+    expect(
+      screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value,
+    ).toContain(representativeLetterContent.template.signOff);
+    await screen.findByLabelText(SEARCH_LABEL);
+    await user.click(
+      screen.getByRole('button', {
+        name: INFORMATION_TAB,
+      }),
+    );
     expect(screen.getByText('representativeLetter.processCopy')).toBeVisible();
 
     await user.click(
@@ -102,13 +117,14 @@ describe('RepresentativeLetterPage', () => {
     expect(
       screen.getByText('representativeLetter.backgroundText'),
     ).toBeVisible();
+    await user.click(
+      screen.getByRole('button', { name: 'representativeLetter.start' }),
+    );
+    expect(screen.getByLabelText(BODY_LABEL)).toBeVisible();
   });
 
   it('renders exactly the three selectable plain-text outputs without export actions', async () => {
-    const user = userEvent.setup();
     renderPage();
-
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
 
     const recipient = screen.getByLabelText(RECIPIENT_LABEL);
     const subject = screen.getByLabelText('representativeLetter.subjectLabel');
@@ -129,12 +145,17 @@ describe('RepresentativeLetterPage', () => {
         name: OPEN_MAIL_CLIENT,
       }),
     ).toBeDisabled();
+    expect(
+      screen.queryByLabelText('representativeLetter.severityLabel'),
+    ).toBeNull();
+    expect(
+      screen.queryByLabelText('representativeLetter.careStatusLabel'),
+    ).toBeNull();
   });
 
   it('searches locally and retains an explicitly selected verified recipient', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
 
     const search = await screen.findByLabelText(SEARCH_LABEL);
     await user.type(search, VERIFIED_RECIPIENT!.fullName);
@@ -188,7 +209,6 @@ describe('RepresentativeLetterPage', () => {
   it('shows the official contact fallback when no email is verified', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
 
     await user.type(
       await screen.findByLabelText(SEARCH_LABEL),
@@ -220,7 +240,6 @@ describe('RepresentativeLetterPage', () => {
   it('filters by federal state, limits broad results, and supports entries without a constituency', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
 
     const stateFilter = await screen.findByLabelText(
       'representativeLetter.stateFilterLabel',
@@ -246,7 +265,6 @@ describe('RepresentativeLetterPage', () => {
   it('requires an explicit constituency choice for ambiguous postcodes', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
 
     const locationSearch = await screen.findByLabelText(LOCATION_SEARCH_LABEL);
     await user.type(locationSearch, '97896');
@@ -293,7 +311,6 @@ describe('RepresentativeLetterPage', () => {
   it('shows local place-search validation and keeps queries ephemeral', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
 
     const locationSearch = await screen.findByLabelText(LOCATION_SEARCH_LABEL);
     await user.type(locationSearch, 'ab');
@@ -331,10 +348,8 @@ describe('RepresentativeLetterPage', () => {
   });
 
   it('shows loading and failure states for the bundled catalog asset', async () => {
-    const user = userEvent.setup();
     vi.mocked(fetch).mockImplementationOnce(() => new Promise(() => undefined));
     const loadingRender = renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
     expect(
       screen.getByText('representativeLetter.catalogLoading'),
     ).toBeVisible();
@@ -347,10 +362,9 @@ describe('RepresentativeLetterPage', () => {
     ).toBeVisible();
   });
 
-  it('retains the current view and body length across a same-tab remount', async () => {
+  it('retains the body length and starts directly on the letter after remount', async () => {
     const user = userEvent.setup();
     const firstRender = renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
     await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
 
     await waitFor(() => {
@@ -359,28 +373,27 @@ describe('RepresentativeLetterPage', () => {
     firstRender.unmount();
     renderPage();
 
-    expect(
-      screen.getByRole('button', { name: 'representativeLetter.letterTab' }),
-    ).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: LETTER_TAB })).toHaveAttribute(
+      PRESSED_ATTRIBUTE,
+      'true',
+    );
     expect(
       screen.getByRole('button', { name: LONG_BODY_BUTTON }),
-    ).toHaveAttribute('aria-pressed', 'true');
+    ).toHaveAttribute(PRESSED_ATTRIBUTE, 'true');
   });
 
   it('supports both view and body-length controls', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(
-      screen.getByRole('button', { name: 'representativeLetter.letterTab' }),
-    );
+    await user.click(screen.getByRole('button', { name: LETTER_TAB }));
     await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
     await user.click(
       screen.getByRole('button', { name: 'representativeLetter.shortBody' }),
     );
     await user.click(
       screen.getByRole('button', {
-        name: 'representativeLetter.informationTab',
+        name: INFORMATION_TAB,
       }),
     );
 
@@ -388,101 +401,9 @@ describe('RepresentativeLetterPage', () => {
     expect(readRepresentativeLetterState().bodyLength).toBe('short');
   });
 
-  it('selects independent personal variants and includes them only after short-form opt-in', async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
-
-    const body = screen.getByLabelText(BODY_LABEL);
-    await user.selectOptions(
-      screen.getByLabelText('representativeLetter.severityLabel'),
-      'mild',
-    );
-    await user.selectOptions(
-      screen.getByLabelText('representativeLetter.severityVariantLabel'),
-      '2',
-    );
-    await user.selectOptions(
-      screen.getByLabelText('representativeLetter.careStatusLabel'),
-      'level-2',
-    );
-    await user.selectOptions(
-      screen.getByLabelText('representativeLetter.careVariantLabel'),
-      '2',
-    );
-
-    expect((body as HTMLTextAreaElement).value).not.toContain(
-      'Von außen sieht man mir die Erkrankung kaum an.',
-    );
-    await user.click(screen.getByText('representativeLetter.customizeTitle'));
-    await user.type(
-      screen.getByLabelText('representativeLetter.customExperienceLabel'),
-      CUSTOM_EXPERIENCE,
-    );
-    await user.type(
-      screen.getByLabelText('representativeLetter.customRequestLabel'),
-      'Synthetische eigene Bitte.',
-    );
-    await user.click(
-      screen.getByLabelText('representativeLetter.constituencyConfirmation'),
-    );
-    await user.click(screen.getByLabelText(INCLUDE_PERSONAL));
-
-    const includedBody = (body as HTMLTextAreaElement).value;
-    expect(includedBody).toContain(
-      'Von außen sieht man mir die Erkrankung kaum an.',
-    );
-    expect(includedBody).toContain('Ich habe Pflegegrad 2.');
-    expect(includedBody).toContain(CUSTOM_EXPERIENCE);
-    expect(includedBody).toContain('Synthetische eigene Bitte.');
-    expect(includedBody).toContain('Ich lebe in Ihrem Wahlkreis.');
-
-    await user.click(screen.getByLabelText(INCLUDE_PERSONAL));
-    expect((body as HTMLTextAreaElement).value).not.toContain(
-      CUSTOM_EXPERIENCE,
-    );
-    await user.selectOptions(
-      screen.getByLabelText('representativeLetter.severityLabel'),
-      '',
-    );
-    await user.selectOptions(
-      screen.getByLabelText('representativeLetter.careStatusLabel'),
-      '',
-    );
-    await user.click(
-      screen.getByLabelText('representativeLetter.constituencyConfirmation'),
-    );
-    expect(readRepresentativeLetterState()).toMatchObject({
-      severityId: null,
-      careStatusId: null,
-      includeConstituencyStatement: false,
-    });
-  });
-
-  it('safely omits a stale variant that is not in the approved catalog', async () => {
-    window.sessionStorage.setItem(
-      REPRESENTATIVE_LETTER_SESSION_KEY,
-      JSON.stringify({
-        ...createDefaultRepresentativeLetterState(),
-        view: 'letter',
-        severityId: 'mild',
-        severityVariantId: 'unknown',
-      }),
-    );
-    renderPage();
-
-    expect(
-      screen.queryByLabelText('representativeLetter.severityVariantLabel'),
-    ).toBeNull();
-    expect(
-      screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value,
-    ).not.toContain('Ich bin leicht an ME erkrankt.');
-  });
-
   it('passes the complete visible long body to the email application', async () => {
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
     await user.type(
       await screen.findByLabelText(SEARCH_LABEL),
       VERIFIED_RECIPIENT!.fullName,
@@ -508,14 +429,15 @@ describe('RepresentativeLetterPage', () => {
   });
 
   it('keeps a genuinely oversized body available while omitting it from mailto', async () => {
+    representativeLetterContent.template.signOff = 'x'.repeat(
+      MAX_MAILTO_URL_LENGTH,
+    );
     window.sessionStorage.setItem(
       REPRESENTATIVE_LETTER_SESSION_KEY,
       JSON.stringify({
         ...createDefaultRepresentativeLetterState(),
-        view: 'letter',
         recipientId: VERIFIED_RECIPIENT!.id,
         bodyLength: 'long',
-        customExperience: 'x'.repeat(MAX_MAILTO_URL_LENGTH),
       }),
     );
     renderPage();
@@ -540,7 +462,6 @@ describe('RepresentativeLetterPage', () => {
     localeState.current = 'en';
     const user = userEvent.setup();
     renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
     await user.type(
       await screen.findByLabelText(SEARCH_LABEL),
       VERIFIED_RECIPIENT!.fullName,
@@ -561,12 +482,19 @@ describe('RepresentativeLetterPage', () => {
     const user = userEvent.setup();
     window.sessionStorage.setItem('unrelated', 'keep');
     renderPage();
-    await user.click(screen.getByRole('button', { name: START_BUTTON }));
+    await user.click(
+      screen.getByRole('button', {
+        name: INFORMATION_TAB,
+      }),
+    );
     await user.click(
       screen.getByRole('button', { name: 'representativeLetter.reset' }),
     );
 
-    expect(screen.getByText('representativeLetter.processTitle')).toBeVisible();
+    expect(screen.getByRole('button', { name: LETTER_TAB })).toHaveAttribute(
+      PRESSED_ATTRIBUTE,
+      'true',
+    );
     expect(
       window.sessionStorage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY),
     ).toBeNull();
