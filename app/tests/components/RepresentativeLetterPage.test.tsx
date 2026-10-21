@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { representativeLetterContent } from '../../src/features/representative-letter/data/letterContent';
 import { constituencyLocationCatalog } from '../../src/features/representative-letter/data/constituencyLocationCatalog';
 import { representativeCatalog } from '../../src/features/representative-letter/data/representativeCatalog';
+import { MAX_MAILTO_URL_LENGTH } from '../../src/features/representative-letter/mailto';
 import RepresentativeLetterPage from '../../src/features/representative-letter/pages/RepresentativeLetterPage';
 import { createDefaultRepresentativeLetterState } from '../../src/features/representative-letter/model';
 import {
@@ -157,15 +158,23 @@ describe('RepresentativeLetterPage', () => {
     expect(readRepresentativeLetterState().recipientId).toBe(
       VERIFIED_RECIPIENT!.id,
     );
-    expect(
-      screen.getByRole('link', {
-        name: OPEN_MAIL_CLIENT,
-      }),
-    ).toHaveAttribute(
+    const mailtoLink = screen.getByRole('link', {
+      name: OPEN_MAIL_CLIENT,
+    });
+    expect(mailtoLink).toHaveAttribute(
       'href',
       expect.stringContaining(
         `mailto:${VERIFIED_RECIPIENT!.email}?subject=${encodeURIComponent(representativeLetterContent.subject)}`,
       ),
+    );
+    expect(
+      decodeURIComponent(
+        mailtoLink.getAttribute('href')?.split('&body=')[1] ?? '',
+      ),
+    ).toBe(
+      screen
+        .getByLabelText<HTMLTextAreaElement>(BODY_LABEL)
+        .value.replaceAll('\n', '\r\n'),
     );
 
     await user.clear(search);
@@ -470,7 +479,7 @@ describe('RepresentativeLetterPage', () => {
     ).not.toContain('Ich bin leicht an ME erkrankt.');
   });
 
-  it('keeps an oversized long body available while omitting it from mailto', async () => {
+  it('passes the complete visible long body to the email application', async () => {
     const user = userEvent.setup();
     renderPage();
     await user.click(screen.getByRole('button', { name: START_BUTTON }));
@@ -483,11 +492,39 @@ describe('RepresentativeLetterPage', () => {
     );
     await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
 
+    const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value;
+    expect(body).toContain('Weiterführende Quellen:');
+    const mailtoLink = screen.getByRole('link', {
+      name: OPEN_MAIL_CLIENT,
+    });
+    expect(
+      decodeURIComponent(
+        mailtoLink.getAttribute('href')?.split('&body=')[1] ?? '',
+      ),
+    ).toBe(body.replaceAll('\n', '\r\n'));
+    expect(
+      screen.queryByText('representativeLetter.mailtoBodyTooLong'),
+    ).toBeNull();
+  });
+
+  it('keeps a genuinely oversized body available while omitting it from mailto', async () => {
+    window.sessionStorage.setItem(
+      REPRESENTATIVE_LETTER_SESSION_KEY,
+      JSON.stringify({
+        ...createDefaultRepresentativeLetterState(),
+        view: 'letter',
+        recipientId: VERIFIED_RECIPIENT!.id,
+        bodyLength: 'long',
+        customExperience: 'x'.repeat(MAX_MAILTO_URL_LENGTH),
+      }),
+    );
+    renderPage();
+
     expect(
       screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value,
-    ).toContain('Weiterführende Quellen:');
+    ).toContain('x'.repeat(MAX_MAILTO_URL_LENGTH));
     expect(
-      screen.getByRole('link', {
+      await screen.findByRole('link', {
         name: OPEN_MAIL_CLIENT,
       }),
     ).toHaveAttribute(
