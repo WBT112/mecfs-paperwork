@@ -975,12 +975,10 @@ body {
 
 .representative-letter__copy-field-heading label {
   font-weight: 700;
-  color: var(--color-text-strong);
 }
 
 .representative-letter__copy-status {
   min-height: 1.5em;
-  color: var(--color-text-secondary);
 }
 
 .representative-letter__outputs input,
@@ -1001,12 +999,6 @@ body {
 .representative-letter__outputs textarea:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-}
-
-@media (max-width: 520px) {
-  .representative-letter__copy-field-heading .app__button {
-    width: 100%;
-  }
 }
 
 .games-bingo {
