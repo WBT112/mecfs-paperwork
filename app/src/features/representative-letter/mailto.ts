@@ -1,7 +1,7 @@
 import type { RepresentativeContactStatus } from './data/catalogs';
 
-/** Conservative URL length for broad browser and mail-client compatibility. */
-export const MAX_MAILTO_URL_LENGTH = 1_900;
+/** Pragmatic URL ceiling that supports current mail clients and full letters. */
+export const MAX_MAILTO_URL_LENGTH = 8_000;
 
 /** Input used to create a local mail-client link. */
 export type MailtoInput = {

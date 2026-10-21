@@ -64,6 +64,13 @@ test('opens directly and retains only tab-local representative-letter state', as
     'href',
     /^mailto:sanae\.abdi@bundestag\.de\?subject=/,
   );
+  const visibleBody = await page
+    .locator('#representative-letter-body')
+    .inputValue();
+  const mailtoHref = await mailtoLink.getAttribute('href');
+  expect(new URL(mailtoHref as string).searchParams.get('body')).toBe(
+    visibleBody.replaceAll('\n', '\r\n'),
+  );
 
   const search = page.getByLabel(/Name oder Wahlkreis|Name or constituency/i);
   await search.fill('Aaron Valent');
