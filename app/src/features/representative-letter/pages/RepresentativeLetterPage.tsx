@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import CollapsibleSection from '../../../components/CollapsibleSection';
 import { useLocale } from '../../../i18n/useLocale';
+import CopyableTextField from '../components/CopyableTextField';
 import {
   type RepresentativeCatalog,
   type RepresentativeCatalogEntry,
@@ -511,6 +512,14 @@ const SelectedRecipient = ({
       <div className="representative-letter__profile-links" style={LINKS_STYLE}>
         <a
           className="app__link"
+          href={representative.abgeordnetenwatchProfileUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {t('representativeLetter.abgeordnetenwatchProfile')}
+        </a>
+        <a
+          className="app__link"
           href={representative.officialProfileUrl}
           target="_blank"
           rel="noreferrer"
@@ -526,6 +535,9 @@ const SelectedRecipient = ({
           {t('representativeLetter.officialContact')}
         </a>
       </div>
+      <p style={SUBTLE_TEXT_STYLE}>
+        {t('representativeLetter.abgeordnetenwatchPublicNotice')}
+      </p>
     </section>
   );
 };
@@ -794,43 +806,41 @@ export default function RepresentativeLetterPage() {
           </p>
 
           <div className="representative-letter__outputs">
-            <label htmlFor="representative-letter-recipient">
-              {t('representativeLetter.recipientLabel')}
-            </label>
-            <textarea
+            <CopyableTextField
               id="representative-letter-recipient"
-              rows={2}
-              readOnly
+              label={t('representativeLetter.recipientLabel')}
+              copyLabel={t('representativeLetter.copyRecipient')}
               value={selectedRepresentative?.email ?? ''}
               placeholder={t(
                 selectedRepresentative
                   ? 'representativeLetter.recipientMissingPlaceholder'
                   : 'representativeLetter.recipientPlaceholder',
               )}
+              multiline
             />
 
-            <label htmlFor="representative-letter-subject">
-              {t('representativeLetter.subjectLabel')}
-            </label>
-            <input
+            <CopyableTextField
               id="representative-letter-subject"
-              type="text"
-              readOnly
+              label={t('representativeLetter.subjectLabel')}
+              copyLabel={t('representativeLetter.copySubject')}
               value={generatedLetter.subject}
               placeholder={t('representativeLetter.subjectPlaceholder')}
             />
 
-            <label htmlFor="representative-letter-body">
-              {t('representativeLetter.bodyLabel')}
-            </label>
-            <textarea
+            <CopyableTextField
               id="representative-letter-body"
-              rows={12}
-              readOnly
+              label={t('representativeLetter.bodyLabel')}
+              copyLabel={t('representativeLetter.copyBody')}
               value={generatedLetter.body}
               placeholder={t('representativeLetter.bodyPlaceholder')}
+              multiline
+              rows={12}
             />
           </div>
+
+          <p style={SUBTLE_TEXT_STYLE}>
+            {t('representativeLetter.signatureNotice')}
+          </p>
 
           <MailtoAction mailtoLink={mailtoLink} />
         </div>

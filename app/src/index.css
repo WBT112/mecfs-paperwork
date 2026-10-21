@@ -956,13 +956,29 @@ body {
 
 .representative-letter__outputs {
   display: grid;
+  gap: 1rem;
+}
+
+.representative-letter__copy-field {
+  display: grid;
+  min-width: 0;
   gap: 0.5rem;
 }
 
-.representative-letter__outputs label {
-  margin-top: 0.5rem;
+.representative-letter__copy-field-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.representative-letter__copy-field-heading label {
   font-weight: 700;
-  color: var(--color-text-strong);
+}
+
+.representative-letter__copy-status {
+  min-height: 1.5em;
 }
 
 .representative-letter__outputs input,

@@ -4,9 +4,18 @@ const TOOL_PATH = '/tools/representative-letter';
 const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v3';
 
 test('opens directly and retains only tab-local representative-letter state', async ({
+  browserName,
   context,
   page,
 }) => {
+  let clipboardReadSupported = browserName === 'chromium';
+  if (clipboardReadSupported) {
+    try {
+      await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    } catch {
+      clipboardReadSupported = false;
+    }
+  }
   await page.goto('/formpacks');
   await page
     .getByRole('link', {
@@ -53,6 +62,17 @@ test('opens directly and retains only tab-local representative-letter state', as
   const visibleBody = await page
     .locator('#representative-letter-body')
     .inputValue();
+  if (clipboardReadSupported) {
+    await page
+      .getByRole('button', { name: /Mailinhalt kopieren|Copy mail body/i })
+      .click();
+    await expect(
+      page.getByText(/In die Zwischenablage kopiert|Copied to the clipboard/i),
+    ).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      visibleBody,
+    );
+  }
   const mailtoHref = await mailtoLink.getAttribute('href');
   expect(new URL(mailtoHref as string).searchParams.get('body')).toBe(
     visibleBody.replaceAll('\n', '\r\n'),
@@ -118,6 +138,7 @@ test('finds an ambiguous postcode and its representatives fully offline', async 
   page,
 }) => {
   test.setTimeout(75_000);
+  await page.setViewportSize({ width: 375, height: 812 });
   const requestOrigins: string[] = [];
   page.on('request', (request) => {
     const url = new URL(request.url());
@@ -156,4 +177,9 @@ test('finds an ambiguous postcode and its representatives fully offline', async 
   const appOrigin = new URL(page.url()).origin;
   expect(requestOrigins.filter((origin) => origin !== appOrigin)).toEqual([]);
   expect(page.url()).not.toContain('70184');
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 });

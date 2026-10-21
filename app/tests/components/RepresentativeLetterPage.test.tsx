@@ -16,6 +16,7 @@ import { TestRouter } from '../setup/testRouter';
 
 const LONG_BODY_BUTTON = 'representativeLetter.longBody';
 const RECIPIENT_LABEL = 'representativeLetter.recipientLabel';
+const SUBJECT_LABEL = 'representativeLetter.subjectLabel';
 const BODY_LABEL = 'representativeLetter.bodyLabel';
 const SEARCH_LABEL = 'representativeLetter.searchLabel';
 const LOCATION_SEARCH_LABEL = 'representativeLetter.locationSearchLabel';
@@ -23,12 +24,19 @@ const SELECT_CONSTITUENCY_BUTTON =
   'representativeLetter.selectConstituencyNamed';
 const SELECT_RECIPIENT_BUTTON = 'representativeLetter.selectRecipientNamed';
 const OPEN_MAIL_CLIENT = 'representativeLetter.openMailClient';
+const COPY_RECIPIENT = 'representativeLetter.copyRecipient';
+const COPY_SUBJECT = 'representativeLetter.copySubject';
+const COPY_BODY = 'representativeLetter.copyBody';
+const COPY_SUCCEEDED = 'representativeLetter.copySucceeded';
 const LETTER_TAB = 'representativeLetter.letterTab';
 const INFORMATION_TAB = 'representativeLetter.informationTab';
 const PRESSED_ATTRIBUTE = 'aria-pressed';
 const ORIGINAL_SIGN_OFF = representativeLetterContent.template.signOff;
 const VERIFIED_RECIPIENT = representativeCatalog.representatives.find(
   ({ email }) => email !== null,
+);
+const ALTERNATE_VERIFIED_RECIPIENT = representativeCatalog.representatives.find(
+  ({ email, id }) => email !== null && id !== VERIFIED_RECIPIENT?.id,
 );
 const MISSING_RECIPIENT = representativeCatalog.representatives.find(
   ({ email }) => email === null,
@@ -37,6 +45,11 @@ const RECIPIENT_WITHOUT_CONSTITUENCY =
   representativeCatalog.representatives.find(
     ({ constituency }) => constituency === null,
   );
+const originalClipboard = Object.getOwnPropertyDescriptor(
+  navigator,
+  'clipboard',
+);
+let clipboardWrite: ReturnType<typeof vi.fn>;
 
 const { localeState } = vi.hoisted(() => ({
   localeState: { current: 'de' },
@@ -65,10 +78,19 @@ const renderPage = () =>
     </TestRouter>,
   );
 
+const installClipboardMock = () => {
+  Object.defineProperty(navigator, 'clipboard', {
+    configurable: true,
+    value: { writeText: clipboardWrite },
+  });
+};
+
 describe('RepresentativeLetterPage', () => {
   beforeEach(() => {
     localeState.current = 'de';
     window.sessionStorage.clear();
+    clipboardWrite = vi.fn().mockResolvedValue(undefined);
+    installClipboardMock();
     vi.stubGlobal(
       'fetch',
       vi.fn(async (input: RequestInfo | URL) => {
@@ -84,6 +106,11 @@ describe('RepresentativeLetterPage', () => {
 
   afterEach(() => {
     representativeLetterContent.template.signOff = ORIGINAL_SIGN_OFF;
+    if (originalClipboard) {
+      Object.defineProperty(navigator, 'clipboard', originalClipboard);
+    } else {
+      Reflect.deleteProperty(navigator, 'clipboard');
+    }
     vi.unstubAllGlobals();
   });
 
@@ -127,7 +154,7 @@ describe('RepresentativeLetterPage', () => {
     renderPage();
 
     const recipient = screen.getByLabelText(RECIPIENT_LABEL);
-    const subject = screen.getByLabelText('representativeLetter.subjectLabel');
+    const subject = screen.getByLabelText(SUBJECT_LABEL);
     const body = screen.getByLabelText(BODY_LABEL);
     expect(recipient).toHaveAttribute('readonly');
     expect(subject).toHaveAttribute('readonly');
@@ -145,6 +172,9 @@ describe('RepresentativeLetterPage', () => {
         name: OPEN_MAIL_CLIENT,
       }),
     ).toBeDisabled();
+    expect(screen.getByRole('button', { name: COPY_RECIPIENT })).toBeDisabled();
+    expect(screen.getByRole('button', { name: COPY_SUBJECT })).toBeEnabled();
+    expect(screen.getByRole('button', { name: COPY_BODY })).toBeEnabled();
     expect(
       screen.queryByLabelText('representativeLetter.severityLabel'),
     ).toBeNull();
@@ -176,6 +206,11 @@ describe('RepresentativeLetterPage', () => {
         name: 'representativeLetter.officialProfile',
       }),
     ).toHaveAttribute('href', VERIFIED_RECIPIENT!.officialProfileUrl);
+    expect(
+      screen.getByRole('link', {
+        name: 'representativeLetter.abgeordnetenwatchProfile',
+      }),
+    ).toHaveAttribute('href', VERIFIED_RECIPIENT!.abgeordnetenwatchProfileUrl);
     expect(readRepresentativeLetterState().recipientId).toBe(
       VERIFIED_RECIPIENT!.id,
     );
@@ -204,6 +239,71 @@ describe('RepresentativeLetterPage', () => {
     expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue(
       VERIFIED_RECIPIENT!.email,
     );
+  });
+
+  it('copies each visible field exactly and resets feedback after recipient changes', async () => {
+    const user = userEvent.setup();
+    installClipboardMock();
+    renderPage();
+
+    const search = await screen.findByLabelText(SEARCH_LABEL);
+    await user.type(search, VERIFIED_RECIPIENT!.fullName);
+    await user.click(
+      screen.getByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
+    );
+
+    const recipient =
+      screen.getByLabelText<HTMLTextAreaElement>(RECIPIENT_LABEL);
+    const subject = screen.getByLabelText<HTMLInputElement>(SUBJECT_LABEL);
+    const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL);
+    await user.click(screen.getByRole('button', { name: COPY_RECIPIENT }));
+    await user.click(screen.getByRole('button', { name: COPY_SUBJECT }));
+    await user.click(screen.getByRole('button', { name: COPY_BODY }));
+
+    expect(clipboardWrite.mock.calls).toEqual([
+      [recipient.value],
+      [subject.value],
+      [body.value],
+    ]);
+    expect(screen.getAllByText(COPY_SUCCEEDED)).toHaveLength(3);
+
+    await user.clear(search);
+    await user.type(search, ALTERNATE_VERIFIED_RECIPIENT!.fullName);
+    await user.click(
+      screen.getByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
+    );
+    await waitFor(() => {
+      expect(screen.queryAllByText(COPY_SUCCEEDED)).toHaveLength(1);
+    });
+    const updatedBody = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL);
+    expect(updatedBody.value).toContain(
+      `Guten Tag ${ALTERNATE_VERIFIED_RECIPIENT!.fullName},`,
+    );
+    await user.click(screen.getByRole('button', { name: COPY_BODY }));
+    expect(clipboardWrite).toHaveBeenLastCalledWith(updatedBody.value);
+  });
+
+  it('selects input and textarea content when clipboard access fails', async () => {
+    const user = userEvent.setup();
+    clipboardWrite.mockRejectedValue(new Error('blocked'));
+    installClipboardMock();
+    renderPage();
+
+    const subject = screen.getByLabelText<HTMLInputElement>(SUBJECT_LABEL);
+    await user.click(screen.getByRole('button', { name: COPY_SUBJECT }));
+    expect(subject).toHaveFocus();
+    expect(subject.selectionStart).toBe(0);
+    expect(subject.selectionEnd).toBe(subject.value.length);
+
+    const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL);
+    await user.click(screen.getByRole('button', { name: COPY_BODY }));
+    expect(body).toHaveFocus();
+    expect(body.selectionStart).toBe(0);
+    expect(body.selectionEnd).toBe(body.value.length);
+    expect(
+      screen.getAllByText('representativeLetter.copyManualFallback'),
+    ).toHaveLength(2);
+    expect(screen.queryByText(COPY_SUCCEEDED)).toBeNull();
   });
 
   it('shows the official contact fallback when no email is verified', async () => {
