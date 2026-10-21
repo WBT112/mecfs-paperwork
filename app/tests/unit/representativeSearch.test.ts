@@ -76,6 +76,18 @@ describe('filterRepresentatives', () => {
     );
   });
 
+  it('requires the explicitly selected constituency when provided', () => {
+    expect(filterRepresentatives(representatives, '', '', 220)).toEqual([
+      representatives[1],
+    ]);
+    expect(filterRepresentatives(representatives, 'Erika', '', 220)).toEqual(
+      [],
+    );
+    expect(filterRepresentatives(representatives, '', '', null)).toEqual(
+      representatives,
+    );
+  });
+
   it('returns all entries when both filters are empty', () => {
     expect(filterRepresentatives(representatives, ' ', '')).toEqual(
       representatives,

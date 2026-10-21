@@ -131,3 +131,57 @@ test('opens directly and retains only tab-local representative-letter state', as
     )
     .toEqual({ tool: null, unrelated: 'keep' });
 });
+
+test('finds an ambiguous postcode and its representatives fully offline', async ({
+  context,
+  page,
+}) => {
+  test.setTimeout(75_000);
+  const requestOrigins: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    requestOrigins.push(url.origin);
+  });
+
+  await page.goto(TOOL_PATH);
+  await expect(
+    page
+      .getByRole('button', { name: /Brief vorbereiten|prepare letter/i })
+      .last(),
+  ).toBeVisible();
+  await page
+    .getByRole('button', { name: /Brief vorbereiten|prepare letter/i })
+    .last()
+    .click();
+  await expect(
+    page.getByLabel(/Ort oder Postleitzahl|Place or postcode/i),
+  ).toBeVisible();
+
+  await context.setOffline(true);
+  try {
+    await page
+      .getByLabel(/Ort oder Postleitzahl|Place or postcode/i)
+      .fill('70184');
+    await expect(
+      page.getByText(/passt zu 2 Wahlkreisen|matches 2 constituencies/i),
+    ).toBeVisible();
+    await page
+      .getByRole('button', {
+        name: /Wahlkreis 258.*Stuttgart I auswählen|Select constituency 258.*Stuttgart I/i,
+      })
+      .click();
+    await expect(
+      page
+        .getByRole('button', {
+          name: /als Empfänger auswählen|as recipient/i,
+        })
+        .first(),
+    ).toBeVisible();
+  } finally {
+    await context.setOffline(false);
+  }
+
+  const appOrigin = new URL(page.url()).origin;
+  expect(requestOrigins.filter((origin) => origin !== appOrigin)).toEqual([]);
+  expect(page.url()).not.toContain('70184');
+});
