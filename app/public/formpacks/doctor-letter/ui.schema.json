@@ -66,7 +66,7 @@
   },
   "decision": {
     "ui:title": "doctor-letter.section.decision.title",
-    "ui:order": ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "resolvedCaseText"],
+    "ui:order": ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "otherCauseCode", "resolvedCaseText"],
     "q1": {
       "ui:title": "doctor-letter.decision.q1.label",
       "ui:help": "doctor-letter.decision.q1.help",
@@ -160,6 +160,11 @@
         "doctor-letter.decision.q8.option.COVID19Vaccination",
         "doctor-letter.decision.q8.option.OtherCause"
       ]
+    },
+    "otherCauseCode": {
+      "ui:title": "doctor-letter.decision.otherCauseCode.label",
+      "ui:help": "doctor-letter.decision.otherCauseCode.help",
+      "ui:placeholder": "doctor-letter.decision.otherCauseCode.placeholder"
     },
     "resolvedCaseText": {
       "ui:title": "doctor-letter.decision.resolvedCaseText.label",
