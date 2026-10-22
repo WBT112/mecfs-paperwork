@@ -18,7 +18,11 @@ const CASE_0_KEY = 'doctor-letter.case.0.paragraph';
 const CASE_3_KEY = 'doctor-letter.case.3.paragraph';
 const CASE_11_KEY = 'doctor-letter.case.11.paragraph';
 const CASE_12_KEY = 'doctor-letter.case.12.paragraph';
+const CASE_13_KEY = 'doctor-letter.case.13.paragraph';
 const CASE_14_KEY = 'doctor-letter.case.14.paragraph';
+const OTHER_CAUSE_CODE = 'E89.9 (Synthetic example)';
+const OTHER_CAUSE = 'Other cause';
+const MARKED_OTHER_CAUSE_CODE = 'Synthetic [[P]] code';
 const buildExpectedCaseText = (input: string) =>
   splitParagraphs(input).join('\n\n');
 
@@ -336,6 +340,74 @@ describe('buildDocumentModel for doctor-letter', () => {
         splitParagraphs(enTranslations[CASE_14_KEY]),
       );
       expect(result.decision?.caseText).toMatch(/fluoroquinolon/i);
+    });
+
+    it('inserts the other-cause code into Case 10', () => {
+      const result = buildDocumentModel(FORMPACK_ID, 'de', {
+        decision: {
+          q1: 'yes',
+          q2: 'yes',
+          q3: 'no',
+          q5: OTHER_CAUSE,
+          otherCauseCode: `  ${OTHER_CAUSE_CODE}  `,
+        },
+      });
+
+      expect(result.decision?.caseId).toBe(10);
+      expect(result.decision?.caseText).toContain(OTHER_CAUSE_CODE);
+      expect(result.decision?.caseText).not.toContain('OTHER_CAUSE_CODE');
+    });
+
+    it('keeps paragraph markers in the entered code as plain text', () => {
+      const result = buildDocumentModel(FORMPACK_ID, 'en', {
+        decision: {
+          q1: 'yes',
+          q2: 'yes',
+          q3: 'no',
+          q5: OTHER_CAUSE,
+          otherCauseCode: MARKED_OTHER_CAUSE_CODE,
+        },
+      });
+
+      expect(result.decision?.caseText).toContain(MARKED_OTHER_CAUSE_CODE);
+      expect(result.decision?.caseParagraphs).toHaveLength(2);
+      expect(result.decision?.caseParagraphs[1]).toContain(
+        MARKED_OTHER_CAUSE_CODE,
+      );
+    });
+
+    it('inserts the other-cause code into Case 13 and retains the fallback when empty', () => {
+      const populated = buildDocumentModel(FORMPACK_ID, 'en', {
+        decision: {
+          q1: 'no',
+          q6: 'yes',
+          q7: 'yes',
+          q8: OTHER_CAUSE,
+          otherCauseCode: OTHER_CAUSE_CODE,
+        },
+      });
+      const empty = buildDocumentModel(FORMPACK_ID, 'en', {
+        decision: {
+          q1: 'no',
+          q6: 'yes',
+          q7: 'yes',
+          q8: OTHER_CAUSE,
+        },
+      });
+
+      expect(populated.decision?.caseId).toBe(13);
+      expect(populated.decision?.caseText).toContain(OTHER_CAUSE_CODE);
+      expect(empty.decision?.caseText).toContain(
+        '[insert the appropriate code for the specific cause here]',
+      );
+      expect(empty.decision?.caseText).toBe(
+        buildExpectedCaseText(
+          enTranslations[CASE_13_KEY].replace(
+            '[[OTHER_CAUSE_CODE]]',
+            '',
+          ).replace('[[/OTHER_CAUSE_CODE]]', ''),
+        ),
+      );
     });
 
     it('accepts boolean decision answers and resolves the same case', () => {

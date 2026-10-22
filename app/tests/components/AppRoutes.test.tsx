@@ -37,6 +37,13 @@ vi.mock('../../src/features/games/pages/MeBingoPage', () => ({
   default: () => <div>ME Bingo route</div>,
 }));
 
+vi.mock(
+  '../../src/features/representative-letter/pages/RepresentativeLetterPage',
+  () => ({
+    default: () => <div>Representative letter route</div>,
+  }),
+);
+
 describe('AppRoutes', () => {
   it('redirects the root route to formpacks', async () => {
     render(
@@ -71,6 +78,20 @@ describe('AppRoutes', () => {
 
     await waitFor(() => {
       expect(screen.getByText('ME Bingo route')).toBeInTheDocument();
+    });
+  });
+
+  it('renders the representative-letter route', async () => {
+    render(
+      <TestRouter initialEntries={['/tools/representative-letter']}>
+        <AppRoutes />
+      </TestRouter>,
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Representative letter route'),
+      ).toBeInTheDocument();
     });
   });
 });
