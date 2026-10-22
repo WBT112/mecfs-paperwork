@@ -43,6 +43,8 @@ describe('createPwaConfig', () => {
     expect(patterns).toContain('index.html');
     expect(patterns).toContain('manifest.webmanifest');
     expect(patterns).toContain('assets/*.{js,css,woff2}');
+    expect(patterns).toContain('assets/representatives-*.json');
+    expect(patterns).toContain('assets/constituency-locations-*.json');
     expect(patterns).toContain('assets/annex-*.{jpg,jpeg,png}');
     expect(patterns).toContain('assets/Liberation*.ttf');
     expect(patterns.join(',')).not.toContain('docx');

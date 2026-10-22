@@ -98,6 +98,10 @@
           "type": "string",
           "enum": ["No known cause", "EBV", "Influenza", "COVID-19 infection", "COVID-19 vaccination", "Other cause"]
         },
+        "otherCauseCode": {
+          "type": "string",
+          "maxLength": 200
+        },
         "resolvedCaseText": {
           "type": "string",
           "title": "Resolved Case",

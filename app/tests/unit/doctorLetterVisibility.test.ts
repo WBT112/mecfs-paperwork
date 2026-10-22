@@ -23,6 +23,7 @@ describe('doctorLetterVisibility', () => {
         q6: false,
         q7: false,
         q8: false,
+        otherCauseCode: false,
         resolvedCaseText: true,
       });
     });
@@ -61,6 +62,25 @@ describe('doctorLetterVisibility', () => {
         expect(visibility.q4).toBe(false);
       });
 
+      it('shows the other-cause code only for the q5 other-cause option', () => {
+        expect(
+          getFieldVisibility({
+            q1: 'yes',
+            q2: 'yes',
+            q3: 'no',
+            q5: OTHER_CAUSE_TEXT,
+          }).otherCauseCode,
+        ).toBe(true);
+        expect(
+          getFieldVisibility({
+            q1: 'yes',
+            q2: 'yes',
+            q3: 'no',
+            q5: 'COVID-19 vaccination',
+          }).otherCauseCode,
+        ).toBe(false);
+      });
+
       it('hides follow-ups when q1=true but q2=false', () => {
         const visibility = getFieldVisibility({ q1: 'yes', q2: 'no' });
         expect(visibility.q3).toBe(false);
@@ -89,6 +109,17 @@ describe('doctorLetterVisibility', () => {
           q7: 'yes',
         });
         expect(visibility.q8).toBe(true);
+      });
+
+      it('shows the other-cause code for the q8 other-cause option', () => {
+        const visibility = getFieldVisibility({
+          q1: 'no',
+          q6: 'yes',
+          q7: 'yes',
+          q8: OTHER_CAUSE_TEXT,
+        });
+
+        expect(visibility.otherCauseCode).toBe(true);
       });
 
       it('hides follow-ups when q1=false but q6=false', () => {
@@ -222,6 +253,26 @@ describe('doctorLetterVisibility', () => {
       const cleaned = clearHiddenFields(decision);
       expect(cleaned.q4).toBeUndefined();
       expect(cleaned.q5).toBe(OTHER_CAUSE_TEXT);
+    });
+
+    it('keeps the other-cause code only while an other-cause path is active', () => {
+      const active = clearHiddenFields({
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'no',
+        q5: OTHER_CAUSE_TEXT,
+        otherCauseCode: 'E89.9',
+      });
+      const inactive = clearHiddenFields({
+        q1: 'yes',
+        q2: 'yes',
+        q3: 'no',
+        q5: 'COVID-19 vaccination',
+        otherCauseCode: 'E89.9',
+      });
+
+      expect(active.otherCauseCode).toBe('E89.9');
+      expect(inactive.otherCauseCode).toBeUndefined();
     });
 
     it('clears q7-q8 when q6 is false', () => {
