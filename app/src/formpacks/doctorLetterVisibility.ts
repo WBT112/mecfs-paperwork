@@ -28,6 +28,7 @@ export type DecisionData = {
   q6?: 'yes' | 'no';
   q7?: 'yes' | 'no';
   q8?: string;
+  otherCauseCode?: string;
   resolvedCaseText?: string;
 };
 
@@ -40,6 +41,7 @@ export type FieldVisibility = {
   q6: boolean;
   q7: boolean;
   q8: boolean;
+  otherCauseCode: boolean;
   resolvedCaseText: boolean;
 };
 
@@ -56,6 +58,7 @@ export function getFieldVisibility(decision: DecisionData): FieldVisibility {
     q6: false,
     q7: false,
     q8: false,
+    otherCauseCode: false,
     resolvedCaseText: true, // Always visible (result display)
   };
 
@@ -67,6 +70,10 @@ export function getFieldVisibility(decision: DecisionData): FieldVisibility {
   } else {
     // q1 undefined - no further questions yet
   }
+
+  visibility.otherCauseCode =
+    (visibility.q5 && decision.q5 === 'Other cause') ||
+    (visibility.q8 && decision.q8 === 'Other cause');
 
   return visibility;
 }
@@ -135,6 +142,7 @@ export function clearHiddenFields(decision: DecisionData): DecisionData {
   if (!visibility.q6) delete cleaned.q6;
   if (!visibility.q7) delete cleaned.q7;
   if (!visibility.q8) delete cleaned.q8;
+  if (!visibility.otherCauseCode) delete cleaned.otherCauseCode;
 
   return cleaned;
 }
