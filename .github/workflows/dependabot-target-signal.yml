@@ -1,0 +1,21 @@
+name: Dependabot target routing signal
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  signal:
+    name: Signal routing workflow
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Complete signal
+        run: echo "Pull request routing can now be evaluated in a privileged workflow."
