@@ -71,6 +71,12 @@ const run = async () => {
     "index Cache-Control",
   );
   assertNoHsts(indexResponse.headers, "index");
+  assertHeaderIncludes(
+    indexResponse.headers.get("content-security-policy"),
+    ["worker-src 'self' blob:"],
+    "index Content-Security-Policy",
+  );
+  assertTextContains(indexHtml, "worker-src 'self' blob:", "index CSP meta");
 
   const deepLinkHeaders = await fetchHeaders(deepLinkPath, "deep link");
   const deepLinkCache = deepLinkHeaders.get("cache-control");
