@@ -1,4 +1,4 @@
-FROM node:24-bookworm-slim AS build
+FROM node:24.22.2-bookworm-slim AS build
 
 # Build arguments for environment-specific configuration
 ARG VITE_MODE=production
