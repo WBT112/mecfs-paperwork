@@ -19,7 +19,7 @@ test('opens directly and retains only tab-local representative-letter state', as
   await page.goto('/formpacks');
   await page
     .getByRole('link', {
-      name: /Brief an Abgeordnete|letter to representatives/i,
+      name: /E-Mail an Abgeordnete|open email to representatives/i,
     })
     .click();
   await expect(page).toHaveURL(new RegExp(`${TOOL_PATH}$`));
