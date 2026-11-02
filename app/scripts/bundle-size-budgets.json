@@ -1,6 +1,6 @@
 {
   "jsTotalBudget": 3450000,
-  "cssTotalBudget": 60000,
+  "cssTotalBudget": 61000,
   "appChunkHardLimit": 500000,
   "jsChunkBudgets": {
     "vendor-react-pdf": 1600000,

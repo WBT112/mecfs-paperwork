@@ -17,6 +17,9 @@
   --color-surface: #f8f9fb;
   --color-surface-muted: #f2f4f7;
   --color-surface-subtle: #eef2f6;
+  --color-help-category: #e9eef4;
+  --color-help-offer: #ffffff;
+  --color-help-offer-hover: #f8fafc;
   --color-text: #111827;
   --color-text-strong: #0f172a;
   --color-text-secondary: #1f2937;
@@ -56,6 +59,9 @@
   --color-surface: #232323;
   --color-surface-muted: #1f1f1f;
   --color-surface-subtle: #242424;
+  --color-help-category: #2d2d2d;
+  --color-help-offer: #393939;
+  --color-help-offer-hover: #434343;
   --color-text: #f3f4f6;
   --color-text-strong: #f9fafb;
   --color-text-secondary: #eef2f7;
@@ -718,11 +724,30 @@ body {
 
 .formpack-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 1.25rem;
 }
 
+.formpack-list__controls,
+.formpack-list__categories {
+  display: grid;
+  gap: 1rem;
+}
+
+.formpack-list__controls {
+  margin-bottom: 1rem;
+}
+
+.formpack-list__category {
+  min-width: 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  background: var(--color-help-category);
+  padding: 1rem;
+}
+
 .formpack-card {
+  min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 1rem 1.25rem;
@@ -730,7 +755,7 @@ body {
   flex-direction: column;
   justify-content: space-between;
   gap: 1rem;
-  background: var(--color-surface-muted);
+  background: var(--color-help-offer);
   text-decoration: none;
   color: inherit;
   transition:
@@ -740,7 +765,7 @@ body {
 
 .formpack-card:hover,
 .formpack-card:focus-visible {
-  background: var(--color-surface);
+  background: var(--color-help-offer-hover);
   border-color: var(--color-border-strong);
 }
 
@@ -792,7 +817,7 @@ body {
   font-size: 1rem;
   background-color: var(--color-input-bg);
   color: var(--color-text);
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 
 .formpack-list__search:focus-visible {
@@ -803,7 +828,7 @@ body {
 .formpack-list__category-heading {
   font-size: 1rem;
   font-weight: 600;
-  margin: 1.25rem 0 0.75rem;
+  margin: 0 0 0.75rem;
   color: var(--color-text-muted);
 }
 
