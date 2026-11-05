@@ -630,13 +630,9 @@ describe('RepresentativeLetterPage', () => {
     expect(window.sessionStorage.getItem('unrelated')).toBe('keep');
   });
 
-  it('links back to the support overview', async () => {
-    const user = userEvent.setup();
+  it('does not duplicate the support overview link inside the tool card', () => {
     renderPage();
 
-    await user.click(
-      screen.getByRole('link', { name: 'representativeLetter.backToOverview' }),
-    );
-    expect(screen.getByText('Overview')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 });

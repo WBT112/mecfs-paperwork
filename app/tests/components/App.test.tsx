@@ -6,13 +6,17 @@ import App from '../../src/App';
 
 const LANGUAGE_LABEL = 'Language';
 const APP_SUBTITLE = 'Offline-first paperwork helper';
+const TOOL_BRAND = 'ME/CFS Paperwork';
 
 const setLocale = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
 const startFormpackBackgroundRefresh = vi.hoisted(() => vi.fn(() => vi.fn()));
 
 const translations: Record<string, string> = {
-  appTitle: 'ME/CFS Paperwork',
+  appTitle: TOOL_BRAND,
   appSubtitle: APP_SUBTITLE,
+  'toolHeader.navigationLabel': 'Tool navigation',
+  'toolHeader.backToOverview': 'Back to overview',
+  'toolHeader.brand': TOOL_BRAND,
   languageLabel: LANGUAGE_LABEL,
   'languageOptions.de': 'Deutsch',
   'languageOptions.en': 'English',
@@ -67,7 +71,7 @@ describe('App', () => {
     );
 
     expect(
-      screen.getByRole('heading', { name: 'ME/CFS Paperwork' }),
+      screen.getByRole('heading', { name: TOOL_BRAND }),
     ).toBeInTheDocument();
     expect(screen.getByText(APP_SUBTITLE)).toBeInTheDocument();
 
@@ -90,6 +94,27 @@ describe('App', () => {
     );
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('renders compact navigation as the first links on a tool route', () => {
+    render(
+      <MemoryRouter initialEntries={['/tools/representative-letter']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    const links = screen.getAllByRole('link');
+    expect(links[0]).toHaveAccessibleName('Back to overview');
+    expect(links[0]).toHaveAttribute('href', '/formpacks');
+    expect(links[1]).toHaveAccessibleName(TOOL_BRAND);
+    expect(links[1]).toHaveAttribute('href', '/formpacks');
+    expect(screen.getByRole('navigation')).toHaveAccessibleName(
+      'Tool navigation',
+    );
+    expect(screen.queryByText(APP_SUBTITLE)).not.toBeInTheDocument();
+    expect(screen.queryByText('Topbar Actions')).not.toBeInTheDocument();
+    expect(screen.queryByText('Theme Switcher')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(LANGUAGE_LABEL)).not.toBeInTheDocument();
   });
 
   it('swallows locale update errors and keeps rendering', async () => {

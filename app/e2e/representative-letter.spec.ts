@@ -3,6 +3,69 @@ import { expect, test } from '@playwright/test';
 const TOOL_PATH = '/tools/representative-letter';
 const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v3';
 
+test('uses compact, keyboard-accessible navigation without horizontal overflow', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto('/formpacks');
+  const overviewHeaderHeight = await page
+    .locator('.app__header')
+    .evaluate((header) => header.getBoundingClientRect().height);
+
+  await page.goto(TOOL_PATH);
+  const header = page.locator('.app__header');
+  const backLink = header.getByRole('link', {
+    name: /Zurück zur Übersicht|Back to overview/i,
+  });
+  const brandLink = header.getByRole('link', { name: 'MEcfs-PAPERwork' });
+  const headerLinks = header.getByRole('link');
+
+  await expect(headerLinks.first()).toHaveAccessibleName(
+    /Zurück zur Übersicht|Back to overview/i,
+  );
+  await expect(header).not.toContainText(/BETA|Fehler bitte|report bugs/i);
+  await expect(
+    page.getByRole('heading', {
+      level: 1,
+      name: /E-Mail an Abgeordnete|Email representatives/i,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.locator('[data-tool-id="representative-letter"]').getByRole('link', {
+      name: /Zurück zur Übersicht|Back to overview/i,
+    }),
+  ).toHaveCount(0);
+
+  const toolHeaderHeight = await header.evaluate(
+    (element) => element.getBoundingClientRect().height,
+  );
+  expect(toolHeaderHeight).toBeLessThan(overviewHeaderHeight);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+
+  await page.keyboard.press('Tab');
+  await expect(backLink).toBeFocused();
+  expect(
+    await backLink.evaluate(
+      (link) => window.getComputedStyle(link).outlineStyle,
+    ),
+  ).not.toBe('none');
+  await page.keyboard.press('Tab');
+  await expect(brandLink).toBeFocused();
+
+  await backLink.click();
+  await expect(page).toHaveURL(/\/formpacks$/);
+  await page.goto(TOOL_PATH);
+  await page
+    .locator('.app__header')
+    .getByRole('link', { name: 'MEcfs-PAPERwork' })
+    .click();
+  await expect(page).toHaveURL(/\/formpacks$/);
+});
+
 test('opens directly and retains only tab-local representative-letter state', async ({
   browserName,
   context,

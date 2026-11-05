@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import CollapsibleSection from '../../../components/CollapsibleSection';
 import { useLocale } from '../../../i18n/useLocale';
@@ -684,14 +683,13 @@ export default function RepresentativeLetterPage() {
           <p className="representative-letter__eyebrow">
             {t('representativeLetter.toolLabel')}
           </p>
-          <h2>{t('representativeLetter.title')}</h2>
+          <h1 className="representative-letter__title">
+            {t('representativeLetter.title')}
+          </h1>
           <p className="app__subtitle">
             {t('representativeLetter.description')}
           </p>
         </div>
-        <Link className="app__link" to="/formpacks">
-          {t('representativeLetter.backToOverview')}
-        </Link>
       </div>
 
       <div className="representative-letter__panel">
