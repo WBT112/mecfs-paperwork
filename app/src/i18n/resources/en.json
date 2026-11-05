@@ -1,6 +1,11 @@
 {
   "appTitle": "MEcfs-PAPERwork - BETA version (please report bugs on GitHub.)",
   "appSubtitle": "Paperwork for Myalgic Encephalomyelitis (ME/CFS) made easy. Secure in your browser - all data stays on your device.",
+  "toolHeader": {
+    "navigationLabel": "Tool navigation",
+    "backToOverview": "Back to overview",
+    "brand": "MEcfs-PAPERwork"
+  },
   "languageLabel": "Language",
   "theme": {
     "label": "Theme",
@@ -262,14 +267,13 @@
   "confirmationDialogTitle": "Confirmation required",
   "representativeLetter": {
     "toolLabel": "Tool",
-    "title": "Letter to representatives",
-    "description": "Prepare the recipient, subject, and mail body locally in your browser for copying.",
+    "title": "Email representatives",
+    "description": "Choose a recipient and open the ready-to-send email directly in your email application or copy the individual fields.",
     "entryCategory": "Mailings",
     "entryTitle": "Email representatives",
     "entryDescription": "Create a ready-to-send email in just a few clicks.",
     "entryAriaLabel": "Open email to representatives",
     "open": "Open tool",
-    "backToOverview": "Back to overview",
     "processTitle": "How it works",
     "processRecipient": "Choose a recipient.",
     "processCopy": "Copy the finished letter or open it directly in your email application.",

@@ -1,6 +1,11 @@
 {
   "appTitle": "MEcfs-PAPERwork - BETA-Version (Fehler bitte über GitHub melden.)",
   "appSubtitle": "Papierkram rund um Myalgische Enzephalomyelitis (ME/CFS) leicht gemacht. Sicher in deinem Browser - alle Daten bleiben auf deinem Gerät.",
+  "toolHeader": {
+    "navigationLabel": "Werkzeugnavigation",
+    "backToOverview": "Zurück zur Übersicht",
+    "brand": "MEcfs-PAPERwork"
+  },
   "languageLabel": "Sprache",
   "theme": {
     "label": "Design",
@@ -262,14 +267,13 @@
   "confirmationDialogTitle": "Bestätigung erforderlich",
   "representativeLetter": {
     "toolLabel": "Werkzeug",
-    "title": "Brief an Abgeordnete",
-    "description": "Bereite Empfänger, Betreff und Mailinhalt lokal in deinem Browser zum Kopieren vor.",
+    "title": "E-Mail an Abgeordnete",
+    "description": "Wähle einen Empfänger und öffne die fertige E-Mail direkt in deinem E-Mail-Programm oder kopiere die einzelnen Felder.",
     "entryCategory": "Mailings",
     "entryTitle": "E-Mail an Abgeordnete",
     "entryDescription": "Mit wenigen Klicks zur fertigen E-Mail.",
     "entryAriaLabel": "E-Mail an Abgeordnete öffnen",
     "open": "Werkzeug öffnen",
-    "backToOverview": "Zurück zur Übersicht",
     "processTitle": "So funktioniert’s",
     "processRecipient": "Empfänger auswählen.",
     "processCopy": "Das fertige Schreiben kopieren oder direkt im eigenen E-Mail-Programm öffnen.",

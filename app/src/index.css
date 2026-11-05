@@ -125,6 +125,29 @@ body {
   box-shadow: var(--shadow-soft);
 }
 
+.app__header.app__header--tool {
+  padding: 0.65rem 0.9rem;
+}
+
+.app__tool-header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.app__tool-header-brand {
+  color: var(--color-text-subtle);
+  font-size: 0.85rem;
+}
+
+.app__tool-header-back:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .app__header-content {
   display: flex;
   align-items: center;
@@ -945,6 +968,10 @@ body {
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.representative-letter__title {
+  margin: 0 0 0.25rem;
 }
 
 .representative-letter__length-switch,
