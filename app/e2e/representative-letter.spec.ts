@@ -108,18 +108,25 @@ test('opens directly and retains only tab-local representative-letter state', as
 
   const secondTab = await context.newPage();
   await secondTab.goto(TOOL_PATH);
+  await expect(secondTab.locator('#representative-letter-body')).toBeVisible();
   await expect(
     secondTab.getByRole('button', {
-      name: /Brief vorbereiten|prepare letter/i,
+      name: /So funktioniert’s|How it works/i,
     }),
-  ).toHaveAttribute('aria-pressed', 'true');
+  ).toHaveAttribute('aria-expanded', 'false');
+  await expect(
+    secondTab.getByRole('button', {
+      name: /Hinweis zur Datenverarbeitung|Data processing notice/i,
+    }),
+  ).toHaveAttribute('aria-expanded', 'false');
   await secondTab.close();
 
   await page.evaluate(() => sessionStorage.setItem('unrelated', 'keep'));
   await page.getByRole('button', { name: /Zurücksetzen|reset/i }).click();
-  await expect(
-    page.getByRole('button', { name: /Brief vorbereiten|prepare letter/i }),
-  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#representative-letter-body')).toBeVisible();
+  await expect(page.locator('#representative-letter-recipient')).toHaveValue(
+    '',
+  );
   await expect
     .poll(() =>
       page.evaluate(

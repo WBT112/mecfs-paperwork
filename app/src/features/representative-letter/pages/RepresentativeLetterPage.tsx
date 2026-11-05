@@ -18,7 +18,6 @@ import {
   createDefaultRepresentativeLetterState,
   type RepresentativeLetterBodyLength,
   type RepresentativeLetterState,
-  type RepresentativeLetterView,
 } from '../model';
 import {
   clearRepresentativeLetterState,
@@ -419,9 +418,6 @@ const RecipientPicker = ({
           </select>
         </label>
       </div>
-      <p className="representative-letter__search-hint">
-        {t('representativeLetter.locationPrivacyHint')}
-      </p>
       <LocationSearchResults
         status={locationSearch.status}
         matches={locationSearch.matches}
@@ -592,7 +588,7 @@ const MailtoAction = ({ mailtoLink }: MailtoActionProps) => {
 /**
  * Renders the standalone, offline representative-letter workflow.
  *
- * @returns The representative-letter information and plain-text output views.
+ * @returns The representative-letter workflow with supporting disclosures.
  */
 export default function RepresentativeLetterPage() {
   const { t } = useTranslation();
@@ -600,7 +596,6 @@ export default function RepresentativeLetterPage() {
   const [state, setState] = useState<RepresentativeLetterState>(() =>
     readRepresentativeLetterState(),
   );
-  const [view, setView] = useState<RepresentativeLetterView>('letter');
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [stateFilter, setStateFilter] = useState('');
@@ -635,7 +630,6 @@ export default function RepresentativeLetterPage() {
     skipNextWrite.current = true;
     clearRepresentativeLetterState();
     setState(createDefaultRepresentativeLetterState());
-    setView('letter');
     setSearchQuery('');
     setLocationQuery('');
     setStateFilter('');
@@ -700,156 +694,131 @@ export default function RepresentativeLetterPage() {
         </Link>
       </div>
 
-      <nav
-        className="representative-letter__view-switch"
-        aria-label={t('representativeLetter.viewNavigation')}
-      >
-        <button
-          type="button"
-          className="app__button"
-          aria-pressed={view === 'information'}
-          onClick={() => setView('information')}
-        >
-          {t('representativeLetter.informationTab')}
-        </button>
-        <button
-          type="button"
-          className="app__button"
-          aria-pressed={view === 'letter'}
-          onClick={() => setView('letter')}
-        >
-          {t('representativeLetter.letterTab')}
-        </button>
-      </nav>
+      <div className="representative-letter__panel">
+        {catalog && locationCatalog ? (
+          <RecipientPicker
+            representatives={representatives}
+            locationCatalog={locationCatalog}
+            query={searchQuery}
+            locationQuery={locationQuery}
+            stateCode={stateFilter}
+            selectedConstituencyNumber={selectedConstituencyNumber}
+            recipientId={state.recipientId}
+            onQueryChange={updateRepresentativeQuery}
+            onLocationQueryChange={updateLocationQuery}
+            onStateChange={updateStateFilter}
+            onSelectConstituency={setSelectedConstituencyNumber}
+            onSelect={selectRecipient}
+          />
+        ) : (
+          <output className="representative-letter__catalog-status">
+            {t(
+              catalogFailed
+                ? 'representativeLetter.catalogLoadFailed'
+                : 'representativeLetter.catalogLoading',
+            )}
+          </output>
+        )}
 
-      {view === 'information' ? (
-        <div className="representative-letter__panel">
-          <h3>{t('representativeLetter.processTitle')}</h3>
+        {selectedRepresentative ? (
+          <SelectedRecipient representative={selectedRepresentative} />
+        ) : null}
+
+        <div
+          className="representative-letter__length-switch"
+          role="group"
+          aria-label={t('representativeLetter.lengthLabel')}
+        >
+          <button
+            type="button"
+            className="app__button"
+            aria-pressed={state.bodyLength === 'short'}
+            onClick={() => setBodyLength('short')}
+          >
+            {t('representativeLetter.shortBody')}
+          </button>
+          <button
+            type="button"
+            className="app__button"
+            aria-pressed={state.bodyLength === 'long'}
+            onClick={() => setBodyLength('long')}
+          >
+            {t('representativeLetter.longBody')}
+          </button>
+        </div>
+
+        <p
+          className="representative-letter__language-note"
+          style={SUBTLE_TEXT_STYLE}
+        >
+          {t('representativeLetter.contentLanguageNotice')}
+        </p>
+
+        <div className="representative-letter__outputs">
+          <CopyableTextField
+            id="representative-letter-recipient"
+            label={t('representativeLetter.recipientLabel')}
+            copyLabel={t('representativeLetter.copyRecipient')}
+            value={selectedRepresentative?.email ?? ''}
+            placeholder={t(
+              selectedRepresentative
+                ? 'representativeLetter.recipientMissingPlaceholder'
+                : 'representativeLetter.recipientPlaceholder',
+            )}
+            multiline
+          />
+
+          <CopyableTextField
+            id="representative-letter-subject"
+            label={t('representativeLetter.subjectLabel')}
+            copyLabel={t('representativeLetter.copySubject')}
+            value={generatedLetter.subject}
+            placeholder={t('representativeLetter.subjectPlaceholder')}
+          />
+
+          <CopyableTextField
+            id="representative-letter-body"
+            label={t('representativeLetter.bodyLabel')}
+            copyLabel={t('representativeLetter.copyBody')}
+            value={generatedLetter.body}
+            placeholder={t('representativeLetter.bodyPlaceholder')}
+            multiline
+            rows={12}
+          />
+        </div>
+
+        <p style={SUBTLE_TEXT_STYLE}>
+          {t('representativeLetter.signatureNotice')}
+        </p>
+
+        <MailtoAction mailtoLink={mailtoLink} />
+
+        <div className="representative-letter__actions">
+          <button type="button" className="app__button" onClick={reset}>
+            {t('representativeLetter.reset')}
+          </button>
+        </div>
+      </div>
+
+      <div className="representative-letter__information">
+        <CollapsibleSection
+          id="representative-letter-process"
+          title={t('representativeLetter.processTitle')}
+          className="representative-letter__background"
+        >
           <ol>
             <li>{t('representativeLetter.processRecipient')}</li>
             <li>{t('representativeLetter.processCopy')}</li>
           </ol>
-          <CollapsibleSection
-            id="representative-letter-background"
-            title={t('representativeLetter.backgroundTitle')}
-            className="representative-letter__background"
-          >
-            <p>{t('representativeLetter.backgroundText')}</p>
-          </CollapsibleSection>
-          <button
-            type="button"
-            className="app__button"
-            onClick={() => setView('letter')}
-          >
-            {t('representativeLetter.start')}
-          </button>
-        </div>
-      ) : (
-        <div className="representative-letter__panel">
-          {catalog && locationCatalog ? (
-            <RecipientPicker
-              representatives={representatives}
-              locationCatalog={locationCatalog}
-              query={searchQuery}
-              locationQuery={locationQuery}
-              stateCode={stateFilter}
-              selectedConstituencyNumber={selectedConstituencyNumber}
-              recipientId={state.recipientId}
-              onQueryChange={updateRepresentativeQuery}
-              onLocationQueryChange={updateLocationQuery}
-              onStateChange={updateStateFilter}
-              onSelectConstituency={setSelectedConstituencyNumber}
-              onSelect={selectRecipient}
-            />
-          ) : (
-            <output className="representative-letter__catalog-status">
-              {t(
-                catalogFailed
-                  ? 'representativeLetter.catalogLoadFailed'
-                  : 'representativeLetter.catalogLoading',
-              )}
-            </output>
-          )}
-
-          {selectedRepresentative ? (
-            <SelectedRecipient representative={selectedRepresentative} />
-          ) : null}
-
-          <div
-            className="representative-letter__length-switch"
-            role="group"
-            aria-label={t('representativeLetter.lengthLabel')}
-          >
-            <button
-              type="button"
-              className="app__button"
-              aria-pressed={state.bodyLength === 'short'}
-              onClick={() => setBodyLength('short')}
-            >
-              {t('representativeLetter.shortBody')}
-            </button>
-            <button
-              type="button"
-              className="app__button"
-              aria-pressed={state.bodyLength === 'long'}
-              onClick={() => setBodyLength('long')}
-            >
-              {t('representativeLetter.longBody')}
-            </button>
-          </div>
-
-          <p
-            className="representative-letter__language-note"
-            style={SUBTLE_TEXT_STYLE}
-          >
-            {t('representativeLetter.contentLanguageNotice')}
-          </p>
-
-          <div className="representative-letter__outputs">
-            <CopyableTextField
-              id="representative-letter-recipient"
-              label={t('representativeLetter.recipientLabel')}
-              copyLabel={t('representativeLetter.copyRecipient')}
-              value={selectedRepresentative?.email ?? ''}
-              placeholder={t(
-                selectedRepresentative
-                  ? 'representativeLetter.recipientMissingPlaceholder'
-                  : 'representativeLetter.recipientPlaceholder',
-              )}
-              multiline
-            />
-
-            <CopyableTextField
-              id="representative-letter-subject"
-              label={t('representativeLetter.subjectLabel')}
-              copyLabel={t('representativeLetter.copySubject')}
-              value={generatedLetter.subject}
-              placeholder={t('representativeLetter.subjectPlaceholder')}
-            />
-
-            <CopyableTextField
-              id="representative-letter-body"
-              label={t('representativeLetter.bodyLabel')}
-              copyLabel={t('representativeLetter.copyBody')}
-              value={generatedLetter.body}
-              placeholder={t('representativeLetter.bodyPlaceholder')}
-              multiline
-              rows={12}
-            />
-          </div>
-
-          <p style={SUBTLE_TEXT_STYLE}>
-            {t('representativeLetter.signatureNotice')}
-          </p>
-
-          <MailtoAction mailtoLink={mailtoLink} />
-        </div>
-      )}
-
-      <div className="representative-letter__actions">
-        <button type="button" className="app__button" onClick={reset}>
-          {t('representativeLetter.reset')}
-        </button>
+        </CollapsibleSection>
+        <CollapsibleSection
+          id="representative-letter-data-processing"
+          title={t('representativeLetter.dataProcessingTitle')}
+          className="representative-letter__background"
+        >
+          <p>{t('representativeLetter.backgroundText')}</p>
+          <p>{t('representativeLetter.locationPrivacyHint')}</p>
+        </CollapsibleSection>
       </div>
     </section>
   );

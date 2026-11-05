@@ -947,7 +947,6 @@ body {
   text-transform: uppercase;
 }
 
-.representative-letter__view-switch,
 .representative-letter__length-switch,
 .representative-letter__actions {
   display: flex;
@@ -955,7 +954,6 @@ body {
   flex-wrap: wrap;
 }
 
-.representative-letter__view-switch .app__button[aria-pressed='true'],
 .representative-letter__length-switch .app__button[aria-pressed='true'] {
   border-color: var(--color-border-strong);
   background: var(--color-surface-subtle);
@@ -967,16 +965,26 @@ body {
   gap: 1rem;
 }
 
+.representative-letter__information {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .representative-letter__background {
   border: 1px solid var(--color-border-subtle);
   border-radius: 10px;
   padding: 0.5rem;
 }
 
-.representative-letter__background p {
+.representative-letter__background p,
+.representative-letter__background ol {
   margin: 0;
   padding: 0 0.75rem 0.5rem;
   color: var(--color-text-secondary);
+}
+
+.representative-letter__background ol {
+  padding-left: 2rem;
 }
 
 .representative-letter__outputs {

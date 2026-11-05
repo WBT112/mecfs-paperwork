@@ -28,9 +28,10 @@ const COPY_RECIPIENT = 'representativeLetter.copyRecipient';
 const COPY_SUBJECT = 'representativeLetter.copySubject';
 const COPY_BODY = 'representativeLetter.copyBody';
 const COPY_SUCCEEDED = 'representativeLetter.copySucceeded';
-const LETTER_TAB = 'representativeLetter.letterTab';
-const INFORMATION_TAB = 'representativeLetter.informationTab';
 const PRESSED_ATTRIBUTE = 'aria-pressed';
+const EXPANDED_ATTRIBUTE = 'aria-expanded';
+const PROCESS_TITLE = 'representativeLetter.processTitle';
+const DATA_PROCESSING_TITLE = 'representativeLetter.dataProcessingTitle';
 const ORIGINAL_SIGN_OFF = representativeLetterContent.template.signOff;
 const VERIFIED_RECIPIENT = representativeCatalog.representatives.find(
   ({ email }) => email !== null,
@@ -114,40 +115,59 @@ describe('RepresentativeLetterPage', () => {
     vi.unstubAllGlobals();
   });
 
-  it('starts with the complete letter and keeps information optional', async () => {
+  it('shows the generator immediately and keeps information in disclosures below it', async () => {
     const user = userEvent.setup();
     renderPage();
 
     expect(
       screen.getByRole('heading', { name: 'representativeLetter.title' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: LETTER_TAB })).toHaveAttribute(
-      PRESSED_ATTRIBUTE,
-      'true',
-    );
     expect(
       screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value,
     ).toContain(representativeLetterContent.template.signOff);
     await screen.findByLabelText(SEARCH_LABEL);
-    await user.click(
-      screen.getByRole('button', {
-        name: INFORMATION_TAB,
-      }),
-    );
-    expect(screen.getByText('representativeLetter.processCopy')).toBeVisible();
+    expect(
+      screen.queryByText('representativeLetter.locationPrivacyHint'),
+    ).not.toBeVisible();
 
-    await user.click(
-      screen.getByRole('button', {
-        name: 'representativeLetter.backgroundTitle',
-      }),
-    );
+    const processDisclosure = screen.getByRole('button', {
+      name: PROCESS_TITLE,
+    });
+    const privacyDisclosure = screen.getByRole('button', {
+      name: DATA_PROCESSING_TITLE,
+    });
+    expect(processDisclosure).toHaveAttribute(EXPANDED_ATTRIBUTE, 'false');
+    expect(privacyDisclosure).toHaveAttribute(EXPANDED_ATTRIBUTE, 'false');
+
+    processDisclosure.focus();
+    await user.keyboard('[Enter]');
+    expect(screen.getByText('representativeLetter.processCopy')).toBeVisible();
+    privacyDisclosure.focus();
+    await user.keyboard('[Space]');
     expect(
       screen.getByText('representativeLetter.backgroundText'),
     ).toBeVisible();
-    await user.click(
-      screen.getByRole('button', { name: 'representativeLetter.start' }),
-    );
-    expect(screen.getByLabelText(BODY_LABEL)).toBeVisible();
+    expect(
+      screen.getByText('representativeLetter.locationPrivacyHint'),
+    ).toBeVisible();
+
+    const mailAction = screen.getByRole('button', { name: OPEN_MAIL_CLIENT });
+    expect(
+      mailAction.compareDocumentPosition(processDisclosure) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      processDisclosure.compareDocumentPosition(privacyDisclosure) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      screen.queryByRole('button', {
+        name: 'representativeLetter.informationTab',
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'representativeLetter.start' }),
+    ).not.toBeInTheDocument();
   });
 
   it('renders exactly the three selectable plain-text outputs without export actions', async () => {
@@ -462,7 +482,7 @@ describe('RepresentativeLetterPage', () => {
     ).toBeVisible();
   });
 
-  it('retains the body length and starts directly on the letter after remount', async () => {
+  it('retains the body length and shows the generator after remount', async () => {
     const user = userEvent.setup();
     const firstRender = renderPage();
     await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
@@ -473,31 +493,27 @@ describe('RepresentativeLetterPage', () => {
     firstRender.unmount();
     renderPage();
 
-    expect(screen.getByRole('button', { name: LETTER_TAB })).toHaveAttribute(
-      PRESSED_ATTRIBUTE,
-      'true',
-    );
+    expect(screen.getByLabelText(BODY_LABEL)).toBeVisible();
     expect(
       screen.getByRole('button', { name: LONG_BODY_BUTTON }),
     ).toHaveAttribute(PRESSED_ATTRIBUTE, 'true');
   });
 
-  it('supports both view and body-length controls', async () => {
+  it('supports body-length and disclosure controls independently', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByRole('button', { name: LETTER_TAB }));
     await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
     await user.click(
       screen.getByRole('button', { name: 'representativeLetter.shortBody' }),
     );
     await user.click(
       screen.getByRole('button', {
-        name: INFORMATION_TAB,
+        name: PROCESS_TITLE,
       }),
     );
 
-    expect(screen.getByText('representativeLetter.processTitle')).toBeVisible();
+    expect(screen.getByText(PROCESS_TITLE)).toBeVisible();
     expect(readRepresentativeLetterState().bodyLength).toBe('short');
   });
 
@@ -582,19 +598,32 @@ describe('RepresentativeLetterPage', () => {
     const user = userEvent.setup();
     window.sessionStorage.setItem('unrelated', 'keep');
     renderPage();
+    const search = await screen.findByLabelText(SEARCH_LABEL);
+    await user.type(search, VERIFIED_RECIPIENT!.fullName);
     await user.click(
-      screen.getByRole('button', {
-        name: INFORMATION_TAB,
-      }),
+      screen.getByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
     );
+    await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
     await user.click(
       screen.getByRole('button', { name: 'representativeLetter.reset' }),
     );
 
-    expect(screen.getByRole('button', { name: LETTER_TAB })).toHaveAttribute(
-      PRESSED_ATTRIBUTE,
-      'true',
-    );
+    expect(screen.getByLabelText(BODY_LABEL)).toBeVisible();
+    expect(search).toHaveValue('');
+    expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue('');
+    expect(
+      screen.getByRole('button', { name: 'representativeLetter.shortBody' }),
+    ).toHaveAttribute(PRESSED_ATTRIBUTE, 'true');
+    expect(
+      screen.getByRole('button', {
+        name: PROCESS_TITLE,
+      }),
+    ).toHaveAttribute(EXPANDED_ATTRIBUTE, 'false');
+    expect(
+      screen.getByRole('button', {
+        name: DATA_PROCESSING_TITLE,
+      }),
+    ).toHaveAttribute(EXPANDED_ATTRIBUTE, 'false');
     expect(
       window.sessionStorage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY),
     ).toBeNull();

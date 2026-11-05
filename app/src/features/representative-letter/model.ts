@@ -4,9 +4,6 @@ export const REPRESENTATIVE_LETTER_TOOL_ID = 'representative-letter';
 /** Current schema version for the tab-local representative-letter state. */
 export const REPRESENTATIVE_LETTER_STATE_VERSION = 3 as const;
 
-/** Views available inside the representative-letter tool. */
-export type RepresentativeLetterView = 'information' | 'letter';
-
 /** Available lengths for the generated mail body. */
 export type RepresentativeLetterBodyLength = 'short' | 'long';
 
