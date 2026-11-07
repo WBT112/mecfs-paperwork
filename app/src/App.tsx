@@ -19,6 +19,7 @@ export default function App() {
   const { locale, setLocale, supportedLocales } = useLocale();
   const location = useLocation();
   const isToolRoute = location.pathname.startsWith('/tools/');
+  const isOverviewRoute = location.pathname === '/formpacks';
 
   const handleLocaleChange = useCallback(
     (event: ChangeEvent<HTMLSelectElement>) => {
@@ -65,6 +66,9 @@ export default function App() {
                   {t('appTitle')}
                 </Link>
               </h1>
+              <p className="app__subtitle">
+                <small>{t('appBugReportHint')}</small>
+              </p>
               <p className="app__subtitle">{t('appSubtitle')}</p>
             </div>
             <div className="app__header-actions">
@@ -109,6 +113,11 @@ export default function App() {
             </div>
           </div>
         )}
+        {isOverviewRoute ? (
+          <p className="app__subtitle" style={{ marginTop: '1rem' }}>
+            {t('formpackListDescription')}
+          </p>
+        ) : null}
       </header>
       <main className="app__content">
         <AppRoutes />

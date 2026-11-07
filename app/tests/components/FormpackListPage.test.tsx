@@ -131,6 +131,7 @@ describe('FormpackListPage', () => {
       name: 'representativeLetter.entryCategory',
     });
 
+    expect(screen.queryByText('formpackListDescription')).toBeNull();
     expect(
       heading.compareDocumentPosition(status) &
         Node.DOCUMENT_POSITION_FOLLOWING,
