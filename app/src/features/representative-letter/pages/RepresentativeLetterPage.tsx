@@ -490,6 +490,71 @@ type PrimaryMailActionsProps = {
   bodyFieldRef: RefObject<HTMLTextAreaElement | null>;
 };
 
+type CatalogSource = {
+  id: string;
+  url: string;
+  attribution: string;
+};
+
+type CatalogSourceListProps = {
+  label: string;
+  sources: readonly CatalogSource[];
+};
+
+const CatalogSourceList = ({ label, sources }: CatalogSourceListProps) => (
+  <div>
+    <p>{label}</p>
+    <ul>
+      {sources.map((source) => (
+        <li key={source.id}>
+          <a
+            className="app__link"
+            href={source.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {source.attribution}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+type CatalogProvenanceProps = {
+  catalog: RepresentativeCatalog;
+  locationCatalog: ConstituencyLocationCatalog;
+};
+
+const CatalogProvenance = ({
+  catalog,
+  locationCatalog,
+}: CatalogProvenanceProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className="representative-letter__catalog-provenance">
+      <p>
+        {t('representativeLetter.dataSnapshotStatus', {
+          term: catalog.term.number,
+          representativeDate: catalog.verifiedAt,
+          constituencyStatus: locationCatalog.constituencyStatus,
+          locationDate: locationCatalog.verifiedAt,
+        })}
+      </p>
+      <p>{t('representativeLetter.dataNotAutomaticallyUpdated')}</p>
+      <CatalogSourceList
+        label={t('representativeLetter.contactDataSources')}
+        sources={catalog.sources}
+      />
+      <CatalogSourceList
+        label={t('representativeLetter.locationDataSources')}
+        sources={locationCatalog.sources}
+      />
+    </div>
+  );
+};
+
 type PrimaryCopyStatus = 'idle' | 'copied' | 'manual';
 
 const PrimaryMailActions = ({
@@ -822,6 +887,12 @@ export default function RepresentativeLetterPage() {
         >
           <p>{t('representativeLetter.backgroundText')}</p>
           <p>{t('representativeLetter.locationPrivacyHint')}</p>
+          {catalog && locationCatalog ? (
+            <CatalogProvenance
+              catalog={catalog}
+              locationCatalog={locationCatalog}
+            />
+          ) : null}
         </CollapsibleSection>
       </div>
     </section>

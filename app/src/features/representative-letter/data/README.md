@@ -127,3 +127,7 @@ editorially approved archive. They are not displayed, selected, transformed,
 or included in generated letters. Changing the archived content or adding an
 English letter catalog requires explicit editorial approval and a new content
 version.
+
+The release acceptance checklist and the procedures for legal, content,
+mandate, contact, and constituency updates are documented in
+[`docs/qa/representative-letter.md`](../../../../../docs/qa/representative-letter.md).
