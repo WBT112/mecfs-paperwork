@@ -103,7 +103,7 @@ const configuredVitestWorkers = parsePositiveInt(
   process.env.VITEST_MAX_WORKERS ?? process.env.VITEST_WORKERS,
 );
 const vitestMaxWorkers =
-  configuredVitestWorkers ?? (isCI ? 2 : defaultLocalVitestWorkers);
+  configuredVitestWorkers ?? (isCI ? 4 : defaultLocalVitestWorkers);
 
 const createConfig = (mode: string): AppConfig => ({
   define: {
