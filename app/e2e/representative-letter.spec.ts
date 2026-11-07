@@ -94,8 +94,23 @@ test('opens directly and retains only tab-local representative-letter state', as
   await expect(page.locator('a[download], button[download]')).toHaveCount(0);
 
   await page
-    .getByLabel(/Name oder Wahlkreis|Name or constituency/i)
-    .fill('Sanae Abdi');
+    .getByLabel(/Postleitzahl oder Ort|Postcode or place/i)
+    .fill('50668');
+  await expect(
+    page.getByRole('button', {
+      name: /Wahlkreis 92.*Köln I auswählen|Select constituency 92.*Köln I/i,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', {
+      name: /Sanae Abdi als Empfänger auswählen|Select Sanae Abdi as recipient/i,
+    }),
+  ).toHaveCount(0);
+  await page
+    .getByRole('button', {
+      name: /Wahlkreis 92.*Köln I auswählen|Select constituency 92.*Köln I/i,
+    })
+    .click();
   await page
     .getByRole('button', {
       name: /Sanae Abdi als Empfänger auswählen|Select Sanae Abdi as recipient/i,
@@ -168,8 +183,16 @@ test('opens directly and retains only tab-local representative-letter state', as
     ),
   ).toBe(true);
 
-  const search = page.getByLabel(/Name oder Wahlkreis|Name or constituency/i);
-  await search.fill('Aaron Valent');
+  const search = page.getByLabel(/Postleitzahl oder Ort|Postcode or place/i);
+  await search.fill('97237');
+  await expect(page.locator('#representative-letter-recipient')).toHaveValue(
+    '',
+  );
+  await page
+    .getByRole('button', {
+      name: /Wahlkreis 250.*Würzburg auswählen|Select constituency 250.*Würzburg/i,
+    })
+    .click();
   await page
     .getByRole('button', {
       name: /Aaron Valent als Empfänger auswählen|Select Aaron Valent as recipient/i,
@@ -244,13 +267,13 @@ test('finds an ambiguous postcode and its representatives fully offline', async 
 
   await page.goto(TOOL_PATH);
   await expect(
-    page.getByLabel(/Ort oder Postleitzahl|Place or postcode/i),
+    page.getByLabel(/Postleitzahl oder Ort|Postcode or place/i),
   ).toBeVisible();
 
   await context.setOffline(true);
   try {
     await page
-      .getByLabel(/Ort oder Postleitzahl|Place or postcode/i)
+      .getByLabel(/Postleitzahl oder Ort|Postcode or place/i)
       .fill('70184');
     await expect(
       page.getByText(/passt zu 2 Wahlkreisen|matches 2 constituencies/i),

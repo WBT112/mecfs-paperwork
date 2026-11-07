@@ -74,14 +74,14 @@ describe('searchConstituencyLocations', () => {
     ['ab', 'incomplete-place'],
     ['unbekannt', 'not-found'],
   ] as const)('reports %s as %s', (query, status) => {
-    expect(searchConstituencyLocations(catalog, query, '')).toEqual({
+    expect(searchConstituencyLocations(catalog, query)).toEqual({
       status,
       matches: [],
     });
   });
 
   it('returns every constituency for an ambiguous full postcode', () => {
-    const result = searchConstituencyLocations(catalog, '12345', '');
+    const result = searchConstituencyLocations(catalog, '12345');
 
     expect(result.status).toBe('matches');
     expect(
@@ -89,26 +89,26 @@ describe('searchConstituencyLocations', () => {
     ).toEqual([2, 1]);
   });
 
-  it('narrows postcode matches by federal state', () => {
-    const result = searchConstituencyLocations(catalog, '12345', 'SH');
-
-    expect(result.matches).toHaveLength(1);
-    expect(result.matches[0]?.constituencyNumber).toBe(1);
-  });
-
   it('normalizes case, umlauts, accents, punctuation, and St./Sankt', () => {
     expect(
-      searchConstituencyLocations(catalog, ' ST. aegidien ', '').matches[0]
+      searchConstituencyLocations(catalog, ' ST. aegidien ').matches[0]
         ?.constituencyNumber,
     ).toBe(1);
     expect(
-      searchConstituencyLocations(catalog, 'aeusserst dorf', '').matches[0]
+      searchConstituencyLocations(catalog, 'DORFHAUSEN').matches[0]
         ?.constituencyNumber,
     ).toBe(3);
   });
 
+  it('does not expose county names as a separate search path', () => {
+    expect(searchConstituencyLocations(catalog, 'Landkreis Beispiel')).toEqual({
+      status: 'not-found',
+      matches: [],
+    });
+  });
+
   it('ranks an exact municipality before prefix and county matches', () => {
-    const result = searchConstituencyLocations(catalog, 'Neustadt', '');
+    const result = searchConstituencyLocations(catalog, 'Neustadt');
 
     expect(
       result.matches.map(({ constituencyNumber }) => constituencyNumber),

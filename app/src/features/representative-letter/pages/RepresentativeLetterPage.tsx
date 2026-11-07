@@ -29,7 +29,7 @@ import {
   readRepresentativeLetterState,
   writeRepresentativeLetterState,
 } from '../sessionState';
-import { filterRepresentatives } from '../representativeSearch';
+import { findRepresentativesForConstituency } from '../representativeSearch';
 import {
   searchConstituencyLocations,
   type ConstituencyLocationMatch,
@@ -63,11 +63,6 @@ const SEND_BUTTON_STYLE: CSSProperties = {
   fontWeight: 700,
 };
 const PRIMARY_DESCRIPTION_STYLE: CSSProperties = { margin: 0 };
-const CONTROL_GRID_STYLE: CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 16rem), 1fr))',
-  gap: '0.75rem',
-};
 const FIELD_STYLE: CSSProperties = {
   display: 'grid',
   gap: '0.35rem',
@@ -159,32 +154,25 @@ const RepresentativeResult = ({
 };
 
 type SearchResultsProps = {
-  active: boolean;
   matches: RepresentativeCatalogEntry[];
   recipientId: string | null;
   onSelect: (recipientId: string) => void;
 };
 
 const SearchResults = ({
-  active,
   matches,
   recipientId,
   onSelect,
 }: SearchResultsProps) => {
   const { t } = useTranslation();
-  if (!active) {
-    return <p>{t('representativeLetter.searchPrompt')}</p>;
-  }
-
-  const visibleRepresentatives = matches.slice(0, RESULT_LIMIT);
   return (
     <>
       <output className="representative-letter__result-count">
         {t('representativeLetter.resultCount', { count: matches.length })}
       </output>
-      {visibleRepresentatives.length > 0 ? (
+      {matches.length > 0 ? (
         <ul className="representative-letter__results" style={RESULTS_STYLE}>
-          {visibleRepresentatives.map((representative) => (
+          {matches.map((representative) => (
             <RepresentativeResult
               key={representative.id}
               representative={representative}
@@ -196,9 +184,6 @@ const SearchResults = ({
       ) : (
         <p>{t('representativeLetter.noResults')}</p>
       )}
-      {matches.length > RESULT_LIMIT ? (
-        <p>{t('representativeLetter.refineSearch')}</p>
-      ) : null}
     </>
   );
 };
@@ -206,14 +191,10 @@ const SearchResults = ({
 type RecipientPickerProps = {
   representatives: readonly RepresentativeCatalogEntry[];
   locationCatalog: ConstituencyLocationCatalog;
-  query: string;
   locationQuery: string;
-  stateCode: string;
   selectedConstituencyNumber: number | null;
   recipientId: string | null;
-  onQueryChange: (value: string) => void;
   onLocationQueryChange: (value: string) => void;
-  onStateChange: (value: string) => void;
   onSelectConstituency: (constituencyNumber: number) => void;
   onSelect: (recipientId: string) => void;
 };
@@ -340,41 +321,22 @@ const LocationSearchResults = ({
 const RecipientPicker = ({
   representatives,
   locationCatalog,
-  query,
   locationQuery,
-  stateCode,
   selectedConstituencyNumber,
   recipientId,
-  onQueryChange,
   onLocationQueryChange,
-  onStateChange,
   onSelectConstituency,
   onSelect,
 }: RecipientPickerProps) => {
   const { t } = useTranslation();
-  const representativeStates = [
-    ...new Map(
-      representatives.map(({ stateCode: optionCode, state }) => [
-        optionCode,
-        state,
-      ]),
-    ).entries(),
-  ].toSorted(([, left], [, right]) => left.localeCompare(right, 'de'));
   const locationSearch = searchConstituencyLocations(
     locationCatalog,
     locationQuery,
-    stateCode,
   );
-  const locationActive = locationQuery.trim() !== '';
-  const active = locationActive
-    ? selectedConstituencyNumber !== null
-    : query.trim() !== '' || stateCode !== '';
-  const matches = active
-    ? filterRepresentatives(
+  const matches = selectedConstituencyNumber
+    ? findRepresentativesForConstituency(
         representatives,
-        query,
-        stateCode,
-        locationActive ? selectedConstituencyNumber : null,
+        selectedConstituencyNumber,
       )
     : [];
 
@@ -390,21 +352,7 @@ const RecipientPicker = ({
         </h3>
         <p>{t('representativeLetter.recipientSearchDescription')}</p>
       </div>
-      <div
-        className="representative-letter__search-controls"
-        style={CONTROL_GRID_STYLE}
-      >
-        <label htmlFor="representative-letter-search" style={FIELD_STYLE}>
-          {t('representativeLetter.searchLabel')}
-          <input
-            id="representative-letter-search"
-            type="search"
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder={t('representativeLetter.searchPlaceholder')}
-            style={CONTROL_STYLE}
-          />
-        </label>
+      <div className="representative-letter__search-controls">
         <label
           htmlFor="representative-letter-location-search"
           style={FIELD_STYLE}
@@ -419,22 +367,6 @@ const RecipientPicker = ({
             placeholder={t('representativeLetter.locationSearchPlaceholder')}
             style={CONTROL_STYLE}
           />
-        </label>
-        <label htmlFor="representative-letter-state-filter" style={FIELD_STYLE}>
-          {t('representativeLetter.stateFilterLabel')}
-          <select
-            id="representative-letter-state-filter"
-            value={stateCode}
-            onChange={(event) => onStateChange(event.target.value)}
-            style={CONTROL_STYLE}
-          >
-            <option value="">{t('representativeLetter.allStates')}</option>
-            {representativeStates.map(([optionCode, stateName]) => (
-              <option key={optionCode} value={optionCode}>
-                {stateName}
-              </option>
-            ))}
-          </select>
         </label>
       </div>
       <LocationSearchResults
@@ -454,14 +386,13 @@ const RecipientPicker = ({
           {t('representativeLetter.constituencyLookup')}
         </a>
       </p>
-      {!locationActive || selectedConstituencyNumber !== null ? (
+      {selectedConstituencyNumber === null ? null : (
         <SearchResults
-          active={active}
           matches={matches}
           recipientId={recipientId}
           onSelect={onSelect}
         />
-      ) : null}
+      )}
     </section>
   );
 };
@@ -681,9 +612,7 @@ export default function RepresentativeLetterPage() {
   const [state, setState] = useState<RepresentativeLetterState>(() =>
     readRepresentativeLetterState(),
   );
-  const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
-  const [stateFilter, setStateFilter] = useState('');
   const bodyFieldRef = useRef<HTMLTextAreaElement>(null);
   const [selectedConstituencyNumber, setSelectedConstituencyNumber] = useState<
     number | null
@@ -716,31 +645,19 @@ export default function RepresentativeLetterPage() {
     skipNextWrite.current = true;
     clearRepresentativeLetterState();
     setState(createDefaultRepresentativeLetterState());
-    setSearchQuery('');
     setLocationQuery('');
-    setStateFilter('');
     setSelectedConstituencyNumber(null);
-  };
-
-  const updateRepresentativeQuery = (value: string) => {
-    setSearchQuery(value);
-    if (value.trim()) {
-      setLocationQuery('');
-      setSelectedConstituencyNumber(null);
-    }
   };
 
   const updateLocationQuery = (value: string) => {
     setLocationQuery(value);
     setSelectedConstituencyNumber(null);
-    if (value.trim()) {
-      setSearchQuery('');
-    }
+    setState((current) => ({ ...current, recipientId: null }));
   };
 
-  const updateStateFilter = (value: string) => {
-    setStateFilter(value);
-    setSelectedConstituencyNumber(null);
+  const selectConstituency = (constituencyNumber: number) => {
+    setSelectedConstituencyNumber(constituencyNumber);
+    setState((current) => ({ ...current, recipientId: null }));
   };
 
   const contentCatalog = getRepresentativeLetterContent(locale);
@@ -784,15 +701,11 @@ export default function RepresentativeLetterPage() {
           <RecipientPicker
             representatives={representatives}
             locationCatalog={locationCatalog}
-            query={searchQuery}
             locationQuery={locationQuery}
-            stateCode={stateFilter}
             selectedConstituencyNumber={selectedConstituencyNumber}
             recipientId={state.recipientId}
-            onQueryChange={updateRepresentativeQuery}
             onLocationQueryChange={updateLocationQuery}
-            onStateChange={updateStateFilter}
-            onSelectConstituency={setSelectedConstituencyNumber}
+            onSelectConstituency={selectConstituency}
             onSelect={selectRecipient}
           />
         ) : (
