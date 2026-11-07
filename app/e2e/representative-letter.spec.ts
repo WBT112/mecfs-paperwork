@@ -71,6 +71,7 @@ test('opens directly and retains only tab-local representative-letter state', as
   context,
   page,
 }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
   let clipboardReadSupported = browserName === 'chromium';
   if (clipboardReadSupported) {
     try {
@@ -115,8 +116,23 @@ test('opens directly and retains only tab-local representative-letter state', as
   await expect(page.locator('#representative-letter-body')).not.toHaveValue(
     /Mein Alltag ist eine ständige Abwägung|Mein Antrag auf einen Pflegegrad läuft/u,
   );
+  const recipientDisclosure = page.getByRole('button', {
+    name: 'Sanae Abdi',
+    exact: true,
+  });
+  await expect(recipientDisclosure).toHaveAttribute('aria-expanded', 'false');
+  await recipientDisclosure.focus();
+  await page.keyboard.press('Enter');
+  await expect(recipientDisclosure).toHaveAttribute('aria-expanded', 'true');
+  await expect(
+    page.getByRole('link', {
+      name: /Offizielles Bundestagsprofil|Official Bundestag profile/i,
+    }),
+  ).toBeVisible();
+  await page.keyboard.press('Space');
+  await expect(recipientDisclosure).toHaveAttribute('aria-expanded', 'false');
   const mailtoLink = page.getByRole('link', {
-    name: /Im E-Mail-Programm öffnen|Open in email application/i,
+    name: /E-Mail versenden|Send email/i,
   });
   await expect(mailtoLink).toHaveAttribute(
     'href',
@@ -128,6 +144,7 @@ test('opens directly and retains only tab-local representative-letter state', as
   if (clipboardReadSupported) {
     await page
       .getByRole('button', { name: /Mailinhalt kopieren|Copy mail body/i })
+      .first()
       .click();
     await expect(
       page.getByText(/In die Zwischenablage kopiert|Copied to the clipboard/i),
@@ -140,6 +157,16 @@ test('opens directly and retains only tab-local representative-letter state', as
   expect(new URL(mailtoHref as string).searchParams.get('body')).toBe(
     visibleBody.replaceAll('\n', '\r\n'),
   );
+  await expect(
+    page
+      .getByRole('button', { name: /Mailinhalt kopieren|Copy mail body/i })
+      .last(),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 
   const search = page.getByLabel(/Name oder Wahlkreis|Name or constituency/i);
   await search.fill('Aaron Valent');

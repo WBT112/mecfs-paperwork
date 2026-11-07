@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyRepresentativeLetterText } from '../clipboard';
 
@@ -12,6 +12,7 @@ type CopyableTextFieldProps = {
   placeholder: string;
   multiline?: boolean;
   rows?: number;
+  textareaRef?: RefObject<HTMLTextAreaElement | null>;
 };
 
 /**
@@ -28,10 +29,12 @@ export default function CopyableTextField({
   placeholder,
   multiline = false,
   rows = 2,
+  textareaRef,
 }: CopyableTextFieldProps) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const resolvedTextareaRef = textareaRef ?? internalTextareaRef;
   const [status, setStatus] = useState<CopyStatus>('idle');
   const statusId = `${id}-copy-status`;
 
@@ -46,7 +49,7 @@ export default function CopyableTextField({
       return;
     }
 
-    const field = multiline ? textareaRef.current : inputRef.current;
+    const field = multiline ? resolvedTextareaRef.current : inputRef.current;
     field?.focus();
     field?.select();
     setStatus('manual');
@@ -79,7 +82,7 @@ export default function CopyableTextField({
         </button>
       </div>
       {multiline ? (
-        <textarea ref={textareaRef} rows={rows} {...sharedProps} />
+        <textarea ref={resolvedTextareaRef} rows={rows} {...sharedProps} />
       ) : (
         <input ref={inputRef} type="text" {...sharedProps} />
       )}
