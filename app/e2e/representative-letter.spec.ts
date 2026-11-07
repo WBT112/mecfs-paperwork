@@ -260,10 +260,14 @@ test('finds an ambiguous postcode and its representatives fully offline', async 
   test.setTimeout(75_000);
   await page.setViewportSize({ width: 375, height: 812 });
   const requestOrigins: string[] = [];
+  const requestUrls: string[] = [];
+  const consoleMessages: string[] = [];
   page.on('request', (request) => {
     const url = new URL(request.url());
     requestOrigins.push(url.origin);
+    requestUrls.push(url.href);
   });
+  page.on('console', (message) => consoleMessages.push(message.text()));
 
   await page.goto(TOOL_PATH);
   await expect(
@@ -297,6 +301,15 @@ test('finds an ambiguous postcode and its representatives fully offline', async 
   const appOrigin = new URL(page.url()).origin;
   expect(requestOrigins.filter((origin) => origin !== appOrigin)).toEqual([]);
   expect(page.url()).not.toContain('70184');
+  expect(requestUrls.join('\n')).not.toContain('70184');
+  expect(consoleMessages.join('\n')).not.toContain('70184');
+  const persistedBrowserData = await page.evaluate(() =>
+    JSON.stringify({
+      localStorage: { ...localStorage },
+      sessionStorage: { ...sessionStorage },
+    }),
+  );
+  expect(persistedBrowserData).not.toContain('70184');
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,

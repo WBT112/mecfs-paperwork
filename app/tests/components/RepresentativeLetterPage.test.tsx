@@ -189,6 +189,26 @@ describe('RepresentativeLetterPage', () => {
     expect(
       screen.getByText('representativeLetter.locationPrivacyHint'),
     ).toBeVisible();
+    expect(
+      screen.getByText('representativeLetter.dataSnapshotStatus'),
+    ).toBeVisible();
+    expect(
+      screen.getByText('representativeLetter.dataNotAutomaticallyUpdated'),
+    ).toBeVisible();
+    expect(
+      screen.getByText('representativeLetter.contactDataSources'),
+    ).toBeVisible();
+    expect(
+      screen.getByText('representativeLetter.locationDataSources'),
+    ).toBeVisible();
+    for (const source of [
+      ...representativeCatalog.sources,
+      ...constituencyLocationCatalog.sources,
+    ]) {
+      expect(
+        screen.getByRole('link', { name: source.attribution }),
+      ).toHaveAttribute('href', source.url);
+    }
 
     const body = screen.getByLabelText(BODY_LABEL);
     expect(
