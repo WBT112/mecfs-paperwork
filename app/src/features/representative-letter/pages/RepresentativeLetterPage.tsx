@@ -8,6 +8,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import CollapsibleSection from '../../../components/CollapsibleSection';
 import { useLocale } from '../../../i18n/useLocale';
+import CopyIconButton from '../components/CopyIconButton';
 import CopyableTextField from '../components/CopyableTextField';
 import {
   type RepresentativeCatalog,
@@ -602,7 +603,7 @@ const PrimaryMailActions = ({
             aria-describedby={descriptionId}
             style={SEND_BUTTON_STYLE}
           >
-            {t('representativeLetter.sendEmail')}
+            {t('representativeLetter.openEmailApp')}
           </a>
         ) : (
           <button
@@ -612,40 +613,15 @@ const PrimaryMailActions = ({
             disabled
             style={SEND_BUTTON_STYLE}
           >
-            {t('representativeLetter.sendEmail')}
+            {t('representativeLetter.openEmailApp')}
           </button>
         )}
-        <button
-          type="button"
-          className="app__button app__icon-button"
-          aria-label={t('representativeLetter.copyBody')}
-          aria-describedby={copyStatusId}
+        <CopyIconButton
+          label={t('representativeLetter.copyBody')}
+          describedBy={copyStatusId}
+          disabled={false}
           onClick={copyBody}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 20 20"
-            fill="none"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <rect
-              x="6.5"
-              y="6.5"
-              width="10"
-              height="10"
-              rx="1.5"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M13.5 6.5V5A1.5 1.5 0 0 0 12 3.5H5A1.5 1.5 0 0 0 3.5 5v7A1.5 1.5 0 0 0 5 13.5h1.5"
-              stroke="currentColor"
-              strokeWidth="1.5"
-            />
-          </svg>
-        </button>
+        />
       </div>
       <p id={descriptionId} style={PRIMARY_DESCRIPTION_STYLE}>
         {mailtoLink

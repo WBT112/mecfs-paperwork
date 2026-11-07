@@ -19,8 +19,8 @@ technical maintenance.
 3. Select a representative. Expand their details to review the verification
    date and official contact/profile links.
 4. Choose the short or long version. Copy recipient, subject, and mail body
-   separately, or select **Send email** to open the locally configured mail
-   application.
+   separately, or select **Open in email app** to open the locally configured
+   mail application.
 5. Paperwork does not send the message. If a mail body is too long for a
    reliable `mailto` URL, recipient and subject remain available and the mail
    body can be copied with the adjacent button.

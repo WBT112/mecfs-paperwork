@@ -147,7 +147,7 @@ test('opens directly and retains only tab-local representative-letter state', as
   await page.keyboard.press('Space');
   await expect(recipientDisclosure).toHaveAttribute('aria-expanded', 'false');
   const mailtoLink = page.getByRole('link', {
-    name: /E-Mail versenden|Send email/i,
+    name: /Im Mailprogramm öffnen|Open in email app/i,
   });
   await expect(mailtoLink).toHaveAttribute(
     'href',
@@ -172,6 +172,26 @@ test('opens directly and retains only tab-local representative-letter state', as
   expect(new URL(mailtoHref as string).searchParams.get('body')).toBe(
     visibleBody.replaceAll('\n', '\r\n'),
   );
+  const copyButtons = page.locator(
+    '[data-tool-id="representative-letter"] .app__icon-button',
+  );
+  await expect(copyButtons).toHaveCount(4);
+  const copyButtonMetrics = await copyButtons.evaluateAll((buttons) =>
+    buttons.map((button) => {
+      const bounds = button.getBoundingClientRect();
+      return {
+        accessibleName: button.getAttribute('aria-label'),
+        title: button.getAttribute('title'),
+        width: bounds.width,
+        height: bounds.height,
+      };
+    }),
+  );
+  for (const metrics of copyButtonMetrics) {
+    expect(metrics.accessibleName).toBe(metrics.title);
+    expect(metrics.width).toBeGreaterThanOrEqual(44);
+    expect(metrics.height).toBeGreaterThanOrEqual(44);
+  }
   await expect(
     page
       .getByRole('button', { name: /Mailinhalt kopieren|Copy mail body/i })

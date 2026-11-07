@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { copyRepresentativeLetterText } from '../clipboard';
+import CopyIconButton from './CopyIconButton';
 
 type CopyStatus = 'idle' | 'copied' | 'manual';
 
@@ -72,14 +73,12 @@ export default function CopyableTextField({
     <div className="representative-letter__copy-field">
       <div className="representative-letter__copy-field-heading">
         <label htmlFor={id}>{label}</label>
-        <button
-          type="button"
-          className="app__button"
+        <CopyIconButton
+          label={copyLabel}
+          describedBy={statusId}
           disabled={!value}
           onClick={copy}
-        >
-          {copyLabel}
-        </button>
+        />
       </div>
       {multiline ? (
         <textarea ref={resolvedTextareaRef} rows={rows} {...sharedProps} />

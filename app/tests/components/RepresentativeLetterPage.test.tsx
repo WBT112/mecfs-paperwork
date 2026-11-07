@@ -23,7 +23,7 @@ const LOCATION_SEARCH_LABEL = 'representativeLetter.locationSearchLabel';
 const SELECT_CONSTITUENCY_BUTTON =
   'representativeLetter.selectConstituencyNamed';
 const SELECT_RECIPIENT_BUTTON = 'representativeLetter.selectRecipientNamed';
-const SEND_EMAIL = 'representativeLetter.sendEmail';
+const OPEN_EMAIL_APP = 'representativeLetter.openEmailApp';
 const COPY_RECIPIENT = 'representativeLetter.copyRecipient';
 const COPY_SUBJECT = 'representativeLetter.copySubject';
 const COPY_BODY = 'representativeLetter.copyBody';
@@ -253,11 +253,22 @@ describe('RepresentativeLetterPage', () => {
     expect(
       screen.queryByRole('button', { name: /download|export/i }),
     ).toBeNull();
-    expect(screen.queryByRole('button', { name: SEND_EMAIL })).toBeNull();
-    expect(screen.queryByRole('link', { name: SEND_EMAIL })).toBeNull();
-    expect(screen.getByRole('button', { name: COPY_RECIPIENT })).toBeDisabled();
-    expect(screen.getByRole('button', { name: COPY_SUBJECT })).toBeEnabled();
-    expect(screen.getByRole('button', { name: COPY_BODY })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: OPEN_EMAIL_APP })).toBeNull();
+    expect(screen.queryByRole('link', { name: OPEN_EMAIL_APP })).toBeNull();
+    const copyButtons = [
+      [screen.getByRole('button', { name: COPY_RECIPIENT }), COPY_RECIPIENT],
+      [screen.getByRole('button', { name: COPY_SUBJECT }), COPY_SUBJECT],
+      [screen.getByRole('button', { name: COPY_BODY }), COPY_BODY],
+    ] as const;
+    expect(copyButtons[0][0]).toBeDisabled();
+    expect(copyButtons[1][0]).toBeEnabled();
+    expect(copyButtons[2][0]).toBeEnabled();
+    for (const [button, label] of copyButtons) {
+      expect(button).toHaveClass('app__icon-button');
+      expect(button).toHaveAttribute('title', label);
+      expect(button.textContent.trim()).toBe('');
+      expect(button.querySelector('svg')).toBeInTheDocument();
+    }
     expect(
       screen.queryByLabelText('representativeLetter.severityLabel'),
     ).toBeNull();
@@ -303,7 +314,7 @@ describe('RepresentativeLetterPage', () => {
       VERIFIED_RECIPIENT!.id,
     );
     const mailtoLink = screen.getByRole('link', {
-      name: SEND_EMAIL,
+      name: OPEN_EMAIL_APP,
     });
     expect(mailtoLink).toHaveAttribute(
       'href',
@@ -437,7 +448,7 @@ describe('RepresentativeLetterPage', () => {
     ).toHaveAttribute('href', MISSING_RECIPIENT!.officialContactUrl);
     expect(
       screen.getByRole('button', {
-        name: SEND_EMAIL,
+        name: OPEN_EMAIL_APP,
       }),
     ).toBeDisabled();
   });
@@ -637,7 +648,7 @@ describe('RepresentativeLetterPage', () => {
     const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value;
     expect(body).toContain('Weiterführende Quellen:');
     const mailtoLink = screen.getByRole('link', {
-      name: SEND_EMAIL,
+      name: OPEN_EMAIL_APP,
     });
     expect(
       decodeURIComponent(
@@ -668,7 +679,7 @@ describe('RepresentativeLetterPage', () => {
     ).toContain('x'.repeat(MAX_MAILTO_URL_LENGTH));
     expect(
       await screen.findByRole('link', {
-        name: SEND_EMAIL,
+        name: OPEN_EMAIL_APP,
       }),
     ).toHaveAttribute(
       'href',

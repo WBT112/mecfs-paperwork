@@ -337,7 +337,7 @@
     "copyManualFallback": "Automatisches Kopieren ist nicht verfügbar. Der Text ist ausgewählt; kopiere ihn mit Strg+C oder Cmd+C.",
     "signatureNotice": "Ergänze deinen Namen erst beim Versand, zum Beispiel über deine E-Mail-Signatur. Paperwork übernimmt keine Namen oder Anschriften aus anderen Formularen.",
     "primaryActionsLabel": "E-Mail-Aktionen",
-    "sendEmail": "E-Mail versenden",
+    "openEmailApp": "Im Mailprogramm öffnen",
     "mailtoDescription": "Öffnet dein lokal eingerichtetes E-Mail-Programm mit den oben sichtbaren Angaben. Paperwork versendet nichts automatisch.",
     "mailtoUnavailable": "Wähle einen Empfänger mit bestätigter öffentlicher E-Mail-Adresse. Nutze andernfalls die Copy/Paste-Felder und die offizielle Kontaktmöglichkeit.",
     "mailtoBodyTooLong": "Betreff oder Mailinhalt sind für einen zuverlässigen E-Mail-Link zu lang. Das E-Mail-Programm wird nur mit den Angaben geöffnet, die sicher übergeben werden können; kopiere den vollständigen Inhalt aus den Feldern oben.",
