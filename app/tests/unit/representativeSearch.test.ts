@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RepresentativeCatalogEntry } from '../../src/features/representative-letter/data/catalogs';
-import { filterRepresentatives } from '../../src/features/representative-letter/representativeSearch';
+import { findRepresentativesForConstituency } from '../../src/features/representative-letter/representativeSearch';
 
 const createRepresentative = (
   overrides: Partial<RepresentativeCatalogEntry>,
@@ -48,49 +48,19 @@ const representatives = [
   }),
 ];
 
-describe('filterRepresentatives', () => {
-  it('matches names independent of case, accents, umlauts, and spacing', () => {
-    expect(
-      filterRepresentatives(representatives, '  ERIKA aeusserst ', ''),
-    ).toEqual([representatives[0]]);
-    expect(filterRepresentatives(representatives, 'Cansin', '')).toEqual([
+describe('findRepresentativesForConstituency', () => {
+  it('returns only representatives assigned to the selected constituency', () => {
+    expect(findRepresentativesForConstituency(representatives, 220)).toEqual([
       representatives[1],
     ]);
-  });
-
-  it('matches constituency names, numbers, and multiple tokens', () => {
-    expect(filterRepresentatives(representatives, '75 mitte', '')).toEqual([
+    expect(findRepresentativesForConstituency(representatives, 75)).toEqual([
       representatives[0],
     ]);
-    expect(filterRepresentatives(representatives, 'muenchen 220', '')).toEqual([
-      representatives[1],
-    ]);
   });
 
-  it('combines the state filter with the query', () => {
-    expect(filterRepresentatives(representatives, '', 'BY')).toEqual([
-      representatives[1],
-    ]);
-    expect(filterRepresentatives(representatives, 'Beispiel', 'BE')).toEqual(
+  it('excludes entries without a constituency and unknown constituencies', () => {
+    expect(findRepresentativesForConstituency(representatives, 999)).toEqual(
       [],
-    );
-  });
-
-  it('requires the explicitly selected constituency when provided', () => {
-    expect(filterRepresentatives(representatives, '', '', 220)).toEqual([
-      representatives[1],
-    ]);
-    expect(filterRepresentatives(representatives, 'Erika', '', 220)).toEqual(
-      [],
-    );
-    expect(filterRepresentatives(representatives, '', '', null)).toEqual(
-      representatives,
-    );
-  });
-
-  it('returns all entries when both filters are empty', () => {
-    expect(filterRepresentatives(representatives, ' ', '')).toEqual(
-      representatives,
     );
   });
 });
