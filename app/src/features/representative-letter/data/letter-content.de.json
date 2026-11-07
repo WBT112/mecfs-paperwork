@@ -1,0 +1,202 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "2026-10-19.1",
+  "contentLanguage": "de",
+  "approval": {
+    "status": "approved-as-provided",
+    "approvedAt": "2026-10-19",
+    "sourceIssue": 553,
+    "notes": "The maintainer approved using the supplied German source text unchanged. No English letter translation has been approved."
+  },
+  "subject": "Pflegeneuordnungsgesetz: Bitte denken Sie bei Ihrer Abstimmung an Menschen mit ME/CFS",
+  "template": {
+    "opening": [
+      "Ich bin an Myalgischer Enzephalomyelitis (ME/CFS) erkrankt, einer schweren neuroimmunologischen Multisystemerkrankung. Ihr Kernmerkmal ist PENE, eine postexertionelle neuroimmunologische Erschöpfung: Schon geringe körperliche, geistige oder sensorische Anstrengung kann eine zeitverzögerte Verschlechterung auslösen, die Tage, Wochen oder dauerhaft anhält.",
+      "Ich schreibe Ihnen, weil der Bundestag über das Pflegeneuordnungsgesetz berät und dieses Gesetz meine Versorgung unmittelbar betrifft."
+    ],
+    "requestHeading": "Ich bitte Sie, sich im parlamentarischen Verfahren für Folgendes einzusetzen:",
+    "requests": [
+      "Die Verhinderungspflege bleibt als eigenständige und flexible Leistung erhalten, auch stundenweise und durch vertraute private Personen.",
+      "Ersatzpflege darf nicht auf Notdienste und Kurzzeitpflege beschränkt werden. Für Menschen, die auf Reizabschirmung angewiesen sind, sind beide keine Entlastung, sondern ein gesundheitliches Risiko.",
+      "Der Entlastungsbetrag bleibt auch in Pflegegrad 1 erhalten.",
+      "Bevor die Schwellenwerte der Begutachtung geändert werden, wird geprüft, ob das Verfahren schwankende und zeitverzögerte Krankheitsverläufe wie bei ME überhaupt erfassen kann."
+    ],
+    "responseRequest": "Über eine kurze Rückmeldung, wie Sie sich zu diesen Punkten verhalten werden, würde ich mich freuen.",
+    "templateDisclosure": "Diese Nachricht beruht auf einer Vorlage, weil mich eigenes Formulieren viel Kraft kostet. Die Schilderung entspricht meiner Lebenssituation.",
+    "signOff": "Mit freundlichen Grüßen"
+  },
+  "sourceReferences": [
+    {
+      "id": "leopoldina-postinfectious-diseases",
+      "label": "Leopoldina: Postinfektiöse Erkrankungen – Versorgung, Dateninfrastruktur, Forschung und Prävention",
+      "url": "https://www.leopoldina.org/postinfektioese-erkrankungen"
+    },
+    {
+      "id": "bundespressekonferenz-archive",
+      "label": "Bundespressekonferenz: Archiv der Pressekonferenzen",
+      "url": "https://www.bundespressekonferenz.de/pressekonferenzen/termine/archiv"
+    }
+  ],
+  "personalBlocks": [
+    {
+      "id": "severity-mild-1",
+      "category": "severity",
+      "selectionId": "mild",
+      "variantId": "1",
+      "label": "Leicht · 1",
+      "sourceText": "Ich bin leicht an ME erkrankt. Das klingt harmlos, bedeutet aber, dass ich meine Aktivität etwa um die Hälfte reduzieren musste. Haushalt, Freizeit und Kontakte habe ich weitgehend aufgegeben, damit ich [arbeiten / den Alltag bewältigen] kann. Jede Hilfe, die mir Energie spart, schützt mich davor, dauerhaft schwerer zu erkranken."
+    },
+    {
+      "id": "severity-mild-2",
+      "category": "severity",
+      "selectionId": "mild",
+      "variantId": "2",
+      "label": "Leicht · 2",
+      "sourceText": "Von außen sieht man mir die Erkrankung kaum an. Was man nicht sieht: Nach einem normalen Tag liege ich oft den Abend und das Wochenende. Kleine Hilfen wie eine Haushaltshilfe oder eine Begleitung zu Terminen entscheiden darüber, ob ich stabil bleibe. Wer hier kürzt, riskiert, dass aus leicht Erkrankten schwer Pflegebedürftige werden."
+    },
+    {
+      "id": "severity-moderate-1",
+      "category": "severity",
+      "selectionId": "moderate",
+      "variantId": "1",
+      "label": "Moderat · 1",
+      "sourceText": "Ich bin moderat an ME erkrankt und überwiegend an meine Wohnung gebunden. Duschen, Kochen oder ein Arztbesuch kosten mich so viel, dass ich danach oft tagelang liege. Ich bin auf [meinen Partner / meine Partnerin / meine Mutter] angewiesen. Fällt diese Person aus, springt bisher jemand ein, der mich kennt und weiß, wie viel ich vertrage."
+    },
+    {
+      "id": "severity-moderate-2",
+      "category": "severity",
+      "selectionId": "moderate",
+      "variantId": "2",
+      "label": "Moderat · 2",
+      "sourceText": "Mein Alltag ist eine ständige Abwägung: Jede Tätigkeit kann eine Verschlechterung auslösen. Meine Angehörigen tragen vieles, was ich nicht mehr kann. Die Verhinderungspflege ist unsere einzige verlässliche Möglichkeit, dass auch sie einmal ausfallen dürfen, ohne dass meine Versorgung abbricht."
+    },
+    {
+      "id": "severity-severe-1",
+      "category": "severity",
+      "selectionId": "severe",
+      "variantId": "1",
+      "label": "Schwer · 1",
+      "sourceText": "Ich bin schwer an ME erkrankt und verbringe den größten Teil des Tages im Bett, meist in einem abgedunkelten, ruhigen Raum. Licht, Geräusche, Gespräche und Berührung können meinen Zustand verschlechtern. Wer mich versorgt, muss wissen, wie man sich leise bewegt und wann man nicht spricht. Eine fremde Pflegekraft oder ein Platz in einer Einrichtung ist für mich keine Entlastung, sondern ein gesundheitliches Risiko."
+    },
+    {
+      "id": "severity-severe-2",
+      "category": "severity",
+      "selectionId": "severe",
+      "variantId": "2",
+      "label": "Schwer · 2",
+      "sourceText": "Ich kann meine Wohnung nicht verlassen. Beim Essen, bei der Körperpflege und bei Medikamenten bin ich auf Hilfe angewiesen. Bisher konnten wir eine vertraute Person bezahlen, wenn [mein Partner / meine Partnerin / meine Mutter] krank war, einen Termin hatte oder selbst nicht mehr konnte. Fällt diese Möglichkeit weg, bleibt mir nur Hilfe, die ich nicht vertrage."
+    },
+    {
+      "id": "severity-very-severe-1",
+      "category": "severity",
+      "selectionId": "very-severe",
+      "variantId": "1",
+      "label": "Sehr schwer · 1",
+      "sourceText": "Ich bin sehr schwer an ME erkrankt. Ich bin vollständig bettlägerig, kann oft nicht sprechen, nicht aufrecht sitzen und [nicht selbstständig essen]. Jeder fremde Mensch im Zimmer, jedes Geräusch und jeder Transport kann meinen Zustand dauerhaft verschlechtern. Die Menschen, die mich pflegen, sind nicht austauschbar."
+    },
+    {
+      "id": "severity-very-severe-2",
+      "category": "severity",
+      "selectionId": "very-severe",
+      "variantId": "2",
+      "label": "Sehr schwer · 2",
+      "sourceText": "Mein Leben findet in einem abgedunkelten, stillen Raum statt, oft mit Gehörschutz und Augenmaske. Ich brauche rund um die Uhr Pflege, und diese hängt an sehr wenigen Menschen, die gelernt haben, mich zu versorgen, ohne mir zu schaden. Fällt eine von ihnen aus, ist eine vertraute Vertretung die Voraussetzung dafür, dass meine Versorgung nicht zusammenbricht und ich nicht in ein Krankenhaus muss, das ich kaum ertragen kann."
+    },
+    {
+      "id": "care-none-1",
+      "category": "care",
+      "selectionId": "none",
+      "variantId": "1",
+      "label": "Ohne Pflegegrad · 1",
+      "sourceText": "Ich habe noch keinen Pflegegrad, obwohl ich auf Hilfe angewiesen bin. Bei einer Begutachtung zeigt sich ME oft nicht: Viele Erkrankte reißen sich für den Termin zusammen, und die Verschlechterung durch diese Anstrengung tritt erst Stunden oder Tage später ein. Der Gesetzentwurf ändert die Schwellenwerte für die Pflegegrade 1 bis 3, und für Neuanträge gilt kein Bestandsschutz."
+    },
+    {
+      "id": "care-pending-1",
+      "category": "care",
+      "selectionId": "pending",
+      "variantId": "1",
+      "label": "Antrag läuft · 1",
+      "sourceText": "Mein Antrag auf einen Pflegegrad läuft. Ich befürchte, dass die geplante neue Begutachtung für mich weniger Unterstützung bei gleichem Bedarf bedeutet. Bitte sorgen Sie dafür, dass vor jeder Änderung geprüft wird, ob das Verfahren zeitverzögerte Verschlechterungen wie bei ME überhaupt erfassen kann."
+    },
+    {
+      "id": "care-level-1-1",
+      "category": "care",
+      "selectionId": "level-1",
+      "variantId": "1",
+      "label": "Pflegegrad 1 · 1",
+      "sourceText": "Ich habe Pflegegrad 1. Mit dem Entlastungsbetrag von 131 Euro im Monat bezahle ich [eine Haushaltshilfe / eine Begleitung zu Terminen]. Diese Hilfe spart mir genau die Energie, die mich vor einer Verschlechterung schützt. Nach dem Gesetzentwurf entfällt der Entlastungsbetrag in Pflegegrad 1, das neue Sozialraumbudget gibt es erst ab Pflegegrad 2."
+    },
+    {
+      "id": "care-level-1-2",
+      "category": "care",
+      "selectionId": "level-1",
+      "variantId": "2",
+      "label": "Pflegegrad 1 · 2",
+      "sourceText": "Pflegegrad 1 klingt nach geringem Bedarf. Bei ME ist es oft die Stufe, in der sich entscheidet, ob jemand stabil bleibt oder schwerer erkrankt. Verliere ich die Unterstützung im Haushalt, muss ich diese Arbeit selbst übernehmen, und jede dieser Anstrengungen kann eine PENE auslösen. Die Kürzung spart heute wenig und kostet später viel."
+    },
+    {
+      "id": "care-level-2-1",
+      "category": "care",
+      "selectionId": "level-2",
+      "variantId": "1",
+      "label": "Pflegegrad 2 · 1",
+      "sourceText": "Ich habe Pflegegrad 2. [Mein Partner / Meine Partnerin / Meine Mutter] versorgt mich zu Hause. Über die Verhinderungspflege konnten wir bisher eine vertraute Person bezahlen, wenn [er / sie] selbst Termine hatte oder krank war. Künftig soll diese private Vertretung aus dem Entlastungsbudget bezahlt werden, das an die Stelle des Pflegegeldes tritt. Jede Stunde Vertretung geht dann von dem Geld ab, das unseren Alltag trägt."
+    },
+    {
+      "id": "care-level-2-2",
+      "category": "care",
+      "selectionId": "level-2",
+      "variantId": "2",
+      "label": "Pflegegrad 2 · 2",
+      "sourceText": "Ich habe Pflegegrad 2. Das neue Überbrückungsbudget hilft mir nicht: Es zahlt nur ambulante Pflegenotdienste oder einen Platz in der Kurzzeitpflege. Beides bedeutet fremde Menschen, Reize und Wege, also genau das, was meine Erkrankung verschlechtert. Ich brauche eine Vertretung, die ich kenne und die mich kennt."
+    },
+    {
+      "id": "care-level-3-1",
+      "category": "care",
+      "selectionId": "level-3",
+      "variantId": "1",
+      "label": "Pflegegrad 3 · 1",
+      "sourceText": "Ich habe Pflegegrad 3 und bin den Großteil des Tages auf Hilfe angewiesen. Diese Hilfe kommt fast vollständig von [meinem Partner / meiner Partnerin / meiner Familie]. Die Verhinderungspflege ist die einzige Leistung, die ausdrücklich dafür da ist, dass meine pflegende Person auch einmal ausfallen darf. Fällt sie als eigener Anspruch weg, wird jede Pause zur Frage, ob wir sie uns leisten können."
+    },
+    {
+      "id": "care-level-3-2",
+      "category": "care",
+      "selectionId": "level-3",
+      "variantId": "2",
+      "label": "Pflegegrad 3 · 2",
+      "sourceText": "Mit Pflegegrad 3 ruht meine Versorgung auf wenigen Schultern. Mein Zustand schwankt, und wenn er sich verschlechtert, muss ich neu begutachtet werden, dann nach den geänderten Schwellenwerten. Gleichzeitig fällt die flexible Ersatzpflege weg, mit der wir Ausfälle meiner Pflegeperson bisher aufgefangen haben, ohne dass ich in fremde Hände musste."
+    },
+    {
+      "id": "care-level-4-1",
+      "category": "care",
+      "selectionId": "level-4",
+      "variantId": "1",
+      "label": "Pflegegrad 4 · 1",
+      "sourceText": "Ich habe Pflegegrad 4 und bin weitgehend bettlägerig. Fremde Pflegekräfte, Gespräche und Licht können bei mir eine Verschlechterung auslösen, die Wochen dauert. Bisher konnten wir über die Verhinderungspflege eine vertraute Person bezahlen. Das neue Überbrückungsbudget zahlt nur Notdienste und vollstationäre Kurzzeitpflege. Ein Transport in eine Einrichtung wäre für mich gesundheitlich nicht verantwortbar."
+    },
+    {
+      "id": "care-level-4-2",
+      "category": "care",
+      "selectionId": "level-4",
+      "variantId": "2",
+      "label": "Pflegegrad 4 · 2",
+      "sourceText": "Mit Pflegegrad 4 brauche ich bei fast allem Hilfe. [Mein Partner / Meine Partnerin / Meine Mutter] pflegt mich seit [Zahl] Jahren und ist selbst an der Grenze. Die Verhinderungspflege macht diese Pflege durchhaltbar: einige Stunden, in denen jemand da ist, dem ich vertraue. Ohne sie steigt das Risiko, dass meine pflegende Person selbst krank wird und meine Versorgung zusammenbricht."
+    },
+    {
+      "id": "care-level-5-1",
+      "category": "care",
+      "selectionId": "level-5",
+      "variantId": "1",
+      "label": "Pflegegrad 5 · 1",
+      "sourceText": "Ich habe Pflegegrad 5. Ich bin vollständig bettlägerig und rund um die Uhr auf Pflege angewiesen, in einem Raum, der fast völlig dunkel und still sein muss. Meine Pflege lässt sich nicht an einen Notdienst übergeben, der wechselnde Personen schickt. Die Menschen, die mich versorgen, haben über lange Zeit gelernt, wie das geht, ohne mir zu schaden."
+    },
+    {
+      "id": "care-level-5-2",
+      "category": "care",
+      "selectionId": "level-5",
+      "variantId": "2",
+      "label": "Pflegegrad 5 · 2",
+      "sourceText": "Pflegegrad 5 ist die höchste Stufe, und trotzdem passt das neue Überbrückungsbudget nicht zu meiner Erkrankung. Eine vollstationäre Kurzzeitpflege würde bedeuten, mich aus dem einzigen Raum zu bringen, den ich ertrage. Bitte erhalten Sie eine Ersatzpflege, die zu Hause und durch vertraute Personen möglich bleibt."
+    }
+  ]
+}

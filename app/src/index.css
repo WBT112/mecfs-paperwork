@@ -17,6 +17,9 @@
   --color-surface: #f8f9fb;
   --color-surface-muted: #f2f4f7;
   --color-surface-subtle: #eef2f6;
+  --color-help-category: #e9eef4;
+  --color-help-offer: #ffffff;
+  --color-help-offer-hover: #f8fafc;
   --color-text: #111827;
   --color-text-strong: #0f172a;
   --color-text-secondary: #1f2937;
@@ -56,6 +59,9 @@
   --color-surface: #232323;
   --color-surface-muted: #1f1f1f;
   --color-surface-subtle: #242424;
+  --color-help-category: #2d2d2d;
+  --color-help-offer: #393939;
+  --color-help-offer-hover: #434343;
   --color-text: #f3f4f6;
   --color-text-strong: #f9fafb;
   --color-text-secondary: #eef2f7;
@@ -119,6 +125,29 @@ body {
   box-shadow: var(--shadow-soft);
 }
 
+.app__header.app__header--tool {
+  padding: 0.65rem 0.9rem;
+}
+
+.app__tool-header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.app__tool-header-brand {
+  color: var(--color-text-subtle);
+  font-size: 0.85rem;
+}
+
+.app__tool-header-back:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
 .app__header-content {
   display: flex;
   align-items: center;
@@ -150,7 +179,7 @@ body {
 .app__topbar-actions {
   display: flex;
   align-items: stretch;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.75rem;
   margin: 0;
   padding: 0;
@@ -163,7 +192,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  min-width: 7.5rem;
+  min-width: 6rem;
   justify-content: center;
   font-size: 1rem;
 }
@@ -718,11 +747,30 @@ body {
 
 .formpack-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 1.25rem;
 }
 
+.formpack-list__controls,
+.formpack-list__categories {
+  display: grid;
+  gap: 1rem;
+}
+
+.formpack-list__controls {
+  margin-bottom: 1rem;
+}
+
+.formpack-list__category {
+  min-width: 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  background: var(--color-help-category);
+  padding: 1rem;
+}
+
 .formpack-card {
+  min-width: 0;
   border: 1px solid var(--color-border);
   border-radius: 12px;
   padding: 1rem 1.25rem;
@@ -730,7 +778,7 @@ body {
   flex-direction: column;
   justify-content: space-between;
   gap: 1rem;
-  background: var(--color-surface-muted);
+  background: var(--color-help-offer);
   text-decoration: none;
   color: inherit;
   transition:
@@ -740,7 +788,7 @@ body {
 
 .formpack-card:hover,
 .formpack-card:focus-visible {
-  background: var(--color-surface);
+  background: var(--color-help-offer-hover);
   border-color: var(--color-border-strong);
 }
 
@@ -792,7 +840,7 @@ body {
   font-size: 1rem;
   background-color: var(--color-input-bg);
   color: var(--color-text);
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 
 .formpack-list__search:focus-visible {
@@ -803,7 +851,7 @@ body {
 .formpack-list__category-heading {
   font-size: 1rem;
   font-weight: 600;
-  margin: 1.25rem 0 0.75rem;
+  margin: 0 0 0.75rem;
   color: var(--color-text-muted);
 }
 
@@ -860,11 +908,6 @@ body {
   outline-offset: 2px;
 }
 
-.games-hub__card--coming-soon {
-  background: var(--color-surface-muted);
-  box-shadow: none;
-}
-
 .games-hub__card-header {
   display: grid;
   gap: 0.6rem;
@@ -880,32 +923,115 @@ body {
   color: var(--color-text-muted);
 }
 
-.games-hub__status {
-  width: fit-content;
-  border-radius: 999px;
-  padding: 0.2rem 0.65rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.games-hub__status--active {
-  background: var(--color-badge-bg);
-  color: var(--color-badge-text);
-}
-
-.games-hub__status--coming-soon {
-  background: var(--color-surface-subtle);
-  color: var(--color-text-subtle);
-}
-
 .games-hub__cta {
   color: var(--color-link-strong);
   font-weight: 700;
 }
 
-.games-hub__cta--muted {
+.representative-letter {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.representative-letter__eyebrow {
+  margin: 0 0 0.35rem;
   color: var(--color-text-subtle);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.representative-letter__title {
+  margin: 0 0 0.25rem;
+}
+
+.representative-letter__length-switch,
+.representative-letter__actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.representative-letter__length-switch .app__button[aria-pressed='true'] {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface-subtle);
+  color: var(--color-text-strong);
+}
+
+.representative-letter__panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.representative-letter__information {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.representative-letter__background {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  padding: 0.5rem;
+  background: var(--color-help-category);
+}
+
+.representative-letter__background p,
+.representative-letter__background ol {
+  margin: 0;
+  padding: 0 0.75rem 0.5rem;
+  color: var(--color-text-secondary);
+}
+
+.representative-letter__background ol {
+  padding-left: 2rem;
+}
+
+.representative-letter__outputs {
+  display: grid;
+  gap: 1rem;
+}
+
+.representative-letter__copy-field {
+  display: grid;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.representative-letter__copy-field-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.representative-letter__copy-field-heading label {
+  font-weight: 700;
+}
+
+.representative-letter__copy-status {
+  min-height: 1.5em;
+}
+
+.representative-letter__outputs input,
+.representative-letter__outputs textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: var(--color-input-bg);
+  color: var(--color-text);
+  font: inherit;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.representative-letter__outputs input:focus-visible,
+.representative-letter__outputs textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .games-bingo {
@@ -1183,171 +1309,6 @@ body {
   color: var(--color-text-muted);
 }
 
-.games-spoon {
-  display: grid;
-  gap: 1.25rem;
-  max-width: 1120px;
-}
-
-.games-spoon__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.games-spoon__eyebrow,
-.games-spoon__kicker,
-.games-spoon__result-label {
-  margin: 0;
-  color: var(--color-text-subtle);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.games-spoon__header h2 {
-  margin-bottom: 0.35rem;
-}
-
-.games-spoon__back-link {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.games-spoon__toolbar,
-.games-spoon__result-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.games-spoon__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
-  gap: 1rem;
-  align-items: start;
-}
-
-.games-spoon__main,
-.games-spoon__sidebar {
-  display: grid;
-  gap: 1rem;
-}
-
-.games-spoon__panel,
-.games-spoon__result-card {
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  background: var(--color-surface-muted);
-  padding: 1rem;
-  display: grid;
-  gap: 0.8rem;
-}
-
-.games-spoon__panel h3,
-.games-spoon__result-card h3,
-.games-spoon__panel p,
-.games-spoon__result-card p {
-  margin: 0;
-}
-
-.games-spoon__panel--intro,
-.games-spoon__result-card {
-  background: linear-gradient(
-    180deg,
-    var(--color-surface) 0%,
-    var(--color-surface-subtle) 100%
-  );
-}
-
-.games-spoon__primary-action {
-  width: fit-content;
-}
-
-.games-spoon__action-list,
-.games-spoon__feedback-list,
-.games-spoon__legend-list {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.games-spoon__legend-list {
-  margin: 0;
-  padding-left: 1.15rem;
-}
-
-.games-spoon__action-button {
-  width: 100%;
-  min-height: 56px;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  background: var(--color-surface);
-  color: inherit;
-  display: grid;
-  gap: 0.35rem;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-  transition:
-    border-color 0.2s ease-in-out,
-    background-color 0.2s ease-in-out,
-    transform 0.2s ease-in-out;
-}
-
-.games-spoon__action-button:hover {
-  border-color: var(--color-border-strong);
-  background: var(--color-surface-muted);
-}
-
-.games-spoon__action-button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.games-spoon__action-button:disabled {
-  cursor: default;
-  opacity: 0.72;
-}
-
-.games-spoon__action-title {
-  color: var(--color-text-strong);
-  font-weight: 700;
-}
-
-.games-spoon__action-meta {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-}
-
-.games-spoon__metrics {
-  margin: 0;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.games-spoon__metrics div {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.games-spoon__metrics dt {
-  color: var(--color-text-subtle);
-  font-size: 0.88rem;
-}
-
-.games-spoon__metrics dd {
-  margin: 0;
-  color: var(--color-text-strong);
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
 @media (max-width: 720px) {
   .games-bingo__layout {
     display: flex;
@@ -1362,19 +1323,6 @@ body {
     order: 2;
     display: flex;
     flex-direction: column;
-  }
-
-  .games-spoon__layout {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .games-spoon__main {
-    order: 1;
-  }
-
-  .games-spoon__sidebar {
-    order: 2;
   }
 }
 
@@ -1392,23 +1340,6 @@ body {
     order: 2;
     display: flex;
     flex-direction: column;
-  }
-
-  .games-spoon__layout {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .games-spoon__main {
-    order: 1;
-  }
-
-  .games-spoon__sidebar {
-    order: 2;
-  }
-
-  .games-spoon__action-button {
-    padding: 0.85rem 0.9rem;
   }
 }
 
@@ -1505,7 +1436,8 @@ body {
   font-size: 0.9rem;
 }
 
-.formpack-detail__tools .collapsible-section__heading {
+.formpack-detail__tools .collapsible-section__heading,
+.representative-letter__background .collapsible-section__heading {
   margin: 0;
 }
 

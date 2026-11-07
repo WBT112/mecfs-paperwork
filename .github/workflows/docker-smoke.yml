@@ -55,7 +55,7 @@ jobs:
 
       - name: Build image
         if: steps.check-secrets.outputs.available == 'true'
-        run: docker build -t mecfs-paperwork .
+        run: docker build --pull -t mecfs-paperwork .
 
       - name: Run container
         if: steps.check-secrets.outputs.available == 'true'
@@ -137,7 +137,9 @@ jobs:
 
       - name: Compose up
         if: steps.check-secrets.outputs.available == 'true'
-        run: docker compose up -d --build
+        run: |
+          docker compose build --pull web
+          docker compose up -d
 
       - name: Compose wait for health
         if: steps.check-secrets.outputs.available == 'true'
@@ -172,7 +174,7 @@ jobs:
         if: steps.check-secrets.outputs.available == 'true'
         run: |
           if [ -f compose.prod.yaml ]; then
-            docker compose -f compose.prod.yaml build web
+            docker compose -f compose.prod.yaml build --pull web
           else
             echo "::notice::compose.prod.yaml not present; skipping."
           fi

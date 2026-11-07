@@ -1,14 +1,20 @@
-import { readLocalStorage } from '../../lib/safeLocalStorage';
 import type { FormpackCategory, FormpackManifest } from '../../formpacks/types';
+import { readLocalStorage } from '../../lib/safeLocalStorage';
 
-const CATEGORY_ORDER: FormpackCategory[] = [
+/** Categories shown on the help-offer overview. */
+export type HelpOfferCategory = 'mailings' | FormpackCategory;
+
+const CATEGORY_ORDER: HelpOfferCategory[] = [
+  'mailings',
   'insurer',
   'doctor',
   'general',
   'other',
 ];
 
-export const CATEGORY_I18N_KEYS: Record<FormpackCategory, string> = {
+/** Translation keys for the labels of all help-offer categories. */
+export const CATEGORY_I18N_KEYS: Record<HelpOfferCategory, string> = {
+  mailings: 'representativeLetter.entryCategory',
   insurer: 'formpackCategoryInsurer',
   doctor: 'formpackCategoryDoctor',
   general: 'formpackCategoryGeneral',
@@ -17,19 +23,23 @@ export const CATEGORY_I18N_KEYS: Record<FormpackCategory, string> = {
 
 const LAST_ACTIVE_FORMPACK_KEY = 'mecfs-paperwork.lastActiveFormpackId';
 
-/**
- * View model for a translated formpack card.
- *
- * @remarks
- * RATIONALE: The list page needs precomputed searchable strings so the UI can
- * stay declarative while search remains deterministic and locale-aware.
- */
-export type TranslatedManifest = {
-  manifest: FormpackManifest;
+/** View model for a searchable help-offer card. */
+export type HelpOfferListItem = {
+  id: string;
+  category: HelpOfferCategory;
   title: string;
   description: string;
   searchBlob: string;
+  href: string;
+  ariaLabel: string;
+  openLabel: string;
+  formpackId?: string;
 };
+
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+const createSearchBlob = (...parts: string[]): string =>
+  parts.join(' ').toLocaleLowerCase();
 
 /**
  * Restores the last active formpack only when a matching active record marker
@@ -50,16 +60,16 @@ export const readResumeFormpackId = (): string | null => {
 };
 
 /**
- * Builds translated card models used for rendering and full-text search.
+ * Builds localized list items for the formpack catalog.
  *
  * @param manifests - Visible formpack manifests.
- * @param translate - Translation function used for localized titles and descriptions.
- * @returns Localized card models with cached search text.
+ * @param translate - Translation function used for localized card content.
+ * @returns Searchable help-offer items for the supplied formpacks.
  */
-export const buildTranslatedManifests = (
+export const buildFormpackListItems = (
   manifests: FormpackManifest[],
-  translate: (key: string, options?: Record<string, unknown>) => string,
-): TranslatedManifest[] =>
+  translate: Translate,
+): HelpOfferListItem[] =>
   manifests.map((manifest) => {
     const namespace = `formpack:${manifest.id}`;
     const title = translate(manifest.titleKey, {
@@ -70,24 +80,64 @@ export const buildTranslatedManifests = (
       ns: namespace,
       defaultValue: manifest.descriptionKey,
     });
-    const keywords = (manifest.meta?.keywords ?? []).join(' ');
-    const searchBlob = `${title} ${description} ${keywords}`.toLowerCase();
+    const category = manifest.meta?.category ?? 'other';
+    const keywords = manifest.meta?.keywords ?? [];
 
-    return { manifest, title, description, searchBlob };
+    return {
+      id: `formpack-${manifest.id}`,
+      category,
+      title,
+      description,
+      searchBlob: createSearchBlob(
+        title,
+        description,
+        ...keywords,
+        translate(CATEGORY_I18N_KEYS[category]),
+      ),
+      href: `/formpacks/${manifest.id}`,
+      ariaLabel: translate('formpackOpenWithTitle', { title }),
+      openLabel: translate('formpackOpen'),
+      formpackId: manifest.id,
+    };
   });
 
 /**
- * Filters translated formpacks using AND-matched query tokens.
+ * Builds the representative-email entry for the shared help-offer list.
  *
- * @param items - Localized formpack card models.
+ * @param translate - Translation function used for localized card content.
+ * @returns The searchable representative-email list item.
+ */
+export const buildRepresentativeLetterListItem = (
+  translate: Translate,
+): HelpOfferListItem => {
+  const title = translate('representativeLetter.entryTitle');
+  const description = translate('representativeLetter.entryDescription');
+  const category = translate(CATEGORY_I18N_KEYS.mailings);
+
+  return {
+    id: 'representative-letter',
+    category: 'mailings',
+    title,
+    description,
+    searchBlob: createSearchBlob(title, description, category),
+    href: '/tools/representative-letter',
+    ariaLabel: translate('representativeLetter.entryAriaLabel'),
+    openLabel: translate('representativeLetter.open'),
+  };
+};
+
+/**
+ * Filters help offers using AND-matched query tokens.
+ *
+ * @param items - Localized help-offer card models.
  * @param query - Raw user-entered search query.
  * @returns Matching items, or the original list when the query is blank.
  */
-export const filterFormpacksByQuery = (
-  items: TranslatedManifest[],
+export const filterHelpOffersByQuery = (
+  items: HelpOfferListItem[],
   query: string,
-): TranslatedManifest[] => {
-  const tokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+): HelpOfferListItem[] => {
+  const tokens = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
 
   if (tokens.length === 0) {
     return items;
@@ -99,23 +149,22 @@ export const filterFormpacksByQuery = (
 };
 
 /**
- * Groups translated formpacks by their configured list category.
+ * Groups help offers by their configured list category.
  *
- * @param items - Localized formpack card models.
- * @returns Category groups in the configured display order.
+ * @param items - Localized help-offer card models.
+ * @returns Non-empty category groups in the configured display order.
  */
-export const groupFormpacksByCategory = (
-  items: TranslatedManifest[],
-): [FormpackCategory, TranslatedManifest[]][] => {
-  const groups = new Map<FormpackCategory, TranslatedManifest[]>();
+export const groupHelpOffersByCategory = (
+  items: HelpOfferListItem[],
+): [HelpOfferCategory, HelpOfferListItem[]][] => {
+  const groups = new Map<HelpOfferCategory, HelpOfferListItem[]>();
 
   for (const item of items) {
-    const category = item.manifest.meta?.category ?? 'other';
-    const list = groups.get(category);
+    const list = groups.get(item.category);
     if (list) {
       list.push(item);
     } else {
-      groups.set(category, [item]);
+      groups.set(item.category, [item]);
     }
   }
 
@@ -125,11 +174,11 @@ export const groupFormpacksByCategory = (
 };
 
 /**
- * Counts rendered formpack cards across all category groups.
+ * Counts rendered cards across all category groups.
  *
- * @param groups - Grouped formpack card models.
+ * @param groups - Grouped help-offer card models.
  * @returns Total number of rendered cards.
  */
-export const countGroupedFormpacks = (
-  groups: [FormpackCategory, TranslatedManifest[]][],
+export const countGroupedHelpOffers = (
+  groups: [HelpOfferCategory, HelpOfferListItem[]][],
 ): number => groups.reduce((total, [, items]) => total + items.length, 0);

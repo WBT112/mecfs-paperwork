@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  buildTranslatedManifests,
+  buildFormpackListItems,
+  buildRepresentativeLetterListItem,
   CATEGORY_I18N_KEYS,
-  countGroupedFormpacks,
-  filterFormpacksByQuery,
-  groupFormpacksByCategory,
+  countGroupedHelpOffers,
+  filterHelpOffersByQuery,
+  groupHelpOffersByCategory,
   readResumeFormpackId,
 } from '../../src/pages/formpack-list/formpackListHelpers';
 import type { FormpackManifest } from '../../src/formpacks/types';
@@ -32,6 +33,8 @@ const otherManifest: FormpackManifest = {
   visibility: 'public',
 };
 
+const translate = (key: string): string => `${key} translated`;
+
 describe('formpackListHelpers', () => {
   beforeEach(() => {
     window.localStorage.clear();
@@ -39,6 +42,7 @@ describe('formpackListHelpers', () => {
 
   it('exposes stable i18n keys for each rendered category', () => {
     expect(CATEGORY_I18N_KEYS).toEqual({
+      mailings: 'representativeLetter.entryCategory',
       insurer: 'formpackCategoryInsurer',
       doctor: 'formpackCategoryDoctor',
       general: 'formpackCategoryGeneral',
@@ -46,55 +50,82 @@ describe('formpackListHelpers', () => {
     });
   });
 
-  it('builds translated manifests with cached search blobs', () => {
-    const translated = buildTranslatedManifests(
-      [insurerManifest],
-      (key) => `${key} translated`,
-    );
+  it('builds searchable formpack list items including their category', () => {
+    const items = buildFormpackListItems([insurerManifest], translate);
 
-    expect(translated).toEqual([
-      expect.objectContaining({
-        manifest: insurerManifest,
+    expect(items).toEqual([
+      {
+        id: 'formpack-formpack-insurer',
+        category: 'insurer',
         title: 'Insurer Pack translated',
         description: 'Insurer description translated',
         searchBlob:
-          'insurer pack translated insurer description translated kasse antrag',
-      }),
+          'insurer pack translated insurer description translated kasse antrag formpackcategoryinsurer translated',
+        href: '/formpacks/formpack-insurer',
+        ariaLabel: 'formpackOpenWithTitle translated',
+        openLabel: 'formpackOpen translated',
+        formpackId: 'formpack-insurer',
+      },
     ]);
   });
 
-  it('filters manifests with AND-matched query tokens and keeps blank queries unchanged', () => {
-    const translated = buildTranslatedManifests(
+  it('falls back to the other category and an empty keyword list', () => {
+    const [item] = buildFormpackListItems([otherManifest], (key) => key);
+
+    expect(item.category).toBe('other');
+    expect(item.searchBlob).toBe(
+      'other pack other description formpackcategoryother',
+    );
+  });
+
+  it('builds the representative email as a regular searchable item', () => {
+    expect(buildRepresentativeLetterListItem(translate)).toEqual({
+      id: 'representative-letter',
+      category: 'mailings',
+      title: 'representativeLetter.entryTitle translated',
+      description: 'representativeLetter.entryDescription translated',
+      searchBlob:
+        'representativeletter.entrytitle translated representativeletter.entrydescription translated representativeletter.entrycategory translated',
+      href: '/tools/representative-letter',
+      ariaLabel: 'representativeLetter.entryAriaLabel translated',
+      openLabel: 'representativeLetter.open translated',
+    });
+  });
+
+  it('filters offers with AND-matched query tokens and keeps blank queries unchanged', () => {
+    const items = buildFormpackListItems(
       [insurerManifest, otherManifest],
       (key) => key,
     );
 
-    expect(filterFormpacksByQuery(translated, 'insurer antrag')).toEqual([
-      translated[0],
+    expect(filterHelpOffersByQuery(items, 'INSURER antrag')).toEqual([
+      items[0],
     ]);
-    expect(filterFormpacksByQuery(translated, '   ')).toEqual(translated);
+    expect(filterHelpOffersByQuery(items, '   ')).toBe(items);
   });
 
-  it('groups manifests by category order and falls back to other', () => {
-    const translated = buildTranslatedManifests(
+  it('groups offers by category order and appends to existing groups', () => {
+    const formpacks = buildFormpackListItems(
+      [otherManifest, insurerManifest, insurerManifest],
+      (key) => key,
+    );
+    const representative = buildRepresentativeLetterListItem((key) => key);
+
+    expect(groupHelpOffersByCategory([...formpacks, representative])).toEqual([
+      ['mailings', [representative]],
+      ['insurer', [formpacks[1], formpacks[2]]],
+      ['other', [formpacks[0]]],
+    ]);
+  });
+
+  it('counts all grouped help offers', () => {
+    const items = buildFormpackListItems(
       [otherManifest, insurerManifest],
       (key) => key,
     );
+    const groups = groupHelpOffersByCategory(items);
 
-    expect(groupFormpacksByCategory(translated)).toEqual([
-      ['insurer', [translated[1]]],
-      ['other', [translated[0]]],
-    ]);
-  });
-
-  it('counts all grouped manifests', () => {
-    const translated = buildTranslatedManifests(
-      [otherManifest, insurerManifest],
-      (key) => key,
-    );
-    const groups = groupFormpacksByCategory(translated);
-
-    expect(countGroupedFormpacks(groups)).toBe(2);
+    expect(countGroupedHelpOffers(groups)).toBe(2);
   });
 
   it('restores the last active formpack only when an active record marker exists', () => {

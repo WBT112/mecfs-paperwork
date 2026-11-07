@@ -18,6 +18,7 @@ const DECISION_VISIBILITY_FIELDS = [
   'q6',
   'q7',
   'q8',
+  'otherCauseCode',
 ] as const;
 
 function applyFieldVisibility(

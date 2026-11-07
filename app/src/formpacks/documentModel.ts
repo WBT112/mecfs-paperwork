@@ -3,6 +3,7 @@ import type { SupportedLocale } from '../i18n/locale';
 import { normalizeParagraphText } from '../lib/text/paragraphs';
 import { resolveDecisionTree } from './decisionEngine';
 import { normalizeDecisionAnswers } from './doctor-letter/decisionAnswers';
+import { replaceOtherCauseCodePlaceholder } from './doctor-letter/otherCauseCode';
 import {
   DOCTOR_LETTER_FORMPACK_ID,
   NOTFALLPASS_FORMPACK_ID,
@@ -242,8 +243,14 @@ const buildDoctorLetterModel = (
   const rawCaseText = t(result.caseKey, {
     defaultValue: result.caseKey,
   });
-  const { paragraphs: caseParagraphs, text: caseText } =
-    normalizeParagraphText(rawCaseText);
+  const normalizedCaseText = normalizeParagraphText(rawCaseText);
+  const caseText = replaceOtherCauseCodePlaceholder(
+    normalizedCaseText.text,
+    decision?.otherCauseCode,
+  );
+  const caseParagraphs = normalizedCaseText.paragraphs.map((paragraph) =>
+    replaceOtherCauseCodePlaceholder(paragraph, decision?.otherCauseCode),
+  );
 
   return {
     diagnosisParagraphs: [],

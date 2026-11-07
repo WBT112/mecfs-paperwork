@@ -30,9 +30,12 @@ vi.mock('../../src/pages/PrivacyPage', () => ({
   default: () => <div>Privacy</div>,
 }));
 
-vi.mock('../../src/features/games/pages/SpoonManagerPage', () => ({
-  default: () => <div>Spoon Manager</div>,
-}));
+vi.mock(
+  '../../src/features/representative-letter/pages/RepresentativeLetterPage',
+  () => ({
+    default: () => <div>Representative Letter</div>,
+  }),
+);
 
 const renderAppRoutes = async (entry: string) => {
   const { default: AppRoutes } = await import('../../src/AppRoutes');
@@ -91,9 +94,11 @@ describe('AppRoutes', () => {
     expect(await screen.findByText(HELP_TEXT)).toBeInTheDocument();
   });
 
-  it('renders the spoon manager route when lazy loaded', async () => {
-    await renderAppRoutes('/games/spoon-manager');
-    expect(await screen.findByText('Spoon Manager')).toBeInTheDocument();
+  it('renders the representative-letter tool route when lazy loaded', async () => {
+    await renderAppRoutes('/tools/representative-letter');
+    expect(
+      await screen.findByText('Representative Letter'),
+    ).toBeInTheDocument();
   });
 
   it('resets window scroll to top when navigating to another route without hash', async () => {

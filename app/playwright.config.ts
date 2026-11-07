@@ -18,7 +18,7 @@ const defaultLocalWorkers = Math.max(
 const configuredWorkers = parsePositiveInt(
   process.env.PW_WORKERS ?? process.env.PLAYWRIGHT_WORKERS,
 );
-const resolvedWorkers = configuredWorkers ?? (isCI ? 2 : defaultLocalWorkers);
+const resolvedWorkers = configuredWorkers ?? (isCI ? 4 : defaultLocalWorkers);
 const resolvedPort =
   parsePositiveInt(
     process.env.PW_BASE_PORT ??

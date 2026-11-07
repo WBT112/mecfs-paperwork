@@ -12,8 +12,8 @@ const bufferPath = require.resolve('buffer/');
 const processShimPath = require.resolve('./vite.process-shim.js');
 const utilPath = require.resolve('util/util.js');
 
-const createFormpackSpaFallbackPlugin = (): Plugin => ({
-  name: 'formpack-spa-fallback',
+const createAppSpaFallbackPlugin = (): Plugin => ({
+  name: 'app-spa-fallback',
   apply: 'serve',
   enforce: 'pre',
   configureServer(server) {
@@ -36,6 +36,10 @@ const createFormpackSpaFallbackPlugin = (): Plugin => ({
       }
 
       if (/^\/formpacks\/[^/]+\/?$/.test(path)) {
+        req.url = '/index.html';
+      }
+
+      if (path === '/tools/representative-letter') {
         req.url = '/index.html';
       }
 
@@ -99,7 +103,7 @@ const configuredVitestWorkers = parsePositiveInt(
   process.env.VITEST_MAX_WORKERS ?? process.env.VITEST_WORKERS,
 );
 const vitestMaxWorkers =
-  configuredVitestWorkers ?? (isCI ? 2 : defaultLocalVitestWorkers);
+  configuredVitestWorkers ?? (isCI ? 4 : defaultLocalVitestWorkers);
 
 const createConfig = (mode: string): AppConfig => ({
   define: {
@@ -107,7 +111,7 @@ const createConfig = (mode: string): AppConfig => ({
     __BUILD_DATE__: JSON.stringify(BUILD_DATE),
   },
   plugins: [
-    createFormpackSpaFallbackPlugin(),
+    createAppSpaFallbackPlugin(),
     react(),
     VitePWA(
       createPwaConfig({

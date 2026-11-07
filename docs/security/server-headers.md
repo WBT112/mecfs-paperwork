@@ -4,10 +4,11 @@ This document explains the purpose of the HTTP security headers implemented in t
 
 ## Content-Security-Policy (CSP)
 
-- **Directive:** `default-src 'self' blob:; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' data:;`
+- **Directive:** `default-src 'self' blob:; script-src 'self' 'unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' data:;`
 - **Purpose:** This header helps prevent Cross-Site Scripting (XSS) and other content injection attacks by specifying which dynamic resources are allowed to load.
   - `default-src 'self' blob:`: Restricts all resources to the same origin, but allows `blob:` URLs, which are required for client-side file generation (e.g., JSON imports and DOCX exports).
   - `script-src 'self' 'unsafe-eval'`: Allows scripts from the same origin. `'unsafe-eval'` is required for the `docx-templates` library to function correctly.
+  - `worker-src 'self' blob:`: Allows same-origin workers and the temporary `blob:` workers created locally by the Doctor Letter PDF renderer. No external worker origin is permitted.
   - `style-src 'self' 'unsafe-inline'`: Allows stylesheets from the same origin and allows inline styles, which are used by the application's UI components.
   - `img-src 'self' data:`: Allows images from the same origin and from `data:` URIs.
   - `font-src 'self'`: Allows fonts from the same origin.

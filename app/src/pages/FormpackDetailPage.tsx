@@ -51,6 +51,7 @@ import {
 } from '../formpacks';
 import { hasLetterLayout } from '../formpacks/layout';
 import { normalizeDecisionAnswers } from '../formpacks/doctor-letter/decisionAnswers';
+import { replaceOtherCauseCodePlaceholder } from '../formpacks/doctor-letter/otherCauseCode';
 import {
   type FormpackMetaEntry,
   type StorageErrorCode,
@@ -710,7 +711,10 @@ export default function FormpackDetailPage() {
         ns: `formpack:${formpackId}`,
         defaultValue: result.caseKey,
       });
-      return normalizeParagraphText(rawText).text;
+      return replaceOtherCauseCodePlaceholder(
+        normalizeParagraphText(rawText).text,
+        decision.otherCauseCode,
+      );
     },
     [formpackId, t],
   );

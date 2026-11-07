@@ -13,6 +13,8 @@ const TITLE_INSURER = 'Insurer Pack';
 const TITLE_DOCTOR = 'Doctor Pack';
 const TITLE_PLAIN = 'Plain Pack';
 const FORMPACK_ID_INSURER = 'formpack-insurer';
+const REPRESENTATIVE_ENTRY_TITLE = 'representativeLetter.entryTitle';
+const SINGLE_RESULT_STATUS = 'formpackSearchResultsStatus 1';
 
 vi.mock('../../src/formpacks/loader', () => {
   const formpackVersion = '1.0.0';
@@ -105,9 +107,42 @@ describe('FormpackListPage', () => {
     expect(screen.getByText(TITLE_INSURER)).toBeInTheDocument();
     expect(screen.getByText(TITLE_DOCTOR)).toBeInTheDocument();
     expect(screen.getByText(TITLE_PLAIN)).toBeInTheDocument();
+    expect(screen.getByText(REPRESENTATIVE_ENTRY_TITLE)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'representativeLetter.entryAriaLabel',
+      }),
+    ).toHaveAttribute('href', '/tools/representative-letter');
     expect(screen.getByRole('status')).toHaveTextContent(
-      'formpackSearchResultsStatus 3',
+      'formpackSearchResultsStatus 4',
     );
+  });
+
+  it('orders the count and search before the category containers', async () => {
+    renderPage();
+    await waitForLoaded();
+
+    const heading = screen.getByRole('heading', {
+      name: 'formpackListTitle',
+    });
+    const status = screen.getByRole('status');
+    const search = screen.getByRole('searchbox');
+    const firstCategory = screen.getByRole('region', {
+      name: 'representativeLetter.entryCategory',
+    });
+
+    expect(screen.queryByText('formpackListDescription')).toBeNull();
+    expect(
+      heading.compareDocumentPosition(status) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      status.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      search.compareDocumentPosition(firstCategory) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('navigates to the detail page on click', async () => {
@@ -139,9 +174,25 @@ describe('FormpackListPage', () => {
     });
     expect(screen.getByText(TITLE_INSURER)).toBeInTheDocument();
     expect(screen.queryByText(TITLE_PLAIN)).not.toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'formpackSearchResultsStatus 1',
-    );
+    expect(
+      screen.queryByText(REPRESENTATIVE_ENTRY_TITLE),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(SINGLE_RESULT_STATUS);
+  });
+
+  it('finds the representative email through its category', async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await waitForLoaded();
+
+    await user.type(screen.getByRole('searchbox'), 'entrycategory');
+
+    expect(screen.getByText(REPRESENTATIVE_ENTRY_TITLE)).toBeInTheDocument();
+    expect(screen.queryByText(TITLE_INSURER)).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('formpackCategoryInsurer'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(SINGLE_RESULT_STATUS);
   });
 
   it('shows empty state when search yields no results', async () => {
@@ -248,17 +299,17 @@ describe('FormpackListPage', () => {
     getItemSpy.mockRestore();
   });
 
-  it('shows empty registry message and no search input when no formpacks exist', async () => {
+  it('keeps the representative email searchable when no formpacks exist', async () => {
     vi.mocked(listFormpacks).mockResolvedValueOnce([]);
 
     renderPage();
     await waitForLoaded();
 
-    expect(screen.getByText('formpackListEmpty')).toBeInTheDocument();
     expect(
-      screen.queryByPlaceholderText('formpackSearchPlaceholder'),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      screen.getByPlaceholderText('formpackSearchPlaceholder'),
+    ).toBeInTheDocument();
+    expect(screen.getByText(REPRESENTATIVE_ENTRY_TITLE)).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(SINGLE_RESULT_STATUS);
   });
 
   it('groups multiple formpacks in the same category', async () => {
