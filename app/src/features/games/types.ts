@@ -1,9 +1,4 @@
 /**
- * Declares whether a game is already playable or still a placeholder.
- */
-export type GameAvailability = 'available' | 'coming-soon';
-
-/**
  * Metadata used to render a game tile in the Games hub.
  *
  * @remarks
@@ -13,7 +8,6 @@ export type GameAvailability = 'available' | 'coming-soon';
 export interface GameCatalogEntry {
   id: string;
   path: string;
-  availability: GameAvailability;
   titleKey: string;
   descriptionKey: string;
 }

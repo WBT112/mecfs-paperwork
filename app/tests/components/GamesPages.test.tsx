@@ -6,8 +6,10 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import i18n from '../../src/i18n';
 import GamesHubPage from '../../src/features/games/pages/GamesHubPage';
 import MeBingoPage from '../../src/features/games/pages/MeBingoPage';
-import SpoonManagerPage from '../../src/features/games/pages/SpoonManagerPage';
 import { TestRouter } from '../setup/testRouter';
+
+const ME_BINGO_ROUTE = '/games/me-bingo';
+const START_GAME_LABEL = 'Start game';
 
 const renderGamesPages = (initialEntry: string) =>
   render(
@@ -15,8 +17,7 @@ const renderGamesPages = (initialEntry: string) =>
       <TestRouter initialEntries={[initialEntry]}>
         <Routes>
           <Route path="/games" element={<GamesHubPage />} />
-          <Route path="/games/me-bingo" element={<MeBingoPage />} />
-          <Route path="/games/spoon-manager" element={<SpoonManagerPage />} />
+          <Route path={ME_BINGO_ROUTE} element={<MeBingoPage />} />
         </Routes>
       </TestRouter>
     </I18nextProvider>,
@@ -30,29 +31,34 @@ describe('Games pages', () => {
     });
   });
 
-  it('renders the Games hub with two playable tiles and one placeholder', () => {
+  it('renders the Games hub with only ME Bingo and no availability badge', () => {
     renderGamesPages('/games');
 
     expect(screen.getByRole('heading', { name: 'Games' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /me bingo/i })).toHaveAttribute(
-      'href',
-      '/games/me-bingo',
+    const gameLinks = screen.getAllByRole('link');
+    expect(gameLinks).toHaveLength(1);
+    expect(gameLinks[0]).toHaveAccessibleName(/me bingo/i);
+    expect(gameLinks[0]).toHaveAttribute('href', ME_BINGO_ROUTE);
+    expect(screen.queryByText(/playable/i)).not.toBeInTheDocument();
+  });
+
+  it('places the ME Bingo start action before the explanatory copy', () => {
+    renderGamesPages(ME_BINGO_ROUTE);
+
+    const introPanel = screen
+      .getByRole('button', { name: START_GAME_LABEL })
+      .closest('section');
+    expect(introPanel).toBeTruthy();
+    expect(introPanel?.firstElementChild).toBe(
+      screen.getByRole('button', { name: START_GAME_LABEL }),
     );
-    expect(
-      screen.getByRole('link', { name: /spoon manager/i }),
-    ).toHaveAttribute('href', '/games/spoon-manager');
-    expect(screen.getByText('PEM Runner')).toBeInTheDocument();
-    expect(screen.getAllByText(/playable|coming soon/i).length).toBeGreaterThan(
-      0,
-    );
-    expect(screen.getAllByText(/coming soon/i)).toHaveLength(1);
   });
 
   it('plays through the main ME Bingo flow including reset, full card, and new card', async () => {
     const user = userEvent.setup();
-    const { container } = renderGamesPages('/games/me-bingo');
+    const { container } = renderGamesPages(ME_BINGO_ROUTE);
 
-    await user.click(screen.getByRole('button', { name: 'Start game' }));
+    await user.click(screen.getByRole('button', { name: START_GAME_LABEL }));
 
     expect(screen.getByText('1/25')).toBeInTheDocument();
 
@@ -122,42 +128,5 @@ describe('Games pages', () => {
     await waitFor(() => {
       expect(screen.getByText('1/25')).toBeInTheDocument();
     });
-  });
-
-  it('plays through a seeded Spoon Manager day with protective choices', async () => {
-    const user = userEvent.setup();
-    renderGamesPages('/games/spoon-manager?seed=test-seed');
-
-    await user.click(screen.getByRole('button', { name: 'Start day' }));
-
-    for (let index = 0; index < 6; index += 1) {
-      const protectiveAction = screen
-        .getAllByRole('button')
-        .find((button) => /protective|Now \+1|Now 0/i.test(button.textContent));
-      if (!protectiveAction) {
-        throw new Error('Expected a protective Spoon Manager action.');
-      }
-      await user.click(protectiveAction);
-
-      const continueButton = screen.queryByRole('button', { name: 'Continue' });
-      if (continueButton) {
-        await user.click(continueButton);
-      }
-    }
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole('heading', {
-          name: /solidly managed|well chosen|surprisingly steady|good pacing/i,
-        }),
-      ).toBeInTheDocument();
-    });
-
-    expect(screen.getByText('Remaining spoons')).toBeInTheDocument();
-    expect(
-      window.localStorage.getItem(
-        'mecfs-paperwork.games.spoon-manager.stats.v1',
-      ),
-    ).toContain('"totalRuns":1');
   });
 });
