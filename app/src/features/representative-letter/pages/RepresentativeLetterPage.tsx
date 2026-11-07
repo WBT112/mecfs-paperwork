@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type RefObject,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import CollapsibleSection from '../../../components/CollapsibleSection';
 import { useLocale } from '../../../i18n/useLocale';
@@ -30,6 +36,7 @@ import {
   type ConstituencyLocationSearchStatus,
 } from '../constituencyLocationSearch';
 import { createMailtoLink, type MailtoLink } from '../mailto';
+import { copyRepresentativeLetterText } from '../clipboard';
 
 const RESULT_LIMIT = 50;
 const STACKED_PANEL_STYLE: CSSProperties = {
@@ -39,10 +46,23 @@ const STACKED_PANEL_STYLE: CSSProperties = {
   borderRadius: '10px',
   padding: '1rem',
 };
-const MAILTO_PANEL_STYLE: CSSProperties = {
+const PRIMARY_ACTIONS_STYLE: CSSProperties = {
   ...STACKED_PANEL_STYLE,
   justifyItems: 'start',
+  gap: '0.5rem',
+  background: 'var(--color-help-category)',
 };
+const PRIMARY_ACTION_ROW_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'stretch',
+  gap: '0.5rem',
+  flexWrap: 'wrap',
+};
+const SEND_BUTTON_STYLE: CSSProperties = {
+  borderColor: 'var(--color-link)',
+  fontWeight: 700,
+};
+const PRIMARY_DESCRIPTION_STYLE: CSSProperties = { margin: 0 };
 const CONTROL_GRID_STYLE: CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 16rem), 1fr))',
@@ -479,15 +499,11 @@ const SelectedRecipient = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <section
-      className="representative-letter__selection"
-      aria-labelledby="representative-letter-selection-title"
-      style={STACKED_PANEL_STYLE}
+    <CollapsibleSection
+      id="representative-letter-selection"
+      className="representative-letter__background"
+      title={representative.fullName}
     >
-      <h3 id="representative-letter-selection-title">
-        {t('representativeLetter.selectionTitle')}
-      </h3>
-      <strong>{representative.fullName}</strong>
       <p>
         {[
           representative.state,
@@ -533,46 +549,109 @@ const SelectedRecipient = ({
       <p style={SUBTLE_TEXT_STYLE}>
         {t('representativeLetter.abgeordnetenwatchPublicNotice')}
       </p>
-    </section>
+    </CollapsibleSection>
   );
 };
 
-type MailtoActionProps = {
+type PrimaryMailActionsProps = {
   mailtoLink: MailtoLink | null;
+  body: string;
+  bodyFieldRef: RefObject<HTMLTextAreaElement | null>;
 };
 
-const MailtoAction = ({ mailtoLink }: MailtoActionProps) => {
+type PrimaryCopyStatus = 'idle' | 'copied' | 'manual';
+
+const PrimaryMailActions = ({
+  mailtoLink,
+  body,
+  bodyFieldRef,
+}: PrimaryMailActionsProps) => {
   const { t } = useTranslation();
   const descriptionId = 'representative-letter-mailto-description';
+  const copyStatusId = 'representative-letter-primary-copy-status';
+  const [copyStatus, setCopyStatus] = useState<PrimaryCopyStatus>('idle');
+
+  useEffect(() => {
+    setCopyStatus('idle');
+  }, [body]);
+
+  const copyBody = async () => {
+    const copied = await copyRepresentativeLetterText(body);
+    if (copied) {
+      setCopyStatus('copied');
+      return;
+    }
+
+    bodyFieldRef.current!.focus();
+    bodyFieldRef.current!.select();
+    setCopyStatus('manual');
+  };
+
+  const copyStatusMessage: Record<PrimaryCopyStatus, string> = {
+    idle: '',
+    copied: t('representativeLetter.copySucceeded'),
+    manual: t('representativeLetter.copyManualFallback'),
+  };
 
   return (
     <section
-      className="representative-letter__mailto"
-      aria-labelledby="representative-letter-mailto-title"
-      style={MAILTO_PANEL_STYLE}
+      aria-label={t('representativeLetter.primaryActionsLabel')}
+      style={PRIMARY_ACTIONS_STYLE}
     >
-      <h3 id="representative-letter-mailto-title">
-        {t('representativeLetter.mailtoTitle')}
-      </h3>
-      {mailtoLink ? (
-        <a
-          className="app__button"
-          href={mailtoLink.href}
-          aria-describedby={descriptionId}
-        >
-          {t('representativeLetter.openMailClient')}
-        </a>
-      ) : (
+      <div style={PRIMARY_ACTION_ROW_STYLE}>
+        {mailtoLink ? (
+          <a
+            className="app__button"
+            href={mailtoLink.href}
+            aria-describedby={descriptionId}
+            style={SEND_BUTTON_STYLE}
+          >
+            {t('representativeLetter.sendEmail')}
+          </a>
+        ) : (
+          <button
+            type="button"
+            className="app__button"
+            aria-describedby={descriptionId}
+            disabled
+            style={SEND_BUTTON_STYLE}
+          >
+            {t('representativeLetter.sendEmail')}
+          </button>
+        )}
         <button
           type="button"
-          className="app__button"
-          aria-describedby={descriptionId}
-          disabled
+          className="app__button app__icon-button"
+          aria-label={t('representativeLetter.copyBody')}
+          aria-describedby={copyStatusId}
+          onClick={copyBody}
         >
-          {t('representativeLetter.openMailClient')}
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
+            fill="none"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <rect
+              x="6.5"
+              y="6.5"
+              width="10"
+              height="10"
+              rx="1.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <path
+              d="M13.5 6.5V5A1.5 1.5 0 0 0 12 3.5H5A1.5 1.5 0 0 0 3.5 5v7A1.5 1.5 0 0 0 5 13.5h1.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+          </svg>
         </button>
-      )}
-      <p id={descriptionId}>
+      </div>
+      <p id={descriptionId} style={PRIMARY_DESCRIPTION_STYLE}>
         {mailtoLink
           ? t('representativeLetter.mailtoDescription')
           : t('representativeLetter.mailtoUnavailable')}
@@ -580,6 +659,13 @@ const MailtoAction = ({ mailtoLink }: MailtoActionProps) => {
       {mailtoLink && !mailtoLink.bodyIncluded ? (
         <output>{t('representativeLetter.mailtoBodyTooLong')}</output>
       ) : null}
+      <output
+        id={copyStatusId}
+        className="representative-letter__copy-status"
+        aria-live="polite"
+      >
+        {copyStatusMessage[copyStatus]}
+      </output>
     </section>
   );
 };
@@ -598,6 +684,7 @@ export default function RepresentativeLetterPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationQuery, setLocationQuery] = useState('');
   const [stateFilter, setStateFilter] = useState('');
+  const bodyFieldRef = useRef<HTMLTextAreaElement>(null);
   const [selectedConstituencyNumber, setSelectedConstituencyNumber] = useState<
     number | null
   >(null);
@@ -719,7 +806,14 @@ export default function RepresentativeLetterPage() {
         )}
 
         {selectedRepresentative ? (
-          <SelectedRecipient representative={selectedRepresentative} />
+          <>
+            <SelectedRecipient representative={selectedRepresentative} />
+            <PrimaryMailActions
+              mailtoLink={mailtoLink}
+              body={generatedLetter.body}
+              bodyFieldRef={bodyFieldRef}
+            />
+          </>
         ) : null}
 
         <div
@@ -782,14 +876,13 @@ export default function RepresentativeLetterPage() {
             placeholder={t('representativeLetter.bodyPlaceholder')}
             multiline
             rows={12}
+            textareaRef={bodyFieldRef}
           />
         </div>
 
         <p style={SUBTLE_TEXT_STYLE}>
           {t('representativeLetter.signatureNotice')}
         </p>
-
-        <MailtoAction mailtoLink={mailtoLink} />
 
         <div className="representative-letter__actions">
           <button type="button" className="app__button" onClick={reset}>

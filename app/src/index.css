@@ -1001,6 +1001,7 @@ body {
   border: 1px solid var(--color-border-subtle);
   border-radius: 10px;
   padding: 0.5rem;
+  background: var(--color-help-category);
 }
 
 .representative-letter__background p,
@@ -1658,7 +1659,8 @@ body {
   font-size: 0.9rem;
 }
 
-.formpack-detail__tools .collapsible-section__heading {
+.formpack-detail__tools .collapsible-section__heading,
+.representative-letter__background .collapsible-section__heading {
   margin: 0;
 }
 

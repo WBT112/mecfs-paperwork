@@ -23,7 +23,7 @@ const LOCATION_SEARCH_LABEL = 'representativeLetter.locationSearchLabel';
 const SELECT_CONSTITUENCY_BUTTON =
   'representativeLetter.selectConstituencyNamed';
 const SELECT_RECIPIENT_BUTTON = 'representativeLetter.selectRecipientNamed';
-const OPEN_MAIL_CLIENT = 'representativeLetter.openMailClient';
+const SEND_EMAIL = 'representativeLetter.sendEmail';
 const COPY_RECIPIENT = 'representativeLetter.copyRecipient';
 const COPY_SUBJECT = 'representativeLetter.copySubject';
 const COPY_BODY = 'representativeLetter.copyBody';
@@ -151,9 +151,9 @@ describe('RepresentativeLetterPage', () => {
       screen.getByText('representativeLetter.locationPrivacyHint'),
     ).toBeVisible();
 
-    const mailAction = screen.getByRole('button', { name: OPEN_MAIL_CLIENT });
+    const body = screen.getByLabelText(BODY_LABEL);
     expect(
-      mailAction.compareDocumentPosition(processDisclosure) &
+      body.compareDocumentPosition(processDisclosure) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
     expect(
@@ -187,11 +187,8 @@ describe('RepresentativeLetterPage', () => {
     expect(
       screen.queryByRole('button', { name: /download|export/i }),
     ).toBeNull();
-    expect(
-      screen.getByRole('button', {
-        name: OPEN_MAIL_CLIENT,
-      }),
-    ).toBeDisabled();
+    expect(screen.queryByRole('button', { name: SEND_EMAIL })).toBeNull();
+    expect(screen.queryByRole('link', { name: SEND_EMAIL })).toBeNull();
     expect(screen.getByRole('button', { name: COPY_RECIPIENT })).toBeDisabled();
     expect(screen.getByRole('button', { name: COPY_SUBJECT })).toBeEnabled();
     expect(screen.getByRole('button', { name: COPY_BODY })).toBeEnabled();
@@ -218,6 +215,17 @@ describe('RepresentativeLetterPage', () => {
     expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue(
       VERIFIED_RECIPIENT!.email,
     );
+    const recipientDisclosure = screen.getByRole('button', {
+      name: VERIFIED_RECIPIENT!.fullName,
+    });
+    expect(recipientDisclosure).toHaveAttribute(EXPANDED_ATTRIBUTE, 'false');
+    expect(
+      screen.getByText('representativeLetter.emailVerified'),
+    ).not.toBeVisible();
+
+    recipientDisclosure.focus();
+    await user.keyboard('[Enter]');
+    expect(recipientDisclosure).toHaveAttribute(EXPANDED_ATTRIBUTE, 'true');
     expect(
       screen.getByText('representativeLetter.emailVerified'),
     ).toBeVisible();
@@ -235,7 +243,7 @@ describe('RepresentativeLetterPage', () => {
       VERIFIED_RECIPIENT!.id,
     );
     const mailtoLink = screen.getByRole('link', {
-      name: OPEN_MAIL_CLIENT,
+      name: SEND_EMAIL,
     });
     expect(mailtoLink).toHaveAttribute(
       'href',
@@ -278,7 +286,9 @@ describe('RepresentativeLetterPage', () => {
     const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL);
     await user.click(screen.getByRole('button', { name: COPY_RECIPIENT }));
     await user.click(screen.getByRole('button', { name: COPY_SUBJECT }));
-    await user.click(screen.getByRole('button', { name: COPY_BODY }));
+    await user.click(
+      screen.getAllByRole('button', { name: COPY_BODY }).at(-1)!,
+    );
 
     expect(clipboardWrite.mock.calls).toEqual([
       [recipient.value],
@@ -299,8 +309,41 @@ describe('RepresentativeLetterPage', () => {
     expect(updatedBody.value).toContain(
       `Guten Tag ${ALTERNATE_VERIFIED_RECIPIENT!.fullName},`,
     );
-    await user.click(screen.getByRole('button', { name: COPY_BODY }));
+    await user.click(
+      screen.getAllByRole('button', { name: COPY_BODY }).at(-1)!,
+    );
     expect(clipboardWrite).toHaveBeenLastCalledWith(updatedBody.value);
+  });
+
+  it('copies the visible body from the primary action and selects it as a fallback', async () => {
+    const user = userEvent.setup();
+    installClipboardMock();
+    renderPage();
+
+    await user.type(
+      await screen.findByLabelText(SEARCH_LABEL),
+      VERIFIED_RECIPIENT!.fullName,
+    );
+    await user.click(
+      screen.getByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
+    );
+
+    const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL);
+    const primaryCopyButton = screen.getAllByRole('button', {
+      name: COPY_BODY,
+    })[0];
+    await user.click(primaryCopyButton);
+    expect(clipboardWrite).toHaveBeenLastCalledWith(body.value);
+    expect(screen.getByText(COPY_SUCCEEDED)).toBeVisible();
+
+    clipboardWrite.mockRejectedValueOnce(new Error('blocked'));
+    await user.click(primaryCopyButton);
+    expect(body).toHaveFocus();
+    expect(body.selectionStart).toBe(0);
+    expect(body.selectionEnd).toBe(body.value.length);
+    expect(
+      screen.getByText('representativeLetter.copyManualFallback'),
+    ).toBeVisible();
   });
 
   it('selects input and textarea content when clipboard access fails', async () => {
@@ -339,6 +382,9 @@ describe('RepresentativeLetterPage', () => {
         name: SELECT_RECIPIENT_BUTTON,
       }),
     );
+    await user.click(
+      screen.getByRole('button', { name: MISSING_RECIPIENT!.fullName }),
+    );
 
     expect(screen.getByText('representativeLetter.emailMissing')).toBeVisible();
     expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveAttribute(
@@ -352,7 +398,7 @@ describe('RepresentativeLetterPage', () => {
     ).toHaveAttribute('href', MISSING_RECIPIENT!.officialContactUrl);
     expect(
       screen.getByRole('button', {
-        name: OPEN_MAIL_CLIENT,
+        name: SEND_EMAIL,
       }),
     ).toBeDisabled();
   });
@@ -532,7 +578,7 @@ describe('RepresentativeLetterPage', () => {
     const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value;
     expect(body).toContain('Weiterführende Quellen:');
     const mailtoLink = screen.getByRole('link', {
-      name: OPEN_MAIL_CLIENT,
+      name: SEND_EMAIL,
     });
     expect(
       decodeURIComponent(
@@ -563,7 +609,7 @@ describe('RepresentativeLetterPage', () => {
     ).toContain('x'.repeat(MAX_MAILTO_URL_LENGTH));
     expect(
       await screen.findByRole('link', {
-        name: OPEN_MAIL_CLIENT,
+        name: SEND_EMAIL,
       }),
     ).toHaveAttribute(
       'href',
