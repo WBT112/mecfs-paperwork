@@ -908,11 +908,6 @@ body {
   outline-offset: 2px;
 }
 
-.games-hub__card--coming-soon {
-  background: var(--color-surface-muted);
-  box-shadow: none;
-}
-
 .games-hub__card-header {
   display: grid;
   gap: 0.6rem;
@@ -928,32 +923,9 @@ body {
   color: var(--color-text-muted);
 }
 
-.games-hub__status {
-  width: fit-content;
-  border-radius: 999px;
-  padding: 0.2rem 0.65rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-}
-
-.games-hub__status--active {
-  background: var(--color-badge-bg);
-  color: var(--color-badge-text);
-}
-
-.games-hub__status--coming-soon {
-  background: var(--color-surface-subtle);
-  color: var(--color-text-subtle);
-}
-
 .games-hub__cta {
   color: var(--color-link-strong);
   font-weight: 700;
-}
-
-.games-hub__cta--muted {
-  color: var(--color-text-subtle);
 }
 
 .representative-letter {
@@ -1337,171 +1309,6 @@ body {
   color: var(--color-text-muted);
 }
 
-.games-spoon {
-  display: grid;
-  gap: 1.25rem;
-  max-width: 1120px;
-}
-
-.games-spoon__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.games-spoon__eyebrow,
-.games-spoon__kicker,
-.games-spoon__result-label {
-  margin: 0;
-  color: var(--color-text-subtle);
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.games-spoon__header h2 {
-  margin-bottom: 0.35rem;
-}
-
-.games-spoon__back-link {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-}
-
-.games-spoon__toolbar,
-.games-spoon__result-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.games-spoon__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
-  gap: 1rem;
-  align-items: start;
-}
-
-.games-spoon__main,
-.games-spoon__sidebar {
-  display: grid;
-  gap: 1rem;
-}
-
-.games-spoon__panel,
-.games-spoon__result-card {
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  background: var(--color-surface-muted);
-  padding: 1rem;
-  display: grid;
-  gap: 0.8rem;
-}
-
-.games-spoon__panel h3,
-.games-spoon__result-card h3,
-.games-spoon__panel p,
-.games-spoon__result-card p {
-  margin: 0;
-}
-
-.games-spoon__panel--intro,
-.games-spoon__result-card {
-  background: linear-gradient(
-    180deg,
-    var(--color-surface) 0%,
-    var(--color-surface-subtle) 100%
-  );
-}
-
-.games-spoon__primary-action {
-  width: fit-content;
-}
-
-.games-spoon__action-list,
-.games-spoon__feedback-list,
-.games-spoon__legend-list {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.games-spoon__legend-list {
-  margin: 0;
-  padding-left: 1.15rem;
-}
-
-.games-spoon__action-button {
-  width: 100%;
-  min-height: 56px;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  background: var(--color-surface);
-  color: inherit;
-  display: grid;
-  gap: 0.35rem;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-  transition:
-    border-color 0.2s ease-in-out,
-    background-color 0.2s ease-in-out,
-    transform 0.2s ease-in-out;
-}
-
-.games-spoon__action-button:hover {
-  border-color: var(--color-border-strong);
-  background: var(--color-surface-muted);
-}
-
-.games-spoon__action-button:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.games-spoon__action-button:disabled {
-  cursor: default;
-  opacity: 0.72;
-}
-
-.games-spoon__action-title {
-  color: var(--color-text-strong);
-  font-weight: 700;
-}
-
-.games-spoon__action-meta {
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
-}
-
-.games-spoon__metrics {
-  margin: 0;
-  display: grid;
-  gap: 0.75rem;
-}
-
-.games-spoon__metrics div {
-  display: grid;
-  gap: 0.2rem;
-}
-
-.games-spoon__metrics dt {
-  color: var(--color-text-subtle);
-  font-size: 0.88rem;
-}
-
-.games-spoon__metrics dd {
-  margin: 0;
-  color: var(--color-text-strong);
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
 @media (max-width: 720px) {
   .games-bingo__layout {
     display: flex;
@@ -1516,19 +1323,6 @@ body {
     order: 2;
     display: flex;
     flex-direction: column;
-  }
-
-  .games-spoon__layout {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .games-spoon__main {
-    order: 1;
-  }
-
-  .games-spoon__sidebar {
-    order: 2;
   }
 }
 
@@ -1546,23 +1340,6 @@ body {
     order: 2;
     display: flex;
     flex-direction: column;
-  }
-
-  .games-spoon__layout {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .games-spoon__main {
-    order: 1;
-  }
-
-  .games-spoon__sidebar {
-    order: 2;
-  }
-
-  .games-spoon__action-button {
-    padding: 0.85rem 0.9rem;
   }
 }
 

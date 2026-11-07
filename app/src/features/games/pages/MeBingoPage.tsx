@@ -52,9 +52,6 @@ export default function MeBingoPage() {
       {isGameIdle ? (
         <div className="games-bingo__layout">
           <section className="games-bingo__panel games-bingo__panel--intro">
-            <h3>{t('games.meBingo.introTitle')}</h3>
-            <p>{t('games.meBingo.introBody')}</p>
-            <p>{t('games.meBingo.instructions')}</p>
             <button
               type="button"
               className="app__button games-bingo__primary-action"
@@ -62,6 +59,9 @@ export default function MeBingoPage() {
             >
               {t('games.meBingo.startAction')}
             </button>
+            <h3>{t('games.meBingo.introTitle')}</h3>
+            <p>{t('games.meBingo.introBody')}</p>
+            <p>{t('games.meBingo.instructions')}</p>
           </section>
           <StatsPanel
             title={t('games.meBingo.stats.title')}
