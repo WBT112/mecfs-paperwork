@@ -42,9 +42,7 @@ const normalizeLocationValue = (value: string): string =>
     .trim();
 
 const matchesPlace = (location: ConstituencyLocation, tokens: string[]) => {
-  const searchable = normalizeLocationValue(
-    `${location.municipality} ${location.county}`,
-  );
+  const searchable = normalizeLocationValue(location.municipality);
   return tokens.every((token) => searchable.includes(token));
 };
 
@@ -63,7 +61,6 @@ const locationRank = (
  *
  * @param catalog - Static constituency and location snapshot.
  * @param query - Transient five-digit postcode or municipality/locality query.
- * @param stateCode - Optional federal-state filter.
  * @returns A validation state and explicitly selectable constituency matches.
  * @remarks Numeric input must be exactly five digits. Place matching ignores
  * case, diacritics, umlaut spellings, punctuation, and the St./Sankt variant.
@@ -71,7 +68,6 @@ const locationRank = (
 export const searchConstituencyLocations = (
   catalog: ConstituencyLocationCatalog,
   query: string,
-  stateCode: string,
 ): ConstituencyLocationSearchResult => {
   const trimmedQuery = query.trim();
   if (!trimmedQuery) {
@@ -96,9 +92,6 @@ export const searchConstituencyLocations = (
   const tokens = normalizedQuery.split(/\s+/u).filter(Boolean);
 
   const rankedMatches = catalog.constituencies.flatMap((constituency) => {
-    if (stateCode && constituency.stateCode !== stateCode) {
-      return [];
-    }
     const locations = constituency.locations.filter((location) =>
       isPostcode
         ? location.postalCodes.includes(trimmedQuery)
