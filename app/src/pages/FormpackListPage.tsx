@@ -75,10 +75,7 @@ export default function FormpackListPage() {
   return (
     <section className="app__card formpack-list-page">
       <div className="app__card-header">
-        <div>
-          <h2>{t('formpackListTitle')}</h2>
-          <p className="app__subtitle">{t('formpackListDescription')}</p>
-        </div>
+        <h2>{t('formpackListTitle')}</h2>
       </div>
       <div className="formpack-list__controls">
         <output aria-live="polite" className="formpack-list__status">
