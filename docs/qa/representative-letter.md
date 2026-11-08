@@ -10,6 +10,12 @@ bodies, explicitly approved as Revision 2 on 2026-11-08. The archived source
 blocks and approved variant texts must not be rewritten during technical
 maintenance.
 
+Content version `2026-11-08.3` includes the maintainer-requested editorial review
+for natural German and varied closing thanks. The substantive requests and
+medical information remain intact. Verify a thanks paragraph directly precedes
+the sign-off in every body and remains present in the visible field, clipboard,
+and mailto output. Both interface locales use the same German letter catalog.
+
 ## User flow
 
 1. Open **Email representatives**. No account, profile, health detail, or

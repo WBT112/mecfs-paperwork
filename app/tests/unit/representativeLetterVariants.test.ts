@@ -9,6 +9,23 @@ import { representativeLetterContent } from '../../src/features/representative-l
 import { createMailtoLink } from '../../src/features/representative-letter/mailto';
 
 describe('approved representative letter variants', () => {
+  it('uses natural care wording and varied thanks immediately before the sign-off', () => {
+    expect(letterVariants.contentVersion).toBe('2026-11-08.3');
+    const closingThanks = letterVariants.bodies.map(({ text }) => {
+      const paragraphs = text.split('\n\n');
+      expect(paragraphs.at(-1)).toBe('Mit freundlichen Grüßen');
+      expect(paragraphs.at(-2)).toMatch(/(?:Dank|danke)/u);
+      return paragraphs.at(-2);
+    });
+    expect(new Set(closingThanks).size).toBe(30);
+    for (const { text } of [
+      ...letterVariants.subjects,
+      ...letterVariants.bodies,
+    ]) {
+      expect(text).not.toMatch(/\bvertraute(?:n|r)? Ersatzpflege\b/iu);
+    }
+  });
+
   it('contains exactly 30 distinct complete plaintext subjects and bodies', () => {
     for (const variants of [letterVariants.subjects, letterVariants.bodies]) {
       expect(variants).toHaveLength(30);
