@@ -93,8 +93,8 @@ the updater. The built JSON asset is precached for complete offline use.
 
 Location and postcode queries exist only in React component state. They are not
 written to the URL, session/local storage, IndexedDB, profiles, or logs. A
-selected constituency used to reveal representative candidates is also
-transient; selecting a representative remains the existing explicit action.
+query resolves directly to representative candidates with visible constituency
+context; selecting a representative remains an explicit action.
 
 ## Letter content
 

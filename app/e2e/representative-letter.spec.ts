@@ -98,22 +98,17 @@ test('opens directly and retains only tab-local representative-letter state', as
     .fill('50668');
   await expect(
     page.getByRole('button', {
-      name: /Wahlkreis 92.*Köln I auswählen|Select constituency 92.*Köln I/i,
-    }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole('button', {
-      name: /Sanae Abdi als Empfänger auswählen|Select Sanae Abdi as recipient/i,
+      name: /^(?:Wahlkreis auswählen|Select constituency)$/i,
     }),
   ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', {
+      name: /Sanae Abdi.*(?:Wahlkreis|constituency) 92.*Köln I/i,
+    }),
+  ).toBeVisible();
   await page
     .getByRole('button', {
-      name: /Wahlkreis 92.*Köln I auswählen|Select constituency 92.*Köln I/i,
-    })
-    .click();
-  await page
-    .getByRole('button', {
-      name: /Sanae Abdi als Empfänger auswählen|Select Sanae Abdi as recipient/i,
+      name: /Sanae Abdi.*(?:Wahlkreis|constituency) 92.*Köln I/i,
     })
     .click();
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
@@ -203,6 +198,9 @@ test('opens directly and retains only tab-local representative-letter state', as
     ),
   ).toBe(true);
 
+  await page
+    .getByRole('button', { name: /Empfänger ändern|Change recipient/i })
+    .click();
   const search = page.getByLabel(/Postleitzahl oder Ort|Postcode or place/i);
   await search.fill('97237');
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
@@ -210,12 +208,7 @@ test('opens directly and retains only tab-local representative-letter state', as
   );
   await page
     .getByRole('button', {
-      name: /Wahlkreis 250.*Würzburg auswählen|Select constituency 250.*Würzburg/i,
-    })
-    .click();
-  await page
-    .getByRole('button', {
-      name: /Aaron Valent als Empfänger auswählen|Select Aaron Valent as recipient/i,
+      name: /Aaron Valent.*(?:Wahlkreis|constituency) 250.*Würzburg/i,
     })
     .click();
   await expect(page.locator('#representative-letter-body')).toHaveValue(
@@ -309,18 +302,14 @@ test('finds an ambiguous postcode and its representatives fully offline', async 
     await expect(
       page.getByText(/passt zu 2 Wahlkreisen|matches 2 constituencies/i),
     ).toBeVisible();
-    await page
-      .getByRole('button', {
-        name: /Wahlkreis 258.*Stuttgart I auswählen|Select constituency 258.*Stuttgart I/i,
-      })
-      .click();
+    const recipientChoices = page.getByRole('button', {
+      name: /(?:Wahlkreis|constituency).*(?:als Empfänger auswählen|as recipient)/i,
+    });
+    expect(await recipientChoices.count()).toBeGreaterThan(1);
+    await recipientChoices.first().click();
     await expect(
-      page
-        .getByRole('button', {
-          name: /als Empfänger auswählen|as recipient/i,
-        })
-        .first(),
-    ).toBeVisible();
+      page.locator('#representative-letter-recipient'),
+    ).not.toHaveValue('');
   } finally {
     await context.setOffline(false);
   }

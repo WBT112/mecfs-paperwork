@@ -14,10 +14,10 @@ technical maintenance.
 
 1. Open **Email representatives**. No account, profile, health detail, or
    introductory gate is required.
-2. Enter one five-digit postcode or a place name. Select the correct
-   constituency explicitly, especially when several matches are shown.
-3. Select a representative. Expand their details to review the verification
-   date and official contact/profile links.
+2. Enter one five-digit postcode or a place name. The matching representatives
+   are shown directly with place, federal-state, and constituency context.
+3. Select the correct representative. Expand their details to review the
+   verification date and official contact/profile links.
 4. Copy recipient, subject, and the single complete mail body separately, or
    select **Open in email app** to open the locally configured mail application.
 5. Paperwork does not send the message. If a mail body is too long for a
@@ -39,7 +39,7 @@ is public catalog data or clearly synthetic UI input.
 | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Direct entry without profile or health fields                                           | `tests/components/RepresentativeLetterPage.test.tsx`, `e2e/representative-letter.spec.ts`                                  |
 | Postcode, place, umlaut normalization, duplicate place names, and ambiguous assignments | `tests/unit/constituencyLocationSearch.test.ts`, `tests/unit/constituencyLocationCatalog.test.ts`, component and E2E tests |
-| Explicit constituency and recipient selection; stale selection clearing                 | Component and E2E tests                                                                                                    |
+| Direct recipient selection with constituency context; stale selection clearing          | Representative-search unit tests, component tests, and E2E tests                                                          |
 | Verified, missing, and oversized `mailto` paths                                         | Component tests and `tests/unit/representativeLetterMailto.test.ts`                                                        |
 | Three copy fields and manual clipboard fallback                                         | Component tests and `tests/unit/representativeLetterClipboard.test.ts`                                                     |
 | Tab isolation, reload, back navigation, and reset                                       | Session-state unit tests, component tests, and E2E tests                                                                   |
@@ -73,9 +73,9 @@ any allowed Firefox or WebKit warning in the PR description.
 
 Use a fresh browser context and synthetic input only.
 
-- At 320 px width, complete the postcode/place, constituency, recipient, copy,
-  and `mailto` flow with touch, keyboard, and a screen reader. Confirm that no
-  short/long selection is exposed.
+- At 320 px width, complete the postcode/place, direct recipient, copy, and
+  `mailto` flow with touch, keyboard, and a screen reader. Confirm that there is
+  no separate constituency or short/long selection.
 - Verify the visible recipient address, subject, and body exactly match the
   values passed to the mail application. Confirm that no message is sent
   without a separate user action in that application.
