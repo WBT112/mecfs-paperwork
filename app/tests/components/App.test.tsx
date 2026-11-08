@@ -121,7 +121,7 @@ describe('App', () => {
 
   it('renders compact navigation as the first links on a tool route', () => {
     render(
-      <MemoryRouter initialEntries={['/tools/representative-letter']}>
+      <MemoryRouter initialEntries={['/tools/mail-pflegegesetz']}>
         <App />
       </MemoryRouter>,
     );

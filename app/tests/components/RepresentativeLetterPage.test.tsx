@@ -65,10 +65,10 @@ vi.mock('../../src/i18n/useLocale', () => ({
 
 const renderPage = () =>
   render(
-    <TestRouter initialEntries={['/tools/representative-letter']}>
+    <TestRouter initialEntries={['/tools/mail-pflegegesetz']}>
       <Routes>
         <Route
-          path="/tools/representative-letter"
+          path="/tools/mail-pflegegesetz"
           element={<RepresentativeLetterPage />}
         />
         <Route path="/formpacks" element={<div>Overview</div>} />

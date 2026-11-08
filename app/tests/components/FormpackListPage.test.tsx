@@ -112,7 +112,7 @@ describe('FormpackListPage', () => {
       screen.getByRole('link', {
         name: 'representativeLetter.entryAriaLabel',
       }),
-    ).toHaveAttribute('href', '/tools/representative-letter');
+    ).toHaveAttribute('href', '/tools/mail-pflegegesetz');
     expect(screen.getByRole('status')).toHaveTextContent(
       'formpackSearchResultsStatus 4',
     );

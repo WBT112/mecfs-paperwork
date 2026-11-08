@@ -207,6 +207,7 @@ export const createPwaConfig = (
       navigateFallbackAllowlist: [
         /^\/$/,
         /^\/formpacks(\/.*)?$/,
+        /^\/tools\/mail-pflegegesetz$/,
         /^\/tools\/representative-letter$/,
         /^\/help$/,
         /^\/imprint$/,

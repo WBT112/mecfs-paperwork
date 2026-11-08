@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { waitForServiceWorkerReady } from './helpers/serviceWorker';
 
-const TOOL_PATH = '/tools/representative-letter';
+const TOOL_PATH = '/tools/mail-pflegegesetz';
 const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v4';
 const CATALOG_PATH_PATTERNS = [
   /\/representatives(?:-[^/]+)?\.json$/u,

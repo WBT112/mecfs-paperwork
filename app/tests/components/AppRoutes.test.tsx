@@ -81,9 +81,9 @@ describe('AppRoutes', () => {
     });
   });
 
-  it('renders the representative-letter route', async () => {
+  it('renders the mail-pflegegesetz route', async () => {
     render(
-      <TestRouter initialEntries={['/tools/representative-letter']}>
+      <TestRouter initialEntries={['/tools/mail-pflegegesetz']}>
         <AppRoutes />
       </TestRouter>,
     );
