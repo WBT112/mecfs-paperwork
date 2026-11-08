@@ -131,13 +131,18 @@ version.
 
 ### Approved wording variants (#558)
 
-`letter-variants.de.json`, schema v1 and content version `2026-11-08.2`, contains
+`letter-variants.de.json`, schema v1 and content version `2026-11-08.3`, contains
 exactly 30 subjects and 30 complete German plaintext bodies. The maintainer
 explicitly approved all 60 Revision 2 proposals on 2026-11-08 in the
 implementation session. Its approval metadata links the source issue comment.
-The catalog preserves those texts verbatim; generation changes only the neutral
-greeting to address a selected recipient. Both DE and EN interfaces use these
-approved German texts. No English letter translation is approved.
+The maintainer subsequently requested natural German wording and varied closing
+thanks on the same date. Version `2026-11-08.3` contains those editorial updates,
+preserving the four substantive requests and medical information. The approval
+metadata retains Revision 2 as the source and records the editorial request.
+Generation changes only the neutral greeting to address a selected recipient.
+Both DE and EN interfaces use these German texts; no English letter translation
+is approved. A content-version mismatch triggers the existing fresh-pair policy
+while preserving a valid selected recipient.
 
 Selection algorithm v1 samples the subject and body independently and uniformly
 with `Math.random`. A deliberate refresh uniformly samples one of the other
