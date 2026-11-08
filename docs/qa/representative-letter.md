@@ -16,6 +16,12 @@ medical information remain intact. Verify a thanks paragraph directly precedes
 the sign-off in every body and remains present in the visible field, clipboard,
 and mailto output. Both interface locales use the same German letter catalog.
 
+Version `2026-11-08.4` additionally opens each body with one of 30 distinct
+sentences stating that the sender lives in the recipient's constituency. Check
+that it appears after the greeting in the generated plaintext and survives
+copying and mailto generation. No address is collected or inferred, and the
+wording makes no claim about voting eligibility or previous votes.
+
 ## User flow
 
 1. Open **Email representatives**. No account, profile, health detail, or
