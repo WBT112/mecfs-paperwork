@@ -93,16 +93,16 @@ export const validateRepresentativeContent = (value) => {
   requireNonEmptyString(value.subject, 'subject');
   if (
     value.approval?.status !== 'approved-as-provided' ||
-    value.approval?.sourceIssue !== 553
+    value.approval?.sourceIssue !== 619
   ) {
     throw new Error('The content approval metadata is incomplete.');
   }
   if (
     !Array.isArray(value.template?.opening) ||
-    value.template.opening.length !== 2
+    value.template.opening.length !== 3
   ) {
     throw new Error(
-      'The template must contain both approved opening paragraphs.',
+      'The template must contain all three approved opening paragraphs.',
     );
   }
   if (

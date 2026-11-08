@@ -1,66 +1,53 @@
 import type { RepresentativeCatalogEntry } from './data/catalogs';
-
-const normalizeSearchValue = (value: string): string =>
-  value
-    .trim()
-    .toLocaleLowerCase('de')
-    .replaceAll('ä', 'ae')
-    .replaceAll('ö', 'oe')
-    .replaceAll('ü', 'ue')
-    .replaceAll('ß', 'ss')
-    .replaceAll('ı', 'i')
-    .normalize('NFKD')
-    .replaceAll(/\p{Mark}/gu, '')
-    .replaceAll(/[^a-z\d]+/gu, ' ')
-    .trim();
-
-const searchableRepresentativeText = (
-  representative: RepresentativeCatalogEntry,
-): string =>
-  normalizeSearchValue(
-    [
-      representative.fullName,
-      representative.constituency?.number,
-      representative.constituency?.name,
-    ]
-      .filter((value): value is string | number => value !== undefined)
-      .join(' '),
-  );
+import type { ConstituencyLocationMatch } from './constituencyLocationSearch';
 
 /**
- * Filters the bundled representative catalog without any network request.
- *
- * @param representatives - Static catalog entries to search.
- * @param query - User-entered name, constituency name, or constituency number.
- * @param stateCode - Optional federal-state code to require.
- * @param constituencyNumber - Optional explicitly selected constituency.
- * @returns Entries matching the state and every normalized search token.
+ * One representative resolved from a local place or postcode match.
  */
-export const filterRepresentatives = (
+export type RepresentativeLocationMatch = {
+  representative: RepresentativeCatalogEntry;
+  location: ConstituencyLocationMatch;
+};
+
+/**
+ * Resolves local place or postcode matches directly to representatives.
+ *
+ * @param representatives - Static catalog entries to filter.
+ * @param locations - Ordered local constituency matches from the transient
+ * place or postcode search.
+ * @returns Deterministically ordered, representative-ID-deduplicated matches.
+ * @remarks Recipient names, constituency names, and federal states remain
+ * unavailable as independent search paths. Every result must originate from
+ * the bundled local place-or-postcode lookup.
+ */
+export const resolveRepresentativesForLocations = (
   representatives: readonly RepresentativeCatalogEntry[],
-  query: string,
-  stateCode: string,
-  constituencyNumber?: number | null,
-): RepresentativeCatalogEntry[] => {
-  const searchTokens = normalizeSearchValue(query)
-    .split(/\s+/u)
-    .filter(Boolean);
+  locations: readonly ConstituencyLocationMatch[],
+): RepresentativeLocationMatch[] => {
+  const representativesByConstituency = new Map<
+    number,
+    RepresentativeCatalogEntry[]
+  >();
+  for (const representative of representatives) {
+    const constituencyNumber = representative.constituency?.number;
+    if (constituencyNumber === undefined) continue;
+    const entries = representativesByConstituency.get(constituencyNumber) ?? [];
+    entries.push(representative);
+    representativesByConstituency.set(constituencyNumber, entries);
+  }
 
-  return representatives.filter((representative) => {
-    if (stateCode && representative.stateCode !== stateCode) {
-      return false;
-    }
-    if (
-      constituencyNumber &&
-      representative.constituency?.number !== constituencyNumber
-    ) {
-      return false;
-    }
-    if (searchTokens.length === 0) {
-      return true;
-    }
-
-    const searchableText = searchableRepresentativeText(representative);
-    return searchTokens.every((token) => searchableText.includes(token));
-  });
+  const seenRepresentativeIds = new Set<string>();
+  return locations.flatMap((location) =>
+    (representativesByConstituency.get(location.constituencyNumber) ?? [])
+      .toSorted(
+        (left, right) =>
+          left.fullName.localeCompare(right.fullName, 'de') ||
+          left.id.localeCompare(right.id),
+      )
+      .flatMap((representative) => {
+        if (seenRepresentativeIds.has(representative.id)) return [];
+        seenRepresentativeIds.add(representative.id);
+        return [{ representative, location }];
+      }),
+  );
 };

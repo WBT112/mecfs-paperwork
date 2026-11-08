@@ -23,6 +23,7 @@ type RuntimeCacheBudget = {
 
 type RuntimeCacheBudgets = {
   static: RuntimeCacheBudget;
+  representativeData: RuntimeCacheBudget;
   fonts: RuntimeCacheBudget;
   images: RuntimeCacheBudget;
   formpacks: RuntimeCacheBudget;
@@ -31,6 +32,10 @@ type RuntimeCacheBudgets = {
 export const RUNTIME_CACHE_BUDGETS = {
   static: {
     maxEntries: 60,
+    maxAgeSeconds: 30 * 24 * 60 * 60,
+  },
+  representativeData: {
+    maxEntries: 4,
     maxAgeSeconds: 30 * 24 * 60 * 60,
   },
   fonts: {
@@ -52,6 +57,7 @@ export const DEV_RUNTIME_CACHE_BUDGETS = {
     maxEntries: 1_200,
     maxAgeSeconds: 24 * 60 * 60,
   },
+  representativeData: RUNTIME_CACHE_BUDGETS.representativeData,
   fonts: RUNTIME_CACHE_BUDGETS.fonts,
   images: {
     maxEntries: 200,
@@ -88,6 +94,34 @@ const createRuntimeCaching = (
       expiration: {
         maxEntries: budgets.static.maxEntries,
         maxAgeSeconds: budgets.static.maxAgeSeconds,
+        purgeOnQuotaError: true,
+      },
+    },
+  },
+  {
+    urlPattern: ({
+      url,
+      request,
+      sameOrigin,
+    }: {
+      url: URL;
+      request: Request;
+      sameOrigin: boolean;
+    }) =>
+      sameOrigin &&
+      request.method === 'GET' &&
+      /\/(?:representatives|constituency-locations)(?:-[^/]+)?\.json$/u.test(
+        url.pathname,
+      ),
+    handler: 'CacheFirst' as const,
+    options: {
+      cacheName: 'app-representative-data',
+      cacheableResponse: {
+        statuses: [0, 200],
+      },
+      expiration: {
+        maxEntries: budgets.representativeData.maxEntries,
+        maxAgeSeconds: budgets.representativeData.maxAgeSeconds,
         purgeOnQuotaError: true,
       },
     },
@@ -173,6 +207,7 @@ export const createPwaConfig = (
       navigateFallbackAllowlist: [
         /^\/$/,
         /^\/formpacks(\/.*)?$/,
+        /^\/tools\/mail-pflegegesetz$/,
         /^\/tools\/representative-letter$/,
         /^\/help$/,
         /^\/imprint$/,

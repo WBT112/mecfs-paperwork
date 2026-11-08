@@ -86,7 +86,7 @@ describe('formpackListHelpers', () => {
       description: 'representativeLetter.entryDescription translated',
       searchBlob:
         'representativeletter.entrytitle translated representativeletter.entrydescription translated representativeletter.entrycategory translated',
-      href: '/tools/representative-letter',
+      href: '/tools/mail-pflegegesetz',
       ariaLabel: 'representativeLetter.entryAriaLabel translated',
       openLabel: 'representativeLetter.open translated',
     });

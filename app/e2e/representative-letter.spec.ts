@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { waitForServiceWorkerReady } from './helpers/serviceWorker';
 
-const TOOL_PATH = '/tools/representative-letter';
-const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v3';
+const TOOL_PATH = '/tools/mail-pflegegesetz';
+const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v4';
+const CATALOG_PATH_PATTERNS = [
+  /\/representatives(?:-[^/]+)?\.json$/u,
+  /\/constituency-locations(?:-[^/]+)?\.json$/u,
+];
 
 test('uses compact, keyboard-accessible navigation without horizontal overflow', async ({
   page,
@@ -94,11 +99,21 @@ test('opens directly and retains only tab-local representative-letter state', as
   await expect(page.locator('a[download], button[download]')).toHaveCount(0);
 
   await page
-    .getByLabel(/Name oder Wahlkreis|Name or constituency/i)
-    .fill('Sanae Abdi');
+    .getByLabel(/Postleitzahl oder Ort|Postcode or place/i)
+    .fill('50668');
+  await expect(
+    page.getByRole('button', {
+      name: /^(?:Wahlkreis auswählen|Select constituency)$/i,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', {
+      name: /Sanae Abdi.*(?:Wahlkreis|constituency) 92.*Köln I/i,
+    }),
+  ).toBeVisible();
   await page
     .getByRole('button', {
-      name: /Sanae Abdi als Empfänger auswählen|Select Sanae Abdi as recipient/i,
+      name: /Sanae Abdi.*(?:Wahlkreis|constituency) 92.*Köln I/i,
     })
     .click();
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
@@ -132,7 +147,7 @@ test('opens directly and retains only tab-local representative-letter state', as
   await page.keyboard.press('Space');
   await expect(recipientDisclosure).toHaveAttribute('aria-expanded', 'false');
   const mailtoLink = page.getByRole('link', {
-    name: /E-Mail versenden|Send email/i,
+    name: /Im Mailprogramm öffnen|Open in email app/i,
   });
   await expect(mailtoLink).toHaveAttribute(
     'href',
@@ -157,6 +172,26 @@ test('opens directly and retains only tab-local representative-letter state', as
   expect(new URL(mailtoHref as string).searchParams.get('body')).toBe(
     visibleBody.replaceAll('\n', '\r\n'),
   );
+  const copyButtons = page.locator(
+    '[data-tool-id="representative-letter"] .app__icon-button',
+  );
+  await expect(copyButtons).toHaveCount(4);
+  const copyButtonMetrics = await copyButtons.evaluateAll((buttons) =>
+    buttons.map((button) => {
+      const bounds = button.getBoundingClientRect();
+      return {
+        accessibleName: button.getAttribute('aria-label'),
+        title: button.getAttribute('title'),
+        width: bounds.width,
+        height: bounds.height,
+      };
+    }),
+  );
+  for (const metrics of copyButtonMetrics) {
+    expect(metrics.accessibleName).toBe(metrics.title);
+    expect(metrics.width).toBeGreaterThanOrEqual(44);
+    expect(metrics.height).toBeGreaterThanOrEqual(44);
+  }
   await expect(
     page
       .getByRole('button', { name: /Mailinhalt kopieren|Copy mail body/i })
@@ -168,11 +203,17 @@ test('opens directly and retains only tab-local representative-letter state', as
     ),
   ).toBe(true);
 
-  const search = page.getByLabel(/Name oder Wahlkreis|Name or constituency/i);
-  await search.fill('Aaron Valent');
+  await page
+    .getByRole('button', { name: /Empfänger ändern|Change recipient/i })
+    .click();
+  const search = page.getByLabel(/Postleitzahl oder Ort|Postcode or place/i);
+  await search.fill('97237');
+  await expect(page.locator('#representative-letter-recipient')).toHaveValue(
+    '',
+  );
   await page
     .getByRole('button', {
-      name: /Aaron Valent als Empfänger auswählen|Select Aaron Valent as recipient/i,
+      name: /Aaron Valent.*(?:Wahlkreis|constituency) 250.*Würzburg/i,
     })
     .click();
   await expect(page.locator('#representative-letter-body')).toHaveValue(
@@ -182,19 +223,26 @@ test('opens directly and retains only tab-local representative-letter state', as
     /Guten Tag Sanae Abdi,/u,
   );
 
-  await page.getByRole('button', { name: /Langform|long version/i }).click();
-  await page.reload();
+  const generatedBody = await page
+    .locator('#representative-letter-body')
+    .inputValue();
   await expect(
-    page.getByRole('button', { name: /Langform|long version/i }),
-  ).toHaveAttribute('aria-pressed', 'true');
+    page.getByRole('button', {
+      name: /Kurzform|Langform|short version|long version/i,
+    }),
+  ).toHaveCount(0);
+  await page.reload();
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
     'aaron.valent@bundestag.de',
   );
+  await expect(page.locator('#representative-letter-body')).toHaveValue(
+    generatedBody,
+  );
   await page.goto('/formpacks');
   await page.goBack();
-  await expect(
-    page.getByRole('button', { name: /Langform|long version/i }),
-  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#representative-letter-body')).toHaveValue(
+    generatedBody,
+  );
 
   const secondTab = await context.newPage();
   await secondTab.goto(TOOL_PATH);
@@ -237,36 +285,36 @@ test('finds an ambiguous postcode and its representatives fully offline', async 
   test.setTimeout(75_000);
   await page.setViewportSize({ width: 375, height: 812 });
   const requestOrigins: string[] = [];
+  const requestUrls: string[] = [];
+  const consoleMessages: string[] = [];
   page.on('request', (request) => {
     const url = new URL(request.url());
     requestOrigins.push(url.origin);
+    requestUrls.push(url.href);
   });
+  page.on('console', (message) => consoleMessages.push(message.text()));
 
   await page.goto(TOOL_PATH);
   await expect(
-    page.getByLabel(/Ort oder Postleitzahl|Place or postcode/i),
+    page.getByLabel(/Postleitzahl oder Ort|Postcode or place/i),
   ).toBeVisible();
 
   await context.setOffline(true);
   try {
     await page
-      .getByLabel(/Ort oder Postleitzahl|Place or postcode/i)
+      .getByLabel(/Postleitzahl oder Ort|Postcode or place/i)
       .fill('70184');
     await expect(
       page.getByText(/passt zu 2 Wahlkreisen|matches 2 constituencies/i),
     ).toBeVisible();
-    await page
-      .getByRole('button', {
-        name: /Wahlkreis 258.*Stuttgart I auswählen|Select constituency 258.*Stuttgart I/i,
-      })
-      .click();
+    const recipientChoices = page.getByRole('button', {
+      name: /(?:Wahlkreis|constituency).*(?:als Empfänger auswählen|as recipient)/i,
+    });
+    expect(await recipientChoices.count()).toBeGreaterThan(1);
+    await recipientChoices.first().click();
     await expect(
-      page
-        .getByRole('button', {
-          name: /als Empfänger auswählen|as recipient/i,
-        })
-        .first(),
-    ).toBeVisible();
+      page.locator('#representative-letter-recipient'),
+    ).not.toHaveValue('');
   } finally {
     await context.setOffline(false);
   }
@@ -274,9 +322,109 @@ test('finds an ambiguous postcode and its representatives fully offline', async 
   const appOrigin = new URL(page.url()).origin;
   expect(requestOrigins.filter((origin) => origin !== appOrigin)).toEqual([]);
   expect(page.url()).not.toContain('70184');
+  expect(requestUrls.join('\n')).not.toContain('70184');
+  expect(consoleMessages.join('\n')).not.toContain('70184');
+  const persistedBrowserData = await page.evaluate(() =>
+    JSON.stringify({
+      localStorage: { ...localStorage },
+      sessionStorage: { ...sessionStorage },
+    }),
+  );
+  expect(persistedBrowserData).not.toContain('70184');
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+});
+
+test('reloads the complete representative flow offline @chromium-only', async ({
+  browserName,
+  context,
+  page,
+}) => {
+  test.setTimeout(90_000);
+  test.skip(
+    browserName !== 'chromium',
+    'The production-like service-worker smoke test is gated on Chromium.',
+  );
+
+  const searchQuery = '50668';
+  const requestUrls: string[] = [];
+  const consoleMessages: string[] = [];
+  page.on('request', (request) => requestUrls.push(request.url()));
+  page.on('console', (message) => consoleMessages.push(message.text()));
+
+  await page.goto('/formpacks');
+  expect(
+    await waitForServiceWorkerReady(page, {
+      timeoutMs: 45_000,
+    }),
+  ).toBe(true);
+
+  const catalogResponses = CATALOG_PATH_PATTERNS.map((pattern) =>
+    page.waitForResponse((response) => {
+      const path = new URL(response.url()).pathname;
+      return response.ok() && pattern.test(path);
+    }),
+  );
+  await page.goto(TOOL_PATH);
+  await Promise.all(catalogResponses);
+  await expect(
+    page.getByLabel(/Postleitzahl oder Ort|Postcode or place/i),
+  ).toBeVisible();
+  const appOrigin = new URL(page.url()).origin;
+
+  await context.setOffline(true);
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    const locationSearch = page.getByLabel(
+      /Postleitzahl oder Ort|Postcode or place/i,
+    );
+    await expect(locationSearch).toBeVisible();
+    await locationSearch.fill(searchQuery);
+    await page
+      .getByRole('button', {
+        name: /Sanae Abdi.*(?:Wahlkreis|constituency) 92.*Köln I/i,
+      })
+      .click();
+
+    const recipient = page.locator('#representative-letter-recipient');
+    const subject = page.locator('#representative-letter-subject');
+    const body = page.locator('#representative-letter-body');
+    await expect(recipient).toHaveValue('sanae.abdi@bundestag.de');
+    await expect(subject).toHaveValue(/Pflegeneuordnungsgesetz/u);
+    await expect(body).toHaveValue(/Guten Tag Sanae Abdi,/u);
+
+    const mailtoLink = page.getByRole('link', {
+      name: /Im Mailprogramm öffnen|Open in email app/i,
+    });
+    const mailtoHref = await mailtoLink.getAttribute('href');
+    expect(mailtoHref).not.toBeNull();
+    const mailtoUrl = new URL(mailtoHref!);
+    expect(mailtoUrl.pathname).toBe('sanae.abdi@bundestag.de');
+    expect(mailtoUrl.searchParams.get('subject')).toBe(
+      await subject.inputValue(),
+    );
+    expect(mailtoUrl.searchParams.get('body')).toBe(
+      (await body.inputValue()).replaceAll('\n', '\r\n'),
+    );
+
+    expect(page.url()).not.toContain(searchQuery);
+    const persistedBrowserData = await page.evaluate(() =>
+      JSON.stringify({
+        localStorage: { ...localStorage },
+        sessionStorage: { ...sessionStorage },
+      }),
+    );
+    expect(persistedBrowserData).not.toContain(searchQuery);
+  } finally {
+    await context.setOffline(false);
+  }
+
+  expect(
+    requestUrls.filter((url) => new URL(url).origin !== appOrigin),
+  ).toEqual([]);
+  expect(requestUrls.join('\n')).not.toContain(searchQuery);
+  expect(consoleMessages.join('\n')).not.toContain(searchQuery);
 });

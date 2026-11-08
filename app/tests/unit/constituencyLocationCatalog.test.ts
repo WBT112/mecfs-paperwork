@@ -24,14 +24,12 @@ describe('constituency location catalog', () => {
       searchConstituencyLocations(
         constituencyLocationCatalog,
         '70184',
-        '',
       ).matches.map(({ constituencyNumber }) => constituencyNumber),
     ).toEqual([258, 259]);
     expect(
       searchConstituencyLocations(
         constituencyLocationCatalog,
         'Stuttgart',
-        '',
       ).matches.map(({ constituencyNumber }) => constituencyNumber),
     ).toEqual([258, 259]);
   });
@@ -41,7 +39,6 @@ describe('constituency location catalog', () => {
       searchConstituencyLocations(
         constituencyLocationCatalog,
         '34117',
-        '',
       ).matches.map(({ constituencyNumber }) => constituencyNumber),
     ).toEqual([167]);
   });

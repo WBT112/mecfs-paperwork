@@ -93,16 +93,16 @@ the updater. The built JSON asset is precached for complete offline use.
 
 Location and postcode queries exist only in React component state. They are not
 written to the URL, session/local storage, IndexedDB, profiles, or logs. A
-selected constituency used to reveal representative candidates is also
-transient; selecting a representative remains the existing explicit action.
+query resolves directly to representative candidates with visible constituency
+context; selecting a representative remains an explicit action.
 
 ## Letter content
 
-`letter-content.de.json` preserves the German source text supplied in issue
-#553. The maintainer approved this exact text for technical integration on
-2026-10-19. The catalog deliberately retains bracketed alternatives in the
-source material so the generator can resolve them without changing the
-archived wording.
+`letter-content.de.json` preserves the 20 German personal source blocks supplied
+in issue #553. The maintainer approved the revised standard template in issue
+#619 on 2026-11-08. The catalog deliberately retains bracketed alternatives in
+the archived source material without including those blocks in generated
+letters.
 
 No English letter translation is approved yet. Both interface locales resolve
 to the complete German catalog and the UI must disclose that language instead
@@ -112,18 +112,23 @@ catalog requires separate editorial approval and the same structural checks.
 Run `npm run representative-content:validate` after every content change. The
 validator enforces the catalog version, approval metadata, the complete set of
 20 source blocks, unique selection keys, required template sections, and both
-long-form source links. It performs no network requests.
+archived source links. It performs no network requests.
 
 ### Generator behavior
 
-The generator reads only the bundled subject, template, and source references.
-It is deterministic and does not call an API, read profile data, or accept any
-severity, care-grade, or custom health input. The short output is a complete
-letter immediately; the long output additionally includes the two cataloged
-source links and the template disclosure.
+The generator reads only the bundled subject and template. It is deterministic
+and does not call an API, read profile data, or accept any severity, care-grade,
+custom health input, or length selection. It produces one complete letter. The
+cataloged source references and template disclosure remain archived metadata
+and are not injected into the mail body. The approved information link in the
+standard template is part of the generated mail body.
 
 The 20 personal `sourceText` blocks remain unchanged in the catalog as an
 editorially approved archive. They are not displayed, selected, transformed,
 or included in generated letters. Changing the archived content or adding an
 English letter catalog requires explicit editorial approval and a new content
 version.
+
+The release acceptance checklist and the procedures for legal, content,
+mandate, contact, and constituency updates are documented in
+[`docs/qa/representative-letter.md`](../../../../../docs/qa/representative-letter.md).

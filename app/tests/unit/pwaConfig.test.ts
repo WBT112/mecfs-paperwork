@@ -16,17 +16,25 @@ const FORMPACK_MANIFEST_URL =
 const FORMPACK_REFRESH_HEADERS = new Headers({ 'x-formpack-refresh': '1' });
 const WORKBOX_REQUIRED_ERROR = 'Expected Workbox settings to be defined.';
 const CACHE_STATIC = 'app-static';
+const CACHE_REPRESENTATIVE_DATA = 'app-representative-data';
 const CACHE_FONTS = 'app-fonts';
 const CACHE_IMAGES = 'app-images';
 const SCRIPT_URL = 'https://example.test/assets/app.js';
-type UrlPatternMatcher = (options: { request: Request; url: URL }) => boolean;
+const REPRESENTATIVES_URL = 'https://example.test/representatives.json';
+type UrlPatternMatcher = (options: {
+  request: Request;
+  url: URL;
+  sameOrigin: boolean;
+}) => boolean;
 const callUrlPatternMatcher = (
   matcher: UrlPatternMatcher,
   request: Request,
+  sameOrigin = true,
 ): boolean =>
   matcher({
     request,
     url: new URL(request.url),
+    sameOrigin,
   });
 
 describe('createPwaConfig', () => {
@@ -56,6 +64,7 @@ describe('createPwaConfig', () => {
     expect(config.devOptions?.navigateFallbackAllowlist).toEqual([
       /^\/$/,
       /^\/formpacks(\/.*)?$/,
+      /^\/tools\/mail-pflegegesetz$/,
       /^\/tools\/representative-letter$/,
       /^\/help$/,
       /^\/imprint$/,
@@ -143,6 +152,9 @@ describe('createPwaConfig', () => {
     const imageRule = RUNTIME_CACHING.find(
       (entry) => entry.options?.cacheName === CACHE_IMAGES,
     );
+    const representativeDataRule = RUNTIME_CACHING.find(
+      (entry) => entry.options?.cacheName === CACHE_REPRESENTATIVE_DATA,
+    );
 
     expect(staticRule?.options?.expiration).toEqual({
       maxEntries: RUNTIME_CACHE_BUDGETS.static.maxEntries,
@@ -158,6 +170,75 @@ describe('createPwaConfig', () => {
       maxEntries: RUNTIME_CACHE_BUDGETS.images.maxEntries,
       maxAgeSeconds: RUNTIME_CACHE_BUDGETS.images.maxAgeSeconds,
       purgeOnQuotaError: true,
+    });
+    expect(representativeDataRule?.options?.expiration).toEqual({
+      maxEntries: RUNTIME_CACHE_BUDGETS.representativeData.maxEntries,
+      maxAgeSeconds: RUNTIME_CACHE_BUDGETS.representativeData.maxAgeSeconds,
+      purgeOnQuotaError: true,
+    });
+  });
+
+  it('caches only same-origin representative catalogs requested with GET', () => {
+    const representativeDataRule = RUNTIME_CACHING.find(
+      (entry) => entry.options?.cacheName === CACHE_REPRESENTATIVE_DATA,
+    );
+    expect(representativeDataRule).toBeDefined();
+    if (
+      !representativeDataRule ||
+      typeof representativeDataRule.urlPattern !== 'function'
+    ) {
+      throw new Error(
+        'Expected representative data runtime urlPattern function.',
+      );
+    }
+    const urlPattern = representativeDataRule.urlPattern as UrlPatternMatcher;
+
+    expect(
+      callUrlPatternMatcher(
+        urlPattern,
+        new Request(
+          'https://example.test/src/features/representative-letter/data/representatives.json',
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      callUrlPatternMatcher(
+        urlPattern,
+        new Request(
+          'https://example.test/assets/constituency-locations-catalog123.json',
+        ),
+      ),
+    ).toBe(true);
+    expect(
+      callUrlPatternMatcher(
+        urlPattern,
+        new Request('https://example.test/assets/representatives.json'),
+      ),
+    ).toBe(true);
+    expect(
+      callUrlPatternMatcher(
+        urlPattern,
+        new Request(REPRESENTATIVES_URL),
+        false,
+      ),
+    ).toBe(false);
+    expect(
+      callUrlPatternMatcher(
+        urlPattern,
+        new Request(REPRESENTATIVES_URL, {
+          method: 'POST',
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      callUrlPatternMatcher(
+        urlPattern,
+        new Request('https://example.test/assets/other-catalog.json'),
+      ),
+    ).toBe(false);
+    expect(representativeDataRule.handler).toBe('CacheFirst');
+    expect(representativeDataRule.options?.cacheableResponse).toEqual({
+      statuses: [0, 200],
     });
   });
 

@@ -51,8 +51,12 @@ export default function AppRoutes() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/help" element={<HelpPage />} />
         <Route
-          path="/tools/representative-letter"
+          path="/tools/mail-pflegegesetz"
           element={<RepresentativeLetterPage />}
+        />
+        <Route
+          path="/tools/representative-letter"
+          element={<Navigate to="/tools/mail-pflegegesetz" replace />}
         />
       </Routes>
     </Suspense>
