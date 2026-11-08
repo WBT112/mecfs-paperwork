@@ -15,7 +15,6 @@ import {
 } from '../../src/features/representative-letter/sessionState';
 import { TestRouter } from '../setup/testRouter';
 
-const LONG_BODY_BUTTON = 'representativeLetter.longBody';
 const RECIPIENT_LABEL = 'representativeLetter.recipientLabel';
 const SUBJECT_LABEL = 'representativeLetter.subjectLabel';
 const BODY_LABEL = 'representativeLetter.bodyLabel';
@@ -28,7 +27,6 @@ const COPY_RECIPIENT = 'representativeLetter.copyRecipient';
 const COPY_SUBJECT = 'representativeLetter.copySubject';
 const COPY_BODY = 'representativeLetter.copyBody';
 const COPY_SUCCEEDED = 'representativeLetter.copySucceeded';
-const PRESSED_ATTRIBUTE = 'aria-pressed';
 const EXPANDED_ATTRIBUTE = 'aria-expanded';
 const PROCESS_TITLE = 'representativeLetter.processTitle';
 const DATA_PROCESSING_TITLE = 'representativeLetter.dataProcessingTitle';
@@ -604,31 +602,20 @@ describe('RepresentativeLetterPage', () => {
     expect(screen.getByText('representativeLetter.noResults')).toBeVisible();
   });
 
-  it('retains the body length and shows the generator after remount', async () => {
-    const user = userEvent.setup();
+  it('shows the single letter version after remount', () => {
     const firstRender = renderPage();
-    await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
-
-    await waitFor(() => {
-      expect(readRepresentativeLetterState().bodyLength).toBe('long');
-    });
     firstRender.unmount();
     renderPage();
 
     expect(screen.getByLabelText(BODY_LABEL)).toBeVisible();
-    expect(
-      screen.getByRole('button', { name: LONG_BODY_BUTTON }),
-    ).toHaveAttribute(PRESSED_ATTRIBUTE, 'true');
+    expect(screen.queryByText('representativeLetter.shortBody')).toBeNull();
+    expect(screen.queryByText('representativeLetter.longBody')).toBeNull();
   });
 
-  it('supports body-length and disclosure controls independently', async () => {
+  it('keeps disclosure controls independent from letter generation', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
-    await user.click(
-      screen.getByRole('button', { name: 'representativeLetter.shortBody' }),
-    );
     await user.click(
       screen.getByRole('button', {
         name: PROCESS_TITLE,
@@ -636,17 +623,15 @@ describe('RepresentativeLetterPage', () => {
     );
 
     expect(screen.getByText(PROCESS_TITLE)).toBeVisible();
-    expect(readRepresentativeLetterState().bodyLength).toBe('short');
   });
 
-  it('passes the complete visible long body to the email application', async () => {
+  it('passes the complete visible body to the email application', async () => {
     const user = userEvent.setup();
     renderPage();
     await selectRepresentative(user, VERIFIED_RECIPIENT!);
-    await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
 
     const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value;
-    expect(body).toContain('Weiterführende Quellen:');
+    expect(body).not.toContain('Weiterführende Quellen:');
     const mailtoLink = screen.getByRole('link', {
       name: OPEN_EMAIL_APP,
     });
@@ -669,7 +654,6 @@ describe('RepresentativeLetterPage', () => {
       JSON.stringify({
         ...createDefaultRepresentativeLetterState(),
         recipientId: VERIFIED_RECIPIENT!.id,
-        bodyLength: 'long',
       }),
     );
     renderPage();
@@ -709,7 +693,6 @@ describe('RepresentativeLetterPage', () => {
     window.sessionStorage.setItem('unrelated', 'keep');
     renderPage();
     const search = await selectRepresentative(user, VERIFIED_RECIPIENT!);
-    await user.click(screen.getByRole('button', { name: LONG_BODY_BUTTON }));
     await user.click(
       screen.getByRole('button', { name: 'representativeLetter.reset' }),
     );
@@ -717,9 +700,6 @@ describe('RepresentativeLetterPage', () => {
     expect(screen.getByLabelText(BODY_LABEL)).toBeVisible();
     expect(search).toHaveValue('');
     expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue('');
-    expect(
-      screen.getByRole('button', { name: 'representativeLetter.shortBody' }),
-    ).toHaveAttribute(PRESSED_ATTRIBUTE, 'true');
     expect(
       screen.getByRole('button', {
         name: PROCESS_TITLE,

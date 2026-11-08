@@ -2,10 +2,7 @@
 export const REPRESENTATIVE_LETTER_TOOL_ID = 'representative-letter';
 
 /** Current schema version for the tab-local representative-letter state. */
-export const REPRESENTATIVE_LETTER_STATE_VERSION = 3 as const;
-
-/** Available lengths for the generated mail body. */
-export type RepresentativeLetterBodyLength = 'short' | 'long';
+export const REPRESENTATIVE_LETTER_STATE_VERSION = 4 as const;
 
 /**
  * Tab-local preferences used to assemble the representative letter.
@@ -17,7 +14,6 @@ export type RepresentativeLetterBodyLength = 'short' | 'long';
 export type RepresentativeLetterState = {
   version: typeof REPRESENTATIVE_LETTER_STATE_VERSION;
   recipientId: string | null;
-  bodyLength: RepresentativeLetterBodyLength;
 };
 
 /**
@@ -29,5 +25,4 @@ export const createDefaultRepresentativeLetterState =
   (): RepresentativeLetterState => ({
     version: REPRESENTATIVE_LETTER_STATE_VERSION,
     recipientId: null,
-    bodyLength: 'short',
   });

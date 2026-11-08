@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 const TOOL_PATH = '/tools/representative-letter';
-const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v3';
+const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v4';
 
 test('uses compact, keyboard-accessible navigation without horizontal overflow', async ({
   page,
@@ -225,19 +225,26 @@ test('opens directly and retains only tab-local representative-letter state', as
     /Guten Tag Sanae Abdi,/u,
   );
 
-  await page.getByRole('button', { name: /Langform|long version/i }).click();
-  await page.reload();
+  const generatedBody = await page
+    .locator('#representative-letter-body')
+    .inputValue();
   await expect(
-    page.getByRole('button', { name: /Langform|long version/i }),
-  ).toHaveAttribute('aria-pressed', 'true');
+    page.getByRole('button', {
+      name: /Kurzform|Langform|short version|long version/i,
+    }),
+  ).toHaveCount(0);
+  await page.reload();
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
     'aaron.valent@bundestag.de',
   );
+  await expect(page.locator('#representative-letter-body')).toHaveValue(
+    generatedBody,
+  );
   await page.goto('/formpacks');
   await page.goBack();
-  await expect(
-    page.getByRole('button', { name: /Langform|long version/i }),
-  ).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#representative-letter-body')).toHaveValue(
+    generatedBody,
+  );
 
   const secondTab = await context.newPage();
   await secondTab.goto(TOOL_PATH);

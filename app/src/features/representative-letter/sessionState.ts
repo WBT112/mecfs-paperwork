@@ -6,6 +6,8 @@ import {
 
 /** Storage key reserved for the representative-letter workflow. */
 export const REPRESENTATIVE_LETTER_SESSION_KEY =
+  'mecfs-paperwork.representative-letter.state.v4';
+const LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY =
   'mecfs-paperwork.representative-letter.state.v3';
 const LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY =
   'mecfs-paperwork.representative-letter.state.v2';
@@ -27,46 +29,28 @@ const isNonEmptyString = (value: unknown): value is string =>
 const isOptionalId = (value: unknown): value is string | null =>
   value === null || isNonEmptyString(value);
 
-const parseState = (value: unknown): RepresentativeLetterState | null => {
+const parseVersionedState = (
+  value: unknown,
+  expectedVersion: number,
+): RepresentativeLetterState | null => {
   if (!isRecord(value)) {
     return null;
   }
-  if (value.version !== REPRESENTATIVE_LETTER_STATE_VERSION) {
+  if (value.version !== expectedVersion) {
     return null;
   }
   if (!isOptionalId(value.recipientId)) {
-    return null;
-  }
-  if (value.bodyLength !== 'short' && value.bodyLength !== 'long') {
     return null;
   }
 
   return {
     version: REPRESENTATIVE_LETTER_STATE_VERSION,
     recipientId: value.recipientId,
-    bodyLength: value.bodyLength,
   };
 };
 
-const parseLegacyV2State = (
-  value: unknown,
-): RepresentativeLetterState | null => {
-  if (!isRecord(value) || value.version !== 2) {
-    return null;
-  }
-  if (!isOptionalId(value.recipientId)) {
-    return null;
-  }
-  if (value.bodyLength !== 'short' && value.bodyLength !== 'long') {
-    return null;
-  }
-
-  return {
-    version: REPRESENTATIVE_LETTER_STATE_VERSION,
-    recipientId: value.recipientId,
-    bodyLength: value.bodyLength,
-  };
-};
+const parseState = (value: unknown): RepresentativeLetterState | null =>
+  parseVersionedState(value, REPRESENTATIVE_LETTER_STATE_VERSION);
 
 /**
  * Reads and validates the representative-letter state from one browser tab.
@@ -86,17 +70,23 @@ export const readRepresentativeLetterState = (
       );
     }
 
-    const legacySerialized = storage.getItem(
+    const legacyV3Serialized = storage.getItem(
+      LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY,
+    );
+    const legacyV2Serialized = storage.getItem(
       LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY,
     );
+    storage.removeItem(LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY);
+    const legacySerialized = legacyV3Serialized ?? legacyV2Serialized;
     if (!legacySerialized) {
       return createDefaultRepresentativeLetterState();
     }
 
-    const migrated = parseLegacyV2State(
+    const migrated = parseVersionedState(
       JSON.parse(legacySerialized) as unknown,
+      legacyV3Serialized ? 3 : 2,
     );
     if (!migrated) {
       return createDefaultRepresentativeLetterState();
@@ -141,6 +131,7 @@ export const clearRepresentativeLetterState = (
 ): boolean => {
   try {
     storage.removeItem(REPRESENTATIVE_LETTER_SESSION_KEY);
+    storage.removeItem(LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY);
     return true;

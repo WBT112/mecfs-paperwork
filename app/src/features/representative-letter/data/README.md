@@ -112,15 +112,15 @@ catalog requires separate editorial approval and the same structural checks.
 Run `npm run representative-content:validate` after every content change. The
 validator enforces the catalog version, approval metadata, the complete set of
 20 source blocks, unique selection keys, required template sections, and both
-long-form source links. It performs no network requests.
+archived source links. It performs no network requests.
 
 ### Generator behavior
 
-The generator reads only the bundled subject, template, and source references.
-It is deterministic and does not call an API, read profile data, or accept any
-severity, care-grade, or custom health input. The short output is a complete
-letter immediately; the long output additionally includes the two cataloged
-source links and the template disclosure.
+The generator reads only the bundled subject and template. It is deterministic
+and does not call an API, read profile data, or accept any severity, care-grade,
+custom health input, or length selection. It produces one complete letter. The
+cataloged source links and template disclosure remain archived metadata and are
+not injected into the mail body.
 
 The 20 personal `sourceText` blocks remain unchanged in the catalog as an
 editorially approved archive. They are not displayed, selected, transformed,

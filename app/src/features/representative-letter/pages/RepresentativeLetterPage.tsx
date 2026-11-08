@@ -22,7 +22,6 @@ import { loadRepresentativeCatalog } from '../data/loadRepresentativeCatalog';
 import {
   REPRESENTATIVE_LETTER_TOOL_ID,
   createDefaultRepresentativeLetterState,
-  type RepresentativeLetterBodyLength,
   type RepresentativeLetterState,
 } from '../model';
 import {
@@ -674,10 +673,6 @@ export default function RepresentativeLetterPage() {
     writeRepresentativeLetterState(state);
   }, [state]);
 
-  const setBodyLength = (bodyLength: RepresentativeLetterBodyLength) => {
-    setState((current) => ({ ...current, bodyLength }));
-  };
-
   const selectRecipient = (recipientId: string) => {
     setState((current) => ({ ...current, recipientId }));
   };
@@ -708,7 +703,6 @@ export default function RepresentativeLetterPage() {
   );
   const generatedLetter = generateRepresentativeLetter({
     catalog: contentCatalog,
-    bodyLength: state.bodyLength,
     recipientName: selectedRepresentative?.fullName ?? null,
   });
   const mailtoLink = createMailtoLink({
@@ -769,29 +763,6 @@ export default function RepresentativeLetterPage() {
             />
           </>
         ) : null}
-
-        <div
-          className="representative-letter__length-switch"
-          role="group"
-          aria-label={t('representativeLetter.lengthLabel')}
-        >
-          <button
-            type="button"
-            className="app__button"
-            aria-pressed={state.bodyLength === 'short'}
-            onClick={() => setBodyLength('short')}
-          >
-            {t('representativeLetter.shortBody')}
-          </button>
-          <button
-            type="button"
-            className="app__button"
-            aria-pressed={state.bodyLength === 'long'}
-            onClick={() => setBodyLength('long')}
-          >
-            {t('representativeLetter.longBody')}
-          </button>
-        </div>
 
         <p
           className="representative-letter__language-note"
