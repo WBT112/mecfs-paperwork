@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createDefaultRepresentativeLetterState,
   type RepresentativeLetterState,
@@ -26,15 +26,18 @@ const createMemoryStorage = (): RepresentativeLetterSessionStorage => {
 };
 
 const createPopulatedState = (): RepresentativeLetterState => ({
-  version: 4,
+  ...createDefaultRepresentativeLetterState(),
   recipientId: RECIPIENT_ID,
 });
 
 describe('representative-letter session state', () => {
+  beforeEach(() => vi.spyOn(Math, 'random').mockReturnValue(0));
+  afterEach(() => vi.restoreAllMocks());
   it('creates a minimal privacy-preserving default state', () => {
     expect(createDefaultRepresentativeLetterState()).toEqual({
-      version: 4,
+      version: 5,
       recipientId: null,
+      variant: createDefaultRepresentativeLetterState().variant,
     });
   });
 
@@ -122,6 +125,29 @@ describe('representative-letter session state', () => {
     expect(storage.getItem(LEGACY_V1_KEY)).toBeNull();
     expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBe(
       JSON.stringify(createPopulatedState()),
+    );
+  });
+
+  it('migrates a v4 recipient and discards stale variant metadata', () => {
+    const storage = createMemoryStorage();
+    const legacyKey = 'mecfs-paperwork.representative-letter.state.v4';
+    storage.setItem(
+      legacyKey,
+      JSON.stringify({ version: 4, recipientId: RECIPIENT_ID }),
+    );
+    expect(readRepresentativeLetterState(storage)).toEqual(
+      createPopulatedState(),
+    );
+    expect(storage.getItem(legacyKey)).toBeNull();
+    storage.setItem(
+      REPRESENTATIVE_LETTER_SESSION_KEY,
+      JSON.stringify({
+        ...createPopulatedState(),
+        variant: { catalogVersion: 'obsolete' },
+      }),
+    );
+    expect(readRepresentativeLetterState(storage)).toEqual(
+      createPopulatedState(),
     );
   });
 

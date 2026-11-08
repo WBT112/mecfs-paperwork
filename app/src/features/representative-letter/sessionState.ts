@@ -3,9 +3,12 @@ import {
   createDefaultRepresentativeLetterState,
   type RepresentativeLetterState,
 } from './model';
+import { isLetterVariantSelection, selectLetterVariants } from './variants';
 
 /** Storage key reserved for the representative-letter workflow. */
 export const REPRESENTATIVE_LETTER_SESSION_KEY =
+  'mecfs-paperwork.representative-letter.state.v5';
+const LEGACY_V4_REPRESENTATIVE_LETTER_SESSION_KEY =
   'mecfs-paperwork.representative-letter.state.v4';
 const LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY =
   'mecfs-paperwork.representative-letter.state.v3';
@@ -43,9 +46,14 @@ const parseVersionedState = (
     return null;
   }
 
+  const variant = isLetterVariantSelection(value.variant)
+    ? value.variant
+    : selectLetterVariants();
+
   return {
     version: REPRESENTATIVE_LETTER_STATE_VERSION,
     recipientId: value.recipientId,
+    variant,
   };
 };
 
@@ -70,23 +78,29 @@ export const readRepresentativeLetterState = (
       );
     }
 
+    const legacyV4Serialized = storage.getItem(
+      LEGACY_V4_REPRESENTATIVE_LETTER_SESSION_KEY,
+    );
     const legacyV3Serialized = storage.getItem(
       LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY,
     );
     const legacyV2Serialized = storage.getItem(
       LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY,
     );
+    storage.removeItem(LEGACY_V4_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY);
-    const legacySerialized = legacyV3Serialized ?? legacyV2Serialized;
+    const legacySerialized =
+      legacyV4Serialized ?? legacyV3Serialized ?? legacyV2Serialized;
     if (!legacySerialized) {
       return createDefaultRepresentativeLetterState();
     }
 
+    const olderVersion = legacyV3Serialized ? 3 : 2;
     const migrated = parseVersionedState(
       JSON.parse(legacySerialized) as unknown,
-      legacyV3Serialized ? 3 : 2,
+      legacyV4Serialized ? 4 : olderVersion,
     );
     if (!migrated) {
       return createDefaultRepresentativeLetterState();
@@ -131,6 +145,7 @@ export const clearRepresentativeLetterState = (
 ): boolean => {
   try {
     storage.removeItem(REPRESENTATIVE_LETTER_SESSION_KEY);
+    storage.removeItem(LEGACY_V4_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY);

@@ -5,10 +5,22 @@ representative-letter tool. The tool remains offline-first: it reads bundled
 catalogs, stores only its versioned selection state in the current tab's
 `sessionStorage`, and never sends a message itself.
 
-Issue #558 (editorially approved wording variants) is intentionally outside
-this acceptance scope until the final text has been approved. The archived
-source blocks and the generated letter text must not be rewritten as part of
-technical maintenance.
+Issue #558 adds 30 independently combinable subjects and 30 complete plaintext
+bodies, explicitly approved as Revision 2 on 2026-11-08. The archived source
+blocks and approved variant texts must not be rewritten during technical
+maintenance.
+
+Content version `2026-11-08.3` includes the maintainer-requested editorial review
+for natural German and varied closing thanks. The substantive requests and
+medical information remain intact. Verify a thanks paragraph directly precedes
+the sign-off in every body and remains present in the visible field, clipboard,
+and mailto output. Both interface locales use the same German letter catalog.
+
+Version `2026-11-08.4` additionally opens each body with one of 30 distinct
+sentences stating that the sender lives in the recipient's constituency. Check
+that it appears after the greeting in the generated plaintext and survives
+copying and mailto generation. No address is collected or inferred, and the
+wording makes no claim about voting eligibility or previous votes.
 
 ## User flow
 
@@ -26,6 +38,13 @@ technical maintenance.
 6. Add a name or signature only in the mail application. **Reset** removes only
    this tool's tab-local selection.
 
+Optionally use **New email variant** below the body. It refreshes the pair while
+preserving recipient and search. Verify keyboard focus stays on the button,
+the live status announces each change, and the fields, clipboard, and mailto
+agree. Check reload and back/forward stability and two independent tabs. On a
+320-pixel viewport the button must work without horizontal scrolling. Refresh
+must also work offline without making requests or revealing IDs in logs or URLs.
+
 The **Data processing notice** below the primary flow shows the bundled data
 snapshot dates and source links. These snapshots are not updated at runtime and
 must not be presented as automatically current.
@@ -39,7 +58,7 @@ is public catalog data or clearly synthetic UI input.
 | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | Direct entry without profile or health fields                                           | `tests/components/RepresentativeLetterPage.test.tsx`, `e2e/representative-letter.spec.ts`                                  |
 | Postcode, place, umlaut normalization, duplicate place names, and ambiguous assignments | `tests/unit/constituencyLocationSearch.test.ts`, `tests/unit/constituencyLocationCatalog.test.ts`, component and E2E tests |
-| Direct recipient selection with constituency context; stale selection clearing          | Representative-search unit tests, component tests, and E2E tests                                                          |
+| Direct recipient selection with constituency context; stale selection clearing          | Representative-search unit tests, component tests, and E2E tests                                                           |
 | Verified, missing, and oversized `mailto` paths                                         | Component tests and `tests/unit/representativeLetterMailto.test.ts`                                                        |
 | Three copy fields and manual clipboard fallback                                         | Component tests and `tests/unit/representativeLetterClipboard.test.ts`                                                     |
 | Tab isolation, reload, back navigation, and reset                                       | Session-state unit tests, component tests, and E2E tests                                                                   |
@@ -146,7 +165,9 @@ reinterpret, shorten, translate, or expand those claims.
 
 After approval:
 
-1. Update `letter-content.de.json` without unrelated wording changes.
+1. Update `letter-variants.de.json` only after approval of each changed subject
+   and complete body. Keep the original base catalog and archive intact unless
+   separately approved.
 2. Increment `contentVersion`, record the approval date and source issue, and
    remove all unresolved placeholders from generated output.
 3. Run `npm run representative-content:validate` and the complete acceptance
@@ -154,6 +175,7 @@ After approval:
 4. Confirm the data snapshot and content approval dates remain visible and do
    not imply automatic freshness.
 
-An English letter requires its own editorial approval. Wording variants under
-issue #558 likewise require a finalized base text and explicit approval of every
-alternative before implementation.
+An English letter requires its own editorial approval. Future wording variants
+likewise require explicit approval of every alternative before implementation.
+Catalog, algorithm, and session-state versions and their migration policy are
+documented in the data directory README.
