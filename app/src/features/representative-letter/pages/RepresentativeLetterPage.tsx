@@ -18,6 +18,7 @@ import {
 import type { ConstituencyLocationCatalog } from '../data/constituencyLocationCatalogs';
 import { getRepresentativeLetterContent } from '../data/letterContent';
 import { generateRepresentativeLetter } from '../generator';
+import { selectLetterVariants } from '../variants';
 import { loadConstituencyLocationCatalog } from '../data/loadConstituencyLocationCatalog';
 import { loadRepresentativeCatalog } from '../data/loadRepresentativeCatalog';
 import {
@@ -590,6 +591,7 @@ export default function RepresentativeLetterPage() {
     readRepresentativeLetterState(),
   );
   const [locationQuery, setLocationQuery] = useState('');
+  const [variantChanged, setVariantChanged] = useState(0);
   const [recipientSearchOpen, setRecipientSearchOpen] = useState(
     () => state.recipientId === null,
   );
@@ -641,6 +643,7 @@ export default function RepresentativeLetterPage() {
   const generatedLetter = generateRepresentativeLetter({
     catalog: contentCatalog,
     recipientName: selectedRepresentative?.fullName ?? null,
+    variant: state.variant,
   });
   const mailtoLink = createMailtoLink({
     recipient: selectedRepresentative?.email ?? null,
@@ -743,6 +746,26 @@ export default function RepresentativeLetterPage() {
             rows={12}
             textareaRef={bodyFieldRef}
           />
+          <button
+            type="button"
+            className="app__button"
+            onClick={() => {
+              setState((current) => ({
+                ...current,
+                variant: selectLetterVariants(current.variant),
+              }));
+              setVariantChanged((count) => count + 1);
+            }}
+          >
+            {t('representativeLetter.refreshVariant')}
+          </button>
+          <output aria-live="polite">
+            {variantChanged
+              ? t('representativeLetter.variantChanged', {
+                  count: variantChanged,
+                })
+              : ''}
+          </output>
         </div>
 
         <p style={SUBTLE_TEXT_STYLE}>

@@ -116,8 +116,8 @@ archived source links. It performs no network requests.
 
 ### Generator behavior
 
-The generator reads only the bundled subject and template. It is deterministic
-and does not call an API, read profile data, or accept any severity, care-grade,
+The generator renders one selected pair from the bundled variant catalog. It
+does not call an API, read profile data, or accept any severity, care-grade,
 custom health input, or length selection. It produces one complete letter. The
 cataloged source references and template disclosure remain archived metadata
 and are not injected into the mail body. The approved information link in the
@@ -128,6 +128,37 @@ editorially approved archive. They are not displayed, selected, transformed,
 or included in generated letters. Changing the archived content or adding an
 English letter catalog requires explicit editorial approval and a new content
 version.
+
+### Approved wording variants (#558)
+
+`letter-variants.de.json`, schema v1 and content version `2026-11-08.2`, contains
+exactly 30 subjects and 30 complete German plaintext bodies. The maintainer
+explicitly approved all 60 Revision 2 proposals on 2026-11-08 in the
+implementation session. Its approval metadata links the source issue comment.
+The catalog preserves those texts verbatim; generation changes only the neutral
+greeting to address a selected recipient. Both DE and EN interfaces use these
+approved German texts. No English letter translation is approved.
+
+Selection algorithm v1 samples the subject and body independently and uniformly
+with `Math.random`. A deliberate refresh uniformly samples one of the other
+899 pairs by skipping the current pair in a flattened grid. It never retries or
+promises uniqueness across users. Tests inject a deterministic random source and
+exercise all pairs. Future catalog sizes must retain at least two combinations.
+
+Tab-local session schema v5 stores only `recipientId` and a `variant` selection
+containing catalog version, algorithm version, subject ID, and body ID. Reloads,
+navigation, copying, and recipient changes retain the pair. Refresh replaces
+only the pair and announces a numbered change without moving focus. Search is
+never persisted. Old v4/v3/v2 states retain only a valid recipient and receive a
+new pair; obsolete catalog/algorithm versions or unknown IDs receive a fresh
+pair. Invalid state roots receive a fresh default. Reset clears all tool keys.
+
+Variants are bundled static assets and selection has no network dependency.
+IDs and usage statistics are never sent to URLs, logs, profiles, IndexedDB,
+localStorage, or telemetry. A new tab makes its own selection; browser-provided
+tab duplication can initially copy sessionStorage, but later choices remain
+independent. If sessionStorage is unavailable, current mounted-page state still
+works, but persistence across reloads is unavailable.
 
 The release acceptance checklist and the procedures for legal, content,
 mandate, contact, and constituency updates are documented in

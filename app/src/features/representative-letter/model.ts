@@ -1,8 +1,10 @@
+import { selectLetterVariants, type LetterVariantSelection } from './variants';
+
 /** Stable identifier used by the representative-letter tool. */
 export const REPRESENTATIVE_LETTER_TOOL_ID = 'representative-letter';
 
 /** Current schema version for the tab-local representative-letter state. */
-export const REPRESENTATIVE_LETTER_STATE_VERSION = 4 as const;
+export const REPRESENTATIVE_LETTER_STATE_VERSION = 5 as const;
 
 /**
  * Tab-local preferences used to assemble the representative letter.
@@ -14,6 +16,7 @@ export const REPRESENTATIVE_LETTER_STATE_VERSION = 4 as const;
 export type RepresentativeLetterState = {
   version: typeof REPRESENTATIVE_LETTER_STATE_VERSION;
   recipientId: string | null;
+  variant: LetterVariantSelection;
 };
 
 /**
@@ -25,4 +28,5 @@ export const createDefaultRepresentativeLetterState =
   (): RepresentativeLetterState => ({
     version: REPRESENTATIVE_LETTER_STATE_VERSION,
     recipientId: null,
+    variant: selectLetterVariants(),
   });

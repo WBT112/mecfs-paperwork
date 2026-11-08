@@ -321,6 +321,8 @@
     "subjectLabel": "Subject",
     "subjectPlaceholder": "No subject available yet",
     "bodyLabel": "Mail body",
+    "refreshVariant": "New email variant",
+    "variantChanged": "Subject and mail body have been selected again (change {{count}}).",
     "bodyPlaceholder": "No mail body available yet",
     "copyRecipient": "Copy recipient",
     "copySubject": "Copy subject",

@@ -321,6 +321,8 @@
     "subjectLabel": "Betreff",
     "subjectPlaceholder": "Noch kein Betreff verfügbar",
     "bodyLabel": "Mailinhalt",
+    "refreshVariant": "Neue Mailvariante",
+    "variantChanged": "Betreff und Mailinhalt wurden neu ausgewählt (Wechsel {{count}}).",
     "bodyPlaceholder": "Noch kein Mailinhalt verfügbar",
     "copyRecipient": "Empfänger kopieren",
     "copySubject": "Betreff kopieren",

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { representativeLetterContent } from '../../src/features/representative-letter/data/letterContent';
+import { letterVariants } from '../../src/features/representative-letter/variants';
 import { constituencyLocationCatalog } from '../../src/features/representative-letter/data/constituencyLocationCatalog';
 import { representativeCatalog } from '../../src/features/representative-letter/data/representativeCatalog';
 import type { RepresentativeCatalogEntry } from '../../src/features/representative-letter/data/catalogs';
@@ -30,6 +31,7 @@ const EXPANDED_ATTRIBUTE = 'aria-expanded';
 const PROCESS_TITLE = 'representativeLetter.processTitle';
 const DATA_PROCESSING_TITLE = 'representativeLetter.dataProcessingTitle';
 const ORIGINAL_SIGN_OFF = representativeLetterContent.template.signOff;
+const ORIGINAL_VARIANT_BODY = letterVariants.bodies[0].text;
 const VERIFIED_RECIPIENT = representativeCatalog.representatives.find(
   ({ email }) => email !== null,
 );
@@ -126,6 +128,7 @@ const selectRepresentative = async (
 
 describe('RepresentativeLetterPage', () => {
   beforeEach(() => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
     localeState.current = 'de';
     window.sessionStorage.clear();
     clipboardWrite = vi.fn().mockResolvedValue(undefined);
@@ -144,6 +147,8 @@ describe('RepresentativeLetterPage', () => {
   });
 
   afterEach(() => {
+    letterVariants.bodies[0].text = ORIGINAL_VARIANT_BODY;
+    vi.restoreAllMocks();
     representativeLetterContent.template.signOff = ORIGINAL_SIGN_OFF;
     if (originalClipboard) {
       Object.defineProperty(navigator, 'clipboard', originalClipboard);
@@ -318,7 +323,7 @@ describe('RepresentativeLetterPage', () => {
     expect(mailtoLink).toHaveAttribute(
       'href',
       expect.stringContaining(
-        `mailto:${VERIFIED_RECIPIENT!.email}?subject=${encodeURIComponent(representativeLetterContent.subject)}`,
+        `mailto:${VERIFIED_RECIPIENT!.email}?subject=${encodeURIComponent(letterVariants.subjects[0].text)}`,
       ),
     );
     expect(
@@ -596,6 +601,61 @@ describe('RepresentativeLetterPage', () => {
     expect(screen.queryByText('representativeLetter.longBody')).toBeNull();
   });
 
+  it('refreshes the pair, preserves recipient and search, and synchronizes copying and mailto after remount', async () => {
+    const user = userEvent.setup();
+    installClipboardMock();
+    const firstRender = renderPage();
+    await selectRepresentative(user, VERIFIED_RECIPIENT!);
+    const previousState = readRepresentativeLetterState();
+    const refresh = screen.getByRole('button', {
+      name: 'representativeLetter.refreshVariant',
+    });
+    vi.mocked(Math.random).mockReturnValue(0.75);
+    await user.click(refresh);
+    expect(refresh).toHaveFocus();
+    expect(
+      screen.getByText('representativeLetter.variantChanged'),
+    ).toHaveAttribute('aria-live', 'polite');
+    const changed = readRepresentativeLetterState();
+    expect(changed.recipientId).toBe(previousState.recipientId);
+    expect(changed.variant).not.toEqual(previousState.variant);
+    const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value;
+    const subject =
+      screen.getByLabelText<HTMLInputElement>(SUBJECT_LABEL).value;
+    const url = new URL(
+      screen.getByRole('link', { name: OPEN_EMAIL_APP }).getAttribute('href')!,
+    );
+    expect(url.searchParams.get('body')).toBe(body.replaceAll('\n', '\r\n'));
+    expect(url.searchParams.get('subject')).toBe(subject);
+    await user.click(screen.getByRole('button', { name: COPY_SUBJECT }));
+    expect(clipboardWrite).toHaveBeenLastCalledWith(subject);
+    await user.click(
+      screen.getAllByRole('button', { name: COPY_BODY }).at(-1)!,
+    );
+    expect(clipboardWrite).toHaveBeenLastCalledWith(body);
+    firstRender.unmount();
+    renderPage();
+    expect(screen.getByLabelText(SUBJECT_LABEL)).toHaveValue(subject);
+    await waitFor(() =>
+      expect(screen.getByLabelText(BODY_LABEL)).toHaveValue(body),
+    );
+    await user.click(
+      screen.getByRole('button', { name: CHANGE_RECIPIENT_BUTTON }),
+    );
+    const search = screen.getByLabelText(LOCATION_SEARCH_LABEL);
+    expect(search).toHaveValue('');
+    await user.type(search, 'Köln');
+    const beforeRefresh = readRepresentativeLetterState().variant;
+    await user.click(
+      screen.getByRole('button', {
+        name: 'representativeLetter.refreshVariant',
+      }),
+    );
+    expect(search).toHaveValue('Köln');
+    expect(readRepresentativeLetterState().variant).not.toEqual(beforeRefresh);
+    expect(readRepresentativeLetterState().recipientId).toBeNull();
+  });
+
   it('keeps disclosure controls independent from letter generation', async () => {
     const user = userEvent.setup();
     renderPage();
@@ -630,9 +690,7 @@ describe('RepresentativeLetterPage', () => {
   });
 
   it('keeps a genuinely oversized body available while omitting it from mailto', async () => {
-    representativeLetterContent.template.signOff = 'x'.repeat(
-      MAX_MAILTO_URL_LENGTH,
-    );
+    letterVariants.bodies[0].text = 'x'.repeat(MAX_MAILTO_URL_LENGTH);
     window.sessionStorage.setItem(
       REPRESENTATIVE_LETTER_SESSION_KEY,
       JSON.stringify({
@@ -651,7 +709,7 @@ describe('RepresentativeLetterPage', () => {
       }),
     ).toHaveAttribute(
       'href',
-      `mailto:${VERIFIED_RECIPIENT!.email}?subject=${encodeURIComponent(representativeLetterContent.subject)}`,
+      `mailto:${VERIFIED_RECIPIENT!.email}?subject=${encodeURIComponent(letterVariants.subjects[0].text)}`,
     );
     expect(
       screen.getByText('representativeLetter.mailtoBodyTooLong'),
@@ -666,7 +724,7 @@ describe('RepresentativeLetterPage', () => {
 
     expect(
       screen.getByLabelText('representativeLetter.subjectLabel'),
-    ).toHaveValue(representativeLetterContent.subject);
+    ).toHaveValue(letterVariants.subjects[0].text);
     expect(
       screen.queryByText('representativeLetter.contentLanguageNotice'),
     ).not.toBeInTheDocument();
