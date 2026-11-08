@@ -27,6 +27,17 @@ describe('representative letter generator', () => {
     expect(result.body).toContain(
       representativeLetterContent.template.responseRequest,
     );
+    expect(result.body).toContain('Myalgischer Enzephalomyelitis (ME)');
+    expect(
+      result.body.match(/Myalgischer Enzephalomyelitis \(ME\)/gu),
+    ).toHaveLength(1);
+    expect(result.body).not.toContain('Myalgischer Enzephalomyelitis (ME/CFS)');
+    expect(result.body).toContain('Post-Exertionelle Malaise (PEM)');
+    expect(result.body).toContain('https://www.mecfs.de/');
+    expect(result.body).toContain(
+      'weiterhin als eigenständige Leistung mit eigenem Budget abrechenbar',
+    );
+    expect(result.body).not.toContain('Reizabschirmung');
     expect(result.body).toContain(representativeLetterContent.template.signOff);
     expect(result.body).not.toContain('Weiterführende Quellen:');
     for (const block of representativeLetterContent.personalBlocks) {
