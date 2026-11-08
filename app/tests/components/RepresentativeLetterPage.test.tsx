@@ -658,7 +658,7 @@ describe('RepresentativeLetterPage', () => {
     ).toHaveProperty('tagName', 'OUTPUT');
   });
 
-  it('discloses and consistently uses the approved German content in the English interface', async () => {
+  it('consistently uses the approved German content in the English interface', async () => {
     localeState.current = 'en';
     const user = userEvent.setup();
     renderPage();
@@ -668,8 +668,8 @@ describe('RepresentativeLetterPage', () => {
       screen.getByLabelText('representativeLetter.subjectLabel'),
     ).toHaveValue(representativeLetterContent.subject);
     expect(
-      screen.getByText('representativeLetter.contentLanguageNotice'),
-    ).toBeVisible();
+      screen.queryByText('representativeLetter.contentLanguageNotice'),
+    ).not.toBeInTheDocument();
   });
 
   it('resets only the tool state and leaves unrelated session data intact', async () => {

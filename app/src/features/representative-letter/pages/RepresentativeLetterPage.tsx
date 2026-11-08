@@ -711,13 +711,6 @@ export default function RepresentativeLetterPage() {
           </>
         ) : null}
 
-        <p
-          className="representative-letter__language-note"
-          style={SUBTLE_TEXT_STYLE}
-        >
-          {t('representativeLetter.contentLanguageNotice')}
-        </p>
-
         <div className="representative-letter__outputs">
           <CopyableTextField
             id="representative-letter-recipient"
