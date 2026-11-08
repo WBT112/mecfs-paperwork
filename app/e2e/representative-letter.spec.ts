@@ -2,11 +2,139 @@ import { expect, test } from '@playwright/test';
 import { waitForServiceWorkerReady } from './helpers/serviceWorker';
 
 const TOOL_PATH = '/tools/mail-pflegegesetz';
-const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v4';
+const TOOL_STATE_KEY = 'mecfs-paperwork.representative-letter.state.v5';
 const CATALOG_PATH_PATTERNS = [
   /\/representatives(?:-[^/]+)?\.json$/u,
   /\/constituency-locations(?:-[^/]+)?\.json$/u,
 ];
+
+test('refreshes plaintext offline with independent tab state @mobile', async ({
+  page,
+  context,
+}) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.addInitScript(() => {
+    Math.random = () => 0.1;
+    let clipboardText = '';
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async (text: string) => {
+          clipboardText = text;
+        },
+        readText: async () => clipboardText,
+      },
+    });
+  });
+  await page.goto(TOOL_PATH);
+  const search = page.getByLabel(/Postleitzahl oder Ort|Postcode or place/i);
+  await search.fill('50668');
+  await page
+    .getByRole('button', { name: /Sanae Abdi.*(?:Wahlkreis|constituency) 92/i })
+    .click();
+  const subject = page.locator('#representative-letter-subject');
+  const body = page.locator('#representative-letter-body');
+  const originalPair = [await subject.inputValue(), await body.inputValue()];
+  await page.reload();
+  await expect(subject).toHaveValue(originalPair[0]);
+  await expect(body).toHaveValue(originalPair[1]);
+  await page.goto('/formpacks');
+  await page.goBack();
+  await expect(body).toHaveValue(originalPair[1]);
+  await page.goForward();
+  await expect(page).toHaveURL(/\/formpacks$/u);
+  await page.goBack();
+  await expect(body).toHaveValue(originalPair[1]);
+
+  const otherTab = await context.newPage();
+  await otherTab.addInitScript(() => {
+    Math.random = () => 0.9;
+  });
+  await otherTab.goto(TOOL_PATH);
+  const otherBody = await otherTab
+    .locator('#representative-letter-body')
+    .inputValue();
+  expect(otherBody).not.toBe(originalPair[1]);
+  const otherState = await otherTab.evaluate(
+    (key) => sessionStorage.getItem(key),
+    TOOL_STATE_KEY,
+  );
+  const requests: string[] = [];
+  page.on('request', (request) => requests.push(request.url()));
+  await page.evaluate(() => {
+    Math.random = () => 0.8;
+  });
+  await context.setOffline(true);
+  try {
+    const refresh = page.getByRole('button', {
+      name: /Neue Mailvariante|New email variant/i,
+    });
+    await refresh.focus();
+    await page.keyboard.press('Enter');
+    await expect(refresh).toBeFocused();
+    await expect(subject).not.toHaveValue(originalPair[0]);
+    await expect(body).not.toHaveValue(originalPair[1]);
+    await expect(page.locator('#representative-letter-recipient')).toHaveValue(
+      'sanae.abdi@bundestag.de',
+    );
+    await expect(page.getByText(/Wechsel 1|change 1/i)).toBeVisible();
+    const nextBody = await body.inputValue();
+    const nextSubject = await subject.inputValue();
+    await page
+      .getByRole('button', { name: /Mailinhalt kopieren|Copy mail body/i })
+      .last()
+      .click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      nextBody,
+    );
+    await page
+      .getByRole('button', { name: /Betreff kopieren|Copy subject/i })
+      .click();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+      nextSubject,
+    );
+    const mailto = new URL(
+      (await page
+        .getByRole('link', {
+          name: /Im Mailprogramm öffnen|Open in email app/i,
+        })
+        .getAttribute('href'))!,
+    );
+    expect(mailto.searchParams.get('subject')).toBe(nextSubject);
+    expect(mailto.searchParams.get('body')).toBe(
+      nextBody.replaceAll('\n', '\r\n'),
+    );
+    await page
+      .getByRole('button', { name: /Empfänger ändern|Change recipient/i })
+      .click();
+    await search.fill('Köln');
+    await refresh.click();
+    await expect(search).toHaveValue('Köln');
+    await expect(page.getByText(/Wechsel 2|change 2/i)).toBeVisible();
+    expect(requests).toEqual([]);
+    expect(
+      await otherTab.evaluate(
+        (key) => sessionStorage.getItem(key),
+        TOOL_STATE_KEY,
+      ),
+    ).toBe(otherState);
+    await expect(otherTab.locator('#representative-letter-body')).toHaveValue(
+      otherBody,
+    );
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  } finally {
+    await context.setOffline(false);
+    await otherTab.close();
+  }
+  const finalPair = [await subject.inputValue(), await body.inputValue()];
+  await page.reload();
+  await expect(subject).toHaveValue(finalPair[0]);
+  await expect(body).toHaveValue(finalPair[1]);
+});
 
 test('uses compact, keyboard-accessible navigation without horizontal overflow', async ({
   page,
@@ -393,7 +521,7 @@ test('reloads the complete representative flow offline @chromium-only', async ({
     const subject = page.locator('#representative-letter-subject');
     const body = page.locator('#representative-letter-body');
     await expect(recipient).toHaveValue('sanae.abdi@bundestag.de');
-    await expect(subject).toHaveValue(/Pflegeneuordnungsgesetz/u);
+    await expect(subject).not.toHaveValue('');
     await expect(body).toHaveValue(/Guten Tag Sanae Abdi,/u);
 
     const mailtoLink = page.getByRole('link', {
