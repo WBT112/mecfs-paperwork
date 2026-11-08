@@ -3,6 +3,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
   type RefObject,
 } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,10 +30,12 @@ import {
   readRepresentativeLetterState,
   writeRepresentativeLetterState,
 } from '../sessionState';
-import { findRepresentativesForConstituency } from '../representativeSearch';
+import {
+  resolveRepresentativesForLocations,
+  type RepresentativeLocationMatch,
+} from '../representativeSearch';
 import {
   searchConstituencyLocations,
-  type ConstituencyLocationMatch,
   type ConstituencyLocationSearchStatus,
 } from '../constituencyLocationSearch';
 import { createMailtoLink, type MailtoLink } from '../mailto';
@@ -115,18 +118,26 @@ const constituencyLabel = (
 };
 
 type RepresentativeResultProps = {
-  representative: RepresentativeCatalogEntry;
-  isSelected: boolean;
+  match: RepresentativeLocationMatch;
   onSelect: (recipientId: string) => void;
 };
 
 const RepresentativeResult = ({
-  representative,
-  isSelected,
+  match,
   onSelect,
 }: RepresentativeResultProps) => {
   const { t } = useTranslation();
+  const { representative, location } = match;
   const constituency = constituencyLabel(representative);
+  const locationSummary = location.locations
+    .slice(0, 3)
+    .map(({ municipality }) => municipality)
+    .join(' · ');
+  const postalCodeSummary = [
+    ...new Set(location.locations.flatMap(({ postalCodes }) => postalCodes)),
+  ]
+    .slice(0, 4)
+    .join(', ');
   return (
     <li style={RESULT_STYLE}>
       <div style={RESULT_DETAILS_STYLE}>
@@ -135,33 +146,38 @@ const RepresentativeResult = ({
           {[representative.state, constituency].filter(Boolean).join(' · ')}
         </span>
         <span>{representative.parliamentaryGroup}</span>
+        <span>{locationSummary}</span>
+        <span>
+          {t('representativeLetter.postcodeSummary', {
+            postalCodes: postalCodeSummary,
+          })}
+        </span>
       </div>
       <button
         type="button"
         className="app__button"
-        aria-pressed={isSelected}
         aria-label={t('representativeLetter.selectRecipientNamed', {
           name: representative.fullName,
+          number: location.constituencyNumber,
+          constituency: location.constituencyName,
         })}
         onClick={() => onSelect(representative.id)}
       >
-        {isSelected
-          ? t('representativeLetter.selected')
-          : t('representativeLetter.selectRecipient')}
+        {t('representativeLetter.selectRecipient')}
       </button>
     </li>
   );
 };
 
 type SearchResultsProps = {
-  matches: RepresentativeCatalogEntry[];
-  recipientId: string | null;
+  matches: RepresentativeLocationMatch[];
+  showRefineHint: boolean;
   onSelect: (recipientId: string) => void;
 };
 
 const SearchResults = ({
   matches,
-  recipientId,
+  showRefineHint,
   onSelect,
 }: SearchResultsProps) => {
   const { t } = useTranslation();
@@ -172,11 +188,10 @@ const SearchResults = ({
       </output>
       {matches.length > 0 ? (
         <ul className="representative-letter__results" style={RESULTS_STYLE}>
-          {matches.map((representative) => (
+          {matches.slice(0, RESULT_LIMIT).map((match) => (
             <RepresentativeResult
-              key={representative.id}
-              representative={representative}
-              isSelected={representative.id === recipientId}
+              key={match.representative.id}
+              match={match}
               onSelect={onSelect}
             />
           ))}
@@ -184,6 +199,9 @@ const SearchResults = ({
       ) : (
         <p>{t('representativeLetter.noResults')}</p>
       )}
+      {showRefineHint ? (
+        <p>{t('representativeLetter.refineLocationSearch')}</p>
+      ) : null}
     </>
   );
 };
@@ -192,10 +210,7 @@ type RecipientPickerProps = {
   representatives: readonly RepresentativeCatalogEntry[];
   locationCatalog: ConstituencyLocationCatalog;
   locationQuery: string;
-  selectedConstituencyNumber: number | null;
-  recipientId: string | null;
   onLocationQueryChange: (value: string) => void;
-  onSelectConstituency: (constituencyNumber: number) => void;
   onSelect: (recipientId: string) => void;
 };
 
@@ -208,124 +223,16 @@ const locationStatusKey = (
     'invalid-postcode': 'representativeLetter.locationInvalidPostcode',
     'incomplete-place': 'representativeLetter.locationIncompletePlace',
     'not-found': 'representativeLetter.locationNotFound',
-    matches: 'representativeLetter.locationChooseConstituency',
+    matches: 'representativeLetter.locationMatches',
   };
   return keys[status];
-};
-
-type LocationResultProps = {
-  match: ConstituencyLocationMatch;
-  isSelected: boolean;
-  onSelect: (constituencyNumber: number) => void;
-};
-
-const LocationResult = ({
-  match,
-  isSelected,
-  onSelect,
-}: LocationResultProps) => {
-  const { t } = useTranslation();
-  const visibleLocations = match.locations.slice(0, 3);
-  const locationSummary = visibleLocations
-    .map(({ municipality }) => municipality)
-    .join(' · ');
-  const postalCodeSummary = [
-    ...new Set(match.locations.flatMap(({ postalCodes }) => postalCodes)),
-  ]
-    .slice(0, 4)
-    .join(', ');
-
-  return (
-    <li style={RESULT_STYLE}>
-      <div style={RESULT_DETAILS_STYLE}>
-        <strong>
-          {t('representativeLetter.constituencyResult', {
-            number: match.constituencyNumber,
-            name: match.constituencyName,
-          })}
-        </strong>
-        <span>{match.state}</span>
-        <span>{locationSummary}</span>
-        <span>
-          {t('representativeLetter.postcodeSummary', {
-            postalCodes: postalCodeSummary,
-          })}
-        </span>
-      </div>
-      <button
-        type="button"
-        className="app__button"
-        aria-pressed={isSelected}
-        aria-label={t('representativeLetter.selectConstituencyNamed', {
-          number: match.constituencyNumber,
-          name: match.constituencyName,
-        })}
-        onClick={() => onSelect(match.constituencyNumber)}
-      >
-        {isSelected
-          ? t('representativeLetter.constituencySelected')
-          : t('representativeLetter.selectConstituency')}
-      </button>
-    </li>
-  );
-};
-
-type LocationSearchResultsProps = {
-  status: ConstituencyLocationSearchStatus;
-  matches: ConstituencyLocationMatch[];
-  selectedConstituencyNumber: number | null;
-  onSelect: (constituencyNumber: number) => void;
-};
-
-const LocationSearchResults = ({
-  status,
-  matches,
-  selectedConstituencyNumber,
-  onSelect,
-}: LocationSearchResultsProps) => {
-  const { t } = useTranslation();
-  if (status === 'idle') {
-    return null;
-  }
-  if (status !== 'matches') {
-    return <output>{t(locationStatusKey(status))}</output>;
-  }
-
-  return (
-    <div className="representative-letter__location-results">
-      <output>
-        {t(
-          matches.length > 1
-            ? 'representativeLetter.locationAmbiguous'
-            : 'representativeLetter.locationChooseConstituency',
-          { count: matches.length },
-        )}
-      </output>
-      <ul className="representative-letter__results" style={RESULTS_STYLE}>
-        {matches.slice(0, RESULT_LIMIT).map((match) => (
-          <LocationResult
-            key={match.constituencyNumber}
-            match={match}
-            isSelected={match.constituencyNumber === selectedConstituencyNumber}
-            onSelect={onSelect}
-          />
-        ))}
-      </ul>
-      {matches.length > RESULT_LIMIT ? (
-        <p>{t('representativeLetter.refineLocationSearch')}</p>
-      ) : null}
-    </div>
-  );
 };
 
 const RecipientPicker = ({
   representatives,
   locationCatalog,
   locationQuery,
-  selectedConstituencyNumber,
-  recipientId,
   onLocationQueryChange,
-  onSelectConstituency,
   onSelect,
 }: RecipientPickerProps) => {
   const { t } = useTranslation();
@@ -333,12 +240,10 @@ const RecipientPicker = ({
     locationCatalog,
     locationQuery,
   );
-  const matches = selectedConstituencyNumber
-    ? findRepresentativesForConstituency(
-        representatives,
-        selectedConstituencyNumber,
-      )
-    : [];
+  const matches = resolveRepresentativesForLocations(
+    representatives,
+    locationSearch.matches,
+  );
 
   return (
     <section
@@ -369,12 +274,23 @@ const RecipientPicker = ({
           />
         </label>
       </div>
-      <LocationSearchResults
-        status={locationSearch.status}
-        matches={locationSearch.matches}
-        selectedConstituencyNumber={selectedConstituencyNumber}
-        onSelect={onSelectConstituency}
-      />
+      {locationSearch.status === 'idle' ? null : (
+        <output>
+          {t(locationStatusKey(locationSearch.status), {
+            count: locationSearch.matches.length,
+          })}
+        </output>
+      )}
+      {locationSearch.status === 'matches' ? (
+        <SearchResults
+          matches={matches}
+          showRefineHint={
+            locationSearch.matches.length > RESULT_LIMIT ||
+            matches.length > RESULT_LIMIT
+          }
+          onSelect={onSelect}
+        />
+      ) : null}
       <p className="representative-letter__search-hint">
         {t('representativeLetter.constituencyHint')}{' '}
         <a
@@ -386,13 +302,34 @@ const RecipientPicker = ({
           {t('representativeLetter.constituencyLookup')}
         </a>
       </p>
-      {selectedConstituencyNumber === null ? null : (
-        <SearchResults
-          matches={matches}
-          recipientId={recipientId}
-          onSelect={onSelect}
-        />
-      )}
+    </section>
+  );
+};
+
+type RecipientSelectionSummaryProps = {
+  representative: RepresentativeCatalogEntry;
+  onChange: () => void;
+};
+
+const RecipientSelectionSummary = ({
+  representative,
+  onChange,
+}: RecipientSelectionSummaryProps) => {
+  const { t } = useTranslation();
+  return (
+    <section
+      className="representative-letter__recipient-search"
+      aria-label={t('representativeLetter.recipientSearchTitle')}
+      style={STACKED_PANEL_STYLE}
+    >
+      <p style={PRIMARY_DESCRIPTION_STYLE}>
+        {t('representativeLetter.recipientSelectedSummary', {
+          name: representative.fullName,
+        })}
+      </p>
+      <button type="button" className="app__button" onClick={onChange}>
+        {t('representativeLetter.changeRecipient')}
+      </button>
     </section>
   );
 };
@@ -653,10 +590,10 @@ export default function RepresentativeLetterPage() {
     readRepresentativeLetterState(),
   );
   const [locationQuery, setLocationQuery] = useState('');
+  const [recipientSearchOpen, setRecipientSearchOpen] = useState(
+    () => state.recipientId === null,
+  );
   const bodyFieldRef = useRef<HTMLTextAreaElement>(null);
-  const [selectedConstituencyNumber, setSelectedConstituencyNumber] = useState<
-    number | null
-  >(null);
   const {
     catalog,
     locationCatalog,
@@ -675,6 +612,7 @@ export default function RepresentativeLetterPage() {
 
   const selectRecipient = (recipientId: string) => {
     setState((current) => ({ ...current, recipientId }));
+    setRecipientSearchOpen(false);
   };
 
   const reset = () => {
@@ -682,18 +620,17 @@ export default function RepresentativeLetterPage() {
     clearRepresentativeLetterState();
     setState(createDefaultRepresentativeLetterState());
     setLocationQuery('');
-    setSelectedConstituencyNumber(null);
+    setRecipientSearchOpen(true);
   };
 
   const updateLocationQuery = (value: string) => {
     setLocationQuery(value);
-    setSelectedConstituencyNumber(null);
     setState((current) => ({ ...current, recipientId: null }));
   };
 
-  const selectConstituency = (constituencyNumber: number) => {
-    setSelectedConstituencyNumber(constituencyNumber);
+  const changeRecipient = () => {
     setState((current) => ({ ...current, recipientId: null }));
+    setRecipientSearchOpen(true);
   };
 
   const contentCatalog = getRepresentativeLetterContent(locale);
@@ -711,6 +648,35 @@ export default function RepresentativeLetterPage() {
     subject: generatedLetter.subject,
     body: generatedLetter.body,
   });
+  let recipientSearchContent: ReactNode;
+  if (selectedRepresentative && !recipientSearchOpen) {
+    recipientSearchContent = (
+      <RecipientSelectionSummary
+        representative={selectedRepresentative}
+        onChange={changeRecipient}
+      />
+    );
+  } else if (catalog && locationCatalog) {
+    recipientSearchContent = (
+      <RecipientPicker
+        representatives={representatives}
+        locationCatalog={locationCatalog}
+        locationQuery={locationQuery}
+        onLocationQueryChange={updateLocationQuery}
+        onSelect={selectRecipient}
+      />
+    );
+  } else {
+    recipientSearchContent = (
+      <output className="representative-letter__catalog-status">
+        {t(
+          catalogFailed
+            ? 'representativeLetter.catalogLoadFailed'
+            : 'representativeLetter.catalogLoading',
+        )}
+      </output>
+    );
+  }
 
   return (
     <section
@@ -732,26 +698,7 @@ export default function RepresentativeLetterPage() {
       </div>
 
       <div className="representative-letter__panel">
-        {catalog && locationCatalog ? (
-          <RecipientPicker
-            representatives={representatives}
-            locationCatalog={locationCatalog}
-            locationQuery={locationQuery}
-            selectedConstituencyNumber={selectedConstituencyNumber}
-            recipientId={state.recipientId}
-            onLocationQueryChange={updateLocationQuery}
-            onSelectConstituency={selectConstituency}
-            onSelect={selectRecipient}
-          />
-        ) : (
-          <output className="representative-letter__catalog-status">
-            {t(
-              catalogFailed
-                ? 'representativeLetter.catalogLoadFailed'
-                : 'representativeLetter.catalogLoading',
-            )}
-          </output>
-        )}
+        {recipientSearchContent}
 
         {selectedRepresentative ? (
           <>

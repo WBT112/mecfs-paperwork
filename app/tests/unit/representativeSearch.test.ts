@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import type { ConstituencyLocationMatch } from '../../src/features/representative-letter/constituencyLocationSearch';
 import type { RepresentativeCatalogEntry } from '../../src/features/representative-letter/data/catalogs';
-import { findRepresentativesForConstituency } from '../../src/features/representative-letter/representativeSearch';
+import { resolveRepresentativesForLocations } from '../../src/features/representative-letter/representativeSearch';
 
 const createRepresentative = (
   overrides: Partial<RepresentativeCatalogEntry>,
@@ -26,6 +27,8 @@ const createRepresentative = (
   ...overrides,
 });
 
+const MUNICH_CONSTITUENCY = 'München-West';
+
 const representatives = [
   createRepresentative({}),
   createRepresentative({
@@ -35,7 +38,7 @@ const representatives = [
     lastName: 'Beispiel',
     state: 'Bayern',
     stateCode: 'BY',
-    constituency: { number: 220, name: 'München-West' },
+    constituency: { number: 220, name: MUNICH_CONSTITUENCY },
   }),
   createRepresentative({
     id: 'representative-3',
@@ -46,21 +49,75 @@ const representatives = [
     stateCode: 'HB',
     constituency: null,
   }),
+  createRepresentative({
+    id: 'representative-4',
+    fullName: 'Ada Beispiel',
+    firstName: 'Ada',
+    lastName: 'Beispiel',
+    state: 'Bayern',
+    stateCode: 'BY',
+    constituency: { number: 220, name: MUNICH_CONSTITUENCY },
+  }),
+  createRepresentative({
+    id: 'representative-5',
+    fullName: 'Ada Beispiel',
+    firstName: 'Ada',
+    lastName: 'Beispiel',
+    state: 'Bayern',
+    stateCode: 'BY',
+    constituency: { number: 220, name: MUNICH_CONSTITUENCY },
+  }),
 ];
 
-describe('findRepresentativesForConstituency', () => {
-  it('returns only representatives assigned to the selected constituency', () => {
-    expect(findRepresentativesForConstituency(representatives, 220)).toEqual([
-      representatives[1],
-    ]);
-    expect(findRepresentativesForConstituency(representatives, 75)).toEqual([
-      representatives[0],
+const createLocation = (
+  constituencyNumber: number,
+  constituencyName: string,
+): ConstituencyLocationMatch => ({
+  constituencyNumber,
+  constituencyName,
+  stateCode: 'BY',
+  state: 'Bayern',
+  locations: [
+    {
+      county: 'Beispielkreis',
+      municipality: 'Beispielort',
+      postalCodes: ['12345'],
+    },
+  ],
+});
+
+describe('resolveRepresentativesForLocations', () => {
+  it('resolves matches in location order and sorts representatives by name', () => {
+    const munich = createLocation(220, MUNICH_CONSTITUENCY);
+    const berlin = createLocation(75, 'Berlin-Mitte');
+
+    expect(
+      resolveRepresentativesForLocations(representatives, [munich, berlin]),
+    ).toEqual([
+      { representative: representatives[3], location: munich },
+      { representative: representatives[4], location: munich },
+      { representative: representatives[1], location: munich },
+      { representative: representatives[0], location: berlin },
     ]);
   });
 
-  it('excludes entries without a constituency and unknown constituencies', () => {
-    expect(findRepresentativesForConstituency(representatives, 999)).toEqual(
-      [],
-    );
+  it('deduplicates representatives and excludes unusable catalog entries', () => {
+    const munich = createLocation(220, MUNICH_CONSTITUENCY);
+
+    expect(
+      resolveRepresentativesForLocations(representatives, [munich, munich]),
+    ).toEqual([
+      { representative: representatives[3], location: munich },
+      { representative: representatives[4], location: munich },
+      { representative: representatives[1], location: munich },
+    ]);
+    expect(
+      resolveRepresentativesForLocations(representatives, [
+        createLocation(999, 'Unbekannt'),
+      ]),
+    ).toEqual([]);
+    expect(
+      resolveRepresentativesForLocations([representatives[2]], [munich]),
+    ).toEqual([]);
   });
 });

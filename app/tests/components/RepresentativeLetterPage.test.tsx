@@ -19,9 +19,8 @@ const RECIPIENT_LABEL = 'representativeLetter.recipientLabel';
 const SUBJECT_LABEL = 'representativeLetter.subjectLabel';
 const BODY_LABEL = 'representativeLetter.bodyLabel';
 const LOCATION_SEARCH_LABEL = 'representativeLetter.locationSearchLabel';
-const SELECT_CONSTITUENCY_BUTTON =
-  'representativeLetter.selectConstituencyNamed';
 const SELECT_RECIPIENT_BUTTON = 'representativeLetter.selectRecipientNamed';
+const CHANGE_RECIPIENT_BUTTON = 'representativeLetter.changeRecipient';
 const OPEN_EMAIL_APP = 'representativeLetter.openEmailApp';
 const COPY_RECIPIENT = 'representativeLetter.copyRecipient';
 const COPY_SUBJECT = 'representativeLetter.copySubject';
@@ -107,12 +106,15 @@ const selectRepresentative = async (
   user: ReturnType<typeof userEvent.setup>,
   representative: RepresentativeCatalogEntry,
 ) => {
+  const changeRecipient = screen.queryByRole('button', {
+    name: CHANGE_RECIPIENT_BUTTON,
+  });
+  if (changeRecipient) {
+    await user.click(changeRecipient);
+  }
   const locationSearch = await screen.findByLabelText(LOCATION_SEARCH_LABEL);
   await user.clear(locationSearch);
   await user.type(locationSearch, uniquePostcodeFor(representative));
-  await user.click(
-    screen.getByRole('button', { name: SELECT_CONSTITUENCY_BUTTON }),
-  );
   const result = screen.getByText(representative.fullName).closest('li');
   if (!result) {
     throw new Error('Representative result was not rendered.');
@@ -120,7 +122,6 @@ const selectRepresentative = async (
   await user.click(
     within(result).getByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
   );
-  return locationSearch;
 };
 
 describe('RepresentativeLetterPage', () => {
@@ -275,11 +276,11 @@ describe('RepresentativeLetterPage', () => {
     ).toBeNull();
   });
 
-  it('selects a verified recipient only after an explicit constituency choice', async () => {
+  it('selects a verified recipient directly from a location result', async () => {
     const user = userEvent.setup();
     renderPage();
 
-    const search = await selectRepresentative(user, VERIFIED_RECIPIENT!);
+    await selectRepresentative(user, VERIFIED_RECIPIENT!);
 
     expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue(
       VERIFIED_RECIPIENT!.email,
@@ -330,8 +331,15 @@ describe('RepresentativeLetterPage', () => {
         .value.replaceAll('\n', '\r\n'),
     );
 
-    await user.clear(search);
-    await user.type(search, 'no matching place');
+    expect(screen.queryByLabelText(LOCATION_SEARCH_LABEL)).toBeNull();
+    await user.click(
+      screen.getByRole('button', { name: CHANGE_RECIPIENT_BUTTON }),
+    );
+    expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue('');
+    expect(readRepresentativeLetterState().recipientId).toBeNull();
+    const reopenedSearch = screen.getByLabelText(LOCATION_SEARCH_LABEL);
+    await user.clear(reopenedSearch);
+    await user.type(reopenedSearch, 'no matching place');
     expect(
       screen.getByText('representativeLetter.locationNotFound'),
     ).toBeVisible();
@@ -451,7 +459,7 @@ describe('RepresentativeLetterPage', () => {
     ).toBeDisabled();
   });
 
-  it('requires a constituency choice even for one place match', async () => {
+  it('shows representatives directly for one place match', async () => {
     const user = userEvent.setup();
     renderPage();
 
@@ -460,47 +468,25 @@ describe('RepresentativeLetterPage', () => {
       'Altertheim',
     );
     expect(
-      screen.queryByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
-    ).toBeNull();
-    expect(
-      screen.getByText('representativeLetter.locationChooseConstituency'),
+      screen.getByText('representativeLetter.locationMatches'),
     ).toBeVisible();
-    await user.click(
-      screen.getByRole('button', {
-        name: SELECT_CONSTITUENCY_BUTTON,
-      }),
-    );
     expect(
       screen.getAllByRole('button', { name: SELECT_RECIPIENT_BUTTON }).length,
     ).toBeGreaterThan(0);
   });
 
-  it('requires an explicit constituency choice for ambiguous postcodes', async () => {
+  it('shows direct representative choices for ambiguous postcodes', async () => {
     const user = userEvent.setup();
     renderPage();
 
     const locationSearch = await screen.findByLabelText(LOCATION_SEARCH_LABEL);
     await user.type(locationSearch, '97896');
     expect(
-      screen.getByText('representativeLetter.locationAmbiguous'),
+      screen.getByText('representativeLetter.locationMatches'),
     ).toBeVisible();
     expect(
-      screen.queryByRole('button', { name: SELECT_RECIPIENT_BUTTON }),
-    ).toBeNull();
-    expect(
-      screen.getAllByRole('button', {
-        name: SELECT_CONSTITUENCY_BUTTON,
-      }),
-    ).toHaveLength(2);
-
-    await user.click(
-      screen.getAllByRole('button', {
-        name: SELECT_CONSTITUENCY_BUTTON,
-      })[0],
-    );
-    expect(
       screen.getAllByRole('button', { name: SELECT_RECIPIENT_BUTTON }).length,
-    ).toBeGreaterThan(0);
+    ).toBeGreaterThan(1);
 
     await user.clear(locationSearch);
     await user.type(locationSearch, '1234');
@@ -593,12 +579,10 @@ describe('RepresentativeLetterPage', () => {
         name: RECIPIENT_WITHOUT_CONSTITUENCY!.fullName,
       }),
     ).toBeVisible();
-    await user.type(screen.getByLabelText(LOCATION_SEARCH_LABEL), '70184');
     await user.click(
-      screen.getAllByRole('button', {
-        name: SELECT_CONSTITUENCY_BUTTON,
-      })[0],
+      screen.getByRole('button', { name: CHANGE_RECIPIENT_BUTTON }),
     );
+    await user.type(screen.getByLabelText(LOCATION_SEARCH_LABEL), '70184');
     expect(screen.getByText('representativeLetter.noResults')).toBeVisible();
   });
 
@@ -692,13 +676,13 @@ describe('RepresentativeLetterPage', () => {
     const user = userEvent.setup();
     window.sessionStorage.setItem('unrelated', 'keep');
     renderPage();
-    const search = await selectRepresentative(user, VERIFIED_RECIPIENT!);
+    await selectRepresentative(user, VERIFIED_RECIPIENT!);
     await user.click(
       screen.getByRole('button', { name: 'representativeLetter.reset' }),
     );
 
     expect(screen.getByLabelText(BODY_LABEL)).toBeVisible();
-    expect(search).toHaveValue('');
+    expect(screen.getByLabelText(LOCATION_SEARCH_LABEL)).toHaveValue('');
     expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue('');
     expect(
       screen.getByRole('button', {
