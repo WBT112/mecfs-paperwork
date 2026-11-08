@@ -39,7 +39,10 @@ const createAppSpaFallbackPlugin = (): Plugin => ({
         req.url = '/index.html';
       }
 
-      if (path === '/tools/representative-letter') {
+      if (
+        path === '/tools/mail-pflegegesetz' ||
+        path === '/tools/representative-letter'
+      ) {
         req.url = '/index.html';
       }
 

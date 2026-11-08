@@ -94,7 +94,14 @@ describe('AppRoutes', () => {
     expect(await screen.findByText(HELP_TEXT)).toBeInTheDocument();
   });
 
-  it('renders the representative-letter tool route when lazy loaded', async () => {
+  it('renders the mail-pflegegesetz tool route when lazy loaded', async () => {
+    await renderAppRoutes('/tools/mail-pflegegesetz');
+    expect(
+      await screen.findByText('Representative Letter'),
+    ).toBeInTheDocument();
+  });
+
+  it('redirects the legacy representative-letter route', async () => {
     await renderAppRoutes('/tools/representative-letter');
     expect(
       await screen.findByText('Representative Letter'),

@@ -120,7 +120,7 @@ export const buildRepresentativeLetterListItem = (
     title,
     description,
     searchBlob: createSearchBlob(title, description, category),
-    href: '/tools/representative-letter',
+    href: '/tools/mail-pflegegesetz',
     ariaLabel: translate('representativeLetter.entryAriaLabel'),
     openLabel: translate('representativeLetter.open'),
   };
