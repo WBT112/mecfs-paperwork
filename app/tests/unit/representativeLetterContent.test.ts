@@ -14,8 +14,10 @@ describe('representative letter content catalog', () => {
     expect(identifiers.size).toBe(20);
     expect(representativeLetterContent.approval).toMatchObject({
       status: 'approved-as-provided',
-      sourceIssue: 553,
+      approvedAt: '2026-11-08',
+      sourceIssue: 619,
     });
+    expect(representativeLetterContent.contentVersion).toBe('2026-11-08.1');
   });
 
   it('keeps one approved language across both interface locales', () => {

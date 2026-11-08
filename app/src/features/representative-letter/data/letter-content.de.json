@@ -1,25 +1,26 @@
 {
   "schemaVersion": 1,
-  "contentVersion": "2026-10-19.1",
+  "contentVersion": "2026-11-08.1",
   "contentLanguage": "de",
   "approval": {
     "status": "approved-as-provided",
-    "approvedAt": "2026-10-19",
-    "sourceIssue": 553,
-    "notes": "The maintainer approved using the supplied German source text unchanged. No English letter translation has been approved."
+    "approvedAt": "2026-11-08",
+    "sourceIssue": 619,
+    "notes": "The maintainer approved the revised German standard text in issue #619. No English letter translation has been approved."
   },
   "subject": "Pflegeneuordnungsgesetz: Bitte denken Sie bei Ihrer Abstimmung an Menschen mit ME/CFS",
   "template": {
     "opening": [
-      "Ich bin an Myalgischer Enzephalomyelitis (ME/CFS) erkrankt, einer schweren neuroimmunologischen Multisystemerkrankung. Ihr Kernmerkmal ist PENE, eine postexertionelle neuroimmunologische Erschöpfung: Schon geringe körperliche, geistige oder sensorische Anstrengung kann eine zeitverzögerte Verschlechterung auslösen, die Tage, Wochen oder dauerhaft anhält.",
+      "Ich bin an Myalgischer Enzephalomyelitis (ME) erkrankt, einer schweren neuroimmunologischen Erkrankung. Charakteristisch ist die Post-Exertionelle Malaise (PEM): Bereits geringe körperliche, geistige oder sensorische Belastung kann eine zeitverzögerte und lang anhaltende Verschlechterung der Symptome auslösen.",
+      "Weiterführende Informationen zum Krankheitsbild finden Sie bei der Deutschen Gesellschaft für ME/CFS: https://www.mecfs.de/",
       "Ich schreibe Ihnen, weil der Bundestag über das Pflegeneuordnungsgesetz berät und dieses Gesetz meine Versorgung unmittelbar betrifft."
     ],
     "requestHeading": "Ich bitte Sie, sich im parlamentarischen Verfahren für Folgendes einzusetzen:",
     "requests": [
-      "Die Verhinderungspflege bleibt als eigenständige und flexible Leistung erhalten, auch stundenweise und durch vertraute private Personen.",
-      "Ersatzpflege darf nicht auf Notdienste und Kurzzeitpflege beschränkt werden. Für Menschen, die auf Reizabschirmung angewiesen sind, sind beide keine Entlastung, sondern ein gesundheitliches Risiko.",
-      "Der Entlastungsbetrag bleibt auch in Pflegegrad 1 erhalten.",
-      "Bevor die Schwellenwerte der Begutachtung geändert werden, wird geprüft, ob das Verfahren schwankende und zeitverzögerte Krankheitsverläufe wie bei ME überhaupt erfassen kann."
+      "Die Verhinderungspflege muss weiterhin als eigenständige Leistung mit eigenem Budget abrechenbar bleiben – auch stundenweise und wenn eine vertraute Privatperson die Ersatzpflege übernimmt.",
+      "Eine vertraute Ersatzpflege im eigenen Zuhause muss weiterhin finanziert werden können. Ambulante Notdienste und stationäre Kurzzeitpflege sind für schwer und sehr schwer an ME Erkrankte häufig ungeeignet: Wechselnde Pflegepersonen, Transporte sowie Licht, Geräusche, Berührungen und Gespräche können eine erhebliche und lang anhaltende Verschlechterung auslösen.",
+      "Der Entlastungsbetrag von derzeit 131 Euro monatlich muss für Menschen mit Pflegegrad 1 erhalten bleiben.",
+      "Die geplante Anhebung der Schwellenwerte für die Pflegegrade 1 bis 3 darf erst erfolgen, wenn wissenschaftlich geprüft wurde, ob das Begutachtungsverfahren schwankende und zeitverzögerte Krankheitsverläufe wie bei ME angemessen erfasst."
     ],
     "responseRequest": "Über eine kurze Rückmeldung, wie Sie sich zu diesen Punkten verhalten werden, würde ich mich freuen.",
     "templateDisclosure": "Diese Nachricht beruht auf einer Vorlage, weil mich eigenes Formulieren viel Kraft kostet. Die Schilderung entspricht meiner Lebenssituation.",

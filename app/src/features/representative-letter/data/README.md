@@ -98,11 +98,11 @@ context; selecting a representative remains an explicit action.
 
 ## Letter content
 
-`letter-content.de.json` preserves the German source text supplied in issue
-#553. The maintainer approved this exact text for technical integration on
-2026-10-19. The catalog deliberately retains bracketed alternatives in the
-source material so the generator can resolve them without changing the
-archived wording.
+`letter-content.de.json` preserves the 20 German personal source blocks supplied
+in issue #553. The maintainer approved the revised standard template in issue
+#619 on 2026-11-08. The catalog deliberately retains bracketed alternatives in
+the archived source material without including those blocks in generated
+letters.
 
 No English letter translation is approved yet. Both interface locales resolve
 to the complete German catalog and the UI must disclose that language instead
@@ -119,8 +119,9 @@ archived source links. It performs no network requests.
 The generator reads only the bundled subject and template. It is deterministic
 and does not call an API, read profile data, or accept any severity, care-grade,
 custom health input, or length selection. It produces one complete letter. The
-cataloged source links and template disclosure remain archived metadata and are
-not injected into the mail body.
+cataloged source references and template disclosure remain archived metadata
+and are not injected into the mail body. The approved information link in the
+standard template is part of the generated mail body.
 
 The 20 personal `sourceText` blocks remain unchanged in the catalog as an
 editorially approved archive. They are not displayed, selected, transformed,
