@@ -18,9 +18,8 @@ technical maintenance.
    constituency explicitly, especially when several matches are shown.
 3. Select a representative. Expand their details to review the verification
    date and official contact/profile links.
-4. Choose the short or long version. Copy recipient, subject, and mail body
-   separately, or select **Open in email app** to open the locally configured
-   mail application.
+4. Copy recipient, subject, and the single complete mail body separately, or
+   select **Open in email app** to open the locally configured mail application.
 5. Paperwork does not send the message. If a mail body is too long for a
    reliable `mailto` URL, recipient and subject remain available and the mail
    body can be copied with the adjacent button.
@@ -74,8 +73,9 @@ any allowed Firefox or WebKit warning in the PR description.
 
 Use a fresh browser context and synthetic input only.
 
-- At 320 px width, complete the postcode/place, constituency, recipient,
-  short/long, copy, and `mailto` flow with touch, keyboard, and a screen reader.
+- At 320 px width, complete the postcode/place, constituency, recipient, copy,
+  and `mailto` flow with touch, keyboard, and a screen reader. Confirm that no
+  short/long selection is exposed.
 - Verify the visible recipient address, subject, and body exactly match the
   values passed to the mail application. Confirm that no message is sent
   without a separate user action in that application.
@@ -88,8 +88,8 @@ Use a fresh browser context and synthetic input only.
   DevTools shows no request to an external origin.
 - Inspect URL, console, Network, Application Storage, IndexedDB, and generated
   test artifacts. They must not contain the entered place/postcode or private
-  user information. Only the documented body-length and recipient ID may exist
-  in the tool's tab-local state.
+  user information. Only the documented recipient ID may exist in the tool's
+  tab-local state.
 - Repeat the UI flow in German and English. The generated letter remains German
   until a separately approved English catalog exists, and the UI must disclose
   that fact.
@@ -140,8 +140,8 @@ For constituency, municipality, or postcode changes:
 ## Letter and legal maintenance
 
 Legal or policy changes require editorial review before a release. A maintainer
-must verify every claim and primary source in the subject, short version, long
-version, and source references. Technical contributors must not silently
+must verify every claim and primary source in the subject, single mail body,
+and source references. Technical contributors must not silently
 reinterpret, shorten, translate, or expand those claims.
 
 After approval:

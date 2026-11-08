@@ -11,8 +11,10 @@ import {
   type RepresentativeLetterSessionStorage,
 } from '../../src/features/representative-letter/sessionState';
 
+const LEGACY_V3_KEY = 'mecfs-paperwork.representative-letter.state.v3';
 const LEGACY_V2_KEY = 'mecfs-paperwork.representative-letter.state.v2';
 const LEGACY_V1_KEY = 'mecfs-paperwork.representative-letter.state.v1';
+const RECIPIENT_ID = 'representative-example';
 
 const createMemoryStorage = (): RepresentativeLetterSessionStorage => {
   const values = new Map<string, string>();
@@ -24,17 +26,15 @@ const createMemoryStorage = (): RepresentativeLetterSessionStorage => {
 };
 
 const createPopulatedState = (): RepresentativeLetterState => ({
-  version: 3,
-  recipientId: 'representative-example',
-  bodyLength: 'long',
+  version: 4,
+  recipientId: RECIPIENT_ID,
 });
 
 describe('representative-letter session state', () => {
   it('creates a minimal privacy-preserving default state', () => {
     expect(createDefaultRepresentativeLetterState()).toEqual({
-      version: 3,
+      version: 4,
       recipientId: null,
-      bodyLength: 'short',
     });
   });
 
@@ -84,7 +84,6 @@ describe('representative-letter session state', () => {
     ['version', { ...createPopulatedState(), version: 2 }],
     ['recipient', { ...createPopulatedState(), recipientId: 2 }],
     ['empty recipient', { ...createPopulatedState(), recipientId: ' ' }],
-    ['body length', { ...createPopulatedState(), bodyLength: 'medium' }],
   ])('rejects an invalid %s value', (_label, value) => {
     const storage = createMemoryStorage();
     storage.setItem(REPRESENTATIVE_LETTER_SESSION_KEY, JSON.stringify(value));
@@ -94,7 +93,7 @@ describe('representative-letter session state', () => {
     );
   });
 
-  it('accepts the short length and a null recipient', () => {
+  it('accepts a null recipient', () => {
     const storage = createMemoryStorage();
     const state = createDefaultRepresentativeLetterState();
     storage.setItem(REPRESENTATIVE_LETTER_SESSION_KEY, JSON.stringify(state));
@@ -102,18 +101,42 @@ describe('representative-letter session state', () => {
     expect(readRepresentativeLetterState(storage)).toEqual(state);
   });
 
-  it('migrates only recipient and length from the health-related v2 state', () => {
+  it('migrates only the recipient from the v3 state', () => {
+    const storage = createMemoryStorage();
+    storage.setItem(
+      LEGACY_V3_KEY,
+      JSON.stringify({
+        version: 3,
+        recipientId: RECIPIENT_ID,
+        bodyLength: 'long',
+      }),
+    );
+    storage.setItem(LEGACY_V2_KEY, 'obsolete');
+    storage.setItem(LEGACY_V1_KEY, 'obsolete');
+
+    expect(readRepresentativeLetterState(storage)).toEqual(
+      createPopulatedState(),
+    );
+    expect(storage.getItem(LEGACY_V3_KEY)).toBeNull();
+    expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
+    expect(storage.getItem(LEGACY_V1_KEY)).toBeNull();
+    expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBe(
+      JSON.stringify(createPopulatedState()),
+    );
+  });
+
+  it('migrates only the recipient from the health-related v2 state', () => {
     const storage = createMemoryStorage();
     storage.setItem(
       LEGACY_V2_KEY,
       JSON.stringify({
         version: 2,
         view: 'information',
-        recipientId: 'representative-example',
+        recipientId: RECIPIENT_ID,
         severityId: 'severe',
         careStatusId: 'level-4',
         customExperience: 'Synthetic health detail',
-        bodyLength: 'long',
+        bodyLength: 'short',
       }),
     );
     storage.setItem(LEGACY_V1_KEY, 'obsolete');
@@ -121,6 +144,7 @@ describe('representative-letter session state', () => {
     expect(readRepresentativeLetterState(storage)).toEqual(
       createPopulatedState(),
     );
+    expect(storage.getItem(LEGACY_V3_KEY)).toBeNull();
     expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
     expect(storage.getItem(LEGACY_V1_KEY)).toBeNull();
     expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBe(
@@ -130,9 +154,8 @@ describe('representative-letter session state', () => {
 
   it.each([
     ['non-object', 'legacy'],
-    ['wrong version', { version: 1, recipientId: null, bodyLength: 'short' }],
-    ['invalid recipient', { version: 2, recipientId: [], bodyLength: 'short' }],
-    ['invalid length', { version: 2, recipientId: null, bodyLength: 'medium' }],
+    ['wrong version', { version: 1, recipientId: null }],
+    ['invalid recipient', { version: 2, recipientId: [] }],
   ])('discards an invalid legacy %s state', (_label, value) => {
     const storage = createMemoryStorage();
     storage.setItem(LEGACY_V2_KEY, JSON.stringify(value));
@@ -147,12 +170,14 @@ describe('representative-letter session state', () => {
     const storage = createMemoryStorage();
     const unrelatedKey = 'unrelated';
     storage.setItem(unrelatedKey, 'keep');
+    storage.setItem(LEGACY_V3_KEY, 'obsolete');
     storage.setItem(LEGACY_V2_KEY, 'obsolete');
     storage.setItem(LEGACY_V1_KEY, 'obsolete');
     writeRepresentativeLetterState(createPopulatedState(), storage);
 
     expect(clearRepresentativeLetterState(storage)).toBe(true);
     expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBeNull();
+    expect(storage.getItem(LEGACY_V3_KEY)).toBeNull();
     expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
     expect(storage.getItem(LEGACY_V1_KEY)).toBeNull();
     expect(storage.getItem(unrelatedKey)).toBe('keep');
