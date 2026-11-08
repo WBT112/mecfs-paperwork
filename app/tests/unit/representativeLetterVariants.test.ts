@@ -10,7 +10,7 @@ import { createMailtoLink } from '../../src/features/representative-letter/mailt
 
 describe('approved representative letter variants', () => {
   it('uses natural care wording and varied thanks immediately before the sign-off', () => {
-    expect(letterVariants.contentVersion).toBe('2026-11-08.3');
+    expect(letterVariants.contentVersion).toBe('2026-11-08.4');
     const closingThanks = letterVariants.bodies.map(({ text }) => {
       const paragraphs = text.split('\n\n');
       expect(paragraphs.at(-1)).toBe('Mit freundlichen Grüßen');
@@ -24,6 +24,19 @@ describe('approved representative letter variants', () => {
     ]) {
       expect(text).not.toMatch(/\bvertraute(?:n|r)? Ersatzpflege\b/iu);
     }
+  });
+
+  it('opens every body with a distinct statement that the sender lives in the constituency', () => {
+    const introductions = letterVariants.bodies.map(({ text }) => {
+      const introduction = text.split('\n\n')[1];
+      expect(introduction).toContain('in Ihrem Wahlkreis');
+      expect(introduction).toMatch(/(?:lebe|wohne|Wohnort)/u);
+      expect(introduction).not.toMatch(
+        /Wähler|Wählerin|gewählt|Wahlberechtigung/u,
+      );
+      return introduction;
+    });
+    expect(new Set(introductions).size).toBe(30);
   });
 
   it('contains exactly 30 distinct complete plaintext subjects and bodies', () => {

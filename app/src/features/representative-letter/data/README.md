@@ -131,7 +131,7 @@ version.
 
 ### Approved wording variants (#558)
 
-`letter-variants.de.json`, schema v1 and content version `2026-11-08.3`, contains
+`letter-variants.de.json`, schema v1 and content version `2026-11-08.4`, contains
 exactly 30 subjects and 30 complete German plaintext bodies. The maintainer
 explicitly approved all 60 Revision 2 proposals on 2026-11-08 in the
 implementation session. Its approval metadata links the source issue comment.
@@ -143,6 +143,12 @@ Generation changes only the neutral greeting to address a selected recipient.
 Both DE and EN interfaces use these German texts; no English letter translation
 is approved. A content-version mismatch triggers the existing fresh-pair policy
 while preserving a valid selected recipient.
+
+Version `2026-11-08.4` adds a distinct opening sentence to every body, stating
+that the sender lives in the recipient's constituency, as requested by the
+maintainer. These are bundled drafting statements, not inferred residence data:
+the application collects no address and makes no assertion about citizenship,
+voter eligibility, or voting history. Recipient selection remains explicit.
 
 Selection algorithm v1 samples the subject and body independently and uniformly
 with `Math.random`. A deliberate refresh uniformly samples one of the other
