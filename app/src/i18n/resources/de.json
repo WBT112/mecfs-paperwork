@@ -327,6 +327,7 @@
     "copyRecipient": "Empfänger kopieren",
     "copySubject": "Betreff kopieren",
     "copyBody": "Mailinhalt kopieren",
+    "copy": "Kopieren",
     "copySucceeded": "In die Zwischenablage kopiert.",
     "copyManualFallback": "Automatisches Kopieren ist nicht verfügbar. Der Text ist ausgewählt; kopiere ihn mit Strg+C oder Cmd+C.",
     "signatureNotice": "Ergänze deinen Namen erst beim Versand, zum Beispiel über deine E-Mail-Signatur.",

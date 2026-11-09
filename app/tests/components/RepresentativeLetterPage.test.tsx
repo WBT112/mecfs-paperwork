@@ -270,7 +270,7 @@ describe('RepresentativeLetterPage', () => {
     for (const [button, label] of copyButtons) {
       expect(button).toHaveClass('app__icon-button');
       expect(button).toHaveAttribute('title', label);
-      expect(button.textContent.trim()).toBe('');
+      expect(button.textContent.trim()).toBe('representativeLetter.copy');
       expect(button.querySelector('svg')).toBeInTheDocument();
     }
   });

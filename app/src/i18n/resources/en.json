@@ -327,6 +327,7 @@
     "copyRecipient": "Copy recipient",
     "copySubject": "Copy subject",
     "copyBody": "Copy mail body",
+    "copy": "Copy",
     "copySucceeded": "Copied to the clipboard.",
     "copyManualFallback": "Automatic copying is unavailable. The text is selected; copy it with Ctrl+C or Cmd+C.",
     "signatureNotice": "Add your name only when sending, for example through your email signature.",
