@@ -296,6 +296,20 @@ test('opens directly and retains only tab-local representative-letter state', as
     '[data-tool-id="representative-letter"] .app__icon-button',
   );
   await expect(copyButtons).toHaveCount(4);
+  for (const button of await copyButtons.all()) {
+    const label = button.locator('.representative-letter__copy-button-label');
+    await expect(label).toBeVisible();
+    await expect(label).toHaveText(/^(Kopieren|Copy)$/u);
+    await expect(button.locator('svg')).toBeHidden();
+  }
+  await page.setViewportSize({ width: 721, height: 720 });
+  for (const button of await copyButtons.all()) {
+    await expect(
+      button.locator('.representative-letter__copy-button-label'),
+    ).toBeHidden();
+    await expect(button.locator('svg')).toBeVisible();
+  }
+  await page.setViewportSize({ width: 320, height: 720 });
   const copyButtonMetrics = await copyButtons.evaluateAll((buttons) =>
     buttons.map((button) => {
       const bounds = button.getBoundingClientRect();

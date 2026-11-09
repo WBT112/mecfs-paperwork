@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 type CopyIconButtonProps = {
   label: string;
   describedBy: string;
@@ -9,7 +11,7 @@ type CopyIconButtonProps = {
  * Renders the shared accessible copy action used by representative-letter fields.
  *
  * @param props - Accessible label, status relation, state, and click handler.
- * @returns A touch-sized icon button with matching tooltip and accessible name.
+ * @returns A responsive copy button with a field-specific accessible name.
  */
 export default function CopyIconButton({
   label,
@@ -17,16 +19,20 @@ export default function CopyIconButton({
   disabled,
   onClick,
 }: CopyIconButtonProps) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
-      className="app__button app__icon-button"
+      className="app__button app__icon-button representative-letter__copy-button"
       aria-label={label}
       aria-describedby={describedBy}
       title={label}
       disabled={disabled}
       onClick={onClick}
     >
+      <span className="representative-letter__copy-button-label">
+        {t('representativeLetter.copy')}
+      </span>
       <svg
         width="20"
         height="20"

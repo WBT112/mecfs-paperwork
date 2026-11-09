@@ -1003,6 +1003,30 @@ body {
   font-weight: 700;
 }
 
+.representative-letter__copy-button-label {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .representative-letter__copy-field-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .representative-letter__copy-button {
+    padding: 0.45rem 0.9rem;
+    line-height: normal;
+  }
+
+  .representative-letter__copy-button svg {
+    display: none;
+  }
+
+  .representative-letter__copy-button-label {
+    display: inline;
+  }
+}
+
 .representative-letter__copy-status {
   min-height: 1.5em;
 }
