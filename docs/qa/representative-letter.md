@@ -46,6 +46,10 @@ bodies, constituency introductions, and closing thanks remain unchanged.
 5. Paperwork does not send the message. If a mail body is too long for a
    reliable `mailto` URL, recipient and subject remain available and the mail
    body can be copied with the adjacent button.
+   At viewport widths up to 720 px, copy actions display **Copy** (**Kopieren**
+   in German) as regular text buttons. Each output label sits above its button.
+   Wider viewports retain the compact copy icons. Accessible names always
+   identify the field being copied.
 6. Add a name or signature only in the mail application. **Reset** removes only
    this tool's tab-local selection and returns focus and the viewport to search.
    **Change recipient** also returns to search without replacing the variant.

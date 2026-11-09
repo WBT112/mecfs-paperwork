@@ -29,6 +29,14 @@ const requireNonEmptyString = (value, label) => {
   }
 };
 
+const hasApprovedInformationLink = (text) =>
+  text
+    .split(/\s+/u)
+    .some(
+      (token) =>
+        URL.canParse(token) && new URL(token).href === 'https://www.mecfs.de/',
+    );
+
 const validateEntries = (entries, label) => {
   if (!Array.isArray(entries) || entries.length !== 30) {
     throw new Error(`${label} must contain exactly 30 variants.`);
@@ -61,7 +69,7 @@ const validateEntries = (entries, label) => {
       label === 'bodies' &&
       (!entry.text.startsWith('Guten Tag,\n\n') ||
         !entry.text.endsWith('Mit freundlichen Grüßen') ||
-        !entry.text.includes('https://www.mecfs.de/'))
+        !hasApprovedInformationLink(entry.text))
     ) {
       throw new Error(
         'Bodies require the neutral greeting, sign-off, and approved information link.',

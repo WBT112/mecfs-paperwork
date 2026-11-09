@@ -71,7 +71,7 @@ Highlights:
 
 ## AI-assisted development (transparency)
 
-This project is developed in part with AI assistance (e.g., agents/Codex/Jules). This is intentional: the problem matters, development should move quickly, and AI helps deliver small changes faster.
+This project is developed in part with AI assistance (e.g., agents/Codex). This is intentional: the problem matters, development should move quickly, and AI helps deliver small changes faster.
 
 Important: AI does not replace quality or security measures. Changes are not accepted "blindly"; they go through review and the existing quality gates (see "Quality gates" and CONTRIBUTING/AGENTS).
 

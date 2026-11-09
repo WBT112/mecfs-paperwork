@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import rawVariants from '../../src/features/representative-letter/data/letter-variants.de.json';
 import { validateRepresentativeContent } from '../../scripts/validate-representative-content.mjs';
 
+const APPROVED_INFORMATION_URL = 'https://www.mecfs.de/';
+
 const withEntry = (
   collection: 'subjects' | 'bodies',
   index: number,
@@ -112,7 +114,7 @@ describe('active representative content validation', () => {
     for (const text of [
       body.text.replace('Guten Tag,', 'Hallo,'),
       body.text.replace('Mit freundlichen Grüßen', ''),
-      body.text.replace('https://www.mecfs.de/', 'https://example.invalid/'),
+      body.text.replace(APPROVED_INFORMATION_URL, 'https://example.invalid/'),
     ]) {
       expect(() =>
         validateRepresentativeContent(
@@ -129,5 +131,41 @@ describe('active representative content validation', () => {
     ).toContain(
       `30 subjects, 30 bodies, version ${rawVariants.contentVersion}`,
     );
+  });
+
+  it.each([
+    'https://evil.invalid/?next=https://www.mecfs.de/',
+    'https://evil.invalid/https://www.mecfs.de/',
+    'https://www.mecfs.de.evil.invalid/',
+    'https://www.mecfs.de@evil.invalid/',
+    'https://www.mecfs.de/?next=https://evil.invalid/',
+    'https://www.mecfs.de/#https://evil.invalid/',
+    'prefixhttps://www.mecfs.de/',
+    'http://www.mecfs.de/',
+  ])(
+    'rejects an embedded, spoofed, or unapproved information URL: %s',
+    (url) => {
+      const original = rawVariants.bodies[0];
+      expect(() =>
+        validateRepresentativeContent(
+          withEntry('bodies', 0, {
+            ...original,
+            text: original.text.replace(APPROVED_INFORMATION_URL, url),
+          }),
+        ),
+      ).toThrow(/approved information link/u);
+    },
+  );
+
+  it('accepts the canonical official URL parsed from a complete plaintext token', () => {
+    const original = rawVariants.bodies[0];
+    const value = withEntry('bodies', 0, {
+      ...original,
+      text: original.text.replace(
+        APPROVED_INFORMATION_URL,
+        'https://WWW.MECFS.DE:443/',
+      ),
+    });
+    expect(validateRepresentativeContent(value)).toBe(value);
   });
 });
