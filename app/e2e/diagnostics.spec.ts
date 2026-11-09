@@ -257,4 +257,77 @@ test.describe('reset all local data', () => {
     );
     expect(activeRecordId).not.toBeNull();
   });
+
+  test('waits for a blocking tab and preserves the key until deletion completes', async ({
+    page,
+    context,
+  }) => {
+    await deleteDatabase(page, DB_NAME);
+    await seedDraft(page);
+    const otherAppTab = await context.newPage();
+    await otherAppTab.goto(`/formpacks/${FORM_PACK_ID}`);
+    await expect(otherAppTab.locator('#root_person_firstName')).toBeVisible();
+    const blocker = await context.newPage();
+    await blocker.goto('/e2e-reset.html');
+    await blocker.evaluate(async (name) => {
+      const state = window as unknown as {
+        resetBlocked: boolean;
+        resetConnection?: IDBDatabase;
+      };
+      state.resetBlocked = false;
+      await new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open(name);
+        request.onsuccess = () => {
+          state.resetConnection = request.result;
+          // This deliberately uncooperative connection models an older app tab.
+          request.result.onversionchange = () => {
+            state.resetBlocked = true;
+          };
+          resolve();
+        };
+        request.onerror = () => reject(request.error);
+      });
+    }, DB_NAME);
+
+    const keyBefore = (await context.cookies()).find(
+      (cookie) => cookie.name === STORAGE_KEY_COOKIE_NAME,
+    );
+    expect(keyBefore).toBeDefined();
+    await page.goto('/help');
+    await page.getByTestId('reset-all-data').click();
+    await page
+      .getByRole('dialog', { name: CONFIRMATION_DIALOG_TITLE })
+      .getByRole('button', { name: RESET_ALL_LABEL })
+      .click();
+    await expect
+      .poll(() =>
+        blocker.evaluate(
+          () => (window as unknown as { resetBlocked: boolean }).resetBlocked,
+        ),
+      )
+      .toBe(true);
+    await expect(page.getByTestId('reset-all-data')).toBeDisabled();
+    expect(
+      (await context.cookies()).find(
+        (cookie) => cookie.name === STORAGE_KEY_COOKIE_NAME,
+      )?.value,
+    ).toBe(keyBefore?.value);
+
+    const reloaded = page.waitForEvent('load');
+    await blocker.close();
+    await reloaded;
+    await expect(page.getByTestId('reset-all-data')).toBeEnabled();
+    expect(
+      (await context.cookies()).some(
+        (cookie) => cookie.name === STORAGE_KEY_COOKIE_NAME,
+      ),
+    ).toBe(false);
+    expect(
+      await page.evaluate(
+        (key) => localStorage.getItem(key),
+        ACTIVE_RECORD_KEY,
+      ),
+    ).toBeNull();
+    await otherAppTab.close();
+  });
 });

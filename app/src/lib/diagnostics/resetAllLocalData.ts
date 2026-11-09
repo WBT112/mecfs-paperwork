@@ -1,48 +1,26 @@
-import { toError } from '../errors';
+import { deleteDB } from 'idb';
 import { clearStorageEncryptionKeyCookie } from '../../storage/atRestEncryption';
+import { resetAppShell } from './resetAppShell';
 
 const DB_NAME = 'mecfs-paperwork';
 
+/**
+ * Deletes persisted data before clearing the app shell and encryption material.
+ *
+ * @returns A promise that resolves once cleanup and the reload request complete.
+ * @throws When database deletion or app-shell cleanup fails.
+ * @remarks
+ * A blocked deletion remains pending. Never remove the key or report completion
+ * before IndexedDB confirms deletion; cooperating connections close on version changes.
+ */
 export const resetAllLocalData = async (): Promise<void> => {
-  // 1. Delete IndexedDB database
   if (typeof indexedDB !== 'undefined') {
-    await new Promise<void>((resolve, reject) => {
-      const request = indexedDB.deleteDatabase(DB_NAME);
-      request.onsuccess = () => {
-        resolve();
-      };
-      request.onerror = () => {
-        reject(
-          toError(
-            request.error,
-            `Failed to delete IndexedDB database "${DB_NAME}".`,
-          ),
-        );
-      };
-      request.onblocked = () => {
-        resolve();
-      };
-    });
+    await deleteDB(DB_NAME);
   }
 
-  // 2. Unregister all service workers
-  if ('serviceWorker' in navigator) {
-    const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map((reg) => reg.unregister()));
-  }
-
-  // 3. Clear all caches
-  if ('caches' in globalThis) {
-    const cacheNames = await caches.keys();
-    await Promise.all(cacheNames.map((name) => caches.delete(name)));
-  }
-
-  // 4. Clear localStorage
+  await resetAppShell({ reload: false });
   globalThis.localStorage.clear();
-
-  // 5. Clear storage encryption key cookie
+  globalThis.sessionStorage.clear();
   clearStorageEncryptionKeyCookie();
-
-  // 6. Reload the page to reinitialize cleanly
   globalThis.location.reload();
 };
