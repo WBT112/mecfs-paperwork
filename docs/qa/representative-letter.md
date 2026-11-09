@@ -29,8 +29,10 @@ wording makes no claim about voting eligibility or previous votes.
    introductory gate is required.
 2. Enter one five-digit postcode or a place name. The matching representatives
    are shown directly with place, federal-state, and constituency context.
-3. Select the correct representative. Expand their details to review the
-   verification date and official contact/profile links.
+3. Select the correct representative. The next available mail action receives
+   focus and is brought into view immediately, including after changing the
+   recipient. Without a verified email, focus goes to the mail-body copy action.
+   Expand recipient details to review verification and official contact links.
 4. Copy recipient, subject, and the single complete mail body separately, or
    select **Open in email app** to open the locally configured mail application.
 5. Paperwork does not send the message. If a mail body is too long for a
@@ -88,6 +90,13 @@ npm run test:e2e
 
 Run E2E only after the faster checks pass. Record the commit, browser/OS, and
 any allowed Firefox or WebKit warning in the PR description.
+
+`e2e/representative-letter-scroll.spec.ts` checks the action after selecting from
+a long results list and again after a postcode search. It covers desktop keyboard
+input and narrow/landscape touch viewports, including full visibility, focus,
+hit testing, and the next Tab stop. Reloading a saved selection and refreshing a
+variant must not pull focus or scroll back to the primary action. Native mobile
+keyboard and browser-toolbar behavior still require a real-device check.
 
 ## Manual release review
 

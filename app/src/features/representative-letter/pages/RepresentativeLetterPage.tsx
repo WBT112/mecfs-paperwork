@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -421,6 +422,7 @@ const SelectedRecipient = ({
 };
 
 type PrimaryMailActionsProps = {
+  actionsRef: RefObject<HTMLElement | null>;
   mailtoLink: MailtoLink | null;
   body: string;
   bodyFieldRef: RefObject<HTMLTextAreaElement | null>;
@@ -494,6 +496,7 @@ const CatalogProvenance = ({
 type PrimaryCopyStatus = 'idle' | 'copied' | 'manual';
 
 const PrimaryMailActions = ({
+  actionsRef,
   mailtoLink,
   body,
   bodyFieldRef,
@@ -527,6 +530,7 @@ const PrimaryMailActions = ({
 
   return (
     <section
+      ref={actionsRef}
       aria-label={t('representativeLetter.primaryActionsLabel')}
       style={PRIMARY_ACTIONS_STYLE}
     >
@@ -593,12 +597,27 @@ export default function RepresentativeLetterPage() {
     () => state.recipientId === null,
   );
   const bodyFieldRef = useRef<HTMLTextAreaElement>(null);
+  const primaryActionsRef = useRef<HTMLElement>(null);
+  const pendingSelectionFocus = useRef(false);
   const {
     catalog,
     locationCatalog,
     failed: catalogFailed,
   } = useRepresentativeCatalogs();
   const skipNextWrite = useRef(false);
+
+  useLayoutEffect(() => {
+    if (!pendingSelectionFocus.current) {
+      return;
+    }
+    pendingSelectionFocus.current = false;
+    // RATIONALE: Removing search results must leave the next action in view.
+    const nextAction = primaryActionsRef.current!.querySelector<HTMLElement>(
+      'a[href], button:enabled',
+    )!;
+    nextAction.focus({ preventScroll: true });
+    nextAction.scrollIntoView({ behavior: 'instant', block: 'center' });
+  }, [state.recipientId]);
 
   useEffect(() => {
     if (skipNextWrite.current) {
@@ -610,6 +629,7 @@ export default function RepresentativeLetterPage() {
   }, [state]);
 
   const selectRecipient = (recipientId: string) => {
+    pendingSelectionFocus.current = true;
     setState((current) => ({ ...current, recipientId }));
     setRecipientSearchOpen(false);
   };
@@ -702,6 +722,7 @@ export default function RepresentativeLetterPage() {
           <>
             <SelectedRecipient representative={selectedRepresentative} />
             <PrimaryMailActions
+              actionsRef={primaryActionsRef}
               mailtoLink={mailtoLink}
               body={generatedLetter.body}
               bodyFieldRef={bodyFieldRef}
