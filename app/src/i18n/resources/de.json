@@ -333,7 +333,7 @@
     "primaryActionsLabel": "E-Mail-Aktionen",
     "openEmailApp": "Im Mailprogramm öffnen",
     "mailtoDescription": "Öffnet dein eingerichtetes Mailprogramm mit der versandfertigen Mail.",
-    "mailtoUnavailable": "Wähle einen Empfänger mit bestätigter öffentlicher E-Mail-Adresse. Nutze andernfalls die Copy/Paste-Felder und die offizielle Kontaktmöglichkeit.",
+    "mailtoUnavailable": "Keine bestätigte E-Mail-Adresse verfügbar. Kopiere den Mailinhalt und nutze die offizielle Kontaktmöglichkeit.",
     "mailtoBodyTooLong": "Betreff oder Mailinhalt sind für einen zuverlässigen E-Mail-Link zu lang. Das E-Mail-Programm wird nur mit den Angaben geöffnet, die sicher übergeben werden können; kopiere den vollständigen Inhalt aus den Feldern oben.",
     "reset": "Zurücksetzen"
   },

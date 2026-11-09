@@ -41,9 +41,16 @@ const normalizeLocationValue = (value: string): string =>
     .replaceAll(/[^a-z\d]+/gu, ' ')
     .trim();
 
+const simplifyUmlauts = (value: string): string =>
+  value.replaceAll(/([aou])e/gu, '$1');
+
 const matchesPlace = (location: ConstituencyLocation, tokens: string[]) => {
   const searchable = normalizeLocationValue(location.municipality);
-  return tokens.every((token) => searchable.includes(token));
+  const simplified = simplifyUmlauts(searchable);
+  return tokens.every(
+    (token) =>
+      searchable.includes(token) || simplified.includes(simplifyUmlauts(token)),
+  );
 };
 
 const locationRank = (
@@ -53,7 +60,11 @@ const locationRank = (
   const municipality = normalizeLocationValue(location.municipality);
   if (municipality === normalizedQuery) return 0;
   if (municipality.startsWith(normalizedQuery)) return 1;
-  return 2;
+  const simplified = simplifyUmlauts(municipality);
+  const simplifiedQuery = simplifyUmlauts(normalizedQuery);
+  if (simplified === simplifiedQuery) return 2;
+  if (simplified.startsWith(simplifiedQuery)) return 3;
+  return 4;
 };
 
 /**
@@ -64,6 +75,8 @@ const locationRank = (
  * @returns A validation state and explicitly selectable constituency matches.
  * @remarks Numeric input must be exactly five digits. Place matching ignores
  * case, diacritics, umlaut spellings, punctuation, and the St./Sankt variant.
+ * Exact and prefix matches retain priority over simplified umlaut spellings.
+ * Postcode matches expose only the searched postcode without mutating the catalog.
  */
 export const searchConstituencyLocations = (
   catalog: ConstituencyLocationCatalog,
@@ -92,11 +105,15 @@ export const searchConstituencyLocations = (
   const tokens = normalizedQuery.split(/\s+/u).filter(Boolean);
 
   const rankedMatches = catalog.constituencies.flatMap((constituency) => {
-    const locations = constituency.locations.filter((location) =>
-      isPostcode
-        ? location.postalCodes.includes(trimmedQuery)
-        : matchesPlace(location, tokens),
-    );
+    const locations = constituency.locations
+      .filter((location) =>
+        isPostcode
+          ? location.postalCodes.includes(trimmedQuery)
+          : matchesPlace(location, tokens),
+      )
+      .map((location) =>
+        isPostcode ? { ...location, postalCodes: [trimmedQuery] } : location,
+      );
     if (locations.length === 0) {
       return [];
     }

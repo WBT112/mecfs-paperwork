@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { searchConstituencyLocations } from '../../src/features/representative-letter/constituencyLocationSearch';
+import { constituencyLocationCatalog } from '../../src/features/representative-letter/data/constituencyLocationCatalog';
 import type { ConstituencyLocationCatalog } from '../../src/features/representative-letter/data/constituencyLocationCatalogs';
 
 const catalog: ConstituencyLocationCatalog = {
@@ -105,6 +106,58 @@ describe('searchConstituencyLocations', () => {
       status: 'not-found',
       matches: [],
     });
+  });
+
+  it.each([
+    ['Köln', 'Koln'],
+    ['Koeln', 'Koln'],
+    ['München', 'Munchen'],
+    ['Muenchen', 'Munchen'],
+  ])(
+    'resolves %s and %s to the same constituencies',
+    (original, simplified) => {
+      const numbers = (query: string) =>
+        searchConstituencyLocations(constituencyLocationCatalog, query)
+          .matches.map(({ constituencyNumber }) => constituencyNumber)
+          .sort((a, b) => a - b);
+      expect(numbers(simplified)).toEqual(numbers(original));
+      expect(numbers(original).length).toBeGreaterThan(0);
+    },
+  );
+
+  it('ranks original spellings before simplified exact and prefix matches', () => {
+    const spellingCatalog: ConstituencyLocationCatalog = {
+      ...catalog,
+      constituencies: ['Koln', 'Köln', 'Kölnerdorf', 'Alt-Köln'].map(
+        (municipality, index) => ({
+          ...catalog.constituencies[0],
+          number: index + 1,
+          locations: [
+            { municipality, county: 'Example', postalCodes: ['12345'] },
+          ],
+        }),
+      ),
+    };
+    expect(
+      searchConstituencyLocations(spellingCatalog, 'Koln').matches.map(
+        ({ constituencyNumber }) => constituencyNumber,
+      ),
+    ).toEqual([1, 2, 3, 4]);
+  });
+
+  it('limits postcode context to the matched postcode without changing the catalog', () => {
+    const original = structuredClone(constituencyLocationCatalog);
+    const result = searchConstituencyLocations(
+      constituencyLocationCatalog,
+      '50999',
+    );
+    expect(result.matches.length).toBeGreaterThan(0);
+    for (const match of result.matches) {
+      for (const location of match.locations) {
+        expect(location.postalCodes).toEqual(['50999']);
+      }
+    }
+    expect(constituencyLocationCatalog).toEqual(original);
   });
 
   it('ranks an exact municipality before prefix and county matches', () => {
