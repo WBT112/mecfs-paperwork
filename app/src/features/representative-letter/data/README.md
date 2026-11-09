@@ -122,7 +122,7 @@ approved body. There is no legacy-template fallback.
 
 ### Approved wording variants (#558)
 
-`letter-variants.de.json`, schema v1 and content version `2026-11-08.4`, contains
+`letter-variants.de.json`, schema v1 and content version `2026-11-09.1`, contains
 exactly 30 subjects and 30 complete German plaintext bodies. The maintainer
 explicitly approved all 60 Revision 2 proposals on 2026-11-08 in the
 implementation session. Its approval metadata links the source issue comment.
@@ -140,6 +140,13 @@ that the sender lives in the recipient's constituency, as requested by the
 maintainer. These are bundled drafting statements, not inferred residence data:
 the application collects no address and makes no assertion about citizenship,
 voter eligibility, or voting history. Recipient selection remains explicit.
+
+Version `2026-11-09.1` contains the corrections approved in #632 on 2026-11-09.
+Bodies 03 and 22 consistently request a prior scientific assessment of whether
+the grading process captures fluctuating and delayed ME trajectories. Body 10
+clarifies continued separate billing of respite care. No other variant wording
+changes. Approval metadata retains the original Revision 2 provenance and
+records this subsequent editorial approval.
 
 Selection algorithm v1 samples the subject and body independently and uniformly
 with `Math.random`. A deliberate refresh uniformly samples one of the other
