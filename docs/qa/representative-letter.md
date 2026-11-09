@@ -23,6 +23,13 @@ that it appears after the greeting in the generated plaintext and survives
 copying and mailto generation. No address is collected or inferred, and the
 wording makes no claim about voting eligibility or previous votes.
 
+Version `2026-11-09.1` records the maintainer-approved corrections in #632.
+Bodies 03 and 22 require a prior scientific assessment of whether the grading
+process captures fluctuating and delayed ME trajectories, consistently with the
+other bodies. Body 10 clarifies that respite care remains a separate benefit
+with its own budget and can continue to be billed separately. All other subjects,
+bodies, constituency introductions, and closing thanks remain unchanged.
+
 ## User flow
 
 1. Open **Email representatives**. No account, profile, health detail, or
