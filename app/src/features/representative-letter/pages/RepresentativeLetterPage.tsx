@@ -207,6 +207,7 @@ const SearchResults = ({
 };
 
 type RecipientPickerProps = {
+  searchRef: RefObject<HTMLInputElement | null>;
   representatives: readonly RepresentativeCatalogEntry[];
   locationCatalog: ConstituencyLocationCatalog;
   locationQuery: string;
@@ -229,6 +230,7 @@ const locationStatusKey = (
 };
 
 const RecipientPicker = ({
+  searchRef,
   representatives,
   locationCatalog,
   locationQuery,
@@ -264,6 +266,7 @@ const RecipientPicker = ({
         >
           {t('representativeLetter.locationSearchLabel')}
           <input
+            ref={searchRef}
             id="representative-letter-location-search"
             type="search"
             inputMode="search"
@@ -424,6 +427,7 @@ const SelectedRecipient = ({
 type PrimaryMailActionsProps = {
   actionsRef: RefObject<HTMLElement | null>;
   mailtoLink: MailtoLink | null;
+  officialContactUrl: string;
   body: string;
   bodyFieldRef: RefObject<HTMLTextAreaElement | null>;
 };
@@ -498,6 +502,7 @@ type PrimaryCopyStatus = 'idle' | 'copied' | 'manual';
 const PrimaryMailActions = ({
   actionsRef,
   mailtoLink,
+  officialContactUrl,
   body,
   bodyFieldRef,
 }: PrimaryMailActionsProps) => {
@@ -557,10 +562,20 @@ const PrimaryMailActions = ({
         )}
         <CopyIconButton
           label={t('representativeLetter.copyBody')}
-          describedBy={copyStatusId}
+          describedBy={`${copyStatusId} ${descriptionId}`}
           disabled={false}
           onClick={copyBody}
         />
+        {mailtoLink ? null : (
+          <a
+            className="app__button"
+            href={officialContactUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {t('representativeLetter.officialContact')}
+          </a>
+        )}
       </div>
       <p id={descriptionId} style={PRIMARY_DESCRIPTION_STYLE}>
         {mailtoLink
@@ -598,7 +613,8 @@ export default function RepresentativeLetterPage() {
   );
   const bodyFieldRef = useRef<HTMLTextAreaElement>(null);
   const primaryActionsRef = useRef<HTMLElement>(null);
-  const pendingSelectionFocus = useRef(false);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const pendingFocus = useRef<'search' | 'actions' | null>(null);
   const {
     catalog,
     locationCatalog,
@@ -607,17 +623,23 @@ export default function RepresentativeLetterPage() {
   const skipNextWrite = useRef(false);
 
   useLayoutEffect(() => {
-    if (!pendingSelectionFocus.current) {
+    if (!pendingFocus.current) {
       return;
     }
-    pendingSelectionFocus.current = false;
-    // RATIONALE: Removing search results must leave the next action in view.
-    const nextAction = primaryActionsRef.current!.querySelector<HTMLElement>(
-      'a[href], button:enabled',
-    )!;
+    // RATIONALE: Replacing workflow steps must leave the next control in view.
+    const nextAction =
+      pendingFocus.current === 'search'
+        ? searchRef.current
+        : primaryActionsRef.current!.querySelector<HTMLElement>(
+            'a[href], button:enabled',
+          )!;
+    if (!nextAction) {
+      return;
+    }
+    pendingFocus.current = null;
     nextAction.focus({ preventScroll: true });
     nextAction.scrollIntoView({ behavior: 'instant', block: 'center' });
-  }, [state.recipientId]);
+  }, [state, recipientSearchOpen, catalog]);
 
   useEffect(() => {
     if (skipNextWrite.current) {
@@ -629,12 +651,13 @@ export default function RepresentativeLetterPage() {
   }, [state]);
 
   const selectRecipient = (recipientId: string) => {
-    pendingSelectionFocus.current = true;
+    pendingFocus.current = 'actions';
     setState((current) => ({ ...current, recipientId }));
     setRecipientSearchOpen(false);
   };
 
   const reset = () => {
+    pendingFocus.current = 'search';
     skipNextWrite.current = true;
     clearRepresentativeLetterState();
     setState(createDefaultRepresentativeLetterState());
@@ -648,6 +671,7 @@ export default function RepresentativeLetterPage() {
   };
 
   const changeRecipient = () => {
+    pendingFocus.current = 'search';
     setState((current) => ({ ...current, recipientId: null }));
     setRecipientSearchOpen(true);
   };
@@ -677,6 +701,7 @@ export default function RepresentativeLetterPage() {
   } else if (catalog && locationCatalog) {
     recipientSearchContent = (
       <RecipientPicker
+        searchRef={searchRef}
         representatives={representatives}
         locationCatalog={locationCatalog}
         locationQuery={locationQuery}
@@ -724,6 +749,7 @@ export default function RepresentativeLetterPage() {
             <PrimaryMailActions
               actionsRef={primaryActionsRef}
               mailtoLink={mailtoLink}
+              officialContactUrl={selectedRepresentative.officialContactUrl}
               body={generatedLetter.body}
               bodyFieldRef={bodyFieldRef}
             />

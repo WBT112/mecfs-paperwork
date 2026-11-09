@@ -55,6 +55,9 @@ for (const scenario of scenarios) {
     await page
       .getByRole('button', { name: /Empfänger ändern|Change recipient/i })
       .click();
+    const search = page.getByLabel(/Postleitzahl oder Ort|Postcode or place/i);
+    await expect(search).toBeFocused();
+    await expect(search).toBeInViewport({ ratio: 1 });
     await page
       .getByLabel(/Postleitzahl oder Ort|Postcode or place/i)
       .fill('50668');
@@ -65,5 +68,46 @@ for (const scenario of scenarios) {
       .click();
     await expect(emailAction).toBeInViewport({ ratio: 1 });
     await expect(emailAction).toBeFocused();
+    await page.getByRole('button', { name: /Zurücksetzen|Reset/i }).click();
+    await expect(search).toBeFocused();
+    await expect(search).toBeInViewport({ ratio: 1 });
+    await expect(search).toHaveValue('');
   });
 }
+
+test('keeps the workflow usable without storage and displays the searched postcode @mobile', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'sessionStorage', {
+      configurable: true,
+      get() {
+        throw new DOMException('Storage blocked', 'SecurityError');
+      },
+    });
+  });
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/tools/mail-pflegegesetz');
+  const search = page.getByLabel(/Postleitzahl oder Ort|Postcode or place/i);
+  await search.fill('50999');
+  const results = page.locator('.representative-letter__results li');
+  await expect(results.first()).toBeVisible();
+  for (const text of await results.allTextContents()) {
+    expect(text).toContain('50999');
+  }
+  await results.first().getByRole('button').tap();
+  await expect(
+    page.getByRole('link', {
+      name: /Im Mailprogramm öffnen|Open in email app/i,
+    }),
+  ).toBeFocused();
+  await page.getByRole('button', { name: /Zurücksetzen|Reset/i }).tap();
+  await expect(search).toBeFocused();
+  await expect(search).toBeInViewport({ ratio: 1 });
+  for (const query of ['Koln', 'Munchen']) {
+    await search.fill(query);
+    await expect(results.first()).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});

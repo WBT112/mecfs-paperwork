@@ -22,6 +22,8 @@ const LOCATION_SEARCH_LABEL = 'representativeLetter.locationSearchLabel';
 const SELECT_RECIPIENT_BUTTON = 'representativeLetter.selectRecipientNamed';
 const CHANGE_RECIPIENT_BUTTON = 'representativeLetter.changeRecipient';
 const OPEN_EMAIL_APP = 'representativeLetter.openEmailApp';
+const REFRESH_VARIANT = 'representativeLetter.refreshVariant';
+const RESET_BUTTON = 'representativeLetter.reset';
 const COPY_RECIPIENT = 'representativeLetter.copyRecipient';
 const COPY_SUBJECT = 'representativeLetter.copySubject';
 const COPY_BODY = 'representativeLetter.copyBody';
@@ -446,6 +448,17 @@ describe('RepresentativeLetterPage', () => {
     const copyAction = screen.getAllByRole('button', { name: COPY_BODY })[0];
     expect(copyAction).toHaveFocus();
     expect(scrollIntoView.mock.contexts).toEqual([copyAction]);
+    const primaryContact = within(
+      screen.getByRole('region', {
+        name: 'representativeLetter.primaryActionsLabel',
+      }),
+    ).getByRole('link', { name: 'representativeLetter.officialContact' });
+    expect(primaryContact).toBeVisible();
+    expect(primaryContact).toHaveAttribute(
+      'href',
+      MISSING_RECIPIENT!.officialContactUrl,
+    );
+    expect(primaryContact).toHaveAttribute('rel', 'noreferrer');
     await user.click(
       screen.getByRole('button', { name: MISSING_RECIPIENT!.fullName }),
     );
@@ -456,9 +469,9 @@ describe('RepresentativeLetterPage', () => {
       'representativeLetter.recipientMissingPlaceholder',
     );
     expect(
-      screen.getByRole('link', {
+      screen.getAllByRole('link', {
         name: 'representativeLetter.officialContact',
-      }),
+      })[0],
     ).toHaveAttribute('href', MISSING_RECIPIENT!.officialContactUrl);
     expect(
       screen.getByRole('button', {
@@ -601,7 +614,7 @@ describe('RepresentativeLetterPage', () => {
     await selectRepresentative(user, VERIFIED_RECIPIENT!);
     const previousState = readRepresentativeLetterState();
     const refresh = screen.getByRole('button', {
-      name: 'representativeLetter.refreshVariant',
+      name: REFRESH_VARIANT,
     });
     vi.mocked(Math.random).mockReturnValue(0.75);
     await user.click(refresh);
@@ -646,7 +659,7 @@ describe('RepresentativeLetterPage', () => {
     const beforeRefresh = readRepresentativeLetterState().variant;
     await user.click(
       screen.getByRole('button', {
-        name: 'representativeLetter.refreshVariant',
+        name: REFRESH_VARIANT,
       }),
     );
     expect(search).toHaveValue('Köln');
@@ -718,12 +731,14 @@ describe('RepresentativeLetterPage', () => {
     window.sessionStorage.setItem('unrelated', 'keep');
     renderPage();
     await selectRepresentative(user, VERIFIED_RECIPIENT!);
-    await user.click(
-      screen.getByRole('button', { name: 'representativeLetter.reset' }),
-    );
+    await user.click(screen.getByRole('button', { name: RESET_BUTTON }));
 
     expect(screen.getByLabelText(BODY_LABEL)).toBeVisible();
     expect(screen.getByLabelText(LOCATION_SEARCH_LABEL)).toHaveValue('');
+    expect(screen.getByLabelText(LOCATION_SEARCH_LABEL)).toHaveFocus();
+    expect(scrollIntoView.mock.contexts.at(-1)).toBe(
+      screen.getByLabelText(LOCATION_SEARCH_LABEL),
+    );
     expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue('');
     expect(
       screen.getByRole('button', {
@@ -739,6 +754,60 @@ describe('RepresentativeLetterPage', () => {
       window.sessionStorage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY),
     ).toBeNull();
     expect(window.sessionStorage.getItem('unrelated')).toBe('keep');
+    await user.click(screen.getByRole('button', { name: RESET_BUTTON }));
+    expect(screen.getByLabelText(LOCATION_SEARCH_LABEL)).toHaveFocus();
+  });
+
+  it('supports selection, variant refresh, recipient change and reset when storage is blocked', async () => {
+    vi.spyOn(globalThis, 'sessionStorage', 'get').mockImplementation(() => {
+      throw new DOMException('Storage blocked', 'SecurityError');
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await selectRepresentative(user, VERIFIED_RECIPIENT!);
+    expect(screen.getByRole('link', { name: OPEN_EMAIL_APP })).toHaveFocus();
+    const originalPair = [SUBJECT_LABEL, BODY_LABEL].map(
+      (label) => screen.getByLabelText<HTMLInputElement>(label).value,
+    );
+    vi.mocked(Math.random).mockReturnValue(0.5);
+    await user.click(
+      screen.getByRole('button', {
+        name: REFRESH_VARIANT,
+      }),
+    );
+    expect(
+      [SUBJECT_LABEL, BODY_LABEL].map(
+        (label) => screen.getByLabelText<HTMLInputElement>(label).value,
+      ),
+    ).not.toEqual(originalPair);
+    await user.click(
+      screen.getByRole('button', { name: CHANGE_RECIPIENT_BUTTON }),
+    );
+    expect(screen.getByLabelText(LOCATION_SEARCH_LABEL)).toHaveFocus();
+    await selectRepresentative(user, ALTERNATE_VERIFIED_RECIPIENT!);
+    await user.click(screen.getByRole('button', { name: RESET_BUTTON }));
+    expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue('');
+    expect(screen.getByLabelText(LOCATION_SEARCH_LABEL)).toHaveFocus();
+  });
+
+  it('returns to search after a reset while catalogs are still loading', async () => {
+    let finishLoading!: () => void;
+    const ready = new Promise<void>((resolve) => {
+      finishLoading = resolve;
+    });
+    const loadCatalog = vi.mocked(fetch).getMockImplementation()!;
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      await ready;
+      return loadCatalog(input, init);
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole('button', { name: RESET_BUTTON }));
+    expect(
+      screen.getByText('representativeLetter.catalogLoading'),
+    ).toBeVisible();
+    finishLoading();
+    expect(await screen.findByLabelText(LOCATION_SEARCH_LABEL)).toHaveFocus();
   });
 
   it('does not duplicate the support overview link inside the tool card', () => {

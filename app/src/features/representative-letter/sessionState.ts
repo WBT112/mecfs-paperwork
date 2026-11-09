@@ -71,9 +71,10 @@ const parseVersionedState = (
  * @returns The stored state, or a fresh default when access or validation fails.
  */
 export const readRepresentativeLetterState = (
-  storage: RepresentativeLetterSessionStorage = globalThis.sessionStorage,
+  storage?: RepresentativeLetterSessionStorage,
 ): RepresentativeLetterState => {
   try {
+    storage ??= globalThis.sessionStorage;
     discardRetiredStates(storage);
     const serialized = storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY);
     if (serialized) {
@@ -119,9 +120,10 @@ export const readRepresentativeLetterState = (
  */
 export const writeRepresentativeLetterState = (
   state: RepresentativeLetterState,
-  storage: RepresentativeLetterSessionStorage = globalThis.sessionStorage,
+  storage?: RepresentativeLetterSessionStorage,
 ): boolean => {
   try {
+    storage ??= globalThis.sessionStorage;
     storage.setItem(REPRESENTATIVE_LETTER_SESSION_KEY, JSON.stringify(state));
     return true;
   } catch {
@@ -136,9 +138,10 @@ export const writeRepresentativeLetterState = (
  * @returns Whether the removal succeeded.
  */
 export const clearRepresentativeLetterState = (
-  storage: RepresentativeLetterSessionStorage = globalThis.sessionStorage,
+  storage?: RepresentativeLetterSessionStorage,
 ): boolean => {
   try {
+    storage ??= globalThis.sessionStorage;
     storage.removeItem(REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V4_REPRESENTATIVE_LETTER_SESSION_KEY);
     discardRetiredStates(storage);

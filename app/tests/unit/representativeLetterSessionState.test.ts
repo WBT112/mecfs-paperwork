@@ -39,6 +39,24 @@ describe('representative-letter session state', () => {
     expect(readRepresentativeLetterState(storage)).toEqual(state);
   });
 
+  it('uses browser storage when no storage is supplied', () => {
+    const state = createPopulatedState();
+    expect(writeRepresentativeLetterState(state)).toBe(true);
+    expect(readRepresentativeLetterState()).toEqual(state);
+    expect(clearRepresentativeLetterState()).toBe(true);
+  });
+
+  it('recovers when obtaining browser storage itself throws', () => {
+    vi.spyOn(globalThis, 'sessionStorage', 'get').mockImplementation(() => {
+      throw new DOMException('Storage blocked', 'SecurityError');
+    });
+    expect(readRepresentativeLetterState()).toEqual(
+      createDefaultRepresentativeLetterState(),
+    );
+    expect(writeRepresentativeLetterState(createPopulatedState())).toBe(false);
+    expect(clearRepresentativeLetterState()).toBe(false);
+  });
+
   it('keeps separate tab storage independent and initializes empty storage', () => {
     const firstTab = createMemoryStorage();
     const secondTab = createMemoryStorage();
