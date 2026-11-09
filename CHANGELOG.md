@@ -18,6 +18,30 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 -
 
+## [0.7.0] - 2026-11-09
+
+### Added
+
+- Offline representative-letter tool with direct postcode/place lookup, verified public contacts, 30 approved subjects and 30 letter bodies, accessible copy actions, and explicit local email-client handoff. Completes epic #550.
+- Pacing signal cards, revised support-offer navigation, and the ME Bingo / Spoon Manager games hub.
+
+### Fixed
+
+- Representative-letter mobile copy controls, action visibility after recipient selection, storage-denied operation, and search context.
+- False background formpack updates caused by fingerprinting raw and normalized manifests differently.
+- Data reset now waits for confirmed database deletion, preserves keys while blocked, and invalidates connections in other tabs (#641).
+- Mobile Safari form controls use consistent minimum touch heights, including date inputs.
+- Approved information-link validation for CodeQL alert 96; E2E report retention for allowed browser failures.
+
+### Removed
+
+- Retired Jules configuration and obsolete representative-letter implementation assets.
+
+### Known issues
+
+- Outstanding dependency and Sonar findings are documented in `docs/qa/security-review-2026-11-09.md`.
+- Full release notes: `docs/releases/v.0.7.0.md`.
+
 ## [0.6.0] - 2026-02-27
 
 ### Added

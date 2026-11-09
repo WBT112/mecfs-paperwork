@@ -57,6 +57,48 @@ describe('storage/db', () => {
   });
 
   describe('openStorage', () => {
+    it('closes invalidated connections and rejects access until the tab reloads', async () => {
+      vi.resetModules();
+      const storage = await import('../../../src/storage/db');
+      globalWithIndexedDb.indexedDB = {} as IDBFactory;
+      const database = { close: vi.fn() } as unknown as IDBPDatabase;
+      (openDB as Mock).mockResolvedValue(database);
+
+      await storage.openStorage();
+      const options = (openDB as Mock).mock.calls.at(-1)?.[2] as
+        OpenDBCallbacks<unknown> | undefined;
+      expect(options?.blocking).toBeTypeOf('function');
+      options!.blocking!(3, null, {} as IDBVersionChangeEvent);
+
+      expect(database.close).toHaveBeenCalledOnce();
+      await expect(storage.openStorage()).rejects.toThrow(/Reload the app/);
+    });
+
+    it('closes an in-flight connection if another connection is invalidated', async () => {
+      vi.resetModules();
+      const storage = await import('../../../src/storage/db');
+      globalWithIndexedDb.indexedDB = {} as IDBFactory;
+      const first = { close: vi.fn() } as unknown as IDBPDatabase;
+      const second = { close: vi.fn() } as unknown as IDBPDatabase;
+      let finishOpening!: (database: IDBPDatabase) => void;
+      (openDB as Mock).mockResolvedValueOnce(first).mockReturnValueOnce(
+        new Promise<IDBPDatabase>((resolve) => {
+          finishOpening = resolve;
+        }),
+      );
+
+      await storage.openStorage();
+      const options = (openDB as Mock).mock.calls.at(-1)?.[2] as
+        OpenDBCallbacks<unknown> | undefined;
+      const pending = storage.openStorage();
+      options!.blocking!(3, null, {} as IDBVersionChangeEvent);
+      finishOpening(second);
+
+      await expect(pending).rejects.toThrow(/Reload the app/);
+      expect(first.close).toHaveBeenCalledOnce();
+      expect(second.close).toHaveBeenCalledOnce();
+    });
+
     it('should throw StorageUnavailableError if indexedDB is not available', async () => {
       globalWithIndexedDb.indexedDB = undefined;
 

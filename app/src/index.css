@@ -1705,6 +1705,11 @@ body {
   text-overflow: ellipsis;
 }
 
+.formpack-form input:not([type='checkbox']):not([type='radio']),
+.formpack-form select {
+  min-height: 44px;
+}
+
 .formpack-form textarea.formpack-textarea--auto {
   overflow: hidden;
   resize: vertical;

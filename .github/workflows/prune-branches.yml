@@ -1,0 +1,53 @@
+name: Prune merged branches
+
+on:
+  push:
+    branches: [staging]
+    paths: [.github/workflows/prune-branches.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: prune-merged-branches
+  cancel-in-progress: false
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Checkout repository history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Delete merged branches without open pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+          open_heads="$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls?state=open&per_page=100" --jq '.[].head.ref')"
+          while IFS= read -r branch; do
+            case "$branch" in main|staging|HEAD) continue ;; esac
+            [[ "$branch" =~ ^[a-zA-Z0-9._/-]+$ ]] || continue
+            if printf '%s\n' "$open_heads" | grep -Fxq -- "$branch"; then
+              continue
+            fi
+            sha="$(git rev-parse "refs/remotes/origin/$branch")"
+            if ! git merge-base --is-ancestor "$sha" origin/main &&
+               ! git merge-base --is-ancestor "$sha" origin/staging; then
+              continue
+            fi
+            current_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" --jq '.object.sha')"
+            [[ "$current_sha" == "$sha" ]] || continue
+            gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/$branch"
+            echo "Deleted merged branch: $branch"
+          done < <(git for-each-ref --format='%(refname:strip=3)' refs/remotes/origin)
