@@ -8,8 +8,23 @@ import { generateRepresentativeLetter } from '../../src/features/representative-
 import { createMailtoLink } from '../../src/features/representative-letter/mailto';
 
 describe('approved representative letter variants', () => {
+  it('keeps the reviewed assessment request and separate billing wording consistent', () => {
+    for (const id of ['body-03', 'body-22']) {
+      const text = letterVariants.bodies.find((body) => body.id === id)!.text;
+      expect(text).toContain('nachdem wissenschaftlich geprüft wurde, ob');
+      expect(text).not.toMatch(/bestätigt.*dass/u);
+    }
+    expect(
+      letterVariants.bodies.find(({ id }) => id === 'body-10')!.text,
+    ).toContain(
+      'eine eigenständige Leistung mit eigenem Budget bleibt und weiterhin separat abgerechnet werden kann',
+    );
+    expect(letterVariants.approval.approvedAt).toBe('2026-11-09');
+    expect(letterVariants.approval.notes).toContain('#632');
+  });
+
   it('uses natural care wording and varied thanks immediately before the sign-off', () => {
-    expect(letterVariants.contentVersion).toBe('2026-11-08.4');
+    expect(letterVariants.contentVersion).toBe('2026-11-09.1');
     const closingThanks = letterVariants.bodies.map(({ text }) => {
       const paragraphs = text.split('\n\n');
       expect(paragraphs.at(-1)).toBe('Mit freundlichen Grüßen');

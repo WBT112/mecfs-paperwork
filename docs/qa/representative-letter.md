@@ -23,6 +23,13 @@ that it appears after the greeting in the generated plaintext and survives
 copying and mailto generation. No address is collected or inferred, and the
 wording makes no claim about voting eligibility or previous votes.
 
+Version `2026-11-09.1` records the maintainer-approved corrections in #632.
+Bodies 03 and 22 require a prior scientific assessment of whether the grading
+process captures fluctuating and delayed ME trajectories, consistently with the
+other bodies. Body 10 clarifies that respite care remains a separate benefit
+with its own budget and can continue to be billed separately. All other subjects,
+bodies, constituency introductions, and closing thanks remain unchanged.
+
 ## User flow
 
 1. Open **Email representatives**. No account, profile, health detail, or
@@ -32,6 +39,7 @@ wording makes no claim about voting eligibility or previous votes.
 3. Select the correct representative. The next available mail action receives
    focus and is brought into view immediately, including after changing the
    recipient. Without a verified email, focus goes to the mail-body copy action.
+   The official contact link is also available directly beside the copy action.
    Expand recipient details to review verification and official contact links.
 4. Copy recipient, subject, and the single complete mail body separately, or
    select **Open in email app** to open the locally configured mail application.
@@ -39,7 +47,15 @@ wording makes no claim about voting eligibility or previous votes.
    reliable `mailto` URL, recipient and subject remain available and the mail
    body can be copied with the adjacent button.
 6. Add a name or signature only in the mail application. **Reset** removes only
-   this tool's tab-local selection.
+   this tool's tab-local selection and returns focus and the viewport to search.
+   **Change recipient** also returns to search without replacing the variant.
+
+Search accepts umlauts, their `ae`/`oe`/`ue` transliterations, and plain vowels
+(for example, `Köln`, `Koeln`, and `Koln`). Exact and prefix spellings take
+priority over simplified matches. Postcode results display the searched postcode
+instead of an arbitrary subset of the municipality's postcodes. With blocked
+session storage the workflow remains usable in memory without fallback storage;
+selections do not survive a reload in that case.
 
 Optionally use **New email variant** below the body. It refreshes the pair while
 preserving recipient and search. Verify keyboard focus stays on the button,
