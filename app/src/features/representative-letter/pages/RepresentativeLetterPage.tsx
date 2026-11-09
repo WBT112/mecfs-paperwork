@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -8,7 +9,6 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import CollapsibleSection from '../../../components/CollapsibleSection';
-import { useLocale } from '../../../i18n/useLocale';
 import CopyIconButton from '../components/CopyIconButton';
 import CopyableTextField from '../components/CopyableTextField';
 import {
@@ -16,7 +16,6 @@ import {
   type RepresentativeCatalogEntry,
 } from '../data/catalogs';
 import type { ConstituencyLocationCatalog } from '../data/constituencyLocationCatalogs';
-import { getRepresentativeLetterContent } from '../data/letterContent';
 import { generateRepresentativeLetter } from '../generator';
 import { selectLetterVariants } from '../variants';
 import { loadConstituencyLocationCatalog } from '../data/loadConstituencyLocationCatalog';
@@ -423,6 +422,7 @@ const SelectedRecipient = ({
 };
 
 type PrimaryMailActionsProps = {
+  actionsRef: RefObject<HTMLElement | null>;
   mailtoLink: MailtoLink | null;
   body: string;
   bodyFieldRef: RefObject<HTMLTextAreaElement | null>;
@@ -496,6 +496,7 @@ const CatalogProvenance = ({
 type PrimaryCopyStatus = 'idle' | 'copied' | 'manual';
 
 const PrimaryMailActions = ({
+  actionsRef,
   mailtoLink,
   body,
   bodyFieldRef,
@@ -529,6 +530,7 @@ const PrimaryMailActions = ({
 
   return (
     <section
+      ref={actionsRef}
       aria-label={t('representativeLetter.primaryActionsLabel')}
       style={PRIMARY_ACTIONS_STYLE}
     >
@@ -586,7 +588,6 @@ const PrimaryMailActions = ({
  */
 export default function RepresentativeLetterPage() {
   const { t } = useTranslation();
-  const { locale } = useLocale();
   const [state, setState] = useState<RepresentativeLetterState>(() =>
     readRepresentativeLetterState(),
   );
@@ -596,12 +597,27 @@ export default function RepresentativeLetterPage() {
     () => state.recipientId === null,
   );
   const bodyFieldRef = useRef<HTMLTextAreaElement>(null);
+  const primaryActionsRef = useRef<HTMLElement>(null);
+  const pendingSelectionFocus = useRef(false);
   const {
     catalog,
     locationCatalog,
     failed: catalogFailed,
   } = useRepresentativeCatalogs();
   const skipNextWrite = useRef(false);
+
+  useLayoutEffect(() => {
+    if (!pendingSelectionFocus.current) {
+      return;
+    }
+    pendingSelectionFocus.current = false;
+    // RATIONALE: Removing search results must leave the next action in view.
+    const nextAction = primaryActionsRef.current!.querySelector<HTMLElement>(
+      'a[href], button:enabled',
+    )!;
+    nextAction.focus({ preventScroll: true });
+    nextAction.scrollIntoView({ behavior: 'instant', block: 'center' });
+  }, [state.recipientId]);
 
   useEffect(() => {
     if (skipNextWrite.current) {
@@ -613,6 +629,7 @@ export default function RepresentativeLetterPage() {
   }, [state]);
 
   const selectRecipient = (recipientId: string) => {
+    pendingSelectionFocus.current = true;
     setState((current) => ({ ...current, recipientId }));
     setRecipientSearchOpen(false);
   };
@@ -635,13 +652,11 @@ export default function RepresentativeLetterPage() {
     setRecipientSearchOpen(true);
   };
 
-  const contentCatalog = getRepresentativeLetterContent(locale);
   const representatives = catalog?.representatives ?? [];
   const selectedRepresentative = representatives.find(
     ({ id }) => id === state.recipientId,
   );
   const generatedLetter = generateRepresentativeLetter({
-    catalog: contentCatalog,
     recipientName: selectedRepresentative?.fullName ?? null,
     variant: state.variant,
   });
@@ -707,6 +722,7 @@ export default function RepresentativeLetterPage() {
           <>
             <SelectedRecipient representative={selectedRepresentative} />
             <PrimaryMailActions
+              actionsRef={primaryActionsRef}
               mailtoLink={mailtoLink}
               body={generatedLetter.body}
               bodyFieldRef={bodyFieldRef}

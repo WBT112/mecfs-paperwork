@@ -5,7 +5,6 @@ import {
   selectLetterVariants,
 } from '../../src/features/representative-letter/variants';
 import { generateRepresentativeLetter } from '../../src/features/representative-letter/generator';
-import { representativeLetterContent } from '../../src/features/representative-letter/data/letterContent';
 import { createMailtoLink } from '../../src/features/representative-letter/mailto';
 
 describe('approved representative letter variants', () => {
@@ -89,7 +88,6 @@ describe('approved representative letter variants', () => {
         expect(selection.bodyId).toBe(letterVariants.bodies[body].id);
         pairs.add(`${selection.subjectId}/${selection.bodyId}`);
         const letter = generateRepresentativeLetter({
-          catalog: representativeLetterContent,
           recipientName: 'Erika Beispiel',
           variant: selection,
         });
@@ -135,7 +133,6 @@ describe('approved representative letter variants', () => {
     const variant = selectLetterVariants(undefined, () => 0);
     expect(
       generateRepresentativeLetter({
-        catalog: representativeLetterContent,
         recipientName: null,
         variant,
       }).body,

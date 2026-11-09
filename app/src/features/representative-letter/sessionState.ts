@@ -10,18 +10,23 @@ export const REPRESENTATIVE_LETTER_SESSION_KEY =
   'mecfs-paperwork.representative-letter.state.v5';
 const LEGACY_V4_REPRESENTATIVE_LETTER_SESSION_KEY =
   'mecfs-paperwork.representative-letter.state.v4';
-const LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY =
-  'mecfs-paperwork.representative-letter.state.v3';
-const LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY =
-  'mecfs-paperwork.representative-letter.state.v2';
-const LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY =
-  'mecfs-paperwork.representative-letter.state.v1';
 
 /** Minimal storage contract used by the tab-local state helpers. */
 export type RepresentativeLetterSessionStorage = Pick<
   Storage,
   'getItem' | 'setItem' | 'removeItem'
 >;
+
+// SECURITY: Retired states may contain health-related free text; never parse it.
+const discardRetiredStates = (
+  storage: RepresentativeLetterSessionStorage,
+): void => {
+  for (const version of [1, 2, 3]) {
+    storage.removeItem(
+      `mecfs-paperwork.representative-letter.state.v${version}`,
+    );
+  }
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -46,9 +51,11 @@ const parseVersionedState = (
     return null;
   }
 
-  const variant = isLetterVariantSelection(value.variant)
-    ? value.variant
-    : selectLetterVariants();
+  const variant =
+    expectedVersion === REPRESENTATIVE_LETTER_STATE_VERSION &&
+    isLetterVariantSelection(value.variant)
+      ? value.variant
+      : selectLetterVariants();
 
   return {
     version: REPRESENTATIVE_LETTER_STATE_VERSION,
@@ -56,9 +63,6 @@ const parseVersionedState = (
     variant,
   };
 };
-
-const parseState = (value: unknown): RepresentativeLetterState | null =>
-  parseVersionedState(value, REPRESENTATIVE_LETTER_STATE_VERSION);
 
 /**
  * Reads and validates the representative-letter state from one browser tab.
@@ -70,37 +74,28 @@ export const readRepresentativeLetterState = (
   storage: RepresentativeLetterSessionStorage = globalThis.sessionStorage,
 ): RepresentativeLetterState => {
   try {
+    discardRetiredStates(storage);
     const serialized = storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY);
     if (serialized) {
       return (
-        parseState(JSON.parse(serialized) as unknown) ??
-        createDefaultRepresentativeLetterState()
+        parseVersionedState(
+          JSON.parse(serialized) as unknown,
+          REPRESENTATIVE_LETTER_STATE_VERSION,
+        ) ?? createDefaultRepresentativeLetterState()
       );
     }
 
     const legacyV4Serialized = storage.getItem(
       LEGACY_V4_REPRESENTATIVE_LETTER_SESSION_KEY,
     );
-    const legacyV3Serialized = storage.getItem(
-      LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY,
-    );
-    const legacyV2Serialized = storage.getItem(
-      LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY,
-    );
     storage.removeItem(LEGACY_V4_REPRESENTATIVE_LETTER_SESSION_KEY);
-    storage.removeItem(LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY);
-    storage.removeItem(LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY);
-    storage.removeItem(LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY);
-    const legacySerialized =
-      legacyV4Serialized ?? legacyV3Serialized ?? legacyV2Serialized;
-    if (!legacySerialized) {
+    if (!legacyV4Serialized) {
       return createDefaultRepresentativeLetterState();
     }
 
-    const olderVersion = legacyV3Serialized ? 3 : 2;
     const migrated = parseVersionedState(
-      JSON.parse(legacySerialized) as unknown,
-      legacyV4Serialized ? 4 : olderVersion,
+      JSON.parse(legacyV4Serialized) as unknown,
+      4,
     );
     if (!migrated) {
       return createDefaultRepresentativeLetterState();
@@ -146,9 +141,7 @@ export const clearRepresentativeLetterState = (
   try {
     storage.removeItem(REPRESENTATIVE_LETTER_SESSION_KEY);
     storage.removeItem(LEGACY_V4_REPRESENTATIVE_LETTER_SESSION_KEY);
-    storage.removeItem(LEGACY_V3_REPRESENTATIVE_LETTER_SESSION_KEY);
-    storage.removeItem(LEGACY_V2_REPRESENTATIVE_LETTER_SESSION_KEY);
-    storage.removeItem(LEGACY_V1_REPRESENTATIVE_LETTER_SESSION_KEY);
+    discardRetiredStates(storage);
     return true;
   } catch {
     return false;
