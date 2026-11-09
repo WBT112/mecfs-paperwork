@@ -6,137 +6,106 @@ import { checkNodeVersion } from './check-node-version.mjs';
 
 checkNodeVersion();
 
-const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const CONTENT_PATH = path.resolve(
-  SCRIPT_DIR,
-  '../src/features/representative-letter/data/letter-content.de.json',
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../src/features/representative-letter/data/letter-variants.de.json',
 );
-const EXPECTED_SELECTION_COUNTS = new Map([
-  ['severity:mild', 2],
-  ['severity:moderate', 2],
-  ['severity:severe', 2],
-  ['severity:very-severe', 2],
-  ['care:none', 1],
-  ['care:pending', 1],
-  ['care:level-1', 2],
-  ['care:level-2', 2],
-  ['care:level-3', 2],
-  ['care:level-4', 2],
-  ['care:level-5', 2],
-]);
+const CATALOG_KEYS = [
+  'schemaVersion',
+  'contentVersion',
+  'contentLanguage',
+  'approval',
+  'subjects',
+  'bodies',
+];
+const MARKDOWN_OR_PLACEHOLDER =
+  /(?:^|\n)#{1,6}\s|\*\*|__|```|\[[^\]]+\]\(|<[^>]+>|\{\{|\}\}/u;
 
+const isObject = (value) =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
 const requireNonEmptyString = (value, label) => {
   if (typeof value !== 'string' || value.trim() === '') {
     throw new Error(`${label} must be a non-empty string.`);
   }
 };
 
-const validateBlocks = (blocks) => {
-  if (!Array.isArray(blocks) || blocks.length !== 20) {
-    throw new Error(
-      'The content catalog must contain exactly 20 source blocks.',
-    );
+const validateEntries = (entries, label) => {
+  if (!Array.isArray(entries) || entries.length !== 30) {
+    throw new Error(`${label} must contain exactly 30 variants.`);
   }
-
   const ids = new Set();
-  const combinations = new Set();
-  const selectionCounts = new Map();
-  for (const block of blocks) {
-    for (const key of [
-      'id',
-      'category',
-      'selectionId',
-      'variantId',
-      'label',
-      'sourceText',
-    ]) {
-      requireNonEmptyString(block[key], `personalBlocks.${key}`);
+  const texts = new Set();
+  for (const entry of entries) {
+    if (
+      !isObject(entry) ||
+      Object.keys(entry).some((key) => !['id', 'text'].includes(key))
+    ) {
+      throw new Error(`${label} entries must contain only id and text.`);
     }
-    if (!['severity', 'care'].includes(block.category)) {
-      throw new Error(`Unsupported block category: ${block.category}`);
+    requireNonEmptyString(entry.id, `${label}.id`);
+    requireNonEmptyString(entry.text, `${label}.text`);
+    if (ids.has(entry.id) || texts.has(entry.text)) {
+      throw new Error(`${label} must have unique IDs and texts.`);
     }
-    if (ids.has(block.id)) {
-      throw new Error(`Duplicate block id: ${block.id}`);
-    }
-    ids.add(block.id);
-
-    const combination = `${block.category}:${block.selectionId}:${block.variantId}`;
-    if (combinations.has(combination)) {
-      throw new Error(`Duplicate block selection: ${combination}`);
-    }
-    combinations.add(combination);
-
-    const selection = `${block.category}:${block.selectionId}`;
-    selectionCounts.set(selection, (selectionCounts.get(selection) ?? 0) + 1);
-  }
-
-  for (const [selection, expectedCount] of EXPECTED_SELECTION_COUNTS) {
-    if (selectionCounts.get(selection) !== expectedCount) {
+    ids.add(entry.id);
+    texts.add(entry.text);
+    if (MARKDOWN_OR_PLACEHOLDER.test(entry.text)) {
       throw new Error(
-        `${selection} must contain ${expectedCount} source block(s).`,
+        `${label} must be plaintext without unresolved placeholders.`,
+      );
+    }
+    if (label === 'subjects' && /[\r\n]/u.test(entry.text)) {
+      throw new Error('Subjects must fit on one line.');
+    }
+    if (
+      label === 'bodies' &&
+      (!entry.text.startsWith('Guten Tag,\n\n') ||
+        !entry.text.endsWith('Mit freundlichen Grüßen') ||
+        !entry.text.includes('https://www.mecfs.de/'))
+    ) {
+      throw new Error(
+        'Bodies require the neutral greeting, sign-off, and approved information link.',
       );
     }
   }
-  if (selectionCounts.size !== EXPECTED_SELECTION_COUNTS.size) {
-    throw new Error('The content catalog contains an unsupported selection.');
-  }
 };
 
+/**
+ * Validates the active bundled variants and their editorial provenance.
+ * @param value - Untrusted parsed catalog.
+ * @returns The validated catalog.
+ * @throws If the schema, approval metadata, or plaintext variants are invalid.
+ */
 export const validateRepresentativeContent = (value) => {
-  if (!value || typeof value !== 'object') {
+  if (!isObject(value)) {
     throw new Error('The content catalog must be an object.');
   }
   if (value.schemaVersion !== 1 || value.contentLanguage !== 'de') {
     throw new Error('Unsupported representative-letter content schema.');
   }
+  if (Object.keys(value).some((key) => !CATALOG_KEYS.includes(key))) {
+    throw new Error('The catalog contains unsupported fields.');
+  }
   requireNonEmptyString(value.contentVersion, 'contentVersion');
-  requireNonEmptyString(value.subject, 'subject');
+  const approval = value.approval;
   if (
-    value.approval?.status !== 'approved-as-provided' ||
-    value.approval?.sourceIssue !== 619
+    !isObject(approval) ||
+    approval.status !== 'approved-as-provided' ||
+    !Number.isInteger(approval.sourceIssue) ||
+    approval.sourceIssue <= 0 ||
+    !Number.isInteger(approval.sourceRevision) ||
+    approval.sourceRevision <= 0 ||
+    typeof approval.approvedAt !== 'string' ||
+    !/^\d{4}-\d{2}-\d{2}$/u.test(approval.approvedAt) ||
+    typeof approval.sourceComment !== 'string' ||
+    !URL.canParse(approval.sourceComment) ||
+    new URL(approval.sourceComment).protocol !== 'https:'
   ) {
     throw new Error('The content approval metadata is incomplete.');
   }
-  if (
-    !Array.isArray(value.template?.opening) ||
-    value.template.opening.length !== 3
-  ) {
-    throw new Error(
-      'The template must contain all three approved opening paragraphs.',
-    );
-  }
-  if (
-    !Array.isArray(value.template?.requests) ||
-    value.template.requests.length !== 4
-  ) {
-    throw new Error('The template must contain all four approved requests.');
-  }
-  for (const text of [
-    ...value.template.opening,
-    value.template.requestHeading,
-    ...value.template.requests,
-    value.template.responseRequest,
-    value.template.templateDisclosure,
-    value.template.signOff,
-  ]) {
-    requireNonEmptyString(text, 'template text');
-  }
-  if (
-    !Array.isArray(value.sourceReferences) ||
-    value.sourceReferences.length !== 2
-  ) {
-    throw new Error(
-      'Both required long-form source references must be present.',
-    );
-  }
-  for (const reference of value.sourceReferences) {
-    requireNonEmptyString(reference.id, 'source reference id');
-    requireNonEmptyString(reference.label, 'source reference label');
-    if (!URL.canParse(reference.url) || !reference.url.startsWith('https://')) {
-      throw new Error(`Invalid source reference URL: ${reference.url}`);
-    }
-  }
-  validateBlocks(value.personalBlocks);
+  requireNonEmptyString(approval.notes, 'approval.notes');
+  validateEntries(value.subjects, 'subjects');
+  validateEntries(value.bodies, 'bodies');
   return value;
 };
 
@@ -144,7 +113,7 @@ const main = async () => {
   const raw = await fs.readFile(CONTENT_PATH, 'utf8');
   const catalog = validateRepresentativeContent(JSON.parse(raw));
   console.log(
-    `Representative letter content valid: ${catalog.personalBlocks.length} source blocks, version ${catalog.contentVersion}.`,
+    `Representative letter content valid: ${catalog.subjects.length} subjects, ${catalog.bodies.length} bodies, version ${catalog.contentVersion}.`,
   );
 };
 

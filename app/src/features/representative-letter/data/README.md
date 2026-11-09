@@ -98,36 +98,27 @@ context; selecting a representative remains an explicit action.
 
 ## Letter content
 
-`letter-content.de.json` preserves the 20 German personal source blocks supplied
-in issue #553. The maintainer approved the revised standard template in issue
-#619 on 2026-11-08. The catalog deliberately retains bracketed alternatives in
-the archived source material without including those blocks in generated
-letters.
+`letter-variants.de.json` is the only runtime letter-content catalog. It contains
+the 30 approved subjects, 30 complete German plaintext bodies, and their schema,
+content-version, and approval provenance. Historical templates and personal
+blocks remain available in Git history and are not shipped in the application.
 
-No English letter translation is approved yet. Both interface locales resolve
-to the complete German catalog and the UI must disclose that language instead
-of silently mixing translated and untranslated paragraphs. A later English
-catalog requires separate editorial approval and the same structural checks.
-
-Run `npm run representative-content:validate` after every content change. The
-validator enforces the catalog version, approval metadata, the complete set of
-20 source blocks, unique selection keys, required template sections, and both
-archived source links. It performs no network requests.
+Run `npm run representative-content:validate` after every content change. It
+validates the active schema, approval metadata, exact counts, unique IDs and
+texts, plaintext format, greetings, sign-offs, and approved information link.
+It rejects unsupported catalog fields and performs no network requests. The
+catalog tests additionally enforce medical and policy invariants and all 900
+subject/body combinations. Both DE and EN interfaces use the same complete
+German catalog until an English translation receives separate editorial approval.
 
 ### Generator behavior
 
 The generator renders one selected pair from the bundled variant catalog. It
 does not call an API, read profile data, or accept any severity, care-grade,
-custom health input, or length selection. It produces one complete letter. The
-cataloged source references and template disclosure remain archived metadata
-and are not injected into the mail body. The approved information link in the
-standard template is part of the generated mail body.
-
-The 20 personal `sourceText` blocks remain unchanged in the catalog as an
-editorially approved archive. They are not displayed, selected, transformed,
-or included in generated letters. Changing the archived content or adding an
-English letter catalog requires explicit editorial approval and a new content
-version.
+custom health input, or length selection. Its required input is a validated
+variant pair and an optional recipient name. It personalizes only the greeting;
+all other text, including the information link, comes directly from the selected
+approved body. There is no legacy-template fallback.
 
 ### Approved wording variants (#558)
 
@@ -160,9 +151,12 @@ Tab-local session schema v5 stores only `recipientId` and a `variant` selection
 containing catalog version, algorithm version, subject ID, and body ID. Reloads,
 navigation, copying, and recipient changes retain the pair. Refresh replaces
 only the pair and announces a numbered change without moving focus. Search is
-never persisted. Old v4/v3/v2 states retain only a valid recipient and receive a
-new pair; obsolete catalog/algorithm versions or unknown IDs receive a fresh
-pair. Invalid state roots receive a fresh default. Reset clears all tool keys.
+never persisted. The immediately previous schema v4 retains only a valid
+recipient and receives a new pair. Versions v1-v3 have no supported migration;
+their keys are deleted without reading or parsing their potentially sensitive
+contents. Only this minimal privacy purge remains. Obsolete catalog/algorithm
+versions or unknown IDs receive a fresh pair. Invalid state roots receive a
+fresh default. Reset clears supported keys and retired tool keys.
 
 Variants are bundled static assets and selection has no network dependency.
 IDs and usage statistics are never sent to URLs, logs, profiles, IndexedDB,

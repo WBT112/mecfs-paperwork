@@ -4,7 +4,7 @@ import rawVariants from './data/letter-variants.de.json';
 export const letterVariants = rawVariants;
 
 /** Version of the uniform selection algorithm with direct repeat exclusion. */
-export const LETTER_VARIANT_ALGORITHM_VERSION = 1;
+const LETTER_VARIANT_ALGORITHM_VERSION = 1;
 
 /** Versioned IDs stored only in the current tab's sessionStorage. */
 export type LetterVariantSelection = {

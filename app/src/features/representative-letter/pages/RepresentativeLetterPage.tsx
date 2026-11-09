@@ -8,7 +8,6 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import CollapsibleSection from '../../../components/CollapsibleSection';
-import { useLocale } from '../../../i18n/useLocale';
 import CopyIconButton from '../components/CopyIconButton';
 import CopyableTextField from '../components/CopyableTextField';
 import {
@@ -16,7 +15,6 @@ import {
   type RepresentativeCatalogEntry,
 } from '../data/catalogs';
 import type { ConstituencyLocationCatalog } from '../data/constituencyLocationCatalogs';
-import { getRepresentativeLetterContent } from '../data/letterContent';
 import { generateRepresentativeLetter } from '../generator';
 import { selectLetterVariants } from '../variants';
 import { loadConstituencyLocationCatalog } from '../data/loadConstituencyLocationCatalog';
@@ -586,7 +584,6 @@ const PrimaryMailActions = ({
  */
 export default function RepresentativeLetterPage() {
   const { t } = useTranslation();
-  const { locale } = useLocale();
   const [state, setState] = useState<RepresentativeLetterState>(() =>
     readRepresentativeLetterState(),
   );
@@ -635,13 +632,11 @@ export default function RepresentativeLetterPage() {
     setRecipientSearchOpen(true);
   };
 
-  const contentCatalog = getRepresentativeLetterContent(locale);
   const representatives = catalog?.representatives ?? [];
   const selectedRepresentative = representatives.find(
     ({ id }) => id === state.recipientId,
   );
   const generatedLetter = generateRepresentativeLetter({
-    catalog: contentCatalog,
     recipientName: selectedRepresentative?.fullName ?? null,
     variant: state.variant,
   });

@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  createDefaultRepresentativeLetterState,
-  type RepresentativeLetterState,
-} from '../../src/features/representative-letter/model';
+import { createDefaultRepresentativeLetterState } from '../../src/features/representative-letter/model';
 import {
   REPRESENTATIVE_LETTER_SESSION_KEY,
   clearRepresentativeLetterState,
@@ -11,11 +8,8 @@ import {
   type RepresentativeLetterSessionStorage,
 } from '../../src/features/representative-letter/sessionState';
 
-const LEGACY_V3_KEY = 'mecfs-paperwork.representative-letter.state.v3';
-const LEGACY_V2_KEY = 'mecfs-paperwork.representative-letter.state.v2';
-const LEGACY_V1_KEY = 'mecfs-paperwork.representative-letter.state.v1';
+const PREVIOUS_KEY = 'mecfs-paperwork.representative-letter.state.v4';
 const RECIPIENT_ID = 'representative-example';
-
 const createMemoryStorage = (): RepresentativeLetterSessionStorage => {
   const values = new Map<string, string>();
   return {
@@ -24,8 +18,7 @@ const createMemoryStorage = (): RepresentativeLetterSessionStorage => {
     removeItem: (key) => values.delete(key),
   };
 };
-
-const createPopulatedState = (): RepresentativeLetterState => ({
+const createPopulatedState = () => ({
   ...createDefaultRepresentativeLetterState(),
   recipientId: RECIPIENT_ID,
 });
@@ -33,117 +26,112 @@ const createPopulatedState = (): RepresentativeLetterState => ({
 describe('representative-letter session state', () => {
   beforeEach(() => vi.spyOn(Math, 'random').mockReturnValue(0));
   afterEach(() => vi.restoreAllMocks());
-  it('creates a minimal privacy-preserving default state', () => {
-    expect(createDefaultRepresentativeLetterState()).toEqual({
-      version: 5,
-      recipientId: null,
-      variant: createDefaultRepresentativeLetterState().variant,
-    });
-  });
 
-  it('round-trips valid state in one tab-local storage instance', () => {
+  it('creates only current schema fields and restores them unchanged', () => {
     const storage = createMemoryStorage();
     const state = createPopulatedState();
-
+    expect(state).toEqual({
+      version: 5,
+      recipientId: RECIPIENT_ID,
+      variant: createDefaultRepresentativeLetterState().variant,
+    });
     expect(writeRepresentativeLetterState(state, storage)).toBe(true);
     expect(readRepresentativeLetterState(storage)).toEqual(state);
   });
 
-  it('keeps separate tab-local storage instances independent', () => {
+  it('keeps separate tab storage independent and initializes empty storage', () => {
     const firstTab = createMemoryStorage();
     const secondTab = createMemoryStorage();
-    const firstState = createPopulatedState();
-
-    writeRepresentativeLetterState(firstState, firstTab);
-
-    expect(readRepresentativeLetterState(firstTab)).toEqual(firstState);
+    writeRepresentativeLetterState(createPopulatedState(), firstTab);
+    expect(readRepresentativeLetterState(firstTab)).toEqual(
+      createPopulatedState(),
+    );
     expect(readRepresentativeLetterState(secondTab)).toEqual(
       createDefaultRepresentativeLetterState(),
     );
   });
 
-  it('uses the default state for malformed JSON and inaccessible storage', () => {
-    const malformedStorage = createMemoryStorage();
-    malformedStorage.setItem(REPRESENTATIVE_LETTER_SESSION_KEY, '{');
-    const inaccessibleStorage: RepresentativeLetterSessionStorage = {
-      getItem: vi.fn(() => {
-        throw new Error('blocked');
-      }),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-    };
-
-    expect(readRepresentativeLetterState(malformedStorage)).toEqual(
-      createDefaultRepresentativeLetterState(),
-    );
-    expect(readRepresentativeLetterState(inaccessibleStorage)).toEqual(
-      createDefaultRepresentativeLetterState(),
-    );
-  });
-
   it.each([
-    ['null root', null],
-    ['primitive root', 'invalid'],
-    ['version', { ...createPopulatedState(), version: 2 }],
-    ['recipient', { ...createPopulatedState(), recipientId: 2 }],
-    ['empty recipient', { ...createPopulatedState(), recipientId: ' ' }],
-  ])('rejects an invalid %s value', (_label, value) => {
+    null,
+    'invalid',
+    [],
+    { version: 9, recipientId: null },
+    { version: 5, recipientId: 2 },
+    { version: 5, recipientId: ' ' },
+  ])('rejects invalid current state %j', (value) => {
     const storage = createMemoryStorage();
     storage.setItem(REPRESENTATIVE_LETTER_SESSION_KEY, JSON.stringify(value));
-
     expect(readRepresentativeLetterState(storage)).toEqual(
       createDefaultRepresentativeLetterState(),
     );
   });
 
-  it('accepts a null recipient', () => {
+  it('preserves a null recipient in current state', () => {
     const storage = createMemoryStorage();
     const state = createDefaultRepresentativeLetterState();
     storage.setItem(REPRESENTATIVE_LETTER_SESSION_KEY, JSON.stringify(state));
-
     expect(readRepresentativeLetterState(storage)).toEqual(state);
   });
 
-  it('migrates only the recipient from the v3 state', () => {
-    const storage = createMemoryStorage();
-    storage.setItem(
-      LEGACY_V3_KEY,
-      JSON.stringify({
-        version: 3,
-        recipientId: RECIPIENT_ID,
-        bodyLength: 'long',
-      }),
-    );
-    storage.setItem(LEGACY_V2_KEY, 'obsolete');
-    storage.setItem(LEGACY_V1_KEY, 'obsolete');
+  it.each([RECIPIENT_ID, null])(
+    'migrates the immediately previous schema with recipient %s',
+    (recipientId) => {
+      const storage = createMemoryStorage();
+      storage.setItem(
+        PREVIOUS_KEY,
+        JSON.stringify({ version: 4, recipientId }),
+      );
+      const expected = {
+        ...createDefaultRepresentativeLetterState(),
+        recipientId,
+      };
+      expect(readRepresentativeLetterState(storage)).toEqual(expected);
+      expect(storage.getItem(PREVIOUS_KEY)).toBeNull();
+      expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBe(
+        JSON.stringify(expected),
+      );
+    },
+  );
 
+  it.each([
+    null,
+    { version: 3, recipientId: RECIPIENT_ID },
+    { version: 4, recipientId: [] },
+  ])('discards invalid previous state %j', (value) => {
+    const storage = createMemoryStorage();
+    storage.setItem(PREVIOUS_KEY, JSON.stringify(value));
     expect(readRepresentativeLetterState(storage)).toEqual(
-      createPopulatedState(),
+      createDefaultRepresentativeLetterState(),
     );
-    expect(storage.getItem(LEGACY_V3_KEY)).toBeNull();
-    expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
-    expect(storage.getItem(LEGACY_V1_KEY)).toBeNull();
-    expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBe(
-      JSON.stringify(createPopulatedState()),
-    );
+    expect(storage.getItem(PREVIOUS_KEY)).toBeNull();
   });
 
-  it('migrates a v4 recipient and discards stale variant metadata', () => {
+  it('discards retired values without reading or parsing their contents', () => {
     const storage = createMemoryStorage();
-    const legacyKey = 'mecfs-paperwork.representative-letter.state.v4';
-    storage.setItem(
-      legacyKey,
-      JSON.stringify({ version: 4, recipientId: RECIPIENT_ID }),
+    const retiredKeys = [1, 2, 3].map(
+      (version) => `mecfs-paperwork.representative-letter.state.v${version}`,
     );
+    for (const key of retiredKeys) storage.setItem(key, 'retired');
+    const getItem = vi.spyOn(storage, 'getItem');
     expect(readRepresentativeLetterState(storage)).toEqual(
-      createPopulatedState(),
+      createDefaultRepresentativeLetterState(),
     );
-    expect(storage.getItem(legacyKey)).toBeNull();
+    for (const key of retiredKeys) {
+      expect(getItem).not.toHaveBeenCalledWith(key);
+      expect(storage.getItem(key)).toBeNull();
+    }
+  });
+
+  it('resamples obsolete variants while preserving the recipient', () => {
+    const storage = createMemoryStorage();
     storage.setItem(
       REPRESENTATIVE_LETTER_SESSION_KEY,
       JSON.stringify({
         ...createPopulatedState(),
-        variant: { catalogVersion: 'obsolete' },
+        variant: {
+          ...createPopulatedState().variant,
+          catalogVersion: 'obsolete',
+        },
       }),
     );
     expect(readRepresentativeLetterState(storage)).toEqual(
@@ -151,78 +139,90 @@ describe('representative-letter session state', () => {
     );
   });
 
-  it('migrates only the recipient from the health-related v2 state', () => {
+  it('migrates only the recipient from v4 even if extra fields are present', () => {
     const storage = createMemoryStorage();
+    const variant = {
+      ...createPopulatedState().variant,
+      subjectId: 'subject-30',
+      bodyId: 'body-30',
+    };
     storage.setItem(
-      LEGACY_V2_KEY,
+      PREVIOUS_KEY,
       JSON.stringify({
-        version: 2,
-        view: 'information',
+        version: 4,
         recipientId: RECIPIENT_ID,
-        severityId: 'severe',
-        careStatusId: 'level-4',
-        customExperience: 'Synthetic health detail',
-        bodyLength: 'short',
+        variant,
+        unused: 'discard',
       }),
     );
-    storage.setItem(LEGACY_V1_KEY, 'obsolete');
-
     expect(readRepresentativeLetterState(storage)).toEqual(
       createPopulatedState(),
     );
-    expect(storage.getItem(LEGACY_V3_KEY)).toBeNull();
-    expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
-    expect(storage.getItem(LEGACY_V1_KEY)).toBeNull();
-    expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBe(
-      JSON.stringify(createPopulatedState()),
-    );
   });
 
-  it.each([
-    ['non-object', 'legacy'],
-    ['wrong version', { version: 1, recipientId: null }],
-    ['invalid recipient', { version: 2, recipientId: [] }],
-  ])('discards an invalid legacy %s state', (_label, value) => {
+  it.each([REPRESENTATIVE_LETTER_SESSION_KEY, PREVIOUS_KEY])(
+    'recovers from malformed JSON at %s',
+    (key) => {
+      const storage = createMemoryStorage();
+      storage.setItem(key, '{');
+      expect(readRepresentativeLetterState(storage)).toEqual(
+        createDefaultRepresentativeLetterState(),
+      );
+    },
+  );
+
+  it('clears supported and retired tool data while retaining unrelated data', () => {
     const storage = createMemoryStorage();
-    storage.setItem(LEGACY_V2_KEY, JSON.stringify(value));
-
-    expect(readRepresentativeLetterState(storage)).toEqual(
-      createDefaultRepresentativeLetterState(),
-    );
-    expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
-  });
-
-  it('clears current and legacy keys while retaining unrelated data', () => {
-    const storage = createMemoryStorage();
-    const unrelatedKey = 'unrelated';
-    storage.setItem(unrelatedKey, 'keep');
-    storage.setItem(LEGACY_V3_KEY, 'obsolete');
-    storage.setItem(LEGACY_V2_KEY, 'obsolete');
-    storage.setItem(LEGACY_V1_KEY, 'obsolete');
-    writeRepresentativeLetterState(createPopulatedState(), storage);
-
+    const keys = [
+      REPRESENTATIVE_LETTER_SESSION_KEY,
+      PREVIOUS_KEY,
+      ...[1, 2, 3].map(
+        (version) => `mecfs-paperwork.representative-letter.state.v${version}`,
+      ),
+    ];
+    for (const key of keys) storage.setItem(key, 'tool');
+    storage.setItem('unrelated', 'keep');
     expect(clearRepresentativeLetterState(storage)).toBe(true);
-    expect(storage.getItem(REPRESENTATIVE_LETTER_SESSION_KEY)).toBeNull();
-    expect(storage.getItem(LEGACY_V3_KEY)).toBeNull();
-    expect(storage.getItem(LEGACY_V2_KEY)).toBeNull();
-    expect(storage.getItem(LEGACY_V1_KEY)).toBeNull();
-    expect(storage.getItem(unrelatedKey)).toBe('keep');
+    for (const key of keys) expect(storage.getItem(key)).toBeNull();
+    expect(storage.getItem('unrelated')).toBe('keep');
   });
 
-  it('reports blocked writes and removals without throwing', () => {
+  it('handles inaccessible storage and reports write and removal failures', () => {
     const storage: RepresentativeLetterSessionStorage = {
-      getItem: vi.fn(),
+      getItem: vi.fn(() => {
+        throw new Error('blocked');
+      }),
       setItem: vi.fn(() => {
         throw new Error('blocked');
       }),
-      removeItem: vi.fn(() => {
-        throw new Error('blocked');
-      }),
+      removeItem: vi.fn(),
     };
-
+    expect(readRepresentativeLetterState(storage)).toEqual(
+      createDefaultRepresentativeLetterState(),
+    );
     expect(
       writeRepresentativeLetterState(createPopulatedState(), storage),
     ).toBe(false);
+    vi.mocked(storage.removeItem).mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    expect(readRepresentativeLetterState(storage)).toEqual(
+      createDefaultRepresentativeLetterState(),
+    );
     expect(clearRepresentativeLetterState(storage)).toBe(false);
+  });
+
+  it('recovers when the previous state cannot be persisted', () => {
+    const storage = createMemoryStorage();
+    storage.setItem(
+      PREVIOUS_KEY,
+      JSON.stringify({ version: 4, recipientId: RECIPIENT_ID }),
+    );
+    vi.spyOn(storage, 'setItem').mockImplementation(() => {
+      throw new Error('blocked');
+    });
+    expect(readRepresentativeLetterState(storage)).toEqual(
+      createDefaultRepresentativeLetterState(),
+    );
   });
 });
