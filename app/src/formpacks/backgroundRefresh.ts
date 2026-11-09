@@ -88,7 +88,8 @@ const refreshSingleFormpack = async (formpackId: string): Promise<boolean> => {
     manifestPath,
   )) as FormpackManifestPayload;
   const manifest = parseManifest(manifestPayload, formpackId);
-  const signature = await deriveFormpackRevisionSignature(manifestPayload);
+  // Match the normalized manifest hashed by the active page to avoid false updates.
+  const signature = await deriveFormpackRevisionSignature(manifest);
   const existing = await getFormpackMeta(formpackId);
 
   if (existing?.hash === signature.hash) {

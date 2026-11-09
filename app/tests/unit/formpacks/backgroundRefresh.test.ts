@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFile } from 'node:fs/promises';
+import type { FormpackManifestPayload } from '../../../src/formpacks/types';
 
-const { FORMPACK_ID } = vi.hoisted(() => ({ FORMPACK_ID: 'doctor-letter' }));
+const { FORMPACK_ID, LOADER_MODULE, METADATA_MODULE } = vi.hoisted(() => ({
+  FORMPACK_ID: 'doctor-letter',
+  LOADER_MODULE: '../../../src/formpacks/loader',
+  METADATA_MODULE: '../../../src/formpacks/metadata',
+}));
 
 const getFormpackMeta = vi.hoisted(() => vi.fn());
 const upsertFormpackMeta = vi.hoisted(() => vi.fn());
@@ -18,7 +24,7 @@ vi.mock('../../../src/storage/formpackMeta', () => ({
   upsertFormpackMeta,
 }));
 
-vi.mock('../../../src/formpacks/loader', () => ({
+vi.mock(LOADER_MODULE, () => ({
   parseManifest,
   clearFormpackCaches,
 }));
@@ -27,7 +33,7 @@ vi.mock('../../../src/i18n/formpack', () => ({
   clearFormpackI18nCache,
 }));
 
-vi.mock('../../../src/formpacks/metadata', () => ({
+vi.mock(METADATA_MODULE, () => ({
   deriveFormpackRevisionSignature,
 }));
 
@@ -131,6 +137,43 @@ describe('formpacks/backgroundRefresh', () => {
     expect(result.skippedOffline).toBe(true);
     expect(result.updatedIds).toEqual([]);
     expect(getFormpackMeta).not.toHaveBeenCalled();
+  });
+
+  it('does not invalidate a real manifest already fingerprinted by the page', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+    const actualLoader =
+      await vi.importActual<typeof import('../../../src/formpacks/loader')>(
+        LOADER_MODULE,
+      );
+    const actualMetadata =
+      await vi.importActual<typeof import('../../../src/formpacks/metadata')>(
+        METADATA_MODULE,
+      );
+    const payload = JSON.parse(
+      await readFile(`public/formpacks/${FORMPACK_ID}/manifest.json`, 'utf8'),
+    ) as FormpackManifestPayload;
+    const normalizedManifest = actualLoader.parseManifest(payload, FORMPACK_ID);
+    const signature =
+      await actualMetadata.deriveFormpackRevisionSignature(normalizedManifest);
+    parseManifest.mockImplementationOnce(actualLoader.parseManifest);
+    deriveFormpackRevisionSignature.mockImplementationOnce(
+      actualMetadata.deriveFormpackRevisionSignature,
+    );
+    getFormpackMeta.mockResolvedValue({
+      id: FORMPACK_ID,
+      ...signature,
+      updatedAt: UPDATED_AT,
+    });
+    installFetchMock({ manifestResponse: createResponse(true, 200, payload) });
+
+    const result = await runFormpackBackgroundRefresh();
+
+    expect(result.updatedIds).toEqual([]);
+    expect(clearFormpackCaches).not.toHaveBeenCalled();
+    expect(upsertFormpackMeta).not.toHaveBeenCalled();
   });
 
   it('updates metadata and invalidates caches when formpack content changed', async () => {
