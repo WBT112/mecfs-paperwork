@@ -48,7 +48,12 @@ const originalClipboard = Object.getOwnPropertyDescriptor(
   navigator,
   'clipboard',
 );
+const originalScrollIntoView = Object.getOwnPropertyDescriptor(
+  HTMLElement.prototype,
+  'scrollIntoView',
+);
 let clipboardWrite: ReturnType<typeof vi.fn>;
+const scrollIntoView = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -119,6 +124,11 @@ const selectRepresentative = async (
 
 describe('RepresentativeLetterPage', () => {
   beforeEach(() => {
+    scrollIntoView.mockClear();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView,
+    });
     vi.spyOn(Math, 'random').mockReturnValue(0);
     window.sessionStorage.clear();
     clipboardWrite = vi.fn().mockResolvedValue(undefined);
@@ -143,6 +153,15 @@ describe('RepresentativeLetterPage', () => {
       Object.defineProperty(navigator, 'clipboard', originalClipboard);
     } else {
       Reflect.deleteProperty(navigator, 'clipboard');
+    }
+    if (originalScrollIntoView) {
+      Object.defineProperty(
+        HTMLElement.prototype,
+        'scrollIntoView',
+        originalScrollIntoView,
+      );
+    } else {
+      Reflect.deleteProperty(HTMLElement.prototype, 'scrollIntoView');
     }
     vi.unstubAllGlobals();
   });
@@ -259,6 +278,14 @@ describe('RepresentativeLetterPage', () => {
     renderPage();
 
     await selectRepresentative(user, VERIFIED_RECIPIENT!);
+
+    const nextAction = screen.getByRole('link', { name: OPEN_EMAIL_APP });
+    expect(nextAction).toHaveFocus();
+    expect(scrollIntoView.mock.contexts).toEqual([nextAction]);
+    expect(scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'instant',
+      block: 'center',
+    });
 
     expect(screen.getByLabelText(RECIPIENT_LABEL)).toHaveValue(
       VERIFIED_RECIPIENT!.email,
@@ -416,6 +443,9 @@ describe('RepresentativeLetterPage', () => {
     renderPage();
 
     await selectRepresentative(user, MISSING_RECIPIENT!);
+    const copyAction = screen.getAllByRole('button', { name: COPY_BODY })[0];
+    expect(copyAction).toHaveFocus();
+    expect(scrollIntoView.mock.contexts).toEqual([copyAction]);
     await user.click(
       screen.getByRole('button', { name: MISSING_RECIPIENT!.fullName }),
     );
@@ -576,6 +606,7 @@ describe('RepresentativeLetterPage', () => {
     vi.mocked(Math.random).mockReturnValue(0.75);
     await user.click(refresh);
     expect(refresh).toHaveFocus();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(
       screen.getByText('representativeLetter.variantChanged'),
     ).toHaveAttribute('aria-live', 'polite');
@@ -602,6 +633,10 @@ describe('RepresentativeLetterPage', () => {
     await waitFor(() =>
       expect(screen.getByLabelText(BODY_LABEL)).toHaveValue(body),
     );
+    expect(
+      screen.getByRole('link', { name: OPEN_EMAIL_APP }),
+    ).not.toHaveFocus();
+    expect(scrollIntoView).toHaveBeenCalledTimes(1);
     await user.click(
       screen.getByRole('button', { name: CHANGE_RECIPIENT_BUTTON }),
     );
