@@ -6,9 +6,10 @@ catalogs, stores only its versioned selection state in the current tab's
 `sessionStorage`, and never sends a message itself.
 
 Issue #558 adds 30 independently combinable subjects and 30 complete plaintext
-bodies, explicitly approved as Revision 2 on 2026-11-08. The archived source
-blocks and approved variant texts must not be rewritten during technical
-maintenance.
+bodies, explicitly approved as Revision 2 on 2026-11-08. Approved variant texts
+must not be rewritten during technical maintenance. The active variant catalog
+is the only runtime letter-content model; historical templates and blocks are
+preserved in Git history.
 
 Content version `2026-11-08.3` includes the maintainer-requested editorial review
 for natural German and varied closing thanks. The substantive requests and
@@ -93,8 +94,8 @@ any allowed Firefox or WebKit warning in the PR description.
 Use a fresh browser context and synthetic input only.
 
 - At 320 px width, complete the postcode/place, direct recipient, copy, and
-  `mailto` flow with touch, keyboard, and a screen reader. Confirm that there is
-  no separate constituency or short/long selection.
+  `mailto` flow with touch, keyboard, and a screen reader. Confirm that the
+  matching representative can be selected directly from the search results.
 - Verify the visible recipient address, subject, and body exactly match the
   values passed to the mail application. Confirm that no message is sent
   without a separate user action in that application.
@@ -107,11 +108,10 @@ Use a fresh browser context and synthetic input only.
   DevTools shows no request to an external origin.
 - Inspect URL, console, Network, Application Storage, IndexedDB, and generated
   test artifacts. They must not contain the entered place/postcode or private
-  user information. Only the documented recipient ID may exist in the tool's
-  tab-local state.
+  user information. Only the documented recipient ID, variant IDs, and schema,
+  catalog, and algorithm versions may exist in the tool's tab-local state.
 - Repeat the UI flow in German and English. The generated letter remains German
-  until a separately approved English catalog exists, and the UI must disclose
-  that fact.
+  until a separately approved English catalog exists.
 - Smoke-test the existing formpack DOCX, PDF, and JSON paths to ensure this
   standalone tool has not changed them.
 
@@ -160,14 +160,14 @@ For constituency, municipality, or postcode changes:
 
 Legal or policy changes require editorial review before a release. A maintainer
 must verify every claim and primary source in the subject, single mail body,
-and source references. Technical contributors must not silently
+and linked information. Technical contributors must not silently
 reinterpret, shorten, translate, or expand those claims.
 
 After approval:
 
 1. Update `letter-variants.de.json` only after approval of each changed subject
-   and complete body. Keep the original base catalog and archive intact unless
-   separately approved.
+   and complete body. Preserve the source issue, revision, approval date, and
+   editorial notes; the Git history is the archive for previous content.
 2. Increment `contentVersion`, record the approval date and source issue, and
    remove all unresolved placeholders from generated output.
 3. Run `npm run representative-content:validate` and the complete acceptance

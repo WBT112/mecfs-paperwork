@@ -2,7 +2,6 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { representativeLetterContent } from '../../src/features/representative-letter/data/letterContent';
 import { letterVariants } from '../../src/features/representative-letter/variants';
 import { constituencyLocationCatalog } from '../../src/features/representative-letter/data/constituencyLocationCatalog';
 import { representativeCatalog } from '../../src/features/representative-letter/data/representativeCatalog';
@@ -30,7 +29,7 @@ const COPY_SUCCEEDED = 'representativeLetter.copySucceeded';
 const EXPANDED_ATTRIBUTE = 'aria-expanded';
 const PROCESS_TITLE = 'representativeLetter.processTitle';
 const DATA_PROCESSING_TITLE = 'representativeLetter.dataProcessingTitle';
-const ORIGINAL_SIGN_OFF = representativeLetterContent.template.signOff;
+const SIGN_OFF = 'Mit freundlichen Grüßen';
 const ORIGINAL_VARIANT_BODY = letterVariants.bodies[0].text;
 const VERIFIED_RECIPIENT = representativeCatalog.representatives.find(
   ({ email }) => email !== null,
@@ -51,18 +50,10 @@ const originalClipboard = Object.getOwnPropertyDescriptor(
 );
 let clipboardWrite: ReturnType<typeof vi.fn>;
 
-const { localeState } = vi.hoisted(() => ({
-  localeState: { current: 'de' },
-}));
-
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
   }),
-}));
-
-vi.mock('../../src/i18n/useLocale', () => ({
-  useLocale: () => ({ locale: localeState.current }),
 }));
 
 const renderPage = () =>
@@ -129,7 +120,6 @@ const selectRepresentative = async (
 describe('RepresentativeLetterPage', () => {
   beforeEach(() => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
-    localeState.current = 'de';
     window.sessionStorage.clear();
     clipboardWrite = vi.fn().mockResolvedValue(undefined);
     installClipboardMock();
@@ -149,7 +139,6 @@ describe('RepresentativeLetterPage', () => {
   afterEach(() => {
     letterVariants.bodies[0].text = ORIGINAL_VARIANT_BODY;
     vi.restoreAllMocks();
-    representativeLetterContent.template.signOff = ORIGINAL_SIGN_OFF;
     if (originalClipboard) {
       Object.defineProperty(navigator, 'clipboard', originalClipboard);
     } else {
@@ -167,7 +156,7 @@ describe('RepresentativeLetterPage', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value,
-    ).toContain(representativeLetterContent.template.signOff);
+    ).toContain(SIGN_OFF);
     await screen.findByLabelText(LOCATION_SEARCH_LABEL);
     expect(
       screen.queryByText('representativeLetter.locationPrivacyHint'),
@@ -223,14 +212,6 @@ describe('RepresentativeLetterPage', () => {
       processDisclosure.compareDocumentPosition(privacyDisclosure) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    expect(
-      screen.queryByRole('button', {
-        name: 'representativeLetter.informationTab',
-      }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: 'representativeLetter.start' }),
-    ).not.toBeInTheDocument();
   });
 
   it('renders exactly the three selectable plain-text outputs without export actions', async () => {
@@ -247,12 +228,10 @@ describe('RepresentativeLetterPage', () => {
       'search',
     );
     expect(screen.getAllByRole('searchbox')).toHaveLength(1);
-    expect(
-      screen.queryByLabelText('representativeLetter.searchLabel'),
-    ).toBeNull();
-    expect(
-      screen.queryByLabelText('representativeLetter.stateFilterLabel'),
-    ).toBeNull();
+    expect(screen.getAllByRole('textbox')).toEqual([recipient, subject, body]);
+    expect(document.querySelectorAll('input, textarea, select')).toHaveLength(
+      4,
+    );
     expect(screen.queryByRole('link', { name: /download|export/i })).toBeNull();
     expect(
       screen.queryByRole('button', { name: /download|export/i }),
@@ -273,12 +252,6 @@ describe('RepresentativeLetterPage', () => {
       expect(button.textContent.trim()).toBe('');
       expect(button.querySelector('svg')).toBeInTheDocument();
     }
-    expect(
-      screen.queryByLabelText('representativeLetter.severityLabel'),
-    ).toBeNull();
-    expect(
-      screen.queryByLabelText('representativeLetter.careStatusLabel'),
-    ).toBeNull();
   });
 
   it('selects a verified recipient directly from a location result', async () => {
@@ -591,16 +564,6 @@ describe('RepresentativeLetterPage', () => {
     expect(screen.getByText('representativeLetter.noResults')).toBeVisible();
   });
 
-  it('shows the single letter version after remount', () => {
-    const firstRender = renderPage();
-    firstRender.unmount();
-    renderPage();
-
-    expect(screen.getByLabelText(BODY_LABEL)).toBeVisible();
-    expect(screen.queryByText('representativeLetter.shortBody')).toBeNull();
-    expect(screen.queryByText('representativeLetter.longBody')).toBeNull();
-  });
-
   it('refreshes the pair, preserves recipient and search, and synchronizes copying and mailto after remount', async () => {
     const user = userEvent.setup();
     installClipboardMock();
@@ -675,7 +638,6 @@ describe('RepresentativeLetterPage', () => {
     await selectRepresentative(user, VERIFIED_RECIPIENT!);
 
     const body = screen.getByLabelText<HTMLTextAreaElement>(BODY_LABEL).value;
-    expect(body).not.toContain('Weiterführende Quellen:');
     const mailtoLink = screen.getByRole('link', {
       name: OPEN_EMAIL_APP,
     });
@@ -714,20 +676,6 @@ describe('RepresentativeLetterPage', () => {
     expect(
       screen.getByText('representativeLetter.mailtoBodyTooLong'),
     ).toHaveProperty('tagName', 'OUTPUT');
-  });
-
-  it('consistently uses the approved German content in the English interface', async () => {
-    localeState.current = 'en';
-    const user = userEvent.setup();
-    renderPage();
-    await selectRepresentative(user, VERIFIED_RECIPIENT!);
-
-    expect(
-      screen.getByLabelText('representativeLetter.subjectLabel'),
-    ).toHaveValue(letterVariants.subjects[0].text);
-    expect(
-      screen.queryByText('representativeLetter.contentLanguageNotice'),
-    ).not.toBeInTheDocument();
   });
 
   it('resets only the tool state and leaves unrelated session data intact', async () => {

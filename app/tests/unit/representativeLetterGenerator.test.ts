@@ -1,67 +1,42 @@
 import { describe, expect, it } from 'vitest';
-import { representativeLetterContent } from '../../src/features/representative-letter/data/letterContent';
+import {
+  letterVariants,
+  selectLetterVariants,
+} from '../../src/features/representative-letter/variants';
 import {
   generateRepresentativeLetter,
   type RepresentativeLetterGenerationInput,
 } from '../../src/features/representative-letter/generator';
 
 const createInput = (
-  overrides: Partial<RepresentativeLetterGenerationInput> = {},
+  recipientName: string | null = null,
 ): RepresentativeLetterGenerationInput => ({
-  catalog: representativeLetterContent,
-  recipientName: null,
-  ...overrides,
+  variant: selectLetterVariants(undefined, () => 0),
+  recipientName,
 });
 
 describe('representative letter generator', () => {
-  it('creates the complete approved letter without archived source blocks', () => {
+  it('personalizes only the greeting and preserves the selected complete plaintext', () => {
     const result = generateRepresentativeLetter(
-      createInput({ recipientName: 'Dr. Beispiel & Co.' }),
+      createInput('Dr. Beispiel & Co.'),
     );
-
-    expect(result.subject).toBe(representativeLetterContent.subject);
-    expect(result.body).toContain('Guten Tag Dr. Beispiel & Co.,');
-    expect(result.body).toContain(
-      representativeLetterContent.template.requestHeading,
-    );
-    expect(result.body).toContain(
-      representativeLetterContent.template.responseRequest,
-    );
-    expect(result.body).toContain('Myalgischer Enzephalomyelitis (ME)');
-    expect(
-      result.body.match(/Myalgischer Enzephalomyelitis \(ME\)/gu),
-    ).toHaveLength(1);
-    expect(result.body).not.toContain('Myalgischer Enzephalomyelitis (ME/CFS)');
-    expect(result.body).toContain('Post-Exertionelle Malaise (PEM)');
-    expect(result.body).toContain('https://www.mecfs.de/');
-    expect(result.body).toContain(
-      'weiterhin als eigenständige Leistung mit eigenem Budget abrechenbar',
-    );
-    expect(result.body).not.toContain('Reizabschirmung');
-    expect(result.body).toContain(representativeLetterContent.template.signOff);
-    expect(result.body).not.toContain('Weiterführende Quellen:');
-    for (const block of representativeLetterContent.personalBlocks) {
-      expect(result.body).not.toContain(block.sourceText);
-    }
-    expect(result.body).not.toContain(
-      representativeLetterContent.template.templateDisclosure,
-    );
-    for (const reference of representativeLetterContent.sourceReferences) {
-      expect(result.body).not.toContain(`${reference.label}: ${reference.url}`);
-    }
-  });
-
-  it('uses a neutral salutation without a selected recipient', () => {
-    expect(generateRepresentativeLetter(createInput()).body).toContain(
-      'Guten Tag,',
+    expect(result.subject).toBe(letterVariants.subjects[0].text);
+    expect(result.body).toBe(
+      letterVariants.bodies[0].text.replace(
+        'Guten Tag,',
+        'Guten Tag Dr. Beispiel & Co.,',
+      ),
     );
   });
 
-  it('is deterministic for the same minimal input', () => {
-    const input = createInput({
-      recipientName: 'Erika Beispiel',
-    });
+  it('preserves the neutral greeting without a selected recipient', () => {
+    expect(generateRepresentativeLetter(createInput()).body).toBe(
+      letterVariants.bodies[0].text,
+    );
+  });
 
+  it('is deterministic for the same selection and recipient', () => {
+    const input = createInput('Erika Beispiel');
     expect(generateRepresentativeLetter(input)).toEqual(
       generateRepresentativeLetter(input),
     );

@@ -231,11 +231,6 @@ test('opens directly and retains only tab-local representative-letter state', as
     .fill('50668');
   await expect(
     page.getByRole('button', {
-      name: /^(?:Wahlkreis auswählen|Select constituency)$/i,
-    }),
-  ).toHaveCount(0);
-  await expect(
-    page.getByRole('button', {
       name: /Sanae Abdi.*(?:Wahlkreis|constituency) 92.*Köln I/i,
     }),
   ).toBeVisible();
@@ -250,15 +245,12 @@ test('opens directly and retains only tab-local representative-letter state', as
   await expect(page.locator('#representative-letter-body')).toHaveValue(
     /Guten Tag Sanae Abdi,/u,
   );
-  await expect(page.getByLabel(/ME-Schweregrad|ME severity/i)).toHaveCount(0);
+  await expect(page.locator('#representative-letter-body')).not.toHaveValue('');
   await expect(
-    page.getByLabel(
-      /Pflegegrad oder Antragsstatus|Care grade or application status/i,
-    ),
-  ).toHaveCount(0);
-  await expect(page.locator('#representative-letter-body')).not.toHaveValue(
-    /Mein Alltag ist eine ständige Abwägung|Mein Antrag auf einen Pflegegrad läuft/u,
-  );
+    page
+      .locator('[data-tool-id="representative-letter"]')
+      .locator('input, textarea, select'),
+  ).toHaveCount(3);
   const recipientDisclosure = page.getByRole('button', {
     name: 'Sanae Abdi',
     exact: true,
@@ -354,11 +346,6 @@ test('opens directly and retains only tab-local representative-letter state', as
   const generatedBody = await page
     .locator('#representative-letter-body')
     .inputValue();
-  await expect(
-    page.getByRole('button', {
-      name: /Kurzform|Langform|short version|long version/i,
-    }),
-  ).toHaveCount(0);
   await page.reload();
   await expect(page.locator('#representative-letter-recipient')).toHaveValue(
     'aaron.valent@bundestag.de',
