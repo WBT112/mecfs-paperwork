@@ -29,6 +29,8 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 - Representative-letter mobile copy controls, action visibility after recipient selection, storage-denied operation, and search context.
 - False background formpack updates caused by fingerprinting raw and normalized manifests differently.
+- Data reset now waits for confirmed database deletion, preserves keys while blocked, and invalidates connections in other tabs (#641).
+- Mobile Safari form controls use consistent minimum touch heights, including date inputs.
 - Approved information-link validation for CodeQL alert 96; E2E report retention for allowed browser failures.
 
 ### Removed
@@ -37,7 +39,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 
 ### Known issues
 
-- Blocked data-reset deletion remains tracked in #641. Outstanding dependency and Sonar findings are documented in `docs/qa/security-review-2026-11-09.md`.
+- Outstanding dependency and Sonar findings are documented in `docs/qa/security-review-2026-11-09.md`.
 - Full release notes: `docs/releases/v.0.7.0.md`.
 
 ## [0.6.0] - 2026-02-27

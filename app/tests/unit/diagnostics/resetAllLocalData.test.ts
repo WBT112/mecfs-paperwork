@@ -1,11 +1,28 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { deleteDB } from 'idb';
 import { resetAllLocalData } from '../../../src/lib/diagnostics/resetAllLocalData';
+
+vi.mock('idb', () => ({ deleteDB: vi.fn() }));
+
+const KEY_COOKIE = 'mecfs-paperwork.storage-key';
+const STORAGE_MARKER = 'synthetic-marker';
 
 describe('resetAllLocalData', () => {
   let mockReload: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.mocked(deleteDB).mockReset();
+    vi.mocked(deleteDB).mockResolvedValue(undefined);
+    vi.stubGlobal('indexedDB', {});
+    vi.stubGlobal('navigator', {});
+    vi.stubGlobal('caches', {
+      keys: vi.fn().mockResolvedValue([]),
+      delete: vi.fn().mockResolvedValue(true),
+    });
+    localStorage.clear();
+    sessionStorage.clear();
+    document.cookie = `${KEY_COOKIE}=; Max-Age=0; Path=/`;
     mockReload = vi.fn();
     vi.stubGlobal('location', { reload: mockReload });
   });
@@ -15,23 +32,9 @@ describe('resetAllLocalData', () => {
   });
 
   it('deletes the IndexedDB database', async () => {
-    const deleteDatabase = vi.fn().mockReturnValue({
-      set onsuccess(fn: () => void) {
-        fn();
-      },
-      set onerror(_: () => void) {
-        /* noop */
-      },
-      set onblocked(_: () => void) {
-        /* noop */
-      },
-    });
-    vi.stubGlobal('indexedDB', { deleteDatabase });
-    vi.stubGlobal('navigator', {});
-
     await resetAllLocalData();
 
-    expect(deleteDatabase).toHaveBeenCalledWith('mecfs-paperwork');
+    expect(deleteDB).toHaveBeenCalledWith('mecfs-paperwork');
   });
 
   it('unregisters all service workers', async () => {
@@ -89,61 +92,62 @@ describe('resetAllLocalData', () => {
   it('clears the storage encryption key cookie', async () => {
     vi.stubGlobal('indexedDB', undefined);
     vi.stubGlobal('navigator', {});
-    document.cookie = 'mecfs-paperwork.storage-key=secret';
+    document.cookie = `${KEY_COOKIE}=synthetic-key`;
 
     await resetAllLocalData();
 
-    expect(document.cookie).not.toContain('mecfs-paperwork.storage-key=');
+    expect(document.cookie).not.toContain(`${KEY_COOKIE}=`);
   });
 
   it('handles missing APIs gracefully', async () => {
     vi.stubGlobal('indexedDB', undefined);
     vi.stubGlobal('navigator', {});
+    Reflect.deleteProperty(globalThis, 'caches');
 
     await expect(resetAllLocalData()).resolves.toBeUndefined();
     expect(mockReload).toHaveBeenCalledOnce();
   });
 
-  it('proceeds when deleteDatabase is blocked', async () => {
-    const deleteDatabase = vi.fn().mockReturnValue({
-      set onsuccess(_: () => void) {
-        /* never called */
-      },
-      set onerror(_: () => void) {
-        /* noop */
-      },
-      set onblocked(fn: () => void) {
-        fn();
-      },
-    });
-    vi.stubGlobal('indexedDB', { deleteDatabase });
-    vi.stubGlobal('navigator', {});
+  it('retains storage and the key until a blocked deletion actually completes', async () => {
+    let confirmDeletion!: () => void;
+    vi.mocked(deleteDB).mockReturnValue(
+      new Promise<void>((resolve) => {
+        confirmDeletion = resolve;
+      }),
+    );
+    localStorage.setItem(STORAGE_MARKER, 'retained');
+    sessionStorage.setItem(STORAGE_MARKER, 'retained');
+    document.cookie = `${KEY_COOKIE}=synthetic-key`;
+    const getRegistrations = vi.fn().mockResolvedValue([]);
+    vi.stubGlobal('navigator', { serviceWorker: { getRegistrations } });
 
-    await resetAllLocalData();
+    const reset = resetAllLocalData();
+    await Promise.resolve();
 
+    expect(localStorage.getItem(STORAGE_MARKER)).toBe('retained');
+    expect(sessionStorage.getItem(STORAGE_MARKER)).toBe('retained');
+    expect(document.cookie).toContain(`${KEY_COOKIE}=synthetic-key`);
+    expect(getRegistrations).not.toHaveBeenCalled();
+    expect(mockReload).not.toHaveBeenCalled();
+
+    confirmDeletion();
+    await reset;
+
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
+    expect(document.cookie).not.toContain(`${KEY_COOKIE}=`);
     expect(mockReload).toHaveBeenCalledOnce();
   });
 
   it('rejects when deleteDatabase reports an error', async () => {
     const deleteError = new Error('delete failed');
-    const request = {
-      error: deleteError,
-      set onsuccess(_: () => void) {
-        /* noop */
-      },
-      set onerror(fn: () => void) {
-        fn();
-      },
-      set onblocked(_: () => void) {
-        /* noop */
-      },
-    };
-    const deleteDatabase = vi.fn().mockReturnValue(request);
-
-    vi.stubGlobal('indexedDB', { deleteDatabase });
-    vi.stubGlobal('navigator', {});
+    vi.mocked(deleteDB).mockRejectedValue(deleteError);
+    document.cookie = `${KEY_COOKIE}=synthetic-key`;
+    localStorage.setItem(STORAGE_MARKER, 'retained');
 
     await expect(resetAllLocalData()).rejects.toBe(deleteError);
+    expect(document.cookie).toContain(`${KEY_COOKIE}=synthetic-key`);
+    expect(localStorage.getItem(STORAGE_MARKER)).toBe('retained');
     expect(mockReload).not.toHaveBeenCalled();
   });
 });

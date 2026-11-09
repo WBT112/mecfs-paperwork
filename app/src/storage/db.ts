@@ -8,6 +8,10 @@ import type {
 
 const DB_NAME = 'mecfs-paperwork';
 const DB_VERSION = 3;
+const STORAGE_INVALIDATED_MESSAGE =
+  'Local storage changed in another tab. Reload the app before continuing.';
+let storageInvalidated = false;
+const isStorageInvalidated = (): boolean => storageInvalidated;
 
 /**
  * Typed schema for the IndexedDB storage.
@@ -59,6 +63,12 @@ const isIndexedDbAvailable = (): boolean => typeof indexedDB !== 'undefined';
 
 /**
  * Opens the IndexedDB connection for the app.
+ *
+ * @returns A connection to the current storage schema.
+ * @throws StorageUnavailableError when storage is unavailable or this tab must reload.
+ * @remarks
+ * Connections cooperate with deletion/version changes. An invalidated tab must
+ * reload so stale in-memory drafts cannot recreate data after another tab resets it.
  */
 export const openStorage = async (): Promise<
   IDBPDatabase<MecfsPaperworkDB>
@@ -66,8 +76,15 @@ export const openStorage = async (): Promise<
   if (!isIndexedDbAvailable()) {
     throw new StorageUnavailableError('IndexedDB is unavailable.');
   }
+  if (isStorageInvalidated()) {
+    throw new StorageUnavailableError(STORAGE_INVALIDATED_MESSAGE);
+  }
 
-  return openDB<MecfsPaperworkDB>(DB_NAME, DB_VERSION, {
+  const connection = await openDB<MecfsPaperworkDB>(DB_NAME, DB_VERSION, {
+    blocking() {
+      storageInvalidated = true;
+      connection.close();
+    },
     upgrade(database) {
       // NOTE: This upgrade callback only runs when the DB_VERSION is incremented.
       // Any schema changes (adding/removing object stores or indexes) require
@@ -107,4 +124,9 @@ export const openStorage = async (): Promise<
       }
     },
   });
+  if (isStorageInvalidated()) {
+    connection.close();
+    throw new StorageUnavailableError(STORAGE_INVALIDATED_MESSAGE);
+  }
+  return connection;
 };
