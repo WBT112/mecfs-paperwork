@@ -1037,7 +1037,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.record.data).toEqual({
       diagnoses: {
         meCfs: true,
@@ -1122,7 +1122,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.record.data).toEqual(buildDeepData(depth));
   });
 
@@ -1142,8 +1142,8 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
-    expect(result.payload).not.toBe(null);
+    expect(result.error).toBeNull();
+    expect(result.payload).not.toBeNull();
     if (!result.payload) {
       throw new Error('Expected payload to be present.');
     }
@@ -1172,7 +1172,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('schema_mismatch');
   });
 });
