@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import type { FormpackManifestPayload } from '../../../src/formpacks/types';
 
-const { FORMPACK_ID, LOADER_MODULE, METADATA_MODULE } = vi.hoisted(() => ({
-  FORMPACK_ID: 'doctor-letter',
-  LOADER_MODULE: '../../../src/formpacks/loader',
-  METADATA_MODULE: '../../../src/formpacks/metadata',
-}));
+const { FORMPACK_ID, FORMPACK_IDS, LOADER_MODULE, METADATA_MODULE } =
+  vi.hoisted(() => ({
+    FORMPACK_ID: 'doctor-letter',
+    FORMPACK_IDS: ['doctor-letter'],
+    LOADER_MODULE: '../../../src/formpacks/loader',
+    METADATA_MODULE: '../../../src/formpacks/metadata',
+  }));
 
 const getFormpackMeta = vi.hoisted(() => vi.fn());
 const upsertFormpackMeta = vi.hoisted(() => vi.fn());
@@ -16,7 +18,7 @@ const parseManifest = vi.hoisted(() => vi.fn());
 const deriveFormpackRevisionSignature = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../src/formpacks/registry', () => ({
-  FORMPACK_IDS: [FORMPACK_ID],
+  FORMPACK_IDS,
 }));
 
 vi.mock('../../../src/storage/formpackMeta', () => ({
@@ -49,6 +51,8 @@ const manifestPayload = {
   locales: ['de', 'en'],
 };
 
+const DOCX_MAPPING_PATH = 'docx/mapping.json';
+
 const parsedManifest = {
   id: FORMPACK_ID,
   version: '1.0.0',
@@ -60,7 +64,7 @@ const parsedManifest = {
   visibility: 'public',
   docx: {
     templates: { a4: 'docx/a4.docx' },
-    mapping: 'docx/mapping.json',
+    mapping: DOCX_MAPPING_PATH,
   },
 };
 const UPDATED_AT = '2026-02-01T00:00:00.000Z';
@@ -113,6 +117,7 @@ const installFetchMock = (options?: {
 describe('formpacks/backgroundRefresh', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    FORMPACK_IDS.splice(0, FORMPACK_IDS.length, FORMPACK_ID);
     parseManifest.mockReturnValue(parsedManifest);
     deriveFormpackRevisionSignature.mockResolvedValue({
       versionOrHash: '1.0.1',
@@ -214,6 +219,100 @@ describe('formpacks/backgroundRefresh', () => {
     const firstRequestOptions = firstCall[1] as RequestInit;
     const headers = new Headers(firstRequestOptions.headers);
     expect(headers.get('x-formpack-refresh')).toBe('1');
+  });
+
+  it.each([
+    '../private.json',
+    'docx/../../private.json',
+    'docx/%2e%2e/private.json',
+    'docx/%252e%252e/private.json',
+    'docx/..\\private.json',
+    '/private.json',
+    '//example.invalid/private.json',
+    'https://example.invalid/private.json',
+    'docx/mapping.json?operation=delete',
+    'docx/mapping.json#fragment',
+    `${DOCX_MAPPING_PATH}\n`,
+    ` ${DOCX_MAPPING_PATH}`,
+    '',
+  ])(
+    'rejects unsafe manifest asset %j before fetching document resources',
+    async (asset) => {
+      Object.defineProperty(navigator, 'onLine', {
+        configurable: true,
+        value: true,
+      });
+      const fetchMock = installFetchMock();
+      getFormpackMeta.mockResolvedValue({ hash: 'old-hash' });
+      parseManifest.mockReturnValue({
+        ...parsedManifest,
+        docx: { ...parsedManifest.docx, templates: { a4: asset } },
+      });
+
+      const result = await runFormpackBackgroundRefresh();
+
+      expect(result.updatedIds).toEqual([]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(upsertFormpackMeta).not.toHaveBeenCalled();
+      expect(clearFormpackCaches).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects unsafe mapping paths before fetching document resources', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+    const fetchMock = installFetchMock();
+    getFormpackMeta.mockResolvedValue({ hash: 'old-hash' });
+    parseManifest.mockReturnValue({
+      ...parsedManifest,
+      docx: { ...parsedManifest.docx, mapping: 'docx/../../private.json' },
+    });
+
+    const result = await runFormpackBackgroundRefresh();
+
+    expect(result.updatedIds).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(upsertFormpackMeta).not.toHaveBeenCalled();
+  });
+
+  it('keeps registry order when independent refreshes finish out of order and one fails', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+    FORMPACK_IDS.push('notfallpass', 'broken-pack');
+    const fetchMock = installFetchMock();
+    const defaultFetch = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation((input: RequestInfo | URL) =>
+      String(input).includes('/broken-pack/')
+        ? Promise.reject(new Error('unavailable'))
+        : (defaultFetch(input) as Promise<MockResponse>),
+    );
+    getFormpackMeta.mockResolvedValue({ hash: 'old-hash' });
+    let finishFirst!: () => void;
+    const firstWrite = new Promise<void>((resolve) => {
+      finishFirst = resolve;
+    });
+    upsertFormpackMeta.mockImplementation(({ id }: { id: string }) =>
+      id === FORMPACK_ID ? firstWrite : Promise.resolve(),
+    );
+
+    const refresh = runFormpackBackgroundRefresh();
+    await vi.waitFor(() =>
+      expect(upsertFormpackMeta).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'notfallpass' }),
+      ),
+    );
+    finishFirst();
+
+    expect((await refresh).updatedIds).toEqual([FORMPACK_ID, 'notfallpass']);
+    expect(clearFormpackI18nCache.mock.calls).toEqual([
+      [FORMPACK_ID],
+      ['notfallpass'],
+    ]);
+    upsertFormpackMeta.mockReset();
   });
 
   it('bootstraps metadata without invalidating caches when no baseline exists', async () => {

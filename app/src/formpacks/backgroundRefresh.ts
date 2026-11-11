@@ -79,8 +79,16 @@ const buildUiSchemaPath = (formpackId: string): string =>
 const buildI18nPath = (formpackId: string, locale: string): string =>
   `/formpacks/${formpackId}/i18n/${locale}.json`;
 
-const buildDocxPath = (formpackId: string, file: string): string =>
-  `/formpacks/${formpackId}/${file}`;
+const buildDocxPath = (formpackId: string, file: string): string => {
+  // SECURITY: Manifest-controlled assets must stay inside the static formpack directories.
+  if (
+    file.trim() !== file ||
+    !/^(?:docx|templates)\/[a-zA-Z0-9_-]+\.(?:json|docx)$/u.test(file)
+  ) {
+    throw new Error('Invalid formpack document asset path.');
+  }
+  return `/formpacks/${formpackId}/${file}`;
+};
 
 const refreshSingleFormpack = async (formpackId: string): Promise<boolean> => {
   const manifestPath = buildManifestPath(formpackId);
@@ -129,6 +137,8 @@ let activeRefreshRun: Promise<FormpackRefreshResult> | null = null;
 /**
  * Executes a single best-effort refresh cycle across all registered formpacks.
  * Returns changed ids and never leaves stale in-memory refresh state behind.
+ *
+ * @returns Changed formpack ids in registry order and refresh metadata.
  */
 export const runFormpackBackgroundRefresh =
   async (): Promise<FormpackRefreshResult> => {
@@ -147,18 +157,17 @@ export const runFormpackBackgroundRefresh =
         };
       }
 
-      const updatedIds: string[] = [];
-
-      for (const formpackId of FORMPACK_IDS) {
-        try {
-          const hasChanges = await refreshSingleFormpack(formpackId);
-          if (hasChanges) {
-            updatedIds.push(formpackId);
+      const changes = await Promise.all(
+        FORMPACK_IDS.map(async (formpackId) => {
+          try {
+            return await refreshSingleFormpack(formpackId);
+          } catch {
+            // Keep individual refresh failures isolated and offline-safe.
+            return false;
           }
-        } catch {
-          // NOTE: Keep refresh best-effort and offline-safe.
-        }
-      }
+        }),
+      );
+      const updatedIds = FORMPACK_IDS.filter((_, index) => changes[index]);
 
       if (updatedIds.length > 0) {
         clearFormpackCaches();

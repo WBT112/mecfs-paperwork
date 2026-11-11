@@ -104,19 +104,17 @@ const collectCacheInfo = async (): Promise<CacheInfo[]> => {
 
   try {
     const cacheNames = await caches.keys();
-    const result: CacheInfo[] = [];
-
-    for (const name of cacheNames) {
-      try {
-        const cache = await caches.open(name);
-        const keys = await cache.keys();
-        result.push({ name, entryCount: keys.length });
-      } catch {
-        result.push({ name, entryCount: -1 });
-      }
-    }
-
-    return result;
+    return await Promise.all(
+      cacheNames.map(async (name) => {
+        try {
+          const cache = await caches.open(name);
+          const keys = await cache.keys();
+          return { name, entryCount: keys.length };
+        } catch {
+          return { name, entryCount: -1 };
+        }
+      }),
+    );
   } catch {
     return [];
   }
@@ -152,9 +150,12 @@ const collectIdbInfo = async (): Promise<DiagnosticsBundle['indexedDb']> => {
       request.onsuccess = () => resolve(request.result);
     });
 
-    for (const storeName of STORE_NAMES) {
-      try {
-        if (db.objectStoreNames.contains(storeName)) {
+    const storeCounts = await Promise.all(
+      STORE_NAMES.map(async (storeName) => {
+        try {
+          if (!db.objectStoreNames.contains(storeName)) {
+            return null;
+          }
           const tx = db.transaction(storeName, 'readonly');
           const store = tx.objectStore(storeName);
           const count = await new Promise<number>((resolve, reject) => {
@@ -168,12 +169,13 @@ const collectIdbInfo = async (): Promise<DiagnosticsBundle['indexedDb']> => {
                 ),
               );
           });
-          stores.push({ name: storeName, recordCount: count });
+          return { name: storeName, recordCount: count };
+        } catch {
+          return { name: storeName, recordCount: -1 };
         }
-      } catch {
-        stores.push({ name: storeName, recordCount: -1 });
-      }
-    }
+      }),
+    );
+    stores.push(...storeCounts.filter((store) => store !== null));
 
     db.close();
   } catch {

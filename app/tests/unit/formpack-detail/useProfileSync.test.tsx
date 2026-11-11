@@ -150,6 +150,18 @@ describe('useProfileSync', () => {
     });
   });
 
+  it('keeps the profile empty when mirroring an autosaved record fails', async () => {
+    mocked.upsertProfile.mockRejectedValue(new Error('profile write failed'));
+    const { result } = renderUseProfileSync(DEFAULT_FORMPACK_ID);
+
+    await act(async () => {
+      result.current.handleProfileRecordSaved(createRecord());
+    });
+
+    expect(mocked.upsertProfile).toHaveBeenCalledOnce();
+    expect(result.current.profileHasSavedData).toBe(false);
+  });
+
   it('skips profile mirroring when autosave sync is disabled', async () => {
     vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('false');
 
@@ -174,8 +186,8 @@ describe('useProfileSync', () => {
       expect(result.current.profileHasSavedData).toBe(true);
     });
 
-    act(() => {
-      result.current.handleProfileSaveToggle(getToggleEvent(false));
+    await act(async () => {
+      await result.current.handleProfileSaveToggle(getToggleEvent(false));
     });
 
     expect(setItemSpy).toHaveBeenCalledWith(
@@ -200,6 +212,35 @@ describe('useProfileSync', () => {
     expect(result.current.profileSaveEnabled).toBe(false);
   });
 
+  it.each(['confirmation', 'deletion'])(
+    'retains saved profile state after a %s failure',
+    async (failure) => {
+      mocked.getProfile.mockResolvedValue(createProfileEntry());
+      mockRequestConfirmation.mockResolvedValue(true);
+      if (failure === 'confirmation') {
+        mockRequestConfirmation.mockRejectedValue(
+          new Error('confirmation failed'),
+        );
+      } else {
+        mocked.deleteProfile.mockRejectedValue(new Error('deletion failed'));
+      }
+      const { result } = renderUseProfileSync(DEFAULT_FORMPACK_ID);
+      await waitFor(() =>
+        expect(result.current.profileHasSavedData).toBe(true),
+      );
+
+      await act(async () => {
+        await result.current.handleProfileSaveToggle(getToggleEvent(false));
+      });
+
+      expect(result.current.profileHasSavedData).toBe(true);
+      expect(result.current.profileSaveEnabled).toBe(false);
+      expect(mocked.deleteProfile).toHaveBeenCalledTimes(
+        failure === 'confirmation' ? 0 : 1,
+      );
+    },
+  );
+
   it('persists enabled toggle state to localStorage', async () => {
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
     vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('false');
@@ -210,8 +251,8 @@ describe('useProfileSync', () => {
       expect(result.current.profileHasSavedData).toBe(false);
     });
 
-    act(() => {
-      result.current.handleProfileSaveToggle(getToggleEvent(true));
+    await act(async () => {
+      await result.current.handleProfileSaveToggle(getToggleEvent(true));
     });
 
     expect(setItemSpy).toHaveBeenCalledWith(
@@ -230,8 +271,8 @@ describe('useProfileSync', () => {
       expect(result.current.profileHasSavedData).toBe(true);
     });
 
-    act(() => {
-      result.current.handleProfileSaveToggle(getToggleEvent(false));
+    await act(async () => {
+      await result.current.handleProfileSaveToggle(getToggleEvent(false));
     });
 
     await waitFor(() => {
@@ -241,15 +282,15 @@ describe('useProfileSync', () => {
     expect(result.current.profileHasSavedData).toBe(true);
   });
 
-  it('ignores storage write failures when toggling profile sync', () => {
+  it('ignores storage write failures when toggling profile sync', async () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('storage unavailable');
     });
 
     const { result } = renderUseProfileSync(DEFAULT_FORMPACK_ID);
 
-    act(() => {
-      result.current.handleProfileSaveToggle(getToggleEvent(false));
+    await act(async () => {
+      await result.current.handleProfileSaveToggle(getToggleEvent(false));
     });
 
     expect(result.current.profileSaveEnabled).toBe(false);
