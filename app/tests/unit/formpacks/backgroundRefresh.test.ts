@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { readFile } from 'node:fs/promises';
 import type { FormpackManifestPayload } from '../../../src/formpacks/types';
 
-const { FORMPACK_ID, LOADER_MODULE, METADATA_MODULE } = vi.hoisted(() => ({
-  FORMPACK_ID: 'doctor-letter',
-  LOADER_MODULE: '../../../src/formpacks/loader',
-  METADATA_MODULE: '../../../src/formpacks/metadata',
-}));
+const { FORMPACK_ID, FORMPACK_IDS, LOADER_MODULE, METADATA_MODULE } =
+  vi.hoisted(() => ({
+    FORMPACK_ID: 'doctor-letter',
+    FORMPACK_IDS: ['doctor-letter'],
+    LOADER_MODULE: '../../../src/formpacks/loader',
+    METADATA_MODULE: '../../../src/formpacks/metadata',
+  }));
 
 const getFormpackMeta = vi.hoisted(() => vi.fn());
 const upsertFormpackMeta = vi.hoisted(() => vi.fn());
@@ -16,7 +18,7 @@ const parseManifest = vi.hoisted(() => vi.fn());
 const deriveFormpackRevisionSignature = vi.hoisted(() => vi.fn());
 
 vi.mock('../../../src/formpacks/registry', () => ({
-  FORMPACK_IDS: [FORMPACK_ID],
+  FORMPACK_IDS,
 }));
 
 vi.mock('../../../src/storage/formpackMeta', () => ({
@@ -113,6 +115,7 @@ const installFetchMock = (options?: {
 describe('formpacks/backgroundRefresh', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    FORMPACK_IDS.splice(0, FORMPACK_IDS.length, FORMPACK_ID);
     parseManifest.mockReturnValue(parsedManifest);
     deriveFormpackRevisionSignature.mockResolvedValue({
       versionOrHash: '1.0.1',
@@ -214,6 +217,44 @@ describe('formpacks/backgroundRefresh', () => {
     const firstRequestOptions = firstCall[1] as RequestInit;
     const headers = new Headers(firstRequestOptions.headers);
     expect(headers.get('x-formpack-refresh')).toBe('1');
+  });
+
+  it('keeps registry order when independent refreshes finish out of order and one fails', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+    FORMPACK_IDS.push('notfallpass', 'broken-pack');
+    const fetchMock = installFetchMock();
+    const defaultFetch = fetchMock.getMockImplementation()!;
+    fetchMock.mockImplementation((input: RequestInfo | URL) =>
+      String(input).includes('/broken-pack/')
+        ? Promise.reject(new Error('unavailable'))
+        : (defaultFetch(input) as Promise<MockResponse>),
+    );
+    getFormpackMeta.mockResolvedValue({ hash: 'old-hash' });
+    let finishFirst!: () => void;
+    const firstWrite = new Promise<void>((resolve) => {
+      finishFirst = resolve;
+    });
+    upsertFormpackMeta.mockImplementation(({ id }: { id: string }) =>
+      id === FORMPACK_ID ? firstWrite : Promise.resolve(),
+    );
+
+    const refresh = runFormpackBackgroundRefresh();
+    await vi.waitFor(() =>
+      expect(upsertFormpackMeta).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'notfallpass' }),
+      ),
+    );
+    finishFirst();
+
+    expect((await refresh).updatedIds).toEqual([FORMPACK_ID, 'notfallpass']);
+    expect(clearFormpackI18nCache.mock.calls).toEqual([
+      [FORMPACK_ID],
+      ['notfallpass'],
+    ]);
+    upsertFormpackMeta.mockReset();
   });
 
   it('bootstraps metadata without invalidating caches when no baseline exists', async () => {

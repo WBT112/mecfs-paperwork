@@ -47,12 +47,12 @@ describe('resolveOfflabelFocusTarget', () => {
   });
 
   it('returns null when request state is missing', () => {
-    expect(resolveOfflabelFocusTarget(null, { drug: 'ivabradine' }, true)).toBe(
-      null,
-    );
-    expect(resolveOfflabelFocusTarget({ drug: 'ivabradine' }, null, true)).toBe(
-      null,
-    );
+    expect(
+      resolveOfflabelFocusTarget(null, { drug: 'ivabradine' }, true),
+    ).toBeNull();
+    expect(
+      resolveOfflabelFocusTarget({ drug: 'ivabradine' }, null, true),
+    ).toBeNull();
   });
 
   it('returns null for unknown drug values', () => {

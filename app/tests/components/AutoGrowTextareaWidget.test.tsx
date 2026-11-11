@@ -200,7 +200,7 @@ describe('AccessibleSelectWidget', () => {
 
     const options = screen.getAllByRole('option');
     // placeholder option + 3 enum options
-    expect(options.length).toBe(4);
+    expect(options).toHaveLength(4);
   });
 
   it('shows placeholder option when schema.default is undefined', () => {
@@ -248,7 +248,7 @@ describe('AccessibleSelectWidget', () => {
       />,
     );
     const options = screen.getAllByRole('option');
-    expect(options.length).toBe(3);
+    expect(options).toHaveLength(3);
     expect(options[0]).toHaveTextContent('Option A');
   });
 

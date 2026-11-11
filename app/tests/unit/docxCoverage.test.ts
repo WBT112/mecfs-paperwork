@@ -660,10 +660,10 @@ describe('docx export coverage', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(mocks.loadFormpackSchemaMock.mock.calls.length).toBe(
+    expect(mocks.loadFormpackSchemaMock.mock.calls).toHaveLength(
       schemaCallsBefore + 1,
     );
-    expect(mocks.loadFormpackUiSchemaMock.mock.calls.length).toBe(
+    expect(mocks.loadFormpackUiSchemaMock.mock.calls).toHaveLength(
       uiSchemaCallsBefore + 1,
     );
   });
@@ -950,10 +950,10 @@ describe('docx export coverage', () => {
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(mocks.loadFormpackSchemaMock.mock.calls.length).toBe(
+    expect(mocks.loadFormpackSchemaMock.mock.calls).toHaveLength(
       schemaCallsBefore,
     );
-    expect(mocks.loadFormpackUiSchemaMock.mock.calls.length).toBe(
+    expect(mocks.loadFormpackUiSchemaMock.mock.calls).toHaveLength(
       uiSchemaCallsBefore,
     );
   });

@@ -21,6 +21,10 @@ export type ImportRecordOptions = {
 
 /**
  * Imports a record and snapshots in a single transaction to avoid partial writes.
+ *
+ * @param options - Import data, revisions, and target record settings.
+ * @returns The imported record with decrypted in-memory data.
+ * @throws TypeError when an overwrite target is missing or belongs to another formpack.
  */
 export const importRecordWithSnapshots = async (
   options: ImportRecordOptions,
@@ -87,19 +91,21 @@ export const importRecordWithSnapshots = async (
   }
 
   if (encryptedRevisions.length) {
-    for (const revision of encryptedRevisions) {
-      const snapshot: SnapshotEntry = {
-        id: crypto.randomUUID(),
-        recordId: record.id,
-        label: revision.label,
-        data: revision.data,
-        createdAt: revision.createdAt ?? now,
-      };
-      await snapshotStore.add({
-        ...snapshot,
-        data: revision.encryptedData,
-      });
-    }
+    await Promise.all(
+      encryptedRevisions.map((revision) => {
+        const snapshot: SnapshotEntry = {
+          id: crypto.randomUUID(),
+          recordId: record.id,
+          label: revision.label,
+          data: revision.data,
+          createdAt: revision.createdAt ?? now,
+        };
+        return snapshotStore.add({
+          ...snapshot,
+          data: revision.encryptedData,
+        });
+      }),
+    );
   }
 
   await tx.done;

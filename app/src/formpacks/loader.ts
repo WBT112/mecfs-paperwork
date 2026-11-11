@@ -85,24 +85,18 @@ const delay = async (milliseconds: number): Promise<void> =>
 const fetchWithRetry = async (
   path: string,
   init?: RequestInit,
+  attempt = 0,
 ): Promise<Response> => {
-  let lastError: unknown;
-
-  for (let attempt = 0; attempt <= FETCH_RETRY_DELAYS_MS.length; attempt += 1) {
-    try {
-      return await fetch(path, init);
-    } catch (error) {
-      lastError = error;
-
-      if (attempt === FETCH_RETRY_DELAYS_MS.length) {
-        break;
-      }
-
-      await delay(FETCH_RETRY_DELAYS_MS[attempt]);
+  try {
+    return await fetch(path, init);
+  } catch (error) {
+    if (attempt === FETCH_RETRY_DELAYS_MS.length) {
+      throw error;
     }
-  }
 
-  throw lastError;
+    await delay(FETCH_RETRY_DELAYS_MS[attempt]);
+    return fetchWithRetry(path, init, attempt + 1);
+  }
 };
 
 const getValidatedLocales = (

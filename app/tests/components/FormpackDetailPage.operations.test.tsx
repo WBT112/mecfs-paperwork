@@ -682,7 +682,7 @@ describe('FormpackDetailPage', () => {
       expect(firstPayload?.hiddenText).toBeUndefined();
       expect(firstPayload?.readonlyText).toBeUndefined();
       expect(Array.isArray(firstPayload?.tags)).toBe(true);
-      expect((firstPayload?.tags as unknown[]).length).toBe(1);
+      expect(firstPayload?.tags as unknown[]).toHaveLength(1);
 
       randomSpy.mockReturnValue(0.99);
       await userEvent.click(dummyButton);
@@ -695,7 +695,7 @@ describe('FormpackDetailPage', () => {
       expect(secondPayload).toBeDefined();
       expect(secondPayload?.visibleChoice).toBe('');
       expect(Array.isArray(secondPayload?.tags)).toBe(true);
-      expect((secondPayload?.tags as unknown[]).length).toBe(3);
+      expect(secondPayload?.tags as unknown[]).toHaveLength(3);
       expect(secondPayload).not.toEqual(firstPayload);
     } finally {
       randomSpy.mockRestore();
@@ -1543,7 +1543,7 @@ describe('FormpackDetailPage', () => {
     await waitFor(() =>
       expect(storageState.loadRecord).toHaveBeenCalledWith(secondRecord.id),
     );
-    expect(storageState.markAsSaved.mock.calls.length).toBe(initialSavedCalls);
+    expect(storageState.markAsSaved.mock.calls).toHaveLength(initialSavedCalls);
   });
 
   it('shows delete action only for non-active drafts', async () => {
@@ -1996,7 +1996,7 @@ describe('FormpackDetailPage', () => {
     );
 
     await waitFor(() => expect(storageState.createRecord).toHaveBeenCalled());
-    expect(storageState.markAsSaved.mock.calls.length).toBe(initialSavedCalls);
+    expect(storageState.markAsSaved.mock.calls).toHaveLength(initialSavedCalls);
   });
 
   it('does not create a new record when updating the active record fails', async () => {
