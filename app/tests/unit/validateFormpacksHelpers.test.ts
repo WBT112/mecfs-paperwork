@@ -49,8 +49,8 @@ describe('validate-formpacks helpers', () => {
     // verify nested structure via serialization
     expect(JSON.stringify(obj)).toContain('"p":{"q":42}');
     expect(getNested(obj, 'p')).toBeTruthy();
-    expect(getNested(obj, 'p.q')).toBe(undefined);
-    expect(getNested(obj, 'no.such')).toBe(undefined);
+    expect(getNested(obj, 'p.q')).toBeUndefined();
+    expect(getNested(obj, 'no.such')).toBeUndefined();
   });
 
   it('buildI18nContext produces nested t and __PACK_ID__ alias', () => {
@@ -94,11 +94,11 @@ describe('validate-formpacks helpers', () => {
     collectErrors(errors, 'pack1', '/p', 'oops');
     expect(errors.has('pack1')).toBe(true);
     const list1 = errors.get('pack1') ?? [];
-    expect(list1.length).toBe(1);
+    expect(list1).toHaveLength(1);
 
     collectErrors(errors, 'pack1', '/p2', ['err1', 'err2']);
     const list2 = errors.get('pack1') ?? [];
-    expect(list2.length).toBe(3);
+    expect(list2).toHaveLength(3);
   });
 
   it('validateManifest accepts valid manifest and rejects invalid ones', () => {
@@ -163,7 +163,7 @@ describe('validate-formpacks helpers', () => {
 
   it('parseArgs extracts --id flag', () => {
     expect(parseArgs(['--id', 'zzz']).id).toBe('zzz');
-    expect(parseArgs([]).id).toBe(null);
+    expect(parseArgs([]).id).toBeNull();
   });
 
   it('validateExample returns no errors for valid examples', () => {

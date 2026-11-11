@@ -33,7 +33,7 @@ describe('createMailtoLink', () => {
   ])('does not create a link for $recipientStatus/$recipient', (entry) => {
     expect(
       createMailtoLink({ ...entry, subject: 'Subject', body: 'Body' }),
-    ).toBe(null);
+    ).toBeNull();
   });
 
   it('omits an oversized body while keeping recipient and subject', () => {
