@@ -31,7 +31,7 @@ export default function CopyableTextField({
   multiline = false,
   rows = 2,
   textareaRef,
-}: CopyableTextFieldProps) {
+}: Readonly<CopyableTextFieldProps>) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);

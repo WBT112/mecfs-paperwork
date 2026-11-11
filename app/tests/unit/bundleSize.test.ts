@@ -69,30 +69,15 @@ describe.skipIf(!hasBuild)('bundle size budgets', () => {
     }
   });
 
-  it('vendor-react-pdf stays under configured budget', () => {
-    const chunk = jsAssets.find((a) => a.chunk === 'vendor-react-pdf');
+  it.each([
+    'vendor-react-pdf',
+    'vendor-react',
+    'vendor-docx',
+    'vendor-rjsf',
+  ] as const)('%s stays under configured budget', (chunkName) => {
+    const chunk = jsAssets.find((asset) => asset.chunk === chunkName);
     expect(chunk).toBeDefined();
-    expect(chunk!.size).toBeLessThanOrEqual(
-      JS_CHUNK_BUDGETS['vendor-react-pdf'],
-    );
-  });
-
-  it('vendor-react stays under configured budget', () => {
-    const chunk = jsAssets.find((a) => a.chunk === 'vendor-react');
-    expect(chunk).toBeDefined();
-    expect(chunk!.size).toBeLessThanOrEqual(JS_CHUNK_BUDGETS['vendor-react']);
-  });
-
-  it('vendor-docx stays under configured budget', () => {
-    const chunk = jsAssets.find((a) => a.chunk === 'vendor-docx');
-    expect(chunk).toBeDefined();
-    expect(chunk!.size).toBeLessThanOrEqual(JS_CHUNK_BUDGETS['vendor-docx']);
-  });
-
-  it('vendor-rjsf stays under configured budget', () => {
-    const chunk = jsAssets.find((a) => a.chunk === 'vendor-rjsf');
-    expect(chunk).toBeDefined();
-    expect(chunk!.size).toBeLessThanOrEqual(JS_CHUNK_BUDGETS['vendor-rjsf']);
+    expect(chunk!.size).toBeLessThanOrEqual(JS_CHUNK_BUDGETS[chunkName]);
   });
 
   it('expected vendor chunks are present', () => {
