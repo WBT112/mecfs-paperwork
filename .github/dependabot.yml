@@ -41,7 +41,7 @@ updates:
         update-types:
           - "major"
 
-  # Keep action updates in one monthly PR, with the same patch and maturity policy.
+  # Keep action updates in one monthly PR and exclude routine patch releases.
   - package-ecosystem: "github-actions"
     directory: "/"
     target-branch: "staging"
@@ -60,9 +60,8 @@ updates:
           - "version-update:semver-minor"
           - "version-update:semver-major"
     cooldown:
+      # GitHub Actions supports only one cooldown, not per-SemVer periods.
       default-days: 14
-      semver-major-days: 90
-      semver-minor-days: 14
     groups:
       monthly-action-updates:
         applies-to: "version-updates"
