@@ -504,7 +504,7 @@ describe('PdfExportButton', () => {
       const rafCallsBeforeTick = rafSpy.mock.calls.length;
       firstTick(1);
 
-      expect(rafSpy.mock.calls.length).toBe(rafCallsBeforeTick);
+      expect(rafSpy.mock.calls).toHaveLength(rafCallsBeforeTick);
       expect(cancelSpy).toHaveBeenCalled();
     } finally {
       globalThis.requestAnimationFrame = originalRaf;
