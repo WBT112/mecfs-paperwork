@@ -18,7 +18,7 @@ export default function CopyIconButton({
   describedBy,
   disabled,
   onClick,
-}: CopyIconButtonProps) {
+}: Readonly<CopyIconButtonProps>) {
   const { t } = useTranslation();
   return (
     <button

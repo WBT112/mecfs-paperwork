@@ -687,13 +687,6 @@ body {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .games-hub__card,
-  .games-bingo__cell-button {
-    transition: none;
-  }
-}
-
 .legal-page {
   display: flex;
   flex-direction: column;
@@ -891,10 +884,6 @@ body {
   color: inherit;
   text-decoration: none;
   box-shadow: var(--shadow-subtle);
-  transition:
-    border-color 0.2s ease-in-out,
-    transform 0.2s ease-in-out,
-    background-color 0.2s ease-in-out;
 }
 
 .games-hub__card:hover,
@@ -1204,10 +1193,16 @@ body {
   text-align: left;
   font: inherit;
   cursor: pointer;
-  transition:
-    background-color 0.2s ease-in-out,
-    border-color 0.2s ease-in-out,
-    transform 0.2s ease-in-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .games-hub__card,
+  .games-bingo__cell-button {
+    transition:
+      background-color 0.2s ease-in-out,
+      border-color 0.2s ease-in-out,
+      transform 0.2s ease-in-out;
+  }
 }
 
 .games-bingo__cell-button:not(.games-bingo__cell-button--marked):not(
@@ -1271,7 +1266,6 @@ body {
   line-height: 1.35;
   overflow: hidden;
   overflow-wrap: anywhere;
-  word-break: break-word;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 4;
 }
@@ -1532,7 +1526,7 @@ body {
 .formpack-detail__section dd {
   margin: 0;
   color: var(--color-text-strong);
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .info-box {

@@ -331,7 +331,7 @@ describe('validate-formpacks: extra branches', () => {
       process.stdout.write = () => true;
       process.stderr.write = () => true;
       await run();
-      expect(process.exitCode !== 0).toBe(true);
+      expect(process.exitCode).not.toBe(0);
     } finally {
       process.argv = oldArgv;
       process.exitCode = oldExit;

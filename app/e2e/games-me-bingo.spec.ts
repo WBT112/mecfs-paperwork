@@ -1,5 +1,25 @@
 import { expect, test } from '@playwright/test';
 
+for (const reducedMotion of ['reduce', 'no-preference'] as const) {
+  test(`games respect the ${reducedMotion} motion preference`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto('/games');
+    const card = page.locator('.games-hub__card').first();
+    const duration = reducedMotion === 'reduce' ? '0s' : '0.2s, 0.2s, 0.2s';
+    await expect(card).toHaveCSS('transition-duration', duration);
+    await page.getByRole('link', { name: /me bingo/i }).click();
+    await page
+      .getByRole('button', { name: /spiel starten|start game/i })
+      .click();
+    await expect(page.locator('.games-bingo__cell-button').first()).toHaveCSS(
+      'transition-duration',
+      duration,
+    );
+  });
+}
+
 test('games hub opens ME Bingo and reaches a shareable result view', async ({
   page,
 }) => {

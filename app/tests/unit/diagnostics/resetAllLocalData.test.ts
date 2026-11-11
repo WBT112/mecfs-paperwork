@@ -133,8 +133,8 @@ describe('resetAllLocalData', () => {
     confirmDeletion();
     await reset;
 
-    expect(localStorage.length).toBe(0);
-    expect(sessionStorage.length).toBe(0);
+    expect(localStorage).toHaveLength(0);
+    expect(sessionStorage).toHaveLength(0);
     expect(document.cookie).not.toContain(`${KEY_COOKIE}=`);
     expect(mockReload).toHaveBeenCalledOnce();
   });

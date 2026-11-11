@@ -362,8 +362,8 @@ describe('Doctor-Letter JSON Export/Import Roundtrip', () => {
       const importedDecision = importedData.decision as Record<string, unknown>;
 
       // Empty objects are preserved (lenient validation allows incomplete data)
-      expect(Object.keys(importedPatient).length).toBe(0);
-      expect(Object.keys(importedDoctor).length).toBe(0);
+      expect(Object.keys(importedPatient)).toHaveLength(0);
+      expect(Object.keys(importedDoctor)).toHaveLength(0);
 
       // Decision data preserved
       expect(importedDecision.q1).toBe('no');
