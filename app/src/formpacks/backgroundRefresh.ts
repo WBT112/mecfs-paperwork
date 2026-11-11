@@ -79,8 +79,16 @@ const buildUiSchemaPath = (formpackId: string): string =>
 const buildI18nPath = (formpackId: string, locale: string): string =>
   `/formpacks/${formpackId}/i18n/${locale}.json`;
 
-const buildDocxPath = (formpackId: string, file: string): string =>
-  `/formpacks/${formpackId}/${file}`;
+const buildDocxPath = (formpackId: string, file: string): string => {
+  // SECURITY: Manifest-controlled assets must stay inside the static formpack directories.
+  if (
+    file.trim() !== file ||
+    !/^(?:docx|templates)\/[a-zA-Z0-9_-]+\.(?:json|docx)$/u.test(file)
+  ) {
+    throw new Error('Invalid formpack document asset path.');
+  }
+  return `/formpacks/${formpackId}/${file}`;
+};
 
 const refreshSingleFormpack = async (formpackId: string): Promise<boolean> => {
   const manifestPath = buildManifestPath(formpackId);
