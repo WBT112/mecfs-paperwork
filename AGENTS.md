@@ -116,6 +116,7 @@ If any step fails: fix it before finishing.
 - Linting: ESLint with TypeScript support.
 - Formatting: Prettier.
 - Type safety: `tsc --noEmit` as `typecheck`.
+- Dependabot: schedule routine version updates monthly in one shared group across both npm manifests and GitHub Actions, with at most one open routine-update PR. Security updates are exempt from this schedule and limit.
 
 When adding or updating tooling:
 - Keep configuration minimal and documented.

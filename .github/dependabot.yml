@@ -1,20 +1,27 @@
 version: 2
 
-updates:
-  # Regular npm updates across both manifests. Security updates remain event-driven.
-  - package-ecosystem: "npm"
-    directories:
-      - "/"
-      - "/app"
-    target-branch: "staging"
+multi-ecosystem-groups:
+  monthly-dependencies:
     schedule:
       interval: "monthly"
       time: "06:00"
       timezone: "Europe/Berlin"
-    open-pull-requests-limit: 2
-    rebase-strategy: "auto"
+    target-branch: "staging"
+    open-pull-requests-limit: 1
     labels:
       - "type:dependencies"
+
+updates:
+  # Bundle both npm manifests and Actions into one scheduled version-update PR.
+  # Security updates remain event-driven and outside this version-update group.
+  - package-ecosystem: "npm"
+    directories:
+      - "/"
+      - "/app"
+    patterns:
+      - "*"
+    multi-ecosystem-group: "monthly-dependencies"
+    rebase-strategy: "auto"
     # Routine patch-only updates stay out of the PR queue. This only limits
     # version updates; Dependabot security updates remain eligible immediately.
     allow:
@@ -27,33 +34,12 @@ updates:
       default-days: 14
       semver-major-days: 90
       semver-minor-days: 14
-    groups:
-      monthly-npm-minors:
-        applies-to: "version-updates"
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-      mature-npm-majors:
-        applies-to: "version-updates"
-        patterns:
-          - "*"
-        update-types:
-          - "major"
-
-  # Keep action updates in one monthly PR and exclude routine patch releases.
   - package-ecosystem: "github-actions"
     directory: "/"
-    target-branch: "staging"
-    schedule:
-      interval: "monthly"
-      time: "06:00"
-      timezone: "Europe/Berlin"
-    open-pull-requests-limit: 1
+    patterns:
+      - "*"
+    multi-ecosystem-group: "monthly-dependencies"
     rebase-strategy: "auto"
-    labels:
-      - "type:dependencies"
-      - "type:ci"
     allow:
       - dependency-name: "*"
         update-types:
@@ -62,11 +48,3 @@ updates:
     cooldown:
       # GitHub Actions supports only one cooldown, not per-SemVer periods.
       default-days: 14
-    groups:
-      monthly-action-updates:
-        applies-to: "version-updates"
-        patterns:
-          - "*"
-        update-types:
-          - "minor"
-          - "major"
