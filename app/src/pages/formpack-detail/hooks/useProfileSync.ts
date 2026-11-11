@@ -56,7 +56,9 @@ export interface UseProfileSyncResult {
   profileStatus: string | null;
   clearProfileStatus: () => void;
   handleProfileRecordSaved: (record: RecordEntry) => void;
-  handleProfileSaveToggle: (event: ChangeEvent<HTMLInputElement>) => void;
+  handleProfileSaveToggle: (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => Promise<void>;
   handleApplyProfile: () => Promise<void>;
 }
 
@@ -118,27 +120,29 @@ export const useProfileSync = ({
   );
 
   const handleProfileSaveToggle = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
+    async (event: ChangeEvent<HTMLInputElement>) => {
       const enabled = event.target.checked;
       setProfileSaveEnabled(enabled);
       persistProfileSavePreference(enabled);
 
       if (!enabled && profileHasSavedData) {
-        requestConfirmation({
-          title: t('confirmationDialogTitle'),
-          message: t('profileDeleteConfirmPrompt'),
-          confirmLabel: t('common.delete'),
-          cancelLabel: t('common.cancel'),
-          tone: 'danger',
-        }).then((shouldDeleteExisting) => {
+        try {
+          const shouldDeleteExisting = await requestConfirmation({
+            title: t('confirmationDialogTitle'),
+            message: t('profileDeleteConfirmPrompt'),
+            confirmLabel: t('common.delete'),
+            cancelLabel: t('common.cancel'),
+            tone: 'danger',
+          });
           if (!shouldDeleteExisting) {
             return;
           }
 
-          deleteProfile(DEFAULT_PROFILE_ID).then(() => {
-            setProfileHasSavedData(false);
-          }, ignorePromiseError);
-        }, ignorePromiseError);
+          await deleteProfile(DEFAULT_PROFILE_ID);
+          setProfileHasSavedData(false);
+        } catch {
+          // A failed confirmation or deletion must retain the saved-profile state.
+        }
       }
     },
     [profileHasSavedData, requestConfirmation, t],

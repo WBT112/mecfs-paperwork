@@ -12,6 +12,7 @@ import { openStorage } from '../../../src/storage/db';
 
 const TEST_FORMPACK_ID = 'test-formpack';
 const EXISTING_RECORD_ID = 'existing-id';
+const FIRST_REVISION_LABEL = 'Revision 1';
 
 vi.mock('../../../src/storage/db', () => ({
   openStorage: vi.fn(),
@@ -190,6 +191,25 @@ describe('importRecordWithSnapshots', () => {
     );
   });
 
+  it('propagates a failed revision write instead of reporting a successful import', async () => {
+    snapshotStore.add.mockRejectedValueOnce(new Error('snapshot write failed'));
+
+    await expect(
+      importRecordWithSnapshots({
+        formpackId: TEST_FORMPACK_ID,
+        data: { a: 1 },
+        locale: 'en',
+        mode: 'new',
+        revisions: [{ label: FIRST_REVISION_LABEL, data: { a: 0 } }],
+      }),
+    ).rejects.toThrow('snapshot write failed');
+    expect(db.transaction).toHaveBeenCalledTimes(1);
+    expect(db.transaction).toHaveBeenCalledWith(
+      ['records', 'snapshots'],
+      'readwrite',
+    );
+  });
+
   it('should import revisions for a new record', async () => {
     const options = {
       formpackId: TEST_FORMPACK_ID,
@@ -197,7 +217,7 @@ describe('importRecordWithSnapshots', () => {
       locale: 'en' as const,
       mode: 'new' as const,
       revisions: [
-        { label: 'Revision 1', data: { a: 0 } },
+        { label: FIRST_REVISION_LABEL, data: { a: 0 } },
         { label: 'Revision 2', data: { a: 1 } },
       ],
     };
@@ -208,7 +228,7 @@ describe('importRecordWithSnapshots', () => {
     expect(snapshotStore.add).toHaveBeenCalledWith(
       expect.objectContaining({
         recordId: result.id,
-        label: 'Revision 1',
+        label: FIRST_REVISION_LABEL,
       }),
     );
     expect(snapshotStore.add).toHaveBeenCalledWith(

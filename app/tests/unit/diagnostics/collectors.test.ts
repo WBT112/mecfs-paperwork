@@ -256,6 +256,36 @@ describe('collectDiagnosticsBundle', () => {
     expect(bundle.caches[0].entryCount).toBe(2);
   });
 
+  it('preserves cache order and isolates failures when counts finish out of order', async () => {
+    const firstCache = 'first-cache';
+    let finishFirst!: (keys: object[]) => void;
+    const firstCount = new Promise<object[]>((resolve) => {
+      finishFirst = resolve;
+    });
+    const open = vi.fn(async (name: string) => {
+      if (name === 'bad-cache') throw new Error('cache unavailable');
+      return {
+        keys: () => (name === firstCache ? firstCount : Promise.resolve([{}])),
+      };
+    });
+    vi.stubGlobal('caches', {
+      keys: vi
+        .fn()
+        .mockResolvedValue([firstCache, 'second-cache', 'bad-cache']),
+      open,
+    });
+
+    const diagnostics = collectDiagnosticsBundle();
+    await vi.waitFor(() => expect(open).toHaveBeenCalledTimes(3));
+    finishFirst([{}, {}]);
+
+    expect((await diagnostics).caches).toEqual([
+      { name: firstCache, entryCount: 2 },
+      { name: 'second-cache', entryCount: 1 },
+      { name: 'bad-cache', entryCount: -1 },
+    ]);
+  });
+
   it('collects error ring buffer entries', async () => {
     const bundle = await collectDiagnosticsBundle();
     expect(bundle.errors).toHaveLength(1);

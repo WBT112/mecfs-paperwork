@@ -439,6 +439,28 @@ describe('formpack loader fetches', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it('spaces three failed attempts by 150 ms and 400 ms without retrying indefinitely', async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockRejectedValue(new Error('offline'));
+    vi.stubGlobal('fetch', fetchMock);
+    const manifestPromise = loadFormpackManifest(DOCTOR_LETTER_ID);
+    const rejection = expect(manifestPromise).rejects.toMatchObject({
+      code: 'network',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(149);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(399);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(1);
+    await rejection;
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('handles missing and invalid manifest responses', async () => {
     const fetchMock = buildFetchMock({
       [MANIFEST_PATH_DOCTOR]: {

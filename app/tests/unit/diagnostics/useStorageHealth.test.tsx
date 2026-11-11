@@ -98,7 +98,7 @@ describe('useStorageHealth', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(mockCheckStorageHealth.mock.calls.length).toBe(callCountBefore + 1);
+    expect(mockCheckStorageHealth.mock.calls).toHaveLength(callCountBefore + 1);
     expect(result.current.health).toEqual(errorResult);
   });
 
