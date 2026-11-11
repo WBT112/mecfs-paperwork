@@ -51,6 +51,8 @@ const manifestPayload = {
   locales: ['de', 'en'],
 };
 
+const DOCX_MAPPING_PATH = 'docx/mapping.json';
+
 const parsedManifest = {
   id: FORMPACK_ID,
   version: '1.0.0',
@@ -62,7 +64,7 @@ const parsedManifest = {
   visibility: 'public',
   docx: {
     templates: { a4: 'docx/a4.docx' },
-    mapping: 'docx/mapping.json',
+    mapping: DOCX_MAPPING_PATH,
   },
 };
 const UPDATED_AT = '2026-02-01T00:00:00.000Z';
@@ -217,6 +219,62 @@ describe('formpacks/backgroundRefresh', () => {
     const firstRequestOptions = firstCall[1] as RequestInit;
     const headers = new Headers(firstRequestOptions.headers);
     expect(headers.get('x-formpack-refresh')).toBe('1');
+  });
+
+  it.each([
+    '../private.json',
+    'docx/../../private.json',
+    'docx/%2e%2e/private.json',
+    'docx/%252e%252e/private.json',
+    'docx/..\\private.json',
+    '/private.json',
+    '//example.invalid/private.json',
+    'https://example.invalid/private.json',
+    'docx/mapping.json?operation=delete',
+    'docx/mapping.json#fragment',
+    `${DOCX_MAPPING_PATH}\n`,
+    ` ${DOCX_MAPPING_PATH}`,
+    '',
+  ])(
+    'rejects unsafe manifest asset %j before fetching document resources',
+    async (asset) => {
+      Object.defineProperty(navigator, 'onLine', {
+        configurable: true,
+        value: true,
+      });
+      const fetchMock = installFetchMock();
+      getFormpackMeta.mockResolvedValue({ hash: 'old-hash' });
+      parseManifest.mockReturnValue({
+        ...parsedManifest,
+        docx: { ...parsedManifest.docx, templates: { a4: asset } },
+      });
+
+      const result = await runFormpackBackgroundRefresh();
+
+      expect(result.updatedIds).toEqual([]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(upsertFormpackMeta).not.toHaveBeenCalled();
+      expect(clearFormpackCaches).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects unsafe mapping paths before fetching document resources', async () => {
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true,
+    });
+    const fetchMock = installFetchMock();
+    getFormpackMeta.mockResolvedValue({ hash: 'old-hash' });
+    parseManifest.mockReturnValue({
+      ...parsedManifest,
+      docx: { ...parsedManifest.docx, mapping: 'docx/../../private.json' },
+    });
+
+    const result = await runFormpackBackgroundRefresh();
+
+    expect(result.updatedIds).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(upsertFormpackMeta).not.toHaveBeenCalled();
   });
 
   it('keeps registry order when independent refreshes finish out of order and one fails', async () => {
