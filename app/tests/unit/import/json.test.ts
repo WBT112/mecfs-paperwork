@@ -134,7 +134,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload).toBeDefined();
     expect(result.payload?.formpack.id).toBe(PRIMARY_FORMPACK_ID);
   });
@@ -155,7 +155,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.formpack.id).toBe(PRIMARY_FORMPACK_ID);
   });
 
@@ -175,7 +175,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.formpack.id).toBe(PRIMARY_FORMPACK_ID);
   });
 
@@ -190,7 +190,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_json');
 
     // Verify that the error object containing "secret-data" was not logged.
@@ -210,7 +210,7 @@ describe('validateJsonImport', () => {
   it('returns an invalid_json error for empty import files', () => {
     const result = validateJsonImport('', mockSchema, PRIMARY_FORMPACK_ID);
 
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_json');
   });
 
@@ -229,7 +229,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_payload');
   });
 
@@ -247,7 +247,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('formpack_mismatch');
   });
 
@@ -265,7 +265,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_payload');
   });
 
@@ -283,7 +283,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('unknown_formpack');
   });
 
@@ -301,7 +301,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('schema_mismatch');
   });
 
@@ -318,7 +318,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_payload');
   });
 

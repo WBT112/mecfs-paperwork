@@ -126,8 +126,8 @@ describe('buildRandomDummyPatch', () => {
 
     expect(Array.isArray(minPatch.contacts)).toBe(true);
     expect(Array.isArray(maxPatch.contacts)).toBe(true);
-    expect((minPatch.contacts as unknown[]).length).toBe(1);
-    expect((maxPatch.contacts as unknown[]).length).toBe(3);
+    expect(minPatch.contacts as unknown[]).toHaveLength(1);
+    expect(maxPatch.contacts as unknown[]).toHaveLength(3);
   });
 
   it('produces different values with different rng sequences', () => {
@@ -197,7 +197,7 @@ describe('buildRandomDummyPatch', () => {
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
     expect(typeof patch.birthDate).toBe('string');
-    expect(datePattern.exec(patch.birthDate as string)).not.toBe(null);
+    expect(datePattern.exec(patch.birthDate as string)).not.toBeNull();
     expect(typeof patch.consent).toBe('boolean');
     expect(Number.isInteger(patch.visits)).toBe(true);
     expect(typeof patch.score).toBe('number');
@@ -227,7 +227,7 @@ describe('buildRandomDummyPatch', () => {
     });
 
     expect(Array.isArray(patch.contacts)).toBe(true);
-    expect((patch.contacts as unknown[]).length).toBe(2);
+    expect(patch.contacts as unknown[]).toHaveLength(2);
     expect(
       (patch.contacts as unknown[]).every((entry) => typeof entry === 'string'),
     ).toBe(true);
@@ -251,7 +251,7 @@ describe('buildRandomDummyPatch', () => {
     });
 
     expect(Array.isArray(patch.tags)).toBe(true);
-    expect((patch.tags as unknown[]).length).toBe(3);
+    expect(patch.tags as unknown[]).toHaveLength(3);
   });
 
   it('returns empty arrays for array schemas without a usable item schema', () => {
@@ -329,7 +329,7 @@ describe('buildRandomDummyPatch', () => {
     });
 
     expect(Array.isArray(patch.tags)).toBe(true);
-    expect((patch.tags as unknown[]).length).toBe(1);
+    expect(patch.tags as unknown[]).toHaveLength(1);
     expect(typeof (patch.tags as unknown[])[0]).toBe('string');
   });
 
@@ -355,8 +355,8 @@ describe('buildRandomDummyPatch', () => {
       arrayMax: 1,
     });
 
-    expect((validBoundsPatch.tags as unknown[]).length).toBe(2);
-    expect((clampedBoundsPatch.tags as unknown[]).length).toBe(3);
+    expect(validBoundsPatch.tags as unknown[]).toHaveLength(2);
+    expect(clampedBoundsPatch.tags as unknown[]).toHaveLength(3);
   });
 
   it('uses dedicated 10-value pools for common identity fields', () => {
