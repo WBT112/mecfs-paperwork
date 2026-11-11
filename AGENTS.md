@@ -34,11 +34,15 @@ You are a **Privacy-First Full-Stack TypeScript/React Developer** with expertise
 
 Codex reads this file before doing any work. Follow it as the default standard for this repository.
 
-## 1) Language policy (chat + code)
-- Default language for agent responses and PR descriptions: **English**.
-- If the user starts the conversation/task in **German**, respond in **German** for that task.
+## 1) Language policy (chat, repository, and GitHub)
+- Repository language: **English**.
+- All authored GitHub content must be **English only**: PR and issue titles and descriptions, comments, reviews, discussions, release titles, and release notes.
+- Commit messages must be **English only**.
+- Default language for direct chat responses: **English**. If the user starts the conversation/task in **German**, respond in **German** in chat.
+- The German-language exception applies **only to direct chat responses**; repository and GitHub content must remain English regardless of the chat language.
 - Source code identifiers (variables, functions, files): **English only**.
 - Code comments and documentation: **English only** (even if the task chat is German).
+- Keep user-facing application content localized in **DE and EN**; this policy does not remove either supported locale.
 
 ## 2) Project principles (non-negotiable)
 - Offline-first: no network requests at runtime except loading the static app assets.
@@ -112,6 +116,7 @@ If any step fails: fix it before finishing.
 - Linting: ESLint with TypeScript support.
 - Formatting: Prettier.
 - Type safety: `tsc --noEmit` as `typecheck`.
+- Dependabot: schedule routine version updates monthly in one shared group across both npm manifests and GitHub Actions, with at most one open routine-update PR. Security updates are exempt from this schedule and limit.
 
 When adding or updating tooling:
 - Keep configuration minimal and documented.
