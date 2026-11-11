@@ -337,7 +337,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_payload');
   });
 
@@ -356,7 +356,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_payload');
   });
 
@@ -376,7 +376,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.record.title).toBe('Custom Title');
   });
 
@@ -396,7 +396,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.record.title).toBe('Legacy Title');
   });
 
@@ -413,7 +413,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_payload');
   });
 
@@ -431,7 +431,7 @@ describe('validateJsonImport', () => {
       mockSchema,
       PRIMARY_FORMPACK_ID,
     );
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('unsupported_locale');
   });
 
@@ -449,7 +449,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_payload');
   });
 
@@ -469,7 +469,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_revisions');
   });
 
@@ -482,7 +482,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_payload');
   });
 
@@ -521,7 +521,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload).toBeDefined();
     expect(result.payload?.record.data).toEqual({
       severity: {
@@ -597,7 +597,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload).toBeDefined();
     expect(result.payload?.record.data).toEqual({
       request: {
@@ -642,7 +642,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.record.data).toEqual({
       request: {
         drug: 'legacy-drug-value',
@@ -663,7 +663,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload).toBeDefined();
     expect(result.payload?.formpack.version).toBe('2.4.0');
     expect(result.payload?.record.locale).toBe('de');
@@ -710,7 +710,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.formpack.version).toBe('1.2.3');
     expect(result.payload?.record.data).toEqual({
       metadata: { note: 'kept' },
@@ -758,7 +758,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.record.data).toEqual({
       requiredText: '',
       requiredList: [],
@@ -780,7 +780,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_json');
     expect(result.error?.message).toContain('10 MB');
   });
@@ -810,7 +810,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.record.data).toEqual({
       name: 'Test',
       note: nearThresholdPayload,
@@ -837,7 +837,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.payload).toBe(null);
+    expect(result.payload).toBeNull();
     expect(result.error?.code).toBe('invalid_json');
     expect(result.error?.message).toContain('10 MB');
   });
@@ -908,7 +908,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.record.data).toEqual({
       objectItems: [{ keep: 'kept' }],
       arrayWithoutItems: [{ legacy: true }],
@@ -974,7 +974,7 @@ describe('validateJsonImport', () => {
       PRIMARY_FORMPACK_ID,
     );
 
-    expect(result.error).toBe(null);
+    expect(result.error).toBeNull();
     expect(result.payload?.record.data).toEqual({
       known: 'ok',
       nested: {
