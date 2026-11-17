@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { getRepoUrl } from '../lib/repoUrl';
 import { getSponsorUrl } from '../lib/funding';
 import { APP_VERSION, BUILD_DATE_ISO, formatBuildDate } from '../lib/version';
+import sponsorStrip from '../assets/brand/GKV-Logoleiste aktualisiert.jpg';
 
 export default memo(function Footer() {
   const { t, i18n } = useTranslation();
@@ -60,13 +61,21 @@ export default memo(function Footer() {
             </a>
           ) : null}
         </nav>
-        <p className="app__footer-version" title={BUILD_DATE_ISO}>
-          {t('footerVersionLabel', {
-            version: APP_VERSION,
-            date: buildDateLabel,
-          })}
-        </p>
       </div>
+      <div className="app__footer-sponsors">
+        <img
+          src={sponsorStrip}
+          alt={t('footerSponsorsAlt')}
+          width={1692}
+          height={123}
+        />
+      </div>
+      <p className="app__footer-version" title={BUILD_DATE_ISO}>
+        {t('footerVersionLabel', {
+          version: APP_VERSION,
+          date: buildDateLabel,
+        })}
+      </p>
     </footer>
   );
 });

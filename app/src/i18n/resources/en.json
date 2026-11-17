@@ -1,6 +1,6 @@
 {
-  "appTitle": "MEcfs-PAPERwork – BETA version",
-  "appBugReportHint": "Please report bugs on GitHub.",
+  "appTitle": "MEcfs-PAPERwork",
+  "appSupporter": "Supported by ME in Thüringen",
   "appSubtitle": "Paperwork for Myalgic Encephalomyelitis (ME/CFS) made easy. Secure in your browser - all data stays on your device.",
   "toolHeader": {
     "navigationLabel": "Tool navigation",
@@ -51,6 +51,7 @@
   "footerGames": "Games",
   "footerGithub": "GitHub",
   "footerSponsor": "Sponsor",
+  "footerSponsorsAlt": "Sponsors: AOK PLUS, BKK Landesverband Mitte, IKK classic, KNAPPSCHAFT, SVLFG and vdek.",
   "footerVersionLabel": "Version: {{version}} • {{date}}",
   "formpackListTitle": "Support offers",
   "formpackListDescription": "Here you can see the currently available support offers. More are in progress. If you want to help, get in touch. All inputs are processed locally on your device and are optional.",

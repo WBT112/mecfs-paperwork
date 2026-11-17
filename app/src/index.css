@@ -442,10 +442,25 @@ body {
   text-align: right;
 }
 
+.app__footer-sponsors {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.app__footer-sponsors img {
+  display: block;
+  width: 100%;
+  max-width: 1692px;
+  height: auto;
+  margin-inline: auto;
+}
+
 .app__footer-version {
-  margin: 0.9rem 0 0;
+  margin: 0.5rem 0 0;
   color: var(--color-text-subtle);
-  font-size: 0.82rem;
+  font-size: 0.75rem;
 }
 
 .sr-only {
