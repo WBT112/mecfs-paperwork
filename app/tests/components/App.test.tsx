@@ -6,7 +6,7 @@ import App from '../../src/App';
 
 const LANGUAGE_LABEL = 'Language';
 const APP_SUBTITLE = 'Offline-first paperwork helper';
-const APP_BUG_REPORT_HINT = 'Please report bugs on GitHub.';
+const APP_SUPPORTER = 'Supported by ME in Thüringen';
 const FORMPACK_LIST_DESCRIPTION = 'Available support offers';
 const FORMPACKS_PATH = '/formpacks';
 const TOOL_BRAND = 'ME/CFS Paperwork';
@@ -16,7 +16,7 @@ const startFormpackBackgroundRefresh = vi.hoisted(() => vi.fn(() => vi.fn()));
 
 const translations: Record<string, string> = {
   appTitle: TOOL_BRAND,
-  appBugReportHint: APP_BUG_REPORT_HINT,
+  appSupporter: APP_SUPPORTER,
   appSubtitle: APP_SUBTITLE,
   formpackListDescription: FORMPACK_LIST_DESCRIPTION,
   'toolHeader.navigationLabel': 'Tool navigation',
@@ -78,11 +78,17 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { name: TOOL_BRAND }),
     ).toBeInTheDocument();
-    expect(screen.getByText(APP_BUG_REPORT_HINT)).toBeInTheDocument();
+    const supporter = screen.getByRole('link', { name: APP_SUPPORTER });
+    expect(supporter).toHaveAttribute('href', 'https://me-in-thueringen.de/');
+    expect(supporter).toHaveAttribute('target', '_blank');
+    expect(supporter).toHaveAttribute('rel', 'noreferrer noopener');
+    expect(
+      screen.queryByText(/report bugs on GitHub/i),
+    ).not.toBeInTheDocument();
     expect(
       screen
         .getByRole('heading', { name: TOOL_BRAND })
-        .textContent.includes(APP_BUG_REPORT_HINT),
+        .textContent.includes(APP_SUPPORTER),
     ).toBe(false);
     expect(screen.getByText(APP_SUBTITLE)).toBeInTheDocument();
 
@@ -135,7 +141,7 @@ describe('App', () => {
       'Tool navigation',
     );
     expect(screen.queryByText(APP_SUBTITLE)).not.toBeInTheDocument();
-    expect(screen.queryByText(APP_BUG_REPORT_HINT)).not.toBeInTheDocument();
+    expect(screen.queryByText(APP_SUPPORTER)).not.toBeInTheDocument();
     expect(
       screen.queryByText(FORMPACK_LIST_DESCRIPTION),
     ).not.toBeInTheDocument();
