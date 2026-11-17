@@ -24,8 +24,8 @@ for (const { viewport, locale } of viewports.flatMap((viewport) =>
     const supporter = header.getByRole('link', {
       name:
         locale === 'de'
-          ? 'Unterstützt von ME in Thüringen'
-          : 'Supported by ME in Thüringen',
+          ? 'Ein Projekt des Vereins "Selbsthilfe für ME in Thüringen"'
+          : 'A project by the association "Selbsthilfe für ME in Thüringen"',
     });
     const feedback = header.getByRole('link', { name: /Feedback/i });
     const share = header.getByRole('button', { name: /Teilen|Share/i });
