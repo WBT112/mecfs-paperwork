@@ -6,20 +6,27 @@ const viewports = [
   { name: 'desktop', width: 1280, height: 900 },
 ] as const;
 
-for (const viewport of viewports) {
-  test(`keeps the support-offer header clear at ${viewport.name}`, async ({
+for (const { viewport, locale } of viewports.flatMap((viewport) =>
+  (['de', 'en'] as const).map((locale) => ({ viewport, locale })),
+)) {
+  test(`keeps the app branding clear in ${locale} at ${viewport.name}`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
     await page.goto('/formpacks');
+    await page.locator('#locale-select').selectOption(locale);
 
     const header = page.locator('.app__header');
     const title = header.getByRole('heading', {
-      name: /MEcfs-PAPERwork.*BETA(?:-| )version/i,
+      name: 'MEcfs-PAPERwork',
+      exact: true,
     });
-    const bugReportHint = header.getByText(
-      /Fehler bitte über GitHub melden|Please report bugs on GitHub/i,
-    );
+    const supporter = header.getByRole('link', {
+      name:
+        locale === 'de'
+          ? 'Unterstützt von ME in Thüringen'
+          : 'Supported by ME in Thüringen',
+    });
     const feedback = header.getByRole('link', { name: /Feedback/i });
     const share = header.getByRole('button', { name: /Teilen|Share/i });
     const language = header.locator('#locale-select');
@@ -33,13 +40,60 @@ for (const viewport of viewports) {
     });
 
     await expect(title).toBeVisible();
-    await expect(bugReportHint).toBeVisible();
+    await expect(supporter).toBeVisible();
+    await expect(supporter).toHaveAttribute(
+      'href',
+      'https://me-in-thueringen.de/',
+    );
+    await expect(page.locator('body')).not.toContainText(
+      /\bBETA\b|Fehler bitte über GitHub melden|Please report bugs on GitHub/i,
+    );
     await expect(feedback).toBeVisible();
     await expect(share).toBeVisible();
     await expect(language).toBeVisible();
     await expect(theme).toBeVisible();
     await expect(description).toBeVisible();
     await expect(listHeading).toBeVisible();
+    const footer = page.getByRole('contentinfo');
+    const sponsorStrip = footer.getByRole('img', {
+      name: /AOK PLUS.*BKK Landesverband Mitte.*IKK classic.*KNAPPSCHAFT.*SVLFG.*vdek/,
+    });
+    const version = footer.locator('.app__footer-version');
+    await sponsorStrip.scrollIntoViewIfNeeded();
+    await expect(sponsorStrip).toBeVisible();
+    await expect(sponsorStrip).toHaveJSProperty('complete', true);
+    expect(
+      await sponsorStrip.evaluate((image: HTMLImageElement) => ({
+        loaded: image.complete && image.naturalWidth > 0,
+        proportional:
+          Math.abs(
+            image.width / image.height -
+              image.naturalWidth / image.naturalHeight,
+          ) < 0.5,
+      })),
+    ).toEqual({ loaded: true, proportional: true });
+    const [navigationBox, sponsorBox, versionBox] = await Promise.all([
+      footer.getByRole('navigation').boundingBox(),
+      sponsorStrip.boundingBox(),
+      version.boundingBox(),
+    ]);
+    expect(sponsorBox!.y).toBeGreaterThanOrEqual(
+      navigationBox!.y + navigationBox!.height,
+    );
+    expect(versionBox!.y).toBeGreaterThanOrEqual(
+      sponsorBox!.y + sponsorBox!.height,
+    );
+    expect(
+      await version.evaluate((element) =>
+        Number.parseFloat(window.getComputedStyle(element).fontSize),
+      ),
+    ).toBeLessThan(
+      await footer
+        .getByRole('navigation')
+        .evaluate((element) =>
+          Number.parseFloat(window.getComputedStyle(element).fontSize),
+        ),
+    );
     await expect(page.locator('main')).not.toContainText(
       /Hier werden die aktuell verfügbaren Hilfsangebote angezeigt|Here you can see the currently available support offers/i,
     );

@@ -9,6 +9,7 @@ export const PRECACHE_GLOB_PATTERNS = [
   'assets/representatives-*.json',
   'assets/constituency-locations-*.json',
   'assets/annex-*.{jpg,jpeg,png}',
+  'assets/GKV-Logoleiste*.jpg',
   'assets/Liberation*.ttf',
 ];
 

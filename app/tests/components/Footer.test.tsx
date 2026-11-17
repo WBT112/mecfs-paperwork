@@ -15,6 +15,8 @@ const translations: Record<string, string> = {
   footerGames: 'Games',
   footerGithub: 'GitHub',
   footerSponsor: 'Sponsor',
+  footerSponsorsAlt:
+    'Sponsors: AOK PLUS, BKK Landesverband Mitte, IKK classic, KNAPPSCHAFT, SVLFG and vdek.',
   footerVersionLabel: 'v{{version}} • {{date}}',
 };
 
@@ -83,7 +85,26 @@ describe('Footer', () => {
     expect(githubLink).toHaveAttribute('href', DEFAULT_REPO_URL);
     expect(githubLink).toHaveAttribute('target', '_blank');
     expect(githubLink).toHaveAttribute('rel', 'noreferrer noopener');
-    expect(screen.getByText('vabc1234 • Feb 7, 2026, 12:00 PM')).toBeVisible();
+    const sponsorStrip = screen.getByRole('img', {
+      name: translations.footerSponsorsAlt,
+    });
+    expect(sponsorStrip).toHaveAttribute(
+      'src',
+      expect.stringContaining('GKV-Logoleiste'),
+    );
+    expect(sponsorStrip).toHaveAttribute('width', '1692');
+    expect(sponsorStrip).toHaveAttribute('height', '123');
+    const version = screen.getByText('vabc1234 • Feb 7, 2026, 12:00 PM');
+    expect(version).toBeVisible();
+    expect(version).toHaveAttribute('title', '2026-02-07T12:00:00.000Z');
+    expect(
+      screen.getByRole('navigation').compareDocumentPosition(sponsorStrip) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      sponsorStrip.compareDocumentPosition(version) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('hides the sponsor link when no funding URL is available', () => {

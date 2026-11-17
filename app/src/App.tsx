@@ -67,7 +67,16 @@ export default function App() {
                 </Link>
               </h1>
               <p className="app__subtitle">
-                <small>{t('appBugReportHint')}</small>
+                <small>
+                  <a
+                    className="app__link"
+                    href="https://me-in-thueringen.de/"
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    {t('appSupporter')}
+                  </a>
+                </small>
               </p>
               <p className="app__subtitle">{t('appSubtitle')}</p>
             </div>
