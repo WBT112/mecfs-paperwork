@@ -6,7 +6,8 @@ import App from '../../src/App';
 
 const LANGUAGE_LABEL = 'Language';
 const APP_SUBTITLE = 'Offline-first paperwork helper';
-const APP_SUPPORTER = 'Supported by ME in Thüringen';
+const APP_SUPPORTER =
+  'A project by the association "Selbsthilfe für ME in Thüringen"';
 const FORMPACK_LIST_DESCRIPTION = 'Available support offers';
 const FORMPACKS_PATH = '/formpacks';
 const TOOL_BRAND = 'ME/CFS Paperwork';
